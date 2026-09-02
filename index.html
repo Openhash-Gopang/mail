@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Mail — 대화로 보내고, 대화로 관리하는 메일 비서</title>
+<meta name="description" content="K-Mail은 자연어 대화로 메일 발송·주소록 관리·자동삭제 규칙을 처리하는 혼디넷의 메일 비서입니다. 이메일 주소를 스스로 지어내지 않는 정직한 한계, K-Plan과 연동되는 K-Recompose 파이프라인을 소개합니다.">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --gov-header: #001845;
+  --gov-nav:    #1B2A6B;
+  --primary:    #3D4FC4;
+  --primary-dk: #2F3EA0;
+  --primary-lt: #6472DB;
+  --primary-bg: #EEF0FB;
+  --primary-bd: #C9CEF2;
+  --amber:      #B9791F;
+  --amber-dk:   #92601A;
+  --amber-bg:   #FBF1E0;
+  --surface:    #FFFFFF;
+  --bg:         #F5F6FA;
+  --border:     #DFE2ED;
+  --text:       #1A202C;
+  --sub:        #4A5568;
+  --hint:       #718096;
+  --green:      #1B6B3A; --green-bg: #E6F4EC;
+  --orange:     #C05621; --orange-bg: #FEF3E2;
+  --red:        #C01C28; --red-bg: #FEE2E2;
+  --font: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  --shadow-1: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-2: 0 6px 18px rgba(0,0,0,.10);
+  --r: 6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font); font-size: 14px; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+
+/* GOV BAR */
+.gov-bar { background: var(--gov-header); color: rgba(255,255,255,.72); font-size: 11px; padding: 6px 0; text-align: center; letter-spacing: .3px; font-weight: 500; }
+.gov-bar a { color: rgba(255,255,255,.90); font-weight: 700; }
+.gov-bar a:hover { text-decoration: underline; }
+
+/* TOPNAV */
+.topnav { background: var(--gov-nav); position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,.22); }
+.topnav-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; height: 54px; }
+.topnav-logo { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -.4px; padding-right: 18px; border-right: 1px solid rgba(255,255,255,.15); flex-shrink: 0; margin-right: 6px; }
+.topnav-logo-icon { width: 30px; height: 30px; background: var(--primary-lt); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.topnav-links { display: flex; flex: 1; }
+.topnav-links a { display: flex; align-items: center; padding: 0 15px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.72); transition: background .15s, color .15s; border-bottom: 3px solid transparent; white-space: nowrap; }
+.topnav-links a:hover { background: rgba(255,255,255,.08); color: #fff; }
+.topnav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; padding-left: 16px; flex-shrink: 0; }
+.topnav-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.55); }
+.status-dot-green { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+.topnav-cta { background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18); color: #fff; padding: 7px 14px; border-radius: var(--r); font-size: 12px; font-weight: 700; }
+.topnav-cta:hover { background: rgba(255,255,255,.18); }
+
+/* HERO */
+.hero { background: linear-gradient(150deg, #0E1440 0%, #1B2A6B 55%, #2F3EA0 100%); color: #fff; padding: 60px 0 52px; border-bottom: 3px solid var(--primary-lt); }
+.hero-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+.hero-tag { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.80); letter-spacing: .3px; margin-bottom: 18px; }
+.hero-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
+.hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -.8px; line-height: 1.35; margin-bottom: 16px; max-width: 760px; }
+.hero h1 em { color: #B7C0F0; font-style: normal; }
+.hero p { font-size: 15px; color: rgba(255,255,255,.72); line-height: 1.8; max-width: 660px; margin-bottom: 10px; }
+.hero-btns { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+.hero-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--primary-lt); color: #fff; border-radius: var(--r); font-size: 13px; font-weight: 700; transition: background .15s; }
+.hero-btn-primary:hover { background: #7c86e6; }
+.hero-btn-outline { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.20); color: rgba(255,255,255,.88); border-radius: var(--r); font-size: 13px; font-weight: 600; transition: background .15s; }
+.hero-btn-outline:hover { background: rgba(255,255,255,.14); }
+
+/* WIDE SECTION */
+.wide-section { max-width: 1160px; margin: 0 auto; padding: 52px 24px; }
+.wide-section.alt { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.wide-section.alt-inner { max-width: 1160px; margin: 0 auto; padding: 52px 24px; }
+.section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); padding-bottom: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 14px; display: inline-block; }
+.wide-h2 { font-size: 21px; font-weight: 800; margin-bottom: 8px; letter-spacing: -.4px; }
+.wide-sub { font-size: 13.5px; color: var(--sub); margin-bottom: 26px; line-height: 1.75; max-width: 760px; }
+
+/* CAPABILITY CARDS */
+.cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.cap-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow-1); }
+.cap-num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.cap-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.cap-desc { font-size: 12.5px; color: var(--sub); line-height: 1.7; }
+
+/* ACTION LIST (모든 실행 태그) */
+.action-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 8px; }
+.action-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-bottom: none; }
+.action-item:first-child { border-radius: var(--r) var(--r) 0 0; }
+.action-item:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 var(--r) var(--r); }
+.action-tag { flex-shrink: 0; font-family: 'SFMono-Regular', 'Courier New', monospace; font-size: 10.5px; font-weight: 700; color: var(--primary); background: var(--primary-bg); border-radius: 5px; padding: 4px 8px; white-space: nowrap; }
+.action-desc { font-size: 12.5px; color: var(--sub); line-height: 1.65; padding-top: 3px; }
+.action-desc strong { color: var(--text); font-weight: 700; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.badge-amber  { background: var(--amber-bg); color: var(--amber-dk); }
+.badge-blue   { background: var(--primary-bg); color: var(--primary); }
+.badge-orange { background: var(--orange-bg); color: var(--orange); }
+.badge-green  { background: var(--green-bg); color: var(--green); }
+.badge-gray   { background: #EDEFF3; color: var(--sub); }
+
+/* LIMITS */
+.limit-list { display: flex; flex-direction: column; gap: 10px; }
+.limit-item { display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: var(--r); padding: 14px 16px; box-shadow: var(--shadow-1); }
+.limit-icon { color: var(--orange); flex-shrink: 0; margin-top: 1px; }
+.limit-text { font-size: 12.5px; color: var(--text); line-height: 1.7; }
+.limit-text strong { font-weight: 700; }
+
+/* PIPELINE */
+.pipeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 20px; }
+.pipe-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px; background: var(--surface); border: 1px solid var(--border); border-bottom: none; font-size: 12.5px; }
+.pipe-item:first-child { border-radius: var(--r) var(--r) 0 0; }
+.pipe-item:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 var(--r) var(--r); }
+.pipe-num { width: 22px; height: 22px; border-radius: 50%; background: var(--amber-bg); color: var(--amber-dk); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pipe-item.highlight { background: var(--amber-bg); }
+
+/* QUICK FACTS */
+.facts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.fact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-1); }
+.fact-val { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+.fact-lbl { font-size: 11.5px; color: var(--sub); line-height: 1.5; }
+
+/* PRINCIPLE STRIP */
+.principle-strip { background: var(--primary-bg); border: 1px solid var(--primary-bd); border-radius: var(--r); padding: 18px 20px; font-size: 12.5px; color: var(--text); line-height: 1.8; margin-bottom: 24px; }
+.principle-strip strong { color: var(--primary); }
+
+/* DOCS GRID */
+.docs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.doc-card { display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; box-shadow: var(--shadow-1); transition: border-color .15s, transform .1s; }
+.doc-card:hover { border-color: var(--primary-lt); transform: translateY(-1px); }
+.doc-icon { width: 30px; height: 30px; border-radius: 7px; background: var(--primary-bg); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.doc-title { font-size: 12.5px; font-weight: 700; margin-bottom: 3px; }
+.doc-desc { font-size: 11.5px; color: var(--hint); line-height: 1.55; }
+
+/* FOOTER */
+footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 30px 0; }
+.footer-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; font-size: 11.5px; }
+.footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
+.footer-links a:hover { color: #fff; }
+
+@media (max-width: 860px) {
+  .cap-grid, .docs-grid { grid-template-columns: 1fr; }
+  .facts-grid { grid-template-columns: repeat(2, 1fr); }
+  .topnav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="gov-bar">혼디넷(hondi.net) K-서비스 — <a href="https://hondi.net" target="_blank">hondi.net으로 돌아가기 ↗</a></div>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="#top" class="topnav-logo"><span class="topnav-logo-icon">📬</span>K-Mail</a>
+    <div class="topnav-links">
+      <a href="#intro">소개</a>
+      <a href="#capabilities">할 수 있는 일</a>
+      <a href="#limits">정직한 한계</a>
+      <a href="#kplan">K-Plan 연동</a>
+      <a href="#docs">문서</a>
+    </div>
+    <div class="topnav-right">
+      <div class="topnav-status"><span class="status-dot-green"></span>hondi.net 앱 내 서비스 · 라이브 운영 중</div>
+      <a href="https://hondi.net/pages/kmail-assistant.html" target="_blank" class="topnav-cta">K-Mail 열기 ↗</a>
+    </div>
+  </div>
+</nav>
+
+<div id="top"></div>
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag"><span class="hero-tag-dot"></span> hondi.net 지갑 로그인 필요 · 개인 메일(hondi.kr) 전용</div>
+    <h1>메일을 보내는 것도, 주소록을 관리하는 것도<br><em>전부 대화로</em> 끝냅니다</h1>
+    <p>K-Mail은 사용자가 자연어로 요청하는 메일 발송·주소록 관리·인바운드 필터 규칙을, 대화를 통해 정확한 구조화 데이터로 확정한 뒤 실제로 실행하는 혼디넷의 메일 비서입니다.</p>
+    <p>관리자 전용 공문 시스템(gov-mail, hondi.org)과는 완전히 무관합니다 — 여기서 다루는 건 혼디 사용자 개인의 메일(<code>&lt;guid&gt;@hondi.kr</code>)입니다.</p>
+    <div class="hero-btns">
+      <a href="https://hondi.net/pages/kmail-assistant.html" target="_blank" class="hero-btn-primary">K-Mail 비서 열기 ↗</a>
+      <a href="https://hondi.net/prompts/SP-25_kmail_v1_6.txt" target="_blank" class="hero-btn-outline">정본 문서(SP-25_kmail_v1_6) ↗</a>
+    </div>
+  </div>
+</div>
+
+<section class="wide-section" id="intro">
+  <div class="section-title">빠른 사실</div>
+  <div class="facts-grid">
+    <div class="fact-card">
+      <div class="fact-val">{guid}@hondi.kr</div>
+      <div class="fact-lbl">내 K-Mail 주소 형식 — 고정값, 조회 불필요</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">100통/일</div>
+      <div class="fact-lbl">발송 한도(5일 이동평균 기준 고정 상수)</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">3종</div>
+      <div class="fact-lbl">할 수 있는 일 — 발송·주소록·자동삭제 규칙</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">24시간 1회</div>
+      <div class="fact-lbl">부재중 자동응답, 같은 외부 발신자 기준 제한</div>
+    </div>
+  </div>
+</section>
+
+<div class="wide-section alt">
+  <div class="wide-section alt-inner" style="padding:52px 24px;" id="capabilities">
+    <div class="section-title">할 수 있는 일</div>
+    <h2 class="wide-h2">3가지 — 발송, 주소록, 자동삭제 규칙</h2>
+    <p class="wide-sub">평소엔 자연어로 대화하고, 실행이 필요한 순간에만 K-Mail이 내부적으로 구조화된 액션을 냅니다. 사용자는 이 내부 형식을 몰라도 됩니다.</p>
+    <div class="cap-grid">
+      <div class="cap-card">
+        <div class="cap-num">1</div>
+        <div class="cap-title">메일 발송(즉시 또는 예약)</div>
+        <div class="cap-desc">한 명 또는 여러 명에게 보낼 수 있고, 회신을 특정 시각까지 모아 다이제스트로 정리해줄 수도 있습니다. 발송 대상은 그 자리에서 자동으로 주소록에도 등록됩니다 — 따로 요청하지 않아도 됩니다.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-num">2</div>
+        <div class="cap-title">주소록 등록·검색·관리</div>
+        <div class="cap-desc">이름·이메일·직업·소속기관·전공·나와의 관계·그룹(태그)으로 저장·검색합니다. 그룹 부여/해제, 중복 연락처 병합도 대화로 처리합니다.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-num">3</div>
+        <div class="cap-title">자동삭제 규칙 등록</div>
+        <div class="cap-desc">"불필요한 메일은 도착 즉시 삭제해" 같은 규칙을 사용자가 말한 기준 그대로 등록합니다. 실제 판정은 이 문장을 다른 AI가 그대로 읽고 수행합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="wide-section" id="limits">
+  <div class="section-title">정직한 한계 — 반드시 지키는 원칙</div>
+  <h2 class="wide-h2">이메일 주소를 스스로 지어내지 않습니다</h2>
+  <p class="wide-sub">K-Mail은 이메일 주소를 스스로 알고 있지 않습니다. 수신자를 확보하는 방법은 사용자가 직접 알려주거나, 모호한 서술("서울대 컴퓨터 관련 학과 교수들")에 대해 실제 웹 검색을 거쳐 스니펫에서 실제로 확인되는 정보만 후보로 제시하는 것, 이 둘뿐입니다. 검색 결과에 이메일이 안 보이면 지어내지 않고 "못 찾았다"고 솔직히 말합니다.</p>
+  <div class="limit-list">
+    <div class="limit-item">
+      <span class="limit-icon">⚠</span>
+      <div class="limit-text"><strong>이메일 주소 추측·확정 금지</strong> — 검색으로도 확인되지 않는 이메일은 후보에 넣지 않고, 사용자에게 직접 물어봅니다.</div>
+    </div>
+    <div class="limit-item">
+      <span class="limit-icon">⚠</span>
+      <div class="limit-text"><strong>발송 전 명시적 확인 필수</strong> — 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 "이대로 보낼까요?" 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
+    </div>
+    <div class="limit-item">
+      <span class="limit-icon">⚠</span>
+      <div class="limit-text"><strong>GDC 초과 과금 누적액 미집계</strong> — 발송 현황 조회에서 아직 잡히지 않습니다. 물어보면 "그 항목은 아직 집계가 안 됩니다"라고 솔직히 답합니다.</div>
+    </div>
+    <div class="limit-item">
+      <span class="limit-icon">⚠</span>
+      <div class="limit-text"><strong>실사용자 대화 경로의 K-Plan 연동 — 미검증</strong> — 사용자가 실제로 채팅 중 "이건 K-Plan 플랜이야"라고 말했을 때 그 필드가 정확히 채워져 전달되는지는 아직 라이브로 검증되지 않았습니다. 관리자 시딩 경로로만 end-to-end 검증됐습니다(아래 K-Plan 연동 참고).</div>
+    </div>
+  </div>
+</section>
+
+<div class="wide-section alt">
+  <div class="wide-section alt-inner" style="padding:52px 24px;" id="kplan">
+    <div class="section-title">K-Plan 연동</div>
+    <h2 class="wide-h2">여러 주에 걸친 캠페인의 회신 결과가 K-Plan의 K-Recompose를 깨웁니다</h2>
+    <p class="wide-sub">캠페인이 여러 트랙으로 나뉘어 몇 주에 걸쳐 순차 발송될 때, 사용자가 "이 캠페인은 K-Plan 플랜의 일부"라고 명시적으로 알려주면 K-Mail이 받은 회신 다이제스트가 K-Plan의 중간 재평가(K-Recompose)를 자동으로 트리거합니다. 짐작으로 채우지 않으며, 언급이 없으면 완전히 무관한 개인 메일로만 처리됩니다.</p>
+    <div class="pipeline">
+      <div class="pipe-item"><span class="pipe-num">1</span>사용자가 K-Mail에게 "이 캠페인은 K-Plan 플랜 X의 트랙 B 체크포인트야"라고 알림</div>
+      <div class="pipe-item"><span class="pipe-num">2</span>KMAIL_SEND_CAMPAIGN에 kplan_plan_id / kplan_checkpoint_label 포함 (명시했을 때만 — 추측 금지)</div>
+      <div class="pipe-item"><span class="pipe-num">3</span>kmail_campaigns 레코드에 저장, digest_at 도달까지 대기</div>
+      <div class="pipe-item"><span class="pipe-num">4</span>매시 정각 크론이 회신 다이제스트 생성</div>
+      <div class="pipe-item highlight"><span class="pipe-num">5</span>plan_id가 있으면 K-Plan의 K-Recompose를 자동 트리거 <span class="badge badge-amber">2026-09-02 신설</span></div>
+      <div class="pipe-item"><span class="pipe-num">6</span>조정 결과가 사용자 메시지함에 자연스럽게 노출</div>
+    </div>
+    <div class="principle-strip">
+      <strong>검증 상태</strong> — 관리자 시딩 → 스윕 → K-Recompose → 결과 조회까지 end-to-end 성공(2026-09-02, 라이브 스모크테스트). 다만 실사용자가 채팅에서 직접 플랜을 언급하는 경로는 이번 검증 범위 밖입니다 — 관리자 엔드포인트가 사용자 서명 계층을 우회하고 PocketBase에 직접 레코드를 시딩했기 때문입니다.
+    </div>
+  </div>
+</div>
+
+<div class="wide-section alt-inner" style="padding:52px 24px;" id="docs">
+    <div class="section-title">문서</div>
+    <h2 class="wide-h2">개발자·후속 담당자를 위한 기술 문서</h2>
+    <p class="wide-sub">이 사이트의 내용은 아래 정본 문서(SP-25_kmail_v1_6.txt)를 기준으로 작성됐습니다. 정본이 개정되면 이 페이지도 함께 갱신해야 합니다.</p>
+    <div class="docs-grid">
+      <a class="doc-card" href="https://hondi.net/prompts/SP-25_kmail_v1_6.txt" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">SP-25_kmail_v1_6.txt — 정본</div>
+          <div class="doc-desc">K-Mail의 모든 능력·액션 태그·정직한 한계가 담긴 시스템 프롬프트 원문.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://hondi.net/docs/KPLAN_KMAIL_INTEGRATION_ARCHITECTURE_v1_0_20260902.md" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">K-Plan↔K-Mail 연동 아키텍처</div>
+          <div class="doc-desc">K-Recompose 트리거 파이프라인의 데이터 흐름 전체 정리.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://hondi.net/docs/HANDOFF_20260902.md" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">인수인계서(2026-09-02)</div>
+          <div class="doc-desc">무엇이 실제로 검증됐고 무엇이 아닌지 — 실사용자 대화 경로는 아직 미검증 상태입니다.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://hondi.net/docs/KMAIL_KPLAN_PIPELINE_LIVE_TEST_INCIDENT_2026_09_02.md" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">라이브 테스트 사고 기록(2026-09-02)</div>
+          <div class="doc-desc">K-Mail↔K-Plan 파이프라인 배포 과정에서 겪은 사고 5건(secret 관리 등) 상세 기록.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://plan.hondi.net" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">plan.hondi.net</div>
+          <div class="doc-desc">K-Recompose를 실제로 트리거하는 K-Plan 소개 사이트.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://github.com/Openhash-Gopang/hondi" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">GitHub — Openhash-Gopang/hondi ↗</div>
+          <div class="doc-desc">혼디넷 메인 저장소. K-Mail 관련 문서와 코드가 모두 이곳에 있습니다.</div>
+        </div>
+      </a>
+    </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026 혼디넷(hondi.net) · K-Mail · 팀 주피터</div>
+    <div class="footer-links">
+      <a href="https://hondi.net" target="_blank">hondi.net</a>
+      <a href="https://plan.hondi.net" target="_blank">plan.hondi.net</a>
+      <a href="https://klaw.hondi.net" target="_blank">klaw.hondi.net</a>
+      <a href="https://github.com/Openhash-Gopang/hondi" target="_blank">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
