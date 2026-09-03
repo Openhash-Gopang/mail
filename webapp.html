@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<title>K-Mail — 캠페인 발송 및 주소록 관리</title>
+<meta name="description" content="제목·본문·수신자를 채팅이 아닌 화면으로 직접 입력해 캠페인을 만들고 발송합니다. K-Plan 플랜과 연결하면 회신 다이제스트가 도착했을 때 K-Recompose가 자동으로 계획서를 갱신합니다.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230F8F7E%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2245%22%20font-family%3D%22%27Pretendard%27%2C%27Malgun%20Gothic%27%2Csans-serif%22%20font-size%3D%2234%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%20text-anchor%3D%22middle%22%3EM%3C/text%3E%3C/svg%3E">
+
+<!-- 고팡 공통 인증(지갑 세션) — desktop.html 등과 동일한 표준 로드 방식.
+     data-required="false"인 이유는 plan.hondi.net/webapp.html과 동일:
+     이 페이지의 실제 인증(과금 없음이지만 소유권 판정 포함)은 전화번호
+     OTP/device-link 흐름(phone_verify_token, K-서비스 공용 인증 게이트
+     경유)이 담당한다. 필수 모드로 두면 직접 URL 방문 시 hondi.net
+     silent-auth.html과의 무한 리다이렉트 루프에 빠질 수 있다(원인·
+     상세는 plan 저장소 webapp.html 동일 주석 참고, 이 저장소 범위 밖). -->
+<script type="module" src="https://hondi.net/auth/subsystem-auth.js" data-required="false"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --gov:    #0B3B33; --nav: #12564A; --pri: #0F8F7E; --pri-lt: #14B39B;
+  --pri-bg: #E4F5F2; --pri-bd: #B7E4DC; --teal: #3D4FC4; --teal-bg: #EEF2FF;
+  --sur: #FFFFFF; --bg: #F5F6FA; --bdr: #DFE2ED; --txt: #1A202C;
+  --sub: #4A5568; --hint: #718096;
+  --grn: #1B6B3A; --gbg: #E6F4EC; --red: #C01C28; --rbg: #FEE2E2;
+  --org: #C05621; --obg: #FEF3E2;
+  --font: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  --r: 8px; --sh: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);font-size:14px;color:var(--txt);background:var(--bg);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+textarea,input,select{font-family:var(--font)}
+button{font-family:var(--font);cursor:pointer}
+
+/* 로그인 오버레이 (plan.hondi.net #kplan-login-overlay 패턴 재사용) */
+#kmail-login-overlay{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,var(--gov) 0%,var(--nav) 60%,#0B6F62 100%);display:none;align-items:center;justify-content:center;padding:24px}
+#kmail-login-overlay.show{display:flex}
+.kmail-login-box{background:var(--sur);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);width:100%;max-width:380px;overflow:hidden}
+.kmail-login-header{background:linear-gradient(135deg,var(--gov) 0%,var(--pri) 100%);padding:24px 28px;text-align:center;color:#fff}
+.kmail-login-logo{font-size:32px;margin-bottom:8px}
+.kmail-login-title{font-size:20px;font-weight:900}
+.kmail-login-subtitle{font-size:11px;color:rgba(255,255,255,.65);margin-top:3px}
+.kmail-login-body{padding:24px 28px}
+.kmail-login-desc{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.6;text-align:center}
+.kmail-login-row{display:flex;gap:8px;margin-bottom:10px}
+.kmail-login-row input{flex:1;min-width:0;font-size:14px;padding:11px 12px;border:1px solid var(--bdr);border-radius:8px;color:var(--txt);background:#fff}
+.kmail-login-row input:focus{outline:none;border-color:var(--pri)}
+.kmail-login-row button{flex-shrink:0;font-size:13px;font-weight:700;color:#fff;background:var(--pri);border:none;border-radius:8px;padding:0 16px;white-space:nowrap}
+.kmail-login-row button:disabled{background:var(--hint);cursor:not-allowed}
+.kmail-login-msg{font-size:12px;margin-top:10px;text-align:center;min-height:16px}
+.kmail-login-msg.err{color:var(--red)}
+.kmail-login-msg.ok{color:var(--grn)}
+.kmail-login-resend{font-size:11px;color:var(--hint);text-align:center;margin-top:10px}
+.kmail-login-resend a{color:var(--pri);cursor:pointer;text-decoration:underline}
+
+header{background:var(--nav);color:#fff;padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+header .logo{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+header .logo-icon{width:28px;height:28px;background:var(--pri-lt);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#0B3B33}
+header a.back{margin-left:auto;font-size:12px;color:rgba(255,255,255,.7);text-decoration:none}
+header a.back:hover{color:#fff}
+
+main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh);padding:22px;margin-bottom:18px}
+.card h2{font-size:15px;font-weight:800;margin-bottom:6px}
+.card .sub{font-size:12px;color:var(--sub);margin-bottom:16px;line-height:1.7}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:6px}
+.field input[type=text],.field input[type=email],.field input[type=datetime-local],.field textarea,.field select{
+  width:100%;font-size:13.5px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);background:#fff}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--pri)}
+.field textarea{resize:vertical;min-height:120px;line-height:1.6}
+.field-hint{font-size:11px;color:var(--hint);margin-top:5px;line-height:1.6}
+.field-row{display:flex;gap:12px;flex-wrap:wrap}
+.field-row .field{flex:1;min-width:160px}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:var(--r);font-size:13px;font-weight:700;border:none}
+.btn-primary{background:var(--pri);color:#fff}
+.btn-primary:hover{background:#0b6f62}
+.btn-primary:disabled{background:var(--hint);cursor:not-allowed}
+.btn-outline{background:var(--sur);border:1px solid var(--bdr);color:var(--sub)}
+.btn-outline:hover{border-color:var(--pri-lt);color:var(--pri)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,.12);border-top-color:var(--pri);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);padding:10px 2px}
+
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-scheduled{background:var(--teal-bg);color:var(--teal)}
+.badge-sent{background:var(--gbg);color:var(--grn)}
+.badge-failed{background:var(--rbg);color:var(--red)}
+.badge-confirmed{background:var(--gbg);color:var(--grn)}
+.badge-pending_review{background:var(--obg);color:var(--org)}
+.badge-rejected{background:#EDEFF3;color:var(--sub)}
+.badge-pending{background:var(--obg);color:var(--org)}
+.badge-done{background:var(--gbg);color:var(--grn)}
+.badge-none{background:#EDEFF3;color:var(--hint)}
+
+.errbox{background:var(--rbg);border:1px solid #F5B5B0;color:var(--red);border-radius:var(--r);padding:12px 15px;font-size:12.5px;margin:10px 0}
+.okbox{background:var(--gbg);border:1px solid #B7E4CE;color:var(--grn);border-radius:var(--r);padding:12px 15px;font-size:12.5px;margin:10px 0}
+.hint{font-size:11.5px;color:var(--hint);margin-top:8px;line-height:1.6}
+
+.tabbar{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--bdr);overflow-x:auto}
+.tabbar button{background:none;border:none;padding:10px 16px;font-size:13px;font-weight:700;color:var(--hint);border-bottom:2px solid transparent;white-space:nowrap}
+.tabbar button.active{color:var(--pri);border-bottom-color:var(--pri)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* 수신자 선택 — 주소록 검색 → 칩으로 추가 */
+.recipient-search{position:relative}
+.recipient-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--r) var(--r);box-shadow:var(--sh);max-height:220px;overflow-y:auto;z-index:20;display:none}
+.recipient-results.show{display:block}
+.recipient-result-item{padding:9px 12px;font-size:12.5px;cursor:pointer;border-bottom:1px solid #F0F1F5}
+.recipient-result-item:last-child{border-bottom:none}
+.recipient-result-item:hover{background:var(--pri-bg)}
+.recipient-result-item .rn{font-weight:700}
+.recipient-result-item .re{color:var(--hint);margin-left:6px;font-size:11px}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip-list:empty{margin-top:0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg);border:1px solid var(--pri-bd);color:var(--pri);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:14px}
+.chip-x{cursor:pointer;opacity:.7;font-size:11px}
+.chip-x:hover{opacity:1}
+
+/* 목록형 카드(연락처/캠페인 공용) */
+.list-item{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:8px;background:var(--sur)}
+.list-item .li-main{flex:1;min-width:0}
+.list-item .li-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list-item .li-sub{font-size:11px;color:var(--hint);margin-top:2px}
+.list-item .li-actions{display:flex;gap:6px;flex-shrink:0}
+.tag-pill{display:inline-block;background:var(--teal-bg);color:var(--teal);font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;margin:2px 4px 0 0}
+
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filter-row input,.filter-row select{font-size:12.5px;padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff}
+.filter-row input[type=text]{flex:1;min-width:140px}
+
+.kplan-box{border:1px dashed var(--pri-bd);border-radius:var(--r);padding:14px;margin-top:6px;background:var(--pri-bg)}
+.kplan-box .field-row{margin-top:10px}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--sub)}
+.checkbox-row input{width:16px;height:16px}
+</style>
+</head>
+<body>
+
+<div id="kmail-login-overlay">
+  <div class="kmail-login-box">
+    <div class="kmail-login-header">
+      <div class="kmail-login-logo">✉️</div>
+    </div>
+    <div class="kmail-login-body">
+      <div class="kmail-login-desc" id="kmail-login-desc">휴대폰 번호 뒷자리 8자를 입력하십시오.</div>
+
+      <div id="kmail-login-step-phone">
+        <div class="kmail-login-row">
+          <input type="tel" id="kmail-login-phone" placeholder="전화번호 뒷 8자리" inputmode="numeric" maxlength="8" autocomplete="tel">
+        </div>
+        <div class="kmail-login-row" style="flex-direction:column;gap:8px">
+          <button type="button" id="kmail-login-devlink-btn" onclick="_kmailLoginStartDeviceLink()" style="width:100%;padding:11px 16px">📱 폰으로 승인받기</button>
+        </div>
+      </div>
+
+      <div id="kmail-login-step-devlink" style="display:none">
+        <div class="kmail-login-devlink-wait">
+          <div class="spinner" style="width:22px;height:22px;border-width:3px;margin:0 auto 12px"></div>
+          <div id="kmail-devlink-status" style="font-size:12.5px;color:var(--sub);text-align:center">스마트폰 알림을 확인해 주세요…</div>
+          <div id="kmail-devlink-timer" style="font-size:11px;color:var(--hint);text-align:center;margin-top:4px"></div>
+        </div>
+        <div class="kmail-login-resend"><a onclick="_kmailLoginResetPhoneStep()">번호를 다시 입력할게요</a></div>
+      </div>
+
+      <div id="kmail-login-step-code" style="display:none">
+        <div class="kmail-login-row">
+          <input type="text" id="kmail-login-code" placeholder="인증번호 6자리" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+          <button type="button" id="kmail-login-verify-btn" onclick="_kmailLoginVerifyOtp()">확인</button>
+        </div>
+        <div class="kmail-login-resend"><a onclick="_kmailLoginResetPhoneStep()">번호를 다시 입력할게요</a></div>
+      </div>
+      <div class="kmail-login-msg" id="kmail-login-msg"></div>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo"><span class="logo-icon">M</span>K-Mail</div>
+  <a class="back" href="https://mail.hondi.net">← 소개 페이지</a>
+  <a class="back" href="https://hondi.net" target="_blank">hondi.net ↗</a>
+</header>
+
+<main>
+  <div class="tabbar">
+    <button id="tab-btn-compose" class="active" onclick="_switchTab('compose')">캠페인 만들기</button>
+    <button id="tab-btn-contacts" onclick="_switchTab('contacts')">주소록</button>
+    <button id="tab-btn-campaigns" onclick="_switchTab('campaigns')">캠페인 목록</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       캠페인 만들기
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-compose" class="tab-panel active">
+    <div class="card">
+      <h2>새 캠페인</h2>
+      <div class="sub">제목·본문을 쓰고 주소록에서 수신자를 검색해 추가한 뒤 보내세요. 발송 시각을 비워두면 즉시 발송 대기열에 들어갑니다.</div>
+
+      <div class="field">
+        <label>제목</label>
+        <input type="text" id="cmp-subject" placeholder="예: 9월 정기 소식지">
+      </div>
+      <div class="field">
+        <label>본문</label>
+        <textarea id="cmp-body" placeholder="본문 내용을 입력하세요"></textarea>
+      </div>
+
+      <div class="field">
+        <label>수신자</label>
+        <div class="recipient-search">
+          <input type="text" id="cmp-recipient-search" placeholder="이름·이메일·소속으로 검색 (확인된 주소록만 검색됨)" autocomplete="off">
+          <div class="recipient-results" id="cmp-recipient-results"></div>
+        </div>
+        <div class="chip-list" id="cmp-recipient-chips"></div>
+        <div class="field-hint" id="cmp-recipient-hint">아직 선택된 수신자가 없습니다. 주소록에 없는 사람은 먼저 "주소록" 탭에서 등록·승인해 주세요.</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>발송 시각 (비우면 즉시)</label>
+          <input type="datetime-local" id="cmp-send-at">
+        </div>
+        <div class="field">
+          <label>회신 수집 마감</label>
+          <input type="datetime-local" id="cmp-collect-until">
+        </div>
+        <div class="field">
+          <label>다이제스트 생성 시각</label>
+          <input type="datetime-local" id="cmp-digest-at">
+        </div>
+      </div>
+      <div class="field-hint">회신 수집 마감·다이제스트 생성 시각을 채우면, 그 시각까지 도착한 회신을 모아 요약(다이제스트)을 만듭니다. 비워두면 다이제스트를 만들지 않습니다.</div>
+
+      <div class="field">
+        <label class="checkbox-row"><input type="checkbox" id="cmp-kplan-toggle" onchange="_cmpToggleKPlan()"> 이 캠페인이 K-Plan 플랜의 일부인가요?</label>
+        <div class="kplan-box" id="cmp-kplan-box" style="display:none">
+          <div class="field-hint" style="margin-top:0">K-Plan에서 받은 plan_id와 체크포인트 라벨을 입력하면, 다이제스트가 만들어질 때 K-Recompose가 자동으로 그 플랜을 다시 검토합니다.</div>
+          <div class="field-row">
+            <div class="field" style="margin-bottom:0">
+              <label>plan_id</label>
+              <input type="text" id="cmp-kplan-planid" placeholder="예: kplan-20260905-a1b2">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>체크포인트 라벨</label>
+              <input type="text" id="cmp-kplan-checkpoint" placeholder="예: 트랙 A">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cmp-err" class="errbox" style="display:none"></div>
+      <div id="cmp-ok" class="okbox" style="display:none"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="cmp-submit-btn" onclick="_cmpSubmit()">캠페인 만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       주소록
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-contacts" class="tab-panel">
+    <div class="card">
+      <h2>새 연락처 등록</h2>
+      <div class="sub">이름과 이메일을 입력하면 승인 대기(pending_review) 상태로 등록됩니다. 아래에서 확인 후 승인해야 캠페인에 쓸 수 있습니다.</div>
+      <div class="field-row">
+        <div class="field"><label>이름</label><input type="text" id="ct-new-name" placeholder="홍길동"></div>
+        <div class="field"><label>이메일</label><input type="email" id="ct-new-email" placeholder="name@example.com"></div>
+        <div class="field"><label>소속(선택)</label><input type="text" id="ct-new-org" placeholder="예: OO단체"></div>
+      </div>
+      <div id="ct-new-err" class="errbox" style="display:none"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="_ctAddNew()">등록</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>주소록</h2>
+      <div class="filter-row">
+        <select id="ct-filter-status" onchange="_ctLoad()">
+          <option value="all">전체 상태</option>
+          <option value="confirmed" selected>확인됨(발송 가능)</option>
+          <option value="pending_review">승인 대기</option>
+          <option value="rejected">거부됨</option>
+        </select>
+        <input type="text" id="ct-filter-q" placeholder="이름·이메일·소속·태그 검색" oninput="_ctSearchDebounced()">
+      </div>
+      <div id="ct-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+      <div id="ct-empty" style="display:none;font-size:12.5px;color:var(--hint)">해당 조건의 연락처가 없습니다.</div>
+      <div id="ct-items"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       캠페인 목록
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-campaigns" class="tab-panel">
+    <div class="card">
+      <h2>내 캠페인</h2>
+      <div class="sub">plan_id가 연결된 캠페인은 다이제스트 생성 시 해당 K-Plan 플랜의 K-Recompose를 자동으로 트리거합니다.</div>
+      <div id="camp-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+      <div id="camp-empty" style="display:none;font-size:12.5px;color:var(--hint)">아직 만든 캠페인이 없습니다.</div>
+      <div id="camp-items"></div>
+      <div class="btn-row"><button class="btn btn-outline btn-sm" onclick="_campLoad()">새로고침</button></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const PROXY = 'https://hondi-proxy.tensor-city.workers.dev';
+function escHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDt(iso){ if(!iso) return '—'; try { return new Date(iso).toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch(e){ return iso; } }
+function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+function _switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tabbar button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('tab-btn-' + name).classList.add('active');
+  if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
+  if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 전화번호 로그인 오버레이 — plan.hondi.net webapp.html과 동일 패턴
+// (K-서비스 공용 인증 게이트, src/worker/k-service-auth.js가 서버측을
+// 담당 — phone_verify_token을 모든 /kmail/* 호출에 그대로 실어 보낸다)
+// ══════════════════════════════════════════════════════════════
+let kmailPhoneVerifyToken    = sessionStorage.getItem('kmail_phone_verify_token') || null;
+let kmailPhoneVerifyTokenExp = Number(sessionStorage.getItem('kmail_phone_verify_token_exp') || 0);
+let _kmailPendingE164        = '';
+let _kmailLoginWaiters       = [];
+let _ctLoadedOnce = false, _campLoadedOnce = false;
+
+function _kmailHasValidLogin() { return !!kmailPhoneVerifyToken && Date.now() < kmailPhoneVerifyTokenExp - 30000; }
+function _kmailLoginSetMsg(text, kind) {
+  const el = document.getElementById('kmail-login-msg');
+  el.textContent = text || ''; el.className = 'kmail-login-msg' + (kind ? ' ' + kind : '');
+}
+function _kmailLoginResetPhoneStep() {
+  _kmailDevlinkStopPolling();
+  document.getElementById('kmail-login-step-code').style.display = 'none';
+  document.getElementById('kmail-login-step-devlink').style.display = 'none';
+  document.getElementById('kmail-login-step-phone').style.display = '';
+  document.getElementById('kmail-login-code').value = '';
+  _kmailLoginSetMsg('', '');
+}
+
+let _kmailDevlinkPollTimer = null;
+let _kmailDevlinkSessionId = null;
+let _kmailDevlinkCountdownTimer = null;
+
+function _kmailDevlinkStopPolling() {
+  if (_kmailDevlinkPollTimer) { clearInterval(_kmailDevlinkPollTimer); _kmailDevlinkPollTimer = null; }
+  if (_kmailDevlinkCountdownTimer) { clearInterval(_kmailDevlinkCountdownTimer); _kmailDevlinkCountdownTimer = null; }
+  _kmailDevlinkSessionId = null;
+  document.removeEventListener('visibilitychange', _kmailDevlinkOnVisibility);
+}
+function _kmailDevlinkOnVisibility() {
+  if (!document.hidden && _kmailDevlinkPollTimer) _kmailDevlinkPollOnce();
+}
+
+async function _kmailLoginStartDeviceLink() {
+  const phone = document.getElementById('kmail-login-phone').value.trim();
+  if (!phone) { _kmailLoginSetMsg('전화번호를 입력해 주세요.', 'err'); return; }
+  const btn = document.getElementById('kmail-login-devlink-btn');
+  btn.disabled = true; _kmailLoginSetMsg('', '');
+
+  const sigMsg = `kmail-login:${crypto.randomUUID()}:${Date.now()}`;
+  try {
+    const res = await fetch(PROXY + '/auth/device-link/init', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ e164: phone, pcLabel: 'mail.hondi.net', purpose: 'sign_request', sigMsg }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.message || data.detail || '요청에 실패했습니다.');
+
+    _kmailPendingE164 = phone;
+    _kmailDevlinkSessionId = data.sessionId;
+    document.getElementById('kmail-login-step-phone').style.display = 'none';
+    document.getElementById('kmail-login-step-devlink').style.display = '';
+
+    const statusEl = document.getElementById('kmail-devlink-status');
+    statusEl.textContent = data.hasMobileDevice === false
+      ? '이 번호로 연결된 스마트폰이 없습니다 — 아래에서 문자로 받아 주세요.'
+      : '스마트폰 알림을 확인해 주세요…';
+
+    _kmailDevlinkStartCountdown(data.expires_in || 90);
+    document.addEventListener('visibilitychange', _kmailDevlinkOnVisibility);
+    _kmailDevlinkPollTimer = setInterval(_kmailDevlinkPollOnce, 2000);
+  } catch (e) {
+    _kmailLoginSetMsg(e.message || '요청에 실패했습니다.', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function _kmailDevlinkStartCountdown(seconds) {
+  let remain = seconds;
+  const el = document.getElementById('kmail-devlink-timer');
+  const tick = () => {
+    el.textContent = remain > 0 ? `${remain}초 후 만료` : '만료됨';
+    if (remain <= 0 && _kmailDevlinkCountdownTimer) { clearInterval(_kmailDevlinkCountdownTimer); _kmailDevlinkCountdownTimer = null; }
+    remain -= 1;
+  };
+  tick();
+  _kmailDevlinkCountdownTimer = setInterval(tick, 1000);
+}
+
+async function _kmailDevlinkPollOnce() {
+  if (!_kmailDevlinkSessionId) return;
+  try {
+    const res = await fetch(PROXY + `/auth/device-link/poll?sessionId=${encodeURIComponent(_kmailDevlinkSessionId)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!data.ok) return;
+
+    if (data.state === 'expired') {
+      _kmailDevlinkStopPolling();
+      document.getElementById('kmail-devlink-status').textContent = '요청이 만료됐습니다.';
+      return;
+    }
+    if (data.state === 'verification_failed') {
+      _kmailDevlinkStopPolling();
+      document.getElementById('kmail-devlink-status').textContent = '승인을 확인하지 못했습니다 — 문자 인증으로 진행해 주세요.';
+      return;
+    }
+    if (data.state === 'delivered' && data.verified && data.phone_verify_token) {
+      _kmailDevlinkStopPolling();
+      _kmailApplyLogin(data.phone_verify_token, data.expires_at);
+    }
+  } catch (e) { /* 일시적 네트워크 오류는 무시하고 다음 polling에서 재시도 */ }
+}
+
+async function _kmailLoginSendOtp() {
+  const phone = document.getElementById('kmail-login-phone').value.trim();
+  if (!phone) { _kmailLoginSetMsg('전화번호를 입력해 주세요.', 'err'); return; }
+  try {
+    const res = await fetch(PROXY + '/biz/phone-otp-request', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e164: phone }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.message || '인증번호 발송에 실패했습니다.');
+    _kmailPendingE164 = phone;
+    document.getElementById('kmail-login-step-phone').style.display = 'none';
+    document.getElementById('kmail-login-step-code').style.display = '';
+    document.getElementById('kmail-login-code').focus();
+    _kmailLoginSetMsg('인증번호를 문자로 보내드렸습니다.', 'ok');
+  } catch (e) { _kmailLoginSetMsg(e.message || '인증번호 발송에 실패했습니다.', 'err'); }
+}
+async function _kmailLoginVerifyOtp() {
+  const code = document.getElementById('kmail-login-code').value.trim();
+  if (!code) { _kmailLoginSetMsg('인증번호를 입력해 주세요.', 'err'); return; }
+  const btn = document.getElementById('kmail-login-verify-btn');
+  btn.disabled = true; _kmailLoginSetMsg('확인 중…', '');
+  try {
+    const res = await fetch(PROXY + '/biz/phone-otp-verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ e164: _kmailPendingE164, code }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok || !data.phone_verify_token) throw new Error(data.message || '인증번호가 일치하지 않습니다.');
+    _kmailApplyLogin(data.phone_verify_token, data.expires_at);
+  } catch (e) { _kmailLoginSetMsg(e.message || '인증번호가 일치하지 않습니다.', 'err'); }
+  finally { btn.disabled = false; }
+}
+function _kmailApplyLogin(token, expiresAt) {
+  kmailPhoneVerifyToken    = token;
+  kmailPhoneVerifyTokenExp = new Date(expiresAt).getTime();
+  sessionStorage.setItem('kmail_phone_verify_token', kmailPhoneVerifyToken);
+  sessionStorage.setItem('kmail_phone_verify_token_exp', String(kmailPhoneVerifyTokenExp));
+  document.getElementById('kmail-login-overlay').classList.remove('show');
+  _kmailLoginSetMsg('', '');
+  const waiters = _kmailLoginWaiters; _kmailLoginWaiters = [];
+  waiters.forEach(resolve => resolve());
+}
+function _ensureKmailLogin() {
+  if (_kmailHasValidLogin()) return Promise.resolve();
+  return new Promise((resolve) => {
+    _kmailLoginWaiters.push(resolve);
+    document.getElementById('kmail-login-overlay').classList.add('show');
+  });
+}
+function _kmailIsRecoverableAuthError(message) {
+  return /로그인이 필요합니다|인증 토큰이 만료|토큰 서명이 유효하지 않습니다/.test(message || '');
+}
+
+// ══════════════════════════════════════════════════════════════
+// 공용 fetch 래퍼 — phone_verify_token을 자동으로 실어 보내고, 로그인
+// 만료 응답이면 로그인 오버레이를 띄운 뒤 한 번 재시도한다.
+// ══════════════════════════════════════════════════════════════
+async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) {
+  await _ensureKmailLogin();
+  const doRequest = async () => {
+    let url = PROXY + path;
+    const q = { ...query, phone_verify_token: kmailPhoneVerifyToken };
+    if (method === 'GET') {
+      const usp = new URLSearchParams(Object.entries(q).filter(([,v]) => v !== undefined && v !== null && v !== ''));
+      url += '?' + usp.toString();
+      const res = await fetch(url);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
+      return data;
+    }
+    const res = await fetch(url, {
+      method, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...(body || {}), phone_verify_token: kmailPhoneVerifyToken }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
+    return data;
+  };
+  try { return await doRequest(); }
+  catch (e) {
+    if (_kmailIsRecoverableAuthError(e.message)) {
+      kmailPhoneVerifyToken = null; kmailPhoneVerifyTokenExp = 0;
+      sessionStorage.removeItem('kmail_phone_verify_token'); sessionStorage.removeItem('kmail_phone_verify_token_exp');
+      await _ensureKmailLogin();
+      return await doRequest();
+    }
+    throw e;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 캠페인 만들기
+// ══════════════════════════════════════════════════════════════
+let _cmpSelectedRecipients = []; // [{id, name, email}]
+
+function _cmpToggleKPlan() {
+  document.getElementById('cmp-kplan-box').style.display = document.getElementById('cmp-kplan-toggle').checked ? '' : 'none';
+}
+
+const _cmpSearchRecipients = debounce(async () => {
+  const q = document.getElementById('cmp-recipient-search').value.trim();
+  const box = document.getElementById('cmp-recipient-results');
+  if (!q) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  try {
+    const data = await kmailApi('/kmail/contacts', { query: { status: 'confirmed', q } });
+    const items = (data.items || []).filter(c => !_cmpSelectedRecipients.some(r => r.id === c.id));
+    if (!items.length) { box.innerHTML = '<div class="recipient-result-item" style="color:var(--hint)">검색 결과가 없습니다</div>'; box.classList.add('show'); return; }
+    box.innerHTML = items.slice(0, 20).map(c => `
+      <div class="recipient-result-item" onclick='_cmpAddRecipient(${JSON.stringify({id:c.id,name:c.name,email:c.email}).replace(/'/g,"&#39;")})'>
+        <span class="rn">${escHtml(c.name || '(이름 없음)')}</span><span class="re">${escHtml(c.email)}</span>
+      </div>`).join('');
+    box.classList.add('show');
+  } catch (e) { box.classList.remove('show'); }
+}, 250);
+
+function _cmpAddRecipient(c) {
+  if (_cmpSelectedRecipients.some(r => r.id === c.id)) return;
+  _cmpSelectedRecipients.push(c);
+  document.getElementById('cmp-recipient-search').value = '';
+  document.getElementById('cmp-recipient-results').classList.remove('show');
+  _cmpRenderChips();
+}
+function _cmpRemoveRecipient(id) {
+  _cmpSelectedRecipients = _cmpSelectedRecipients.filter(r => r.id !== id);
+  _cmpRenderChips();
+}
+function _cmpRenderChips() {
+  const box = document.getElementById('cmp-recipient-chips');
+  box.innerHTML = _cmpSelectedRecipients.map(r => `
+    <span class="chip">${escHtml(r.name || r.email)}<span class="chip-x" onclick="_cmpRemoveRecipient('${r.id}')">✕</span></span>`).join('');
+  document.getElementById('cmp-recipient-hint').style.display = _cmpSelectedRecipients.length ? 'none' : '';
+}
+
+function _cmpSetErr(msg) {
+  const el = document.getElementById('cmp-err');
+  if (!msg) { el.style.display = 'none'; return; }
+  el.textContent = msg; el.style.display = '';
+  document.getElementById('cmp-ok').style.display = 'none';
+}
+function _cmpSetOk(msg) {
+  const el = document.getElementById('cmp-ok');
+  el.textContent = msg; el.style.display = '';
+  document.getElementById('cmp-err').style.display = 'none';
+}
+
+async function _cmpSubmit() {
+  _cmpSetErr(''); document.getElementById('cmp-ok').style.display = 'none';
+  const subject = document.getElementById('cmp-subject').value.trim();
+  const body = document.getElementById('cmp-body').value.trim();
+  if (!subject || !body) { _cmpSetErr('제목과 본문을 입력해 주세요.'); return; }
+  if (!_cmpSelectedRecipients.length) { _cmpSetErr('수신자를 한 명 이상 추가해 주세요.'); return; }
+
+  const useKPlan = document.getElementById('cmp-kplan-toggle').checked;
+  const planId = document.getElementById('cmp-kplan-planid').value.trim();
+  const checkpointLabel = document.getElementById('cmp-kplan-checkpoint').value.trim();
+  if (useKPlan && !planId) { _cmpSetErr('K-Plan 플랜에 연결하려면 plan_id를 입력해 주세요.'); return; }
+
+  const toIso = (id) => { const v = document.getElementById(id).value; return v ? new Date(v).toISOString() : undefined; };
+
+  const btn = document.getElementById('cmp-submit-btn');
+  btn.disabled = true;
+  try {
+    const data = await kmailApi('/kmail/campaigns/create', {
+      method: 'POST',
+      body: {
+        subject, body,
+        contact_ids: _cmpSelectedRecipients.map(r => r.id),
+        send_at: toIso('cmp-send-at'),
+        collect_replies_until: toIso('cmp-collect-until'),
+        digest_at: toIso('cmp-digest-at'),
+        kplan_plan_id: useKPlan ? planId : undefined,
+        kplan_checkpoint_label: useKPlan ? checkpointLabel : undefined,
+      },
+    });
+    _cmpSetOk(`캠페인이 만들어졌습니다 (수신자 ${data.recipients}명, 발송 예정: ${fmtDt(data.send_at)}).`);
+    document.getElementById('cmp-subject').value = '';
+    document.getElementById('cmp-body').value = '';
+    _cmpSelectedRecipients = []; _cmpRenderChips();
+    document.getElementById('cmp-send-at').value = '';
+    document.getElementById('cmp-collect-until').value = '';
+    document.getElementById('cmp-digest-at').value = '';
+    document.getElementById('cmp-kplan-planid').value = '';
+    document.getElementById('cmp-kplan-checkpoint').value = '';
+    _campLoadedOnce = false; // 캠페인 목록 탭을 다시 열면 새로 불러오게
+  } catch (e) {
+    _cmpSetErr(e.message || '캠페인 생성에 실패했습니다.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 주소록
+// ══════════════════════════════════════════════════════════════
+async function _ctAddNew() {
+  const name = document.getElementById('ct-new-name').value.trim();
+  const email = document.getElementById('ct-new-email').value.trim();
+  const org = document.getElementById('ct-new-org').value.trim();
+  const errEl = document.getElementById('ct-new-err');
+  errEl.style.display = 'none';
+  if (!email) { errEl.textContent = '이메일을 입력해 주세요.'; errEl.style.display = ''; return; }
+  try {
+    await kmailApi('/kmail/contacts/propose', {
+      method: 'POST',
+      body: { recipient_query: '수동 등록(웹앱)', candidates: [{ name, email, org }] },
+    });
+    document.getElementById('ct-new-name').value = '';
+    document.getElementById('ct-new-email').value = '';
+    document.getElementById('ct-new-org').value = '';
+    document.getElementById('ct-filter-status').value = 'pending_review';
+    _ctLoad();
+  } catch (e) {
+    errEl.textContent = e.message || '등록에 실패했습니다.'; errEl.style.display = '';
+  }
+}
+
+const _ctSearchDebounced = debounce(() => _ctLoad(), 350);
+
+async function _ctLoad() {
+  const status = document.getElementById('ct-filter-status').value;
+  const q = document.getElementById('ct-filter-q').value.trim();
+  const loadingEl = document.getElementById('ct-loading');
+  const emptyEl = document.getElementById('ct-empty');
+  const itemsEl = document.getElementById('ct-items');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  try {
+    const data = await kmailApi('/kmail/contacts', { query: { status, q } });
+    const items = data.items || [];
+    if (!items.length) { emptyEl.style.display = ''; return; }
+    itemsEl.innerHTML = items.map(c => _ctRenderItem(c)).join('');
+  } catch (e) {
+    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally {
+    loadingEl.style.display = 'none';
+  }
+}
+
+function _ctRenderItem(c) {
+  const tags = (c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('');
+  const sub = [c.org, c.email].filter(Boolean).join(' · ');
+  let actions = '';
+  if (c.status === 'pending_review') {
+    actions = `
+      <button class="btn btn-primary btn-sm" onclick="_ctDecide('${c.id}','confirm')">승인</button>
+      <button class="btn btn-outline btn-sm" onclick="_ctDecide('${c.id}','reject')">거부</button>`;
+  } else if (c.status === 'confirmed') {
+    actions = `<button class="btn btn-outline btn-sm" onclick="_ctTagPrompt('${escHtml(c.email)}')">태그 추가</button>`;
+  }
+  return `
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-title">${escHtml(c.name || '(이름 없음)')} <span class="badge badge-${c.status}">${escHtml(c.status)}</span></div>
+        <div class="li-sub">${escHtml(sub)}</div>
+        <div>${tags}</div>
+      </div>
+      <div class="li-actions">${actions}</div>
+    </div>`;
+}
+
+async function _ctDecide(contactId, decision) {
+  try {
+    await kmailApi('/kmail/contacts/decide', { method: 'POST', body: { contact_id: contactId, decision } });
+    _ctLoad();
+  } catch (e) { alert('처리 실패: ' + e.message); }
+}
+
+async function _ctTagPrompt(email) {
+  const tag = prompt('추가할 태그 이름을 입력하세요 (예: 세미나초청대상)');
+  if (!tag || !tag.trim()) return;
+  try {
+    await kmailApi('/kmail/contacts/tag', { method: 'POST', body: { emails: [email], add_tags: [tag.trim()] } });
+    _ctLoad();
+  } catch (e) { alert('태그 추가 실패: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 캠페인 목록
+// ══════════════════════════════════════════════════════════════
+async function _campLoad() {
+  const loadingEl = document.getElementById('camp-loading');
+  const emptyEl = document.getElementById('camp-empty');
+  const itemsEl = document.getElementById('camp-items');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  try {
+    const data = await kmailApi('/kmail/campaigns/list');
+    const items = data.items || [];
+    if (!items.length) { emptyEl.style.display = ''; return; }
+    itemsEl.innerHTML = items.map(c => `
+      <div class="list-item">
+        <div class="li-main">
+          <div class="li-title">${escHtml(c.subject)} <span class="badge badge-${escHtml(c.status)}">${escHtml(c.status)}</span></div>
+          <div class="li-sub">
+            수신자 ${c.recipients}명 · 발송 ${fmtDt(c.send_at)}
+            ${c.digest_at ? ` · 다이제스트 ${fmtDt(c.digest_at)} <span class="badge badge-${escHtml(c.digest_status || 'none')}">${escHtml(c.digest_status || 'none')}</span>` : ''}
+            ${c.kplan_plan_id ? ` · K-Plan: <code>${escHtml(c.kplan_plan_id)}</code>${c.kplan_checkpoint_label ? ' (' + escHtml(c.kplan_checkpoint_label) + ')' : ''}` : ''}
+          </div>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally {
+    loadingEl.style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('cmp-recipient-search').addEventListener('input', _cmpSearchRecipients);
+  document.addEventListener('click', (e) => {
+    const box = document.getElementById('cmp-recipient-results');
+    if (!box.contains(e.target) && e.target.id !== 'cmp-recipient-search') box.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>
