@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>K-Mail — 대화로 보내고, 대화로 관리하는 메일 비서</title>
-<meta name="description" content="K-Mail은 자연어 대화로 메일 발송·주소록 관리·자동삭제 규칙을 처리하는 혼디넷의 메일 비서입니다. 이메일 주소를 스스로 지어내지 않는 정직한 한계, K-Plan과 연동되는 K-Recompose 파이프라인을 소개합니다.">
+<meta name="description" content="K-Mail은 자연어 대화로 메일 발송·주소록 관리·자동삭제 규칙을 처리하는 혼디넷의 메일 비서입니다. 캠페인 생애주기, K-Plan과의 역할 분담, 위임·에스컬레이션 체계, 이메일 주소를 스스로 지어내지 않는 정직한 한계를 소개합니다.">
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -139,6 +139,31 @@ ul { list-style: none; }
 .doc-title { font-size: 12.5px; font-weight: 700; margin-bottom: 3px; }
 .doc-desc { font-size: 11.5px; color: var(--hint); line-height: 1.55; }
 
+/* TOC */
+.toc-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 22px; box-shadow: var(--shadow-1); }
+.toc-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 28px; }
+.toc-cols a { display: flex; align-items: baseline; gap: 8px; padding: 6px 4px; font-size: 12.5px; color: var(--text); font-weight: 600; border-radius: 4px; }
+.toc-cols a:hover { background: var(--primary-bg); color: var(--primary); }
+.toc-num { color: var(--hint); font-size: 11px; font-weight: 700; flex-shrink: 0; width: 16px; }
+
+/* ROLE TABLE */
+.role-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow-1); font-size: 12.5px; }
+.role-table th, .role-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+.role-table th { background: var(--primary-bg); color: var(--primary); font-size: 11.5px; font-weight: 800; }
+.role-table tr:last-child td { border-bottom: none; }
+.role-table td:first-child { font-weight: 700; color: var(--sub); white-space: nowrap; }
+
+/* BOUNDARY LIST (사람과의 관계 — 경고가 아니라 설계상 경계) */
+.boundary-list { display: flex; flex-direction: column; gap: 10px; }
+.boundary-item { display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: var(--r); padding: 14px 16px; box-shadow: var(--shadow-1); }
+.boundary-icon { color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+.boundary-text { font-size: 12.5px; color: var(--text); line-height: 1.7; }
+.boundary-text strong { font-weight: 700; }
+
+/* API BLOCK */
+.api-block { background: #0E1440; color: #C9D3F5; border-radius: var(--r); padding: 16px 18px; font-family: 'SFMono-Regular', 'Courier New', monospace; font-size: 11.5px; line-height: 1.8; margin: 14px 0; overflow-x: auto; white-space: pre; }
+.api-block .k { color: #6472DB; }
+
 /* FOOTER */
 footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 30px 0; }
 .footer-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; font-size: 11.5px; }
@@ -146,9 +171,10 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
 .footer-links a:hover { color: #fff; }
 
 @media (max-width: 860px) {
-  .cap-grid, .docs-grid { grid-template-columns: 1fr; }
+  .cap-grid, .docs-grid, .toc-cols { grid-template-columns: 1fr; }
   .facts-grid { grid-template-columns: repeat(2, 1fr); }
   .topnav-links { display: none; }
+  .role-table { font-size: 11.5px; }
 }
 </style>
 </head>
@@ -160,10 +186,11 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
   <div class="topnav-inner">
     <a href="#top" class="topnav-logo"><span class="topnav-logo-icon">📬</span>K-Mail</a>
     <div class="topnav-links">
-      <a href="#intro">소개</a>
+      <a href="#toc">목차</a>
       <a href="#capabilities">할 수 있는 일</a>
-      <a href="#limits">정직한 한계</a>
-      <a href="#kplan">K-Plan 연동</a>
+      <a href="#lifecycle">캠페인 생애주기</a>
+      <a href="#kplan">K-Plan과의 관계</a>
+      <a href="#delegation">위임·에스컬레이션</a>
       <a href="#docs">문서</a>
     </div>
     <div class="topnav-right">
@@ -179,13 +206,32 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     <div class="hero-tag"><span class="hero-tag-dot"></span> hondi.net 지갑 로그인 필요 · 개인 메일(hondi.kr) 전용</div>
     <h1>메일을 보내는 것도, 주소록을 관리하는 것도<br><em>전부 대화로</em> 끝냅니다</h1>
     <p>K-Mail은 사용자가 자연어로 요청하는 메일 발송·주소록 관리·인바운드 필터 규칙을, 대화를 통해 정확한 구조화 데이터로 확정한 뒤 실제로 실행하는 혼디넷의 메일 비서입니다.</p>
+    <p>탄생 의도는 여기서 한 걸음 더 나갑니다 — 상대방도 K-Mail을 쓴다면, 사람과 사람이 며칠씩 메일을 주고받던 조율을 <strong>K-Mail과 K-Mail이 직접 여러 차례 주고받는 방식</strong>으로 바꿔, 의사결정의 속도·정확성·합리성을 끌어올리는 것이 목표입니다. 이 자율성의 범위는 K-Plan(기획)이 정하고, 범위 밖은 반드시 사람에게 옵니다 — 아래 <a href="#kplan" style="color:#B7C0F0;text-decoration:underline;">K-Plan과의 관계</a> 참고.</p>
     <p>관리자 전용 공문 시스템(gov-mail, hondi.org)과는 완전히 무관합니다 — 여기서 다루는 건 혼디 사용자 개인의 메일(<code>&lt;guid&gt;@hondi.kr</code>)입니다.</p>
     <div class="hero-btns">
       <a href="webapp.html" class="hero-btn-primary">K-Mail 열기 ↗</a>
-      <a href="https://hondi.net/prompts/SP-25_kmail_v1_6.txt" target="_blank" class="hero-btn-outline">정본 문서(SP-25_kmail_v1_6) ↗</a>
+      <a href="https://hondi.net/prompts/SP-25_kmail_v1_9.txt" target="_blank" class="hero-btn-outline">정본 문서(SP-25_kmail_v1_9) ↗</a>
     </div>
   </div>
 </div>
+
+<section class="wide-section" id="toc">
+  <div class="section-title">목차</div>
+  <h2 class="wide-h2">이 페이지에서 다루는 내용</h2>
+  <p class="wide-sub">K-Mail의 기능·용도·목적부터 K-Plan·사람과의 관계까지 한눈에 정리했습니다.</p>
+  <div class="toc-box">
+    <div class="toc-cols">
+      <a href="#intro"><span class="toc-num">01</span>빠른 사실</a>
+      <a href="#capabilities"><span class="toc-num">02</span>할 수 있는 일 (발송·주소록·규칙)</a>
+      <a href="#lifecycle"><span class="toc-num">03</span>캠페인 생애주기 (7단계)</a>
+      <a href="#limits"><span class="toc-num">04</span>정직한 한계</a>
+      <a href="#kplan"><span class="toc-num">05</span>K-Plan과의 관계 — 역할 분담·API</a>
+      <a href="#delegation"><span class="toc-num">06</span>위임과 에스컬레이션</a>
+      <a href="#human"><span class="toc-num">07</span>사람과의 관계 — 최종 승인 경계</a>
+      <a href="#docs"><span class="toc-num">08</span>문서</a>
+    </div>
+  </div>
+</section>
 
 <section class="wide-section" id="intro">
   <div class="section-title">빠른 사실</div>
@@ -199,12 +245,28 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       <div class="fact-lbl">발송 한도(5일 이동평균 기준 고정 상수)</div>
     </div>
     <div class="fact-card">
-      <div class="fact-val">3종</div>
-      <div class="fact-lbl">할 수 있는 일 — 발송·주소록·자동삭제 규칙</div>
+      <div class="fact-val">3종 + α</div>
+      <div class="fact-lbl">기본 발송·주소록·규칙 + 캠페인 생애주기·위임 자동응답</div>
     </div>
     <div class="fact-card">
       <div class="fact-val">24시간 1회</div>
       <div class="fact-lbl">부재중 자동응답, 같은 외부 발신자 기준 제한</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">7단계</div>
+      <div class="fact-lbl">캠페인 생애주기 — 목적파악부터 종료·기록까지</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">3단계</div>
+      <div class="fact-lbl">인바운드 처리 등급 — 즉결 / 위임범위내 실행 / 사람 확인</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">사람 확인 없이</div>
+      <div class="fact-lbl">위임 범위 안 요청은 K-Mail이 직접 회신까지 발송</div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-val">K-Plan</div>
+      <div class="fact-lbl">기획·판단 담당 — K-Mail은 그 지시를 실행하는 front line</div>
     </div>
   </div>
 </section>
@@ -212,13 +274,13 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
 <div class="wide-section alt">
   <div class="wide-section alt-inner" style="padding:52px 24px;" id="capabilities">
     <div class="section-title">할 수 있는 일</div>
-    <h2 class="wide-h2">3가지 — 발송, 주소록, 자동삭제 규칙</h2>
+    <h2 class="wide-h2">기본 3가지 — 발송, 주소록, 자동삭제 규칙</h2>
     <p class="wide-sub">평소엔 자연어로 대화하고, 실행이 필요한 순간에만 K-Mail이 내부적으로 구조화된 액션을 냅니다. 사용자는 이 내부 형식을 몰라도 됩니다.</p>
     <div class="cap-grid">
       <div class="cap-card">
         <div class="cap-num">1</div>
         <div class="cap-title">메일 발송(즉시 또는 예약)</div>
-        <div class="cap-desc">한 명 또는 여러 명에게 보낼 수 있고, 회신을 특정 시각까지 모아 다이제스트로 정리해줄 수도 있습니다. 발송 대상은 그 자리에서 자동으로 주소록에도 등록됩니다 — 따로 요청하지 않아도 됩니다.</div>
+        <div class="cap-desc">한 명 또는 여러 명에게 보낼 수 있고, 회신을 특정 시각까지 모아 다이제스트로 정리해줄 수도 있습니다. 발송 대상은 그 자리에서 자동으로 주소록에도 등록됩니다. 캠페인에는 이름(title)을 붙여 나중에 다시 찾을 수 있고, 수신자마다 다른 본문(맞춤 초안)을 보낼 수도 있습니다.</div>
       </div>
       <div class="cap-card">
         <div class="cap-num">2</div>
@@ -227,12 +289,35 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       </div>
       <div class="cap-card">
         <div class="cap-num">3</div>
-        <div class="cap-title">자동삭제 규칙 등록</div>
-        <div class="cap-desc">"불필요한 메일은 도착 즉시 삭제해" 같은 규칙을 사용자가 말한 기준 그대로 등록합니다. 실제 판정은 이 문장을 다른 AI가 그대로 읽고 수행합니다.</div>
+        <div class="cap-title">규칙 등록 — 자동삭제 또는 위임 처리</div>
+        <div class="cap-desc">"불필요한 메일은 도착 즉시 삭제해" 같은 자동삭제 규칙뿐 아니라, "이런 요청이면 확인 안 받고 알아서 답장해" 같은 <strong>위임 처리 규칙</strong>도 자연어 그대로 등록합니다. 실제 판정은 이 문장을 다른 AI가 그대로 읽고 수행합니다. 자세한 내용은 <a href="#delegation" style="color:var(--primary);font-weight:700;">위임과 에스컬레이션</a> 참고.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-num">4</div>
+        <div class="cap-title">캠페인 조회·보고서</div>
+        <div class="cap-desc">"저번에 서울대 교수들한테 보낸 캠페인 명단이랑 내용 보여줘" 같은 질문에 실제 수신자 명단·본문으로 답합니다. "기관별 응답률 정리해줘"라고 하면 기관·카테고리별 발송·회신·응답률을 집계한 보고서를 만들고, "종료해줘"라고 하면 그 자리에서 캠페인을 종료 처리합니다.</div>
       </div>
     </div>
   </div>
 </div>
+
+<section class="wide-section" id="lifecycle">
+  <div class="section-title">캠페인 생애주기</div>
+  <h2 class="wide-h2">업무용 메일은 이 7단계로 진행합니다</h2>
+  <p class="wide-sub">K-Mail은 업무용 메일이므로, "누구한테 뭘 보낼까요"부터 시작하지 않습니다. 사용자가 여러 단계를 한 번에 말해주면 해당 단계는 확인만 하고 건너뜁니다 — 순서를 기계적으로 다시 밟지 않습니다.</p>
+  <div class="pipeline">
+    <div class="pipe-item"><span class="pipe-num">1</span>목적 파악 — 무엇을 위한 메일인지 먼저 확인</div>
+    <div class="pipe-item"><span class="pipe-num">2</span>대상 검색·특정 — 모호하면 실제 웹 검색을 거쳐 후보 확정</div>
+    <div class="pipe-item"><span class="pipe-num">3</span>주소록 반영 — 발송 확정 시 신규 수신자 자동 등록</div>
+    <div class="pipe-item"><span class="pipe-num">4</span>발송 — 캠페인 이름(title)·수신자별 맞춤 본문(선택) 확인 후 확정</div>
+    <div class="pipe-item"><span class="pipe-num">5</span>회신 취합 — 마감 시각까지 자동으로 회신을 모아 다이제스트 생성</div>
+    <div class="pipe-item"><span class="pipe-num">6</span>보고 — 다이제스트 자동 전달, 요청 시 기관별 응답률 보고서</div>
+    <div class="pipe-item highlight"><span class="pipe-num">7</span>종료·기록 — 명시적 요청 시 종료 처리, 언제든 다시 검색·인출 가능 <span class="badge badge-amber">SP v1.7~v1.8 신설</span></div>
+  </div>
+  <div class="principle-strip">
+    <strong>모든 캠페인은 발송 확정 즉시 영구 기록됩니다</strong> — 나중에 "저번에 보낸 캠페인 뭐였지" 같은 질문에 이름·수신자 명단·본문까지 그대로 찾아 보여줄 수 있습니다.
+  </div>
+</section>
 
 <section class="wide-section" id="limits">
   <div class="section-title">정직한 한계 — 반드시 지키는 원칙</div>
@@ -245,7 +330,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
-      <div class="limit-text"><strong>발송 전 명시적 확인 필수</strong> — 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 "이대로 보낼까요?" 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
+      <div class="limit-text"><strong>발송 전 명시적 확인 필수(위임 범위 밖 발송)</strong> — 위임 규칙 범위 안이 아닌 이상, 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 "이대로 보낼까요?" 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
@@ -253,61 +338,168 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
-      <div class="limit-text"><strong>실사용자 대화 경로의 K-Plan 연동 — 미검증</strong> — 사용자가 실제로 채팅 중 "이건 K-Plan 플랜이야"라고 말했을 때 그 필드가 정확히 채워져 전달되는지는 아직 라이브로 검증되지 않았습니다. 관리자 시딩 경로로만 end-to-end 검증됐습니다(아래 K-Plan 연동 참고).</div>
+      <div class="limit-text"><strong>실사용자 대화 경로의 K-Plan 연동 — 부분 검증</strong> — 관리자 시딩 경로로 다이제스트→K-Recompose 파이프라인은 end-to-end 검증됐지만, 실사용자가 채팅 중 직접 플랜을 언급하는 경로와 신설된 사전 질의(K-Plan에 실시간으로 판단을 구하는 경로)는 아직 실사용자 트래픽으로 검증되지 않았습니다.</div>
+    </div>
+    <div class="limit-item">
+      <span class="limit-icon">⚠</span>
+      <div class="limit-text"><strong>위임 규칙 자동 승격은 사후 검토 없음</strong> — K-Plan이 반복 가능한 패턴이라고 스스로 판단하면 위임 규칙을 즉시 만듭니다. 과하게 일반화됐는지 검증하는 절차는 아직 없어, 오판이 그대로 규칙화될 수 있습니다 — 사람이 주기적으로 위임 규칙 목록을 확인하는 걸 권장합니다.</div>
+    </div>
+    <div class="limit-item">
+      <span class="limit-icon">⚠</span>
+      <div class="limit-text"><strong>실시간 상태(재고·영업시간 등)는 사람이 직접 입력</strong> — K-JIT 같은 실시간 연동은 아직 없어, K-Plan의 판단은 사람이 입력해둔 값이나 계획서의 정적 맥락에 근거합니다.</div>
     </div>
   </div>
 </section>
 
 <div class="wide-section alt">
   <div class="wide-section alt-inner" style="padding:52px 24px;" id="kplan">
-    <div class="section-title">K-Plan 연동</div>
-    <h2 class="wide-h2">여러 주에 걸친 캠페인의 회신 결과가 K-Plan의 K-Recompose를 깨웁니다</h2>
-    <p class="wide-sub">캠페인이 여러 트랙으로 나뉘어 몇 주에 걸쳐 순차 발송될 때, 사용자가 "이 캠페인은 K-Plan 플랜의 일부"라고 명시적으로 알려주면 K-Mail이 받은 회신 다이제스트가 K-Plan의 중간 재평가(K-Recompose)를 자동으로 트리거합니다. 짐작으로 채우지 않으며, 언급이 없으면 완전히 무관한 개인 메일로만 처리됩니다.</p>
+    <div class="section-title">K-Plan과의 관계</div>
+    <h2 class="wide-h2">K-Plan은 기획팀, K-Mail은 그 지시를 실행하는 front line</h2>
+    <p class="wide-sub">K-Mail은 무엇을, 왜, 누구에게 보낼지 스스로 기획하지 않습니다 — 그건 K-Plan의 역할입니다. K-Mail은 K-Plan의 계획을 실제 사람(또는 상대측 K-Mail)과의 메일 왕복으로 구현하는 실무 담당입니다.</p>
+    <table class="role-table">
+      <tr><th></th><th>사람</th><th>K-Plan (기획팀)</th><th>K-Mail (front line)</th></tr>
+      <tr><td>결정하는 것</td><td>새 정책, 큰 그림 승인</td><td>왜/누구에게/몇 단계로, 체크포인트마다 뭘 확인할지</td><td>지금 이 사람에게 뭐라 쓸지, 이 회신이 스팸인지 진짜 문의인지</td></tr>
+      <tr><td>시간 축</td><td>필요할 때만 개입</td><td>여러 주에 걸친 계획 전체</td><td>지금 이 순간의 대화 하나하나</td></tr>
+      <tr><td>실패 시</td><td>방향 재승인</td><td>계획 재수립(K-Recompose)</td><td>스레드를 어떻게 이어갈지 재시도·에스컬레이션</td></tr>
+    </table>
+
+    <h3 style="font-size:15px;font-weight:800;margin:32px 0 10px;">3단계 처리 원칙</h3>
+    <p class="wide-sub" style="margin-bottom:14px;">메일 한 통이 왔을 때 어느 등급으로 처리할지는 <strong>[메일의 성격 × 지금의 실제 상태]</strong>로 정해집니다 — 메일 종류만으로는 정해지지 않습니다. 예: "짜장면 2그릇 주문"은 재고·시간 여유가 있으면 2단계(즉시 처리), 없으면 3단계(사람 승인 필요)가 됩니다.</p>
+    <div class="cap-grid">
+      <div class="cap-card">
+        <div class="cap-num">1</div>
+        <div class="cap-title">즉결</div>
+        <div class="cap-desc">되돌릴 필요조차 없는 일. 예: 스팸 삭제. 보고 없이 로그만 남습니다.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-num">2</div>
+        <div class="cap-title">위임 범위 내 실행</div>
+        <div class="cap-desc">K-Plan이 미리 정해둔 조건 안. K-Mail이 사람 확인 없이 직접 실행하고 K-Plan에만 보고합니다.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-num">3</div>
+        <div class="cap-title">신규 판단 필요</div>
+        <div class="cap-desc">전례 없음·위임 범위 밖. K-Plan과 사람 모두에게 올라갑니다. 예: 시청 위생 점검 통보.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:15px;font-weight:800;margin:32px 0 10px;">함수 수준 API — 실시간으로 묻고 즉답받습니다</h3>
+    <p class="wide-sub" style="margin-bottom:10px;">K-Plan과 K-Mail은 같은 서버 안에 있어 실제 HTTP 왕복 없이 함수 호출로 연결됩니다. K-Mail이 판단이 안 서는 인바운드를 만나면, K-Plan에게 그 자리에서 물어보고 즉답을 받습니다 — "K-Plan이 답을 안 준다"는 상황 자체가 없습니다(매번 동기 LLM 호출 1회로 즉답).</p>
+    <div class="api-block">_kplanDecideForKMail({ planId, subject, bodyText, threadHistoryText })
+  → { decision: <span class="k">'approve'</span> | <span class="k">'escalate'</span>,
+      replyGuidance?, urgent?, holdMessage?,
+      suggestedRuleText?, delegationPromoted? }</div>
+    <p class="wide-sub" style="margin-bottom:0;">K-Plan은 플랜의 목표·계획서, <strong>실시간 상태</strong>(재고·영업시간 등, 사람이나 향후 K-JIT 연동이 채워넣는 값), <strong>이 상대와의 과거 대화 이력</strong>까지 근거로 판단합니다. 승인이면서 반복 가능한 패턴이라고 스스로 판단하면, 그 자리에서 위임 규칙으로 자동 승격해 다음부터는 안 물어봐도 되게 만듭니다. 에스컬레이션이면서 급한 사안이면, 사람 확인 전 "확인 후 회신드리겠습니다" 같은 대기 응답까지 K-Plan이 직접 문구를 정해 K-Mail에게 시킵니다.</p>
+
+    <h3 style="font-size:15px;font-weight:800;margin:32px 0 10px;">기존 상향 보고 — K-Recompose</h3>
+    <p class="wide-sub" style="margin-bottom:14px;">캠페인이 여러 트랙으로 나뉘어 몇 주에 걸쳐 순차 발송될 때, 사용자가 "이 캠페인은 K-Plan 플랜의 일부"라고 명시적으로 알려주면 회신 다이제스트가 K-Plan의 중간 재평가(K-Recompose)를 자동으로 트리거합니다.</p>
     <div class="pipeline">
-      <div class="pipe-item"><span class="pipe-num">1</span>사용자가 K-Mail에게 "이 캠페인은 K-Plan 플랜 X의 트랙 B 체크포인트야"라고 알림</div>
-      <div class="pipe-item"><span class="pipe-num">2</span>KMAIL_SEND_CAMPAIGN에 kplan_plan_id / kplan_checkpoint_label 포함 (명시했을 때만 — 추측 금지)</div>
-      <div class="pipe-item"><span class="pipe-num">3</span>kmail_campaigns 레코드에 저장, digest_at 도달까지 대기</div>
-      <div class="pipe-item"><span class="pipe-num">4</span>매시 정각 크론이 회신 다이제스트 생성</div>
-      <div class="pipe-item highlight"><span class="pipe-num">5</span>plan_id가 있으면 K-Plan의 K-Recompose를 자동 트리거 <span class="badge badge-amber">2026-09-02 신설</span></div>
-      <div class="pipe-item"><span class="pipe-num">6</span>조정 결과가 사용자 메시지함에 자연스럽게 노출</div>
+      <div class="pipe-item"><span class="pipe-num">1</span>사용자가 "이 캠페인은 K-Plan 플랜 X의 체크포인트야"라고 알림</div>
+      <div class="pipe-item"><span class="pipe-num">2</span>KMAIL_SEND_CAMPAIGN에 kplan_plan_id 포함(명시했을 때만 — 추측 금지)</div>
+      <div class="pipe-item"><span class="pipe-num">3</span>회신 마감 시각 도달, 다이제스트 생성</div>
+      <div class="pipe-item highlight"><span class="pipe-num">4</span>K-Plan의 K-Recompose 자동 트리거, <strong>plan 레코드에 실제로 저장</strong> <span class="badge badge-amber">2026-09-04 수정</span></div>
+      <div class="pipe-item"><span class="pipe-num">5</span>조정 결과가 사용자 메시지함에 노출, plan.hondi.net에서도 대화 이력으로 확인 가능</div>
     </div>
     <div class="principle-strip">
-      <strong>검증 상태</strong> — 관리자 시딩 → 스윕 → K-Recompose → 결과 조회까지 end-to-end 성공(2026-09-02, 라이브 스모크테스트). 다만 실사용자가 채팅에서 직접 플랜을 언급하는 경로는 이번 검증 범위 밖입니다 — 관리자 엔드포인트가 사용자 서명 계층을 우회하고 PocketBase에 직접 레코드를 시딩했기 때문입니다.
+      <strong>검증 상태</strong> — 관리자 시딩 → 스윕 → K-Recompose → 결과 조회까지 end-to-end 성공(2026-09-02, 라이브 스모크테스트). 2026-09-04에 재평가 결과가 사용자 메시지함에만 쓰이고 plan 레코드 자체(대화 이력·체크포인트 카운트)는 갱신 안 되던 공백을 수정했습니다. 실사용자 채팅 경로와 신설 사전 질의 API는 아직 라이브 검증 전입니다.
     </div>
   </div>
 </div>
 
-<div class="wide-section alt-inner" style="padding:52px 24px;" id="docs">
+<section class="wide-section" id="delegation">
+  <div class="section-title">위임과 에스컬레이션</div>
+  <h2 class="wide-h2">상대방도 K-Mail을 쓴다면 — K-Mail과 K-Mail이 직접 대화합니다</h2>
+  <p class="wide-sub">기존 이메일은 사람이 사람에게 쓰고 AI가 대신 써주는 틀입니다. K-Mail은 이걸 한 단계 더 밀어붙입니다 — <strong>위임 범위 안의 요청이면 사람 확인 없이 K-Mail이 직접 회신까지 보냅니다.</strong> 두 조직의 조율이 "사람이 메일 확인 → 며칠 뒤 답장"이 아니라 양쪽 K-Mail이 그 자리에서 여러 차례 주고받는 방식이 되면, 의사결정 속도·정확성·합리성이 크게 올라간다는 것이 이 설계의 목적입니다.</p>
+  <div class="cap-grid">
+    <div class="cap-card">
+      <div class="cap-num">A</div>
+      <div class="cap-title">위임 규칙 등록</div>
+      <div class="cap-desc">"짜장면·짬뽕류 주문이고 재고·시간 여유 있으면 바로 수락해" 같은 자연어 규칙을 등록합니다. 특정 K-Plan 캠페인/체크포인트로 범위를 좁힐 수도, 전역으로 둘 수도 있습니다.</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-num">B</div>
+      <div class="cap-title">자동 승인·회신</div>
+      <div class="cap-desc">인바운드가 위임 범위 안으로 판정되면, K-Mail이 사람 확인 없이 즉시 회신을 작성해 발송합니다. 처리 결과는 항상 기록되어 나중에 확인할 수 있습니다.</div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-num">C</div>
+      <div class="cap-title">에스컬레이션</div>
+      <div class="cap-desc">범위 밖이거나 애매하면 사람에게 올립니다. 급한 사안이면 K-Plan이 대기 응답 문구까지 정해줘서, 사람 확인 전에 "확인 후 회신드리겠습니다"를 먼저 보낼 수 있습니다.</div>
+    </div>
+  </div>
+  <div class="principle-strip" style="margin-top:20px;">
+    <strong>스레드 단위로 추적됩니다</strong> — 같은 상대와의 대화는 open(진행 중) / pending_kplan(K-Plan 응답 대기) / pending_human(사람 확인 대기) / resolved(처리 완료) 4단계로 관리되고, 판단할 때마다 그 상대와의 과거 왕복 이력(최근 8건)을 함께 참고합니다 — 이번 메일 한 통만 보고 판단하지 않습니다.
+  </div>
+</section>
+
+<div class="wide-section alt">
+  <div class="wide-section alt-inner" style="padding:52px 24px;" id="human">
+    <div class="section-title">사람과의 관계</div>
+    <h2 class="wide-h2">자율성이 늘어난 만큼, 최종 승인 경계는 더 명확합니다</h2>
+    <p class="wide-sub">위임·에스컬레이션 체계가 생겼다고 K-Mail이 사람 없이 무엇이든 결정하는 건 아닙니다 — 오히려 "어디까지는 사람 없이 가고, 어디부터는 반드시 사람을 거치는지"가 이전보다 훨씬 명시적으로 나뉘었습니다.</p>
+    <div class="boundary-list">
+      <div class="boundary-item">
+        <span class="boundary-icon">●</span>
+        <div class="boundary-text"><strong>위임 범위는 사람(또는 K-Plan)이 정합니다</strong> — K-Mail이 스스로 "이 정도는 물어보지 않아도 되겠다"고 위임 범위를 넓히지 않습니다. 범위를 정하는 건 위임 규칙을 등록하는 사람, 또는 그 규칙을 승격시키는 K-Plan입니다.</div>
+      </div>
+      <div class="boundary-item">
+        <span class="boundary-icon">●</span>
+        <div class="boundary-text"><strong>범위 밖은 예외 없이 사람에게 옵니다</strong> — 애매하면 항상 안전한 쪽(에스컬레이션)으로 판정합니다. 금액·계약·확정적 약속이 걸리거나 전례 없는 사안은 자동 처리 대상이 아닙니다.</div>
+      </div>
+      <div class="boundary-item">
+        <span class="boundary-icon">●</span>
+        <div class="boundary-text"><strong>대기 응답과 최종 답변은 다릅니다</strong> — 급한 사안에 "확인 후 회신드리겠습니다"를 먼저 보내는 것은 판단을 대신하는 게 아니라 시간을 버는 것뿐입니다. 실제 결정은 사람의 확인을 거친 뒤에만 나갑니다.</div>
+      </div>
+      <div class="boundary-item">
+        <span class="boundary-icon">●</span>
+        <div class="boundary-text"><strong>위임 규칙은 언제든 사람이 고치거나 지울 수 있습니다</strong> — K-Plan이 자동으로 승격한 규칙도 예외가 아닙니다. 과하게 일반화됐다고 판단되면 그 규칙을 좁히거나 삭제하는 것으로 즉시 되돌릴 수 있습니다.</div>
+      </div>
+      <div class="boundary-item">
+        <span class="boundary-icon">●</span>
+        <div class="boundary-text"><strong>발송 대상·본문은 항상 확인 대상입니다</strong>(위임 범위 밖) — 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wide-section" style="padding:52px 24px;" id="docs">
     <div class="section-title">문서</div>
     <h2 class="wide-h2">개발자·후속 담당자를 위한 기술 문서</h2>
-    <p class="wide-sub">이 사이트의 내용은 아래 정본 문서(SP-25_kmail_v1_6.txt)를 기준으로 작성됐습니다. 정본이 개정되면 이 페이지도 함께 갱신해야 합니다.</p>
+    <p class="wide-sub">이 사이트의 내용은 아래 정본 문서(SP-25_kmail_v1_9.txt)를 기준으로 작성됐습니다. 정본이 개정되면 이 페이지도 함께 갱신해야 합니다.</p>
     <div class="docs-grid">
-      <a class="doc-card" href="https://hondi.net/prompts/SP-25_kmail_v1_6.txt" target="_blank">
+      <a class="doc-card" href="https://hondi.net/prompts/SP-25_kmail_v1_9.txt" target="_blank">
         <div class="doc-icon">◆</div>
         <div>
-          <div class="doc-title">SP-25_kmail_v1_6.txt — 정본</div>
-          <div class="doc-desc">K-Mail의 모든 능력·액션 태그·정직한 한계가 담긴 시스템 프롬프트 원문.</div>
+          <div class="doc-title">SP-25_kmail_v1_9.txt — 정본</div>
+          <div class="doc-desc">K-Mail의 모든 능력·액션 태그·정직한 한계가 담긴 시스템 프롬프트 원문. 캠페인 생애주기·위임 규칙 등록 태그 포함.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://hondi.net/docs/KPLAN_KMAIL_AGENT_TO_AGENT_ARCHITECTURE_v1_0_20260903.md" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">K-Plan↔K-Mail 에이전트 간 아키텍처</div>
+          <div class="doc-desc">역할 분담, 3단계 처리 원칙, 함수 수준 API(사전 질의·위임 자동승격·실시간 상태·스레드 모델) 전체 설계.</div>
         </div>
       </a>
       <a class="doc-card" href="https://hondi.net/docs/KPLAN_KMAIL_INTEGRATION_ARCHITECTURE_v1_0_20260902.md" target="_blank">
         <div class="doc-icon">◆</div>
         <div>
-          <div class="doc-title">K-Plan↔K-Mail 연동 아키텍처</div>
-          <div class="doc-desc">K-Recompose 트리거 파이프라인의 데이터 흐름 전체 정리.</div>
+          <div class="doc-title">K-Plan↔K-Mail 연동 아키텍처(v1, 상향 보고)</div>
+          <div class="doc-desc">K-Recompose 트리거 파이프라인의 최초 데이터 흐름 정리.</div>
+        </div>
+      </a>
+      <a class="doc-card" href="https://hondi.net/prompts/k-plan_v1_1.md" target="_blank">
+        <div class="doc-icon">◆</div>
+        <div>
+          <div class="doc-title">k-plan_v1_1.md — K-Plan 정본</div>
+          <div class="doc-desc">K-Intent~K-Report, K-Recompose, K-Capability 등 K-Plan의 전체 판단 체계.</div>
         </div>
       </a>
       <a class="doc-card" href="https://hondi.net/docs/HANDOFF_20260902.md" target="_blank">
         <div class="doc-icon">◆</div>
         <div>
           <div class="doc-title">인수인계서(2026-09-02)</div>
-          <div class="doc-desc">무엇이 실제로 검증됐고 무엇이 아닌지 — 실사용자 대화 경로는 아직 미검증 상태입니다.</div>
-        </div>
-      </a>
-      <a class="doc-card" href="https://hondi.net/docs/KMAIL_KPLAN_PIPELINE_LIVE_TEST_INCIDENT_2026_09_02.md" target="_blank">
-        <div class="doc-icon">◆</div>
-        <div>
-          <div class="doc-title">라이브 테스트 사고 기록(2026-09-02)</div>
-          <div class="doc-desc">K-Mail↔K-Plan 파이프라인 배포 과정에서 겪은 사고 5건(secret 관리 등) 상세 기록.</div>
+          <div class="doc-desc">무엇이 실제로 검증됐고 무엇이 아닌지.</div>
         </div>
       </a>
       <a class="doc-card" href="https://plan.hondi.net" target="_blank">
@@ -321,7 +513,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
         <div class="doc-icon">◆</div>
         <div>
           <div class="doc-title">GitHub — Openhash-Gopang/hondi ↗</div>
-          <div class="doc-desc">혼디넷 메인 저장소. K-Mail 관련 문서와 코드가 모두 이곳에 있습니다.</div>
+          <div class="doc-desc">혼디넷 메인 저장소. K-Mail·K-Plan 관련 문서와 코드가 모두 이곳에 있습니다.</div>
         </div>
       </a>
     </div>
