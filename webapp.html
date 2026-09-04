@@ -42,6 +42,12 @@ button{font-family:var(--font);cursor:pointer}
 .kmail-login-row input:focus{outline:none;border-color:var(--pri)}
 .kmail-login-row button{flex-shrink:0;font-size:13px;font-weight:700;color:#fff;background:var(--pri);border:none;border-radius:8px;padding:0 16px;white-space:nowrap}
 .kmail-login-row button:disabled{background:var(--hint);cursor:not-allowed}
+.kmail-login-phone-row{display:flex;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:4px 4px 4px 12px;background:#fff;transition:border-color .12s}
+.kmail-login-phone-row:focus-within{border-color:var(--pri)}
+.kmail-login-phone-row input{flex:1;min-width:0;font-size:14px;padding:8px 0;border:none;outline:none;background:transparent;color:var(--txt)}
+.kmail-login-phone-submit{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .08s}
+.kmail-login-phone-submit:disabled{opacity:.4;cursor:not-allowed}
+.kmail-login-phone-submit:not(:disabled):hover{transform:scale(1.06)}
 .kmail-login-msg{font-size:12px;margin-top:10px;text-align:center;min-height:16px}
 .kmail-login-msg.err{color:var(--red)}
 .kmail-login-msg.ok{color:var(--grn)}
@@ -164,9 +170,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
     <div class="kmail-login-body">
       <div class="kmail-login-desc" id="kmail-login-desc">휴대폰 번호 뒷자리 8자를 입력하십시오.</div>
       <div id="kmail-login-step-phone">
-        <div class="kmail-login-row"><input type="tel" id="kmail-login-phone" placeholder="전화번호 뒷 8자리" inputmode="numeric" maxlength="8" autocomplete="tel"></div>
-        <div class="kmail-login-row" style="flex-direction:column;gap:8px">
-          <button type="button" id="kmail-login-devlink-btn" onclick="_kmailLoginStartDeviceLink()" style="width:100%;padding:11px 16px">📱 폰으로 승인받기</button>
+        <div class="kmail-login-phone-row">
+          <input type="tel" id="kmail-login-phone" placeholder="전화번호 뒷 8자리" inputmode="numeric" maxlength="8" autocomplete="tel">
+          <button type="button" class="kmail-login-phone-submit" id="kmail-login-devlink-btn" onclick="_kmailLoginStartDeviceLink()" title="인증 요청">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
         </div>
       </div>
       <div id="kmail-login-step-devlink" style="display:none">
@@ -608,6 +616,11 @@ document.addEventListener('DOMContentLoaded', () => {
   _kmailAutoResize(input);
   input.addEventListener('input', () => { _kmailAutoResize(input); _cmpChatUpdateSendState(); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _cmpChatSend(); } });
+
+  const phoneInput = document.getElementById('kmail-login-phone');
+  if (phoneInput) phoneInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _kmailLoginStartDeviceLink(); } });
+  const otpInput = document.getElementById('kmail-login-code');
+  if (otpInput) otpInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _kmailLoginVerifyOtp(); } });
 });
 
 // ══════════════════════════════════════════════════════════════
