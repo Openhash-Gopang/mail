@@ -7,10 +7,15 @@
 <meta name="description" content="누구에게 어떤 메일을 보낼지 K-Mail과 대화로 정한 뒤 실제로 발송합니다. 회신을 모아 보고받고, 모든 캠페인은 기록되어 나중에 다시 찾아볼 수 있습니다.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230F8F7E%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2245%22%20font-family%3D%22%27Pretendard%27%2C%27Malgun%20Gothic%27%2Csans-serif%22%20font-size%3D%2234%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%20text-anchor%3D%22middle%22%3EM%3C/text%3E%3C/svg%3E">
 
-<!-- data-required="false"인 이유는 plan.hondi.net/webapp.html과 동일
-     (silent-auth.html 무한 리다이렉트 방지) — 실제 인증은 전화번호
-     OTP/device-link(phone_verify_token, K-서비스 공용 인증 게이트 경유). -->
-<script type="module" src="https://hondi.net/auth/subsystem-auth.js" data-required="false"></script>
+<!-- K-서비스 공용 전화번호 인증 모듈 (2026-09-06 — 이 페이지 자체 구현을
+     대체) — 로그인하면 plan.hondi.net·klaw.hondi.net 등 다른 K-서비스에도
+     .hondi.net 쿠키로 자동 로그인된다. 기존 고팡 지갑 SSO
+     (subsystem-auth.js)는 크로스 도메인 릴레이 버그가 있어 더 이상
+     로드하지 않는다(주피터 지시, 2026-09-06). -->
+<script>
+window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
+</script>
+<script src="https://hondi.net/auth/k-service-auth-client.js"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -30,29 +35,6 @@ a{color:inherit}
 textarea,input,select{font-family:var(--font)}
 button{font-family:var(--font);cursor:pointer}
 
-#kmail-login-overlay{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,var(--gov) 0%,var(--nav) 60%,#0B6F62 100%);display:none;align-items:center;justify-content:center;padding:24px}
-#kmail-login-overlay.show{display:flex}
-.kmail-login-box{background:var(--sur);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);width:100%;max-width:380px;overflow:hidden}
-.kmail-login-header{background:linear-gradient(135deg,var(--gov) 0%,var(--pri) 100%);padding:24px 28px;text-align:center;color:#fff}
-.kmail-login-logo{font-size:32px;margin-bottom:8px}
-.kmail-login-body{padding:24px 28px}
-.kmail-login-desc{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.6;text-align:center}
-.kmail-login-row{display:flex;gap:8px;margin-bottom:10px}
-.kmail-login-row input{flex:1;min-width:0;font-size:14px;padding:11px 12px;border:1px solid var(--bdr);border-radius:8px;color:var(--txt);background:#fff}
-.kmail-login-row input:focus{outline:none;border-color:var(--pri)}
-.kmail-login-row button{flex-shrink:0;font-size:13px;font-weight:700;color:#fff;background:var(--pri);border:none;border-radius:8px;padding:0 16px;white-space:nowrap}
-.kmail-login-row button:disabled{background:var(--hint);cursor:not-allowed}
-.kmail-login-phone-row{display:flex;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:4px 4px 4px 12px;background:#fff;transition:border-color .12s}
-.kmail-login-phone-row:focus-within{border-color:var(--pri)}
-.kmail-login-phone-row input{flex:1;min-width:0;font-size:14px;padding:8px 0;border:none;outline:none;background:transparent;color:var(--txt)}
-.kmail-login-phone-submit{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .08s}
-.kmail-login-phone-submit:disabled{opacity:.4;cursor:not-allowed}
-.kmail-login-phone-submit:not(:disabled):hover{transform:scale(1.06)}
-.kmail-login-msg{font-size:12px;margin-top:10px;text-align:center;min-height:16px}
-.kmail-login-msg.err{color:var(--red)}
-.kmail-login-msg.ok{color:var(--grn)}
-.kmail-login-resend{font-size:11px;color:var(--hint);text-align:center;margin-top:10px}
-.kmail-login-resend a{color:var(--pri);cursor:pointer;text-decoration:underline}
 
 header{background:var(--nav);color:#fff;padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.22)}
 header .logo{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
@@ -163,39 +145,6 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 </style>
 </head>
 <body>
-
-<div id="kmail-login-overlay">
-  <div class="kmail-login-box">
-    <div class="kmail-login-header"><div class="kmail-login-logo">✉️</div></div>
-    <div class="kmail-login-body">
-      <div class="kmail-login-desc" id="kmail-login-desc">휴대폰 번호 뒷자리 8자를 입력하십시오.</div>
-      <div id="kmail-login-step-phone">
-        <div class="kmail-login-phone-row">
-          <input type="tel" id="kmail-login-phone" placeholder="전화번호 뒷 8자리" inputmode="numeric" maxlength="8" autocomplete="tel">
-          <button type="button" class="kmail-login-phone-submit" id="kmail-login-devlink-btn" onclick="_kmailLoginStartDeviceLink()" title="인증 요청">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </button>
-        </div>
-      </div>
-      <div id="kmail-login-step-devlink" style="display:none">
-        <div style="text-align:center">
-          <div class="spinner" style="width:22px;height:22px;border-width:3px;margin:0 auto 12px"></div>
-          <div id="kmail-devlink-status" style="font-size:12.5px;color:var(--sub)">스마트폰 알림을 확인해 주세요…</div>
-          <div id="kmail-devlink-timer" style="font-size:11px;color:var(--hint);margin-top:4px"></div>
-        </div>
-        <div class="kmail-login-resend"><a onclick="_kmailLoginResetPhoneStep()">번호를 다시 입력할게요</a></div>
-      </div>
-      <div id="kmail-login-step-code" style="display:none">
-        <div class="kmail-login-row">
-          <input type="text" id="kmail-login-code" placeholder="인증번호 6자리" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
-          <button type="button" id="kmail-login-verify-btn" onclick="_kmailLoginVerifyOtp()">확인</button>
-        </div>
-        <div class="kmail-login-resend"><a onclick="_kmailLoginResetPhoneStep()">번호를 다시 입력할게요</a></div>
-      </div>
-      <div class="kmail-login-msg" id="kmail-login-msg"></div>
-    </div>
-  </div>
-</div>
 
 <header>
   <div class="logo"><span class="logo-icon">M</span>K-Mail</div>
@@ -343,135 +292,22 @@ function _switchTab(name) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 로그인 — plan.hondi.net/webapp.html과 동일 패턴(device-link + OTP)
+// 로그인 — 공용 인증 모듈(KAuth)이 담당 (2026-09-06)
 // ══════════════════════════════════════════════════════════════
-let kmailPhoneVerifyToken    = sessionStorage.getItem('kmail_phone_verify_token') || null;
-let kmailPhoneVerifyTokenExp = Number(sessionStorage.getItem('kmail_phone_verify_token_exp') || 0);
-let _kmailPendingE164        = '';
-let _kmailLoginWaiters       = [];
 let _ctLoadedOnce = false, _campLoadedOnce = false;
 let _campAllItems = [];
 
-function _kmailHasValidLogin() { return !!kmailPhoneVerifyToken && Date.now() < kmailPhoneVerifyTokenExp - 30000; }
-function _kmailLoginSetMsg(text, kind) {
-  const el = document.getElementById('kmail-login-msg');
-  el.textContent = text || ''; el.className = 'kmail-login-msg' + (kind ? ' ' + kind : '');
-}
-function _kmailLoginResetPhoneStep() {
-  _kmailDevlinkStopPolling();
-  document.getElementById('kmail-login-step-code').style.display = 'none';
-  document.getElementById('kmail-login-step-devlink').style.display = 'none';
-  document.getElementById('kmail-login-step-phone').style.display = '';
-  document.getElementById('kmail-login-code').value = '';
-  _kmailLoginSetMsg('', '');
-}
-
-let _kmailDevlinkPollTimer = null, _kmailDevlinkSessionId = null, _kmailDevlinkCountdownTimer = null;
-function _kmailDevlinkStopPolling() {
-  if (_kmailDevlinkPollTimer) { clearInterval(_kmailDevlinkPollTimer); _kmailDevlinkPollTimer = null; }
-  if (_kmailDevlinkCountdownTimer) { clearInterval(_kmailDevlinkCountdownTimer); _kmailDevlinkCountdownTimer = null; }
-  _kmailDevlinkSessionId = null;
-  document.removeEventListener('visibilitychange', _kmailDevlinkOnVisibility);
-}
-function _kmailDevlinkOnVisibility() { if (!document.hidden && _kmailDevlinkPollTimer) _kmailDevlinkPollOnce(); }
-
-async function _kmailLoginStartDeviceLink() {
-  const phone = document.getElementById('kmail-login-phone').value.trim();
-  if (!phone) { _kmailLoginSetMsg('전화번호를 입력해 주세요.', 'err'); return; }
-  const btn = document.getElementById('kmail-login-devlink-btn');
-  btn.disabled = true; _kmailLoginSetMsg('', '');
-  const sigMsg = `kmail-login:${crypto.randomUUID()}:${Date.now()}`;
-  try {
-    const res = await fetch(PROXY + '/auth/device-link/init', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ e164: phone, pcLabel: 'mail.hondi.net', purpose: 'sign_request', sigMsg }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) throw new Error(data.message || data.detail || '요청에 실패했습니다.');
-    _kmailPendingE164 = phone;
-    _kmailDevlinkSessionId = data.sessionId;
-    document.getElementById('kmail-login-step-phone').style.display = 'none';
-    document.getElementById('kmail-login-step-devlink').style.display = '';
-    document.getElementById('kmail-devlink-status').textContent = data.hasMobileDevice === false
-      ? '이 번호로 연결된 스마트폰이 없습니다 — 아래에서 문자로 받아 주세요.'
-      : '스마트폰 알림을 확인해 주세요…';
-    _kmailDevlinkStartCountdown(data.expires_in || 90);
-    document.addEventListener('visibilitychange', _kmailDevlinkOnVisibility);
-    _kmailDevlinkPollTimer = setInterval(_kmailDevlinkPollOnce, 2000);
-  } catch (e) { _kmailLoginSetMsg(e.message || '요청에 실패했습니다.', 'err'); }
-  finally { btn.disabled = false; }
-}
-function _kmailDevlinkStartCountdown(seconds) {
-  let remain = seconds;
-  const el = document.getElementById('kmail-devlink-timer');
-  const tick = () => {
-    el.textContent = remain > 0 ? `${remain}초 후 만료` : '만료됨';
-    if (remain <= 0 && _kmailDevlinkCountdownTimer) { clearInterval(_kmailDevlinkCountdownTimer); _kmailDevlinkCountdownTimer = null; }
-    remain -= 1;
-  };
-  tick(); _kmailDevlinkCountdownTimer = setInterval(tick, 1000);
-}
-async function _kmailDevlinkPollOnce() {
-  if (!_kmailDevlinkSessionId) return;
-  try {
-    const res = await fetch(PROXY + `/auth/device-link/poll?sessionId=${encodeURIComponent(_kmailDevlinkSessionId)}`);
-    const data = await res.json().catch(() => ({}));
-    if (!data.ok) return;
-    if (data.state === 'expired') { _kmailDevlinkStopPolling(); document.getElementById('kmail-devlink-status').textContent = '요청이 만료됐습니다.'; return; }
-    if (data.state === 'verification_failed') { _kmailDevlinkStopPolling(); document.getElementById('kmail-devlink-status').textContent = '승인을 확인하지 못했습니다 — 문자 인증으로 진행해 주세요.'; return; }
-    if (data.state === 'delivered' && data.verified && data.phone_verify_token) { _kmailDevlinkStopPolling(); _kmailApplyLogin(data.phone_verify_token, data.expires_at); }
-  } catch (e) {}
-}
-async function _kmailLoginSendOtp() {
-  const phone = document.getElementById('kmail-login-phone').value.trim();
-  if (!phone) { _kmailLoginSetMsg('전화번호를 입력해 주세요.', 'err'); return; }
-  try {
-    const res = await fetch(PROXY + '/biz/phone-otp-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e164: phone }) });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) throw new Error(data.message || '인증번호 발송에 실패했습니다.');
-    _kmailPendingE164 = phone;
-    document.getElementById('kmail-login-step-phone').style.display = 'none';
-    document.getElementById('kmail-login-step-code').style.display = '';
-    document.getElementById('kmail-login-code').focus();
-    _kmailLoginSetMsg('인증번호를 문자로 보내드렸습니다.', 'ok');
-  } catch (e) { _kmailLoginSetMsg(e.message || '인증번호 발송에 실패했습니다.', 'err'); }
-}
-async function _kmailLoginVerifyOtp() {
-  const code = document.getElementById('kmail-login-code').value.trim();
-  if (!code) { _kmailLoginSetMsg('인증번호를 입력해 주세요.', 'err'); return; }
-  const btn = document.getElementById('kmail-login-verify-btn');
-  btn.disabled = true; _kmailLoginSetMsg('확인 중…', '');
-  try {
-    const res = await fetch(PROXY + '/biz/phone-otp-verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e164: _kmailPendingE164, code }) });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok || !data.phone_verify_token) throw new Error(data.message || '인증번호가 일치하지 않습니다.');
-    _kmailApplyLogin(data.phone_verify_token, data.expires_at);
-  } catch (e) { _kmailLoginSetMsg(e.message || '인증번호가 일치하지 않습니다.', 'err'); }
-  finally { btn.disabled = false; }
-}
-function _kmailApplyLogin(token, expiresAt) {
-  kmailPhoneVerifyToken = token; kmailPhoneVerifyTokenExp = new Date(expiresAt).getTime();
-  sessionStorage.setItem('kmail_phone_verify_token', kmailPhoneVerifyToken);
-  sessionStorage.setItem('kmail_phone_verify_token_exp', String(kmailPhoneVerifyTokenExp));
-  document.getElementById('kmail-login-overlay').classList.remove('show');
-  _kmailLoginSetMsg('', '');
-  const waiters = _kmailLoginWaiters; _kmailLoginWaiters = [];
-  waiters.forEach(resolve => resolve());
-}
-function _ensureKmailLogin() {
-  if (_kmailHasValidLogin()) return Promise.resolve();
-  return new Promise((resolve) => { _kmailLoginWaiters.push(resolve); document.getElementById('kmail-login-overlay').classList.add('show'); });
-}
 function _kmailIsRecoverableAuthError(message) {
   return /로그인이 필요합니다|인증 토큰이 만료|토큰 서명이 유효하지 않습니다/.test(message || '');
 }
 
+
 // 공용 fetch 래퍼(REST 엔드포인트용) — phone_verify_token 자동 첨부 + 만료 시 재로그인 후 재시도
 async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) {
-  await _ensureKmailLogin();
+  await KAuth.ensureLogin();
   const doRequest = async () => {
     let url = PROXY + path;
-    const q = { ...query, phone_verify_token: kmailPhoneVerifyToken };
+    const q = { ...query, phone_verify_token: KAuth.getToken() };
     if (method === 'GET') {
       const usp = new URLSearchParams(Object.entries(q).filter(([,v]) => v !== undefined && v !== null && v !== ''));
       url += '?' + usp.toString();
@@ -480,7 +316,7 @@ async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) 
       if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
       return data;
     }
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...(body || {}), phone_verify_token: kmailPhoneVerifyToken }) });
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...(body || {}), phone_verify_token: KAuth.getToken() }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
     return data;
@@ -488,9 +324,8 @@ async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) 
   try { return await doRequest(); }
   catch (e) {
     if (_kmailIsRecoverableAuthError(e.message)) {
-      kmailPhoneVerifyToken = null; kmailPhoneVerifyTokenExp = 0;
-      sessionStorage.removeItem('kmail_phone_verify_token'); sessionStorage.removeItem('kmail_phone_verify_token_exp');
-      await _ensureKmailLogin();
+      KAuth.logout();
+      await KAuth.ensureLogin();
       return await doRequest();
     }
     throw e;
@@ -499,11 +334,11 @@ async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) 
 
 // /kmail/chat 호출 — 서버가 { reply, action } 구조로 응답한다
 async function kmailChatCall(messages) {
-  await _ensureKmailLogin();
+  await KAuth.ensureLogin();
   const doRequest = async () => {
     const res = await fetch(KMAIL_CHAT_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, phone_verify_token: kmailPhoneVerifyToken }),
+      body: JSON.stringify({ messages, phone_verify_token: KAuth.getToken() }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
@@ -512,9 +347,8 @@ async function kmailChatCall(messages) {
   try { return await doRequest(); }
   catch (e) {
     if (_kmailIsRecoverableAuthError(e.message)) {
-      kmailPhoneVerifyToken = null; kmailPhoneVerifyTokenExp = 0;
-      sessionStorage.removeItem('kmail_phone_verify_token'); sessionStorage.removeItem('kmail_phone_verify_token_exp');
-      await _ensureKmailLogin();
+      KAuth.logout();
+      await KAuth.ensureLogin();
       return await doRequest();
     }
     throw e;
@@ -616,11 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
   _kmailAutoResize(input);
   input.addEventListener('input', () => { _kmailAutoResize(input); _cmpChatUpdateSendState(); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _cmpChatSend(); } });
-
-  const phoneInput = document.getElementById('kmail-login-phone');
-  if (phoneInput) phoneInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _kmailLoginStartDeviceLink(); } });
-  const otpInput = document.getElementById('kmail-login-code');
-  if (otpInput) otpInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); _kmailLoginVerifyOtp(); } });
 });
 
 // ══════════════════════════════════════════════════════════════
