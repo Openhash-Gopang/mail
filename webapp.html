@@ -157,6 +157,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
     <button id="tab-btn-compose" class="active" onclick="_switchTab('compose')">새 캠페인</button>
     <button id="tab-btn-contacts" onclick="_switchTab('contacts')">주소록</button>
     <button id="tab-btn-campaigns" onclick="_switchTab('campaigns')">내 캠페인</button>
+    <button id="tab-btn-quicksend" onclick="_switchTab('quicksend')">빠른 발송</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -254,6 +255,30 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
       <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 "새 캠페인" 탭으로 이동해 이 캠페인에 대해 바로 물어봅니다.</div>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       빠른 발송 — 대화·캠페인 설계 없이 한 통을 즉시 보내는 단순
+       폼(2026-09-08, hondi.net의 옛 /mail.html을 이 웹앱으로 흡수).
+       "새 캠페인"과 달리 K-Mail이 수신자·제목·본문을 설계하지 않고
+       입력한 그대로 즉시 발송한다 — 받은 메일함 열람 기능은 없음.
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-quicksend" class="tab-panel">
+    <div class="card">
+      <h2>빠른 발송</h2>
+      <div class="sub">외부 이메일 주소로 한 통을 바로 보냅니다. 캠페인으로 설계하지 않는 단순 발송이며, 답장은 상대방의 실제 이메일로 직접 받으셔야 합니다(이 화면에는 받은편지함이 없습니다).</div>
+      <div class="field"><label>받는 사람</label><input type="email" id="qs-to" placeholder="example@email.com"></div>
+      <div class="field"><label>제목</label><input type="text" id="qs-subject" placeholder="제목"></div>
+      <div class="field"><label>내용</label><textarea id="qs-text" rows="8" placeholder="내용을 입력하세요" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-family:inherit;font-size:13.5px"></textarea></div>
+      <div class="field">
+        <label>첨부파일 <span style="color:var(--hint);font-weight:400">(선택, 최대 25MB)</span></label>
+        <input type="file" id="qs-file">
+        <div id="qs-attach-list" style="font-size:12px;color:var(--sub);margin-top:6px"></div>
+      </div>
+      <div id="qs-err" class="errbox" style="display:none"></div>
+      <div id="qs-ok" style="display:none;color:var(--grn);font-size:12.5px;margin-top:8px"></div>
+      <div style="margin-top:10px"><button class="btn btn-primary" id="qs-submit-btn" onclick="_qsSendMail()">보내기</button></div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -331,6 +356,93 @@ async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) 
     throw e;
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// 빠른 발송 — hondi.net /mail.html에서 이관(2026-09-08). 옛 페이지는
+// 지갑 서명(guid/pubkey/signature)으로 /mail/send·/kmail/attachments/upload를
+// 직접 불렀지만, 이 웹앱은 지갑 SSO를 쓰지 않으므로(주석 참고, 2026-09-06)
+// 두 엔드포인트 모두 kmailApi()의 phone_verify_token 인증으로 호출한다
+// (서버 쪽 _kAuth.resolveGuid가 이미 두 인증 방식을 함께 지원하도록
+// 마이그레이션됨 — hondi PR 참고).
+let _qsPendingAttachments = []; // { id, filename } — 업로드 완료된 것만
+
+function _qsFileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function _qsRenderAttachList() {
+  const el = document.getElementById('qs-attach-list');
+  el.textContent = _qsPendingAttachments.length
+    ? '첨부됨: ' + _qsPendingAttachments.map(a => a.filename).join(', ')
+    : '';
+}
+
+async function _qsHandleFileSelect() {
+  const input = document.getElementById('qs-file');
+  const file = input.files[0];
+  if (!file) return;
+  const err = document.getElementById('qs-err');
+  err.style.display = 'none';
+  try {
+    const file_base64 = await _qsFileToBase64(file);
+    const data = await kmailApi('/kmail/attachments/upload', {
+      method: 'POST',
+      body: { file_base64, filename: file.name, content_type: file.type },
+    });
+    _qsPendingAttachments.push({ id: data.attachment_id, filename: file.name });
+    _qsRenderAttachList();
+  } catch (e) {
+    err.textContent = '첨부 업로드 실패: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    input.value = '';
+  }
+}
+
+async function _qsSendMail() {
+  const err = document.getElementById('qs-err');
+  const ok = document.getElementById('qs-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+
+  const to = document.getElementById('qs-to').value.trim();
+  const subject = document.getElementById('qs-subject').value.trim();
+  const text = document.getElementById('qs-text').value.trim();
+  if (!to || !subject || !text) {
+    err.textContent = '받는 사람·제목·내용을 모두 입력해 주세요.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('qs-submit-btn');
+  btn.disabled = true;
+  try {
+    const data = await kmailApi('/mail/send', {
+      method: 'POST',
+      body: { to, subject, text, attachment_ids: _qsPendingAttachments.map(a => a.id) },
+    });
+    ok.textContent = data.quota?.charged_gdc
+      ? `메일을 보냈습니다. (5일 평균 발송한도 초과로 ₮${data.quota.charged_gdc} 부과됨)`
+      : '메일을 보냈습니다.';
+    ok.style.display = 'block';
+    document.getElementById('qs-to').value = '';
+    document.getElementById('qs-subject').value = '';
+    document.getElementById('qs-text').value = '';
+    _qsPendingAttachments = [];
+    _qsRenderAttachList();
+  } catch (e) {
+    err.textContent = '발송 실패: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('qs-file').addEventListener('change', _qsHandleFileSelect);
 
 // /kmail/chat 호출 — 서버가 { reply, action } 구조로 응답한다
 async function kmailChatCall(messages) {
