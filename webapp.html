@@ -122,6 +122,15 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-send-btn:disabled{opacity:.35;cursor:not-allowed}
 .chat-send-btn:not(:disabled):hover{transform:scale(1.06)}
 .chat-composer{position:sticky;bottom:14px;background:var(--bg);padding-top:10px}
+.chat-icon-btn{flex-shrink:0;width:32px;height:32px;margin-bottom:2px;border-radius:50%;border:none;background:transparent;color:var(--hint);display:flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
+.chat-icon-btn:hover{background:var(--pri-bg);color:var(--pri)}
+.chat-icon-btn.recording{color:var(--red);background:var(--rbg);animation:cmpMicPulse 1.1s ease-in-out infinite}
+@keyframes cmpMicPulse{0%,100%{box-shadow:0 0 0 0 rgba(192,28,40,.35)}50%{box-shadow:0 0 0 6px rgba(192,28,40,0)}}
+.chat-attach-list{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 8px}
+.chat-attach-chip{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--bdr);border-radius:14px;padding:4px 8px 4px 12px;font-size:12px;color:var(--sub)}
+.chat-attach-chip.uploading{color:var(--hint)}
+.chat-attach-chip button{border:none;background:transparent;color:var(--hint);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+.chat-attach-chip button:hover{color:var(--red)}
 .chat-thread-header{display:flex;justify-content:flex-end;margin-bottom:8px}
 .chat-thread-header button{background:var(--sur);border:1px solid var(--bdr);color:var(--sub);padding:6px 12px;font-size:12px;border-radius:var(--r)}
 
@@ -181,8 +190,16 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
     <div class="errbox" id="cmp-err" style="display:none"></div>
 
     <div class="chat-composer">
+      <div class="chat-attach-list" id="cmp-attach-list"></div>
       <div class="chat-inputbar">
+        <input type="file" id="cmp-file" style="display:none">
+        <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="파일 첨부" onclick="document.getElementById('cmp-file').click()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
         <textarea id="cmp-input" class="chat-textarea" rows="1" placeholder="예: 다음 주 세미나 초청 메일을 서울대 컴퓨터공학부 교수님들께 보내고 싶어요"></textarea>
+        <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
         <button type="button" class="chat-send-btn" id="cmp-send-btn" title="전송" disabled onclick="_cmpChatSend()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
@@ -445,12 +462,17 @@ async function _qsSendMail() {
 document.getElementById('qs-file').addEventListener('change', _qsHandleFileSelect);
 
 // /kmail/chat 호출 — 서버가 { reply, action } 구조로 응답한다
-async function kmailChatCall(messages) {
+async function kmailChatCall(messages, attachment_ids) {
   await KAuth.ensureLogin();
   const doRequest = async () => {
+    const body = { messages, phone_verify_token: KAuth.getToken() };
+    // attachment_ids: 이번 턴에 새로 첨부된 파일 id 목록(있을 때만 포함).
+    // 서버가 아직 이 필드를 안 쓰더라도 메시지 본문의 [첨부파일: ...]
+    // 표기로 맥락은 전달되므로 안전하게 동작한다.
+    if (attachment_ids && attachment_ids.length) body.attachment_ids = attachment_ids;
     const res = await fetch(KMAIL_CHAT_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, phone_verify_token: KAuth.getToken() }),
+      body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
@@ -471,6 +493,92 @@ async function kmailChatCall(messages) {
 // 새 캠페인 — 대화형 채팅 컨트롤러
 // ══════════════════════════════════════════════════════════════
 const _cmpChat = { messages: [] };
+let _cmpPendingAttachments = []; // { id, filename, uploading }
+
+// ── 파일 첨부 (입력창 오른쪽 아이콘) ──────────────────────────
+// 업로드 자체는 빠른 발송과 동일한 /kmail/attachments/upload를 재사용한다.
+function _cmpRenderAttachList() {
+  const el = document.getElementById('cmp-attach-list');
+  el.innerHTML = _cmpPendingAttachments.map((a, i) => `
+    <span class="chat-attach-chip${a.uploading ? ' uploading' : ''}">
+      📎 ${escHtml(a.filename)}${a.uploading ? ' (업로드 중…)' : ''}
+      <button type="button" title="제거" onclick="_cmpRemoveAttachment(${i})">✕</button>
+    </span>`).join('');
+}
+
+function _cmpRemoveAttachment(i) {
+  _cmpPendingAttachments.splice(i, 1);
+  _cmpRenderAttachList();
+}
+
+async function _cmpHandleFileSelect() {
+  const input = document.getElementById('cmp-file');
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const err = document.getElementById('cmp-err');
+  err.style.display = 'none';
+  const entry = { id: null, filename: file.name, uploading: true };
+  _cmpPendingAttachments.push(entry);
+  _cmpRenderAttachList();
+  try {
+    const file_base64 = await _qsFileToBase64(file);
+    const data = await kmailApi('/kmail/attachments/upload', {
+      method: 'POST',
+      body: { file_base64, filename: file.name, content_type: file.type },
+    });
+    entry.id = data.attachment_id;
+    entry.uploading = false;
+  } catch (e) {
+    _cmpPendingAttachments = _cmpPendingAttachments.filter(a => a !== entry);
+    err.textContent = '첨부 업로드 실패: ' + e.message;
+    err.style.display = '';
+  } finally {
+    _cmpRenderAttachList();
+  }
+}
+document.getElementById('cmp-file').addEventListener('change', _cmpHandleFileSelect);
+
+// ── 음성 입력 (입력창 왼쪽 마이크) ────────────────────────────
+// 브라우저 내장 Web Speech API 사용 — 별도 서버 호출 없이 실시간 인식.
+const _cmpSpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let _cmpRecognition = null;
+let _cmpMicOn = false;
+let _cmpMicBaseText = '';
+
+function _cmpToggleMic() {
+  const btn = document.getElementById('cmp-mic-btn');
+  const err = document.getElementById('cmp-err');
+  if (!_cmpSpeechAPI) {
+    err.textContent = '이 브라우저는 음성 입력을 지원하지 않습니다. Chrome을 사용해 주세요.';
+    err.style.display = '';
+    return;
+  }
+  if (_cmpMicOn) { _cmpRecognition && _cmpRecognition.stop(); return; }
+
+  const input = document.getElementById('cmp-input');
+  _cmpMicBaseText = input.value ? input.value + ' ' : '';
+  _cmpRecognition = new _cmpSpeechAPI();
+  _cmpRecognition.lang = 'ko-KR';
+  _cmpRecognition.continuous = true;
+  _cmpRecognition.interimResults = true;
+
+  _cmpRecognition.onstart = () => { _cmpMicOn = true; btn.classList.add('recording'); btn.title = '음성 입력 중지'; };
+  _cmpRecognition.onresult = (e) => {
+    let text = '';
+    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+    input.value = _cmpMicBaseText + text;
+    _kmailAutoResize(input); _cmpChatUpdateSendState();
+  };
+  _cmpRecognition.onerror = (e) => {
+    if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      err.textContent = '음성 인식 오류: ' + e.error;
+      err.style.display = '';
+    }
+  };
+  _cmpRecognition.onend = () => { _cmpMicOn = false; btn.classList.remove('recording'); btn.title = '음성 입력'; };
+  _cmpRecognition.start();
+}
 
 function _cmpChatUpdateSendState() {
   const input = document.getElementById('cmp-input');
@@ -518,24 +626,35 @@ function _cmpChatStartNew() {
   document.getElementById('cmp-thread-header').style.display = 'none';
   document.getElementById('cmp-landing').style.display = '';
   document.getElementById('cmp-err').style.display = 'none';
+  if (_cmpMicOn) _cmpRecognition && _cmpRecognition.stop();
+  _cmpPendingAttachments = []; _cmpRenderAttachList();
   const input = document.getElementById('cmp-input');
   input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
 }
 
-async function _cmpChatSendText(text) {
+async function _cmpChatSendText(text, attachments) {
   document.getElementById('cmp-landing').style.display = 'none';
   document.getElementById('cmp-thread-header').style.display = 'flex';
   const err = document.getElementById('cmp-err');
   err.style.display = 'none';
 
-  _cmpChat.messages.push({ role: 'user', content: text });
-  _cmpAppendBubble('user', { text });
+  // 첨부파일이 있으면 대화 텍스트에 파일명을 남겨 K-Mail이 맥락(예:
+  // "이 파일 첨부해서 보내줘")을 이해하고, attachment_ids는 별도
+  // 필드로도 함께 보내 백엔드가 바로 사용할 수 있게 한다.
+  const attachNote = attachments && attachments.length
+    ? `\n\n[첨부파일: ${attachments.map(a => a.filename).join(', ')}]`
+    : '';
+  const fullText = text + attachNote;
+
+  _cmpChat.messages.push({ role: 'user', content: fullText });
+  _cmpAppendBubble('user', { text: text + (attachments && attachments.length ? '\n📎 ' + attachments.map(a => a.filename).join(', ') : '') });
 
   const loading = document.getElementById('cmp-loading');
   document.getElementById('cmp-send-btn').disabled = true;
   loading.style.display = 'flex';
   try {
-    const data = await kmailChatCall(_cmpChat.messages);
+    const attachment_ids = (attachments || []).map(a => a.id).filter(Boolean);
+    const data = await kmailChatCall(_cmpChat.messages, attachment_ids);
     _cmpChat.messages.push({ role: 'assistant', content: data.reply });
     const badge = data.action && _CMP_ACTION_BADGE[data.action.type];
     _cmpAppendBubble('assistant', { md: data.reply, badge });
@@ -552,9 +671,17 @@ async function _cmpChatSendText(text) {
 async function _cmpChatSend() {
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();
+  const attachments = _cmpPendingAttachments.filter(a => !a.uploading);
   if (!text) return;
+  if (_cmpPendingAttachments.some(a => a.uploading)) {
+    const err = document.getElementById('cmp-err');
+    err.textContent = '첨부파일 업로드가 끝날 때까지 잠시만 기다려 주세요.';
+    err.style.display = '';
+    return;
+  }
   input.value = ''; _kmailAutoResize(input);
-  await _cmpChatSendText(text);
+  _cmpPendingAttachments = []; _cmpRenderAttachList();
+  await _cmpChatSendText(text, attachments);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
