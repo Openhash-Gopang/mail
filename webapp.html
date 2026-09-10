@@ -75,6 +75,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .badge-rejected{background:#EDEFF3;color:var(--sub)}
 .badge-pending{background:var(--obg);color:var(--org)}
 .badge-none{background:#EDEFF3;color:var(--hint)}
+.badge-draft{background:var(--obg);color:var(--org)}
 .badge-closed{background:var(--gbg);color:var(--grn)}
 
 .errbox{background:var(--rbg);border:1px solid #F5B5B0;color:var(--red);border-radius:var(--r);padding:12px 15px;font-size:12.5px;margin:10px 0}
@@ -268,8 +269,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
       <div id="camp-digest-box" style="display:none"></div>
       <div style="margin-top:16px">
         <button class="btn btn-primary btn-sm" onclick="_campAskChatAboutThis()">💬 K-Mail에게 이 캠페인 자세히 물어보기</button>
+        <button class="btn btn-primary btn-sm" id="camp-resume-btn" style="display:none" onclick="_campResumeConversation()">🔄 이어서 대화하기</button>
       </div>
-      <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 "새 캠페인" 탭으로 이동해 이 캠페인에 대해 바로 물어봅니다.</div>
+      <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 "새 캠페인" 탭으로 이동해 이 캠페인에 대해 바로 물어봅니다. "진행 중(초안)" 상태인 캠페인은 "이어서 대화하기"로 지금까지 나눴던 대화를 그대로 불러와 이어갈 수 있습니다.</div>
     </div>
   </div>
 
@@ -777,7 +779,7 @@ function _campFilterApply() {
   if (!filtered.length) { itemsEl.innerHTML = ''; emptyEl.style.display = ''; return; }
   emptyEl.style.display = 'none';
   itemsEl.innerHTML = filtered.map(c => {
-    const badges = [`<span class="badge badge-${escHtml(c.status)}">${escHtml(c.status)}</span>`];
+    const badges = [`<span class="badge badge-${escHtml(c.status)}">${escHtml(_campStatusLabel(c.status))}</span>`];
     if (c.closed_at) badges.push('<span class="badge badge-closed">종료됨</span>');
     else if (c.digest_status && c.digest_status !== 'none') badges.push(`<span class="badge badge-${escHtml(c.digest_status)}">보고 ${c.digest_status === 'sent' ? '완료' : '대기'}</span>`);
     return `
@@ -790,6 +792,13 @@ function _campFilterApply() {
   }).join('');
 }
 
+// 2026-09-10 신설 — status 원문(draft/scheduled/sent/failed)을 사람이
+// 읽을 한글 라벨로. 배지 CSS 클래스(badge-draft 등)는 그대로 status
+// 값을 쓰고, 이 함수는 텍스트만 바꾼다.
+function _campStatusLabel(status) {
+  return { draft: '진행 중(초안)', scheduled: '예약됨', sent: '발송 완료', failed: '발송 실패' }[status] || status;
+}
+
 async function _campOpenDetail(c) {
   _campCurrentDetail = c;
   document.getElementById('camp-list-card').style.display = 'none';
@@ -798,7 +807,7 @@ async function _campOpenDetail(c) {
   document.getElementById('camp-detail-title').textContent = _campDisplayName(c);
 
   const rows = [
-    ['상태', `<span class="badge badge-${escHtml(c.status)}">${escHtml(c.status)}</span>${c.closed_at ? ' <span class="badge badge-closed">종료됨</span>' : ''}`],
+    ['상태', `<span class="badge badge-${escHtml(c.status)}">${escHtml(_campStatusLabel(c.status))}</span>${c.closed_at ? ' <span class="badge badge-closed">종료됨</span>' : ''}`],
     ['수신자', `${c.recipients}명`],
     ['발송 시각', fmtDt(c.send_at)],
     ['회신 수집 마감', fmtDt(c.collect_replies_until)],
@@ -808,6 +817,7 @@ async function _campOpenDetail(c) {
   if (c.closed_at) rows.push(['종료 시각', fmtDt(c.closed_at)]);
   if (c.kplan_plan_id) rows.push(['K-Plan 연결', `<code>${escHtml(c.kplan_plan_id)}</code>${c.kplan_checkpoint_label ? ' (' + escHtml(c.kplan_checkpoint_label) + ')' : ''}`]);
   document.getElementById('camp-detail-rows').innerHTML = rows.map(([k, v]) => `<div class="detail-row"><div class="dt">${escHtml(k)}</div><div class="dd">${v}</div></div>`).join('');
+  document.getElementById('camp-resume-btn').style.display = c.status === 'draft' ? '' : 'none';
 
   const digestLoading = document.getElementById('camp-digest-loading');
   const digestBox = document.getElementById('camp-digest-box');
@@ -854,6 +864,50 @@ async function _campAskChatAboutThis() {
   document.getElementById('cmp-input').value = '';
   await _cmpChatSendText(q);
 }
+
+// 2026-09-10 신설 — draft(진행 중) 캠페인의 대화를 그대로 불러와
+// 이어간다. 그동안 대화 전문은 kmail_campaign_messages에 계속
+// 기록되고 있었지만, 새 세션(브라우저를 새로 열거나 "+ 새 대화")에서는
+// 그걸 다시 불러오는 경로가 없어 K-Mail이 이전 내용을 전혀 몰랐다 —
+// "기록은 되는데 다시 못 불러온다"는 반쪽짜리 상태였다. 이 함수가
+// /kmail/campaigns/messages에서 저장된 전문을 가져와 대화창에 그대로
+// 다시 그리고, _cmpChat.messages와 campaignId도 채워서 다음 턴부터
+// K-Mail이 전체 맥락(수신자 명단, 본문 초안, 지금까지의 결정 등)을
+// 다시 아는 상태로 이어받는다.
+async function _campResumeConversation() {
+  if (!_campCurrentDetail || _campCurrentDetail.status !== 'draft') return;
+  const c = _campCurrentDetail;
+  _switchTab('compose');
+  _cmpChatStartNew();
+  document.getElementById('cmp-landing').style.display = 'none';
+  document.getElementById('cmp-thread-header').style.display = 'flex';
+  const err = document.getElementById('cmp-err');
+  err.style.display = 'none';
+  const loading = document.getElementById('cmp-loading');
+  loading.style.display = 'flex';
+  try {
+    const data = await kmailApi('/kmail/campaigns/messages', { query: { campaign_id: c.id } });
+    const items = data.items || [];
+    if (items.length === 0) {
+      err.textContent = '이 캠페인에는 저장된 대화 기록이 없습니다.';
+      err.style.display = '';
+      return;
+    }
+    for (const m of items) {
+      _cmpChat.messages.push({ role: m.role, content: m.content });
+      if (m.role === 'user') _cmpAppendBubble('user', { text: m.content });
+      else _cmpAppendBubble('assistant', { md: m.content });
+    }
+    _cmpChat.campaignId = c.id;
+  } catch (e) {
+    err.textContent = '대화 기록을 불러오지 못했습니다: ' + e.message;
+    err.style.display = '';
+  } finally {
+    loading.style.display = 'none';
+    _cmpChatUpdateSendState();
+  }
+}
+
 </script>
 </body>
 </html>
