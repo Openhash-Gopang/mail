@@ -975,15 +975,18 @@ async function _campAskChatAboutThis() {
   await _cmpChatSendText(q);
 }
 
-// 2026-09-10 신설 — draft(진행 중) 캠페인의 대화를 그대로 불러와
-// 이어간다. 그동안 대화 전문은 kmail_campaign_messages에 계속
-// 기록되고 있었지만, 새 세션(브라우저를 새로 열거나 "+ 새 대화")에서는
-// 그걸 다시 불러오는 경로가 없어 K-Mail이 이전 내용을 전혀 몰랐다 —
-// "기록은 되는데 다시 못 불러온다"는 반쪽짜리 상태였다. 이 함수가
-// /kmail/campaigns/messages에서 저장된 전문을 가져와 대화창에 그대로
-// 다시 그리고, _cmpChat.messages와 campaignId도 채워서 다음 턴부터
-// K-Mail이 전체 맥락(수신자 명단, 본문 초안, 지금까지의 결정 등)을
-// 다시 아는 상태로 이어받는다.
+// 2026-09-11 개정 — 재개 방식을 "대화 전문 재생"에서 "압축 상태
+// 불러오기"로 바꿨다. 이전 버전은 kmail_campaign_messages에 쌓인
+// 대화 전문(수백 개 메시지)을 그대로 다시 읽어들여 _cmpChat.messages를
+// 채웠는데, 그러면 재개할 때마다 대화가 다시 원래 크기로 시작돼
+// 컨텍스트 한도(worker.js KMAIL_MAX_APPROX_CHARS)에 금방 다시
+// 부딪혔다(주피터 지시로 확인된 실사용 문제). 이제는
+// /kmail/campaigns/draft-state(캠페인 레코드 자체에 체크포인트된
+// 압축 상태 — 제목·본문·수신자 목록)만 불러와 짧은 요약 메시지
+// 하나로 대화를 다시 시작한다. 전체 대화 기록이 필요하면
+// "전체 대화 기록 보기"로 별도 열람 가능 — 다만 그건 읽기 전용이고
+// _cmpChat.messages에는 안 들어간다(다시 서버로 보내는 대화 맥락을
+// 불리지 않기 위함).
 async function _campResumeConversation() {
   if (!_campCurrentDetail || _campCurrentDetail.status !== 'draft') return;
   const c = _campCurrentDetail;
@@ -996,25 +999,67 @@ async function _campResumeConversation() {
   const loading = document.getElementById('cmp-loading');
   loading.style.display = 'flex';
   try {
-    const data = await kmailApi('/kmail/campaigns/messages', { query: { campaign_id: c.id } });
-    const items = data.items || [];
-    if (items.length === 0) {
-      err.textContent = '이 캠페인에는 저장된 대화 기록이 없습니다.';
-      err.style.display = '';
-      return;
-    }
-    for (const m of items) {
-      _cmpChat.messages.push({ role: m.role, content: m.content });
-      if (m.role === 'user') _cmpAppendBubble('user', { text: m.content });
-      else _cmpAppendBubble('assistant', { md: m.content });
-    }
+    const data = await kmailApi('/kmail/campaigns/draft-state', { query: { campaign_id: c.id } });
+    const s = data.state;
+    const recipientLines = (s.recipients || []).slice(0, 20).map(r => `- ${r.name || '(이름 없음)'} <${r.email}>${r.org ? ` (${r.org})` : ''}`).join('\n');
+    const moreNote = s.recipient_count > 20 ? `\n...외 ${s.recipient_count - 20}명 더` : '';
+    const recap = [
+      `[캠페인 재개 — 압축 상태]`,
+      `제목: ${s.title || '(미정)'}`,
+      `메일 제목(subject): ${s.subject || '(미정)'}`,
+      `수신자: ${s.recipient_count}명${s.recipient_count ? '\n' + recipientLines + moreNote : ''}`,
+      s.body ? `본문(현재까지):\n${s.body}` : '본문: (아직 미정)',
+      `\n이 요약을 바탕으로 이어서 진행하세요. 대화 전문 전체가 아니라 이 압축 상태만 불러온 것입니다.`,
+    ].join('\n');
+
+    _cmpChat.messages.push({ role: 'assistant', content: recap });
+    _cmpAppendBubble('assistant', {
+      md: `📌 **캠페인을 압축 상태로 불러왔습니다.**\n\n- 제목: ${s.title || '(미정)'}\n- 메일 제목: ${s.subject || '(미정)'}\n- 수신자: ${s.recipient_count}명\n- 본문: ${s.body ? '확정본 있음' : '아직 없음'}\n\n이어서 말씀해주시면 됩니다.`,
+    });
     _cmpChat.campaignId = c.id;
+    _campRenderFullTranscriptLink(c.id);
   } catch (e) {
-    err.textContent = '대화 기록을 불러오지 못했습니다: ' + e.message;
+    err.textContent = '캠페인 상태를 불러오지 못했습니다: ' + e.message;
     err.style.display = '';
   } finally {
     loading.style.display = 'none';
     _cmpChatUpdateSendState();
+  }
+}
+
+// 필요할 때만 전체 대화 기록을 "읽기용"으로 펼친다 — _cmpChat.messages에는
+// 추가하지 않는다(다음 턴에 서버로 다시 보내는 대화 맥락을 불리지
+// 않기 위함). 순수하게 화면에 보여주기만 한다.
+function _campRenderFullTranscriptLink(campaignId) {
+  const thread = document.getElementById('cmp-thread');
+  const row = document.createElement('div');
+  row.className = 'chat-bubble-row assistant';
+  row.innerHTML = `<button type="button" class="btn btn-outline btn-sm" style="margin:4px 0" onclick="_campViewFullTranscriptInline('${campaignId}', this)">🔎 전체 대화 기록 보기(읽기 전용)</button>`;
+  thread.appendChild(row);
+  _cmpScrollToBottom();
+}
+
+async function _campViewFullTranscriptInline(campaignId, btn) {
+  btn.disabled = true;
+  btn.textContent = '불러오는 중…';
+  try {
+    const data = await kmailApi('/kmail/campaigns/messages', { query: { campaign_id: campaignId } });
+    const items = data.items || [];
+    const thread = document.getElementById('cmp-thread');
+    const divider = document.createElement('div');
+    divider.className = 'hint';
+    divider.style.textAlign = 'center';
+    divider.style.margin = '12px 0';
+    divider.textContent = `── 전체 기록 ${items.length}건(읽기 전용 — 대화에는 포함되지 않음) ──`;
+    thread.appendChild(divider);
+    for (const m of items) {
+      if (m.role === 'user') _cmpAppendBubble('user', { text: m.content });
+      else _cmpAppendBubble('assistant', { md: m.content });
+    }
+    btn.remove();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '전체 대화 기록 보기 실패 — 다시 시도';
   }
 }
 
