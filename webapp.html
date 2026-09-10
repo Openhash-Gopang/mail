@@ -16,6 +16,16 @@
 window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 </script>
 <script src="https://hondi.net/auth/k-service-auth-client.js"></script>
+<!-- 2026-09-10 신설 — 첨부파일(PDF·DOC·XLS) 텍스트 추출용. K-Mail이
+     쓰는 deepseek-v4-flash는 텍스트 전용(이미지·문서 첨부 입력 자체를
+     지원 안 함 — 실사용 중 "PDF를 못 읽는다" 문의로 확인됨)이라,
+     파일을 K-Mail에게 "읽히려면" 브라우저에서 미리 텍스트로 뽑아
+     대화 메시지에 텍스트로 넣어주는 것 외엔 방법이 없다. 세 파일
+     형식 모두 순수 브라우저 라이브러리로 처리(백엔드 Worker 쪽엔
+     번들링 부담 없음). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.12.2/mammoth.browser.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -485,15 +495,86 @@ async function kmailChatCall(messages, attachment_ids, campaign_id) {
 const _cmpChat = { messages: [], campaignId: null };
 let _cmpPendingAttachments = []; // { id, filename, uploading }
 
+// ── 첨부파일 텍스트 추출 (2026-09-10 신설) ───────────────────────
+// deepseek-v4-flash는 텍스트 전용 모델이라(이미지·문서 입력 자체를
+// 지원하지 않음 — 실사용 중 "PDF를 못 읽는다" 문의로 확인됨), 파일을
+// K-Mail에게 "읽히려면" 여기서 미리 텍스트로 뽑아 대화 메시지에 텍스트
+// 그대로 넣어주는 수밖에 없다. 업로드(실제 메일 첨부용, R2 저장)와는
+// 완전히 별개 경로 — 이건 오직 K-Mail이 내용을 이해하게 하기 위함.
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+// 파일 하나당 추출 텍스트 상한 — 여러 파일을 동시에 붙여도 대화
+// 전체가 서버 쪽 한도(1.5M자, worker.js KMAIL_MAX_APPROX_CHARS)를
+// 넘기지 않도록 하는 안전장치. 한 파일이 이 이상이면 앞부분만 반영.
+const _CMP_ATTACH_TEXT_MAX_CHARS = 150000;
+
+async function _extractPdfText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n\n';
+    if (text.length > _CMP_ATTACH_TEXT_MAX_CHARS) break;
+  }
+  return text.trim();
+}
+
+async function _extractDocxText(file) {
+  const buf = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: buf });
+  return (result.value || '').trim();
+}
+
+async function _extractXlsxText(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  let text = '';
+  for (const name of wb.SheetNames) {
+    const csv = XLSX.utils.sheet_to_csv(wb.Sheets[name]);
+    text += `## 시트: ${name}\n${csv}\n\n`;
+    if (text.length > _CMP_ATTACH_TEXT_MAX_CHARS) break;
+  }
+  return text.trim();
+}
+
+// 확장자로 방식을 고른다 — content_type은 브라우저·OS마다 들쭉날쭉해서
+// (예: .xlsx가 application/octet-stream으로 오는 경우가 흔함) 파일명
+// 확장자가 더 안정적이다.
+async function _extractAttachmentText(file) {
+  const name = (file.name || '').toLowerCase();
+  try {
+    if (name.endsWith('.pdf')) return { text: await _extractPdfText(file) };
+    if (name.endsWith('.docx')) return { text: await _extractDocxText(file) };
+    // 구버전 .doc(바이너리 포맷)는 mammoth가 지원하지 않는다 — .docx만
+    // 가능. 지어내지 않고 정직하게 "못 읽었다"고 표시한다.
+    if (name.endsWith('.doc')) return { text: '', unsupported: true };
+    if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) return { text: await _extractXlsxText(file) };
+    return null; // 이미지 등 — 텍스트 추출 대상 아님, 파일명만 전달
+  } catch (e) {
+    return { text: '', error: e.message };
+  }
+}
+
 // ── 파일 첨부 (입력창 오른쪽 아이콘) ──────────────────────────
 // 업로드 자체는 빠른 발송과 동일한 /kmail/attachments/upload를 재사용한다.
 function _cmpRenderAttachList() {
   const el = document.getElementById('cmp-attach-list');
-  el.innerHTML = _cmpPendingAttachments.map((a, i) => `
+  el.innerHTML = _cmpPendingAttachments.map((a, i) => {
+    let note = '';
+    if (a.uploading) note = ' (업로드 중…)';
+    else if (a.extractStatus === 'done') note = a.extractTruncated ? ' (내용 일부 반영됨)' : ' (내용 읽음 ✓)';
+    else if (a.extractStatus === 'unsupported') note = ' (.doc 미지원 — .docx로 다시 첨부해 주세요)';
+    else if (a.extractStatus === 'error') note = ' (내용 추출 실패)';
+    else if (a.extractStatus === 'empty') note = ' (텍스트 없음 — 스캔 이미지일 수 있음)';
+    return `
     <span class="chat-attach-chip${a.uploading ? ' uploading' : ''}">
-      📎 ${escHtml(a.filename)}${a.uploading ? ' (업로드 중…)' : ''}
+      📎 ${escHtml(a.filename)}${note}
       <button type="button" title="제거" onclick="_cmpRemoveAttachment(${i})">✕</button>
-    </span>`).join('');
+    </span>`;
+  }).join('');
 }
 
 function _cmpRemoveAttachment(i) {
@@ -508,17 +589,35 @@ async function _cmpHandleFileSelect() {
   if (!file) return;
   const err = document.getElementById('cmp-err');
   err.style.display = 'none';
-  const entry = { id: null, filename: file.name, uploading: true };
+  const entry = { id: null, filename: file.name, uploading: true, extractedText: '', extractStatus: 'pending' };
   _cmpPendingAttachments.push(entry);
   _cmpRenderAttachList();
   try {
     const file_base64 = await _qsFileToBase64(file);
-    const data = await kmailApi('/kmail/attachments/upload', {
+    const uploadPromise = kmailApi('/kmail/attachments/upload', {
       method: 'POST',
       body: { file_base64, filename: file.name, content_type: file.type },
     });
+    // 업로드(실제 메일 첨부용 — R2 저장)와 텍스트 추출(K-Mail이 내용을
+    // 읽기 위함)은 서로 독립적인 작업이라 동시에 진행한다.
+    const extractPromise = _extractAttachmentText(file);
+    const [data, extracted] = await Promise.all([uploadPromise, extractPromise]);
     entry.id = data.attachment_id;
     entry.uploading = false;
+    if (!extracted) {
+      entry.extractStatus = 'skipped'; // 이미지 등 — 텍스트 추출 대상 아님
+    } else if (extracted.unsupported) {
+      entry.extractStatus = 'unsupported';
+    } else if (extracted.error) {
+      entry.extractStatus = 'error';
+    } else {
+      let t = extracted.text || '';
+      const truncated = t.length > _CMP_ATTACH_TEXT_MAX_CHARS;
+      if (truncated) t = t.slice(0, _CMP_ATTACH_TEXT_MAX_CHARS);
+      entry.extractedText = t;
+      entry.extractTruncated = truncated;
+      entry.extractStatus = t ? 'done' : 'empty';
+    }
   } catch (e) {
     _cmpPendingAttachments = _cmpPendingAttachments.filter(a => a !== entry);
     err.textContent = '첨부 업로드 실패: ' + e.message;
@@ -630,11 +729,22 @@ async function _cmpChatSendText(text, attachments) {
   const err = document.getElementById('cmp-err');
   err.style.display = 'none';
 
-  // 첨부파일이 있으면 대화 텍스트에 파일명을 남겨 K-Mail이 맥락(예:
-  // "이 파일 첨부해서 보내줘")을 이해하고, attachment_ids는 별도
-  // 필드로도 함께 보내 백엔드가 바로 사용할 수 있게 한다.
+  // 첨부파일이 있으면 추출된 텍스트 내용을 그대로 대화 메시지에 담아
+  // K-Mail이 실제로 읽을 수 있게 한다(2026-09-10 — 파일명만 알려주던
+  // 이전 방식은 K-Mail이 내용을 전혀 몰랐다). 텍스트 추출이 안 된
+  // 파일(이미지, 구버전 .doc, 스캔 PDF 등)은 그 사실을 정직하게
+  // 밝혀서 K-Mail이 "내용을 지어내지" 않게 한다.
   const attachNote = attachments && attachments.length
-    ? `\n\n[첨부파일: ${attachments.map(a => a.filename).join(', ')}]`
+    ? '\n\n' + attachments.map(a => {
+        if (a.extractedText) {
+          return `[첨부파일: ${a.filename}]\n--- 파일 내용 시작 ---\n${a.extractedText}${a.extractTruncated ? '\n\n(※ 파일이 길어 앞부분만 반영됐습니다 — 전체가 필요하면 나눠서 알려주세요)' : ''}\n--- 파일 내용 끝 ---`;
+        }
+        const reason = a.extractStatus === 'unsupported' ? ' — 구버전 .doc 형식이라 내용을 자동으로 읽지 못했습니다(.docx로 다시 첨부해 주세요)'
+          : a.extractStatus === 'empty' ? ' — 텍스트를 추출하지 못했습니다(스캔 이미지 PDF일 수 있습니다)'
+          : a.extractStatus === 'error' ? ' — 내용 추출 중 오류가 발생했습니다'
+          : ''; // skipped(이미지 등)는 사유 없이 파일명만
+        return `[첨부파일: ${a.filename}${reason}]`;
+      }).join('\n\n')
     : '';
   const fullText = text + attachNote;
 
