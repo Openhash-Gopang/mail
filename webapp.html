@@ -462,7 +462,7 @@ async function _qsSendMail() {
 document.getElementById('qs-file').addEventListener('change', _qsHandleFileSelect);
 
 // /kmail/chat 호출 — 서버가 { reply, action } 구조로 응답한다
-async function kmailChatCall(messages, attachment_ids) {
+async function kmailChatCall(messages, attachment_ids, campaign_id) {
   await KAuth.ensureLogin();
   const doRequest = async () => {
     const body = { messages, phone_verify_token: KAuth.getToken() };
@@ -470,6 +470,10 @@ async function kmailChatCall(messages, attachment_ids) {
     // 서버가 아직 이 필드를 안 쓰더라도 메시지 본문의 [첨부파일: ...]
     // 표기로 맥락은 전달되므로 안전하게 동작한다.
     if (attachment_ids && attachment_ids.length) body.attachment_ids = attachment_ids;
+    // campaign_id(2026-09-10 신설): 이 대화가 이미 KMAIL_CAMPAIGN_START로
+    // 시작된 캠페인에 속해 있으면 매 턴 함께 보낸다 — 서버가 이걸 보고
+    // 대화 전문을 일자·시간별로 기록한다(주피터 지시).
+    if (campaign_id) body.campaign_id = campaign_id;
     const res = await fetch(KMAIL_CHAT_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -492,7 +496,7 @@ async function kmailChatCall(messages, attachment_ids) {
 // ══════════════════════════════════════════════════════════════
 // 새 캠페인 — 대화형 채팅 컨트롤러
 // ══════════════════════════════════════════════════════════════
-const _cmpChat = { messages: [] };
+const _cmpChat = { messages: [], campaignId: null };
 let _cmpPendingAttachments = []; // { id, filename, uploading }
 
 // ── 파일 첨부 (입력창 오른쪽 아이콘) ──────────────────────────
@@ -593,6 +597,7 @@ function _cmpScrollToBottom() {
 // 탭에서 다시 찾을 수 있다는 걸 안다.
 const _CMP_ACTION_BADGE = {
   campaign_created:    { cls: 'badge-scheduled', label: '📨 캠페인 예약됨 — "내 캠페인" 탭에서 확인' },
+  campaign_started:    { cls: 'badge-pending',   label: '📌 캠페인 시작됨(진행 중) — "내 캠페인" 탭에서 확인' },
   searched_contacts:   { cls: 'badge-pending',   label: '🔍 웹 검색 결과' },
   looked_up_contacts:  { cls: 'badge-none',      label: '📇 주소록 조회' },
   contacts_tagged:     { cls: 'badge-confirmed', label: '🏷️ 그룹 태그 적용' },
@@ -622,6 +627,7 @@ function _cmpAppendBubble(role, opts) {
 
 function _cmpChatStartNew() {
   _cmpChat.messages = [];
+  _cmpChat.campaignId = null;
   document.getElementById('cmp-thread').innerHTML = '';
   document.getElementById('cmp-thread-header').style.display = 'none';
   document.getElementById('cmp-landing').style.display = '';
@@ -654,11 +660,16 @@ async function _cmpChatSendText(text, attachments) {
   loading.style.display = 'flex';
   try {
     const attachment_ids = (attachments || []).map(a => a.id).filter(Boolean);
-    const data = await kmailChatCall(_cmpChat.messages, attachment_ids);
+    const data = await kmailChatCall(_cmpChat.messages, attachment_ids, _cmpChat.campaignId);
     _cmpChat.messages.push({ role: 'assistant', content: data.reply });
     const badge = data.action && _CMP_ACTION_BADGE[data.action.type];
     _cmpAppendBubble('assistant', { md: data.reply, badge });
-    if (data.action && data.action.type === 'campaign_created') { _campLoadedOnce = false; }
+    // campaign_id(2026-09-10 신설): 캠페인이 시작/확정되면 그 id를
+    // 대화가 끝날 때까지(또는 "+ 새 대화" 전까지) 기억해뒀다가 이후
+    // 모든 턴에 함께 보낸다 — 서버가 대화 전문을 계속 그 캠페인에
+    // 이어서 기록할 수 있게.
+    if (data.action && data.action.campaign_id) { _cmpChat.campaignId = data.action.campaign_id; }
+    if (data.action && (data.action.type === 'campaign_created' || data.action.type === 'campaign_started')) { _campLoadedOnce = false; }
   } catch (e) {
     err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.';
     err.style.display = '';
