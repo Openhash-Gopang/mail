@@ -908,6 +908,13 @@ async function _kaddrSend() {
   const loading = document.getElementById('kaddr-loading');
   document.getElementById('kaddr-send-btn').disabled = true;
   loading.style.display = 'flex';
+  // 2026-09-11 신설 — 방금 보낸 메시지가 길면(예: 대량 명단 붙여넣기)
+  // 말풍선 자체가 화면 한 개 분량을 넘어서, 위 _kaddrAppendBubble이
+  // 말풍선까지만 스크롤해도 그 아래 로딩 표시·입력창은 화면 밖에
+  // 남는다("입력 필드/응답 준비가 처음부터 보여야 하는데 스크롤을
+  // 더 내려야 보인다"는 실사용 버그 보고). 로딩 표시를 보여주는
+  // 이 시점에 한 번 더 스크롤해서 그걸 화면에 들어오게 한다.
+  requestAnimationFrame(() => loading.scrollIntoView({ behavior: 'smooth', block: 'end' }));
   try {
     const data = await _kaddrChatCall(_kaddrChat.messages);
     _kaddrChat.messages.push({ role: 'assistant', content: data.reply });
