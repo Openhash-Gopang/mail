@@ -225,6 +225,20 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-contacts" class="tab-panel">
     <div class="card">
+      <h2>AI로 일괄 관리 (K-Address)</h2>
+      <div class="sub">이름·이메일 명단을 통째로 붙여넣고 "등록해줘"처럼 말하면 한 번에 처리합니다. 수정·보완·승인/거부·병합·태그·삭제도 대화로 가능합니다 — 아래 수동 등록·목록과는 별개의 대화형 도구입니다.</div>
+      <div id="kaddr-thread"></div>
+      <div id="kaddr-loading" class="loading-row" style="display:none"><span class="spinner"></span>K-Address가 처리하고 있습니다…</div>
+      <div id="kaddr-err" class="errbox" style="display:none"></div>
+      <div class="chat-inputbar">
+        <textarea id="kaddr-input" class="chat-textarea" rows="1" placeholder="예: 아래 명단을 주소록에 등록해줘 / 소속 정보 없는 사람들 보여줘"></textarea>
+        <button type="button" class="chat-send-btn" id="kaddr-send-btn" title="전송" disabled onclick="_kaddrSend()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>새 연락처 등록</h2>
       <div class="sub">이름과 이메일을 입력하면 승인 대기(pending_review) 상태로 등록됩니다. 아래에서 확인 후 승인해야 캠페인에 쓸 수 있습니다.</div>
       <div class="field-row">
@@ -313,6 +327,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 <script>
 const PROXY = 'https://hondi-proxy.tensor-city.workers.dev';
 const KMAIL_CHAT_URL = PROXY + '/kmail/chat';
+// 2026-09-11 신설 — K-Address(SP-26) 대화형 주소록 관리, K-Mail과
+// 완전히 격리된 별도 엔드포인트.
+const KADDRESS_CHAT_URL = PROXY + '/kaddress/chat';
 
 function escHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDt(iso){ if(!iso) return '—'; try { return new Date(iso).toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch(e){ return iso; } }
@@ -796,6 +813,95 @@ document.addEventListener('DOMContentLoaded', () => {
   _kmailAutoResize(input);
   input.addEventListener('input', () => { _kmailAutoResize(input); _cmpChatUpdateSendState(); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _cmpChatSend(); } });
+});
+
+// ══════════════════════════════════════════════════════════════
+// K-Address(SP-26) — 대화형 주소록 일괄 관리(2026-09-11 신설).
+// K-Mail 채팅(/kmail/chat)과 완전히 격리된 별도 엔드포인트를 쓴다 —
+// 태그 체계도 다르고(KADDR_ 접두사), campaign_id 같은 K-Mail 전용
+// 개념도 없다. 이 채팅은 순수하게 주소록(kmail_contacts) 자체를
+// 관리하는 용도.
+// ══════════════════════════════════════════════════════════════
+const _kaddrChat = { messages: [] };
+
+async function _kaddrChatCall(messages) {
+  const res = await KAuth.fetchWithAuth(KADDRESS_CHAT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+function _kaddrUpdateSendState() {
+  const input = document.getElementById('kaddr-input');
+  document.getElementById('kaddr-send-btn').disabled = !input.value.trim();
+}
+
+const _KADDR_ACTION_BADGE = {
+  kaddr_saved:     { cls: 'badge-confirmed', label: '📇 주소록에 등록됨' },
+  kaddr_looked_up: { cls: 'badge-none',      label: '🔍 조회 결과' },
+  kaddr_updated:   { cls: 'badge-confirmed', label: '✏️ 정보 보완/갱신됨' },
+  kaddr_decided:   { cls: 'badge-confirmed', label: '✅ 승인/거부 처리됨' },
+  kaddr_merged:    { cls: 'badge-confirmed', label: '🔗 연락처 병합됨' },
+  kaddr_tagged:    { cls: 'badge-confirmed', label: '🏷️ 태그 적용됨' },
+  kaddr_deleted:   { cls: 'badge-none',      label: '🗑️ 주소록에서 제외됨' },
+};
+
+function _kaddrAppendBubble(role, opts) {
+  const thread = document.getElementById('kaddr-thread');
+  const row = document.createElement('div');
+  row.className = 'chat-bubble-row ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  if (role === 'user') {
+    bubble.textContent = opts.text;
+  } else {
+    if (opts.badge) bubble.innerHTML = `<span class="badge ${opts.badge.cls} chat-bubble-badge">${opts.badge.label}</span>`;
+    bubble.innerHTML += mdToHtml(opts.md || '');
+  }
+  row.appendChild(bubble);
+  thread.appendChild(row);
+}
+
+async function _kaddrSend() {
+  const input = document.getElementById('kaddr-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; _kmailAutoResize(input); _kaddrUpdateSendState();
+
+  const err = document.getElementById('kaddr-err');
+  err.style.display = 'none';
+  _kaddrChat.messages.push({ role: 'user', content: text });
+  _kaddrAppendBubble('user', { text });
+
+  const loading = document.getElementById('kaddr-loading');
+  document.getElementById('kaddr-send-btn').disabled = true;
+  loading.style.display = 'flex';
+  try {
+    const data = await _kaddrChatCall(_kaddrChat.messages);
+    _kaddrChat.messages.push({ role: 'assistant', content: data.reply });
+    const badge = data.action && _KADDR_ACTION_BADGE[data.action.type];
+    _kaddrAppendBubble('assistant', { md: data.reply, badge });
+    // 주소록이 바뀌는 액션이면 아래 목록도 새로고침 — 대화로 등록/수정한
+    // 결과가 바로 눈에 보이게.
+    if (data.action && ['kaddr_saved', 'kaddr_updated', 'kaddr_decided', 'kaddr_merged', 'kaddr_tagged', 'kaddr_deleted'].includes(data.action.type)) {
+      _ctLoad();
+    }
+  } catch (e) {
+    err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.';
+    err.style.display = '';
+  } finally {
+    loading.style.display = 'none';
+    _kaddrUpdateSendState();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('kaddr-input');
+  if (!input) return;
+  input.addEventListener('input', () => { _kmailAutoResize(input); _kaddrUpdateSendState(); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _kaddrSend(); } });
 });
 
 // ══════════════════════════════════════════════════════════════
