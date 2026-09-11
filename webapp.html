@@ -165,6 +165,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ct-table td.ct-email{color:var(--pri);word-break:break-all}
 .ct-table td.ct-actions{white-space:nowrap;text-align:right}
 .ct-table-wrap{overflow-x:auto}
+/* 2026-09-11 신설 — 카테고리 요약 화면(주소록 규모 확대 대비). */
+.ct-cat-list{display:flex;flex-wrap:wrap;gap:8px}
+.ct-cat-item{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--bdr);border-radius:999px;background:#fff;font-size:12.5px;cursor:pointer;color:var(--txt)}
+.ct-cat-item:hover{border-color:var(--pri);color:var(--pri)}
+.ct-cat-count{background:var(--bg2, #F2F4F3);border-radius:999px;padding:1px 8px;font-size:11.5px;color:var(--hint);font-weight:700}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .filter-row input,.filter-row select{font-size:12.5px;padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff}
 .filter-row input[type=text]{flex:1;min-width:140px}
@@ -276,18 +281,20 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
     <div class="card">
       <h2>주소록</h2>
-      <div class="sub">K-Mail과의 대화 중 검색으로 찾은 후보도 여기 승인 대기로 올라옵니다 — "승인 대기" 필터로 확인하고 승인해 주세요.</div>
+      <div class="sub">K-Mail과의 대화 중 검색으로 찾은 후보도 여기 승인 대기로 올라옵니다 — "승인 대기" 필터로 확인하고 승인해 주세요. 검색어가 없으면 카테고리별 건수만 보여주고, 검색하면 카테고리와 무관하게 전체에서 바로 찾습니다.</div>
       <div class="filter-row">
-        <select id="ct-filter-status" onchange="_ctLoad()">
+        <select id="ct-filter-status" onchange="_ctFilterChanged()">
           <option value="all">전체 상태</option>
           <option value="confirmed" selected>확인됨(발송 가능)</option>
           <option value="pending_review">승인 대기</option>
           <option value="rejected">거부됨</option>
         </select>
-        <input type="text" id="ct-filter-q" placeholder="이름·이메일·소속·태그 검색" oninput="_ctSearchDebounced()">
+        <input type="text" id="ct-filter-q" placeholder="상세 검색 — 이름·이메일·소속·직책·주소·태그" oninput="_ctSearchDebounced()">
       </div>
+      <div id="ct-cat-back" style="display:none;margin:8px 0"><button type="button" class="btn btn-outline btn-sm" onclick="_ctShowCategories()">← 카테고리 목록으로</button></div>
       <div id="ct-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="ct-empty" style="display:none;font-size:12.5px;color:var(--hint)">해당 조건의 연락처가 없습니다.</div>
+      <div id="ct-categories"></div>
       <div id="ct-items"></div>
     </div>
   </div>
@@ -390,6 +397,12 @@ function _switchTab(name) {
 // 로그인 — 공용 인증 모듈(KAuth)이 담당 (2026-09-06)
 // ══════════════════════════════════════════════════════════════
 let _ctLoadedOnce = false, _campLoadedOnce = false;
+// 2026-09-11 신설 — 주소록이 수천~수만 건으로 커질 수 있다는 지적(주피터
+// 지시)에 대한 대응. null이면 카테고리 요약(건수만) 화면, 문자열이면
+// 그 카테고리 하나로 좁힌 목록 화면('__NONE__'은 "미분류" 버킷 예약어,
+// hondi PR feat/kaddress-csv-import 쪽 category-counts 엔드포인트와
+// 짝이 맞아야 함).
+let _ctViewCategory = null;
 let _campAllItems = [];
 
 // 공용 fetch 래퍼(REST 엔드포인트용) — KAuth.fetchWithAuth에 위임한다.
@@ -1091,35 +1104,98 @@ async function _ctAddNew() {
     document.getElementById('ct-new-org').value = '';
     document.getElementById('ct-new-phone').value = '';
     document.getElementById('ct-filter-status').value = 'pending_review';
+    // 카테고리 요약 화면으로 가면 방금 등록한 연락처가 안 보이므로
+    // (분류가 아직 안 됐거나 목록이 커서 카테고리 클릭이 필요해짐),
+    // 검색어에 이메일을 넣어 바로 찾은 결과를 보여준다.
+    document.getElementById('ct-filter-q').value = email;
     _ctLoad();
   } catch (e) { errEl.textContent = e.message || '등록에 실패했습니다.'; errEl.style.display = ''; }
 }
 
-const _ctSearchDebounced = debounce(() => _ctLoad(), 350);
+const _ctSearchDebounced = debounce(() => { _ctViewCategory = null; _ctLoad(); }, 350);
 
+// 상태(status) 드롭다운이 바뀌면 카테고리별 건수가 달라지므로 요약
+// 화면으로 되돌린다 — 예전 카테고리에 남아있으면 건수가 안 맞을 수 있음.
+function _ctFilterChanged() { _ctViewCategory = null; _ctLoad(); }
+function _ctOpenCategory(category) {
+  _ctViewCategory = category;
+  document.getElementById('ct-filter-q').value = '';
+  _ctLoad();
+}
+function _ctShowCategories() { _ctViewCategory = null; _ctLoad(); }
+
+function _ctRenderTable(items) {
+  // 2026-09-11 — 카드 나열 대신 표(테이블)로. 백엔드가 이미
+  // 소속→이름순으로 정렬해서 주므로(주피터 지시 — "무작위로
+  // 나열하면 안 됨"), 여기서는 그 순서 그대로 행으로 그린다.
+  return `
+    <div class="ct-table-wrap">
+      <table class="ct-table">
+        <thead><tr><th>소속</th><th>직위</th><th>이름</th><th>이메일</th><th>전화번호</th><th>주소</th><th>웹사이트</th><th>메모</th><th>상태</th><th></th></tr></thead>
+        <tbody>${items.map(c => _ctRenderRow(c)).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+// 2026-09-11 신설 — 주소록이 수천~수만 건에 이를 수 있어(주피터 지적)
+// 전체를 한 번에 나열하지 않는다. 검색어가 없으면 카테고리별 건수만
+// 먼저 보여주고(handleKmailContactsCategoryCounts, hondi PR
+// feat/kaddress-csv-import), 실제 목록은 카테고리를 클릭하거나 검색을
+// 써야 나온다 — 검색은 카테고리와 무관하게 전체에서 바로 찾는다.
 async function _ctLoad() {
   const status = document.getElementById('ct-filter-status').value;
   const q = document.getElementById('ct-filter-q').value.trim();
   const loadingEl = document.getElementById('ct-loading');
   const emptyEl = document.getElementById('ct-empty');
   const itemsEl = document.getElementById('ct-items');
-  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  const catsEl = document.getElementById('ct-categories');
+  const backEl = document.getElementById('ct-cat-back');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none';
+  itemsEl.innerHTML = ''; catsEl.innerHTML = '';
+
+  if (q) {
+    backEl.style.display = 'none';
+    try {
+      const data = await kmailApi('/kmail/contacts', { query: { status, q } });
+      const items = data.items || [];
+      if (!items.length) { emptyEl.style.display = ''; return; }
+      itemsEl.innerHTML = _ctRenderTable(items);
+    } catch (e) {
+      itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+    } finally { loadingEl.style.display = 'none'; }
+    return;
+  }
+
+  if (_ctViewCategory !== null) {
+    backEl.style.display = '';
+    try {
+      const data = await kmailApi('/kmail/contacts', { query: { status, category: _ctViewCategory } });
+      const items = data.items || [];
+      if (!items.length) { emptyEl.style.display = ''; return; }
+      const cap = items.length >= 200
+        ? `<div style="font-size:12px;color:var(--hint);margin-bottom:6px">최대 200건까지 표시됩니다 — 더 정확히 찾으려면 위 검색을 이용하세요.</div>`
+        : '';
+      itemsEl.innerHTML = cap + _ctRenderTable(items);
+    } catch (e) {
+      itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+    } finally { loadingEl.style.display = 'none'; }
+    return;
+  }
+
+  backEl.style.display = 'none';
   try {
-    const data = await kmailApi('/kmail/contacts', { query: { status, q } });
-    const items = data.items || [];
-    if (!items.length) { emptyEl.style.display = ''; return; }
-    // 2026-09-11 — 카드 나열 대신 표(테이블)로. 백엔드가 이미
-    // 소속→이름순으로 정렬해서 주므로(주피터 지시 — "무작위로
-    // 나열하면 안 됨"), 여기서는 그 순서 그대로 행으로 그린다.
-    itemsEl.innerHTML = `
-      <div class="ct-table-wrap">
-        <table class="ct-table">
-          <thead><tr><th>소속</th><th>직위</th><th>이름</th><th>이메일</th><th>전화번호</th><th>주소</th><th>웹사이트</th><th>메모</th><th>상태</th><th></th></tr></thead>
-          <tbody>${items.map(c => _ctRenderRow(c)).join('')}</tbody>
-        </table>
+    const data = await kmailApi('/kmail/contacts/category-counts', { query: { status } });
+    if (!data.total) { emptyEl.style.display = ''; return; }
+    const rows = [];
+    if (data.uncategorized > 0) rows.push({ category: '__NONE__', label: '미분류', count: data.uncategorized });
+    for (const c of (data.categories || [])) rows.push({ category: c.category, label: c.category, count: c.count });
+    catsEl.innerHTML = `
+      <div style="font-size:12.5px;color:var(--hint);margin-bottom:8px">전체 ${data.total}건 — 카테고리를 눌러 목록을 봅니다.</div>
+      <div class="ct-cat-list">
+        ${rows.map(r => `<button type="button" class="ct-cat-item" onclick='_ctOpenCategory(${JSON.stringify(r.category)})'><span>${escHtml(r.label)}</span><span class="ct-cat-count">${r.count}</span></button>`).join('')}
       </div>`;
   } catch (e) {
-    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+    catsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
   } finally { loadingEl.style.display = 'none'; }
 }
 
