@@ -1526,6 +1526,14 @@ async function _cmpChatSendText(text, attachments) {
         sourceNote: '캠페인 대화에서 방금 정리된 제목·본문입니다 — 이 캠페인의 실제 수신자와는 별개이며, 여기서 보내면 단건으로 발송됩니다.',
         switchTo: false,
       });
+    } else if (data.action && data.action.type === 'mail_id_setup_prompt') {
+      // 2026-09-12 신설 — K-Mail이 "메일 ID를 아직 안 정했다"고 판단해
+      // 낸 신호(SP §2-14). 실제 저장은 안 하고 화면 전환만 한다 — 사용자가
+      // "메일" 탭의 "내 메일 ID"에서 직접 자동생성/수동지정을 고른다.
+      if (confirm('아직 메일 ID를 설정하지 않으셨어요. 지금 설정 화면으로 이동할까요?')) {
+        _switchTab('mail');
+        _mailSwitchSub('idsettings');
+      }
     }
   } catch (e) {
     err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.';
