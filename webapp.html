@@ -252,6 +252,16 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
     </div>
 
     <div class="card">
+      <h2>CSV/엑셀 일괄 업로드</h2>
+      <div class="sub">CSV나 엑셀(.xlsx) 파일을 올리면 AI를 거치지 않고 바로 주소록에 등록합니다 — 첫 행은 헤더(이름/이메일/소속/부서/전화/직책/관계/주소/웹사이트/메모/태그/카테고리)로 인식하며, 이메일 열 하나만 있어도 됩니다. 소속명으로 분류 가능한 경우 카테고리를 자동으로 채웁니다(애매하면 빈 값으로 남김).</div>
+      <input type="file" id="ct-csv-file" accept=".csv,.xlsx,.xls" onchange="_ctCsvFileSelected(event)">
+      <div id="ct-csv-preview" style="display:none;font-size:12.5px;color:var(--hint);margin-top:6px"></div>
+      <div id="ct-csv-err" class="errbox" style="display:none"></div>
+      <div style="margin-top:6px;font-size:12.5px;color:var(--hint)"><label><input type="checkbox" id="ct-csv-pending"> 승인 대기(pending_review)로 등록 — 기본은 바로 확인됨(confirmed)</label></div>
+      <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-csv-upload-btn" disabled onclick="_ctCsvUpload()">업로드</button></div>
+    </div>
+
+    <div class="card">
       <h2>새 연락처 등록</h2>
       <div class="sub">이름과 이메일을 입력하면 승인 대기(pending_review) 상태로 등록됩니다. 아래에서 확인 후 승인해야 캠페인에 쓸 수 있습니다.</div>
       <div class="field-row">
@@ -944,6 +954,106 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════════════════════════════
 // 주소록
 // ══════════════════════════════════════════════════════════════
+
+// 2026-09-11 신설 — CSV/엑셀 일괄 업로드. K-Address(AI 대화)와 완전히
+// 별개 경로 — 파일 파싱부터 등록까지 AI 호출이 전혀 없다(구조적으로
+// 태그 잘림·거짓 완료·배치 크기 초과 사고가 발생할 수 없음). SheetJS는
+// 이미 첨부파일 텍스트 추출용으로 로드돼 있어(_extractXlsxText 참고)
+// 그대로 재사용한다.
+const CT_CSV_HEADER_MAP = {
+  email: ['이메일', '메일', 'email', 'e-mail'],
+  name: ['이름', '성명', 'name'],
+  org: ['소속', '기관', '회사', 'org', 'organization'],
+  dept: ['부서', 'dept', 'department'],
+  phone: ['전화', '전화번호', '연락처', 'phone'],
+  occupation: ['직책', '직위', 'occupation', 'position'],
+  relationship: ['관계', 'relationship'],
+  address: ['주소', 'address'],
+  website: ['웹사이트', '홈페이지', 'website', 'url'],
+  notes: ['메모', '비고', 'notes', 'note'],
+  category: ['카테고리', '분류', 'category'],
+  tags: ['태그', 'tags'],
+};
+function _ctCsvResolveField(header) {
+  const h = String(header || '').trim().toLowerCase();
+  if (!h) return null;
+  for (const [field, aliases] of Object.entries(CT_CSV_HEADER_MAP)) {
+    if (aliases.some(a => a.toLowerCase() === h)) return field;
+  }
+  return null;
+}
+let _ctCsvParsed = [];
+const _CT_CSV_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+async function _ctCsvFileSelected(event) {
+  const file = event.target.files[0];
+  const err = document.getElementById('ct-csv-err');
+  const preview = document.getElementById('ct-csv-preview');
+  const btn = document.getElementById('ct-csv-upload-btn');
+  err.style.display = 'none'; preview.style.display = 'none'; btn.disabled = true;
+  _ctCsvParsed = [];
+  if (!file) return;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    if (rows.length === 0) throw new Error('파일에 데이터 행이 없습니다.');
+
+    const headers = Object.keys(rows[0]);
+    const fieldByHeader = {};
+    for (const h of headers) { const f = _ctCsvResolveField(h); if (f) fieldByHeader[h] = f; }
+    if (!Object.values(fieldByHeader).includes('email')) {
+      throw new Error('이메일 열을 찾을 수 없습니다 — 첫 행(헤더)에 "이메일" 또는 "email" 열이 있어야 합니다.');
+    }
+
+    let validCount = 0;
+    for (const row of rows) {
+      const contact = {};
+      for (const [h, f] of Object.entries(fieldByHeader)) {
+        let v = row[h];
+        if (v === undefined || v === null) continue;
+        v = String(v).trim();
+        if (!v) continue;
+        if (f === 'tags') contact.tags = v.split(/[,;\s]+/).filter(Boolean);
+        else contact[f] = v;
+      }
+      if (contact.email && _CT_CSV_EMAIL_RE.test(contact.email)) validCount++;
+      _ctCsvParsed.push(contact);
+    }
+    preview.textContent = `${rows.length}행 인식됨 — 유효한 이메일 ${validCount}건 (인식된 열: ${Object.values(fieldByHeader).join(', ')})`;
+    preview.style.display = 'block';
+    btn.disabled = validCount === 0;
+  } catch (e) {
+    err.textContent = e.message || '파일을 읽는 중 오류가 발생했습니다.';
+    err.style.display = 'block';
+  }
+}
+async function _ctCsvUpload() {
+  const btn = document.getElementById('ct-csv-upload-btn');
+  const err = document.getElementById('ct-csv-err');
+  const preview = document.getElementById('ct-csv-preview');
+  err.style.display = 'none';
+  btn.disabled = true; const origLabel = btn.textContent; btn.textContent = '업로드 중…';
+  try {
+    const pending = document.getElementById('ct-csv-pending').checked;
+    const data = await kmailApi('/kmail/contacts/csv-import', {
+      method: 'POST',
+      body: { contacts: _ctCsvParsed, status: pending ? 'pending_review' : 'confirmed' },
+    });
+    preview.textContent = `등록 ${data.created}건 · 중복 건너뜀 ${data.skippedDup}건 · 형식 오류 ${data.invalidCount}건 · 카테고리 자동분류 ${data.autoCategorized}건`;
+    preview.style.display = 'block';
+    document.getElementById('ct-csv-file').value = '';
+    _ctCsvParsed = [];
+    _ctLoad();
+  } catch (e) {
+    err.textContent = e.message || '업로드에 실패했습니다.';
+    err.style.display = 'block';
+  } finally {
+    btn.textContent = origLabel;
+    btn.disabled = true;
+  }
+}
+
 async function _ctAddNew() {
   const name = document.getElementById('ct-new-name').value.trim();
   const email = document.getElementById('ct-new-email').value.trim();
