@@ -1028,25 +1028,47 @@ async function _ctCsvFileSelected(event) {
     err.style.display = 'block';
   }
 }
+// 2026-09-11 — 서버가 건마다 중복조회+등록을 순차 처리하므로(대량일수록
+// 오래 걸림), "업로드 중…"이라는 막연한 문구만 두면 진행 상황을 알 수
+// 없다(수백~수천 건에서 실제로 지적된 문제). CT_CSV_UPLOAD_BATCH_SIZE
+// 단위로 나눠 보내고, 배치가 끝날 때마다 지금까지 처리된 건수·등록/중복/
+// 오류/자동분류 누계를 실시간으로 갱신한다 — 중간에 실패해도 어디까지
+// 처리됐는지 오류 메시지에 남긴다.
+const CT_CSV_UPLOAD_BATCH_SIZE = 50;
 async function _ctCsvUpload() {
   const btn = document.getElementById('ct-csv-upload-btn');
   const err = document.getElementById('ct-csv-err');
   const preview = document.getElementById('ct-csv-preview');
   err.style.display = 'none';
-  btn.disabled = true; const origLabel = btn.textContent; btn.textContent = '업로드 중…';
+  btn.disabled = true; const origLabel = btn.textContent;
+  const pending = document.getElementById('ct-csv-pending').checked;
+  const total = _ctCsvParsed.length;
+  const chunks = [];
+  for (let i = 0; i < total; i += CT_CSV_UPLOAD_BATCH_SIZE) chunks.push(_ctCsvParsed.slice(i, i + CT_CSV_UPLOAD_BATCH_SIZE));
+  const agg = { created: 0, skippedDup: 0, invalidCount: 0, autoCategorized: 0 };
+  let doneCount = 0;
+  preview.style.display = 'block';
+  preview.textContent = `0/${total}건 처리 중…`;
   try {
-    const pending = document.getElementById('ct-csv-pending').checked;
-    const data = await kmailApi('/kmail/contacts/csv-import', {
-      method: 'POST',
-      body: { contacts: _ctCsvParsed, status: pending ? 'pending_review' : 'confirmed' },
-    });
-    preview.textContent = `등록 ${data.created}건 · 중복 건너뜀 ${data.skippedDup}건 · 형식 오류 ${data.invalidCount}건 · 카테고리 자동분류 ${data.autoCategorized}건`;
-    preview.style.display = 'block';
+    for (const chunk of chunks) {
+      btn.textContent = `업로드 중… (${doneCount}/${total})`;
+      const data = await kmailApi('/kmail/contacts/csv-import', {
+        method: 'POST',
+        body: { contacts: chunk, status: pending ? 'pending_review' : 'confirmed' },
+      });
+      agg.created += data.created || 0;
+      agg.skippedDup += data.skippedDup || 0;
+      agg.invalidCount += data.invalidCount || 0;
+      agg.autoCategorized += data.autoCategorized || 0;
+      doneCount += chunk.length;
+      preview.textContent = `${doneCount}/${total}건 처리 중… (등록 ${agg.created} · 중복 ${agg.skippedDup} · 형식오류 ${agg.invalidCount} · 자동분류 ${agg.autoCategorized})`;
+    }
+    preview.textContent = `완료 — 등록 ${agg.created}건 · 중복 건너뜀 ${agg.skippedDup}건 · 형식 오류 ${agg.invalidCount}건 · 카테고리 자동분류 ${agg.autoCategorized}건`;
     document.getElementById('ct-csv-file').value = '';
     _ctCsvParsed = [];
     _ctLoad();
   } catch (e) {
-    err.textContent = e.message || '업로드에 실패했습니다.';
+    err.textContent = `${e.message || '업로드에 실패했습니다.'} (처리 완료: ${doneCount}/${total}건 — 등록 ${agg.created}건, 여기까지는 이미 반영됨)`;
     err.style.display = 'block';
   } finally {
     btn.textContent = origLabel;
