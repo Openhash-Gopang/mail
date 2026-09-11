@@ -1230,6 +1230,23 @@ function _cmpScrollToBottom() {
 // action.type별로 눈에 띄는 배지를 붙인다 — 특히 campaign_created는
 // "이제 캠페인으로 기록됐다"는 걸 명확히 보여줘야 사용자가 "내 캠페인"
 // 탭에서 다시 찾을 수 있다는 걸 안다.
+// 2026-09-11 신설 — 조회 결과 배지에 정확한 건수를 직접 표시한다
+// (주피터 지시: "정확한 숫자를 표시하면 좋겠다"). 지금까지는 총
+// 건수를 AI가 답변 문장 속에서 말로 옮겼는데, 서버가 정확한 값을
+// 줘도 AI가 다시 서술하는 과정에서 틀릴 여지가 있었다(실사례 —
+// 실제 769건인데 "총 200건"이라 답한 사고, hondi PR
+// fix/kaddress-total-count-accuracy 참고). 배지는 AI 문장을 거치지
+// 않고 서버가 응답에 실어준 action.count를 그대로 붙이므로 항상
+// 정확하다.
+function _badgeWithCount(map, action) {
+  if (!action) return null;
+  const base = map[action.type];
+  if (!base) return null;
+  const countTypes = { kaddr_looked_up: true, looked_up_contacts: true };
+  if (typeof action.count !== 'number' || !countTypes[action.type]) return base;
+  return { cls: base.cls, label: `${base.label} (${action.count}건)` };
+}
+
 const _CMP_ACTION_BADGE = {
   campaign_created:    { cls: 'badge-scheduled', label: '📨 캠페인 예약됨 — "내 캠페인" 탭에서 확인' },
   campaign_started:    { cls: 'badge-pending',   label: '📌 캠페인 시작됨(진행 중) — "내 캠페인" 탭에서 확인' },
@@ -1308,7 +1325,7 @@ async function _cmpChatSendText(text, attachments) {
     const attachment_ids = (attachments || []).map(a => a.id).filter(Boolean);
     const data = await kmailChatCall(_cmpChat.messages, attachment_ids, _cmpChat.campaignId);
     _cmpChat.messages.push({ role: 'assistant', content: data.reply });
-    const badge = data.action && _CMP_ACTION_BADGE[data.action.type];
+    const badge = _badgeWithCount(_CMP_ACTION_BADGE, data.action);
     _cmpAppendBubble('assistant', { md: data.reply, badge });
     // campaign_id(2026-09-10 신설): 캠페인이 시작/확정되면 그 id를
     // 대화가 끝날 때까지(또는 "+ 새 대화" 전까지) 기억해뒀다가 이후
@@ -1462,7 +1479,7 @@ async function _kaddrSend() {
   try {
     const data = await _kaddrChatCall(_kaddrChat.messages);
     _kaddrChat.messages.push({ role: 'assistant', content: data.reply });
-    const badge = data.action && _KADDR_ACTION_BADGE[data.action.type];
+    const badge = _badgeWithCount(_KADDR_ACTION_BADGE, data.action);
     _kaddrAppendBubble('assistant', { md: data.reply, badge });
     // 주소록이 바뀌는 액션이면 아래 목록도 새로고침 — 대화로 등록/수정한
     // 결과가 바로 눈에 보이게.
