@@ -862,6 +862,13 @@ function _kaddrAppendBubble(role, opts) {
   }
   row.appendChild(bubble);
   thread.appendChild(row);
+  // 2026-09-11 신설 — 이 채팅창은 K-Mail 작성 탭과 달리 페이지 안에
+  // 다른 카드(새 연락처 등록·주소록 목록)와 함께 놓여 있어서,
+  // _cmpScrollToBottom()처럼 "문서 전체 맨 아래로" 스크롤하면 답변을
+  // 지나쳐 아래 카드까지 넘어가 버린다. 방금 추가된 말풍선만
+  // 화면에 들어오게 스크롤한다(빠졌던 부분 — 입력 후 답변이 안
+  // 보이고 페이지가 위로 튀는 버그로 보고됨).
+  requestAnimationFrame(() => row.scrollIntoView({ behavior: 'smooth', block: 'end' }));
 }
 
 async function _kaddrSend() {
