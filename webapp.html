@@ -855,7 +855,16 @@ function _kaddrAppendBubble(role, opts) {
   const bubble = document.createElement('div');
   bubble.className = 'chat-bubble';
   if (role === 'user') {
-    bubble.textContent = opts.text;
+    // 2026-09-11 신설 — 사용자가 표(스프레드시트)를 복사해 붙여넣으면
+    // 항목마다 줄바꿈이 하나씩 들어있는 경우가 많다. .chat-bubble의
+    // white-space:pre-wrap이 그 줄바꿈을 전부 강제 개행으로 지켜서,
+    // 폭이 짧은 줄 하나하나가 말풍선의 "자연스러운 너비"로 잡혀버려
+    // (align-items:flex-end로 내용 폭에 맞춰 줄어드는 구조) 화면
+    // 보고처럼 극단적으로 좁고 긴 말풍선이 됐다. 실제 서버로 보내는
+    // 내용(_kaddrChat.messages)은 원문 그대로 두고, 화면에 "보여주는"
+    // 텍스트만 문단 구분(빈 줄)은 유지하되 홑줄바꿈은 공백으로 합쳐
+    // 정상적으로 줄바꿈되게 한다.
+    bubble.textContent = opts.text.replace(/\n{2,}/g, '\u0000').replace(/\n/g, ' ').replace(/\u0000/g, '\n\n');
   } else {
     if (opts.badge) bubble.innerHTML = `<span class="badge ${opts.badge.cls} chat-bubble-badge">${opts.badge.label}</span>`;
     bubble.innerHTML += mdToHtml(opts.md || '');
