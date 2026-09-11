@@ -975,7 +975,7 @@ async function _ctLoad() {
     itemsEl.innerHTML = `
       <div class="ct-table-wrap">
         <table class="ct-table">
-          <thead><tr><th>소속</th><th>직위</th><th>이름</th><th>이메일</th><th>전화번호</th><th>상태</th><th></th></tr></thead>
+          <thead><tr><th>소속</th><th>직위</th><th>이름</th><th>이메일</th><th>전화번호</th><th>주소</th><th>웹사이트</th><th>메모</th><th>상태</th><th></th></tr></thead>
           <tbody>${items.map(c => _ctRenderRow(c)).join('')}</tbody>
         </table>
       </div>`;
@@ -991,6 +991,16 @@ function _ctRenderRow(c) {
     actions = `<button class="btn btn-primary btn-sm" onclick="_ctDecide('${c.id}','confirm')">승인</button>
       <button class="btn btn-outline btn-sm" onclick="_ctDecide('${c.id}','reject')">거부</button>`;
   }
+  // 2026-09-11 신설 — website는 클릭 가능한 링크로, notes는 길 수
+  // 있어 한 줄로 잘라 보여주고 title(hover 시 툴팁)로 전체 텍스트를
+  // 볼 수 있게 한다(테이블이 메모 하나 때문에 지나치게 넓어지는
+  // 걸 방지).
+  const websiteCell = c.website
+    ? `<a href="${escHtml(c.website)}" target="_blank" rel="noopener">바로가기</a>`
+    : '—';
+  const notesCell = c.notes
+    ? `<span title="${escHtml(c.notes)}" style="display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom">${escHtml(c.notes)}</span>`
+    : '—';
   return `
     <tr>
       <td class="ct-org">${escHtml(c.org || '—')}${c.dept ? ' · ' + escHtml(c.dept) : ''}</td>
@@ -998,6 +1008,9 @@ function _ctRenderRow(c) {
       <td><strong>${escHtml(c.name || '(이름 없음)')}</strong>${tags ? '<div>' + tags + '</div>' : ''}</td>
       <td class="ct-email">${escHtml(c.email || '—')}</td>
       <td>${escHtml(c.phone || '—')}</td>
+      <td>${escHtml(c.address || '—')}</td>
+      <td>${websiteCell}</td>
+      <td>${notesCell}</td>
       <td><span class="badge badge-${escHtml(c.status)}">${escHtml(c.status)}</span></td>
       <td class="ct-actions">${actions}</td>
     </tr>`;
