@@ -96,6 +96,14 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .tabbar button{background:none;border:none;padding:10px 16px;font-size:13px;font-weight:700;color:var(--hint);border-bottom:2px solid transparent;white-space:nowrap}
 .tabbar button.active{color:var(--pri);border-bottom-color:var(--pri)}
 .tab-panel{display:none}
+/* 2026-09-11 신설 — "메일" 탭 내부 서브네비(편지쓰기/임시보관함/
+   보낸메일함/받은메일함/태그별 보관함). 상위 .tabbar보다 한 단계
+   가볍게(밑줄 없이 필 형태) 둬서 시각적 위계가 헷갈리지 않게 한다. */
+.mail-subnav{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.mail-subnav button{background:#F2F4F3;border:1px solid transparent;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer}
+.mail-subnav button.active{background:var(--pri);color:#fff}
+.mail-sub{display:none}
+.mail-sub.active{display:block}
 .tab-panel.active{display:block}
 
 /* ══════════════════════════════════════════════════════════════
@@ -196,6 +204,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
     <button id="tab-btn-contacts" onclick="_switchTab('contacts')">주소록</button>
     <button id="tab-btn-campaigns" onclick="_switchTab('campaigns')">내 캠페인</button>
     <button id="tab-btn-quicksend" onclick="_switchTab('quicksend')">빠른 발송</button>
+    <button id="tab-btn-mail" onclick="_switchTab('mail')">메일</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -353,7 +362,81 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
       <div style="margin-top:10px"><button class="btn btn-primary" id="qs-submit-btn" onclick="_qsSendMail()">보내기</button></div>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       메일 — 편지쓰기/임시보관함/보낸메일함/받은메일함/태그별 보관함을
+       갖춘 전형적인 메일 클라이언트 화면(2026-09-11 신설). "빠른 발송"과
+       달리 받은편지함·초안·라벨(태그)까지 아우른다. 백엔드는 대부분
+       이미 있던 것(mailbox/drafts/message-state)을 재사용 — 이 웹앱이
+       지갑 SSO를 안 쓰는 것에 맞춰 공용 인증 게이트로 이관만 함(hondi
+       PR feat/kmail-tab-backend 참고).
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-mail" class="tab-panel">
+    <div class="card">
+      <div class="mail-subnav">
+        <button type="button" id="mail-subnav-compose" class="active" onclick="_mailSwitchSub('compose')">편지쓰기</button>
+        <button type="button" id="mail-subnav-drafts" onclick="_mailSwitchSub('drafts')">임시보관함</button>
+        <button type="button" id="mail-subnav-sent" onclick="_mailSwitchSub('sent')">보낸메일함</button>
+        <button type="button" id="mail-subnav-inbox" onclick="_mailSwitchSub('inbox')">받은메일함</button>
+        <button type="button" id="mail-subnav-tags" onclick="_mailSwitchSub('tags')">태그별 보관함</button>
+      </div>
+
+      <!-- 편지쓰기 -->
+      <div id="mail-sub-compose" class="mail-sub active">
+        <div id="mail-compose-editing-note" style="display:none;font-size:12px;color:var(--hint);margin-bottom:8px"></div>
+        <div class="field"><label>받는 사람</label><input type="email" id="mail-to" placeholder="example@email.com"></div>
+        <div class="field"><label>제목</label><input type="text" id="mail-subject" placeholder="제목"></div>
+        <div class="field"><label>내용</label><textarea id="mail-body" rows="10" placeholder="내용을 입력하세요" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-family:inherit;font-size:13.5px"></textarea></div>
+        <div class="field">
+          <label>첨부파일 <span style="color:var(--hint);font-weight:400">(선택, 최대 25MB)</span></label>
+          <input type="file" id="mail-file">
+          <div id="mail-attach-list" style="font-size:12px;color:var(--sub);margin-top:6px"></div>
+        </div>
+        <div id="mail-compose-err" class="errbox" style="display:none"></div>
+        <div id="mail-compose-ok" style="display:none;color:var(--grn);font-size:12.5px;margin-top:8px"></div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-outline" id="mail-draft-btn" onclick="_mailSaveDraft()">임시저장</button>
+          <button class="btn btn-primary" id="mail-send-btn" onclick="_mailSend()">보내기</button>
+          <button class="btn btn-outline" id="mail-discard-btn" style="display:none" onclick="_mailDiscardEditing()">새로 쓰기</button>
+        </div>
+      </div>
+
+      <!-- 임시보관함 -->
+      <div id="mail-sub-drafts" class="mail-sub">
+        <div class="sub">보내지 않고 저장해 둔 편지입니다. 눌러서 이어 쓰거나 삭제할 수 있습니다.</div>
+        <div id="mail-drafts-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+        <div id="mail-drafts-empty" style="display:none;font-size:12.5px;color:var(--hint)">임시보관함이 비어 있습니다.</div>
+        <div id="mail-drafts-items"></div>
+      </div>
+
+      <!-- 보낸메일함 -->
+      <div id="mail-sub-sent" class="mail-sub">
+        <div class="sub">이 웹앱(빠른 발송·메일 탭)에서 직접 보낸 메일만 모입니다 — 캠페인 발송은 "내 캠페인" 탭에서 확인해 주세요.</div>
+        <div id="mail-sent-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+        <div id="mail-sent-empty" style="display:none;font-size:12.5px;color:var(--hint)">보낸 메일이 없습니다.</div>
+        <div id="mail-sent-items"></div>
+      </div>
+
+      <!-- 받은메일함 -->
+      <div id="mail-sub-inbox" class="mail-sub">
+        <div class="sub">받은 메일에 라벨을 달면 "태그별 보관함"에서 모아볼 수 있습니다.</div>
+        <div id="mail-inbox-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+        <div id="mail-inbox-empty" style="display:none;font-size:12.5px;color:var(--hint)">받은 메일이 없습니다.</div>
+        <div id="mail-inbox-items"></div>
+      </div>
+
+      <!-- 태그별 보관함 -->
+      <div id="mail-sub-tags" class="mail-sub">
+        <div id="mail-tags-back" style="display:none;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" onclick="_mailTagsShowSummary()">← 태그 목록으로</button></div>
+        <div id="mail-tags-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+        <div id="mail-tags-empty" style="display:none;font-size:12.5px;color:var(--hint)">라벨이 달린 메일이 없습니다 — 받은메일함에서 라벨을 추가해 보세요.</div>
+        <div id="mail-tags-summary"></div>
+        <div id="mail-tags-items"></div>
+      </div>
+    </div>
+  </div>
 </main>
+
 
 <script>
 const PROXY = 'https://hondi-proxy.tensor-city.workers.dev';
@@ -391,6 +474,7 @@ function _switchTab(name) {
   document.getElementById('tab-btn-' + name).classList.add('active');
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
+  if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailSwitchSub('compose'); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -522,6 +606,341 @@ async function _qsSendMail() {
 }
 
 document.getElementById('qs-file').addEventListener('change', _qsHandleFileSelect);
+
+// ══════════════════════════════════════════════════════════════
+// 메일 탭 — 편지쓰기/임시보관함/보낸메일함/받은메일함/태그별 보관함
+// (2026-09-11 신설). 백엔드는 hondi PR feat/kmail-tab-backend에서
+// phone_verify_token을 지원하도록 이관된 기존 엔드포인트를 그대로
+// 쓴다 — mailbox(GET /kmail/mailbox), drafts(GET/POST /kmail/drafts,
+// POST /kmail/drafts/delete), 라벨(GET/POST /kmail/messages/state).
+// ══════════════════════════════════════════════════════════════
+let _mailLoadedOnce = false;
+let _mailEditingDraftId = null; // null이면 새 편지, 값이 있으면 그 초안을 수정 중
+let _mailPendingAttachments = []; // { id, filename }
+let _mailMessageStates = null; // message_id -> {labels, starred, read_at} — 라벨 조인용 캐시
+let _mailSentCache = null;
+let _mailInboxCache = null;
+
+function _mailSwitchSub(name) {
+  document.querySelectorAll('.mail-sub').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.mail-subnav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('mail-sub-' + name).classList.add('active');
+  document.getElementById('mail-subnav-' + name).classList.add('active');
+  if (name === 'drafts') _mailLoadDrafts();
+  if (name === 'sent') _mailLoadSent();
+  if (name === 'inbox') _mailLoadInbox();
+  if (name === 'tags') _mailTagsShowSummary();
+}
+
+// ── 편지쓰기 ──────────────────────────────────────────────────
+function _mailFileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+function _mailRenderAttachList() {
+  document.getElementById('mail-attach-list').textContent = _mailPendingAttachments.length
+    ? '첨부됨: ' + _mailPendingAttachments.map(a => a.filename).join(', ')
+    : '';
+}
+async function _mailHandleFileSelect() {
+  const input = document.getElementById('mail-file');
+  const file = input.files[0];
+  if (!file) return;
+  const err = document.getElementById('mail-compose-err');
+  err.style.display = 'none';
+  try {
+    const file_base64 = await _mailFileToBase64(file);
+    const data = await kmailApi('/kmail/attachments/upload', {
+      method: 'POST', body: { file_base64, filename: file.name, content_type: file.type },
+    });
+    _mailPendingAttachments.push({ id: data.attachment_id, filename: file.name });
+    _mailRenderAttachList();
+  } catch (e) {
+    err.textContent = '첨부 업로드 실패: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    input.value = '';
+  }
+}
+
+// 임시보관함에서 "이어 쓰기"를 누르면 편지쓰기 화면에 내용을 채우고
+// draft_id를 기억해둔다 — "임시저장"은 그 초안을 갱신하고, "보내기"는
+// 발송 성공 후 그 초안을 지운다(발송된 편지가 임시보관함에 남아있으면
+// 안 되므로).
+function _mailEditDraft(draft) {
+  _mailEditingDraftId = draft.id;
+  const recipients = Array.isArray(draft.recipients) ? draft.recipients : [];
+  document.getElementById('mail-to').value = recipients[0]?.email || '';
+  document.getElementById('mail-subject').value = draft.subject || '';
+  document.getElementById('mail-body').value = draft.body || '';
+  _mailPendingAttachments = [];
+  _mailRenderAttachList();
+  const note = document.getElementById('mail-compose-editing-note');
+  note.textContent = `임시보관함의 편지를 이어 쓰는 중입니다(${fmtDt(draft.updated)} 저장됨).`;
+  note.style.display = 'block';
+  document.getElementById('mail-discard-btn').style.display = '';
+  _mailSwitchSub('compose');
+}
+function _mailDiscardEditing() {
+  _mailEditingDraftId = null;
+  document.getElementById('mail-to').value = '';
+  document.getElementById('mail-subject').value = '';
+  document.getElementById('mail-body').value = '';
+  _mailPendingAttachments = [];
+  _mailRenderAttachList();
+  document.getElementById('mail-compose-editing-note').style.display = 'none';
+  document.getElementById('mail-discard-btn').style.display = 'none';
+}
+
+async function _mailSaveDraft() {
+  const err = document.getElementById('mail-compose-err');
+  const ok = document.getElementById('mail-compose-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const to = document.getElementById('mail-to').value.trim();
+  const subject = document.getElementById('mail-subject').value.trim();
+  const body = document.getElementById('mail-body').value.trim();
+  if (!to && !subject && !body) {
+    err.textContent = '저장할 내용이 없습니다.';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('mail-draft-btn');
+  btn.disabled = true;
+  try {
+    const data = await kmailApi('/kmail/drafts', {
+      method: 'POST',
+      body: {
+        draft_id: _mailEditingDraftId || undefined,
+        recipients: to ? [{ email: to }] : [],
+        subject, body,
+      },
+    });
+    _mailEditingDraftId = data.draft_id;
+    ok.textContent = '임시보관함에 저장했습니다.';
+    ok.style.display = 'block';
+    const note = document.getElementById('mail-compose-editing-note');
+    note.textContent = '임시보관함의 편지를 이어 쓰는 중입니다(방금 저장됨).';
+    note.style.display = 'block';
+    document.getElementById('mail-discard-btn').style.display = '';
+  } catch (e) {
+    err.textContent = '임시저장 실패: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function _mailSend() {
+  const err = document.getElementById('mail-compose-err');
+  const ok = document.getElementById('mail-compose-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const to = document.getElementById('mail-to').value.trim();
+  const subject = document.getElementById('mail-subject').value.trim();
+  const text = document.getElementById('mail-body').value.trim();
+  if (!to || !subject || !text) {
+    err.textContent = '받는 사람·제목·내용을 모두 입력해 주세요.';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('mail-send-btn');
+  btn.disabled = true;
+  try {
+    const data = await kmailApi('/mail/send', {
+      method: 'POST',
+      body: { to, subject, text, attachment_ids: _mailPendingAttachments.map(a => a.id) },
+    });
+    // 발송에 성공했으면 이어 쓰던 초안은 임시보관함에서 지운다 — 이미
+    // 보낸 편지가 "임시보관함"에 남아있으면 혼란스럽다.
+    if (_mailEditingDraftId) {
+      try { await kmailApi('/kmail/drafts/delete', { method: 'POST', body: { draft_id: _mailEditingDraftId } }); } catch (e) { /* 발송은 이미 성공했으니 삭제 실패는 조용히 무시 */ }
+    }
+    ok.textContent = data.quota?.charged_gdc
+      ? `메일을 보냈습니다. (5일 평균 발송한도 초과로 ₮${data.quota.charged_gdc} 부과됨)`
+      : '메일을 보냈습니다.';
+    ok.style.display = 'block';
+    _mailDiscardEditing();
+    _mailSentCache = null; // 다음에 보낸메일함을 열면 새로 불러오게
+  } catch (e) {
+    err.textContent = '발송 실패: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById('mail-file').addEventListener('change', _mailHandleFileSelect);
+
+// ── 임시보관함 ────────────────────────────────────────────────
+async function _mailLoadDrafts() {
+  const loadingEl = document.getElementById('mail-drafts-loading');
+  const emptyEl = document.getElementById('mail-drafts-empty');
+  const itemsEl = document.getElementById('mail-drafts-items');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  try {
+    const data = await kmailApi('/kmail/drafts');
+    const items = data.items || [];
+    if (!items.length) { emptyEl.style.display = ''; return; }
+    itemsEl.innerHTML = items.map(d => {
+      const recipients = Array.isArray(d.recipients) ? d.recipients : [];
+      const to = recipients[0]?.email || '(받는 사람 미입력)';
+      return `
+        <div class="list-item" onclick='_mailEditDraft(${JSON.stringify(d).replace(/'/g, "&#39;")})'>
+          <div class="li-main">
+            <div class="li-title">${escHtml(d.subject || '(제목 없음)')}</div>
+            <div class="li-sub">받는 사람: ${escHtml(to)} · ${fmtDt(d.updated)} 저장됨</div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); _mailDeleteDraft('${d.id}')">삭제</button>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally { loadingEl.style.display = 'none'; }
+}
+async function _mailDeleteDraft(draftId) {
+  try {
+    await kmailApi('/kmail/drafts/delete', { method: 'POST', body: { draft_id: draftId } });
+    if (_mailEditingDraftId === draftId) _mailDiscardEditing();
+    _mailLoadDrafts();
+  } catch (e) {
+    alert('삭제 실패: ' + e.message);
+  }
+}
+
+// ── 보낸메일함 / 받은메일함 ───────────────────────────────────
+// GET /kmail/mailbox는 최대 200건까지만 준다(hondi 쪽 고정 캡) — 지금
+// 규모에선 문제없지만, 나중에 주소록처럼 훨씬 커지면 여기도 카테고리
+// 요약 같은 별도 집계가 필요해질 수 있다.
+async function _mailFetchBox(box) {
+  const data = await kmailApi('/kmail/mailbox', { query: { box } });
+  return data.items || [];
+}
+function _mailSnippet(body) {
+  const s = String(body || '').replace(/\s+/g, ' ').trim();
+  return s.length > 100 ? s.slice(0, 100) + '…' : s;
+}
+function _mailRenderMailItem(m, { showLabels } = {}) {
+  const stateEntry = _mailMessageStates && _mailMessageStates[m.id];
+  const labels = stateEntry?.labels || [];
+  const labelPills = labels.map(l => `<span class="tag-pill">${escHtml(l)}</span>`).join('');
+  const bodyId = `mail-body-${m.id}`;
+  const labelInputId = `mail-labelinput-${m.id}`;
+  return `
+    <div class="list-item" style="cursor:default;align-items:flex-start" >
+      <div class="li-main">
+        <div class="li-title" style="cursor:pointer" onclick="_mailToggleExpand('${bodyId}')">${escHtml(m.subject || '(제목 없음)')}</div>
+        <div class="li-sub">${m.direction === 'sent' ? '받는 사람' : '보낸 사람'}: ${escHtml(m.counterparty)} · ${fmtDt(m.created)}</div>
+        <div class="li-sub" style="margin-top:2px;cursor:pointer" onclick="_mailToggleExpand('${bodyId}')">${escHtml(_mailSnippet(m.body))}</div>
+        <div id="${bodyId}" style="display:none;margin-top:8px;font-size:12.5px;white-space:pre-wrap;border-top:1px solid var(--bdr);padding-top:8px">${escHtml(m.body)}</div>
+        ${showLabels ? `
+          <div style="margin-top:8px">${labelPills}</div>
+          <div style="margin-top:6px;display:flex;gap:6px">
+            <input type="text" id="${labelInputId}" placeholder="라벨 추가(예: 로스쿨)" style="font-size:12px;padding:5px 8px;border:1px solid var(--bdr);border-radius:var(--r);flex:1;max-width:220px">
+            <button type="button" class="btn btn-outline btn-sm" onclick="_mailAddLabel('${m.id}', document.getElementById('${labelInputId}').value)">추가</button>
+          </div>` : ''}
+      </div>
+    </div>`;
+}
+function _mailToggleExpand(bodyId) {
+  const el = document.getElementById(bodyId);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+async function _mailLoadSent() {
+  const loadingEl = document.getElementById('mail-sent-loading');
+  const emptyEl = document.getElementById('mail-sent-empty');
+  const itemsEl = document.getElementById('mail-sent-items');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  try {
+    if (!_mailSentCache) _mailSentCache = await _mailFetchBox('sent');
+    const items = _mailSentCache;
+    if (!items.length) { emptyEl.style.display = ''; return; }
+    itemsEl.innerHTML = items.map(m => _mailRenderMailItem(m, { showLabels: false })).join('');
+  } catch (e) {
+    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally { loadingEl.style.display = 'none'; }
+}
+async function _mailLoadInbox() {
+  const loadingEl = document.getElementById('mail-inbox-loading');
+  const emptyEl = document.getElementById('mail-inbox-empty');
+  const itemsEl = document.getElementById('mail-inbox-items');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  try {
+    if (!_mailMessageStates) await _mailLoadMessageStates();
+    if (!_mailInboxCache) _mailInboxCache = await _mailFetchBox('inbox');
+    const items = _mailInboxCache;
+    if (!items.length) { emptyEl.style.display = ''; return; }
+    itemsEl.innerHTML = items.map(m => _mailRenderMailItem(m, { showLabels: true })).join('');
+  } catch (e) {
+    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally { loadingEl.style.display = 'none'; }
+}
+async function _mailAddLabel(messageId, rawLabel) {
+  const label = String(rawLabel || '').trim();
+  if (!label) return;
+  const current = (_mailMessageStates && _mailMessageStates[messageId]?.labels) || [];
+  if (current.includes(label)) return;
+  const labels = [...current, label];
+  try {
+    await kmailApi('/kmail/messages/state', { method: 'POST', body: { message_id: messageId, labels } });
+    if (!_mailMessageStates) _mailMessageStates = {};
+    _mailMessageStates[messageId] = { ..._mailMessageStates[messageId], labels };
+    _mailLoadInbox();
+  } catch (e) {
+    alert('라벨 추가 실패: ' + e.message);
+  }
+}
+
+// ── 태그별 보관함 ─────────────────────────────────────────────
+async function _mailLoadMessageStates() {
+  const data = await kmailApi('/kmail/messages/state');
+  const map = {};
+  for (const s of (data.items || [])) map[s.message_id] = s;
+  _mailMessageStates = map;
+  return map;
+}
+async function _mailTagsShowSummary() {
+  document.getElementById('mail-tags-back').style.display = 'none';
+  document.getElementById('mail-tags-items').innerHTML = '';
+  const loadingEl = document.getElementById('mail-tags-loading');
+  const emptyEl = document.getElementById('mail-tags-empty');
+  const summaryEl = document.getElementById('mail-tags-summary');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; summaryEl.innerHTML = '';
+  try {
+    if (!_mailMessageStates) await _mailLoadMessageStates();
+    const counts = {};
+    for (const s of Object.values(_mailMessageStates)) {
+      for (const l of (s.labels || [])) counts[l] = (counts[l] || 0) + 1;
+    }
+    const labels = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (!labels.length) { emptyEl.style.display = ''; return; }
+    summaryEl.innerHTML = `
+      <div class="ct-cat-list">
+        ${labels.map(([label, count]) => `<button type="button" class="ct-cat-item" onclick='_mailOpenTag(${JSON.stringify(label)})'><span>${escHtml(label)}</span><span class="ct-cat-count">${count}</span></button>`).join('')}
+      </div>`;
+  } catch (e) {
+    summaryEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally { loadingEl.style.display = 'none'; }
+}
+async function _mailOpenTag(label) {
+  document.getElementById('mail-tags-back').style.display = '';
+  document.getElementById('mail-tags-summary').innerHTML = '';
+  const loadingEl = document.getElementById('mail-tags-loading');
+  const emptyEl = document.getElementById('mail-tags-empty');
+  const itemsEl = document.getElementById('mail-tags-items');
+  loadingEl.style.display = ''; emptyEl.style.display = 'none'; itemsEl.innerHTML = '';
+  try {
+    if (!_mailSentCache) _mailSentCache = await _mailFetchBox('sent');
+    if (!_mailInboxCache) _mailInboxCache = await _mailFetchBox('inbox');
+    const matchIds = new Set(Object.entries(_mailMessageStates).filter(([, s]) => (s.labels || []).includes(label)).map(([id]) => id));
+    const items = [..._mailInboxCache, ..._mailSentCache].filter(m => matchIds.has(m.id));
+    if (!items.length) { emptyEl.style.display = ''; return; }
+    itemsEl.innerHTML = items.map(m => _mailRenderMailItem(m, { showLabels: true })).join('');
+  } catch (e) {
+    itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
+  } finally { loadingEl.style.display = 'none'; }
+}
 
 // /kmail/chat 호출 — 서버가 { reply, action } 구조로 응답한다. 같은
 // 이유(2026-09-10)로 KAuth.fetchWithAuth에 위임 — kmailApi 위 주석 참고.
