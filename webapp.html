@@ -1059,6 +1059,7 @@ async function _ctCsvUpload() {
   const chunks = [];
   for (let i = 0; i < total; i += CT_CSV_UPLOAD_BATCH_SIZE) chunks.push(_ctCsvParsed.slice(i, i + CT_CSV_UPLOAD_BATCH_SIZE));
   const agg = { created: 0, skippedDup: 0, invalidCount: 0, autoCategorized: 0 };
+  const failedSamples = []; // 2026-09-11 신설 — 서버가 실패 원인(email+error)을 실어 보내주므로 모아서 보여준다.
   let doneCount = 0;
   preview.style.display = 'block';
   preview.textContent = `0/${total}건 처리 중…`;
@@ -1073,10 +1074,23 @@ async function _ctCsvUpload() {
       agg.skippedDup += data.skippedDup || 0;
       agg.invalidCount += data.invalidCount || 0;
       agg.autoCategorized += data.autoCategorized || 0;
+      if (Array.isArray(data.failedSample)) failedSamples.push(...data.failedSample);
       doneCount += chunk.length;
       preview.textContent = `${doneCount}/${total}건 처리 중… (등록 ${agg.created} · 중복 ${agg.skippedDup} · 형식오류 ${agg.invalidCount} · 자동분류 ${agg.autoCategorized})`;
     }
-    preview.textContent = `완료 — 등록 ${agg.created}건 · 중복 건너뜀 ${agg.skippedDup}건 · 형식 오류 ${agg.invalidCount}건 · 카테고리 자동분류 ${agg.autoCategorized}건`;
+    let summary = `완료 — 등록 ${agg.created}건 · 중복 건너뜀 ${agg.skippedDup}건 · 형식 오류 ${agg.invalidCount}건 · 카테고리 자동분류 ${agg.autoCategorized}건`;
+    // 2026-09-11 신설 — 등록 시도했는데 서버가 거부한 건(예: 필드 검증
+    // 실패)이 있으면 조용히 사라지지 않도록 여기서 명시적으로 알린다
+    // (767건 CSV가 흔적 없이 사라졌던 사고 재발 방지).
+    const attemptedButMissing = total - agg.invalidCount - agg.created - agg.skippedDup;
+    let failLine = '';
+    if (attemptedButMissing > 0 || failedSamples.length > 0) {
+      failLine = `⚠️ 등록 실패 ${Math.max(attemptedButMissing, failedSamples.length)}건`;
+      if (failedSamples.length > 0) {
+        failLine += ' — 예: ' + failedSamples.slice(0, 5).map(f => `${escHtml(f.email)}(${escHtml(f.error)})`).join(', ');
+      }
+    }
+    preview.innerHTML = failLine ? `${escHtml(summary)}<br><span style="color:var(--red)">${failLine}</span>` : escHtml(summary);
     document.getElementById('ct-csv-file').value = '';
     _ctCsvParsed = [];
     _ctLoad();
