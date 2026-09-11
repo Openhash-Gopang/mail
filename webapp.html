@@ -399,6 +399,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
         <button type="button" id="mail-subnav-sent" onclick="_mailSwitchSub('sent')">보낸메일함</button>
         <button type="button" id="mail-subnav-inbox" onclick="_mailSwitchSub('inbox')">받은메일함</button>
         <button type="button" id="mail-subnav-tags" onclick="_mailSwitchSub('tags')">태그별 보관함</button>
+        <button type="button" id="mail-subnav-idsettings" onclick="_mailSwitchSub('idsettings')">내 메일 ID</button>
       </div>
 
       <!-- 편지쓰기 -->
@@ -452,6 +453,43 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
         <div id="mail-tags-empty" style="display:none;font-size:12.5px;color:var(--hint)">라벨이 달린 메일이 없습니다 — 받은메일함에서 라벨을 추가해 보세요.</div>
         <div id="mail-tags-summary"></div>
         <div id="mail-tags-items"></div>
+      </div>
+
+      <!-- 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)는 노출하지
+           않고, 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를
+           설정한다. 실제 발신 주소(<guid>@hondi.kr, 스푸핑 방지용)는
+           바뀌지 않으며 mail_id는 그 위에 얹는 조회용 별칭이다. -->
+      <div id="mail-sub-idsettings" class="mail-sub">
+        <div class="sub">다른 사람이 나를 검색하거나 메일을 보낼 때 쓰는 ID입니다. 실제 발신 주소는 계속 안전하게 고정되어 있고, 이 ID는 그 위에 얹는 별칭입니다.</div>
+
+        <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+
+        <div id="mail-id-content" style="display:none">
+          <div class="field">
+            <label>내 메일 주소</label>
+            <input type="text" id="mail-id-fixed-address" readonly style="background:var(--bg2,#f5f5f5);color:var(--sub)">
+          </div>
+
+          <div id="mail-id-empty-state" style="display:none">
+            <div class="sub" style="margin-top:4px">아직 메일 ID를 설정하지 않았습니다. 자동으로 만들거나 직접 정할 수 있습니다.</div>
+            <div style="margin-top:8px">
+              <button type="button" class="btn btn-primary" id="mail-id-auto-btn" onclick="_mailIdAuto()">자동으로 만들기</button>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:14px">
+            <label>메일 ID 직접 정하기</label>
+            <input type="text" id="mail-id-input" placeholder="예: jupiter (3~30자, 영문 소문자·숫자·-·_)" oninput="_mailIdCheckDebounced()">
+            <div id="mail-id-check-msg" style="font-size:12.5px;margin-top:4px"></div>
+          </div>
+
+          <div id="mail-id-err" class="errbox" style="display:none"></div>
+          <div id="mail-id-ok" style="display:none;color:var(--grn);font-size:12.5px;margin-top:8px"></div>
+
+          <div style="margin-top:10px">
+            <button type="button" class="btn btn-primary" id="mail-id-save-btn" onclick="_mailIdSave()" disabled>이 ID로 저장</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -683,6 +721,137 @@ function _mailSwitchSub(name) {
   if (name === 'sent') _mailLoadSent();
   if (name === 'inbox') _mailLoadInbox();
   if (name === 'tags') _mailTagsShowSummary();
+  if (name === 'idsettings') _mailIdLoad();
+}
+
+// ══════════════════════════════════════════════════════════════
+// 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)를 노출하지 않고
+// 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를 화면에서
+// 조회·설정한다. 실제 발신 주소(<guid>@hondi.kr)는 절대 바꾸지 않는다
+// — 여기서 다루는 건 그 위에 얹는 조회용 별칭뿐이다.
+// ══════════════════════════════════════════════════════════════
+let _mailIdLoadedOnce = false;
+let _mailIdCurrentSettings = null; // 최근 GET /kmail/settings 결과 캐시
+let _mailIdCheckToken = 0; // 늦게 도착하는 과거 요청 응답을 무시하기 위한 순번
+
+async function _mailIdLoad() {
+  if (_mailIdLoadedOnce) return;
+  _mailIdLoadedOnce = true;
+  const loading = document.getElementById('mail-id-loading');
+  const content = document.getElementById('mail-id-content');
+  loading.style.display = '';
+  content.style.display = 'none';
+  try {
+    const data = await kmailApi('/kmail/settings');
+    _mailIdCurrentSettings = data;
+    document.getElementById('mail-id-fixed-address').value = data.kmail_address || '';
+    const emptyState = document.getElementById('mail-id-empty-state');
+    if (data.mail_id) {
+      emptyState.style.display = 'none';
+      document.getElementById('mail-id-input').value = data.mail_id;
+      document.getElementById('mail-id-check-msg').textContent = `현재 메일 ID: ${data.mail_id}@hondi.kr`;
+      document.getElementById('mail-id-check-msg').style.color = 'var(--sub)';
+    } else {
+      emptyState.style.display = '';
+    }
+    loading.style.display = 'none';
+    content.style.display = '';
+  } catch (e) {
+    loading.style.display = 'none';
+    _mailIdLoadedOnce = false; // 실패했으니 탭을 다시 눌렀을 때 재시도 가능하게
+    const err = document.getElementById('mail-id-err');
+    err.textContent = '메일 ID 정보를 불러오지 못했습니다: ' + e.message;
+    err.style.display = 'block';
+    content.style.display = '';
+  }
+}
+
+function _mailIdCheckDebounced() { _mailIdCheckDebouncedImpl(); }
+const _mailIdCheckDebouncedImpl = debounce(_mailIdCheckNow, 400);
+
+async function _mailIdCheckNow() {
+  const raw = document.getElementById('mail-id-input').value;
+  const msg = document.getElementById('mail-id-check-msg');
+  const saveBtn = document.getElementById('mail-id-save-btn');
+  const myToken = ++_mailIdCheckToken;
+
+  // 이미 내가 쓰고 있는 값 그대로면 서버에 물어볼 필요 없이 통과.
+  if (_mailIdCurrentSettings && raw.trim().toLowerCase() === (_mailIdCurrentSettings.mail_id || '')) {
+    msg.textContent = `현재 메일 ID: ${raw.trim().toLowerCase()}@hondi.kr`;
+    msg.style.color = 'var(--sub)';
+    saveBtn.disabled = true;
+    return;
+  }
+  if (!raw.trim()) { msg.textContent = ''; saveBtn.disabled = true; return; }
+
+  msg.textContent = '확인 중…';
+  msg.style.color = 'var(--sub)';
+  saveBtn.disabled = true;
+  try {
+    const data = await kmailApi('/kmail/mail-id/check', { query: { candidate: raw } });
+    if (myToken !== _mailIdCheckToken) return; // 그 사이 사용자가 더 입력함 — 이 응답은 폐기
+    if (!data.valid) {
+      msg.textContent = '3~30자의 영문 소문자·숫자·-·_ 조합이어야 하고, 영숫자로 시작·끝나야 합니다.';
+      msg.style.color = 'var(--red)';
+      saveBtn.disabled = true;
+    } else if (!data.available) {
+      msg.textContent = `이미 사용 중인 ID입니다: ${data.normalized}`;
+      msg.style.color = 'var(--red)';
+      saveBtn.disabled = true;
+    } else {
+      msg.textContent = `사용 가능합니다: ${data.normalized}@hondi.kr`;
+      msg.style.color = 'var(--grn)';
+      saveBtn.disabled = false;
+    }
+  } catch (e) {
+    if (myToken !== _mailIdCheckToken) return;
+    msg.textContent = '확인 실패: ' + e.message;
+    msg.style.color = 'var(--red)';
+    saveBtn.disabled = true;
+  }
+}
+
+async function _mailIdSave() {
+  const raw = document.getElementById('mail-id-input').value.trim();
+  const err = document.getElementById('mail-id-err');
+  const ok = document.getElementById('mail-id-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  if (!raw) return;
+
+  const btn = document.getElementById('mail-id-save-btn');
+  btn.disabled = true;
+  try {
+    await kmailApi('/kmail/settings', { method: 'POST', body: { mail_id: raw } });
+    ok.textContent = '메일 ID가 저장되었습니다.';
+    ok.style.display = 'block';
+    _mailIdLoadedOnce = false;
+    await _mailIdLoad();
+  } catch (e) {
+    err.textContent = '저장 실패: ' + e.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+  }
+}
+
+async function _mailIdAuto() {
+  const err = document.getElementById('mail-id-err');
+  const ok = document.getElementById('mail-id-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+
+  const btn = document.getElementById('mail-id-auto-btn');
+  btn.disabled = true;
+  try {
+    const data = await kmailApi('/kmail/mail-id/auto', { method: 'POST' });
+    ok.textContent = `메일 ID가 자동으로 만들어졌습니다: ${data.mail_id}@hondi.kr`;
+    ok.style.display = 'block';
+    _mailIdLoadedOnce = false;
+    await _mailIdLoad();
+  } catch (e) {
+    err.textContent = '자동 생성 실패: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // 2026-09-11 신설 — K-Mail 채팅("새 캠페인" 탭)이 KMAIL_SAVE_DRAFT나
