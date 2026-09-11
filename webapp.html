@@ -632,6 +632,30 @@ function _mailSwitchSub(name) {
   if (name === 'tags') _mailTagsShowSummary();
 }
 
+// 2026-09-11 신설 — K-Mail 채팅("새 캠페인" 탭)이 KMAIL_SAVE_DRAFT나
+// KMAIL_UPDATE_CAMPAIGN_DRAFT로 제목·본문을 구조화해 넘겨줄 때(hondi PR
+// feat/kmail-draft-to-editor-bridge), 그 내용을 "메일" 탭 편지쓰기
+// 화면에 그대로 옮겨 보여준다. switchTo=true면 화면까지 전환하고,
+// false면 내용만 채워두고 화면 전환은 하지 않는다(호출부 주석 참고 —
+// campaign_draft_updated는 배경에서 자주 일어나는 동작이라 매번
+// 화면을 뺏으면 대화에 방해가 됨).
+function _mailLoadDraftIntoEditor({ subject, body, draftId, sourceNote, switchTo }) {
+  document.getElementById('mail-subject').value = subject || '';
+  document.getElementById('mail-body').value = body || '';
+  document.getElementById('mail-to').value = '';
+  _mailPendingAttachments = [];
+  _mailRenderAttachList();
+  _mailEditingDraftId = draftId || null;
+  const note = document.getElementById('mail-compose-editing-note');
+  note.textContent = sourceNote || '';
+  note.style.display = sourceNote ? 'block' : 'none';
+  document.getElementById('mail-discard-btn').style.display = '';
+  if (switchTo) {
+    _switchTab('mail');
+    _mailSwitchSub('compose');
+  }
+}
+
 // ── 편지쓰기 ──────────────────────────────────────────────────
 function _mailFileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -1239,6 +1263,31 @@ async function _cmpChatSendText(text, attachments) {
     // 이어서 기록할 수 있게.
     if (data.action && data.action.campaign_id) { _cmpChat.campaignId = data.action.campaign_id; }
     if (data.action && (data.action.type === 'campaign_created' || data.action.type === 'campaign_started')) { _campLoadedOnce = false; }
+    // 2026-09-11 신설 — "Mail SP에게 메일 작성을 지시하면 그 초안을
+    // 메일 편집기 화면에 표시해야 한다"(주피터 지시)는 요구 구현.
+    // draft_saved(사용자가 명시적으로 "초안으로 저장해줘"라고 요청한
+    // 경우)만 편지쓰기 화면으로 직접 전환한다 — campaign_draft_updated는
+    // K-Mail이 대화 도중 스스로 알아서 자주 체크포인트하는 배경 동작
+    // 이라(§ 위 주석 참고), 매번 화면을 강제로 전환하면 한창 대화
+    // 중인데 계속 다른 탭으로 튕기는 불편한 경험이 된다 — 그래서 그
+    // 경우엔 편집기 내용만 조용히 채워두고(나중에 "메일" 탭을 열면
+    // 보임) 화면 전환은 하지 않는다. campaign_created/campaign_started
+    // (이미 확정·예약된 캠페인)는 일부러 여기 포함하지 않는다 — 그
+    // 내용을 단건 발송용 편집기에 다시 채우면 실수로 "보내기"를 눌러
+    // 캠페인과 별개로 중복 발송할 위험이 있다.
+    if (data.action && data.action.type === 'draft_saved' && typeof data.action.subject === 'string') {
+      _mailLoadDraftIntoEditor({
+        subject: data.action.subject, body: data.action.body, draftId: data.action.draft_id,
+        sourceNote: 'K-Mail 대화에서 방금 저장한 초안입니다 — 받는 사람을 입력하고 검토 후 보내세요.',
+        switchTo: true,
+      });
+    } else if (data.action && data.action.type === 'campaign_draft_updated' && typeof data.action.subject === 'string') {
+      _mailLoadDraftIntoEditor({
+        subject: data.action.subject, body: data.action.body, draftId: null,
+        sourceNote: '캠페인 대화에서 방금 정리된 제목·본문입니다 — 이 캠페인의 실제 수신자와는 별개이며, 여기서 보내면 단건으로 발송됩니다.',
+        switchTo: false,
+      });
+    }
   } catch (e) {
     err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.';
     err.style.display = '';
