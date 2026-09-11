@@ -26,6 +26,13 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.12.2/mammoth.browser.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<!-- 2026-09-11 신설 — "메일" 탭 편지쓰기용 리치 텍스트 편집기. Quill은
+     오픈소스(BSD-3-Clause) 중 가장 널리 쓰이는 편집기 중 하나(4만+
+     GitHub star)이자 가볍고 빠르다(주피터 지시: "가장 널리 쓰이고
+     성능이 우수한 오픈소스로 적용"). 공식 CDN(jsdelivr) 안내를 그대로
+     따름. -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -188,6 +195,19 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .detail-row .dd{flex:1;min-width:0}
 .digest-box{background:var(--pri-bg);border:1px solid var(--pri-bd);border-radius:var(--r);padding:16px;margin-top:14px;white-space:pre-wrap;font-size:13px;line-height:1.8}
 .digest-box-title{font-size:12px;font-weight:800;color:var(--pri);margin-bottom:8px}
+
+/* 2026-09-11 신설 — "메일" 탭 편지쓰기 리치 텍스트 편집기(Quill).
+   Quill 기본 테마(snow)는 자체 폰트(Helvetica 계열)를 강제하므로,
+   !important로 덮어써야 실제로 Pretendard가 적용된다(주피터 지시:
+   "한글 폰트는 Pretendard로 강제 적용") — 그냥 상속에 맡기면 Quill의
+   기본 스타일시트가 이긴다. 툴바·에디터 테두리·모서리도 이 사이트의
+   다른 입력 요소(.field input 등)와 시각적으로 맞춘다. */
+.ql-toolbar.ql-snow,.ql-container.ql-snow{font-family:var(--font)!important;border-color:var(--bdr)}
+.ql-toolbar.ql-snow{border-radius:var(--r) var(--r) 0 0;background:#FAFBFC}
+.ql-container.ql-snow{border-radius:0 0 var(--r) var(--r)}
+.ql-editor{font-family:var(--font)!important;font-size:13.5px;min-height:220px;line-height:1.65}
+.ql-editor.ql-blank::before{font-family:var(--font)!important;font-style:normal;color:var(--hint)}
+.ql-snow .ql-picker{font-family:var(--font)!important}
 </style>
 </head>
 <body>
@@ -386,7 +406,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
         <div id="mail-compose-editing-note" style="display:none;font-size:12px;color:var(--hint);margin-bottom:8px"></div>
         <div class="field"><label>받는 사람</label><input type="email" id="mail-to" placeholder="example@email.com"></div>
         <div class="field"><label>제목</label><input type="text" id="mail-subject" placeholder="제목"></div>
-        <div class="field"><label>내용</label><textarea id="mail-body" rows="10" placeholder="내용을 입력하세요" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-family:inherit;font-size:13.5px"></textarea></div>
+        <div class="field"><label>내용</label><div id="mail-body-editor"></div></div>
         <div class="field">
           <label>첨부파일 <span style="color:var(--hint);font-weight:400">(선택, 최대 25MB)</span></label>
           <input type="file" id="mail-file">
@@ -474,7 +494,7 @@ function _switchTab(name) {
   document.getElementById('tab-btn-' + name).classList.add('active');
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
-  if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailSwitchSub('compose'); }
+  if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -620,6 +640,39 @@ let _mailPendingAttachments = []; // { id, filename }
 let _mailMessageStates = null; // message_id -> {labels, starred, read_at} — 라벨 조인용 캐시
 let _mailSentCache = null;
 let _mailInboxCache = null;
+let _mailQuill = null; // Quill 편집기 인스턴스 — "메일" 탭 첫 방문 시 지연 초기화
+
+// 2026-09-11 신설 — 편지쓰기 본문을 텍스트영역 대신 Quill(리치 텍스트
+// 편집기)로 교체(주피터 지시: "가장 널리 쓰이고 성능이 우수한 오픈
+// 소스로 적용"). 다만 저장·발송은 지금까지처럼 순수 텍스트 경로
+// (/mail/send의 text 필드, kmail_drafts.body)를 그대로 쓴다 — 실제
+// 이메일 발송 파이프라인(env.EMAIL.send)이 HTML 본문을 지원하는지
+// 확인할 방법이 없는 상태에서 그 경로를 건드리는 건 발송 자체가
+// 깨질 위험이 있어, 서식(굵게·목록 등)은 편집 중 가독성을 위한
+// 용도로만 쓰고 저장/발송 시엔 일반 텍스트로 변환한다.
+function _mailInitQuill() {
+  if (_mailQuill) return;
+  _mailQuill = new Quill('#mail-body-editor', {
+    theme: 'snow',
+    placeholder: '내용을 입력하세요',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link'],
+        ['clean'],
+      ],
+    },
+  });
+}
+function _mailGetBodyText() {
+  _mailInitQuill();
+  return _mailQuill.getText().trim();
+}
+function _mailSetBodyText(text) {
+  _mailInitQuill();
+  _mailQuill.setText(text || '');
+}
 
 function _mailSwitchSub(name) {
   document.querySelectorAll('.mail-sub').forEach(el => el.classList.remove('active'));
@@ -641,7 +694,7 @@ function _mailSwitchSub(name) {
 // 화면을 뺏으면 대화에 방해가 됨).
 function _mailLoadDraftIntoEditor({ subject, body, draftId, sourceNote, switchTo }) {
   document.getElementById('mail-subject').value = subject || '';
-  document.getElementById('mail-body').value = body || '';
+  _mailSetBodyText(body || '');
   document.getElementById('mail-to').value = '';
   _mailPendingAttachments = [];
   _mailRenderAttachList();
@@ -700,7 +753,7 @@ function _mailEditDraft(draft) {
   const recipients = Array.isArray(draft.recipients) ? draft.recipients : [];
   document.getElementById('mail-to').value = recipients[0]?.email || '';
   document.getElementById('mail-subject').value = draft.subject || '';
-  document.getElementById('mail-body').value = draft.body || '';
+  _mailSetBodyText(draft.body || '');
   _mailPendingAttachments = [];
   _mailRenderAttachList();
   const note = document.getElementById('mail-compose-editing-note');
@@ -713,7 +766,7 @@ function _mailDiscardEditing() {
   _mailEditingDraftId = null;
   document.getElementById('mail-to').value = '';
   document.getElementById('mail-subject').value = '';
-  document.getElementById('mail-body').value = '';
+  _mailSetBodyText('');
   _mailPendingAttachments = [];
   _mailRenderAttachList();
   document.getElementById('mail-compose-editing-note').style.display = 'none';
@@ -726,7 +779,7 @@ async function _mailSaveDraft() {
   err.style.display = 'none'; ok.style.display = 'none';
   const to = document.getElementById('mail-to').value.trim();
   const subject = document.getElementById('mail-subject').value.trim();
-  const body = document.getElementById('mail-body').value.trim();
+  const body = _mailGetBodyText();
   if (!to && !subject && !body) {
     err.textContent = '저장할 내용이 없습니다.';
     err.style.display = 'block';
@@ -764,7 +817,7 @@ async function _mailSend() {
   err.style.display = 'none'; ok.style.display = 'none';
   const to = document.getElementById('mail-to').value.trim();
   const subject = document.getElementById('mail-subject').value.trim();
-  const text = document.getElementById('mail-body').value.trim();
+  const text = _mailGetBodyText();
   if (!to || !subject || !text) {
     err.textContent = '받는 사람·제목·내용을 모두 입력해 주세요.';
     err.style.display = 'block';
