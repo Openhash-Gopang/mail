@@ -152,6 +152,19 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .list-item .li-title{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .list-item .li-sub{font-size:11px;color:var(--hint);margin-top:2px}
 .tag-pill{display:inline-block;background:var(--teal-bg);color:var(--teal);font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;margin:2px 4px 0 0}
+/* 2026-09-11 신설 — 주소록을 카드 하나씩 나열하던 방식에서 표(테이블)로
+   변경. 소속·직위·이름·이메일·전화번호를 열로 정리해, 무작위로
+   나열되는 것처럼 보이던 문제(실제로는 최근 등록순 정렬이었음 —
+   백엔드에서 소속·이름순으로 바꿈)를 화면에서도 명확히 정리된
+   표로 보여준다. */
+.ct-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ct-table th{text-align:left;font-size:11px;color:var(--hint);font-weight:700;padding:6px 10px;border-bottom:2px solid var(--bdr);white-space:nowrap}
+.ct-table td{padding:9px 10px;border-bottom:1px solid var(--bdr);vertical-align:top}
+.ct-table tr:last-child td{border-bottom:none}
+.ct-table td.ct-org{color:var(--sub)}
+.ct-table td.ct-email{color:var(--pri);word-break:break-all}
+.ct-table td.ct-actions{white-space:nowrap;text-align:right}
+.ct-table-wrap{overflow-x:auto}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .filter-row input,.filter-row select{font-size:12.5px;padding:7px 10px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff}
 .filter-row input[type=text]{flex:1;min-width:140px}
@@ -245,6 +258,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
         <div class="field"><label>이름</label><input type="text" id="ct-new-name" placeholder="홍길동"></div>
         <div class="field"><label>이메일</label><input type="email" id="ct-new-email" placeholder="name@example.com"></div>
         <div class="field"><label>소속(선택)</label><input type="text" id="ct-new-org" placeholder="예: OO단체"></div>
+        <div class="field"><label>전화번호(선택)</label><input type="text" id="ct-new-phone" placeholder="010-0000-0000"></div>
       </div>
       <div id="ct-new-err" class="errbox" style="display:none"></div>
       <div style="margin-top:6px"><button class="btn btn-primary btn-sm" onclick="_ctAddNew()">등록</button></div>
@@ -927,14 +941,16 @@ async function _ctAddNew() {
   const name = document.getElementById('ct-new-name').value.trim();
   const email = document.getElementById('ct-new-email').value.trim();
   const org = document.getElementById('ct-new-org').value.trim();
+  const phone = document.getElementById('ct-new-phone').value.trim();
   const errEl = document.getElementById('ct-new-err');
   errEl.style.display = 'none';
   if (!email) { errEl.textContent = '이메일을 입력해 주세요.'; errEl.style.display = ''; return; }
   try {
-    await kmailApi('/kmail/contacts/propose', { method: 'POST', body: { recipient_query: '수동 등록(웹앱)', candidates: [{ name, email, org }] } });
+    await kmailApi('/kmail/contacts/propose', { method: 'POST', body: { recipient_query: '수동 등록(웹앱)', candidates: [{ name, email, org, phone }] } });
     document.getElementById('ct-new-name').value = '';
     document.getElementById('ct-new-email').value = '';
     document.getElementById('ct-new-org').value = '';
+    document.getElementById('ct-new-phone').value = '';
     document.getElementById('ct-filter-status').value = 'pending_review';
     _ctLoad();
   } catch (e) { errEl.textContent = e.message || '등록에 실패했습니다.'; errEl.style.display = ''; }
@@ -953,30 +969,53 @@ async function _ctLoad() {
     const data = await kmailApi('/kmail/contacts', { query: { status, q } });
     const items = data.items || [];
     if (!items.length) { emptyEl.style.display = ''; return; }
-    itemsEl.innerHTML = items.map(c => _ctRenderItem(c)).join('');
+    // 2026-09-11 — 카드 나열 대신 표(테이블)로. 백엔드가 이미
+    // 소속→이름순으로 정렬해서 주므로(주피터 지시 — "무작위로
+    // 나열하면 안 됨"), 여기서는 그 순서 그대로 행으로 그린다.
+    itemsEl.innerHTML = `
+      <div class="ct-table-wrap">
+        <table class="ct-table">
+          <thead><tr><th>소속</th><th>직위</th><th>이름</th><th>이메일</th><th>전화번호</th><th>주소</th><th>웹사이트</th><th>메모</th><th>상태</th><th></th></tr></thead>
+          <tbody>${items.map(c => _ctRenderRow(c)).join('')}</tbody>
+        </table>
+      </div>`;
   } catch (e) {
     itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
   } finally { loadingEl.style.display = 'none'; }
 }
 
-function _ctRenderItem(c) {
+function _ctRenderRow(c) {
   const tags = (c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('');
-  const sub = [c.org, c.email].filter(Boolean).join(' · ');
   let actions = '';
   if (c.status === 'pending_review') {
     actions = `<button class="btn btn-primary btn-sm" onclick="_ctDecide('${c.id}','confirm')">승인</button>
       <button class="btn btn-outline btn-sm" onclick="_ctDecide('${c.id}','reject')">거부</button>`;
   }
+  // 2026-09-11 신설 — website는 클릭 가능한 링크로, notes는 길 수
+  // 있어 한 줄로 잘라 보여주고 title(hover 시 툴팁)로 전체 텍스트를
+  // 볼 수 있게 한다(테이블이 메모 하나 때문에 지나치게 넓어지는
+  // 걸 방지).
+  const websiteCell = c.website
+    ? `<a href="${escHtml(c.website)}" target="_blank" rel="noopener">바로가기</a>`
+    : '—';
+  const notesCell = c.notes
+    ? `<span title="${escHtml(c.notes)}" style="display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom">${escHtml(c.notes)}</span>`
+    : '—';
   return `
-    <div class="list-item" style="cursor:default">
-      <div class="li-main">
-        <div class="li-title">${escHtml(c.name || '(이름 없음)')} <span class="badge badge-${c.status}">${escHtml(c.status)}</span></div>
-        <div class="li-sub">${escHtml(sub)}</div>
-        <div>${tags}</div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">${actions}</div>
-    </div>`;
+    <tr>
+      <td class="ct-org">${escHtml(c.org || '—')}${c.dept ? ' · ' + escHtml(c.dept) : ''}</td>
+      <td>${escHtml(c.occupation || '—')}</td>
+      <td><strong>${escHtml(c.name || '(이름 없음)')}</strong>${tags ? '<div>' + tags + '</div>' : ''}</td>
+      <td class="ct-email">${escHtml(c.email || '—')}</td>
+      <td>${escHtml(c.phone || '—')}</td>
+      <td>${escHtml(c.address || '—')}</td>
+      <td>${websiteCell}</td>
+      <td>${notesCell}</td>
+      <td><span class="badge badge-${escHtml(c.status)}">${escHtml(c.status)}</span></td>
+      <td class="ct-actions">${actions}</td>
+    </tr>`;
 }
+
 
 async function _ctDecide(contactId, decision) {
   try { await kmailApi('/kmail/contacts/decide', { method: 'POST', body: { contact_id: contactId, decision } }); _ctLoad(); }
