@@ -320,10 +320,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
         </select>
         <input type="text" id="ct-filter-q" placeholder="상세 검색 — 이름·이메일·소속·직책·주소·태그" oninput="_ctSearchDebounced()">
       </div>
-      <div id="ct-cat-back" style="display:none;margin:8px 0"><button type="button" class="btn btn-outline btn-sm" onclick="_ctShowCategories()">← 카테고리 목록으로</button></div>
+      <div id="ct-cat-back" style="display:none;margin:8px 0"><button type="button" class="btn btn-outline btn-sm" onclick="_ctShowCategories()">← 목록으로</button></div>
       <div id="ct-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="ct-empty" style="display:none;font-size:12.5px;color:var(--hint)">해당 조건의 연락처가 없습니다.</div>
       <div id="ct-categories"></div>
+      <div id="ct-tags"></div>
       <div id="ct-items"></div>
     </div>
   </div>
@@ -545,6 +546,11 @@ let _ctLoadedOnce = false, _campLoadedOnce = false;
 // hondi PR feat/kaddress-csv-import 쪽 category-counts 엔드포인트와
 // 짝이 맞아야 함).
 let _ctViewCategory = null;
+// 2026-09-12 신설 — 카테고리와 나란히 태그로도 좁혀볼 수 있게. null이면
+// "요약(카테고리+태그 버튼 목록)" 화면, 값이 있으면 그 태그 하나로
+// 좁힌 목록 화면. _ctViewCategory와 마찬가지로 한 번에 하나만
+// 켜진다(둘 다 null이어야 요약 화면).
+let _ctViewTag = null;
 let _campAllItems = [];
 
 // 공용 fetch 래퍼(REST 엔드포인트용) — KAuth.fetchWithAuth에 위임한다.
@@ -1841,17 +1847,24 @@ async function _ctAddNew() {
   } catch (e) { errEl.textContent = e.message || '등록에 실패했습니다.'; errEl.style.display = ''; }
 }
 
-const _ctSearchDebounced = debounce(() => { _ctViewCategory = null; _ctLoad(); }, 350);
+const _ctSearchDebounced = debounce(() => { _ctViewCategory = null; _ctViewTag = null; _ctLoad(); }, 350);
 
-// 상태(status) 드롭다운이 바뀌면 카테고리별 건수가 달라지므로 요약
-// 화면으로 되돌린다 — 예전 카테고리에 남아있으면 건수가 안 맞을 수 있음.
-function _ctFilterChanged() { _ctViewCategory = null; _ctLoad(); }
+// 상태(status) 드롭다운이 바뀌면 카테고리·태그별 건수가 달라지므로 요약
+// 화면으로 되돌린다 — 예전 화면에 남아있으면 건수가 안 맞을 수 있음.
+function _ctFilterChanged() { _ctViewCategory = null; _ctViewTag = null; _ctLoad(); }
 function _ctOpenCategory(category) {
   _ctViewCategory = category;
+  _ctViewTag = null;
   document.getElementById('ct-filter-q').value = '';
   _ctLoad();
 }
-function _ctShowCategories() { _ctViewCategory = null; _ctLoad(); }
+function _ctOpenTag(tag) {
+  _ctViewTag = tag;
+  _ctViewCategory = null;
+  document.getElementById('ct-filter-q').value = '';
+  _ctLoad();
+}
+function _ctShowCategories() { _ctViewCategory = null; _ctViewTag = null; _ctLoad(); }
 
 function _ctRenderTable(items) {
   // 2026-09-11 — 카드 나열 대신 표(테이블)로. 백엔드가 이미
@@ -1871,6 +1884,10 @@ function _ctRenderTable(items) {
 // 먼저 보여주고(handleKmailContactsCategoryCounts, hondi PR
 // feat/kaddress-csv-import), 실제 목록은 카테고리를 클릭하거나 검색을
 // 써야 나온다 — 검색은 카테고리와 무관하게 전체에서 바로 찾는다.
+// 2026-09-12 갱신 — 태그별 보기 추가(주피터 지시). category(KSIC 21종
+// 고정값)와 tags(자유 그룹명, 예: "팀 주피터")는 서로 다른 개념이라
+// 카테고리 버튼만으로는 태그로 등록된 그룹이 안 보이는 문제가 있었다
+// — 카테고리 버튼 목록 바로 아래에 태그 버튼 목록을 나란히 보여준다.
 async function _ctLoad() {
   const status = document.getElementById('ct-filter-status').value;
   const q = document.getElementById('ct-filter-q').value.trim();
@@ -1878,9 +1895,10 @@ async function _ctLoad() {
   const emptyEl = document.getElementById('ct-empty');
   const itemsEl = document.getElementById('ct-items');
   const catsEl = document.getElementById('ct-categories');
+  const tagsEl = document.getElementById('ct-tags');
   const backEl = document.getElementById('ct-cat-back');
   loadingEl.style.display = ''; emptyEl.style.display = 'none';
-  itemsEl.innerHTML = ''; catsEl.innerHTML = '';
+  itemsEl.innerHTML = ''; catsEl.innerHTML = ''; tagsEl.innerHTML = '';
 
   if (q) {
     backEl.style.display = 'none';
@@ -1895,10 +1913,11 @@ async function _ctLoad() {
     return;
   }
 
-  if (_ctViewCategory !== null) {
+  if (_ctViewCategory !== null || _ctViewTag !== null) {
     backEl.style.display = '';
     try {
-      const data = await kmailApi('/kmail/contacts', { query: { status, category: _ctViewCategory } });
+      const query = _ctViewTag !== null ? { status, tag: _ctViewTag } : { status, category: _ctViewCategory };
+      const data = await kmailApi('/kmail/contacts', { query });
       const items = data.items || [];
       if (!items.length) { emptyEl.style.display = ''; return; }
       const cap = items.length >= 200
@@ -1913,16 +1932,30 @@ async function _ctLoad() {
 
   backEl.style.display = 'none';
   try {
-    const data = await kmailApi('/kmail/contacts/category-counts', { query: { status } });
-    if (!data.total) { emptyEl.style.display = ''; return; }
-    const rows = [];
-    if (data.uncategorized > 0) rows.push({ category: '__NONE__', label: '미분류', count: data.uncategorized });
-    for (const c of (data.categories || [])) rows.push({ category: c.category, label: c.category, count: c.count });
+    const [catData, tagData] = await Promise.all([
+      kmailApi('/kmail/contacts/category-counts', { query: { status } }),
+      kmailApi('/kmail/contacts/tag-counts', { query: { status } }).catch(() => null),
+    ]);
+    if (!catData.total) { emptyEl.style.display = ''; return; }
+
+    const catRows = [];
+    if (catData.uncategorized > 0) catRows.push({ category: '__NONE__', label: '미분류', count: catData.uncategorized });
+    for (const c of (catData.categories || [])) catRows.push({ category: c.category, label: c.category, count: c.count });
     catsEl.innerHTML = `
-      <div style="font-size:12.5px;color:var(--hint);margin-bottom:8px">전체 ${data.total}건 — 카테고리를 눌러 목록을 봅니다.</div>
+      <div style="font-size:12.5px;color:var(--hint);margin-bottom:8px">전체 ${catData.total}건 — 카테고리를 눌러 목록을 봅니다.</div>
       <div class="ct-cat-list">
-        ${rows.map(r => `<button type="button" class="ct-cat-item" onclick='_ctOpenCategory(${JSON.stringify(r.category)})'><span>${escHtml(r.label)}</span><span class="ct-cat-count">${r.count}</span></button>`).join('')}
+        ${catRows.map(r => `<button type="button" class="ct-cat-item" onclick='_ctOpenCategory(${JSON.stringify(r.category)})'><span>${escHtml(r.label)}</span><span class="ct-cat-count">${r.count}</span></button>`).join('')}
       </div>`;
+
+    // 태그는 자유값이라 없을 수도 있다 — 그럴 땐 섹션 자체를 숨긴다
+    // (빈 "태그별" 헤더만 떠 있으면 오히려 혼란).
+    if (tagData && tagData.tags && tagData.tags.length > 0) {
+      tagsEl.innerHTML = `
+        <div style="font-size:12.5px;color:var(--hint);margin:14px 0 8px">태그별 — 태그를 눌러 목록을 봅니다${tagData.no_tags > 0 ? ` (태그 없음 ${tagData.no_tags}건)` : ''}.</div>
+        <div class="ct-cat-list">
+          ${tagData.tags.map(t => `<button type="button" class="ct-cat-item" onclick='_ctOpenTag(${JSON.stringify(t.tag)})'><span>${escHtml(t.tag)}</span><span class="ct-cat-count">${t.count}</span></button>`).join('')}
+        </div>`;
+    }
   } catch (e) {
     catsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
   } finally { loadingEl.style.display = 'none'; }
