@@ -1669,6 +1669,17 @@ async function _kaddrSend() {
     if (data.action && ['kaddr_saved', 'kaddr_updated', 'kaddr_decided', 'kaddr_merged', 'kaddr_tagged', 'kaddr_deleted'].includes(data.action.type)) {
       _ctLoad();
     }
+    // 2026-09-12 신설 — UNIVERSAL-INTEGRITY U0 항목(11) 대응. K-Address가
+    // "이건 K-Mail이 할 일"이라고 판단한 요청을 실제로 K-Mail 채팅에
+    // 넘긴다 — "메일" 탭이 아니라 "새 캠페인" 탭(K-Mail 채팅이 있는
+    // 곳)으로 전환하고, 그 즉시 instruction을 새 메시지로 대신
+    // 보낸다(_campAskChatAboutThis와 동일한 탭전환+대신발화 패턴).
+    if (data.action && data.action.type === 'handoff_to_kmail' && data.action.instruction) {
+      _switchTab('compose');
+      _cmpChatStartNew();
+      document.getElementById('cmp-input').value = '';
+      await _cmpChatSendText(data.action.instruction);
+    }
   } catch (e) {
     err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.';
     err.style.display = '';
