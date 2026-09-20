@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="ko">
+<!-- desktop.html — K-Mail PC 화면(2026-09-20). webapp.html(모바일)에서 파생: 패널 마크업·인라인
+     스크립트는 그대로이고, 사이드바 셸·PC 레이아웃 CSS·"정보 공개 청구" 탭(foi.js)·_switchTab만 다르다.
+     공통 기능을 고칠 때는 webapp.html과 이 파일 양쪽을 함께 고칠 것(K-Law의 desktop/webapp과 같은 구조). -->
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-/* 기기별 진입 분기 — webapp.html은 폰용 UI다. PC에서 열렸으면 desktop.html(PC 레이아웃)로 보낸다
-   (2026-09-20). 판별식은 hondi.net/index.html과 같다. ?view=mobile 이면 PC에서도 이 화면을 유지하고,
-   ?view=desktop 이면 폰에서도 desktop.html로 간다. 쿼리·해시는 그대로 넘긴다. */
+/* 기기별 진입 분기 — desktop.html은 PC용 화면이다. 폰에서 열렸으면 webapp.html(모바일 UI)로
+   보낸다. 판별식은 hondi.net/index.html과 같다. ?view=desktop 이면 폰에서도 PC 화면을 유지,
+   ?view=mobile 이면 PC에서도 모바일 화면(webapp.html)으로 간다(반대편 파일도 같은 규칙). */
 (function () {
   var ua = navigator.userAgent || '';
   var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
@@ -16,10 +19,10 @@
   var view = new URLSearchParams(location.search).get('view');
   if (view === 'desktop') isMobile = false;
   if (view === 'mobile') isMobile = true;
-  if (!isMobile) location.replace('desktop.html' + location.search + location.hash);
+  if (isMobile) location.replace('webapp.html' + location.search + location.hash);
 })();
 </script>
-<title>K-Mail — 캠페인 설계 및 발송</title>
+<title>K-Mail — 캠페인 설계·발송·정보 공개 청구</title>
 <meta name="description" content="누구에게 어떤 메일을 보낼지 K-Mail과 대화로 정한 뒤 실제로 발송합니다. 회신을 모아 보고받고, 모든 캠페인은 기록되어 나중에 다시 찾아볼 수 있습니다.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230F8F7E%22/%3E%3Ctext%20x%3D%2232%22%20y%3D%2245%22%20font-family%3D%22%27Pretendard%27%2C%27Malgun%20Gothic%27%2Csans-serif%22%20font-size%3D%2234%22%20font-weight%3D%22700%22%20fill%3D%22%23ffffff%22%20text-anchor%3D%22middle%22%3EM%3C/text%3E%3C/svg%3E">
 
@@ -225,23 +228,179 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ql-editor.ql-blank::before{font-family:var(--font)!important;font-style:normal;color:var(--hint)}
 .ql-snow .ql-picker{font-family:var(--font)!important}
 </style>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   desktop.html 전용 레이아웃 (2026-09-20)
+
+   위 <style>은 webapp.html(모바일)과 같은 컴포넌트 스타일(카드·버튼·
+   채팅·표 등)이다. 이 블록은 그 위에 PC 화면용 구조만 덧씌운다:
+   상단 바 + 왼쪽 고정 사이드바 + 넓은 본문. 스크롤은 창(window)
+   기준을 그대로 유지한다(채팅 자동 스크롤 코드가 window.scrollTo를
+   쓰기 때문) — 사이드바만 sticky로 고정.
+   ══════════════════════════════════════════════════════════════ */
+header.topbar{padding:0 22px;gap:18px}
+header.topbar .logo{color:#fff;text-decoration:none}
+.crumb{display:flex;align-items:center;gap:8px;font-size:12.5px;color:rgba(255,255,255,.7)}
+.crumb a{color:inherit;text-decoration:none}
+.crumb a:hover{color:#fff}
+.crumb .sep{opacity:.45}
+.crumb .cur{color:#fff;font-weight:700}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:18px}
+.topbar-right a{font-size:12px;color:rgba(255,255,255,.72);text-decoration:none}
+.topbar-right a:hover{color:#fff}
+
+.app-body{display:flex;align-items:flex-start;min-height:calc(100vh - 54px)}
+.side-nav{width:232px;flex-shrink:0;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;background:var(--sur);border-right:1px solid var(--bdr);padding:16px 12px 24px;display:flex;flex-direction:column}
+.side-group{margin-bottom:16px}
+.side-label{font-size:10.5px;font-weight:800;letter-spacing:.07em;color:var(--hint);padding:4px 12px 6px}
+.side-nav .nav-btn{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:10px 12px;font-size:13.5px;font-weight:700;color:var(--sub);margin-bottom:2px}
+.side-nav .nav-btn svg{width:17px;height:17px;flex-shrink:0;color:var(--hint)}
+.side-nav .nav-btn:hover{background:var(--bg)}
+.side-nav .nav-btn.active{background:var(--pri-bg);color:var(--pri)}
+.side-nav .nav-btn.active svg{color:var(--pri)}
+.side-foot{margin-top:auto;padding:14px 12px 0;border-top:1px solid var(--bdr);font-size:11.5px;color:var(--hint);line-height:1.8}
+.side-foot a{color:var(--sub);text-decoration:none}
+.side-foot a:hover{color:var(--pri);text-decoration:underline}
+
+main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
+.content > .tab-panel{max-width:1120px;margin:0 auto}
+.content > #tab-compose{max-width:880px}
+.content > #tab-quicksend{max-width:820px}
+.content > #tab-campaigns{max-width:960px}
+.card{padding:24px 26px}
+.ql-editor{min-height:340px}
+
+/* 주소록: 2단 배치 — 왼쪽 AI 일괄 관리, 오른쪽 CSV·새 연락처, 아래 전체 목록 */
+#tab-contacts.active{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start;grid-template-areas:"ai csv" "ai newc" "list list"}
+#tab-contacts.active > .card{margin-bottom:0}
+#tab-contacts.active > .card:nth-of-type(1){grid-area:ai}
+#tab-contacts.active > .card:nth-of-type(2){grid-area:csv}
+#tab-contacts.active > .card:nth-of-type(3){grid-area:newc}
+#tab-contacts.active > .card:nth-of-type(4){grid-area:list}
+
+@media (max-width:960px){
+  .app-body{flex-direction:column}
+  .side-nav{position:static;width:100%;height:auto;flex-direction:row;overflow-x:auto;padding:8px 10px;border-right:none;border-bottom:1px solid var(--bdr)}
+  .side-group{display:flex;margin:0;gap:2px}
+  .side-label,.side-foot{display:none}
+  .side-nav .nav-btn{width:auto;white-space:nowrap;margin:0;padding:8px 12px}
+  main.content{padding:18px 14px 40px}
+  #tab-contacts.active{display:block}
+  #tab-contacts.active > .card{margin-bottom:18px}
+  .crumb{display:none}
+}
+
+/* ══════════════ 정보 공개 청구 탭 ══════════════ */
+.foi-head h1{font-size:20px;font-weight:800;margin-bottom:6px}
+.foi-head p{font-size:13px;color:var(--sub);max-width:720px;margin-bottom:16px;line-height:1.75}
+.foi-subnav{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.foi-subnav button{background:#F2F4F3;border:1px solid transparent;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:700;color:var(--sub)}
+.foi-subnav button.active{background:var(--pri);color:#fff}
+.foi-sub{display:none}
+.foi-sub.active{display:block}
+.foi-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:20px;align-items:start}
+.foi-col .card:last-child{margin-bottom:0}
+.foi-sticky{position:sticky;top:74px}
+.foi-select,.foi-textarea,.foi-item input[type=text],#foi-form input[type=date],#foi-d-form input[type=date],#foi-d-form input[type=text]{width:100%;font-size:13.5px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);background:#fff}
+.foi-textarea{resize:vertical;line-height:1.6}
+.foi-select:focus,.foi-textarea:focus,.foi-item input:focus,#foi-form input:focus,#foi-d-form input:focus{outline:none;border-color:var(--pri)}
+.foi-opt{font-weight:400;color:var(--hint)}
+.foi-checks{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
+.foi-checks.col{flex-direction:column;gap:9px}
+.foi-checks label,.foi-keep{display:flex;align-items:flex-start;gap:8px;font-weight:500;color:var(--txt);margin:0;cursor:pointer}
+.foi-checks input,.foi-keep input{margin-top:4px}
+.foi-keep{font-size:12.5px;margin-top:2px}
+.foi-note{background:var(--teal-bg);border:1px solid #CBD3F5;color:var(--teal);border-radius:var(--r);padding:11px 15px;font-size:12.5px;margin-bottom:14px}
+
+.foi-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;padding:10px;border:1px solid var(--bdr);border-radius:var(--r);background:#FAFBFC}
+.foi-item-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.foi-item-warn{font-size:11.5px;color:var(--org);line-height:1.6}
+.foi-item-warn:empty{display:none}
+.foi-item-del{flex-shrink:0;width:30px;height:30px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--hint);font-size:18px;line-height:1}
+.foi-item-del:hover{color:var(--red);border-color:var(--red)}
+
+.foi-preview-card{margin-bottom:0}
+#foi-preview{width:100%;height:420px;resize:vertical;border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;font-family:'Pretendard',-apple-system,sans-serif;font-size:12.5px;line-height:1.85;color:var(--txt);background:#FCFCFD;white-space:pre-wrap}
+.foi-status{font-size:12.5px;border-radius:var(--r);padding:9px 13px;margin-bottom:10px;line-height:1.6}
+.foi-status.warn{background:var(--obg);color:var(--org);border:1px solid #F3D9B5}
+.foi-status.ok{background:var(--gbg);color:var(--grn);border:1px solid #B7E4CE}
+.foi-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.foi-flash{font-size:12.5px;border-radius:var(--r);padding:9px 13px;margin-top:10px}
+.foi-flash.ok{background:var(--gbg);color:var(--grn)}
+.foi-flash.err{background:var(--rbg);color:var(--red)}
+
+.foi-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.foi-tile{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh);padding:14px 18px}
+.foi-tile .n{font-size:24px;font-weight:800;line-height:1.2}
+.foi-tile .l{font-size:12px;color:var(--hint);font-weight:700}
+.foi-tile.warn .n{color:var(--org)}
+.foi-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.foi-toolbar-right{display:flex;gap:8px}
+.foi-table td{vertical-align:middle}
+.foi-table .badge{white-space:nowrap}
+.foi-table tr.sel td{background:var(--pri-bg)}
+.foi-ag{font-weight:700}
+.foi-dl{font-weight:800;font-size:13px}
+.foi-dl.soon{color:var(--org)}
+.foi-dl.over{color:var(--red)}
+.foi-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;margin-top:14px}
+.foi-calc{background:var(--pri-bg);border:1px solid var(--pri-bd);border-radius:var(--r);padding:14px 16px;font-size:12.5px;line-height:1.8;margin-bottom:14px}
+.foi-calc div+div{margin-top:6px}
+.foi-label-sm{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:6px}
+.foi-d-items{margin:0 0 0 18px;font-size:12.5px;line-height:1.75}
+
+.foi-guide h3{font-size:14px;font-weight:800;margin:22px 0 8px}
+.foi-steps{margin:0 0 0 20px;font-size:13px;line-height:1.85}
+.foi-steps li{margin-bottom:9px}
+.foi-tips{margin:0 0 0 20px;font-size:13px;line-height:1.85}
+.foi-tips li{margin-bottom:5px}
+
+@media (max-width:1180px){
+  .foi-grid{grid-template-columns:minmax(0,1fr)}
+  .foi-sticky{position:static}
+  .foi-detail-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .foi-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
 </head>
 <body>
 
-<header>
-  <div class="logo"><span class="logo-icon">M</span>K-Mail</div>
-  <a class="back" href="https://mail.hondi.net">← 소개 페이지</a>
-  <a class="back" href="https://hondi.net" target="_blank">hondi.net ↗</a>
+<header class="topbar">
+  <a class="logo" href="https://mail.hondi.net"><span class="logo-icon">M</span>K-Mail</a>
+  <div class="crumb"><a href="https://hondi.net" target="_blank">hondi.net</a><span class="sep">/</span><span>K-Mail</span><span class="sep">/</span><span class="cur" id="crumb-cur">새 캠페인</span></div>
+  <div class="topbar-right">
+    <a href="https://mail.hondi.net">소개 페이지</a>
+    <a href="webapp.html?view=mobile">모바일 화면</a>
+    <a href="https://hondi.net" target="_blank">hondi.net ↗</a>
+  </div>
 </header>
 
-<main>
-  <div class="tabbar">
-    <button id="tab-btn-compose" class="active" onclick="_switchTab('compose')">새 캠페인</button>
-    <button id="tab-btn-contacts" onclick="_switchTab('contacts')">주소록</button>
-    <button id="tab-btn-campaigns" onclick="_switchTab('campaigns')">내 캠페인</button>
-    <button id="tab-btn-quicksend" onclick="_switchTab('quicksend')">빠른 발송</button>
-    <button id="tab-btn-mail" onclick="_switchTab('mail')">메일</button>
-  </div>
+<div class="app-body">
+  <nav class="side-nav" aria-label="K-Mail 메뉴">
+    <div class="side-group">
+      <div class="side-label">작성·발송</div>
+      <button id="tab-btn-compose" class="nav-btn active" data-label="새 캠페인" onclick="_switchTab('compose')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>새 캠페인</button>
+      <button id="tab-btn-quicksend" class="nav-btn" data-label="빠른 발송" onclick="_switchTab('quicksend')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>빠른 발송</button>
+      <button id="tab-btn-mail" class="nav-btn" data-label="메일" onclick="_switchTab('mail')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>메일</button>
+    </div>
+    <div class="side-group">
+      <div class="side-label">관리</div>
+      <button id="tab-btn-contacts" class="nav-btn" data-label="주소록" onclick="_switchTab('contacts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>주소록</button>
+      <button id="tab-btn-campaigns" class="nav-btn" data-label="내 캠페인" onclick="_switchTab('campaigns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>내 캠페인</button>
+    </div>
+    <div class="side-group">
+      <div class="side-label">행정 업무</div>
+      <button id="tab-btn-foi" class="nav-btn" data-label="정보 공개 청구" onclick="_switchTab('foi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>정보 공개 청구</button>
+    </div>
+    <div class="side-foot">
+      <a href="https://mail.hondi.net">소개 페이지</a><br>
+      <a href="webapp.html?view=mobile">모바일 화면으로 보기</a>
+    </div>
+  </nav>
+
+<main class="content">
 
   <!-- ══════════════════════════════════════════════════════════
        새 캠페인 — 대화로 목적 파악 → 대상 검색/특정 → 발송 확정.
@@ -510,7 +669,220 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
       </div>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       정보 공개 청구 — 2026-09-20 신설(desktop.html 전용).
+       「공공기관의 정보공개에 관한 법률」에 따른 청구서를 표준 문구로 만들고,
+       청구 이후의 접수번호·결정기한·이의신청 기한을 기록·계산한다.
+       서버를 쓰지 않으며 모든 기록은 이 브라우저(localStorage)에만 남는다.
+       동작 코드는 foi.js. 제출은 사용자가 정보공개시스템(open.go.kr) 등에서 직접 한다.
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-foi" class="tab-panel">
+    <div class="foi-head">
+      <h1>정보 공개 청구</h1>
+      <p>기관이 이미 보유한 문서를 「공공기관의 정보공개에 관한 법률」에 따라 청구합니다. 청구서를 만들고, 접수 이후의 기한을 챙기는 일까지 이 화면에서 정리하세요.</p>
+    </div>
+
+    <div class="foi-subnav">
+      <button type="button" id="foi-subnav-new" class="active" onclick="_foi.sub('new')">새 청구서</button>
+      <button type="button" id="foi-subnav-list" onclick="_foi.sub('list')">내 청구 현황</button>
+      <button type="button" id="foi-subnav-guide" onclick="_foi.sub('guide')">안내</button>
+    </div>
+
+    <!-- ── 새 청구서 ── -->
+    <div id="foi-sub-new" class="foi-sub active">
+      <div id="foi-editing-note" class="foi-note" style="display:none"></div>
+      <div class="foi-grid" id="foi-form">
+        <div class="foi-col">
+          <div class="card">
+            <h2>① 청구 기관·대상</h2>
+            <div class="sub">청구서 한 장은 기관 한 곳에 냅니다. 같은 문서를 여러 기관에 청구하려면 한 장을 저장한 뒤 “내 청구 현황”의 <b>재사용</b>으로 기관만 바꿔 다시 만드세요.</div>
+            <div class="field">
+              <label for="foi-preset">문서 묶음 (선택하면 아래 목록이 채워집니다)</label>
+              <select id="foi-preset" class="foi-select"></select>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="foi-agency">청구 기관</label><input type="text" id="foi-agency" list="foi-agency-list" placeholder="예: 제주특별자치도 / 제주시 / ○○부" autocomplete="off"><datalist id="foi-agency-list"></datalist></div>
+              <div class="field"><label for="foi-dept">대상 부서 <span class="foi-opt">(선택)</span></label><input type="text" id="foi-dept" placeholder="예: 청정환경국 생활환경과 / 소관 전 부서"></div>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label for="foi-purpose">청구 목적 <span class="foi-opt">(선택 — 적지 않아도 됩니다)</span></label>
+              <textarea id="foi-purpose" rows="2" class="foi-textarea" placeholder="예: 민원 안내 서비스 개선을 위한 업무 자료 확인"></textarea>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>② 청구할 문서</h2>
+            <div class="sub">질문이 아니라 <b>문서 이름</b>으로 지목하세요. 새로 작성·취합해야 하는 자료는 “부존재”로 답이 올 수 있고, “관련 자료 일체”처럼 넓은 표현은 보정 요구를 받기 쉽습니다.</div>
+            <div id="foi-items"></div>
+            <button type="button" class="btn btn-outline btn-sm" id="foi-add-item">+ 문서 항목 추가</button>
+          </div>
+
+          <div class="card">
+            <h2>③ 공개·수령 방법과 요청 사항</h2>
+            <div class="field">
+              <label>공개 방법</label>
+              <div class="foi-checks">
+                <label><input type="checkbox" id="foi-pub-file" checked> 전자파일</label>
+                <label><input type="checkbox" id="foi-pub-copy"> 사본·출력물 교부</label>
+                <label><input type="checkbox" id="foi-pub-view"> 열람</label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="foi-recv">수령 방법</label>
+              <select id="foi-recv" class="foi-select">
+                <option value="net">정보통신망 (정보공개시스템·전자우편)</option>
+                <option value="post">우편</option>
+                <option value="visit">방문 수령</option>
+                <option value="fax">팩스</option>
+              </select>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>청구서에 넣을 요청 문구</label>
+              <div class="foi-checks col">
+                <label><input type="checkbox" id="foi-opt-nocreate" checked> 새로 작성·취합을 요구하는 것이 아니라 <b>보유 문서 그대로</b> 청구함을 명시</label>
+                <label><input type="checkbox" id="foi-opt-partial" checked> 비공개 사유가 있는 부분만 가리고 <b>부분공개</b> 요청</label>
+                <label><input type="checkbox" id="foi-opt-nonexist" checked> 부존재이면 그 사실과 <b>유사 보유 문서명</b> 안내 요청</label>
+                <label><input type="checkbox" id="foi-opt-personal" checked> <b>개인정보</b>는 청구 대상이 아님을 명시</label>
+                <label><input type="checkbox" id="foi-opt-cost" checked> 비용(수수료·우송료) 발생 시 <b>사전 안내</b> 요청</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>④ 청구인</h2>
+            <div class="sub">법은 청구서에 청구인의 성명·연락처 등을 적도록 합니다. 기관 서식에 따라 생년월일·주소를 더 요구할 수 있습니다. 여기 입력한 내용은 이 브라우저 밖으로 나가지 않습니다.</div>
+            <div class="field-row">
+              <div class="field"><label for="foi-req-type">구분</label>
+                <select id="foi-req-type" class="foi-select"><option value="person">개인</option><option value="org">법인·단체</option></select></div>
+              <div class="field"><label for="foi-req-name">성명(단체는 명칭)</label><input type="text" id="foi-req-name" autocomplete="name"></div>
+              <div class="field" id="foi-org-only-rep" style="display:none"><label for="foi-req-rep">대표자</label><input type="text" id="foi-req-rep"></div>
+              <div class="field" id="foi-person-only-birth"><label for="foi-req-birth">생년월일 <span class="foi-opt">(선택)</span></label><input type="text" id="foi-req-birth" placeholder="예: 1980-01-01" autocomplete="bday"></div>
+            </div>
+            <div class="field"><label for="foi-req-addr">주소(단체는 소재지)</label><input type="text" id="foi-req-addr" autocomplete="street-address"></div>
+            <div class="field-row">
+              <div class="field"><label for="foi-req-phone">전화</label><input type="text" id="foi-req-phone" placeholder="010-0000-0000" autocomplete="tel"></div>
+              <div class="field"><label for="foi-req-email">전자우편</label><input type="email" id="foi-req-email" placeholder="name@example.com" autocomplete="email"></div>
+              <div class="field"><label for="foi-date">청구일</label><input type="date" id="foi-date"></div>
+            </div>
+            <label class="foi-keep"><input type="checkbox" id="foi-req-keep"> 청구인 정보를 이 브라우저에 저장해 다음에도 채워 넣기 <span class="foi-opt">(공용 PC에서는 끄세요)</span></label>
+          </div>
+        </div>
+
+        <div class="foi-col foi-sticky">
+          <div class="card foi-preview-card">
+            <h2>청구서 미리보기</h2>
+            <div id="foi-status-box" class="foi-status"></div>
+            <textarea id="foi-preview" readonly spellcheck="false"></textarea>
+            <div id="foi-flash" class="foi-flash" style="display:none"></div>
+            <div class="foi-actions">
+              <button type="button" class="btn btn-primary btn-sm" onclick="_foi.copy()">복사</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.download()">TXT 다운로드</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.toMail()">메일 작성으로 보내기</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.portal()">정보공개포털 ↗</button>
+            </div>
+            <div class="foi-actions" style="margin-top:8px">
+              <button type="button" class="btn btn-primary btn-sm" onclick="_foi.save()">기록에 저장</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.reset()">새로 시작</button>
+            </div>
+            <div class="hint">이 화면은 청구서를 대신 제출하지 않습니다. 복사하거나 내려받아 정보공개시스템(open.go.kr) 등 기관이 안내한 방법으로 제출하고, 접수되면 “내 청구 현황”에 접수번호를 기록하세요. “메일 작성으로 보내기”는 기관이 전자우편 청구를 받는다고 확인된 경우에만 쓰세요.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 내 청구 현황 ── -->
+    <div id="foi-sub-list" class="foi-sub">
+      <div class="foi-summary">
+        <div class="foi-tile"><div class="n" id="foi-sum-active">0</div><div class="l">진행 중</div></div>
+        <div class="foi-tile warn"><div class="n" id="foi-sum-soon">0</div><div class="l">기한 3일 이내</div></div>
+        <div class="foi-tile"><div class="n" id="foi-sum-done">0</div><div class="l">결정 완료</div></div>
+        <div class="foi-tile"><div class="n" id="foi-sum-all">0</div><div class="l">전체</div></div>
+      </div>
+      <div id="foi-storage-warn" class="errbox" style="display:none">이 브라우저가 저장을 허용하지 않아 기록이 유지되지 않을 수 있습니다(시크릿 모드 등). 중요한 청구는 청구서를 따로 내려받아 두세요.</div>
+      <div class="card">
+        <div class="foi-toolbar">
+          <h2 style="margin:0">내 청구 현황</h2>
+          <div class="foi-toolbar-right">
+            <button type="button" class="btn btn-outline btn-sm" onclick="_foi.exportJson()">내보내기(JSON)</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('foi-import').click()">가져오기</button>
+            <input type="file" id="foi-import" accept=".json,application/json" style="display:none" onchange="_foi.importJson(event)">
+          </div>
+        </div>
+        <div class="sub" style="margin-top:6px">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우거나 다른 PC로 옮길 때는 내보내기·가져오기를 쓰세요(청구인 개인정보는 내보내기에 포함되지 않습니다).</div>
+        <div id="foi-list-flash" class="foi-flash" style="display:none"></div>
+        <div id="foi-list-empty" style="font-size:12.5px;color:var(--hint);padding:14px 2px">아직 저장한 청구가 없습니다 — “새 청구서”에서 작성한 뒤 <b>기록에 저장</b>을 누르세요.</div>
+        <div id="foi-list-wrap" class="ct-table-wrap" style="display:none">
+          <table class="ct-table foi-table">
+            <thead><tr><th>기관·부서</th><th>청구 문서</th><th>상태</th><th>접수일</th><th>다음 기한</th><th></th></tr></thead>
+            <tbody id="foi-list-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="foi-detail-card" style="display:none">
+        <div class="foi-toolbar">
+          <h2 id="foi-d-title" style="margin:0"></h2>
+          <div class="foi-toolbar-right"><button type="button" class="btn btn-outline btn-sm" onclick="_foi.closeDetail()">닫기</button></div>
+        </div>
+        <div class="foi-detail-grid">
+          <div id="foi-d-form">
+            <div class="field"><label for="foi-d-status">진행 상태</label><select id="foi-d-status" class="foi-select"></select></div>
+            <div class="field-row">
+              <div class="field"><label for="foi-d-received">접수일</label><input type="date" id="foi-d-received"></div>
+              <div class="field"><label for="foi-d-receipt">접수번호</label><input type="text" id="foi-d-receipt" placeholder="기관·시스템이 부여한 번호"></div>
+              <div class="field"><label for="foi-d-decided">결정 통지를 받은 날</label><input type="date" id="foi-d-decided"></div>
+            </div>
+            <div class="field"><label for="foi-d-memo">메모</label><textarea id="foi-d-memo" rows="3" class="foi-textarea" placeholder="담당자 회신 내용, 부분공개 사유, 후속 조치 등"></textarea></div>
+          </div>
+          <div>
+            <div class="foi-calc" id="foi-d-calc"></div>
+            <div class="foi-label-sm">청구한 문서</div>
+            <ol class="foi-d-items" id="foi-d-items"></ol>
+          </div>
+        </div>
+        <div id="foi-d-flash" class="foi-flash" style="display:none"></div>
+        <div class="foi-actions">
+          <button type="button" class="btn btn-primary btn-sm" onclick="_foi.saveDetail()">저장</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="_foi.editFromDetail()">청구서 수정·다시 보기</button>
+          <button type="button" class="btn btn-outline btn-sm" style="color:var(--red)" onclick="_foi.deleteRecord()">삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 안내 ── -->
+    <div id="foi-sub-guide" class="foi-sub">
+      <div class="card foi-guide">
+        <h2>정보 공개 청구, 이렇게 진행됩니다</h2>
+        <div class="sub">2026-09-20 기준으로 국가법령정보센터의 「공공기관의 정보공개에 관한 법률」 본문을 확인해 정리했습니다. 법률 자문이 아니며, 구체적인 사안은 기관 안내와 법령 원문을 확인하세요.</div>
+        <ol class="foi-steps">
+          <li><b>청구서 작성</b> — 청구인 정보와, 공개를 청구하는 정보의 내용·공개 방법을 적습니다(법 제10조). 말로도 청구할 수 있지만 기록이 남도록 서면(전자문서 포함)을 권합니다. 청구 정보는 사회 일반인의 관점에서 내용과 범위를 확정할 수 있을 만큼 <b>특정</b>해야 합니다.</li>
+          <li><b>제출</b> — 정보를 보유한 기관에 냅니다. 정보공개포털(open.go.kr)에서 온라인으로 청구할 수 있는 기관이 많고, 기관별 접수 방식은 각 기관 안내를 따르세요.</li>
+          <li><b>결정 (10일)</b> — 기관은 청구를 받은 날부터 10일 이내에 공개 여부를 결정해야 합니다. 부득이하면 그 기간이 끝나는 날의 다음 날부터 10일의 범위에서 연장할 수 있고, 연장 사실과 사유를 청구인에게 문서로 통지해야 합니다(법 제11조).</li>
+          <li><b>결과</b> — 공개, 부분공개, 비공개, 또는 부존재(보유하지 않음)로 통지됩니다. 비공개 대상은 법 제9조에 정해져 있으며, 예를 들어 개인 식별 정보, 감사·계약·인사 관련 사항, 의사결정·내부검토 과정에 있는 사항 등이 있습니다.</li>
+          <li><b>불복</b> — 비공개·부분공개 결정에 불복하거나 청구 후 20일이 지나도록 결정이 없으면, 통지를 받은 날 또는 20일이 경과한 날부터 30일 이내에 그 기관에 문서로 <b>이의신청</b>할 수 있습니다(법 제18조). 이의신청을 거치지 않고 <b>행정심판</b>을 청구할 수도 있으며(법 제19조), 청구 기간은 행정심판법이 정합니다.</li>
+        </ol>
+
+        <h3>잘 되는 청구서의 요령</h3>
+        <ul class="foi-tips">
+          <li><b>문서 이름으로 지목</b>합니다. “○○ 처리지침 최신 시행본”은 되지만 “○○는 어떻게 처리하나요?”는 청구 대상이 아닙니다.</li>
+          <li><b>새로 만드는 자료는 청구할 수 없습니다.</b> 통계·분석을 새로 작성해 달라는 청구는 부존재로 끝나기 쉽습니다. 기존 집계 문서가 있는지를 지목하세요.</li>
+          <li><b>범위와 시점</b>을 붙입니다(“최근 2개년”, “현재 시행 중인 최신본”). “관련 자료 일체”는 피하세요.</li>
+          <li>이미 공개된 자료(자치법규, 사전공표 자료, 민원편람 등)는 기관 누리집에서 먼저 찾아보면 청구 없이 얻을 수 있습니다.</li>
+          <li>목록 먼저, 원문은 나중에 — 처음에는 <b>문서 목록</b>과 공통 문서만 청구하고, 결과를 보고 필요한 원문을 2차로 청구하면 부담이 작습니다.</li>
+        </ul>
+
+        <h3>이 화면의 한계</h3>
+        <ul class="foi-tips">
+          <li>청구서를 대신 제출하지 않습니다. 작성·복사·다운로드까지이며 제출과 접수는 직접 하셔야 합니다.</li>
+          <li>기한 계산은 <b>참고용</b>입니다. 토·일요일만 반영하고 공휴일은 반영하지 않으며, 기관이 보낸 통지의 기한이 항상 우선합니다.</li>
+          <li>기록과 청구인 정보는 이 브라우저에만 저장됩니다. 서버로 보내지 않으며, 브라우저 데이터를 지우면 사라지므로 중요한 기록은 내보내기로 백업하세요.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </main>
+</div>
 
 
 <script>
@@ -544,9 +916,13 @@ function _kmailAutoResize(el) { el.style.height = 'auto'; el.style.height = el.s
 
 function _switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tabbar button').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav .nav-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  document.getElementById('tab-btn-' + name).classList.add('active');
+  const _navBtn = document.getElementById('tab-btn-' + name);
+  _navBtn.classList.add('active');
+  const _crumb = document.getElementById('crumb-cur');
+  if (_crumb) _crumb.textContent = _navBtn.getAttribute('data-label') || '';
+  if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
@@ -2228,6 +2604,12 @@ async function _campViewFullTranscriptInline(campaignId, btn) {
   }
 }
 
+// desktop.html#foi 처럼 해시로 특정 탭을 바로 열 수 있다(북마크·다른 서비스의 딥링크용).
+(function () {
+  const h = (location.hash || '').replace('#', '');
+  if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
+})();
 </script>
+<script src="foi.js?v=20260920"></script>
 </body>
 </html>
