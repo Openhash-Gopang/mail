@@ -363,6 +363,70 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 @media (max-width:640px){
   .foi-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* ── 정보 공개 청구: 청구 건(캠페인)·AI 입력창·공유 아카이브 (2026-09-20 개편) ── */
+.foi-count{display:inline-block;min-width:18px;padding:0 6px;margin-left:4px;border-radius:9px;background:var(--org);color:#fff;font-size:10.5px;font-weight:800;line-height:18px;text-align:center}
+.foi-subnav button.active .foi-count{background:#fff;color:var(--pri)}
+.foi-ai{margin-bottom:20px}
+.foi-ai-thread{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.foi-ai-thread:empty{display:none}
+.foi-ai-thread .chat-bubble-row.assistant .chat-bubble{background:#FAFBFC}
+.foi-ai-progress{font-size:12.5px;color:var(--sub);background:var(--pri-bg);border:1px solid var(--pri-bd);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;line-height:1.8}
+.foi-ai-progress .row{display:flex;align-items:center;gap:8px}
+.foi-ai-progress .spinner{flex-shrink:0}
+.foi-ai-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.foi-known{margin-bottom:20px}
+.foi-known h2{margin-bottom:10px}
+.foi-known .row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #F0F1F5;font-size:12.5px;line-height:1.7}
+.foi-known .row:last-child{border-bottom:none}
+.foi-known .row .t{flex:1;min-width:0}
+.foi-known .row a{color:var(--pri);word-break:break-all}
+.foi-known .sec{font-size:12px;font-weight:800;color:var(--sub);margin:14px 0 4px}
+.foi-known .unv{font-size:12.5px;color:var(--org);line-height:1.8}
+
+.foi-seg{display:inline-flex;border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
+.foi-seg button{background:#fff;border:none;padding:6px 14px;font-size:12px;font-weight:700;color:var(--sub);border-right:1px solid var(--bdr)}
+.foi-seg button:last-child{border-right:none}
+.foi-seg button.active{background:var(--pri);color:#fff}
+.foi-bar{height:7px;border-radius:4px;background:#E8EAF0;overflow:hidden;min-width:110px}
+.foi-bar > span{display:block;height:100%;background:var(--pri-lt)}
+.foi-prog-txt{font-size:11.5px;color:var(--hint);margin-top:4px}
+.foi-chip{display:inline-block;padding:1px 8px;border-radius:9px;font-size:10.5px;font-weight:700;margin-right:4px;background:#EDEFF3;color:var(--sub)}
+.foi-chip.warn{background:var(--obg);color:var(--org)}
+.foi-chip.ok{background:var(--gbg);color:var(--grn)}
+.foi-chip.bad{background:var(--rbg);color:var(--red)}
+.foi-table td .sub-line{font-size:11.5px;color:var(--hint)}
+
+.foi-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--gbg);border:1px solid #B7E4CE;color:var(--grn);border-radius:var(--r);padding:12px 16px;font-size:12.5px;margin:14px 0}
+.foi-d-meta{font-size:12.5px;color:var(--sub);margin:6px 0 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.foi-d-title-in{width:100%;font-size:15px;font-weight:800;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);margin-top:10px}
+.foi-h3{font-size:13px;font-weight:800;margin:20px 0 8px}
+.foi-itbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.foi-itbl th{text-align:left;font-size:11px;color:var(--hint);font-weight:700;padding:6px 8px;border-bottom:2px solid var(--bdr);white-space:nowrap}
+.foi-itbl td{padding:8px;border-bottom:1px solid var(--bdr);vertical-align:top}
+.foi-itbl input[type=text],.foi-itbl select{width:100%;font-size:12.5px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:#fff}
+.foi-itbl .it-title{font-weight:700}
+.foi-itbl .it-scope{font-size:11.5px;color:var(--hint)}
+.foi-round{border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;background:#FAFBFC}
+.foi-round-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.foi-round-head b{font-size:13px}
+.foi-round .field-row .field{min-width:140px;margin-bottom:10px}
+.foi-round input,.foi-round select,.foi-round textarea{width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff}
+.foi-round .foi-calc{margin:6px 0 0}
+.foi-round-items{font-size:12px;color:var(--sub);margin-top:6px}
+.foi-panel-box{border:1px solid var(--pri-bd);background:var(--pri-bg);border-radius:var(--r);padding:16px 18px;margin:14px 0}
+.foi-panel-box h4{font-size:13px;font-weight:800;margin-bottom:8px}
+.foi-panel-box label.chk{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;padding:4px 0;cursor:pointer}
+.foi-share-preview{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-size:12.5px;line-height:1.8;margin:10px 0}
+.foi-share-preview ul{margin:4px 0 4px 18px}
+.foi-share-no{font-size:11.5px;color:var(--hint);margin-top:6px}
+.foi-arc-card{border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;background:#fff;cursor:pointer}
+.foi-arc-card:hover{border-color:var(--pri-lt)}
+.foi-arc-card .t{font-weight:800;font-size:13.5px}
+.foi-arc-card .m{font-size:12px;color:var(--hint);margin-top:2px}
+.foi-arc-card .s{font-size:12.5px;color:var(--sub);margin-top:6px;line-height:1.7}
+.foi-empty-cta{padding:22px 4px;font-size:13px;color:var(--sub);line-height:1.8}
+@media (max-width:1180px){ .foi-itbl th:nth-child(4),.foi-itbl td:nth-child(4){display:none} }
 </style>
 </head>
 <body>
@@ -671,32 +735,65 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
-       정보 공개 청구 — 2026-09-20 신설(desktop.html 전용).
-       「공공기관의 정보공개에 관한 법률」에 따른 청구서를 표준 문구로 만들고,
-       청구 이후의 접수번호·결정기한·이의신청 기한을 기록·계산한다.
-       서버를 쓰지 않으며 모든 기록은 이 브라우저(localStorage)에만 남는다.
-       동작 코드는 foi.js. 제출은 사용자가 정보공개시스템(open.go.kr) 등에서 직접 한다.
+       정보 공개 청구 — 2026-09-20 신설, 같은 날 "청구 건(캠페인)" 구조로 개편(desktop.html 전용).
+
+       · 새 청구서: 맨 위 입력창에 알고 싶은 것을 적으면 K-FOI(SP-28)가 기관을 특정하고, 다른
+         사용자가 공유한 아카이브 → 웹 순으로 이미 공개된 정보를 확인한 뒤, 아직 얻지 못한 것만
+         청구 목록으로 만들어 아래 폼을 채운다.
+       · 내 청구 건: 청구는 대개 1회로 끝나지 않는다. 한 건(캠페인) 안에 얻고 싶은 정보(항목)와
+         청구 회차를 쌓아 추적하고, 후속 청구를 만든다. 다 얻으면 종료·보관한다.
+       · 공유 아카이브: 종료·보관하며 공유를 선택한 건을 혼디 사용자 전체가 검색한다.
+       청구인의 성명·주소·연락처는 서버로 보내지 않고 이 브라우저에만 둔다. 동작 코드는 foi.js.
+       제출(정보공개시스템 등)은 사용자가 직접 한다.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-foi" class="tab-panel">
     <div class="foi-head">
       <h1>정보 공개 청구</h1>
-      <p>기관이 이미 보유한 문서를 「공공기관의 정보공개에 관한 법률」에 따라 청구합니다. 청구서를 만들고, 접수 이후의 기한을 챙기는 일까지 이 화면에서 정리하세요.</p>
+      <p>기관이 이미 보유한 문서를 「공공기관의 정보공개에 관한 법률」에 따라 청구합니다. 알고 싶은 것을 적으면 이미 공개됐거나 다른 사용자가 얻은 정보는 걸러내고, 청구가 필요한 것만 청구서로 만들어 드립니다. 청구가 여러 번에 걸쳐 이어져도 한 건으로 추적하세요.</p>
     </div>
 
     <div class="foi-subnav">
       <button type="button" id="foi-subnav-new" class="active" onclick="_foi.sub('new')">새 청구서</button>
-      <button type="button" id="foi-subnav-list" onclick="_foi.sub('list')">내 청구 현황</button>
+      <button type="button" id="foi-subnav-list" onclick="_foi.sub('list')">내 청구 건 <span class="foi-count" id="foi-nav-count" style="display:none"></span></button>
+      <button type="button" id="foi-subnav-archive" onclick="_foi.sub('archive')">공유 아카이브</button>
       <button type="button" id="foi-subnav-guide" onclick="_foi.sub('guide')">안내</button>
     </div>
 
-    <!-- ── 새 청구서 ── -->
+    <!-- ══ 새 청구서 ══ -->
     <div id="foi-sub-new" class="foi-sub active">
+
+      <div class="card foi-ai">
+        <h2>무엇을 알고 싶으신가요?</h2>
+        <div class="sub">알고 싶은 내용을 편하게 적어 주세요. 기관과 부서를 특정하고, <b>공유 아카이브</b>에서 다른 사용자가 이미 얻은 자료가 있는지 먼저 본 다음, 웹에서 <b>이미 공개된 자료</b>를 찾습니다. 그러고 남은 것만 아래 청구서 폼에 채웁니다.</div>
+        <div id="foi-ai-thread" class="foi-ai-thread"></div>
+        <div id="foi-ai-progress" class="foi-ai-progress" style="display:none"></div>
+        <div id="foi-ai-err" class="errbox" style="display:none"></div>
+        <div class="chat-inputbar">
+          <textarea id="foi-ai-input" class="chat-textarea" rows="2" placeholder="예: 제주시 생활환경과가 대형폐기물을 어떻게 처리하는지 알 수 있는 업무 자료를 얻고 싶어요"></textarea>
+          <button type="button" class="chat-send-btn" id="foi-ai-send" title="보내기" disabled onclick="_foi.aiSend()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
+        <div class="foi-ai-foot">
+          <span class="hint" style="margin:0">Enter로 줄바꿈, 버튼(또는 Ctrl+Enter)으로 보냅니다. 조사에는 몇 십 초가 걸릴 수 있습니다.</span>
+          <button type="button" class="btn btn-outline btn-sm" id="foi-ai-reset" style="display:none" onclick="_foi.aiReset()">+ 새 요청</button>
+        </div>
+      </div>
+
+      <div id="foi-known-card" class="card foi-known" style="display:none">
+        <h2>이미 확인된 정보 <span class="foi-opt" style="font-size:12px">— 청구서에는 넣지 않습니다</span></h2>
+        <div id="foi-known-items"></div>
+        <div id="foi-known-matches"></div>
+        <div id="foi-known-unverified"></div>
+      </div>
+
       <div id="foi-editing-note" class="foi-note" style="display:none"></div>
+
       <div class="foi-grid" id="foi-form">
         <div class="foi-col">
           <div class="card">
             <h2>① 청구 기관·대상</h2>
-            <div class="sub">청구서 한 장은 기관 한 곳에 냅니다. 같은 문서를 여러 기관에 청구하려면 한 장을 저장한 뒤 “내 청구 현황”의 <b>재사용</b>으로 기관만 바꿔 다시 만드세요.</div>
+            <div class="sub">청구서 한 장은 기관 한 곳에 냅니다. 같은 문서를 여러 기관에 청구하려면 한 장을 저장한 뒤 “내 청구 건”의 <b>재사용</b>으로 기관만 바꿔 다시 만드세요.</div>
             <div class="field">
               <label for="foi-preset">문서 묶음 (선택하면 아래 목록이 채워집니다)</label>
               <select id="foi-preset" class="foi-select"></select>
@@ -751,7 +848,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
           <div class="card">
             <h2>④ 청구인</h2>
-            <div class="sub">법은 청구서에 청구인의 성명·연락처 등을 적도록 합니다. 기관 서식에 따라 생년월일·주소를 더 요구할 수 있습니다. 여기 입력한 내용은 이 브라우저 밖으로 나가지 않습니다.</div>
+            <div class="sub">법은 청구서에 청구인의 성명·연락처 등을 적도록 합니다. 기관 서식에 따라 생년월일·주소를 더 요구할 수 있습니다. 여기 입력한 내용은 <b>이 브라우저 밖으로 나가지 않습니다</b> — 청구 건을 저장해도 서버에는 올라가지 않습니다.</div>
             <div class="field-row">
               <div class="field"><label for="foi-req-type">구분</label>
                 <select id="foi-req-type" class="foi-select"><option value="person">개인</option><option value="org">법인·단체</option></select></div>
@@ -782,39 +879,45 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
               <button type="button" class="btn btn-outline btn-sm" onclick="_foi.portal()">정보공개포털 ↗</button>
             </div>
             <div class="foi-actions" style="margin-top:8px">
-              <button type="button" class="btn btn-primary btn-sm" onclick="_foi.save()">기록에 저장</button>
+              <button type="button" class="btn btn-primary btn-sm" id="foi-save-btn" onclick="_foi.save()">청구 건에 저장</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="_foi.reset()">새로 시작</button>
             </div>
-            <div class="hint">이 화면은 청구서를 대신 제출하지 않습니다. 복사하거나 내려받아 정보공개시스템(open.go.kr) 등 기관이 안내한 방법으로 제출하고, 접수되면 “내 청구 현황”에 접수번호를 기록하세요. “메일 작성으로 보내기”는 기관이 전자우편 청구를 받는다고 확인된 경우에만 쓰세요.</div>
+            <div class="hint">이 화면은 청구서를 대신 제출하지 않습니다. 복사하거나 내려받아 정보공개시스템(open.go.kr) 등 기관이 안내한 방법으로 제출하고, 접수되면 “내 청구 건”에서 그 회차의 접수일·접수번호를 기록하세요. “메일 작성으로 보내기”는 기관이 전자우편 청구를 받는다고 확인된 경우에만 쓰세요.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── 내 청구 현황 ── -->
+    <!-- ══ 내 청구 건 ══ -->
     <div id="foi-sub-list" class="foi-sub">
       <div class="foi-summary">
-        <div class="foi-tile"><div class="n" id="foi-sum-active">0</div><div class="l">진행 중</div></div>
+        <div class="foi-tile"><div class="n" id="foi-sum-active">0</div><div class="l">진행 중인 건</div></div>
+        <div class="foi-tile"><div class="n" id="foi-sum-open">0</div><div class="l">아직 못 얻은 항목</div></div>
         <div class="foi-tile warn"><div class="n" id="foi-sum-soon">0</div><div class="l">기한 3일 이내</div></div>
-        <div class="foi-tile"><div class="n" id="foi-sum-done">0</div><div class="l">결정 완료</div></div>
-        <div class="foi-tile"><div class="n" id="foi-sum-all">0</div><div class="l">전체</div></div>
+        <div class="foi-tile"><div class="n" id="foi-sum-closed">0</div><div class="l">보관된 건</div></div>
       </div>
-      <div id="foi-storage-warn" class="errbox" style="display:none">이 브라우저가 저장을 허용하지 않아 기록이 유지되지 않을 수 있습니다(시크릿 모드 등). 중요한 청구는 청구서를 따로 내려받아 두세요.</div>
+      <div id="foi-legacy-box" class="foi-note" style="display:none">
+        <span id="foi-legacy-text"></span>
+        <button type="button" class="btn btn-outline btn-sm" style="margin-left:8px" onclick="_foi.importLegacy()">가져오기</button>
+      </div>
       <div class="card">
         <div class="foi-toolbar">
-          <h2 style="margin:0">내 청구 현황</h2>
+          <h2 style="margin:0">내 청구 건</h2>
           <div class="foi-toolbar-right">
-            <button type="button" class="btn btn-outline btn-sm" onclick="_foi.exportJson()">내보내기(JSON)</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('foi-import').click()">가져오기</button>
-            <input type="file" id="foi-import" accept=".json,application/json" style="display:none" onchange="_foi.importJson(event)">
+            <div class="foi-seg" id="foi-filter">
+              <button type="button" data-f="active" class="active" onclick="_foi.setFilter('active')">진행 중</button>
+              <button type="button" data-f="closed" onclick="_foi.setFilter('closed')">보관됨</button>
+              <button type="button" data-f="all" onclick="_foi.setFilter('all')">전체</button>
+            </div>
           </div>
         </div>
-        <div class="sub" style="margin-top:6px">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우거나 다른 PC로 옮길 때는 내보내기·가져오기를 쓰세요(청구인 개인정보는 내보내기에 포함되지 않습니다).</div>
+        <div class="sub" style="margin-top:6px">청구 한 건은 얻고 싶은 정보(항목)와 청구 회차로 이뤄집니다. 회차 결과를 기록하면 항목 상태가 갱신되고, 남은 항목은 <b>후속 청구</b>로 이어갈 수 있습니다. 원하는 정보를 모두 얻으면 <b>종료·보관</b>하세요.</div>
         <div id="foi-list-flash" class="foi-flash" style="display:none"></div>
-        <div id="foi-list-empty" style="font-size:12.5px;color:var(--hint);padding:14px 2px">아직 저장한 청구가 없습니다 — “새 청구서”에서 작성한 뒤 <b>기록에 저장</b>을 누르세요.</div>
+        <div id="foi-list-loading" class="loading-row" style="display:none"><span class="spinner"></span>불러오는 중…</div>
+        <div id="foi-list-empty" style="font-size:12.5px;color:var(--hint);padding:14px 2px;display:none"></div>
         <div id="foi-list-wrap" class="ct-table-wrap" style="display:none">
           <table class="ct-table foi-table">
-            <thead><tr><th>기관·부서</th><th>청구 문서</th><th>상태</th><th>접수일</th><th>다음 기한</th><th></th></tr></thead>
+            <thead><tr><th>청구 건</th><th>진행</th><th>회차·상태</th><th>다음 기한</th><th></th></tr></thead>
             <tbody id="foi-list-body"></tbody>
           </table>
         </div>
@@ -825,32 +928,35 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <h2 id="foi-d-title" style="margin:0"></h2>
           <div class="foi-toolbar-right"><button type="button" class="btn btn-outline btn-sm" onclick="_foi.closeDetail()">닫기</button></div>
         </div>
-        <div class="foi-detail-grid">
-          <div id="foi-d-form">
-            <div class="field"><label for="foi-d-status">진행 상태</label><select id="foi-d-status" class="foi-select"></select></div>
-            <div class="field-row">
-              <div class="field"><label for="foi-d-received">접수일</label><input type="date" id="foi-d-received"></div>
-              <div class="field"><label for="foi-d-receipt">접수번호</label><input type="text" id="foi-d-receipt" placeholder="기관·시스템이 부여한 번호"></div>
-              <div class="field"><label for="foi-d-decided">결정 통지를 받은 날</label><input type="date" id="foi-d-decided"></div>
-            </div>
-            <div class="field"><label for="foi-d-memo">메모</label><textarea id="foi-d-memo" rows="3" class="foi-textarea" placeholder="담당자 회신 내용, 부분공개 사유, 후속 조치 등"></textarea></div>
-          </div>
-          <div>
-            <div class="foi-calc" id="foi-d-calc"></div>
-            <div class="foi-label-sm">청구한 문서</div>
-            <ol class="foi-d-items" id="foi-d-items"></ol>
-          </div>
-        </div>
-        <div id="foi-d-flash" class="foi-flash" style="display:none"></div>
-        <div class="foi-actions">
-          <button type="button" class="btn btn-primary btn-sm" onclick="_foi.saveDetail()">저장</button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="_foi.editFromDetail()">청구서 수정·다시 보기</button>
-          <button type="button" class="btn btn-outline btn-sm" style="color:var(--red)" onclick="_foi.deleteRecord()">삭제</button>
-        </div>
+        <div id="foi-d-body"></div>
       </div>
     </div>
 
-    <!-- ── 안내 ── -->
+    <!-- ══ 공유 아카이브 ══ -->
+    <div id="foi-sub-archive" class="foi-sub">
+      <div class="card">
+        <h2>공유 아카이브</h2>
+        <div class="sub">다른 혼디 사용자가 종료·보관하면서 공유를 선택한 청구 건입니다. 같은 정보가 이미 있는지 먼저 찾아보세요 — 새 청구서의 AI도 청구 목록을 만들기 전에 이곳을 먼저 확인합니다. <b>청구인 정보·요청 원문·접수번호·메모는 공유되지 않습니다</b>(기관, 문서 이름, 결과 상태, 공개 자료 주소, 작성자가 승인한 요약만 공유).</div>
+        <div class="filter-row">
+          <input type="text" id="foi-arc-agency" placeholder="기관 (예: 제주시)" style="max-width:220px">
+          <input type="text" id="foi-arc-q" placeholder="찾을 내용 — 부서, 문서 이름 등 (비우면 최근 건)">
+          <button type="button" class="btn btn-primary btn-sm" onclick="_foi.archiveSearch()">검색</button>
+        </div>
+        <div id="foi-arc-flash" class="foi-flash" style="display:none"></div>
+        <div id="foi-arc-loading" class="loading-row" style="display:none"><span class="spinner"></span>찾는 중…</div>
+        <div id="foi-arc-empty" style="font-size:12.5px;color:var(--hint);display:none">일치하는 공유 건이 없습니다.</div>
+        <div id="foi-arc-results"></div>
+      </div>
+      <div class="card" id="foi-arc-detail-card" style="display:none">
+        <div class="foi-toolbar">
+          <h2 id="foi-arc-d-title" style="margin:0"></h2>
+          <div class="foi-toolbar-right"><button type="button" class="btn btn-outline btn-sm" onclick="_foi.archiveCloseDetail()">닫기</button></div>
+        </div>
+        <div id="foi-arc-d-body"></div>
+      </div>
+    </div>
+
+    <!-- ══ 안내 ══ -->
     <div id="foi-sub-guide" class="foi-sub">
       <div class="card foi-guide">
         <h2>정보 공개 청구, 이렇게 진행됩니다</h2>
@@ -860,8 +966,17 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <li><b>제출</b> — 정보를 보유한 기관에 냅니다. 정보공개포털(open.go.kr)에서 온라인으로 청구할 수 있는 기관이 많고, 기관별 접수 방식은 각 기관 안내를 따르세요.</li>
           <li><b>결정 (10일)</b> — 기관은 청구를 받은 날부터 10일 이내에 공개 여부를 결정해야 합니다. 부득이하면 그 기간이 끝나는 날의 다음 날부터 10일의 범위에서 연장할 수 있고, 연장 사실과 사유를 청구인에게 문서로 통지해야 합니다(법 제11조).</li>
           <li><b>결과</b> — 공개, 부분공개, 비공개, 또는 부존재(보유하지 않음)로 통지됩니다. 비공개 대상은 법 제9조에 정해져 있으며, 예를 들어 개인 식별 정보, 감사·계약·인사 관련 사항, 의사결정·내부검토 과정에 있는 사항 등이 있습니다.</li>
-          <li><b>불복</b> — 비공개·부분공개 결정에 불복하거나 청구 후 20일이 지나도록 결정이 없으면, 통지를 받은 날 또는 20일이 경과한 날부터 30일 이내에 그 기관에 문서로 <b>이의신청</b>할 수 있습니다(법 제18조). 이의신청을 거치지 않고 <b>행정심판</b>을 청구할 수도 있으며(법 제19조), 청구 기간은 행정심판법이 정합니다.</li>
+          <li><b>후속 청구 또는 불복</b> — 결과가 부분공개·비공개·부존재이거나 더 필요한 자료가 생기면 같은 건 안에서 <b>후속 청구</b>를 이어갑니다. 비공개·부분공개 결정에 불복하거나 청구 후 20일이 지나도록 결정이 없으면, 통지를 받은 날 또는 20일이 경과한 날부터 30일 이내에 그 기관에 문서로 <b>이의신청</b>할 수 있습니다(법 제18조). 이의신청을 거치지 않고 <b>행정심판</b>을 청구할 수도 있으며(법 제19조), 청구 기간은 행정심판법이 정합니다.</li>
+          <li><b>종료·보관</b> — 원하는 정보를 모두 얻으면 건을 종료·보관합니다. 이때 공유를 선택하면 다른 사용자가 같은 정보를 다시 청구하지 않고 결과를 참고할 수 있습니다.</li>
         </ol>
+
+        <h3>공유 아카이브에 대해</h3>
+        <ul class="foi-tips">
+          <li>공유는 <b>종료·보관할 때 직접 고르는 선택</b>이며, 미리보기로 나갈 내용을 확인한 뒤 결정합니다. 나중에 언제든 공유를 끄거나 건을 삭제할 수 있습니다.</li>
+          <li>공유되는 것: 기관·부서·제목, 항목의 문서 이름·범위·결과 상태, 회차별 결과 상태(월 단위), 이미 공개돼 있던 자료의 주소, 작성자가 승인한 요약. 공유되지 않는 것: 청구인 정보, 요청 원문, 접수번호, 메모.</li>
+          <li>이번 버전은 <b>문서 파일 자체는 공유하지 않습니다.</b> 어떤 문서를 어느 기관에서 어떤 결과로 얻었는지를 공유해, 같은 청구를 반복하지 않게 돕는 것이 목적입니다.</li>
+          <li>공유 자료는 다른 사용자가 쓴 것이므로 정확성을 보증하지 않습니다. 결과 상태는 참고용으로 보고, 필요하면 직접 확인하세요.</li>
+        </ul>
 
         <h3>잘 되는 청구서의 요령</h3>
         <ul class="foi-tips">
@@ -869,14 +984,15 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <li><b>새로 만드는 자료는 청구할 수 없습니다.</b> 통계·분석을 새로 작성해 달라는 청구는 부존재로 끝나기 쉽습니다. 기존 집계 문서가 있는지를 지목하세요.</li>
           <li><b>범위와 시점</b>을 붙입니다(“최근 2개년”, “현재 시행 중인 최신본”). “관련 자료 일체”는 피하세요.</li>
           <li>이미 공개된 자료(자치법규, 사전공표 자료, 민원편람 등)는 기관 누리집에서 먼저 찾아보면 청구 없이 얻을 수 있습니다.</li>
-          <li>목록 먼저, 원문은 나중에 — 처음에는 <b>문서 목록</b>과 공통 문서만 청구하고, 결과를 보고 필요한 원문을 2차로 청구하면 부담이 작습니다.</li>
+          <li>목록 먼저, 원문은 나중에 — 처음에는 <b>문서 목록</b>과 공통 문서만 청구하고, 결과를 보고 필요한 원문을 <b>후속 청구</b>로 이어가면 부담이 작습니다.</li>
         </ul>
 
         <h3>이 화면의 한계</h3>
         <ul class="foi-tips">
           <li>청구서를 대신 제출하지 않습니다. 작성·복사·다운로드까지이며 제출과 접수는 직접 하셔야 합니다.</li>
+          <li>AI가 찾은 “이미 공개된 자료”는 웹 검색과 페이지 열람 결과에 근거하며 오류가 있을 수 있습니다. 출처 주소를 열어 확인하세요. 기관 누리집이 열리지 않으면 확인하지 못한 것으로 표시됩니다.</li>
           <li>기한 계산은 <b>참고용</b>입니다. 토·일요일만 반영하고 공휴일은 반영하지 않으며, 기관이 보낸 통지의 기한이 항상 우선합니다.</li>
-          <li>기록과 청구인 정보는 이 브라우저에만 저장됩니다. 서버로 보내지 않으며, 브라우저 데이터를 지우면 사라지므로 중요한 기록은 내보내기로 백업하세요.</li>
+          <li>청구 건은 혼디 서버에 저장되어 어느 PC에서든 이어볼 수 있습니다. 청구인 정보(성명·주소·연락처)만 이 브라우저에 남습니다.</li>
         </ul>
       </div>
     </div>
@@ -2610,6 +2726,6 @@ async function _campViewFullTranscriptInline(campaignId, btn) {
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
 </script>
-<script src="foi.js?v=20260920"></script>
+<script src="foi.js?v=20260921"></script>
 </body>
 </html>
