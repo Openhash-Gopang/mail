@@ -890,8 +890,8 @@
       var link = safeUrl(it.source_url);
       h += '<tr><td><div class="it-title">' + esc(it.title) + '</div>' + (it.scope ? '<div class="it-scope">' + esc(it.scope) + '</div>' : '') +
         (it.prior ? '<span class="foi-chip warn">선행 청구 ' + (it.prior === 'denied' ? '비공개' : '부존재') + '</span>' : '') +
-        (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener" style="font-size:11.5px;color:var(--pri)">출처 ↗</a>' : '') +
-        (it.archive_id ? ' <a href="#" style="font-size:11.5px;color:var(--pri)" onclick="_foi.archiveOpen(\'' + esc(it.archive_id) + '\');return false">아카이브 건</a>' : '') + '</td>' +
+        (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener" style="font-size:13px;color:var(--pri)">출처 ↗</a>' : '') +
+        (it.archive_id ? ' <a href="#" style="font-size:13px;color:var(--pri)" onclick="_foi.archiveOpen(\'' + esc(it.archive_id) + '\');return false">아카이브 건</a>' : '') + '</td>' +
         '<td><select data-k="item-state" data-id="' + esc(it.id) + '"' + dis + '>' + itemOptions(it.state) + '</select></td>' +
         '<td><input type="text" data-k="item-note" data-id="' + esc(it.id) + '" value="' + esc(it.note) + '" placeholder="예: 6월 통지, 표 3개 누락"' + dis + '></td>' +
         '<td>' + (it.round_seq ? '#' + it.round_seq : '—') + '</td></tr>';
@@ -1189,7 +1189,7 @@
         return '<tr><td><div class="it-title">' + esc(i.title) + '</div>' + (i.scope ? '<div class="it-scope">' + esc(i.scope) + '</div>' : '') + '</td><td>' + stateBadge(i.state) + '</td></tr>';
       }).join('') + '</tbody></table>';
     if ((a.rounds || []).length) {
-      h += '<div class="foi-h3">청구 회차</div><div style="font-size:12.5px">' + a.rounds.map(function (r) {
+      h += '<div class="foi-h3">청구 회차</div><div style="font-size:14px">' + a.rounds.map(function (r) {
         return '<span class="badge ' + ROUND_STATE[r.status].badge + '" style="margin-right:6px">#' + r.seq + ' ' + esc(ROUND_STATE[r.status].label) + (r.month ? ' · ' + esc(r.month) : '') + '</span>';
       }).join('') + '</div>';
     }
