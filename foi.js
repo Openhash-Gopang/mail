@@ -775,6 +775,14 @@
   }
 
   // ── 보내기 ───────────────────────────────────────────────────
+  // 서버·SP 사이의 약속인 KFOI_ 태그는 사용자에게 보이면 안 된다. 서버와 SP가 따로 배포되어 어긋나면(2026-09-21 실사용:
+  // SP가 새 도구를 불렀는데 서버가 아직 몰라 원문 태그가 그대로 내려왔다) 화면에서 한 번 더 걸러 안내 문구로 바꾼다.
+  function cleanReply(t) {
+    var s = String(t || '');
+    var m = /[\[(]?\s*KFOI_[A-Z][A-Z_]*\s*\{/.exec(s);
+    return m ? { text: s.slice(0, m.index).trim(), stripped: true } : { text: s, stripped: false };
+  }
+
   async function aiSend() {
     var ta = $('foi-ai-input');
     var text = ta.value.trim();
@@ -812,7 +820,10 @@
       hideProgress();
       if (!final) throw new Error('조사가 길어져 중단했습니다. 알고 싶은 것을 더 좁혀서 다시 적어 주세요. (조사 깊이를 높이면 더 오래 조사합니다)');
       S.attach = []; renderChips();
-      appendBubble('assistant', final.reply || (final.action ? '청구서 폼을 채웠습니다.' : '응답이 비어 있습니다.'), lines);
+      var cr = cleanReply(final.reply);
+      var shown = cr.text;
+      if (cr.stripped && !final.action) shown += (shown ? '\n\n' : '') + '(AI가 서버에 아직 반영되지 않은 조사 도구를 요청해 여기서 멈췄습니다. 잠시 후 같은 내용을 다시 보내 주세요.)';
+      appendBubble('assistant', shown || (final.action ? '청구서 폼을 채웠습니다.' : '응답이 비어 있습니다.'), lines);
       if (final.action) applyFill(final.action);
     } catch (e) {
       hideProgress();
