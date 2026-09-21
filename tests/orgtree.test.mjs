@@ -73,3 +73,110 @@ test('chunk / crumbText', () => {
   assert.equal(P.crumbText('학교>대학>제주대학교'), '학교 › 대학 › 제주대학교');
   assert.equal(P.crumbText(''), '');
 });
+
+// ═════════ 미분류 자동 분류(규칙 기반 분류기) ═════════
+const emptyTree = () => P.buildTree([]);
+const cls = (org, dept = '', tree = emptyTree()) => P.classifyOrg(org, dept, P.makeIndex(tree));
+const path = c => c.segs && c.segs.join('>');
+
+test('분류기: 사용자 예시 — "제주대학교 컴퓨터공학과" → 학교>대학>제주대학교>컴퓨터공학과', () => {
+  assert.equal(path(cls('제주대학교 컴퓨터공학과')), '학교>대학>제주대학교>컴퓨터공학과');
+  assert.equal(path(cls('제주대학교')), '학교>대학>제주대학교');
+  assert.equal(path(cls('제주대학교', '컴퓨터공학과')), '학교>대학>제주대학교>컴퓨터공학과');   // 부서 필드를 하위 노드로
+  assert.equal(cls('제주대학교').conf, 'high');
+});
+test('분류기: 대학 규칙보다 병원·동문회·대학원 규칙이 먼저(우선순위)', () => {
+  assert.equal(path(cls('제주대학교병원')), '의료기관>병원>제주대학교병원');
+  assert.equal(path(cls('서울대학교 치과병원')), '의료기관>병원>서울대학교 치과병원');
+  assert.equal(path(cls('제주대학교 총동문회')), '협회·단체>제주대학교 총동문회');
+  assert.equal(path(cls('제주대학교 대학원')), '학교>대학원>제주대학교 대학원');
+  assert.equal(path(cls('한국방송통신대학교')), '학교>대학>한국방송통신대학교');   // 방송 키워드가 아니라 대학
+});
+test('분류기: 초·중·고, 대학 아닌 학교', () => {
+  assert.equal(path(cls('한림초등학교')), '학교>초등학교>한림초등학교');
+  assert.equal(path(cls('한림중학교')), '학교>중학교>한림중학교');
+  assert.equal(path(cls('제주고등학교')), '학교>고등학교>제주고등학교');
+  assert.equal(path(cls('제주대학교부속고등학교')), '학교>고등학교>제주대학교부속고등학교');
+});
+test('분류기: 정부·공공기관', () => {
+  assert.equal(path(cls('제주특별자치도청')), '정부·공공기관>지방자치단체>제주특별자치도청');
+  assert.equal(path(cls('제주시 한림읍사무소')), '정부·공공기관>지방자치단체>제주시 한림읍사무소');
+  assert.equal(path(cls('제주도교육청')), '정부·공공기관>지방자치단체>제주도교육청');
+  assert.equal(path(cls('행정안전부')), '정부·공공기관>중앙정부>행정안전부');
+  assert.equal(path(cls('국세청')), '정부·공공기관>중앙정부>국세청');
+  assert.equal(path(cls('제주지방법원')), '정부·공공기관>국회·법원>제주지방법원');
+  assert.equal(path(cls('한국관광공사')), '정부·공공기관>공공기관>한국관광공사');
+  assert.equal(cls('한국관광공사').conf, 'medium');
+});
+test('분류기: 의료·금융·연구·언론·협회·국제·기업', () => {
+  assert.equal(path(cls('한림의원')), '의료기관>의원>한림의원');
+  assert.equal(path(cls('행복약국')), '의료기관>약국>행복약국');
+  assert.equal(path(cls('제주은행')), '금융기관>은행>제주은행');
+  assert.equal(path(cls('삼성생명')), '금융기관>증권·보험>삼성생명');
+  assert.equal(path(cls('한국과학기술연구원')), '연구기관>한국과학기술연구원');
+  assert.equal(path(cls('제주일보')), '언론·방송>제주일보');
+  assert.equal(path(cls('KBS제주')), '언론·방송>KBS제주');
+  assert.equal(path(cls('제주도 관광협회')), '협회·단체>제주도 관광협회');
+  assert.equal(path(cls('사단법인 한림발전회')), '협회·단체>사단법인 한림발전회');
+  assert.equal(path(cls('주한 미국대사관')), '국제·외국기관>주한 미국대사관');
+  assert.equal(path(cls('(주)혼디')), '기업>(주)혼디');
+  assert.equal(path(cls('Acme Corp.')), '기업>Acme Corp.');
+  assert.equal(cls('(주)혼디').conf, 'high');
+  assert.equal(cls('한림전자').conf, 'medium');
+});
+test('분류기: 규칙 없음/소속 없음은 null(억지로 추측하지 않는다)', () => {
+  assert.equal(cls('혼디').segs, null); assert.equal(cls('혼디').conf, 'none');
+  assert.equal(cls('').segs, null); assert.equal(cls('   ').why, '소속 미기재');
+  assert.equal(cls(null).segs, null);
+});
+test('분류기: 이미 있는 노드의 이름·별칭이 규칙보다 우선(표기 통일)', () => {
+  const tree = P.buildTree([
+    { id: 'a', name: '학교', parent_id: '', path: '학교', depth: 1, aliases: [] },
+    { id: 'b', name: '대학', parent_id: 'a', path: '학교>대학', depth: 2, aliases: [] },
+    { id: 'c', name: '제주대학교', parent_id: 'b', path: '학교>대학>제주대학교', depth: 3, aliases: ['제주대', 'JNU'] },
+    { id: 'd', name: '혼디', parent_id: '', path: '협력사>혼디', depth: 2, aliases: ['Hondi Inc'] },
+  ]);
+  assert.equal(path(cls('제주대', '', tree)), '학교>대학>제주대학교');
+  assert.equal(path(cls('jnu', '', tree)), '학교>대학>제주대학교');          // 대소문자 무시
+  assert.equal(path(cls('제주 대학교', '', tree)), '학교>대학>제주대학교');   // 공백 무시
+  assert.equal(path(cls('제주대', '컴퓨터공학과', tree)), '학교>대학>제주대학교>컴퓨터공학과');   // 대학 하위면 부서 추가
+  assert.equal(path(cls('Hondi Inc', '개발팀', tree)), '협력사>혼디');        // 대학이 아니면 부서는 붙이지 않음
+  assert.equal(cls('제주대', '', tree).why, '이미 있는 소속(이름·별칭 일치)');
+  assert.equal(path(cls('혼디', '', tree)), '협력사>혼디');                    // 규칙이 없던 표기도 노드 이름이면 매칭
+});
+test('분류기: 같은 표기가 여러 노드에 있으면(모호) 별칭 매칭을 쓰지 않는다', () => {
+  const tree = P.buildTree([
+    { id: 'a', name: '기획팀', parent_id: '', path: 'A>기획팀', depth: 2, aliases: [] },
+    { id: 'b', name: '기획팀', parent_id: '', path: 'B>기획팀', depth: 2, aliases: [] },
+  ]);
+  assert.equal(cls('기획팀', '', tree).segs, null);
+});
+test('분류기: 노드 이름에 못 쓰는 문자는 공백으로 정리, 정리 후 비면 제안 없음', () => {
+  assert.equal(path(cls('한림 > 의원')), '의료기관>의원>한림 의원');
+  assert.equal(P.sanitizeName('a%b\\c>d'), 'a b c d');
+  assert.equal(P.sanitizeName('__NONE__'), '');
+  assert.equal(P.sanitizeName('x'.repeat(150)).length, 100);
+});
+test('buildGroups: 소속별 묶음·건수 순 정렬, 대학은 부서별로 나눔, 소속 없음 분리', () => {
+  const contacts = [
+    { id: '1', name: '가', org: '제주대학교', dept: '컴퓨터공학과' },
+    { id: '2', name: '나', org: '제주대학교', dept: '컴퓨터공학과' },
+    { id: '3', name: '다', org: '제주대학교', dept: '' },
+    { id: '4', name: '라', org: '(주)혼디', dept: '개발팀' },
+    { id: '5', name: '마', org: '(주)혼디', dept: '영업팀' },
+    { id: '6', name: '바', org: '  (주)혼디 ', dept: '' },
+    { id: '7', name: '사', org: '', dept: '' },
+    { id: '8', name: '아', org: '미지의곳', dept: '' },
+  ];
+  const { groups, noOrg } = P.buildGroups(contacts, emptyTree());
+  assert.equal(noOrg.length, 1);
+  const by = Object.fromEntries(groups.map(g => [g.org + '|' + g.dept, g]));
+  assert.equal(by['(주)혼디|'].count, 3, '기업은 부서로 나누지 않고 공백만 다른 표기를 한 그룹으로');
+  assert.equal(by['제주대학교|컴퓨터공학과'].count, 2);
+  assert.deepEqual(by['제주대학교|컴퓨터공학과'].segs, ['학교', '대학', '제주대학교', '컴퓨터공학과']);
+  assert.equal(by['제주대학교|'].count, 1); assert.deepEqual(by['제주대학교|'].segs, ['학교', '대학', '제주대학교']);
+  assert.equal(by['미지의곳|'].segs, null);
+  assert.equal(by['제주대학교|컴퓨터공학과'].deptUsed, true); assert.equal(by['(주)혼디|'].deptUsed, false);
+  assert.deepEqual(groups.map(g => g.count), [3, 2, 1, 1], '건수 내림차순');
+  assert.deepEqual(by['(주)혼디|'].ids.sort(), ['4', '5', '6']);
+});
