@@ -367,14 +367,20 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 /* ── 정보 공개 청구: 청구 건(캠페인)·AI 입력창·공유 아카이브 (2026-09-20 개편) ── */
 .foi-count{display:inline-block;min-width:18px;padding:0 6px;margin-left:4px;border-radius:9px;background:var(--org);color:#fff;font-size:10.5px;font-weight:800;line-height:18px;text-align:center}
 .foi-subnav button.active .foi-count{background:#fff;color:var(--pri)}
-.foi-ai{margin-bottom:20px}
+.foi-ai{margin-bottom:24px}
 .foi-ai-thread{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
 .foi-ai-thread:empty{display:none}
 .foi-ai-thread .chat-bubble-row.assistant .chat-bubble{background:#FAFBFC}
 .foi-ai-progress{font-size:12.5px;color:var(--sub);background:var(--pri-bg);border:1px solid var(--pri-bd);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;line-height:1.8}
 .foi-ai-progress .row{display:flex;align-items:center;gap:8px}
 .foi-ai-progress .spinner{flex-shrink:0}
-.foi-ai-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.foi-ai-foot{display:flex;justify-content:flex-end;margin-top:10px}
+.foi-ai-foot:has(> button[style*="display:none"]){margin-top:0}
+.foi-bigin{position:relative}
+.foi-bigin-ta{display:block;width:100%;box-sizing:border-box;min-height:148px;max-height:340px;resize:vertical;padding:20px 76px 20px 24px;font-family:inherit;font-size:16px;line-height:1.75;color:var(--txt);background:#fff;border:1.5px solid var(--bdr);border-radius:16px;box-shadow:var(--sh);outline:none;transition:border-color .12s,box-shadow .12s}
+.foi-bigin-ta::placeholder{color:#9AA3AF;opacity:1}
+.foi-bigin-ta:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(15,143,126,.13)}
+.foi-bigin-send{position:absolute;right:16px;bottom:16px;width:42px;height:42px}
 .foi-known{margin-bottom:20px}
 .foi-known h2{margin-bottom:10px}
 .foi-known .row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #F0F1F5;font-size:12.5px;line-height:1.7}
@@ -762,20 +768,18 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <!-- ══ 새 청구서 ══ -->
     <div id="foi-sub-new" class="foi-sub active">
 
-      <div class="card foi-ai">
-        <h2>무엇을 알고 싶으신가요?</h2>
-        <div class="sub">알고 싶은 내용을 편하게 적어 주세요. 기관과 부서를 특정하고, <b>공유 아카이브</b>에서 다른 사용자가 이미 얻은 자료가 있는지 먼저 본 다음, 웹에서 <b>이미 공개된 자료</b>를 찾습니다. 그러고 남은 것만 아래 청구서 폼에 채웁니다.</div>
+      <!-- 첫 섹션 — 입력 필드만 크게. 안내 문구는 placeholder(회색)로 두어 입력을 시작하면 사라진다. -->
+      <div class="foi-ai">
         <div id="foi-ai-thread" class="foi-ai-thread"></div>
         <div id="foi-ai-progress" class="foi-ai-progress" style="display:none"></div>
         <div id="foi-ai-err" class="errbox" style="display:none"></div>
-        <div class="chat-inputbar">
-          <textarea id="foi-ai-input" class="chat-textarea" rows="2" placeholder="예: 제주시 생활환경과가 대형폐기물을 어떻게 처리하는지 알 수 있는 업무 자료를 얻고 싶어요"></textarea>
-          <button type="button" class="chat-send-btn" id="foi-ai-send" title="보내기" disabled onclick="_foi.aiSend()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        <div class="foi-bigin">
+          <textarea id="foi-ai-input" class="foi-bigin-ta" rows="5" aria-label="얻고자 하는 공공 정보" placeholder="귀하가 얻고자하는 공공 정보를 기술하면, AI가 기관 및 청구 문서 목록을 자동으로 작성합니다. 물론, 귀하가 수정할 수 있습니다."></textarea>
+          <button type="button" class="chat-send-btn foi-bigin-send" id="foi-ai-send" title="AI로 청구서 작성 (Ctrl+Enter)" aria-label="AI로 청구서 작성" disabled onclick="_foi.aiSend()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
           </button>
         </div>
         <div class="foi-ai-foot">
-          <span class="hint" style="margin:0">Enter로 줄바꿈, 버튼(또는 Ctrl+Enter)으로 보냅니다. 조사에는 몇 십 초가 걸릴 수 있습니다.</span>
           <button type="button" class="btn btn-outline btn-sm" id="foi-ai-reset" style="display:none" onclick="_foi.aiReset()">+ 새 요청</button>
         </div>
       </div>

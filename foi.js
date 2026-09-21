@@ -500,7 +500,7 @@
   }
 
   // ── AI 입력창(K-FOI) ────────────────────────────────────────
-  function autosize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
+  function autosize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 340) + 'px'; }
   function aiUpdateSend() { $('foi-ai-send').disabled = S.chat.busy || !$('foi-ai-input').value.trim(); }
   function appendBubble(role, text, progress) {
     var row = document.createElement('div');
