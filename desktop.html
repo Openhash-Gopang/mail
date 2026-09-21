@@ -316,6 +316,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .foi-item-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .foi-item-warn{font-size:13px;color:var(--org);line-height:1.6}
 .foi-item-warn:empty{display:none}
+.foi-item-note{font-size:14px;color:var(--sub);background:#F1F5FB;border-radius:8px;padding:6px 10px;line-height:1.6}
+.foi-known .row .btn{flex-shrink:0;align-self:center}
 .foi-item-del{flex-shrink:0;width:30px;height:30px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--hint);font-size:18px;line-height:1}
 .foi-item-del:hover{color:var(--red);border-color:var(--red)}
 
@@ -793,6 +795,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <h2>이미 확인된 정보 <span class="foi-opt" style="font-size:13px">— 청구서에는 넣지 않습니다</span></h2>
         <div id="foi-known-items"></div>
         <div id="foi-known-matches"></div>
+        <div id="foi-known-others"></div>
         <div id="foi-known-unverified"></div>
       </div>
 
@@ -814,6 +817,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <div class="field" style="margin-bottom:0">
               <label for="foi-purpose">청구 목적 <span class="foi-opt">(선택 — 적지 않아도 됩니다)</span></label>
               <textarea id="foi-purpose" rows="2" class="foi-textarea" placeholder="예: 민원 안내 서비스 개선을 위한 업무 자료 확인"></textarea>
+              <div id="foi-purpose-warn" class="foi-item-warn"></div>
             </div>
           </div>
 

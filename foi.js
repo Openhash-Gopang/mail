@@ -109,7 +109,7 @@
   var AGENCY_SUGGEST = ['제주특별자치도', '제주특별자치도교육청', '제주시', '서귀포시', '제주특별자치도의회'];
 
   function newDraft() {
-    return { campaignId: null, roundSeq: null, title: '', goal: '', sourceArchiveId: '', known: [], publicSources: [], archiveMatches: [], unverified: [] };
+    return { campaignId: null, roundSeq: null, title: '', goal: '', sourceArchiveId: '', known: [], publicSources: [], archiveMatches: [], otherAgencies: [], unverified: [] };
   }
 
   var S = {
@@ -240,6 +240,7 @@
         '<input type="text" class="foi-it" placeholder="문서 이름으로 지목 — 예: 부서별 사무분장표 (팀별 담당 업무 포함)" value="' + esc(item.title) + '">' +
         '<input type="text" class="foi-is" placeholder="범위·시점 — 예: 현재 시행 중인 최신본 / 최근 2개년" value="' + esc(item.scope) + '">' +
         '<div class="foi-item-warn"></div>' +
+        ((item.note && !/^(선행 청구|아카이브:)/.test(item.note)) ? '<div class="foi-item-note">메모: ' + esc(item.note) + '</div>' : '') +
       '</div>' +
       '<button type="button" class="foi-item-del" title="이 항목 삭제" aria-label="이 항목 삭제">×</button>';
     row.querySelector('.foi-item-del').addEventListener('click', function () {
@@ -401,6 +402,11 @@
       rows[i].querySelector('.foi-item-warn').innerHTML = ws.map(function (t) { return '<div>⚠ ' + esc(t) + '</div>'; }).join('');
     }
 
+    var pw = $('foi-purpose-warn');
+    if (/\bSP\b|System\s*Prompt|시스템\s*프롬프트|프롬프트/i.test(f.purpose)) {
+      pw.innerHTML = '<div>⚠ ‘SP’·‘프롬프트’ 같은 내부 용어는 기관 직원에게 낯설 수 있습니다. 청구 목적은 적지 않아도 되니, 일반적인 표현으로 바꾸거나 비워 두세요.</div>';
+    } else pw.innerHTML = '';
+
     var miss = [];
     if (!f.agency) miss.push('청구 기관');
     if (!f.items.some(function (x) { return x.title; })) miss.push('청구할 문서');
@@ -469,7 +475,7 @@
   }
   function renderKnown() {
     var d = S.draft;
-    var has = d.known.length || d.archiveMatches.length || d.unverified.length || d.publicSources.length;
+    var has = d.known.length || d.archiveMatches.length || d.unverified.length || d.publicSources.length || d.otherAgencies.length;
     $('foi-known-card').style.display = has ? '' : 'none';
     if (!has) return;
     $('foi-known-items').innerHTML = d.known.map(function (k) {
@@ -494,6 +500,13 @@
       }).join('');
     }
     $('foi-known-matches').innerHTML = m;
+    $('foi-known-others').innerHTML = d.otherAgencies.length
+      ? '<div class="sec">함께 청구할 다른 기관 <span class="foi-opt">— 같은 문서 목록으로 기관만 바꿔 이어서 만들 수 있습니다</span></div>' + d.otherAgencies.map(function (o, i) {
+          return '<div class="row"><div class="t"><b>' + esc(o.agency) + '</b>' + (o.dept ? ' <span class="foi-opt">· ' + esc(o.dept) + '</span>' : '') +
+            (o.note ? '<div class="hint" style="margin:0">' + esc(o.note) + '</div>' : '') + '</div>' +
+            '<button type="button" class="btn btn-outline btn-sm" onclick="_foi.useOther(' + i + ')">이 기관용 청구서 만들기</button></div>';
+        }).join('')
+      : '';
     $('foi-known-unverified').innerHTML = d.unverified.length
       ? '<div class="sec">확인하지 못한 것</div><div class="unv">' + d.unverified.map(function (u) { return '· ' + esc(u); }).join('<br>') + '</div>'
       : '';
@@ -579,6 +592,7 @@
     d.known = (a.items || []).filter(function (i) { return i.state === 'public' || i.state === 'shared'; });
     d.publicSources = a.public_sources || [];
     d.archiveMatches = a.archive_matches || [];
+    d.otherAgencies = a.other_agencies || [];
     d.unverified = a.unverified || [];
     S.draft = d;
     var req = (a.items || []).filter(function (i) { return i.state === 'pending'; })
@@ -594,6 +608,29 @@
     refresh();
     var card = $('foi-known-card');
     if (card && card.style.display !== 'none' && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // AI가 알려 준 "함께 청구할 다른 기관" — 같은 문서 목록으로 기관만 바꿔 새 청구서를 만든다.
+  // 이미 공개된 것으로 확인한 자료(public·shared)는 기관마다 다르므로 옮기지 않는다.
+  function useOther(i) {
+    var o = S.draft.otherAgencies[i];
+    if (!o) return;
+    var f = readForm();
+    var rows = f.items.filter(function (x) { return x.title; });
+    if (!S.draft.campaignId && rows.length &&
+        !window.confirm('현재 기관(' + (f.agency || '미입력') + ')의 청구서를 아직 저장하지 않았습니다. 저장하지 않고 “' + o.agency + '”용으로 바꿀까요? (같은 문서 목록이 그대로 옮겨집니다)')) return;
+    var others = S.draft.otherAgencies.filter(function (_, k) { return k !== i; });
+    if (f.agency) others.push({ agency: f.agency, dept: f.dept, note: '앞서 채운 기관' });
+    var goal = S.draft.goal;
+    S.draft = newDraft(); S.draft.goal = goal; S.draft.otherAgencies = others;
+    writeForm({ presetId: 'blank', agency: o.agency, dept: o.dept, purpose: f.purpose,
+      items: rows.map(function (x) { return { id: '', title: x.title, scope: x.scope, prior: '', note: x.note }; }),
+      pub: f.pub, recv: f.recv, opts: f.opts });
+    var note = $('foi-editing-note');
+    note.textContent = '“' + o.agency + '”용 청구서입니다. 앞 기관과 같은 문서 목록을 옮겼으니 기관에 맞게 고치세요 — 이미 공개된 것으로 확인한 자료는 기관마다 다르므로 옮기지 않았습니다. 저장하면 새 청구 건이 만들어집니다.';
+    note.style.display = '';
+    renderKnown(); refresh();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ── 청구 건에 저장 ───────────────────────────────────────────
@@ -1306,7 +1343,7 @@
   window._foi = {
     init: init, sub: sub, copy: copyText, download: downloadText, toMail: sendToMail, portal: openPortal,
     save: saveToCampaign, reset: resetForm,
-    aiSend: aiSend, aiReset: aiReset,
+    aiSend: aiSend, aiReset: aiReset, useOther: useOther,
     setFilter: setFilter, openCampaign: openCampaign, closeDetail: closeDetail, reuse: reuse, roundOpen: roundOpen,
     detailSave: detailSave, detailFollowUp: detailFollowUp, followUpStart: followUpStart,
     detailClose: detailClose, detailShare: detailShare, detailReopen: detailReopen, detailDelete: detailDelete,
