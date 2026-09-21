@@ -39,7 +39,7 @@
   var LS_LEGACY = 'kmail.foi.v1';          // 2026-09-20 초판(브라우저 저장 방식)의 기록 — 가져오기 전용
   var PORTAL_URL = 'https://www.open.go.kr';
   var DOW = ['일', '월', '화', '수', '목', '금', '토'];
-  var MAX_AI_CALLS = 6;                    // 한 질문에 대해 /kfoi/chat을 이어 부르는 최대 횟수
+  var MAX_AI_CALLS = 9;                    // 한 질문에 대해 /kfoi/chat을 이어 부르는 최대 횟수(조사 깊이 '높음' 12회 = 6회 + 형식 보정 + 마무리)
 
   // 회차(청구 1회)의 진행 상태 → 표시 라벨 / 기존 .badge-* 클래스(webapp과 같은 팔레트)
   var ROUND_STATE = {
@@ -108,6 +108,33 @@
   };
   var AGENCY_SUGGEST = ['제주특별자치도', '제주특별자치도교육청', '제주시', '서귀포시', '제주특별자치도의회'];
 
+  // ── 대화 창: LLM 선택·조사 깊이·첨부 ──────────────────────────
+  // "혼디 기본"은 혼디가 제공하는 기본 모델(API 키 불필요). 그 밖의 LLM을 고르면 그 회사의 API 키를 입력받는다(BYOK).
+  // Claude 모델 ID는 Anthropic이 안내한 값이다. OpenAI·Gemini는 모델 이름이 자주 바뀌므로 사용자가 직접 입력한다.
+  var LLMS = [
+    { id: 'default', provider: 'default', model: '', label: '혼디 기본', sub: '기본 제공 · API 키 불필요' },
+    { id: 'claude-sonnet-5', provider: 'anthropic', model: 'claude-sonnet-5', label: 'Claude Sonnet 5', sub: 'Anthropic · 내 API 키' },
+    { id: 'claude-opus-5', provider: 'anthropic', model: 'claude-opus-5', label: 'Claude Opus 5', sub: 'Anthropic · 내 API 키' },
+    { id: 'claude-haiku-4-5', provider: 'anthropic', model: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', sub: 'Anthropic · 내 API 키 · 빠름' },
+    { id: 'openai', provider: 'openai', model: '', custom: true, label: 'OpenAI', sub: '모델 ID 직접 입력 · 내 API 키' },
+    { id: 'gemini', provider: 'gemini', model: '', custom: true, label: 'Google Gemini', sub: '모델 ID 직접 입력 · 내 API 키' }
+  ];
+  var PROVIDERS = {
+    anthropic: { name: 'Anthropic', keyUrl: 'https://console.anthropic.com/settings/keys' },
+    openai: { name: 'OpenAI', keyUrl: 'https://platform.openai.com/api-keys' },
+    gemini: { name: 'Google Gemini', keyUrl: 'https://aistudio.google.com/apikey' }
+  };
+  var EFFORTS = [
+    { id: 'low', label: '낮음', desc: '빠르게 — 조사 4회까지' },
+    { id: 'medium', label: '중간', desc: '기본 — 조사 8회까지' },
+    { id: 'high', label: '높음', desc: '꼼꼼히 — 조사 12회까지(웹 검색 한도를 더 씁니다)' }
+  ];
+  var LS_LLM = 'kmail.foi.llm.v1';               // 선택한 모델·조사 깊이(키는 넣지 않는다)
+  var KEY_PREFIX = 'kmail.foi.key.';              // 키: 기본은 sessionStorage, "저장"을 고르면 localStorage에도
+  var MODEL_PREFIX = 'kmail.foi.model.';          // OpenAI·Gemini에서 마지막으로 쓴 모델 ID(비밀 아님)
+  var ATTACH_LIMITS = { files: 5, perFileChars: 20000, totalChars: 40000, maxBytes: 10 * 1024 * 1024 };
+  var MODEL_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:\-\/]{0,79}$/;
+
   function newDraft() {
     return { campaignId: null, roundSeq: null, title: '', goal: '', sourceArchiveId: '', known: [], publicSources: [], archiveMatches: [], otherAgencies: [], unverified: [] };
   }
@@ -119,6 +146,10 @@
     draft: newDraft(),
     detail: null, detailDirty: false, panel: null,
     chat: { messages: [], firstUser: '', busy: false },
+    llm: { id: 'default', provider: 'default', model: '', effort: 'medium' },
+    attach: [],                                    // { name, text, status, truncated }
+    mic: { on: false, rec: null, base: '' },
+    modal: null,                                   // 키 팝업이 열려 있을 때 { llm, prev }
     arc: { results: [], detail: null },
     preset: 'blank'
   };
@@ -512,20 +543,26 @@
       : '';
   }
 
-  // ── AI 입력창(K-FOI) ────────────────────────────────────────
-  function autosize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 340) + 'px'; }
+  // ── 대화 창(K-FOI) ───────────────────────────────────────────
+  function autosize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 320) + 'px'; }
   function aiUpdateSend() { $('foi-ai-send').disabled = S.chat.busy || !$('foi-ai-input').value.trim(); }
-  function appendBubble(role, text, progress) {
+  function scrollThread() { var t = $('foi-ai-thread'); t.scrollTop = t.scrollHeight; }
+  function showAiErr(msg) { var er = $('foi-ai-err'); er.textContent = msg; er.style.display = ''; }
+  function appendBubble(role, text, progress, files) {
     var row = document.createElement('div');
     row.className = 'chat-bubble-row ' + role;
     var inner = role === 'user'
       ? esc(text)
       : (typeof mdToHtml === 'function' ? mdToHtml(text) : esc(text));
+    if (role === 'user' && files && files.length) {
+      inner += '<div style="margin-top:8px;font-size:14px;color:rgba(255,255,255,.88)">' + files.map(function (f) { return '📎 ' + esc(f); }).join('<br>') + '</div>';
+    }
     if (role === 'assistant' && progress && progress.length) {
       inner += '<div class="hint" style="margin-top:10px">' + progress.map(function (p) { return '🔎 ' + esc(p); }).join('<br>') + '</div>';
     }
     row.innerHTML = '<div class="chat-bubble">' + inner + '</div>';
     $('foi-ai-thread').appendChild(row);
+    scrollThread();
   }
   function showProgress(lines) {
     var el = $('foi-ai-progress');
@@ -535,22 +572,237 @@
   }
   function hideProgress() { $('foi-ai-progress').style.display = 'none'; $('foi-ai-progress').innerHTML = ''; }
 
+  // ── LLM 선택·API 키 ──────────────────────────────────────────
+  function findLlm(id) { for (var i = 0; i < LLMS.length; i++) if (LLMS[i].id === id) return LLMS[i]; return null; }
+  function getKey(provider) {
+    try { return window.sessionStorage.getItem(KEY_PREFIX + provider) || window.localStorage.getItem(KEY_PREFIX + provider) || ''; } catch (e) { return ''; }
+  }
+  function hasSavedKey(provider) { try { return !!window.localStorage.getItem(KEY_PREFIX + provider); } catch (e) { return false; } }
+  function setKey(provider, key, remember) {
+    try {
+      window.sessionStorage.setItem(KEY_PREFIX + provider, key);
+      if (remember) window.localStorage.setItem(KEY_PREFIX + provider, key); else window.localStorage.removeItem(KEY_PREFIX + provider);
+    } catch (e) { /* 저장소를 못 쓰는 환경 — 이번 탭에서만 메모리에 없음 */ }
+  }
+  function clearKey(provider) { try { window.sessionStorage.removeItem(KEY_PREFIX + provider); window.localStorage.removeItem(KEY_PREFIX + provider); } catch (e) { /* 무시 */ } }
+  function savedModel(provider) { try { return window.localStorage.getItem(MODEL_PREFIX + provider) || ''; } catch (e) { return ''; } }
+  function saveModel(provider, model) { try { window.localStorage.setItem(MODEL_PREFIX + provider, model); } catch (e) { /* 무시 */ } }
+  function persistLlm() { try { window.localStorage.setItem(LS_LLM, JSON.stringify({ id: S.llm.id, model: S.llm.model, effort: S.llm.effort })); } catch (e) { /* 무시 */ } }
+  function loadLlm() {
+    try {
+      var d = JSON.parse(window.localStorage.getItem(LS_LLM) || 'null');
+      if (d) {
+        var m = findLlm(d.id);
+        var effort = EFFORTS.some(function (e) { return e.id === d.effort; }) ? d.effort : 'medium';
+        if (m) S.llm = { id: m.id, provider: m.provider, model: m.custom ? String(d.model || '') : m.model, effort: effort };
+      }
+    } catch (e) { /* 기본값 유지 */ }
+  }
+  function llmLabel() {
+    var m = findLlm(S.llm.id) || LLMS[0];
+    return m.custom && S.llm.model ? m.label + ' · ' + S.llm.model : m.label;
+  }
+  function effortLabel() { for (var i = 0; i < EFFORTS.length; i++) if (EFFORTS[i].id === S.llm.effort) return EFFORTS[i].label; return '중간'; }
+  function renderModelBtn() { $('foi-model-name').textContent = llmLabel(); $('foi-model-effort').textContent = effortLabel(); }
+  function applyLlm(m, model) {
+    S.llm = { id: m.id, provider: m.provider, model: m.custom ? (model || '') : m.model, effort: S.llm.effort };
+    persistLlm(); renderModelBtn(); renderMenu();
+  }
+
+  function menuOpen() { return !$('foi-model-menu').hidden; }
+  function closeMenu() { $('foi-model-menu').hidden = true; $('foi-model-btn').setAttribute('aria-expanded', 'false'); }
+  // 입력 상자가 화면 위쪽에 있을 때 메뉴를 위로 열면 화면 밖으로 잘려 고를 수 없다 — 공간이 더 넓은 쪽으로 연다.
+  function placeMenu() {
+    var menu = $('foi-model-menu'), btn = $('foi-model-btn');
+    var r = btn.getBoundingClientRect();
+    var below = window.innerHeight - r.bottom - 16, above = r.top - 16;
+    var want = Math.min(menu.scrollHeight, 560);
+    var down = below >= Math.min(want, 360) || below >= above;
+    menu.classList.toggle('up', !down);
+    menu.style.maxHeight = Math.max(200, Math.min(560, (down ? below : above))) + 'px';
+  }
+  function openMenu() { renderMenu(); $('foi-model-menu').hidden = false; $('foi-model-btn').setAttribute('aria-expanded', 'true'); placeMenu(); }
+  function itemHtml(m) {
+    var on = S.llm.id === m.id;
+    var tag = m.provider !== 'default' && getKey(m.provider) ? '<span class="tag">키 저장됨</span>' : '';
+    return '<button type="button" class="foi-mi" role="option" aria-selected="' + on + '" data-id="' + esc(m.id) + '">' +
+      '<span class="ck">' + (on ? '✓' : '') + '</span><span class="tx"><div class="t">' + esc(m.label) + tag + '</div><div class="s">' + esc(m.sub) + '</div></span></button>';
+  }
+  function renderMenu() {
+    // 조사 깊이는 맨 위에 고정(sticky)해 둔다 — 모델 목록이 길어 화면 아래로 잘려도 항상 보이게.
+    var h = '<div class="foi-effort"><div class="lb">조사 깊이</div><div class="seg">' +
+      EFFORTS.map(function (e) { return '<button type="button" data-effort="' + e.id + '" class="' + (S.llm.effort === e.id ? 'on' : '') + '">' + esc(e.label) + '</button>'; }).join('') +
+      '</div><div class="ds">' + esc((EFFORTS.filter(function (e) { return e.id === S.llm.effort; })[0] || EFFORTS[1]).desc) + '</div></div>' +
+      '<div class="foi-mgroup">기본 제공</div>' + itemHtml(LLMS[0]) +
+      '<div class="foi-mgroup">내 API 키로 사용</div>' + LLMS.slice(1).map(itemHtml).join('');
+    if (S.llm.provider !== 'default') h += '<div class="foi-mdiv"></div><button type="button" class="foi-mkey" data-act="key">' + esc((PROVIDERS[S.llm.provider] || {}).name || '') + ' API 키 변경·삭제</button>';
+    $('foi-model-menu').innerHTML = h;
+  }
+  function onMenuClick(ev) {
+    var t = ev.target;
+    var mi = t.closest && t.closest('.foi-mi');
+    if (mi) { selectModel(mi.dataset.id); return; }
+    var eb = t.closest && t.closest('[data-effort]');
+    if (eb) { S.llm.effort = eb.dataset.effort; persistLlm(); renderModelBtn(); renderMenu(); return; }
+    if (t.closest && t.closest('[data-act="key"]')) { var m = findLlm(S.llm.id); closeMenu(); if (m) openKeyModal(m, {}); }
+  }
+  // 기본이 아닌 LLM을 고르면 API 키 팝업이 이어서 뜬다. 키와(OpenAI·Gemini는) 모델 ID를 아직 모르면 팝업, 알면 바로 적용.
+  function selectModel(id) {
+    var m = findLlm(id); if (!m) return;
+    closeMenu();
+    if (m.provider === 'default') { applyLlm(m, ''); return; }
+    var model = m.custom ? (S.llm.id === m.id && S.llm.model ? S.llm.model : savedModel(m.provider)) : m.model;
+    if (getKey(m.provider) && (!m.custom || model)) { applyLlm(m, model); return; }
+    openKeyModal(m, {});
+  }
+  function openKeyModal(m, opts) {
+    opts = opts || {};
+    S.modal = { llm: m };
+    var pv = PROVIDERS[m.provider] || { name: m.label, keyUrl: '#' };
+    $('foi-key-title').textContent = pv.name + ' API 키 입력';
+    $('foi-key-desc').textContent = m.custom
+      ? pv.name + ' 모델을 쓰려면 모델 ID와 API 키가 필요합니다. 모델 ID는 ' + pv.name + '가 안내하는 이름을 그대로 입력하세요.'
+      : '‘' + m.label + '’ 모델을 쓰려면 ' + pv.name + ' API 키가 필요합니다.';
+    $('foi-key-model-row').style.display = m.custom ? '' : 'none';
+    $('foi-key-model').value = m.custom ? (S.llm.id === m.id && S.llm.model ? S.llm.model : savedModel(m.provider)) : '';
+    var existing = getKey(m.provider);
+    var ki = $('foi-key-input'); ki.value = '';
+    ki.placeholder = existing ? '저장된 키가 있습니다 — 바꾸려면 새 키를 붙여 넣으세요' : '키를 붙여 넣으세요';
+    $('foi-key-remember').checked = hasSavedKey(m.provider);
+    $('foi-key-delete').style.display = existing ? '' : 'none';
+    $('foi-key-link').href = pv.keyUrl;
+    $('foi-key-err').textContent = opts.error || '';
+    $('foi-key-modal').hidden = false;
+    setTimeout(function () { (m.custom && !$('foi-key-model').value ? $('foi-key-model') : ki).focus(); }, 0);
+  }
+  function closeKeyModal() { $('foi-key-modal').hidden = true; $('foi-key-input').value = ''; S.modal = null; }
+  function saveKeyModal() {
+    if (!S.modal) return;
+    var m = S.modal.llm, err = $('foi-key-err');
+    var key = $('foi-key-input').value.trim() || getKey(m.provider);
+    if (key.length < 8 || /\s/.test(key)) { err.textContent = 'API 키를 입력해 주세요(8자 이상, 공백 없음).'; return; }
+    var model = m.model;
+    if (m.custom) {
+      model = $('foi-key-model').value.trim();
+      if (!MODEL_ID_RE.test(model)) { err.textContent = '모델 ID를 입력해 주세요(영문·숫자와 . _ : - / 만, 80자까지).'; return; }
+      saveModel(m.provider, model);
+    }
+    setKey(m.provider, key, $('foi-key-remember').checked);
+    applyLlm(m, model);
+    closeKeyModal();
+  }
+  function deleteKeyModal() {
+    if (!S.modal) return;
+    var m = S.modal.llm;
+    clearKey(m.provider);
+    if (S.llm.provider === m.provider) applyLlm(LLMS[0], '');
+    closeKeyModal();
+    renderMenu();
+  }
+
+  // ── 파일 첨부 ────────────────────────────────────────────────
+  function readAsText(file) {
+    return new Promise(function (resolve, reject) { var r = new FileReader(); r.onload = function () { resolve(String(r.result || '')); }; r.onerror = reject; r.readAsText(file); });
+  }
+  async function extractText(file) {
+    var n = (file.name || '').toLowerCase();
+    if (/\.(txt|md)$/.test(n)) return { text: await readAsText(file) };
+    if (typeof _extractAttachmentText === 'function') return await _extractAttachmentText(file);   // PDF·DOCX·XLSX·XLS·CSV (편지쓰기 탭과 같은 추출기)
+    return null;
+  }
+  function renderChips() {
+    $('foi-chips').innerHTML = S.attach.map(function (a, i) {
+      var note = { reading: '읽는 중…', done: a.truncated ? '앞부분만 반영' : '내용 읽음 ✓', empty: '텍스트 없음(스캔 이미지일 수 있음)', unsupported: '.doc 미지원 — .docx로 첨부', error: '읽지 못함' }[a.status] || '';
+      var bad = a.status !== 'done' && a.status !== 'reading';
+      return '<span class="foi-chip-file' + (bad ? ' bad' : '') + '"><span class="fn">📎 ' + esc(a.name) + '</span><span class="st">' + note + '</span>' +
+        '<button type="button" data-i="' + i + '" title="제거" aria-label="첨부 제거">✕</button></span>';
+    }).join('');
+  }
+  function attachedChars() { return S.attach.reduce(function (n, a) { return n + (a.text ? a.text.length : 0); }, 0); }
+  async function addFiles(fileList) {
+    $('foi-ai-err').style.display = 'none';
+    var files = Array.prototype.slice.call(fileList || []);
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (S.attach.length >= ATTACH_LIMITS.files) { showAiErr('첨부는 ' + ATTACH_LIMITS.files + '개까지 할 수 있습니다.'); break; }
+      if (f.size > ATTACH_LIMITS.maxBytes) { showAiErr(f.name + ': 10MB를 넘어 첨부할 수 없습니다.'); continue; }
+      var entry = { name: f.name, text: '', status: 'reading', truncated: false };
+      S.attach.push(entry); renderChips();
+      try {
+        var r = await extractText(f);
+        if (!r) {
+          S.attach = S.attach.filter(function (x) { return x !== entry; });
+          showAiErr(f.name + ': 지원하지 않는 형식입니다(PDF·DOCX·XLSX·XLS·CSV·TXT·MD).');
+        } else if (r.unsupported) entry.status = 'unsupported';
+        else if (r.error) entry.status = 'error';
+        else {
+          var t = r.text || '';
+          var room = Math.min(ATTACH_LIMITS.perFileChars, Math.max(0, ATTACH_LIMITS.totalChars - attachedChars()));
+          if (t.length > room) { t = t.slice(0, room); entry.truncated = true; }
+          entry.text = t;
+          entry.status = t ? 'done' : (entry.truncated ? 'done' : 'empty');
+          if (!t && room === 0) { S.attach = S.attach.filter(function (x) { return x !== entry; }); showAiErr('첨부 내용이 너무 많아 ' + f.name + '을(를) 더 담을 수 없습니다.'); }
+        }
+      } catch (e) { entry.status = 'error'; }
+      renderChips();
+    }
+  }
+  function attachmentBlocks() {
+    return S.attach.filter(function (a) { return a.status === 'done' && a.text; }).map(function (a) {
+      return '\n\n[첨부파일: ' + a.name + ']\n--- 파일 내용 시작 ---\n' + a.text + (a.truncated ? '\n\n(※ 파일이 길어 앞부분만 반영됐습니다)' : '') + '\n--- 파일 내용 끝 ---';
+    }).join('');
+  }
+
+  // ── 음성 입력(브라우저 내장 Web Speech API — 편지쓰기 탭과 같은 방식) ──
+  function micToggle() {
+    var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var btn = $('foi-mic-btn');
+    if (!Rec) { showAiErr('이 브라우저는 음성 입력을 지원하지 않습니다. Chrome을 사용해 주세요.'); return; }
+    if (S.mic.on) { if (S.mic.rec) S.mic.rec.stop(); return; }
+    var input = $('foi-ai-input');
+    S.mic.base = input.value ? input.value + ' ' : '';
+    var r = new Rec();
+    r.lang = 'ko-KR'; r.continuous = true; r.interimResults = true;
+    r.onstart = function () { S.mic.on = true; btn.classList.add('recording'); btn.title = '음성 입력 중지'; };
+    r.onresult = function (e) {
+      var t = '';
+      for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      input.value = S.mic.base + t; autosize(input); aiUpdateSend();
+    };
+    r.onerror = function (e) { if (e.error !== 'no-speech' && e.error !== 'aborted') showAiErr('음성 인식 오류: ' + e.error); };
+    r.onend = function () { S.mic.on = false; btn.classList.remove('recording'); btn.title = '음성 입력'; };
+    S.mic.rec = r; r.start();
+  }
+
+  // ── 보내기 ───────────────────────────────────────────────────
   async function aiSend() {
     var ta = $('foi-ai-input');
     var text = ta.value.trim();
     if (!text || S.chat.busy) return;
-    if (!S.chat.messages.length) S.chat.firstUser = text;
-    S.chat.messages.push({ role: 'user', content: text });
-    appendBubble('user', text);
+    if (S.attach.some(function (a) { return a.status === 'reading'; })) { showAiErr('첨부 파일을 읽는 중입니다 — 잠시 후 다시 보내 주세요.'); return; }
+    // 기본이 아닌 LLM인데 키가 없으면(탭을 닫아 사라졌거나 삭제한 경우) 먼저 키를 받는다. 메시지는 아직 보내지 않는다.
+    var picked = findLlm(S.llm.id) || LLMS[0];
+    if (picked.provider !== 'default' && !getKey(picked.provider)) { openKeyModal(picked, { error: '이 모델을 쓰려면 API 키가 필요합니다.' }); return; }
+
+    var files = S.attach.filter(function (a) { return a.status === 'done'; }).map(function (a) { return a.name; });
+    var content = text + attachmentBlocks();
+    var startLen = S.chat.messages.length, firstUserBefore = S.chat.firstUser;
+    if (!startLen) S.chat.firstUser = text;
+    S.chat.messages.push({ role: 'user', content: content });
+    appendBubble('user', text, null, files);
+    var bubble = $('foi-ai-thread').lastChild;
     ta.value = ''; autosize(ta);
     S.chat.busy = true; aiUpdateSend();
     $('foi-ai-err').style.display = 'none';
     $('foi-ai-reset').style.display = '';
-    var steps = 0, lines = [], final = null;
+    var steps = 0, lines = [], final = null, okCalls = 0;
     try {
       for (var call = 0; call < MAX_AI_CALLS; call++) {
         showProgress(lines);
-        var res = await api('/kfoi/chat', { method: 'POST', body: { messages: S.chat.messages, research_steps: steps } });
+        var body = { messages: S.chat.messages, research_steps: steps, llm: { provider: S.llm.provider, model: S.llm.model, effort: S.llm.effort } };
+        if (S.llm.provider !== 'default') body.llm_key = getKey(S.llm.provider);   // 이 요청에서만 전달 — 서버는 저장하지 않는다
+        var res = await api('/kfoi/chat', { method: 'POST', body: body });
+        okCalls++;
         (res.append || []).forEach(function (m) { S.chat.messages.push(m); });
         (res.progress || []).forEach(function (p) { lines.push(p); });
         steps = res.research_steps || steps;
@@ -558,20 +810,29 @@
         final = res; break;
       }
       hideProgress();
-      if (!final) throw new Error('조사가 길어져 중단했습니다. 알고 싶은 것을 더 좁혀서 다시 적어 주세요.');
+      if (!final) throw new Error('조사가 길어져 중단했습니다. 알고 싶은 것을 더 좁혀서 다시 적어 주세요. (조사 깊이를 높이면 더 오래 조사합니다)');
+      S.attach = []; renderChips();
       appendBubble('assistant', final.reply || (final.action ? '청구서 폼을 채웠습니다.' : '응답이 비어 있습니다.'), lines);
       if (final.action) applyFill(final.action);
     } catch (e) {
       hideProgress();
-      var er = $('foi-ai-err');
-      er.textContent = 'AI 조사에 실패했습니다: ' + (e && e.message ? e.message : e);
-      er.style.display = '';
+      var msg = String(e && e.message ? e.message : e);
+      var authFailed = /LLM_AUTH_FAILED/.test(msg);
+      // 첫 호출에서 실패했으면 보낸 것을 되돌려 입력창에 다시 넣는다 — 키를 고친 뒤 바로 다시 보낼 수 있게.
+      if (okCalls === 0) {
+        S.chat.messages.length = startLen; S.chat.firstUser = firstUserBefore;
+        if (bubble && bubble.parentNode) bubble.parentNode.removeChild(bubble);
+        ta.value = text; autosize(ta);
+      }
+      showAiErr('AI 조사에 실패했습니다: ' + msg.replace(/\[LLM_[A-Z_]+\]\s*/, ''));
+      if (authFailed && picked.provider !== 'default') openKeyModal(picked, { error: 'API 키가 거부되었습니다. 키가 맞는지 확인하고 다시 입력해 주세요.' });
     } finally {
       S.chat.busy = false; aiUpdateSend();
     }
   }
   function aiReset() {
     S.chat = { messages: [], firstUser: '', busy: false };
+    S.attach = []; renderChips();
     $('foi-ai-thread').innerHTML = '';
     hideProgress();
     $('foi-ai-err').style.display = 'none';
@@ -1331,7 +1592,34 @@
     $('foi-add-item').addEventListener('click', function () { addItemRow({ title: '', scope: '' }); refresh(); });
     var ai = $('foi-ai-input');
     ai.addEventListener('input', function () { autosize(ai); aiUpdateSend(); });
-    ai.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); aiSend(); } });
+    // Claude와 같이 Enter = 보내기, Shift+Enter = 줄바꿈. 한글 조합 중의 Enter(글자 확정)는 보내지 않는다.
+    ai.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing && ev.keyCode !== 229) { ev.preventDefault(); aiSend(); }
+    });
+    $('foi-ai-send').addEventListener('click', aiSend);
+    $('foi-attach-btn').addEventListener('click', function () { $('foi-attach-input').click(); });
+    $('foi-attach-input').addEventListener('change', function (ev) { var fl = ev.target.files; addFiles(fl).then(function () { ev.target.value = ''; }); });
+    $('foi-chips').addEventListener('click', function (ev) {
+      var b = ev.target.closest && ev.target.closest('button[data-i]');
+      if (b) { S.attach.splice(parseInt(b.dataset.i, 10), 1); renderChips(); }
+    });
+    var comp = $('foi-composer');
+    comp.addEventListener('dragover', function (ev) { ev.preventDefault(); });
+    comp.addEventListener('drop', function (ev) { ev.preventDefault(); if (ev.dataTransfer && ev.dataTransfer.files) addFiles(ev.dataTransfer.files); });
+    $('foi-mic-btn').addEventListener('click', micToggle);
+    loadLlm(); renderModelBtn();
+    $('foi-model-btn').addEventListener('click', function (ev) { ev.stopPropagation(); if (menuOpen()) closeMenu(); else openMenu(); });
+    $('foi-model-menu').addEventListener('click', onMenuClick);
+    document.addEventListener('click', function (ev) { if (menuOpen() && !(ev.target.closest && ev.target.closest('.foi-model-wrap'))) closeMenu(); });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') return;
+      if (S.modal) closeKeyModal(); else if (menuOpen()) closeMenu();
+    });
+    $('foi-key-save').addEventListener('click', saveKeyModal);
+    $('foi-key-cancel').addEventListener('click', closeKeyModal);
+    $('foi-key-delete').addEventListener('click', deleteKeyModal);
+    $('foi-key-modal').addEventListener('click', function (ev) { if (ev.target === $('foi-key-modal')) closeKeyModal(); });
+    $('foi-key-input').addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); saveKeyModal(); } });
     var body = $('foi-d-body');
     body.addEventListener('input', onDetailInput);
     body.addEventListener('change', onDetailChange);
@@ -1343,7 +1631,7 @@
   window._foi = {
     init: init, sub: sub, copy: copyText, download: downloadText, toMail: sendToMail, portal: openPortal,
     save: saveToCampaign, reset: resetForm,
-    aiSend: aiSend, aiReset: aiReset, useOther: useOther,
+    aiSend: aiSend, aiReset: aiReset, useOther: useOther, micToggle: micToggle,
     setFilter: setFilter, openCampaign: openCampaign, closeDetail: closeDetail, reuse: reuse, roundOpen: roundOpen,
     detailSave: detailSave, detailFollowUp: detailFollowUp, followUpStart: followUpStart,
     detailClose: detailClose, detailShare: detailShare, detailReopen: detailReopen, detailDelete: detailDelete,

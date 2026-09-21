@@ -378,11 +378,73 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .foi-ai-progress .spinner{flex-shrink:0}
 .foi-ai-foot{display:flex;justify-content:flex-end;margin-top:10px}
 .foi-ai-foot:has(> button[style*="display:none"]){margin-top:0}
-.foi-bigin{position:relative}
-.foi-bigin-ta{display:block;width:100%;box-sizing:border-box;min-height:148px;max-height:340px;resize:vertical;padding:20px 76px 20px 24px;font-family:inherit;font-size:18px;line-height:1.7;color:var(--txt);background:#fff;border:1.5px solid var(--bdr);border-radius:16px;box-shadow:var(--sh);outline:none;transition:border-color .12s,box-shadow .12s}
-.foi-bigin-ta::placeholder{color:#9AA3AF;opacity:1}
-.foi-bigin-ta:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(15,143,126,.13)}
-.foi-bigin-send{position:absolute;right:16px;bottom:16px;width:42px;height:42px}
+
+/* ── 대화 창(Claude 형식의 입력 상자) ─────────────────────────────── */
+.foi-chatwin{display:flex;flex-direction:column}
+.foi-chatwin .foi-ai-thread{max-height:520px;overflow-y:auto;padding:2px 4px 6px 2px;margin-bottom:14px}
+.foi-composer{background:#fff;border:1.5px solid var(--bdr);border-radius:24px;box-shadow:var(--sh);padding:14px 16px 12px;transition:border-color .12s,box-shadow .12s}
+.foi-composer:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px rgba(15,143,126,.13)}
+.foi-composer-ta{display:block;width:100%;box-sizing:border-box;min-height:84px;max-height:320px;resize:none;border:none;outline:none;background:transparent;padding:6px 8px;font-family:inherit;font-size:17px;line-height:1.7;color:var(--txt)}
+.foi-composer-ta::placeholder{color:#9AA3AF;opacity:1}
+.foi-composer-bar{display:flex;align-items:center;gap:6px;margin-top:6px}
+.foi-cbar-spacer{flex:1}
+.foi-ibtn{width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--sub);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .12s,color .12s}
+.foi-ibtn:hover{background:#F0F2F5;color:var(--txt)}
+.foi-ibtn.recording{background:var(--rbg);color:var(--red);animation:foiPulse 1.2s infinite}
+@keyframes foiPulse{0%,100%{box-shadow:0 0 0 0 rgba(214,69,69,.35)}50%{box-shadow:0 0 0 7px rgba(214,69,69,0)}}
+.foi-send{width:40px;height:40px;border:none;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:opacity .12s,transform .08s}
+.foi-send:hover:not(:disabled){transform:scale(1.05)}
+.foi-send:disabled{opacity:.35;cursor:default}
+.foi-model-wrap{position:relative}
+.foi-model-btn{display:flex;align-items:center;gap:6px;height:40px;padding:0 12px;border:none;border-radius:20px;background:transparent;font-size:15px;color:var(--txt);cursor:pointer}
+.foi-model-btn:hover,.foi-model-btn[aria-expanded="true"]{background:#F0F2F5}
+.foi-model-btn .nm{font-weight:600;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foi-model-btn .eff{color:var(--hint);font-weight:500}
+.foi-model-btn svg{color:var(--hint);flex-shrink:0}
+.foi-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
+.foi-chips:not(:empty){margin-bottom:8px}
+.foi-chip-file{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:6px 12px;border:1px solid var(--bdr);border-radius:12px;background:#FAFBFC;font-size:14px;color:var(--txt)}
+.foi-chip-file .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.foi-chip-file .st{color:var(--hint);font-size:13px;white-space:nowrap}
+.foi-chip-file.bad .st{color:var(--org)}
+.foi-chip-file button{border:none;background:none;color:var(--hint);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}
+.foi-chip-file button:hover{color:var(--red)}
+
+/* LLM 선택 메뉴 */
+.foi-menu{position:absolute;right:0;top:calc(100% + 10px);width:380px;max-width:calc(100vw - 48px);max-height:560px;overflow-y:auto;background:#fff;border:1px solid var(--bdr);border-radius:16px;box-shadow:0 14px 36px rgba(15,23,42,.18);padding:8px;z-index:60}
+.foi-menu.up{top:auto;bottom:calc(100% + 10px)}
+.foi-menu[hidden]{display:none}
+.foi-mgroup{font-size:13px;font-weight:800;color:var(--hint);padding:10px 12px 4px}
+.foi-mi{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;border:none;background:none;border-radius:12px;padding:8px 12px;cursor:pointer;color:var(--txt)}
+.foi-mi:hover{background:#F3F5F7}
+.foi-mi .tx{flex:1;min-width:0}
+.foi-mi .t{font-weight:700;font-size:15px}
+.foi-mi .s{font-size:13px;color:var(--hint);line-height:1.5;margin-top:1px}
+.foi-mi .ck{width:18px;color:var(--pri);font-weight:800;padding-top:1px}
+.foi-mi .tag{font-size:13px;font-weight:700;color:var(--pri);background:var(--pri-bg);border-radius:9px;padding:1px 8px;margin-left:6px}
+.foi-mdiv{height:1px;background:var(--bdr);margin:8px 4px}
+.foi-effort{position:sticky;top:-8px;z-index:2;background:#fff;padding:8px 12px 8px;margin:-8px -8px 0;border-bottom:1px solid var(--bdr);border-radius:16px 16px 0 0}
+.foi-effort .lb{font-size:13px;font-weight:800;color:var(--hint);margin-bottom:6px}
+.foi-effort .seg{display:flex;border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
+.foi-effort .seg button{flex:1;border:none;background:#fff;padding:8px 0;font-size:14px;font-weight:700;color:var(--sub);border-right:1px solid var(--bdr);cursor:pointer}
+.foi-effort .seg button:last-child{border-right:none}
+.foi-effort .seg button.on{background:var(--pri);color:#fff}
+.foi-effort .ds{font-size:13px;color:var(--hint);margin-top:6px;line-height:1.55}
+.foi-mkey{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 12px;font-size:14px;color:var(--pri);cursor:pointer;border-radius:10px}
+.foi-mkey:hover{background:#F3F5F7}
+
+/* API 키 팝업 */
+.foi-modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px}
+.foi-modal[hidden]{display:none}
+.foi-modal-card{width:480px;max-width:100%;max-height:92vh;overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.35);padding:26px 28px 22px}
+.foi-modal-card h3{font-size:19px;font-weight:800;margin-bottom:6px}
+.foi-modal-desc{font-size:14.5px;color:var(--sub);line-height:1.7;margin-bottom:14px}
+.foi-modal-card input[type=text],.foi-modal-card input[type=password]{width:100%;font-size:15px;padding:11px 13px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff;font-family:inherit}
+.foi-modal-card input:focus{outline:none;border-color:var(--pri)}
+.foi-modal-note{font-size:13.5px;color:var(--hint);line-height:1.65;margin-top:8px}
+.foi-modal-actions{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.foi-modal-link{font-size:14px;color:var(--pri);text-decoration:none}
+.foi-modal-link:hover{text-decoration:underline}
 .foi-known{margin-bottom:20px}
 .foi-known h2{margin-bottom:10px}
 .foi-known .row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #F0F1F5;font-size:14px;line-height:1.7}
@@ -775,19 +837,60 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <!-- ══ 새 청구서 ══ -->
     <div id="foi-sub-new" class="foi-sub active">
 
-      <!-- 첫 섹션 — 입력 필드만 크게. 안내 문구는 placeholder(회색)로 두어 입력을 시작하면 사라진다. -->
+      <!-- 첫 섹션 — 대화 창(Claude와 같은 형식의 입력 상자). 대화는 위에 쌓이고, 입력 상자는 아래에 둔다.
+           왼쪽 "+" = 파일 첨부, 오른쪽 = LLM 선택(모델·조사 깊이) · 음성 입력 · 보내기.
+           안내 문구는 placeholder(회색)라 입력을 시작하면 사라진다. -->
       <div class="foi-ai">
-        <div id="foi-ai-thread" class="foi-ai-thread"></div>
-        <div id="foi-ai-progress" class="foi-ai-progress" style="display:none"></div>
-        <div id="foi-ai-err" class="errbox" style="display:none"></div>
-        <div class="foi-bigin">
-          <textarea id="foi-ai-input" class="foi-bigin-ta" rows="5" aria-label="얻고자 하는 공공 정보" placeholder="귀하가 얻고자하는 공공 정보를 기술하면, AI가 기관 및 청구 문서 목록을 자동으로 작성합니다. 물론, 귀하가 수정할 수 있습니다."></textarea>
-          <button type="button" class="chat-send-btn foi-bigin-send" id="foi-ai-send" title="AI로 청구서 작성 (Ctrl+Enter)" aria-label="AI로 청구서 작성" disabled onclick="_foi.aiSend()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-          </button>
+        <div class="foi-chatwin">
+          <div id="foi-ai-thread" class="foi-ai-thread"></div>
+          <div id="foi-ai-progress" class="foi-ai-progress" style="display:none"></div>
+          <div id="foi-ai-err" class="errbox" style="display:none"></div>
+          <div class="foi-composer" id="foi-composer">
+            <div id="foi-chips" class="foi-chips"></div>
+            <textarea id="foi-ai-input" class="foi-composer-ta" rows="3" aria-label="얻고자 하는 공공 정보" placeholder="귀하가 얻고자하는 공공 정보를 기술하면, AI가 기관 및 청구 문서 목록을 자동으로 작성합니다. 물론, 귀하가 수정할 수 있습니다."></textarea>
+            <div class="foi-composer-bar">
+              <button type="button" id="foi-attach-btn" class="foi-ibtn" title="파일 첨부 (PDF·DOCX·XLSX·CSV·TXT)" aria-label="파일 첨부"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+              <input type="file" id="foi-attach-input" multiple hidden accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md">
+              <span class="foi-cbar-spacer"></span>
+              <div class="foi-model-wrap">
+                <button type="button" id="foi-model-btn" class="foi-model-btn" aria-haspopup="listbox" aria-expanded="false" title="LLM 선택">
+                  <span id="foi-model-name" class="nm">혼디 기본</span><span id="foi-model-effort" class="eff">중간</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="foi-model-menu" class="foi-menu" role="listbox" hidden></div>
+              </div>
+              <button type="button" id="foi-mic-btn" class="foi-ibtn" title="음성 입력" aria-label="음성 입력"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></button>
+              <button type="button" id="foi-ai-send" class="foi-send" title="AI로 청구서 작성 (Enter)" aria-label="AI로 청구서 작성" disabled><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+            </div>
+          </div>
         </div>
         <div class="foi-ai-foot">
           <button type="button" class="btn btn-outline btn-sm" id="foi-ai-reset" style="display:none" onclick="_foi.aiReset()">+ 새 요청</button>
+        </div>
+      </div>
+
+      <!-- LLM API 키 입력 팝업 — 기본(혼디 기본) 외의 LLM을 고르면 뜬다 -->
+      <div id="foi-key-modal" class="foi-modal" hidden role="dialog" aria-modal="true" aria-labelledby="foi-key-title">
+        <div class="foi-modal-card">
+          <h3 id="foi-key-title">API 키 입력</h3>
+          <p id="foi-key-desc" class="foi-modal-desc"></p>
+          <div class="field" id="foi-key-model-row" style="display:none">
+            <label for="foi-key-model">모델 ID</label>
+            <input type="text" id="foi-key-model" autocomplete="off" spellcheck="false" placeholder="해당 회사가 안내하는 모델 ID를 그대로 입력">
+          </div>
+          <div class="field">
+            <label for="foi-key-input">API 키</label>
+            <input type="password" id="foi-key-input" autocomplete="off" spellcheck="false" placeholder="키를 붙여 넣으세요">
+          </div>
+          <label class="foi-keep" style="margin:0 0 6px"><input type="checkbox" id="foi-key-remember"><span>이 브라우저에 저장 <span class="foi-opt">(끄면 이 탭을 닫을 때 사라집니다 · 공용 PC에서는 끄세요)</span></span></label>
+          <div class="foi-modal-note">키는 이 브라우저에만 보관됩니다. AI 조사를 요청할 때마다 혼디 서버를 거쳐 해당 회사로 전달되며, 혼디는 키를 저장하거나 기록하지 않도록 만들어져 있습니다. 사용료는 해당 회사가 키 소유자에게 청구합니다.</div>
+          <div id="foi-key-err" class="foi-item-warn" style="margin-top:8px"></div>
+          <div class="foi-modal-actions">
+            <a id="foi-key-link" href="#" target="_blank" rel="noopener" class="foi-modal-link">키 발급 안내 ↗</a>
+            <span class="foi-cbar-spacer"></span>
+            <button type="button" id="foi-key-delete" class="btn btn-outline btn-sm" style="display:none;color:var(--red)">저장된 키 삭제</button>
+            <button type="button" id="foi-key-cancel" class="btn btn-outline btn-sm">취소</button>
+            <button type="button" id="foi-key-save" class="btn btn-primary btn-sm">저장하고 사용</button>
+          </div>
         </div>
       </div>
 
