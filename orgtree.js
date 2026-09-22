@@ -138,6 +138,12 @@
   }
   var MINISTRY = /(기획재정|교육|과학기술정보통신|외교|통일|법무|국방|행정안전|국가보훈|문화체육관광|농림축산식품|산업통상자원|보건복지|환경|고용노동|여성가족|국토교통|해양수산|중소벤처기업)부$|(경찰청|소방청|국세청|관세청|조달청|통계청|병무청|방위사업청|농촌진흥청|산림청|문화재청|기상청|특허청|해양경찰청|질병관리청|식품의약품안전처|국가정보원|감사원|인사혁신처|법제처|국무조정실|대통령실)$/;
   var UNIV_TOKEN = /^(\S+?(?:대학교|대학))(?:\s+(.+))?$/;
+  // 2026-09-22 신설 — '대학교/대학' 접미어가 없는 과학기술원 계열 영문 약칭
+  // (실사용 확인: KAIST, POSTECH). UNIV_TOKEN과 같은 구조로 "약칭 + 나머지"를 뽑는다.
+  // 학과 정보 없이 약칭만 단독으로 온 경우(예: 'KAIST'만, 부서 미상)는 이 규칙도 매칭되지만
+  // rest가 비므로 finishSegs가 대학 노드까지만 제안하고 학과는 사용자가 채워야 한다.
+  var ACRONYM_LIST = ['KAIST', 'POSTECH', 'GIST', 'UNIST', 'DGIST'];
+  var ACRONYM_UNIV = new RegExp('^(' + ACRONYM_LIST.join('|') + ')(?:\\s+(.+))?$', 'i');
   // 2026-09-22 수정 — '대학원' 캐치올 규칙이 대학명 추출보다 먼저 걸려("고려대학교 정보대학
   // 대학원 뇌공학과" 같은 원문 전체가 대학별 구분 없이 학교>대학원 바로 밑에 평평하게 쌓이던
   // 실사용 결함, 실 데이터로 재현·확인) → 대학명 추출({univ:true})을 먼저 시도하고, 거기서
@@ -205,13 +211,18 @@
     for (var i = 0; i < RULES.length; i++) {
       var r = RULES[i];
       if (r.univ) {
-        var m = UNIV_TOKEN.exec(org);
+        var m = UNIV_TOKEN.exec(org), uniName = m ? m[1] : null, why = '대학교·대학';
+        if (!m) {
+          m = ACRONYM_UNIV.exec(org);
+          // 대소문자 표기가 섞여 들어와도(kaist/Kaist/KAIST) 같은 노드로 모이도록 표준 표기로 정규화.
+          if (m) { uniName = ACRONYM_LIST.filter(function (a) { return a.toLowerCase() === m[1].toLowerCase(); })[0]; why = '대학교·대학(약칭 포함)'; }
+        }
         if (m) {
           var rest = normText(m[2] || '');
           var grad = GRAD_RE.test(rest) || GRAD_RE.test(dept);
-          var segs = ['학교', grad ? '대학원' : '대학', m[1]];
+          var segs = ['학교', grad ? '대학원' : '대학', uniName];
           if (rest && normKey(rest) !== normKey('대학원')) segs.push(rest);
-          return finishSegs(segs, dept, true, 'high', grad ? '대학원(대학명 인식)' : '대학교·대학');
+          return finishSegs(segs, dept, true, 'high', grad ? '대학원(대학명 인식)' : why);
         }
         continue;
       }

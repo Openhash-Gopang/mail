@@ -209,3 +209,25 @@ test('분류기(수정): 회귀 — 병원·동문회·일반 대학·부서 필
   assert.equal(path(cls('연세대학교', '컴퓨터과학과')), '학교>대학>연세대학교>컴퓨터과학과');
   assert.equal(path(cls('성균관대학교 소프트웨어학과(초빙교수)')), '학교>대학>성균관대학교>소프트웨어학과(초빙교수)');
 });
+
+// ═════════ 2026-09-22 신설: 과학기술원 계열 영문 약칭(KAIST/POSTECH 등) 인식 ═════════
+// 실사용 확인 — '대학교/대학' 접미어가 없어 규칙이 걸리지 않고, 사용자가 직접 입력한 경로에
+// '>' 구분자가 없어 트리 최상위에 KAIST/POSTECH 노드 3개가 학교 계층 밖으로 따로 생긴 사례.
+test('분류기(신설): 과학기술원 계열 — 학부/대학원 구분, 학과 없으면 대학까지만', () => {
+  assert.equal(path(cls('KAIST 전산학부')), '학교>대학>KAIST>전산학부');
+  assert.equal(path(cls('KAIST AI 대학원')), '학교>대학원>KAIST>AI 대학원');
+  assert.equal(path(cls('POSTECH 컴퓨터공학과')), '학교>대학>POSTECH>컴퓨터공학과');
+  assert.equal(path(cls('KAIST')), '학교>대학>KAIST');   // 학과 정보 없음 — 대학 노드까지만 제안
+  assert.equal(path(cls('GIST')), '학교>대학>GIST');
+  assert.equal(path(cls('UNIST 물리학과')), '학교>대학>UNIST>물리학과');
+  assert.equal(path(cls('DGIST 대학원 로봇공학과')), '학교>대학원>DGIST>대학원 로봇공학과');
+});
+test('분류기(신설): 대소문자가 섞여도 표준 표기(대문자)로 정규화되어 같은 노드로 모인다', () => {
+  assert.equal(path(cls('kaist 전산학부')), '학교>대학>KAIST>전산학부');
+  assert.equal(path(cls('Kaist 전산학부')), '학교>대학>KAIST>전산학부');
+  assert.equal(path(cls('postech 컴퓨터공학과')), '학교>대학>POSTECH>컴퓨터공학과');
+});
+test('분류기(신설): 회귀 — 목록에 없는 영문 약칭·한글 음역은 여전히 규칙 없음(억지 추측 안 함)', () => {
+  assert.equal(cls('카이스트').segs, null);
+  assert.equal(cls('MIT').segs, null);
+});
