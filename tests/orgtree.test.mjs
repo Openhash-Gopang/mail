@@ -140,7 +140,7 @@ test('분류기: 이미 있는 노드의 이름·별칭이 규칙보다 우선(�
   assert.equal(path(cls('jnu', '', tree)), '학교>대학>제주대학교');          // 대소문자 무시
   assert.equal(path(cls('제주 대학교', '', tree)), '학교>대학>제주대학교');   // 공백 무시
   assert.equal(path(cls('제주대', '컴퓨터공학과', tree)), '학교>대학>제주대학교>컴퓨터공학과');   // 대학 하위면 부서 추가
-  assert.equal(path(cls('Hondi Inc', '개발팀', tree)), '협력사>혼디');        // 대학이 아니면 부서는 붙이지 않음
+  assert.equal(path(cls('Hondi Inc', '개발팀', tree)), '협력사>혼디>개발팀');   // 2026-09-22 수정: 대학이 아니어도 부서는 붙인다
   assert.equal(cls('제주대', '', tree).why, '이미 있는 소속(이름·별칭 일치)');
   assert.equal(path(cls('혼디', '', tree)), '협력사>혼디');                    // 규칙이 없던 표기도 노드 이름이면 매칭
 });
@@ -230,4 +230,157 @@ test('분류기(신설): 대소문자가 섞여도 표준 표기(대문자)로 �
 test('분류기(신설): 회귀 — 목록에 없는 영문 약칭·한글 음역은 여전히 규칙 없음(억지 추측 안 함)', () => {
   assert.equal(cls('카이스트').segs, null);
   assert.equal(cls('MIT').segs, null);
+});
+
+// ═════════ 2026-09-22 신설: 재분류(이미 배정된 연락처도 검토) ═════════
+// buildGroups가 기록한 currentPaths를 이용해 "지금 상태와 다른 것만" 골라내는 로직.
+// orgtree.js는 브라우저 전역(window)에 함수를 노출하므로, 이 함수들은 module.exports의
+// _pure에는 없다 — 여기서는 같은 로직을 재현해 값만 검증한다(브라우저 함수 자체는
+// jsdom 종단 테스트에서 실사용 시나리오로 검증).
+
+test('buildGroups: currentPaths — 미분류는 [\'\'], 배정된 것은 실제 경로', () => {
+  const contacts = [
+    { id: '1', org: '제주대학교', dept: '', org_path: '' },
+    { id: '2', org: '제주대학교', dept: '', org_path: '' },
+    { id: '3', org: 'KAIST 전산학부', dept: '', org_path: 'KAIST 전산학부' },   // 옛 평평한 값
+  ];
+  const { groups } = P.buildGroups(contacts, emptyTree());
+  const jeju = groups.find(g => g.org === '제주대학교'), kaist = groups.find(g => g.org === 'KAIST 전산학부');
+  assert.deepEqual(jeju.currentPaths, ['']);
+  assert.deepEqual(kaist.currentPaths, ['KAIST 전산학부']);
+});
+test('재분류 필터: 실사용 재현 — 옛 평평한 배정은 changed, 이미 올바른 배정은 skip, KAIST 단독은 판단 위임', () => {
+  const contacts = [
+    // 실사용 사례 1: 옛 버전이 만든 평평한 학교>대학원>(원문 전체) — 새 규칙은 대학별로 나눔
+    { id: 'a', org: '고려대학교 정보대학 대학원 뇌공학과', dept: '', org_path: '학교>대학원>고려대학교 정보대학 대학원 뇌공학과' },
+    // 실사용 사례 2: dept 미검사 시절 대학(학부) 밑에 잘못 들어간 법학전문대학원
+    { id: 'b1', org: '연세대학교', dept: '법학전문대학원', org_path: '학교>대학>연세대학교>법학전문대학원' },
+    { id: 'b2', org: '연세대학교', dept: '컴퓨터과학과', org_path: '학교>대학>연세대학교>컴퓨터과학과' },   // 이건 원래 맞음
+    // 실사용 사례 3: KAIST 약칭 미인식 시절 평평한 배정
+    { id: 'c', org: 'KAIST 전산학부', dept: '', org_path: 'KAIST 전산학부' },
+    // 실사용 사례 4: 학과 정보 없는 KAIST — 사용자가 직접 'KAIST AI 대학원'으로 골랐던 값(더 정확할 수 있음)
+    { id: 'd', org: 'KAIST', dept: '', org_path: 'KAIST AI 대학원' },
+    // 이미 올바르게 배정된 것 — 표에 나오면 안 됨
+    { id: 'e', org: '제주대학교', dept: '인공지능학과', org_path: '학교>대학>제주대학교>인공지능학과' },
+  ];
+  const { groups } = P.buildGroups(contacts, emptyTree());
+  const by = Object.fromEntries(groups.map(g => [g.org + '|' + g.dept, g]));
+
+  const grad = by['고려대학교 정보대학 대학원 뇌공학과|'];
+  assert.equal(P.needsChange(grad), true);
+  assert.equal(grad.segs.join('>'), '학교>대학원>고려대학교>정보대학 대학원 뇌공학과');
+  assert.equal(P.isUnclassified(grad), false);   // 이미 배정된 적 있음 → 기본 체크 금지 대상
+
+  const yonseiLaw = by['연세대학교|법학전문대학원'];
+  assert.equal(P.needsChange(yonseiLaw), true);
+  assert.equal(yonseiLaw.segs.join('>'), '학교>대학원>연세대학교>법학전문대학원');
+
+  const yonseiCS = by['연세대학교|컴퓨터과학과'];
+  assert.equal(P.needsChange(yonseiCS), false, '이미 올바른 배정은 재분류 대상에서 빠져야 함');
+
+  const kaistDept = by['KAIST 전산학부|'];
+  assert.equal(P.needsChange(kaistDept), true);
+  assert.equal(kaistDept.segs.join('>'), '학교>대학>KAIST>전산학부');
+
+  const kaistBare = by['KAIST|'];
+  assert.equal(P.needsChange(kaistBare), true);   // 표에는 뜬다(제안이 다르므로)
+  assert.equal(kaistBare.segs.join('>'), '학교>대학>KAIST');   // 하지만 규칙의 제안일 뿐 — UI가 기본 체크하지 않아 사용자가 직접 판단
+
+  const jeju = by['제주대학교|인공지능학과'];
+  assert.equal(P.needsChange(jeju), false);
+});
+test('재분류 필터: 제안 자체가 없는(규칙 없음) 그룹은 이미 배정돼 있어도 재분류 대상에서 제외', () => {
+  const contacts = [{ id: 'x', org: '카이스트', dept: '', org_path: '기타>카이스트' }];
+  const { groups } = P.buildGroups(contacts, emptyTree());
+  assert.equal(P.needsChange(groups[0]), false, '제안이 없으면(segs=null) 손대지 않는다');
+});
+
+// ═════════ 2026-09-22 신설: 별칭/이름 매칭이 옛 평평한 노드를 "이미 맞다"고 자기확인하는 문제 ═════════
+test('makeIndex(수정): 원문 그대로인 노드 이름은 매칭에서 제외 — 재분류가 자기 자신을 근거로 통과시키지 않는다', () => {
+  const tree = P.buildTree([
+    { id: 'a', name: '학교', parent_id: '', path: '학교', depth: 1, aliases: [] },
+    { id: 'b', name: '대학원', parent_id: 'a', path: '학교>대학원', depth: 2, aliases: [] },
+    { id: 'c', name: '고려대학교 정보대학 대학원 뇌공학과', parent_id: 'b', path: '학교>대학원>고려대학교 정보대학 대학원 뇌공학과', depth: 3, aliases: [] },
+    { id: 'd', name: '대학', parent_id: 'a', path: '학교>대학', depth: 2, aliases: [] },
+    { id: 'e', name: '제주대학교', parent_id: 'd', path: '학교>대학>제주대학교', depth: 3, aliases: ['제주대'] },
+  ]);
+  const idx = P.makeIndex(tree);
+  // 원문 그대로인 노드 이름 — 다시 입력해도 규칙이 재구성한 새 경로가 나와야 한다(자기 자신 재확인 금지)
+  assert.equal(path(P.classifyOrg('고려대학교 정보대학 대학원 뇌공학과', '', idx)), '학교>대학원>고려대학교>정보대학 대학원 뇌공학과');
+  // 사람이 고른 고유명·별칭은 여전히 신뢰
+  assert.equal(path(P.classifyOrg('제주대학교', '', idx)), '학교>대학>제주대학교');
+  assert.equal(path(P.classifyOrg('제주대', '', idx)), '학교>대학>제주대학교');
+});
+test('isRawLeafName: 규칙이 그대로 리프로 남기면 고유명, 더 쪼개면 원문', () => {
+  assert.equal(P.isRawLeafName('제주대학교'), false);
+  assert.equal(P.isRawLeafName('고려대학교 정보대학 대학원 뇌공학과'), true);
+  assert.equal(P.isRawLeafName('혼디'), false);   // 규칙이 아예 못 알아보면(제안 없음) 고유명으로 간주
+});
+
+// ═════════ 2026-09-22 신설: 대학명 일치 매칭 시 대학/대학원 갈림을 dept로 다시 판단 ═════════
+// 실사용 재현 — "연세대학교"가 예전에 대학(학부) 밑에 잘못 놓여 있으면, 이름이 일치한다는 이유만으로
+// 새로 들어오는 법학전문대학원 소속까지 계속 같은(틀린) 위치로 끌고 가던 문제.
+test('classifyOrg(수정): 대학명이 일치해도 대학/대학원은 항상 dept로 재판단', () => {
+  const tree = P.buildTree([
+    { id: 'a', name: '학교', parent_id: '', path: '학교', depth: 1, aliases: [] },
+    { id: 'd', name: '대학', parent_id: 'a', path: '학교>대학', depth: 2, aliases: [] },
+    { id: 'e', name: '연세대학교', parent_id: 'd', path: '학교>대학>연세대학교', depth: 3, aliases: [] },   // 예전에 잘못 놓인 위치(전부 대학 밑)
+  ]);
+  const idx = P.makeIndex(tree);
+  assert.equal(path(P.classifyOrg('연세대학교', '법학전문대학원', idx)), '학교>대학원>연세대학교>법학전문대학원');
+  assert.equal(path(P.classifyOrg('연세대학교', '컴퓨터과학과', idx)), '학교>대학>연세대학교>컴퓨터과학과');
+  assert.equal(path(P.classifyOrg('연세대학교', '', idx)), '학교>대학>연세대학교', '기존 위치가 그대로 기본값');
+});
+test('classifyOrg(수정): 대학이 아닌 범주(회사 등)는 이름 일치 시 기존 경로를 그대로 재사용', () => {
+  const tree = P.buildTree([
+    { id: 'x', name: '협력사', parent_id: '', path: '협력사', depth: 1, aliases: [] },
+    { id: 'y', name: '혼디', parent_id: 'x', path: '협력사>혼디', depth: 2, aliases: ['Hondi Inc'] },
+  ]);
+  const idx = P.makeIndex(tree);
+  assert.equal(path(P.classifyOrg('혼디', '개발팀', idx)), '협력사>혼디>개발팀');
+  assert.equal(path(P.classifyOrg('Hondi Inc', '', idx)), '협력사>혼디');
+});
+test('classifyOrg(수정): 루트 노드 이름이 "학교"가 아니어도(사용자가 이름을 바꾼 경우) 그 이름을 그대로 재사용', () => {
+  const tree = P.buildTree([
+    { id: 'a', name: '교육기관', parent_id: '', path: '교육기관', depth: 1, aliases: [] },
+    { id: 'd', name: '대학원', parent_id: 'a', path: '교육기관>대학원', depth: 2, aliases: [] },
+    { id: 'e', name: 'KAIST', parent_id: 'd', path: '교육기관>대학원>KAIST', depth: 3, aliases: [] },
+  ]);
+  const idx = P.makeIndex(tree);
+  assert.equal(path(P.classifyOrg('KAIST', 'AI 대학원', idx)), '교육기관>대학원>KAIST>AI 대학원');
+});
+
+// ═════════ 2026-09-22 신설: needsChange가 "규칙 없음 + 미분류" 그룹을 놓치던 회귀 ═════════
+// 실사용 확인 — 재분류 필터를 넣으며 제안(segs) 없는 그룹을 전부 건너뛰게 만들어, "직접 입력이
+// 필요한" 미분류 건이 표에서 통째로 사라지는 회귀가 있었다. 미분류라면 규칙이 없어도 항상 보여야
+// 하고, 이미 사람이 수동으로 배정해 둔 것만(규칙을 몰라도) 매번 다시 묻지 않는다.
+test('needsChange(수정): 규칙 없음 + 미분류는 항상 보여준다(직접 입력 필요)', () => {
+  const contacts = [{ id: 'x', org: '미지의곳', dept: '', org_path: '' }];
+  const { groups } = P.buildGroups(contacts, emptyTree());
+  assert.equal(P.needsChange(groups[0]), true);
+});
+test('needsChange(수정): 규칙 없음이지만 이미 사람이 수동 배정한 것은 매번 다시 묻지 않는다', () => {
+  const contacts = [{ id: 'x', org: '카이스트', dept: '', org_path: '기타>카이스트' }];
+  const { groups } = P.buildGroups(contacts, emptyTree());
+  assert.equal(P.needsChange(groups[0]), false);
+});
+
+// ═════════ 2026-09-22 신설: 자동 선택 판정 — "섞인 안전"과 "이미 다른 값"을 구분 ═════════
+// 실사용 확인 — 새 미분류 연락처가 이미 올바르게 분류된 구성원과 같은 그룹에 섞이면(같은 소속 원문),
+// 적용해도 아무것도 안 바뀌는데도(안전) 예전 판정은 자동 선택을 막았다. 반대로 이미 "다른" 값으로
+// 배정된 것은 여전히 막아야 한다(위험).
+test('safeToAutoCheck: 미분류+이미 올바름이 섞인 그룹은 안전 → 자동 선택 가능', () => {
+  const g = { segs: ['학교', '대학', '제주대학교'], conf: 'high', currentPaths: ['', '학교>대학>제주대학교'] };
+  assert.equal(P.safeToAutoCheck(g), true);
+});
+test('safeToAutoCheck: 이미 다른 값으로 배정된 것은 섞여 있어도 자동 선택 금지', () => {
+  const g = { segs: ['학교', '대학', 'KAIST'], conf: 'high', currentPaths: ['', 'KAIST AI 대학원'] };
+  assert.equal(P.safeToAutoCheck(g), false);
+});
+test('safeToAutoCheck: 제안이 없으면 항상 false', () => {
+  assert.equal(P.safeToAutoCheck({ segs: null, conf: 'none', currentPaths: [''] }), false);
+});
+test('hasAnyUnclassified: 미분류 구성원이 하나라도 있으면 true(규칙 없음 그룹도 보여줌)', () => {
+  assert.equal(P.hasAnyUnclassified({ currentPaths: ['', '기타>카이스트'] }), true);
+  assert.equal(P.hasAnyUnclassified({ currentPaths: ['기타>카이스트'] }), false);
 });

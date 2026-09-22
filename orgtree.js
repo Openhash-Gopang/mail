@@ -178,13 +178,30 @@
   ];
 
   /** 트리의 이름·별칭 → 노드 색인. 같은 표기가 여러 노드에 있으면(모호) 쓰지 않는다. */
+  // 노드 "이름"을 규칙만으로(인덱스 없이) 다시 분류했을 때 리프가 그대로 유지되면 사람이 고른
+  // 고유명("제주대학교")으로 보고 신뢰한다. 더 쪼개진 결과가 나오면("고려대학교 정보대학 대학원
+  // 뇌공학과" → 규칙이 리프를 "정보대학 대학원 뇌공학과"로 바꿔버림) 아직 원문 그대로 저장된
+  // 이름이라는 뜻 — 이런 이름은 별칭 매칭에서 제외한다. 그러지 않으면 재분류가 "이 노드 이름과
+  // 똑같으니 이미 맞다"고 스스로를 근거로 확인해버려, 고쳐야 할 옛 평평한 노드를 영영 못 고친다
+  // (실사용 확인: KAIST/대학원 재분류 검증 중 발견). 별칭은 사람이 일부러 붙인 것이므로 이 검사와
+  // 무관하게 항상 신뢰한다.
+  function isRawLeafName(name) {
+    var r = classifyOrg(name, '', new Map());
+    return !!(r.segs && r.segs[r.segs.length - 1] !== name);
+  }
   function makeIndex(tree) {
     var idx = new Map();
     tree.byId.forEach(function (n) {
-      [n.name].concat(Array.isArray(n.aliases) ? n.aliases : []).forEach(function (nm) {
+      // univLevel — 이 노드의 부모가 정확히 '대학' 또는 '대학원'이라는 이름의 노드인지. 그렇다면
+      // classifyOrg에서 대학/대학원 갈림을 기존 위치가 아니라 dept로 다시 판단해야 하는 대상이다.
+      var parent = tree.byId.get(n.parent_id);
+      var entry = { node: n, univLevel: !!(parent && (parent.name === '대학' || parent.name === '대학원')) };
+      var names = [n.name].filter(function (nm) { return !isRawLeafName(nm); })
+        .concat(Array.isArray(n.aliases) ? n.aliases : []);
+      names.forEach(function (nm) {
         var k = normKey(nm); if (!k) return;
         if (!idx.has(k)) idx.set(k, []);
-        if (idx.get(k).indexOf(n) < 0) idx.get(k).push(n);
+        if (!idx.get(k).some(function (e) { return e.node === n; })) idx.get(k).push(entry);
       });
     });
     return idx;
@@ -205,8 +222,18 @@
     var dept = sanitizeName(deptRaw);
     var hits = idx ? idx.get(normKey(org)) : null;
     if (hits && hits.length === 1) {
-      var useD = /^학교>(대학|대학원)>/.test(hits[0].path);
-      return finishSegs(hits[0].path.split(SEP), dept, useD, 'high', '이미 있는 소속(이름·별칭 일치)');
+      var node = hits[0].node;
+      // 대학 계열(hits[0].univLevel — 부모 노드 이름이 '대학'/'대학원')로 매칭됐으면, 대학명만 재사용하고
+      // 대학/대학원 갈림은 항상 dept로 다시 판단한다. 기존 위치를 그대로 답습하면, 예전에 부서를 안 보고
+      // 잘못 놓인 노드(예: 법학전문대학원 학생이 '대학' 밑 대학교 노드에 붙어 있던 경우)가 앞으로 들어오는
+      // 모든 대학원 소속까지 계속 틀린 위치로 끌고 간다(실사용 확인). 다른 범주(회사·병원 등)는 종전대로
+      // 기존 경로를 그대로 재사용한다.
+      if (hits[0].univLevel) {
+        var schoolRoot = node.path.split(SEP)[0];
+        var grad = GRAD_RE.test(dept);
+        return finishSegs([schoolRoot, grad ? '대학원' : '대학', node.name], dept, true, 'high', '이미 있는 소속(이름·별칭 일치)');
+      }
+      return finishSegs(node.path.split(SEP), dept, true, 'high', '이미 있는 소속(이름·별칭 일치)');
     }
     for (var i = 0; i < RULES.length; i++) {
       var r = RULES[i];
@@ -241,9 +268,12 @@
       byOrg.get(org).push(c);
     });
     function mk(org, dept, list, cls) {
+      // currentPaths — 이 그룹 구성원들이 지금 실제로 배정돼 있는 소속 경로(들). 전부 ''면 미분류.
+      var seen = {}, currentPaths = [];
+      list.forEach(function (c) { var p = normText(c.org_path || ''); if (!seen[p]) { seen[p] = 1; currentPaths.push(p); } });
       return { org: org, dept: dept, ids: list.map(function (c) { return c.id; }), count: list.length,
         names: list.slice(0, 3).map(function (c) { return c.name || c.email || ''; }),
-        segs: cls.segs, conf: cls.conf, why: cls.why, deptUsed: !!(cls.useDept && dept) };
+        segs: cls.segs, conf: cls.conf, why: cls.why, deptUsed: !!(cls.useDept && dept), currentPaths: currentPaths };
     }
     byOrg.forEach(function (list, org) {
       var base = classifyOrg(org, '', idx);
@@ -366,7 +396,7 @@
         '<div class="ot-headbtns">' +
           '<button type="button" class="btn btn-primary btn-sm" data-ot-act="add-root">＋ 최상위 소속</button>' +
           (S.tree.roots.length ? '<button type="button" class="btn btn-outline btn-sm" data-ot-act="expand-all">모두 펼치기</button><button type="button" class="btn btn-outline btn-sm" data-ot-act="collapse-all">접기</button>' : '') +
-          (S.unassigned > 0 ? '<button type="button" class="btn btn-primary btn-sm" data-ot-act="wizard">미분류 자동 분류…</button>' : '') +
+          '<button type="button" class="btn btn-primary btn-sm" data-ot-act="wizard">소속 자동 분류…</button>' +
           '<button type="button" class="btn btn-outline btn-sm" data-ot-act="resync">정합성 점검</button>' +
         '</div>' +
       '</div>';
@@ -693,16 +723,20 @@
     });
   }
 
-  // ── 미분류 자동 분류 마법사 ─────────────────────────────
+  // ── 소속 자동 분류 마법사(미분류 + 재분류) ─────────────────
+  // 2026-09-22 — 미분류뿐 아니라 이미 배정된 연락처도 함께 검토한다. 규칙이 나중에 좋아져도
+  // 예전 결과는 소급 반영되지 않는 문제(실사용 확인) 때문. 다만 이미 배정된 그룹이 '규칙이 남긴
+  // 결과'인지 '사용자가 일부러 고른 값'인지 코드로 구분할 수 없으므로, 배정된 적 있는 그룹은
+  // 제안이 확실해도 기본 체크하지 않는다(never-classified만 자동 선택).
   // 흐름: 미분류 연락처를 전부 불러와(서버 페이지 200건씩) → 소속 원문별로 묶어 경로를 제안 → 사용자가 표에서
   // 확인·수정·선택 → 선택한 그룹만 적용(없는 노드 생성 → 100건씩 배정 → 수정한 표기는 별칭으로 기억).
   // 데이터는 브라우저 밖으로 나가지 않는다: 분류는 여기서 계산하고, 저장은 기존 org-units API만 쓴다.
   var WZ = { groups: [], noOrg: 0, truncated: false };
 
-  async function loadUnassigned(onProgress) {
+  async function loadAllForClassification(onProgress) {
     var out = [], page = 1, totalPages = 1, truncated = false;
     do {
-      var r = await api('/kmail/contacts', { query: { status: 'all', org_path: '__NONE__', page: page } });
+      var r = await api('/kmail/contacts', { query: { status: 'all', page: page } });
       var items = r.items || [];
       items.forEach(function (c) { if (c.status !== 'rejected') out.push(c); });
       if (typeof r.totalPages === 'number') totalPages = r.totalPages;
@@ -713,51 +747,88 @@
     return { contacts: out, truncated: truncated };
   }
 
+  function isUnclassified(g) { return g.currentPaths.length === 1 && g.currentPaths[0] === ''; }
+  function hasAnyUnclassified(g) { return g.currentPaths.indexOf('') !== -1; }
+  // 자동 선택은 "위험이 없을 때"만 — 구성원이 전부 미분류이거나, 이미 배정된 구성원이 있어도 전부
+  // 제안과 똑같을 때만(즉 적용해도 실제로 아무것도 바뀌지 않을 때만) 안전하다고 본다. 하나라도 제안과
+  // 다른 값으로 이미 배정돼 있으면(사람이 다르게 판단했을 수 있음) 자동 선택하지 않는다.
+  function safeToAutoCheck(g) {
+    if (!g.segs) return false;
+    var target = g.segs.join(SEP);
+    return g.currentPaths.every(function (p) { return p === '' || p === target; });
+  }
+  function needsChange(g) {
+    // 제안이 없으면(규칙 없음, 직접 입력 필요) — 한 번도 배정된 적 없을 때만 보여준다. 이미 사람이
+    // 수동으로 배정해 둔 값이 있으면(규칙은 여전히 모르더라도) 매번 다시 물어보지 않는다.
+    // 실사용 확인: 제안이 없는 그룹을 전부 걸러버리면 '직접 입력이 필요한' 미분류 건이 표에서
+    // 통째로 사라져 버리는 회귀가 있었다.
+    if (!g.segs) return hasAnyUnclassified(g);
+    var target = g.segs.join(SEP);
+    return g.currentPaths.length !== 1 || g.currentPaths[0] !== target;
+  }
   function confLabel(c) { return c === 'high' ? '확실' : c === 'medium' ? '확인 필요' : '규칙 없음'; }
+  function currentLabel(g) { return isUnclassified(g) ? '(미분류)' : g.currentPaths.map(crumbText).join(' / '); }
 
-  function wizardHtml(res, truncated) {
+  function wizardHtml(res, truncated, skipped) {
     var g = res.groups, sug = g.filter(function (x) { return x.segs; }).length, hi = g.filter(function (x) { return x.segs && x.conf === 'high'; }).length;
     var rows = g.map(function (x, i) {
       var sub = [];
       if (x.dept) sub.push('부서: ' + esc(x.dept));
       if (x.names.length) sub.push(esc(x.names.join(', ')) + (x.count > x.names.length ? ' 등' : ''));
-      return '<tr data-gi="' + i + '"><td><input type="checkbox" class="ot-wz-cb" aria-label="선택"' + (x.segs && x.conf === 'high' ? ' checked' : '') + '></td>' +
+      var autoChecked = x.conf === 'high' && safeToAutoCheck(x);
+      return '<tr data-gi="' + i + '"><td><input type="checkbox" class="ot-wz-cb" aria-label="선택"' + (autoChecked ? ' checked' : '') + '></td>' +
         '<td>' + esc(x.org) + '<div class="ot-wz-sub">' + sub.join(' · ') + '</div></td>' +
         '<td style="text-align:right">' + x.count + '</td>' +
+        '<td class="ot-wz-sub">' + esc(currentLabel(x)) + '</td>' +
         '<td><input type="text" class="ot-wz-path" list="ot-paths" value="' + esc(x.segs ? x.segs.join(SEP) : '') + '" placeholder="예: 학교>대학>제주대학교" aria-label="소속 경로"></td>' +
         '<td><span class="ot-conf-' + esc(x.conf) + '">' + confLabel(x.conf) + '</span><div class="ot-wz-sub">' + esc(x.why) + '</div></td></tr>';
     }).join('');
     var paths = flatten(S.tree).map(function (n) { return '<option value="' + esc(n.path) + '"></option>'; }).join('');
     var total = g.reduce(function (a, x) { return a + x.count; }, 0);
+    var everClassified = g.filter(function (x) { return !isUnclassified(x); }).length;
     return '<div class="ot-wz-sub" style="font-size:13px;color:var(--sub);line-height:1.7">' +
-      '미분류 <b>' + (total + res.noOrg.length) + '건</b> → 소속 <b>' + g.length + '개 그룹</b> (자동 제안 ' + sug + '개, 그중 확실 ' + hi + '개 · 직접 입력 필요 ' + (g.length - sug) + '개)' +
+      '검토 대상 <b>' + (total + res.noOrg.length) + '건</b> → 소속 <b>' + g.length + '개 그룹</b> (자동 제안 ' + sug + '개, 그중 확실 ' + hi + '개 · 직접 입력 필요 ' + (g.length - sug) + '개' +
+      (everClassified ? ', 이미 분류된 적 있는 그룹 ' + everClassified + '개 포함' : '') + ')' +
+      (skipped ? ' · 이미 최신 규칙과 일치하는 ' + skipped + '개 그룹은 건너뜁니다' : '') +
       (res.noOrg.length ? ' · 소속이 비어 있는 ' + res.noOrg.length + '건은 대상이 아닙니다' : '') + '<br>' +
-      '규칙에 따른 <b>제안</b>입니다. 경로는 직접 고칠 수 있고(‘&gt;’로 단계 구분), <b>체크한 그룹만</b> 적용됩니다. 확실한 것만 미리 선택돼 있습니다.</div>' +
+      '규칙에 따른 <b>제안</b>입니다. 경로는 직접 고칠 수 있고(‘&gt;’로 단계 구분), <b>체크한 그룹만</b> 적용됩니다. ' +
+      '한 번도 분류된 적 없고 확실한 것만 미리 선택돼 있습니다 — <b>이미 분류돼 있던 그룹은 확실해도 자동 선택하지 않습니다</b>.</div>' +
       (truncated ? '<div class="errbox" style="margin-top:8px">서버가 아직 페이지를 지원하지 않아 첫 200건만 불러왔습니다. 서버 업데이트 후 다시 실행하세요.</div>' : '') +
       '<div class="ot-wz-bar"><button type="button" class="btn btn-outline btn-sm" data-ot-act="wz-high">확실한 것만 선택</button>' +
       '<button type="button" class="btn btn-outline btn-sm" data-ot-act="wz-all">제안 있는 것 전체 선택</button>' +
       '<button type="button" class="btn btn-outline btn-sm" data-ot-act="wz-none">모두 해제</button>' +
       '<label style="margin:0 0 0 auto;font-weight:400"><input type="checkbox" id="ot-wz-alias" checked> 수정한 소속은 원문을 별칭으로 기억(다음부터 자동 매칭)</label></div>' +
-      '<div class="ot-wz-scroll"><table class="ot-wz-table"><thead><tr><th></th><th>소속(원문)</th><th style="text-align:right">건수</th><th>제안 경로</th><th>근거</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="ot-wz-scroll"><table class="ot-wz-table"><thead><tr><th></th><th>소속(원문)</th><th style="text-align:right">건수</th><th>현재</th><th>제안 경로</th><th>근거</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<datalist id="ot-paths">' + paths + '</datalist>';
   }
 
   function wizardModal() {
     injectStyle();
     openModal({
-      title: '미분류 자동 분류', wide: true, confirmLabel: '선택한 그룹 적용',
-      html: '<div id="ot-wz"><div class="loading-row"><span class="spinner"></span> 미분류 연락처를 불러오는 중…</div></div>',
+      title: '소속 자동 분류', wide: true, confirmLabel: '선택한 그룹 적용',
+      html: '<div id="ot-wz"><div class="loading-row"><span class="spinner"></span> 연락처를 불러오는 중…</div></div>',
       onOpen: function (m) {
         var ok = m.querySelector('[data-ot-act="modal-ok"]'), host = m.querySelector('#ot-wz');
         ok.disabled = true;
         (async function () {
           try {
             await refreshNodes();
-            var got = await loadUnassigned(function (n, t) { host.textContent = '미분류 연락처를 불러오는 중… ' + n + (t ? ' / ' + t : '') + '건'; });
-            var res = buildGroups(got.contacts, S.tree);
-            WZ.groups = res.groups; WZ.noOrg = res.noOrg.length; WZ.truncated = got.truncated;
-            if (!res.groups.length) { host.innerHTML = '<p style="font-size:14px">분류할 미분류 연락처가 없습니다' + (res.noOrg.length ? ' (소속이 비어 있는 ' + res.noOrg.length + '건은 대상 아님)' : '') + '.</p>'; return; }
-            host.innerHTML = wizardHtml(res, got.truncated);
+            var got = await loadAllForClassification(function (n, t) { host.textContent = '연락처를 불러오는 중… ' + n + (t ? ' / ' + t : '') + '건'; });
+            var full = buildGroups(got.contacts, S.tree);
+            var acted = full.groups.filter(needsChange);
+            var skipped = full.groups.length - acted.length;
+            var res = { groups: acted, noOrg: full.noOrg };
+            WZ.groups = res.groups; WZ.noOrg = res.noOrg.length; WZ.truncated = got.truncated; WZ.skipped = skipped;
+            if (!res.groups.length) {
+              // 잘린 상태로 확인한 부분이 마침 전부 이미 맞아서 여기로 왔더라도, 잘렸다는 사실 자체는
+              // 반드시 알려야 한다 — 못 본 뒷부분에 처리할 게 있을 수 있다(실사용 확인: 이 경고 없이
+              // "모두 정상"만 뜨면 사용자가 뒷부분을 영영 놓친다).
+              host.innerHTML = '<p style="font-size:14px">' + (skipped ? '모든 소속이 이미 최신 규칙과 일치합니다(' + skipped + '개 그룹 확인).' : '분류할 연락처가 없습니다') +
+                (res.noOrg.length ? ' (소속이 비어 있는 ' + res.noOrg.length + '건은 대상 아님)' : '') + '.</p>' +
+                (got.truncated ? '<div class="errbox" style="margin-top:8px">서버가 아직 페이지를 지원하지 않아 첫 200건만 확인했습니다 — 나머지는 아직 보지 못했을 수 있습니다. 서버 업데이트 후 다시 실행하세요.</div>' : '');
+              return;
+            }
+            host.innerHTML = wizardHtml(res, got.truncated, skipped);
             ok.disabled = false;
           } catch (e) { host.innerHTML = '<div class="errbox">' + esc(e && e.message || e) + '</div>'; }
         })();
@@ -913,7 +984,9 @@
     beginTable: beginTable, pathCellHtml: pathCellHtml, breadcrumbHtml: breadcrumbHtml,
     _pure: { validateName: validateName, parseAliases: parseAliases, aliasesInvalid: aliasesInvalid, buildTree: buildTree, flatten: flatten,
              descendantIds: descendantIds, parsePathInput: parsePathInput, planEnsurePath: planEnsurePath, chunk: chunk, crumbText: crumbText,
-             normText: normText, normKey: normKey, sanitizeName: sanitizeName, makeIndex: makeIndex, classifyOrg: classifyOrg, buildGroups: buildGroups },
+             normText: normText, normKey: normKey, sanitizeName: sanitizeName, makeIndex: makeIndex, classifyOrg: classifyOrg, buildGroups: buildGroups, isRawLeafName: isRawLeafName,
+             isUnclassified: isUnclassified, hasAnyUnclassified: hasAnyUnclassified, safeToAutoCheck: safeToAutoCheck,
+             needsChange: needsChange },
     _state: S, _bind: bind,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
