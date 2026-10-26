@@ -514,6 +514,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <a href="https://mail.hondi.net">소개 페이지</a>
     <a href="webapp.html?view=mobile">모바일 화면</a>
     <a href="https://hondi.net" target="_blank">hondi.net ↗</a>
+    <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
   </div>
 </header>
 
@@ -569,11 +570,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="파일 첨부" onclick="document.getElementById('cmp-file').click()">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
-        <textarea id="cmp-input" class="chat-textarea" rows="1" placeholder="예: 다음 주 세미나 초청 메일을 서울대 컴퓨터공학부 교수님들께 보내고 싶어요"></textarea>
+        <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="예: 다음 주 세미나 초청 메일을 서울대 컴퓨터공학부 교수님들께 보내고 싶어요"></textarea>
         <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </button>
-        <button type="button" class="chat-send-btn" id="cmp-send-btn" title="전송" disabled onclick="_cmpChatSend()">
+        <button type="button" class="chat-send-btn" id="cmp-send-btn" data-requires-login="메일 대화" title="전송" disabled onclick="_cmpChatSend()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
       </div>
@@ -593,8 +594,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div id="kaddr-loading" class="loading-row" style="display:none"><span class="spinner"></span>K-Address가 처리하고 있습니다…</div>
       <div id="kaddr-err" class="errbox" style="display:none"></div>
       <div class="chat-inputbar">
-        <textarea id="kaddr-input" class="chat-textarea" rows="1" placeholder="예: 아래 명단을 주소록에 등록해줘 / 소속 정보 없는 사람들 보여줘"></textarea>
-        <button type="button" class="chat-send-btn" id="kaddr-send-btn" title="전송" disabled onclick="_kaddrSend()">
+        <textarea id="kaddr-input" data-requires-login="주소록 AI 관리" class="chat-textarea" rows="1" placeholder="예: 아래 명단을 주소록에 등록해줘 / 소속 정보 없는 사람들 보여줘"></textarea>
+        <button type="button" class="chat-send-btn" id="kaddr-send-btn" data-requires-login="주소록 AI 관리" title="전송" disabled onclick="_kaddrSend()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
       </div>
@@ -607,7 +608,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div id="ct-csv-preview" style="display:none;font-size:14px;color:var(--hint);margin-top:6px"></div>
       <div id="ct-csv-err" class="errbox" style="display:none"></div>
       <div style="margin-top:6px;font-size:14px;color:var(--hint)"><label><input type="checkbox" id="ct-csv-pending"> 승인 대기(pending_review)로 등록 — 기본은 바로 확인됨(confirmed)</label></div>
-      <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-csv-upload-btn" disabled onclick="_ctCsvUpload()">업로드</button></div>
+      <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-csv-upload-btn" data-requires-login="주소록 일괄 업로드" disabled onclick="_ctCsvUpload()">업로드</button></div>
     </div>
 
     <div class="card">
@@ -695,7 +696,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       </div>
       <div id="qs-err" class="errbox" style="display:none"></div>
       <div id="qs-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
-      <div style="margin-top:10px"><button class="btn btn-primary" id="qs-submit-btn" onclick="_qsSendMail()">보내기</button></div>
+      <div style="margin-top:10px"><button class="btn btn-primary" id="qs-submit-btn" data-requires-login="빠른 발송" onclick="_qsSendMail()">보내기</button></div>
     </div>
   </div>
 
@@ -732,8 +733,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <div id="mail-compose-err" class="errbox" style="display:none"></div>
         <div id="mail-compose-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
         <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn btn-outline" id="mail-draft-btn" onclick="_mailSaveDraft()">임시저장</button>
-          <button class="btn btn-primary" id="mail-send-btn" onclick="_mailSend()">보내기</button>
+          <button class="btn btn-outline" id="mail-draft-btn" data-requires-login="초안 저장" onclick="_mailSaveDraft()">임시저장</button>
+          <button class="btn btn-primary" id="mail-send-btn" data-requires-login="메일 보내기" onclick="_mailSend()">보내기</button>
           <button class="btn btn-outline" id="mail-discard-btn" style="display:none" onclick="_mailDiscardEditing()">새로 쓰기</button>
         </div>
       </div>
@@ -803,7 +804,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div id="mail-id-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
 
           <div style="margin-top:10px">
-            <button type="button" class="btn btn-primary" id="mail-id-save-btn" onclick="_mailIdSave()" disabled>이 ID로 저장</button>
+            <button type="button" class="btn btn-primary" id="mail-id-save-btn" data-requires-login="메일 ID 저장" onclick="_mailIdSave()" disabled>이 ID로 저장</button>
           </div>
         </div>
       </div>
@@ -848,7 +849,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div id="foi-ai-err" class="errbox" style="display:none"></div>
           <div class="foi-composer" id="foi-composer">
             <div id="foi-chips" class="foi-chips"></div>
-            <textarea id="foi-ai-input" class="foi-composer-ta" rows="3" aria-label="얻고자 하는 공공 정보" placeholder="귀하가 얻고자하는 공공 정보를 기술하면, AI가 기관 및 청구 문서 목록을 자동으로 작성합니다. 물론, 귀하가 수정할 수 있습니다."></textarea>
+            <textarea id="foi-ai-input" data-requires-login="정보 공개 청구" class="foi-composer-ta" rows="3" aria-label="얻고자 하는 공공 정보" placeholder="귀하가 얻고자하는 공공 정보를 기술하면, AI가 기관 및 청구 문서 목록을 자동으로 작성합니다. 물론, 귀하가 수정할 수 있습니다."></textarea>
             <div class="foi-composer-bar">
               <button type="button" id="foi-attach-btn" class="foi-ibtn" title="파일 첨부 (PDF·DOCX·XLSX·CSV·TXT)" aria-label="파일 첨부"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
               <input type="file" id="foi-attach-input" multiple hidden accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md">
@@ -860,7 +861,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
                 <div id="foi-model-menu" class="foi-menu" role="listbox" hidden></div>
               </div>
               <button type="button" id="foi-mic-btn" class="foi-ibtn" title="음성 입력" aria-label="음성 입력"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></button>
-              <button type="button" id="foi-ai-send" class="foi-send" title="AI로 청구서 작성 (Enter)" aria-label="AI로 청구서 작성" disabled><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+              <button type="button" id="foi-ai-send" data-requires-login="정보 공개 청구" class="foi-send" title="AI로 청구서 작성 (Enter)" aria-label="AI로 청구서 작성" disabled><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
             </div>
           </div>
         </div>
@@ -996,7 +997,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
               <button type="button" class="btn btn-outline btn-sm" onclick="_foi.portal()">정보공개포털 ↗</button>
             </div>
             <div class="foi-actions" style="margin-top:8px">
-              <button type="button" class="btn btn-primary btn-sm" id="foi-save-btn" onclick="_foi.save()">청구 건에 저장</button>
+              <button type="button" class="btn btn-primary btn-sm" id="foi-save-btn" data-requires-login="청구 건 저장" onclick="_foi.save()">청구 건에 저장</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="_foi.reset()">새로 시작</button>
             </div>
             <div class="hint">이 화면은 청구서를 대신 제출하지 않습니다. 복사하거나 내려받아 정보공개시스템(open.go.kr) 등 기관이 안내한 방법으로 제출하고, 접수되면 “내 청구 건”에서 그 회차의 접수일·접수번호를 기록하세요. “메일 작성으로 보내기”는 기관이 전자우편 청구를 받는다고 확인된 경우에만 쓰세요.</div>
@@ -2869,5 +2870,6 @@ async function _campViewFullTranscriptInline(campaignId, btn) {
 })();
 </script>
 <script src="foi.js?v=20260921"></script>
+<script src="https://hondi.net/auth/user-badge.js?v=20261027" defer></script>
 </body>
 </html>
