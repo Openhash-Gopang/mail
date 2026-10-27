@@ -283,6 +283,32 @@ header.topbar .logo{color:#fff;text-decoration:none}
 .side-foot{margin-top:auto;padding:14px 12px 0;border-top:1px solid var(--bdr);font-size:13px;color:var(--hint);line-height:1.8}
 .side-foot a{color:var(--sub);text-decoration:none}
 .side-foot a:hover{color:var(--pri);text-decoration:underline}
+/* 2026-10-28 — 왼쪽 맨 아래 톱니바퀴 '설정'(소개 페이지·모바일 링크 위). 남는 공간을 위에서 밀어 맨 아래로 내린다. */
+.side-settings{margin-top:auto;padding-top:10px}
+.side-settings + .side-foot{margin-top:10px}
+/* 설정 페이지(Gmail 설정을 본뜸): 위쪽 탭 + 항목별 행(왼쪽 이름·오른쪽 입력) */
+.content > #tab-settings{max-width:960px}
+.settings-head h2{font-size:22px;font-weight:800;margin-bottom:4px}
+.settings-head .sub{font-size:14px;color:var(--sub);margin-bottom:14px;line-height:1.7}
+.set-tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);margin-bottom:8px;overflow-x:auto}
+.set-tabs button{background:none;border:none;border-bottom:3px solid transparent;padding:11px 18px;font-size:15px;font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.set-tabs button:hover{color:var(--pri)}
+.set-tabs button.active{color:var(--pri);border-bottom-color:var(--pri)}
+.set-sec{display:none}
+.set-sec.active{display:block}
+.set-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px 28px;padding:20px 0;border-bottom:1px solid var(--bdr)}
+.set-row:last-child{border-bottom:none}
+.set-lbl{font-size:15px;font-weight:800;color:var(--txt);padding-top:9px}
+.set-lbl small{display:block;font-size:13px;font-weight:600;color:var(--hint);margin-top:2px}
+.set-hint{font-size:13.5px;color:var(--sub);line-height:1.7;margin-top:6px}
+.set-row input[type=text],.set-row input[type=date],.set-row textarea{width:100%;font-size:15px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);background:#fff}
+.set-row input[type=date]{width:auto;min-width:190px}
+.set-row textarea{min-height:120px;resize:vertical;line-height:1.6}
+.set-row input:focus,.set-row textarea:focus{outline:none;border-color:var(--pri)}
+.set-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.set-switch{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;padding-top:9px;cursor:pointer}
+.set-switch input{width:18px;height:18px;accent-color:var(--pri)}
+@media (max-width:760px){.set-row{grid-template-columns:1fr;gap:4px}.set-lbl{padding-top:0}}
 
 main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .content > .tab-panel{max-width:1120px;margin:0 auto}
@@ -554,7 +580,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" class="nav-subitem" data-sub="sent" onclick="_navMailSub('sent')">보낸메일함</button>
         <button type="button" class="nav-subitem" data-sub="inbox" onclick="_navMailSub('inbox')">받은메일함</button>
         <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
-        <button type="button" class="nav-subitem" data-sub="idsettings" onclick="_navMailSub('idsettings')">내 메일 ID</button>
       </div>
     </div>
     <div class="side-group">
@@ -565,6 +590,9 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <div class="side-group">
       <div class="side-label">행정 업무</div>
       <button id="tab-btn-foi" class="nav-btn" data-label="정보 공개 청구" onclick="_switchTab('foi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>정보 공개 청구</button>
+    </div>
+    <div class="side-settings">
+      <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
     </div>
     <div class="side-foot">
       <a href="https://mail.hondi.net">소개 페이지</a><br>
@@ -748,7 +776,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" id="mail-subnav-sent" onclick="_mailSwitchSub('sent')">보낸메일함</button>
         <button type="button" id="mail-subnav-inbox" onclick="_mailSwitchSub('inbox')">받은메일함</button>
         <button type="button" id="mail-subnav-tags" onclick="_mailSwitchSub('tags')">태그별 보관함</button>
-        <button type="button" id="mail-subnav-idsettings" onclick="_mailSwitchSub('idsettings')">내 메일 ID</button>
       </div>
 
       <!-- 편지쓰기 -->
@@ -805,58 +832,123 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <div id="mail-tags-items"></div>
       </div>
 
-      <!-- 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)는 노출하지
-           않고, 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를
-           설정한다. 2026-10-27부터 mail_id가 곧 보내는 주소이자 받는 주소다
-           (<mail_id>@hondi.kr). 예전 내부 주소(<guid>@hondi.kr)로 온 메일도
-           계속 받는다. -->
-      <div id="mail-sub-idsettings" class="mail-sub">
-        <div class="sub">이 ID가 내 메일 주소(아이디@hondi.kr)입니다. 메일을 보낼 때 보내는 주소로 쓰이고, 다른 사람이 이 주소로 보낸 메일도 받습니다. 아이디를 바꾸면 이전 아이디로 온 메일은 받지 못합니다.</div>
+    </div>
+  </div>
 
-        <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+  <!-- ══════════════════════════════════════════════════════════
+       설정 — 2026-10-28 신설(주피터 지시). Gmail 설정을 본뜬 화면: 위쪽 탭(계정·서명·부재중 자동응답) + 항목별 행.
+       '아이디 바꾸기'와 '보내는 사람 표시'는 예전 "메일 > 내 메일 ID" 탭에 있던 것을 "계정"으로 옮겼다(요소 id는 그대로).
+       들어가는 길: ① 왼쪽 맨 아래 톱니바퀴 '설정' ② 오른쪽 위 아이디 옆 ⋮(공용 배지 user-badge.js) ③ 주소의 #settings.
+       항목은 서버가 전화 인증 토큰만으로 받는 설정(GET·POST /kmail/settings)에 맞춘다.
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-settings" class="tab-panel">
+    <div class="settings-head">
+      <h2>설정</h2>
+      <div class="sub">메일 아이디, 받는 사람에게 보이는 이름, 보내는 메일 끝에 붙는 서명, 부재중 자동응답을 정합니다.</div>
+    </div>
+    <div class="set-tabs" role="tablist" aria-label="설정 항목">
+      <button type="button" role="tab" id="set-tab-account" class="active" aria-selected="true" onclick="_settingsSwitch('account')">계정</button>
+      <button type="button" role="tab" id="set-tab-signature" aria-selected="false" onclick="_settingsSwitch('signature')">서명</button>
+      <button type="button" role="tab" id="set-tab-autoreply" aria-selected="false" onclick="_settingsSwitch('autoreply')">부재중 자동응답</button>
+    </div>
 
-        <div id="mail-id-content" style="display:none">
-          <div class="field">
-            <label>내 메일 주소</label>
-            <input type="text" id="mail-id-fixed-address" readonly style="background:var(--bg2,#f5f5f5);color:var(--sub)">
+    <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+
+    <!-- 계정 -->
+    <section id="set-sec-account" class="set-sec active">
+      <div id="mail-id-content" style="display:none">
+        <div class="set-row">
+          <div class="set-lbl">내 메일 주소</div>
+          <div>
+            <input type="text" id="mail-id-fixed-address" readonly style="background:var(--bg);color:var(--sub)">
+            <div class="set-hint">내가 보내는 메일의 <b>보내는 주소</b>이자, 다른 사람이 나에게 메일을 보낼 때 쓰는 <b>받는 주소</b>입니다(아이디@hondi.kr).</div>
           </div>
+        </div>
 
-          <div id="mail-id-empty-state" style="display:none">
-            <div class="sub" style="margin-top:4px">아직 메일 ID를 설정하지 않았습니다. 자동으로 만들거나 직접 정할 수 있습니다.</div>
-            <div style="margin-top:8px">
+        <div class="set-row">
+          <div class="set-lbl">아이디 바꾸기</div>
+          <div>
+            <div id="mail-id-empty-state" style="display:none;margin-bottom:12px">
+              <div class="set-hint" style="margin:0 0 8px">아직 메일 ID를 설정하지 않았습니다. 자동으로 만들거나 직접 정할 수 있습니다.</div>
               <button type="button" class="btn btn-primary" id="mail-id-auto-btn" onclick="_mailIdAuto()">자동으로 만들기</button>
             </div>
-          </div>
-
-          <div class="field" style="margin-top:14px">
-            <label>메일 ID 직접 정하기</label>
             <input type="text" id="mail-id-input" placeholder="예: jupiter (3~30자, 영문 소문자·숫자·-·_)" oninput="_mailIdCheckDebounced()">
             <div id="mail-id-check-msg" style="font-size:14px;margin-top:4px"></div>
+            <div id="mail-id-err" class="errbox" style="display:none"></div>
+            <div id="mail-id-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
+            <div class="set-actions">
+              <button type="button" class="btn btn-primary" id="mail-id-save-btn" data-requires-login="메일 ID 저장" onclick="_mailIdSave()" disabled>이 ID로 저장</button>
+            </div>
+            <div class="set-hint">영문 소문자·숫자·하이픈(-)·밑줄(_) 3~30자이고 숫자만으로는 만들 수 없습니다. <b>30일에 3번까지</b> 바꿀 수 있으며, 바꾸면 <b>이전 아이디로 온 메일은 받지 못합니다.</b></div>
           </div>
+        </div>
 
-          <div id="mail-id-err" class="errbox" style="display:none"></div>
-          <div id="mail-id-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
-
-          <div style="margin-top:10px">
-            <button type="button" class="btn btn-primary" id="mail-id-save-btn" data-requires-login="메일 ID 저장" onclick="_mailIdSave()" disabled>이 ID로 저장</button>
-          </div>
-
-          <div class="field" style="margin-top:28px;padding-top:18px;border-top:1px solid var(--bdr,#ddd)">
-            <label>보내는 사람 표시 (선택)</label>
-            <div class="sub" style="margin:2px 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@hondi.kr&gt;</b>로 보입니다.</div>
+        <div class="set-row">
+          <div class="set-lbl">보내는 사람 표시<small>(선택)</small></div>
+          <div>
+            <div class="set-hint" style="margin:0 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@hondi.kr&gt;</b>로 보입니다. 받는 모든 사람에게 보이며, 이후에 보내는 메일부터 적용됩니다.</div>
             <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 도 영민 (40자까지)" oninput="_senderNamePreview()">
-            <div class="sub" style="margin-top:10px">받는 사람에게 이렇게 보입니다</div>
-            <div id="sender-name-preview" style="margin-top:2px;padding:10px 12px;border:1px solid var(--bdr,#ddd);border-radius:8px;background:var(--bg2,#f5f5f5);font-weight:700;font-size:16px;word-break:break-all"></div>
+            <div class="set-hint" style="margin-top:10px">받는 사람에게 이렇게 보입니다</div>
+            <div id="sender-name-preview" style="margin-top:2px;padding:10px 12px;border:1px solid var(--bdr,#ddd);border-radius:8px;background:var(--bg);font-weight:700;font-size:16px;word-break:break-all"></div>
             <div id="sender-name-msg" style="font-size:14px;margin-top:6px;min-height:1.4em"></div>
-          </div>
-          <div id="sender-name-err" class="errbox" style="display:none"></div>
-          <div id="sender-name-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
-          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-primary" id="sender-name-save-btn" data-requires-login="보내는 사람 표시 저장" onclick="_senderNameSave()" disabled>이 이름으로 저장</button>
-            <button type="button" class="btn" id="sender-name-clear-btn" data-requires-login="보내는 사람 표시 저장" onclick="_senderNameClear()">이름 없이 주소만 보내기</button>
+            <div id="sender-name-err" class="errbox" style="display:none"></div>
+            <div id="sender-name-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
+            <div class="set-actions">
+              <button type="button" class="btn btn-primary" id="sender-name-save-btn" data-requires-login="보내는 사람 표시 저장" onclick="_senderNameSave()" disabled>이 이름으로 저장</button>
+              <button type="button" class="btn btn-outline" id="sender-name-clear-btn" data-requires-login="보내는 사람 표시 저장" onclick="_senderNameClear()">이름 없이 주소만 보내기</button>
+            </div>
+            <div class="set-hint">화면 오른쪽 위 아이디를 눌러 나오는 메뉴에서 <b>보내는 이름</b>을 눌러도 바로 고칠 수 있습니다.</div>
           </div>
         </div>
       </div>
+    </section>
+
+    <div id="set-extra" style="display:none">
+      <!-- 서명 -->
+      <section id="set-sec-signature" class="set-sec">
+        <div class="set-row">
+          <div class="set-lbl">서명</div>
+          <div>
+            <textarea id="set-sig-input" maxlength="1000" placeholder="예: 혼디 개발 총괄 도영민 드림" oninput="_sigDirty()"></textarea>
+            <div class="set-hint">내가 보내는 메일의 <b>본문 끝</b>에 한 줄을 띄우고 자동으로 붙습니다(글자만, 1000자까지). 비워 두면 붙지 않습니다. 저장한 뒤 <b>보내는 메일부터</b> 적용됩니다.</div>
+            <div id="set-sig-err" class="errbox" style="display:none"></div>
+            <div id="set-sig-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
+            <div class="set-actions">
+              <button type="button" class="btn btn-primary" id="set-sig-save-btn" data-requires-login="서명 저장" onclick="_sigSave()" disabled>서명 저장</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 부재중 자동응답 -->
+      <section id="set-sec-autoreply" class="set-sec">
+        <div class="set-row">
+          <div class="set-lbl">부재중 자동응답</div>
+          <div>
+            <label class="set-switch"><input type="checkbox" id="set-ar-enabled" onchange="_arDirty()">부재중 자동응답 사용</label>
+            <div class="set-hint">켜 두면 <b>@hondi.kr이 아닌 주소</b>에서 온 메일에 아래 문구를 자동으로 회신합니다. 같은 사람에게는 <b>24시간에 한 번</b>만 보내고, 제목은 "자동 응답: 부재중 안내"로 나갑니다.</div>
+          </div>
+        </div>
+        <div class="set-row">
+          <div class="set-lbl">자동응답 문구</div>
+          <div>
+            <textarea id="set-ar-text" maxlength="2000" placeholder="예: 10월 30일까지 자리를 비웁니다. 돌아오는 대로 답장드리겠습니다." oninput="_arDirty()"></textarea>
+          </div>
+        </div>
+        <div class="set-row">
+          <div class="set-lbl">마지막 날<small>(선택)</small></div>
+          <div>
+            <input type="date" id="set-ar-until" onchange="_arDirty()">
+            <div class="set-hint">고른 날 밤 11시 59분(한국 시간)까지 보냅니다. 비워 두면 끌 때까지 계속 보냅니다.</div>
+            <div id="set-ar-msg" style="font-size:14px;margin-top:6px;min-height:1.4em;color:var(--red)"></div>
+            <div id="set-ar-err" class="errbox" style="display:none"></div>
+            <div id="set-ar-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
+            <div class="set-actions">
+              <button type="button" class="btn btn-primary" id="set-ar-save-btn" data-requires-login="자동응답 저장" onclick="_arSave()" disabled>자동응답 저장</button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -1210,6 +1302,7 @@ function _switchTab(name) {
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
+  if (name === 'settings') _settingsInit();
   _navSyncMailSub();
 }
 
@@ -1402,7 +1495,6 @@ function _mailSwitchSub(name) {
   if (name === 'sent') _mailLoadSent();
   if (name === 'inbox') _mailLoadInbox();
   if (name === 'tags') _mailTagsShowSummary();
-  if (name === 'idsettings') _mailIdLoad();
   _navSyncMailSub();
 }
 
@@ -1470,6 +1562,7 @@ async function _senderNameApply(value, okText) {
     await kmailApi('/kmail/settings', { method: 'POST', body: { sender_display_name: value } });
     _senderNameCurrent = value;
     if (_mailIdCurrentSettings) _mailIdCurrentSettings.sender_display_name = value;
+    _settingsNotifyBadge();
     document.getElementById('sender-name-input').value = value;
     ok.textContent = okText; ok.style.display = 'block';
   } catch (e) {
@@ -1483,13 +1576,121 @@ async function _senderNameSave() {
 }
 async function _senderNameClear() { await _senderNameApply('', `저장했습니다. 이제 받는 사람에게 "${_senderAddress()}"만 보입니다.`); }
 
+// ══════════════════════════════════════════════════════════════
+// 설정 페이지 — 2026-10-28 신설(주피터 지시). 위쪽 탭: 계정(아이디·보내는 사람 표시) · 서명 · 부재중 자동응답.
+// 서버(GET·POST /kmail/settings)가 전화 인증 토큰만으로 받는 항목에 맞춘다.
+// 진입: 왼쪽 맨 아래 '설정' · 공용 배지의 ⋮(window.kmailOpenSettings) · 주소의 #settings
+// ══════════════════════════════════════════════════════════════
+const _SET_SECTIONS = ['account', 'signature', 'autoreply'];
+function _settingsSwitch(name) {
+  if (!_SET_SECTIONS.includes(name)) name = 'account';
+  _SET_SECTIONS.forEach(n => {
+    const sec = document.getElementById('set-sec-' + n), tab = document.getElementById('set-tab-' + n);
+    if (sec) sec.classList.toggle('active', n === name);
+    if (tab) { tab.classList.toggle('active', n === name); tab.setAttribute('aria-selected', n === name ? 'true' : 'false'); }
+  });
+}
+function _settingsInit() { _mailIdLoad(); }
+// 설정 화면에서 아이디·이름을 바꾸면 오른쪽 위 배지(공용 user-badge.js)도 새로 맞춘다.
+function _settingsNotifyBadge() {
+  try { if (window.HondiAuth && typeof window.HondiAuth.reloadMailInfo === 'function') window.HondiAuth.reloadMailInfo(); } catch (e) {}
+}
+// 배지 메뉴에서 보내는 이름을 고쳤을 때(공용 배지가 보내는 이벤트) 이 화면의 값도 맞춘다.
+window.addEventListener('hondi-mail-info-change', (ev) => {
+  const d = (ev && ev.detail) || {};
+  if (typeof d.sender_display_name !== 'string') return;
+  _senderNameCurrent = d.sender_display_name;
+  if (_mailIdCurrentSettings) _mailIdCurrentSettings.sender_display_name = d.sender_display_name;
+  const inp = document.getElementById('sender-name-input');
+  if (inp && document.activeElement !== inp) { inp.value = d.sender_display_name; _senderNamePreview(); }
+});
+function _setBox(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (text) { el.textContent = text; el.style.display = 'block'; } else { el.textContent = ''; el.style.display = 'none'; }
+}
+
+// ── 서명 ──
+let _sigCurrent = '';
+function _sigValue() { return document.getElementById('set-sig-input').value.replace(/\s+$/, ''); }
+function _sigPaint() { document.getElementById('set-sig-save-btn').disabled = (_sigValue() === _sigCurrent); }
+function _sigDirty() { _setBox('set-sig-ok', ''); _setBox('set-sig-err', ''); _sigPaint(); }
+async function _sigSave() {
+  const v = _sigValue();
+  const btn = document.getElementById('set-sig-save-btn');
+  _setBox('set-sig-ok', ''); _setBox('set-sig-err', '');
+  btn.disabled = true;
+  try {
+    await kmailApi('/kmail/settings', { method: 'POST', body: { signature_text: v } });
+    _sigCurrent = v;
+    if (_mailIdCurrentSettings) _mailIdCurrentSettings.signature = v;
+    document.getElementById('set-sig-input').value = v;
+    _setBox('set-sig-ok', v ? '저장했습니다. 이제 보내는 메일의 본문 끝에 이 서명이 붙습니다.' : '저장했습니다. 서명을 비웠습니다 — 메일 끝에 아무것도 붙지 않습니다.');
+  } catch (e) {
+    _setBox('set-sig-err', '저장 실패: ' + e.message);
+  } finally { _sigPaint(); }
+}
+
+// ── 부재중 자동응답 ──
+let _arCurrent = { enabled: false, text: '', until: '' };
+function _arKstDate(iso) {                                   // ISO 시각 → 한국 날짜(YYYY-MM-DD)
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d) ? '' : d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+}
+function _arForm() {
+  return {
+    enabled: document.getElementById('set-ar-enabled').checked,
+    text: document.getElementById('set-ar-text').value.trim(),
+    until: document.getElementById('set-ar-until').value || '',
+  };
+}
+function _arProblem(f) {
+  if (!f.enabled) return '';
+  if (!f.text) return '자동응답을 켜려면 문구를 적어 주세요.';
+  if (f.until && f.until < new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })) return '마지막 날이 이미 지났습니다. 오늘 이후 날짜를 고르거나 비워 주세요.';
+  return '';
+}
+function _arPaint() {
+  const f = _arForm(), problem = _arProblem(f);
+  document.getElementById('set-ar-msg').textContent = problem;
+  document.getElementById('set-ar-save-btn').disabled = !!problem || (f.enabled === _arCurrent.enabled && f.text === _arCurrent.text && f.until === _arCurrent.until);
+}
+function _arDirty() { _setBox('set-ar-ok', ''); _setBox('set-ar-err', ''); _arPaint(); }
+function _arFill(d) {
+  _arCurrent = { enabled: !!d.auto_reply_enabled, text: String(d.auto_reply_text || '').trim(), until: _arKstDate(d.auto_reply_until) };
+  document.getElementById('set-ar-enabled').checked = _arCurrent.enabled;
+  document.getElementById('set-ar-text').value = _arCurrent.text;
+  document.getElementById('set-ar-until').value = _arCurrent.until;
+  _arPaint();
+}
+async function _arSave() {
+  const f = _arForm();
+  if (_arProblem(f)) return;
+  const btn = document.getElementById('set-ar-save-btn');
+  _setBox('set-ar-ok', ''); _setBox('set-ar-err', '');
+  btn.disabled = true;
+  try {
+    const until = f.until ? new Date(f.until + 'T23:59:59+09:00').toISOString() : null;
+    await kmailApi('/kmail/settings', { method: 'POST', body: { auto_reply_enabled: f.enabled, auto_reply_text: f.text, auto_reply_until: until } });
+    _arCurrent = f;
+    if (_mailIdCurrentSettings) Object.assign(_mailIdCurrentSettings, { auto_reply_enabled: f.enabled, auto_reply_text: f.text, auto_reply_until: until });
+    document.getElementById('set-ar-text').value = f.text;
+    _setBox('set-ar-ok', f.enabled ? '저장했습니다. 지금부터 외부에서 온 메일에 자동으로 회신합니다.' : '저장했습니다. 자동응답은 꺼져 있습니다.');
+  } catch (e) {
+    _setBox('set-ar-err', '저장 실패: ' + e.message);
+  } finally { _arPaint(); }
+}
+
 async function _mailIdLoad() {
   if (_mailIdLoadedOnce) return;
   _mailIdLoadedOnce = true;
   const loading = document.getElementById('mail-id-loading');
   const content = document.getElementById('mail-id-content');
+  const extra = document.getElementById('set-extra');
   loading.style.display = '';
   content.style.display = 'none';
+  extra.style.display = 'none';
   try {
     const data = await kmailApi('/kmail/settings');
     _mailIdCurrentSettings = data;
@@ -1497,6 +1698,10 @@ async function _mailIdLoad() {
     _senderNameCurrent = data.sender_display_name || '';
     document.getElementById('sender-name-input').value = _senderNameCurrent;
     _senderNamePreview();
+    _sigCurrent = String(data.signature || '').replace(/\s+$/, '');
+    document.getElementById('set-sig-input').value = _sigCurrent;
+    _sigPaint();
+    _arFill(data);
     const emptyState = document.getElementById('mail-id-empty-state');
     if (data.mail_id) {
       emptyState.style.display = 'none';
@@ -1508,11 +1713,12 @@ async function _mailIdLoad() {
     }
     loading.style.display = 'none';
     content.style.display = '';
+    extra.style.display = '';
   } catch (e) {
     loading.style.display = 'none';
-    _mailIdLoadedOnce = false; // 실패했으니 탭을 다시 눌렀을 때 재시도 가능하게
+    _mailIdLoadedOnce = false; // 실패했으니 설정을 다시 열었을 때 재시도 가능하게
     const err = document.getElementById('mail-id-err');
-    err.textContent = '메일 ID 정보를 불러오지 못했습니다: ' + e.message;
+    err.textContent = '설정을 불러오지 못했습니다: ' + e.message;
     err.style.display = 'block';
     content.style.display = '';
   }
@@ -1575,6 +1781,7 @@ async function _mailIdSave() {
   try {
     await kmailApi('/kmail/settings', { method: 'POST', body: { mail_id: raw } });
     ok.textContent = '메일 ID가 저장되었습니다.';
+    _settingsNotifyBadge();
     ok.style.display = 'block';
     _mailIdLoadedOnce = false;
     await _mailIdLoad();
@@ -1595,6 +1802,7 @@ async function _mailIdAuto() {
   try {
     const data = await kmailApi('/kmail/mail-id/auto', { method: 'POST' });
     ok.textContent = `메일 ID가 자동으로 만들어졌습니다: ${data.mail_id}@hondi.kr`;
+    _settingsNotifyBadge();
     ok.style.display = 'block';
     _mailIdLoadedOnce = false;
     await _mailIdLoad();
@@ -2338,10 +2546,9 @@ async function _cmpChatSendText(text, attachments) {
     } else if (data.action && data.action.type === 'mail_id_setup_prompt') {
       // 2026-09-12 신설 — K-Mail이 "메일 ID를 아직 안 정했다"고 판단해
       // 낸 신호(SP §2-14). 실제 저장은 안 하고 화면 전환만 한다 — 사용자가
-      // "메일" 탭의 "내 메일 ID"에서 직접 자동생성/수동지정을 고른다.
+      // 설정 > 계정에서 직접 자동생성/수동지정을 고른다.
       if (confirm('아직 메일 ID를 설정하지 않으셨어요. 지금 설정 화면으로 이동할까요?')) {
-        _switchTab('mail');
-        _mailSwitchSub('idsettings');
+        kmailOpenSettings('account');
       }
     }
   } catch (e) {
@@ -3039,14 +3246,26 @@ async function _campViewFullTranscriptInline(campaignId, btn) {
   }
 }
 
+// 설정 페이지 열기 — 공용 배지(user-badge.js)의 ⋮ 아이콘이 K-Mail 화면 안에서는 이 함수를 부른다(페이지를 새로 읽지 않는다).
+window.kmailOpenSettings = function (section) {
+  _switchTab('settings');
+  _settingsSwitch(section || 'account');
+  try { history.replaceState(null, '', '#settings'); } catch (e) {}
+};
 // desktop.html#foi 처럼 해시로 특정 탭을 바로 열 수 있다(북마크·다른 서비스의 딥링크용).
+// #settings = 설정 페이지, 예전 #idsettings(내 메일 ID)도 설정 > 계정으로 보낸다.
 (function () {
   const h = (location.hash || '').replace('#', '');
+  if (h === 'idsettings') { kmailOpenSettings('account'); return; }
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
+window.addEventListener('hashchange', function () {
+  const h = (location.hash || '').replace('#', '');
+  if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
+});
 </script>
 <script src="foi.js?v=20260921"></script>
-<script src="https://hondi.net/auth/user-badge.js?v=20261027" defer></script>
+<script src="https://hondi.net/auth/user-badge.js?v=20261028" defer></script>
 <script>
 /* 2026-10-27 — 입력을 시작하면 예시 문구(placeholder)를 숨긴다(한글 입력기 조합 중 포함). 문서 전체에서 이벤트를 받으므로
    나중에 생기는 입력창에도 적용된다. 키를 누르거나(조합 시작 키 포함) 조합을 시작하거나 붙여 넣거나 값이 생기면 .ph-typing을 붙이고,
