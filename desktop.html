@@ -1425,7 +1425,7 @@ async function _mailIdCheckNow() {
     const data = await kmailApi('/kmail/mail-id/check', { query: { candidate: raw } });
     if (myToken !== _mailIdCheckToken) return; // 그 사이 사용자가 더 입력함 — 이 응답은 폐기
     if (!data.valid) {
-      msg.textContent = '3~30자의 영문 소문자·숫자·-·_ 조합이어야 하고, 영숫자로 시작·끝나야 합니다.';
+      msg.textContent = data.message || '3~30자의 영문 소문자·숫자·-·_ 조합이어야 하고, 영숫자로 시작·끝나야 합니다.';   // 숫자만·예약어 등 이유별 안내(2026-10-27)
       msg.style.color = 'var(--red)';
       saveBtn.disabled = true;
     } else if (!data.available) {
