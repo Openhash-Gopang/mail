@@ -775,10 +775,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
       <!-- 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)는 노출하지
            않고, 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를
-           설정한다. 실제 발신 주소(<guid>@hondi.kr, 스푸핑 방지용)는
-           바뀌지 않으며 mail_id는 그 위에 얹는 조회용 별칭이다. -->
+           설정한다. 2026-10-27부터 mail_id가 곧 보내는 주소이자 받는 주소다
+           (<mail_id>@hondi.kr). 예전 내부 주소(<guid>@hondi.kr)로 온 메일도
+           계속 받는다. -->
       <div id="mail-sub-idsettings" class="mail-sub">
-        <div class="sub">다른 사람이 나를 검색하거나 메일을 보낼 때 쓰는 ID입니다. 실제 발신 주소는 계속 안전하게 고정되어 있고, 이 ID는 그 위에 얹는 별칭입니다.</div>
+        <div class="sub">이 ID가 내 메일 주소(아이디@hondi.kr)입니다. 메일을 보낼 때 보내는 주소로 쓰이고, 다른 사람이 이 주소로 보낸 메일도 받습니다. 아이디를 바꾸면 이전 아이디로 온 메일은 받지 못합니다.</div>
 
         <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
@@ -1361,8 +1362,8 @@ function _mailSwitchSub(name) {
 // ══════════════════════════════════════════════════════════════
 // 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)를 노출하지 않고
 // 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를 화면에서
-// 조회·설정한다. 실제 발신 주소(<guid>@hondi.kr)는 절대 바꾸지 않는다
-// — 여기서 다루는 건 그 위에 얹는 조회용 별칭뿐이다.
+// 조회·설정한다. 2026-10-27부터 mail_id가 보내는 주소이자 받는 주소다(<mail_id>@hondi.kr) —
+// 바꾸면 이후 메일은 새 주소로 나가고, 이전 아이디로 온 메일은 받지 못한다.
 // ══════════════════════════════════════════════════════════════
 let _mailIdLoadedOnce = false;
 let _mailIdCurrentSettings = null; // 최근 GET /kmail/settings 결과 캐시
