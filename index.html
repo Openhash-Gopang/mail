@@ -58,35 +58,47 @@ ul { list-style: none; }
 .topnav-status { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.55); }
 .status-dot-green { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
 .topnav-cta { background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18); color: #fff; padding: 7px 14px; border-radius: var(--r); font-size: 13px; font-weight: 700; }
-/* 2026-10-27 — 헤더 오른쪽(사용법·K-Mail 열기·아이디 표시)이 화면 밖으로 밀려나지 않게 한다.
+/* 2026-10-27 — 헤더 오른쪽(상태 점·K-Mail 열기·아이디 표시)이 화면 밖으로 밀려나지 않게 한다.
    링크 줄은 줄어들고(필요하면 가로 스크롤), 오른쪽 묶음은 항상 보인다. */
 .topnav-inner { max-width: 1280px; }
-.topnav-links { flex: 0 1 auto; margin-right: 12px; min-width: 0; overflow-x: auto; scrollbar-width: none; }   /* 남는 자리는 링크가 아니라 아래 '사용법' 양쪽 여백이 나눠 갖는다 */
+.topnav-links { min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .topnav-links::-webkit-scrollbar { display: none; }
-.topnav-manual { align-self: center; margin: 0 auto; background: #fff; color: var(--gov-nav); padding: 7px 15px; border-radius: var(--r); font-size: 14px; font-weight: 800; white-space: nowrap; }   /* 좌우 auto 여백 → 링크 줄과 오른쪽 묶음 사이 빈 공간의 정가운데 */
-.topnav-right { margin-left: 12px; padding-left: 0; }
-.topnav-manual:hover { background: #E8EBFB; }
 .topnav-cta { white-space: nowrap; }
 .topnav-live { display: flex; align-items: center; padding: 0 4px; cursor: help; }
 .topnav-live .status-dot-green { width: 9px; height: 9px; box-shadow: 0 0 0 3px rgba(74,222,128,.25); }
-/* 오른쪽 묶음(점·K-Mail 열기·아이디)과 가운데 '사용법'이 차지하는 폭을 빼고 남는 자리에 링크가 다 들어가도록, 폭이 좁아질수록 단계적으로 줄인다 */
-@media (max-width: 1240px) { .topnav-links a { padding: 0 11px; } }
-@media (max-width: 1150px) { .topnav-links a { padding: 0 9px; } .topnav-links a:first-child { display: none; } }
-@media (max-width: 1090px) { .topnav-links { display: none; } .topnav-right { margin-left: 6px; } }   /* 링크가 없을 땐 로고 오른쪽 여백(6px)만큼 맞춰 '사용법'이 정확히 가운데에 오게 */
-@media (max-width: 640px) { .topnav-inner { padding: 0 12px; } .topnav-logo { padding-right: 10px; margin-right: 0; } .topnav-right { gap: 6px; margin-left: 0; } }
+/* 오른쪽 묶음이 차지하는 폭을 빼고 남는 자리에 링크가 다 들어가도록, 폭이 좁아질수록 단계적으로 줄인다 */
+@media (max-width: 1130px) { .topnav-links a { padding: 0 11px; } }
+@media (max-width: 1075px) { .topnav-links a { padding: 0 9px; } .topnav-links a:first-child { display: none; } }
+@media (max-width: 1005px) { .topnav-links { display: none; } }
+@media (max-width: 640px) { .topnav-inner { padding: 0 12px; } .topnav-logo { padding-right: 10px; margin-right: 0; } .topnav-right { gap: 6px; padding-left: 8px; } }
 @media (max-width: 560px) {
   .topnav { position: static; }
   .topnav-inner { height: auto; min-height: 54px; flex-wrap: wrap; row-gap: 6px; padding: 8px 12px; align-items: center; }
   .topnav-logo { border-right: 0; }
-  .topnav-manual { margin: 0 0 0 auto; }
-  .topnav-right { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; margin-left: 0; }
+  .topnav-right { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; padding-left: 0; }
   .topnav-live { display: none; }
 }
 .topnav-cta:hover { background: rgba(255,255,255,.18); }
 
 /* HERO */
 .hero { background: linear-gradient(150deg, #0E1440 0%, #1B2A6B 55%, #2F3EA0 100%); color: #fff; padding: 60px 0 52px; border-bottom: 3px solid var(--primary-lt); }
-.hero-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+.hero { display: grid; grid-template-columns: max(24px, calc((100% - 1112px) / 2)) max-content minmax(0, 1fr); }   /* 왼쪽 여백 | 제목·버튼 | 나머지 빈 공간 — 다른 섹션의 왼쪽 선과 맞춘다 */
+.hero-inner { grid-column: 2; max-width: none; margin: 0; padding: 0; }
+.hero-side { grid-column: 3; display: flex; align-items: center; justify-content: center; padding: 0 24px; }   /* 빈 공간의 가운데(가로·세로) */
+.hero-manual { display: inline-flex; align-items: center; gap: 14px; padding: 18px 26px; background: #fff; color: var(--gov-nav); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.28); transition: transform .15s, box-shadow .15s, background .15s; }
+.hero-manual:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,0,0,.34); background: #F4F6FF; }
+.hero-manual:focus-visible { outline: 3px solid #B7C0F0; outline-offset: 3px; }
+.hero-manual-ico { font-size: 32px; line-height: 1; }
+.hero-manual-txt { display: flex; flex-direction: column; gap: 2px; }
+.hero-manual-txt b { font-size: 23px; font-weight: 800; letter-spacing: -.4px; line-height: 1.25; }
+.hero-manual-txt small { font-size: 14.5px; font-weight: 600; color: var(--sub); }
+.hero-manual-arrow { font-size: 24px; font-weight: 800; color: var(--primary); margin-left: 4px; }
+@media (max-width: 980px) {
+  .hero { display: block; }
+  .hero-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  .hero-side { max-width: 1160px; margin: 26px auto 0; padding: 0 24px; justify-content: flex-start; }
+}
+@media (max-width: 480px) { .hero-manual { width: 100%; padding: 16px 18px; } .hero-manual-arrow { margin-left: auto; } }
 .hero-tag { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16); border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.80); letter-spacing: .3px; margin-bottom: 18px; }
 .hero-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
 .hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -.8px; line-height: 1.35; margin-bottom: 16px; max-width: 760px; }
@@ -230,7 +242,6 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       <a href="#delegation">위임·에스컬레이션</a>
       <a href="#docs">문서</a>
     </div>
-    <a href="manual.html" class="topnav-manual">사용법</a>
     <div class="topnav-right">
       <span class="topnav-live" title="hondi.net 앱 내 서비스 · 라이브 운영 중" role="img" aria-label="라이브 운영 중"><span class="status-dot-green"></span></span>
       <a href="desktop.html" class="topnav-cta">K-Mail 열기 ↗</a>
@@ -248,6 +259,13 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       <a href="desktop.html" class="hero-btn-primary">K-Mail 열기 ↗</a>
       <a href="https://hondi.net/prompts/SP-25_kmail_v1_30.txt" target="_blank" class="hero-btn-outline">정본 문서(SP-25_kmail_v1_30) ↗</a>
     </div>
+  </div>
+  <div class="hero-side">
+    <a href="manual.html" class="hero-manual">
+      <span class="hero-manual-ico" aria-hidden="true">📖</span>
+      <span class="hero-manual-txt"><b>사용법</b><small>처음 오신 분을 위한 10분 안내</small></span>
+      <span class="hero-manual-arrow" aria-hidden="true">→</span>
+    </a>
   </div>
 </div>
 
