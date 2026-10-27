@@ -61,23 +61,25 @@ ul { list-style: none; }
 /* 2026-10-27 — 헤더 오른쪽(사용법·K-Mail 열기·아이디 표시)이 화면 밖으로 밀려나지 않게 한다.
    링크 줄은 줄어들고(필요하면 가로 스크롤), 오른쪽 묶음은 항상 보인다. */
 .topnav-inner { max-width: 1280px; }
-.topnav-links { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.topnav-links { flex: 0 1 auto; margin-right: 12px; min-width: 0; overflow-x: auto; scrollbar-width: none; }   /* 남는 자리는 링크가 아니라 아래 '사용법' 양쪽 여백이 나눠 갖는다 */
 .topnav-links::-webkit-scrollbar { display: none; }
-.topnav-manual { background: #fff; color: var(--gov-nav); padding: 7px 15px; border-radius: var(--r); font-size: 14px; font-weight: 800; white-space: nowrap; }
+.topnav-manual { align-self: center; margin: 0 auto; background: #fff; color: var(--gov-nav); padding: 7px 15px; border-radius: var(--r); font-size: 14px; font-weight: 800; white-space: nowrap; }   /* 좌우 auto 여백 → 링크 줄과 오른쪽 묶음 사이 빈 공간의 정가운데 */
+.topnav-right { margin-left: 12px; padding-left: 0; }
 .topnav-manual:hover { background: #E8EBFB; }
 .topnav-cta { white-space: nowrap; }
 .topnav-live { display: flex; align-items: center; padding: 0 4px; cursor: help; }
 .topnav-live .status-dot-green { width: 9px; height: 9px; box-shadow: 0 0 0 3px rgba(74,222,128,.25); }
-/* 오른쪽 묶음(점·사용법·K-Mail 열기·아이디)이 차지하는 폭을 빼고 남는 자리에 링크가 다 들어가도록, 폭이 좁아질수록 단계적으로 줄인다 */
+/* 오른쪽 묶음(점·K-Mail 열기·아이디)과 가운데 '사용법'이 차지하는 폭을 빼고 남는 자리에 링크가 다 들어가도록, 폭이 좁아질수록 단계적으로 줄인다 */
 @media (max-width: 1240px) { .topnav-links a { padding: 0 11px; } }
 @media (max-width: 1150px) { .topnav-links a { padding: 0 9px; } .topnav-links a:first-child { display: none; } }
-@media (max-width: 1090px) { .topnav-links { display: none; } }
-@media (max-width: 640px) { .topnav-inner { padding: 0 12px; } .topnav-logo { padding-right: 10px; margin-right: 0; } .topnav-right { gap: 6px; padding-left: 8px; } }
+@media (max-width: 1090px) { .topnav-links { display: none; } .topnav-right { margin-left: 6px; } }   /* 링크가 없을 땐 로고 오른쪽 여백(6px)만큼 맞춰 '사용법'이 정확히 가운데에 오게 */
+@media (max-width: 640px) { .topnav-inner { padding: 0 12px; } .topnav-logo { padding-right: 10px; margin-right: 0; } .topnav-right { gap: 6px; margin-left: 0; } }
 @media (max-width: 560px) {
   .topnav { position: static; }
   .topnav-inner { height: auto; min-height: 54px; flex-wrap: wrap; row-gap: 6px; padding: 8px 12px; align-items: center; }
   .topnav-logo { border-right: 0; }
-  .topnav-right { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; padding-left: 0; }
+  .topnav-manual { margin: 0 0 0 auto; }
+  .topnav-right { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; margin-left: 0; }
   .topnav-live { display: none; }
 }
 .topnav-cta:hover { background: rgba(255,255,255,.18); }
@@ -162,6 +164,13 @@ ul { list-style: none; }
 .doc-desc { font-size: 13px; color: var(--hint); line-height: 1.55; }
 
 /* TOC */
+#about .wide-h2 { margin-bottom: 16px; }
+.about-body { max-width: 860px; }
+.about-body p { font-size: 17px; line-height: 1.9; color: var(--text); margin-bottom: 14px; }
+.about-body p.about-lead { font-size: 19px; font-weight: 700; line-height: 1.8; letter-spacing: -.2px; }
+.about-body a { color: var(--primary); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.about-body code { white-space: nowrap; background: var(--primary-bg); border: 1px solid var(--primary-bd); border-radius: 6px; padding: 1px 8px; font-size: 15.5px; }
+.about-body p.about-note { background: var(--amber-bg); border: 1px solid #E5C48C; border-radius: var(--r); padding: 12px 16px; font-size: 15.5px; line-height: 1.8; margin-top: 18px; }
 .toc-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 22px; box-shadow: var(--shadow-1); }
 .toc-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 28px; }
 .toc-cols a { display: flex; align-items: baseline; gap: 8px; padding: 6px 4px; font-size: 14px; color: var(--text); font-weight: 600; border-radius: 4px; }
@@ -221,9 +230,9 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       <a href="#delegation">위임·에스컬레이션</a>
       <a href="#docs">문서</a>
     </div>
+    <a href="manual.html" class="topnav-manual">사용법</a>
     <div class="topnav-right">
       <span class="topnav-live" title="hondi.net 앱 내 서비스 · 라이브 운영 중" role="img" aria-label="라이브 운영 중"><span class="status-dot-green"></span></span>
-      <a href="manual.html" class="topnav-manual">사용법</a>
       <a href="desktop.html" class="topnav-cta">K-Mail 열기 ↗</a>
       <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
     </div>
@@ -235,16 +244,23 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
   <div class="hero-inner">
     <div class="hero-tag"><span class="hero-tag-dot"></span> hondi.net 지갑 로그인 필요 · 개인 메일(hondi.kr) 전용</div>
     <h1>메일을 보내는 것도, 주소록을 관리하는 것도<br><em>전부 대화로</em> 끝냅니다</h1>
-    <p>K-Mail은 사용자가 자연어로 요청하는 메일 발송·주소록 관리·인바운드 필터 규칙을, 대화를 통해 정확한 구조화 데이터로 확정한 뒤 실제로 실행하는 혼디넷의 메일 비서입니다.</p>
-    <p>탄생 의도는 여기서 한 걸음 더 나갑니다 — 상대방도 K-Mail을 쓴다면, 사람과 사람이 며칠씩 메일을 주고받던 조율을 <strong>K-Mail과 K-Mail이 직접 여러 차례 주고받는 방식</strong>으로 바꿔, 의사결정의 속도·정확성·합리성을 끌어올리는 것이 목표입니다. 이 자율성의 범위는 K-Plan(기획)이 정하고, 범위 밖은 반드시 사람에게 옵니다 — 아래 <a href="#kplan" style="color:#B7C0F0;text-decoration:underline;">K-Plan과의 관계</a> 참고.</p>
-    <p>대화와 함께 쓰는 화면도 갖췄습니다 — 메일함(편지쓰기·보관함), 소속 기관 트리로 정리하는 주소록, 정보 공개 청구까지 PC용 화면에 한곳으로 모았습니다. 자세한 구성은 <a href="#screens" style="color:#B7C0F0;text-decoration:underline;">화면 구성</a>을 참고하세요.</p>
-    <p>관리자 전용 공문 시스템(gov-mail, hondi.org)과는 완전히 무관합니다 — 여기서 다루는 건 혼디 사용자 개인의 메일(<code>&lt;메일 ID&gt;@hondi.kr</code>)입니다.</p>
     <div class="hero-btns">
       <a href="desktop.html" class="hero-btn-primary">K-Mail 열기 ↗</a>
       <a href="https://hondi.net/prompts/SP-25_kmail_v1_30.txt" target="_blank" class="hero-btn-outline">정본 문서(SP-25_kmail_v1_30) ↗</a>
     </div>
   </div>
 </div>
+
+<section class="wide-section" id="about">
+  <div class="section-title">소개</div>
+  <h2 class="wide-h2">K-Mail은 어떤 비서인가요?</h2>
+  <div class="about-body">
+    <p class="about-lead">K-Mail은 사용자가 자연어로 요청하는 메일 발송·주소록 관리·인바운드 필터 규칙을, 대화를 통해 정확한 구조화 데이터로 확정한 뒤 실제로 실행하는 혼디넷의 메일 비서입니다.</p>
+    <p>탄생 의도는 여기서 한 걸음 더 나갑니다 — 상대방도 K-Mail을 쓴다면, 사람과 사람이 며칠씩 메일을 주고받던 조율을 <strong>K-Mail과 K-Mail이 직접 여러 차례 주고받는 방식</strong>으로 바꿔, 의사결정의 속도·정확성·합리성을 끌어올리는 것이 목표입니다. 이 자율성의 범위는 K-Plan(기획)이 정하고, 범위 밖은 반드시 사람에게 옵니다 — 아래 <a href="#kplan">K-Plan과의 관계</a> 참고.</p>
+    <p>대화와 함께 쓰는 화면도 갖췄습니다 — 메일함(편지쓰기·보관함), 소속 기관 트리로 정리하는 주소록, 정보 공개 청구까지 PC용 화면에 한곳으로 모았습니다. 자세한 구성은 <a href="#screens">화면 구성</a>을 참고하세요.</p>
+    <p class="about-note">관리자 전용 공문 시스템(gov-mail, hondi.org)과는 완전히 무관합니다 — 여기서 다루는 건 혼디 사용자 개인의 메일(<code>&lt;메일 ID&gt;@hondi.kr</code>)입니다.</p>
+  </div>
+</section>
 
 <section class="wide-section" id="toc">
   <div class="section-title">목차</div>
