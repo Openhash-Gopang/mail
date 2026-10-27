@@ -486,10 +486,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
       <!-- 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)는 노출하지
            않고, 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를
-           설정한다. 실제 발신 주소(<guid>@hondi.kr, 스푸핑 방지용)는
-           바뀌지 않으며 mail_id는 그 위에 얹는 조회용 별칭이다. -->
+           설정한다. 2026-10-27부터 mail_id가 곧 보내는 주소이자 받는 주소다
+           (<mail_id>@hondi.kr). 예전 내부 주소(<guid>@hondi.kr)로 온 메일도
+           계속 받는다. -->
       <div id="mail-sub-idsettings" class="mail-sub">
-        <div class="sub">다른 사람이 나를 검색하거나 메일을 보낼 때 쓰는 ID입니다. 실제 발신 주소는 계속 안전하게 고정되어 있고, 이 ID는 그 위에 얹는 별칭입니다.</div>
+        <div class="sub">이 ID가 내 메일 주소(아이디@hondi.kr)입니다. 메일을 보낼 때 보내는 주소로 쓰이고, 다른 사람이 이 주소로 보낸 메일도 받습니다. 아이디를 바꾸면 이전 아이디로 온 메일은 받지 못합니다.</div>
 
         <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
@@ -517,6 +518,21 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
           <div style="margin-top:10px">
             <button type="button" class="btn btn-primary" id="mail-id-save-btn" data-requires-login="메일 ID 저장" onclick="_mailIdSave()" disabled>이 ID로 저장</button>
+          </div>
+
+          <div class="field" style="margin-top:28px;padding-top:18px;border-top:1px solid var(--bdr,#ddd)">
+            <label>보내는 사람 표시 (선택)</label>
+            <div class="sub" style="margin:2px 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@hondi.kr&gt;</b>로 보입니다.</div>
+            <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 도 영민 (40자까지)" oninput="_senderNamePreview()">
+            <div class="sub" style="margin-top:10px">받는 사람에게 이렇게 보입니다</div>
+            <div id="sender-name-preview" style="margin-top:2px;padding:10px 12px;border:1px solid var(--bdr,#ddd);border-radius:8px;background:var(--bg2,#f5f5f5);font-weight:700;font-size:16px;word-break:break-all"></div>
+            <div id="sender-name-msg" style="font-size:14px;margin-top:6px;min-height:1.4em"></div>
+          </div>
+          <div id="sender-name-err" class="errbox" style="display:none"></div>
+          <div id="sender-name-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary" id="sender-name-save-btn" data-requires-login="보내는 사람 표시 저장" onclick="_senderNameSave()" disabled>이 이름으로 저장</button>
+            <button type="button" class="btn" id="sender-name-clear-btn" data-requires-login="보내는 사람 표시 저장" onclick="_senderNameClear()">이름 없이 주소만 보내기</button>
           </div>
         </div>
       </div>
@@ -762,12 +778,61 @@ function _mailSwitchSub(name) {
 // ══════════════════════════════════════════════════════════════
 // 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)를 노출하지 않고
 // 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를 화면에서
-// 조회·설정한다. 실제 발신 주소(<guid>@hondi.kr)는 절대 바꾸지 않는다
-// — 여기서 다루는 건 그 위에 얹는 조회용 별칭뿐이다.
+// 조회·설정한다. 2026-10-27부터 mail_id가 보내는 주소이자 받는 주소다(<mail_id>@hondi.kr) —
+// 바꾸면 이후 메일은 새 주소로 나가고, 이전 아이디로 온 메일은 받지 못한다.
 // ══════════════════════════════════════════════════════════════
 let _mailIdLoadedOnce = false;
 let _mailIdCurrentSettings = null; // 최근 GET /kmail/settings 결과 캐시
 let _mailIdCheckToken = 0; // 늦게 도착하는 과거 요청 응답을 무시하기 위한 순번
+
+// ══════════════════════════════════════════════════════════════
+// 보내는 사람 표시 — 2026-10-27 신설(주피터 지시). 받는 사람 화면에는 기본으로 주소(ceo@hondi.kr)만 보이고,
+// 사용자가 이름을 정하면 "도 영민 <ceo@hondi.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
+// 서버가 최종 판정자이고, 여기서는 미리 알려 주기만 한다.
+// ══════════════════════════════════════════════════════════════
+let _senderNameCurrent = '';
+const _SENDER_NAME_MAX = 40;
+function _senderAddress() { return (_mailIdCurrentSettings && _mailIdCurrentSettings.kmail_address) || '(아이디)@hondi.kr'; }
+function _senderNameCheck(raw) {
+  const v = String(raw || '').replace(/\s+/g, ' ').trim();
+  if (/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u2028\u2029\u202A-\u202E\u2060-\u206F\uFEFF]/.test(raw || '')) return { ok: false, value: v, message: '줄바꿈이나 보이지 않는 문자는 쓸 수 없습니다.' };
+  if (Array.from(v).length > _SENDER_NAME_MAX) return { ok: false, value: v, message: `이름은 ${_SENDER_NAME_MAX}자까지 쓸 수 있습니다.` };
+  if (/[<>"@\\;:,]/.test(v)) return { ok: false, value: v, message: '이름에는 < > " @ \\ ; : , 문자를 쓸 수 없습니다.' };
+  return { ok: true, value: v };
+}
+function _senderNamePreview() {
+  const input = document.getElementById('sender-name-input');
+  const prev = document.getElementById('sender-name-preview');
+  const msg = document.getElementById('sender-name-msg');
+  const save = document.getElementById('sender-name-save-btn');
+  const r = _senderNameCheck(input.value);
+  const addr = _senderAddress();
+  prev.textContent = r.ok && r.value ? `${r.value} <${addr}>` : addr;
+  document.getElementById('sender-name-ok').style.display = 'none'; document.getElementById('sender-name-err').style.display = 'none';
+  if (!r.ok) { msg.textContent = r.message; msg.style.color = 'var(--red)'; save.disabled = true; return; }
+  msg.textContent = ''; save.disabled = (r.value === _senderNameCurrent);
+}
+async function _senderNameApply(value, okText) {
+  const err = document.getElementById('sender-name-err'), ok = document.getElementById('sender-name-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const save = document.getElementById('sender-name-save-btn'), clear = document.getElementById('sender-name-clear-btn');
+  save.disabled = true; clear.disabled = true;
+  try {
+    await kmailApi('/kmail/settings', { method: 'POST', body: { sender_display_name: value } });
+    _senderNameCurrent = value;
+    if (_mailIdCurrentSettings) _mailIdCurrentSettings.sender_display_name = value;
+    document.getElementById('sender-name-input').value = value;
+    ok.textContent = okText; ok.style.display = 'block';
+  } catch (e) {
+    err.textContent = '저장 실패: ' + e.message; err.style.display = 'block';
+  } finally { clear.disabled = false; _senderNamePreview(); }
+}
+async function _senderNameSave() {
+  const r = _senderNameCheck(document.getElementById('sender-name-input').value);
+  if (!r.ok) return;
+  await _senderNameApply(r.value, r.value ? `저장했습니다. 이제 받는 사람에게 "${r.value} <${_senderAddress()}>"로 보입니다.` : `저장했습니다. 이제 받는 사람에게 "${_senderAddress()}"만 보입니다.`);
+}
+async function _senderNameClear() { await _senderNameApply('', `저장했습니다. 이제 받는 사람에게 "${_senderAddress()}"만 보입니다.`); }
 
 async function _mailIdLoad() {
   if (_mailIdLoadedOnce) return;
@@ -780,6 +845,9 @@ async function _mailIdLoad() {
     const data = await kmailApi('/kmail/settings');
     _mailIdCurrentSettings = data;
     document.getElementById('mail-id-fixed-address').value = data.kmail_address || '';
+    _senderNameCurrent = data.sender_display_name || '';
+    document.getElementById('sender-name-input').value = _senderNameCurrent;
+    _senderNamePreview();
     const emptyState = document.getElementById('mail-id-empty-state');
     if (data.mail_id) {
       emptyState.style.display = 'none';
