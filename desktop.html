@@ -2922,7 +2922,10 @@ async function _ctAddNew() {
         notes.push(`이전에 <b>${escHtml(_CT_STATUS_LABEL[existing.status] || existing.status)}</b> 상태였던 연락처라 <b>확인됨</b>으로 바꿨습니다.`);
       }
       const differs = (name && name !== (existing.name || '')) || (org && org !== (existing.org || '')) || (phone && phone !== (existing.phone || ''));
-      if (differs) notes.push('입력한 이름·소속·전화번호는 기존 정보와 달라서 반영하지 않았습니다(기존 정보 유지). 고치려면 아래 주소록에서 수정해 주세요.');
+      if (differs) {
+        _ctPendingOverwrite = { id: contactId, fields: Object.fromEntries(Object.entries({ name, org, phone }).filter(([, v]) => v)) };   // 비워 둔 칸은 기존 값을 지우지 않는다
+        notes.push('입력한 이름·소속·전화번호가 기존 정보와 달라 아직 반영하지 않았습니다. <span id="ct-new-overwrite"><button type="button" class="btn btn-primary btn-sm" onclick="_ctApplyNewValues()">입력한 정보로 수정</button></span> 다른 항목은 아래 주소록의 ‘수정’에서 고칠 수 있습니다.');
+      }
     } else {
       throw new Error('등록하지 못했습니다. 이메일 주소를 확인해 주세요.');
     }
@@ -3088,6 +3091,7 @@ async function _ctLoad() {
 }
 
 function _ctRenderRow(c) {
+  _ctRowCache[c.id] = c;
   const tags = (c.tags || []).map(t => `<span class="tag-pill">${escHtml(t)}</span>`).join('');
   let actions = '';
   if (c.status === 'pending_review') {
@@ -3118,10 +3122,79 @@ function _ctRenderRow(c) {
       <td>${websiteCell}</td>
       <td>${notesCell}</td>
       <td><span class="badge badge-${escHtml(c.status)}">${escHtml(c.status)}</span></td>
-      <td class="ct-actions">${actions}</td>
+      <td class="ct-actions">${actions}<button class="btn btn-outline btn-sm" onclick="_ctEdit('${escHtml(c.id)}')">수정</button></td>
     </tr>`;
 }
 
+
+// 2026-10-28 신설(주피터 지적) — 이미 등록된 연락처의 이름·소속·부서·직위·전화·주소·웹사이트·메모를 고친다.
+// 서버: POST /kmail/contacts/update (이메일·상태는 바꾸지 않는다). 이메일을 바꾸려면 새로 등록한다.
+const _ctRowCache = {};
+const _CT_EDIT_FIELDS = [
+  ['name', '이름', 'text'], ['org', '소속', 'text'], ['dept', '부서', 'text'], ['occupation', '직위', 'text'],
+  ['phone', '전화번호', 'text'], ['address', '주소', 'text'], ['website', '웹사이트', 'url'], ['notes', '메모', 'textarea'],
+];
+let _ctPendingOverwrite = null;
+function _ctNormalizeWebsite(v) {
+  v = String(v || '').trim();
+  return v && !/^https?:\/\//i.test(v) ? 'https://' + v : v;
+}
+async function _ctUpdateFields(contactId, fields) {
+  const body = { contact_id: contactId };
+  _CT_EDIT_FIELDS.forEach(([k]) => { if (typeof fields[k] === 'string') body[k] = k === 'website' ? _ctNormalizeWebsite(fields[k]) : fields[k].trim(); });
+  return kmailApi('/kmail/contacts/update', { method: 'POST', body });
+}
+function _ctEditClose() { const m = document.getElementById('ct-edit-modal'); if (m) m.remove(); }
+function _ctEdit(contactId) {
+  const c = _ctRowCache[contactId]; if (!c) return;
+  _ctEditClose();
+  const fld = ([k, label, type]) => `<div class="field" style="margin-bottom:10px"><label>${label}</label>${type === 'textarea'
+    ? `<textarea id="ct-edit-${k}" rows="3" style="width:100%">${escHtml(c[k] || '')}</textarea>`
+    : `<input type="${type}" id="ct-edit-${k}" value="${escHtml(c[k] || '')}">`}</div>`;
+  const m = document.createElement('div');
+  m.id = 'ct-edit-modal';
+  m.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px');
+  m.innerHTML = `<div role="dialog" aria-modal="true" aria-label="연락처 수정" style="background:var(--card,#fff);color:var(--text,#111);border-radius:var(--r,12px);max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+    <h2 style="margin:0 0 4px">연락처 수정</h2>
+    <div class="sub" style="margin-bottom:12px">이메일 <b>${escHtml(c.email || '')}</b>은(는) 바꿀 수 없습니다. 다른 이메일이 필요하면 새로 등록하세요.</div>
+    ${_CT_EDIT_FIELDS.map(fld).join('')}
+    <div id="ct-edit-err" class="errbox" style="display:none"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button type="button" class="btn btn-outline btn-sm" onclick="_ctEditClose()">취소</button>
+      <button type="button" class="btn btn-primary btn-sm" id="ct-edit-save" onclick="_ctEditSave('${escHtml(contactId)}')">저장</button>
+    </div></div>`;
+  m.addEventListener('mousedown', (e) => { if (e.target === m) _ctEditClose(); });
+  m.addEventListener('keydown', (e) => { if (e.key === 'Escape') _ctEditClose(); });
+  document.body.appendChild(m);
+  const first = document.getElementById('ct-edit-name'); if (first) first.focus();
+}
+async function _ctEditSave(contactId) {
+  const errEl = document.getElementById('ct-edit-err'), btn = document.getElementById('ct-edit-save');
+  const fields = {};
+  _CT_EDIT_FIELDS.forEach(([k]) => { fields[k] = document.getElementById('ct-edit-' + k).value; });
+  errEl.style.display = 'none'; btn.disabled = true; btn.textContent = '저장 중…';
+  try {
+    await _ctUpdateFields(contactId, fields);
+    _ctEditClose();
+    _ctLoad();
+  } catch (e) {
+    errEl.textContent = e.message || '저장하지 못했습니다.'; errEl.style.display = '';
+    btn.disabled = false; btn.textContent = '저장';
+  }
+}
+// '새 연락처 등록'에서 이미 있는 이메일에 다른 정보를 입력했을 때 — 결과 카드의 버튼이 부른다
+async function _ctApplyNewValues() {
+  const p = _ctPendingOverwrite; if (!p) return;
+  const box = document.getElementById('ct-new-overwrite');
+  try {
+    await _ctUpdateFields(p.id, p.fields);
+    _ctPendingOverwrite = null;
+    if (box) box.innerHTML = '✅ 입력한 정보로 수정했습니다.';
+    _ctLoad();
+  } catch (e) {
+    if (box) box.insertAdjacentHTML('beforeend', `<div style="color:#b42318;margin-top:6px">수정하지 못했습니다: ${escHtml(e.message || '알 수 없는 오류')}</div>`);
+  }
+}
 
 async function _ctDecide(contactId, decision) {
   try { await kmailApi('/kmail/contacts/decide', { method: 'POST', body: { contact_id: contactId, decision } }); _ctLoad(); }
