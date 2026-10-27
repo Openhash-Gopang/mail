@@ -66,8 +66,20 @@ ul { list-style: none; }
 .topnav-manual { background: #fff; color: var(--gov-nav); padding: 7px 15px; border-radius: var(--r); font-size: 14px; font-weight: 800; white-space: nowrap; }
 .topnav-manual:hover { background: #E8EBFB; }
 .topnav-cta { white-space: nowrap; }
-@media (max-width: 1320px) { .topnav-status { display: none; } .topnav-links a { padding: 0 11px; } }
+.topnav-live { display: flex; align-items: center; padding: 0 4px; cursor: help; }
+.topnav-live .status-dot-green { width: 9px; height: 9px; box-shadow: 0 0 0 3px rgba(74,222,128,.25); }
+/* 오른쪽 묶음(점·사용법·K-Mail 열기·아이디)이 차지하는 폭을 빼고 남는 자리에 링크가 다 들어가도록, 폭이 좁아질수록 단계적으로 줄인다 */
+@media (max-width: 1240px) { .topnav-links a { padding: 0 11px; } }
+@media (max-width: 1150px) { .topnav-links a { padding: 0 9px; } .topnav-links a:first-child { display: none; } }
+@media (max-width: 1090px) { .topnav-links { display: none; } }
 @media (max-width: 640px) { .topnav-inner { padding: 0 12px; } .topnav-logo { padding-right: 10px; margin-right: 0; } .topnav-right { gap: 6px; padding-left: 8px; } }
+@media (max-width: 560px) {
+  .topnav { position: static; }
+  .topnav-inner { height: auto; min-height: 54px; flex-wrap: wrap; row-gap: 6px; padding: 8px 12px; align-items: center; }
+  .topnav-logo { border-right: 0; }
+  .topnav-right { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; padding-left: 0; }
+  .topnav-live { display: none; }
+}
 .topnav-cta:hover { background: rgba(255,255,255,.18); }
 
 /* HERO */
@@ -210,7 +222,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       <a href="#docs">문서</a>
     </div>
     <div class="topnav-right">
-      <div class="topnav-status"><span class="status-dot-green"></span>hondi.net 앱 내 서비스 · 라이브 운영 중</div>
+      <span class="topnav-live" title="hondi.net 앱 내 서비스 · 라이브 운영 중" role="img" aria-label="라이브 운영 중"><span class="status-dot-green"></span></span>
       <a href="manual.html" class="topnav-manual">사용법</a>
       <a href="desktop.html" class="topnav-cta">K-Mail 열기 ↗</a>
       <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
