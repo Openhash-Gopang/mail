@@ -263,6 +263,11 @@ header.topbar .logo{color:#fff;text-decoration:none}
 .side-nav .nav-btn:hover{background:var(--bg)}
 .side-nav .nav-btn.active{background:var(--pri-bg);color:var(--pri)}
 .side-nav .nav-btn.active svg{color:var(--pri)}
+/* 2026-10-28 — '메일' 아래 하위 메뉴(편지쓰기·임시보관함·보낸메일함·받은메일함·태그별 보관함·내 메일 ID). 위쪽 하위 탭과 같은 곳으로 바로 이동한다. */
+.side-nav .nav-sub{display:block;margin:0 0 8px 20px;padding-left:10px;border-left:2px solid var(--bdr)}
+.side-nav .nav-subitem{display:block;width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:6px 10px;font-size:14.5px;font-weight:600;color:var(--sub);margin-bottom:1px;cursor:pointer}
+.side-nav .nav-subitem:hover{background:var(--bg)}
+.side-nav .nav-subitem.active{background:var(--pri-bg);color:var(--pri);font-weight:800}
 .side-foot{margin-top:auto;padding:14px 12px 0;border-top:1px solid var(--bdr);font-size:13px;color:var(--hint);line-height:1.8}
 .side-foot a{color:var(--sub);text-decoration:none}
 .side-foot a:hover{color:var(--pri);text-decoration:underline}
@@ -289,6 +294,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   .side-group{display:flex;margin:0;gap:2px}
   .side-label,.side-foot{display:none}
   .side-nav .nav-btn{width:auto;white-space:nowrap;margin:0;padding:8px 12px}
+  .side-nav .nav-sub{display:none}   /* 가로 한 줄 메뉴에서는 하위 메뉴를 숨긴다(내용 위쪽의 하위 탭을 쓴다) */
   main.content{padding:18px 14px 40px}
   #tab-contacts.active{display:block}
   #tab-contacts.active > .card{margin-bottom:18px}
@@ -530,6 +536,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <button id="tab-btn-compose" class="nav-btn active" data-label="새 캠페인" onclick="_switchTab('compose')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>새 캠페인</button>
       <button id="tab-btn-quicksend" class="nav-btn" data-label="빠른 발송" onclick="_switchTab('quicksend')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>빠른 발송</button>
       <button id="tab-btn-mail" class="nav-btn" data-label="메일" onclick="_switchTab('mail')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>메일</button>
+      <div class="nav-sub" id="nav-sub-mail" role="group" aria-label="메일 하위 메뉴">
+        <button type="button" class="nav-subitem" data-sub="compose" onclick="_navMailSub('compose')">편지쓰기</button>
+        <button type="button" class="nav-subitem" data-sub="drafts" onclick="_navMailSub('drafts')">임시보관함</button>
+        <button type="button" class="nav-subitem" data-sub="sent" onclick="_navMailSub('sent')">보낸메일함</button>
+        <button type="button" class="nav-subitem" data-sub="inbox" onclick="_navMailSub('inbox')">받은메일함</button>
+        <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
+        <button type="button" class="nav-subitem" data-sub="idsettings" onclick="_navMailSub('idsettings')">내 메일 ID</button>
+      </div>
     </div>
     <div class="side-group">
       <div class="side-label">관리</div>
@@ -1181,6 +1195,7 @@ function _switchTab(name) {
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
+  _navSyncMailSub();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1376,6 +1391,25 @@ function _mailSwitchSub(name) {
   if (name === 'inbox') _mailLoadInbox();
   if (name === 'tags') _mailTagsShowSummary();
   if (name === 'idsettings') _mailIdLoad();
+  _navSyncMailSub();
+}
+
+// 사이드바 '메일' 하위 메뉴 — 어느 화면에서든 한 번 눌러 해당 메일함으로 간다. 메일 화면이 아니면 먼저 메일 탭으로 전환한다.
+function _navMailSub(name) {
+  _switchTab('mail');
+  _mailSwitchSub(name);
+}
+// 사이드바 하위 메뉴의 활성 표시를 현재 화면(메일 탭이 열려 있고 위쪽 하위 탭이 무엇인지)에 맞춘다.
+function _navSyncMailSub() {
+  const panel = document.getElementById('tab-mail');
+  const onMail = !!(panel && panel.classList.contains('active'));
+  const act = document.querySelector('.mail-subnav button.active');
+  const cur = act ? act.id.replace('mail-subnav-', '') : null;
+  document.querySelectorAll('.nav-subitem').forEach(b => {
+    const on = onMail && b.getAttribute('data-sub') === cur;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
