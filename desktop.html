@@ -2041,8 +2041,17 @@ function _cmpScrollToBottom() {
 // fix/kaddress-total-count-accuracy 참고). 배지는 AI 문장을 거치지
 // 않고 서버가 응답에 실어준 action.count를 그대로 붙이므로 항상
 // 정확하다.
+// 2026-10-27 — 서버가 실제로 확인한 발송 결과(action.state)에 맞는 배지. "예약됨"으로 뭉뚱그리면 이미 보낸 메일도 "예약"으로 읽힌다.
+const _CAMPAIGN_STATE_BADGE = {
+  sent:      { cls: 'badge-sent',      label: '📨 발송 완료 — "내 캠페인"에서 확인' },
+  partial:   { cls: 'badge-pending',   label: '⚠️ 일부만 발송됨 — "내 캠페인"에서 확인' },
+  failed:    { cls: 'badge-failed',    label: '❌ 발송 실패 — "내 캠페인"에서 확인' },
+  queued:    { cls: 'badge-scheduled', label: '📤 발송 접수됨 — 곧 전달됩니다' },
+  scheduled: { cls: 'badge-scheduled', label: '⏰ 발송 예약됨 — "내 캠페인"에서 확인' },
+};
 function _badgeWithCount(map, action) {
   if (!action) return null;
+  if (action.type === 'campaign_created' && _CAMPAIGN_STATE_BADGE[action.state]) return _CAMPAIGN_STATE_BADGE[action.state];
   const base = map[action.type];
   if (!base) return null;
   const countTypes = { kaddr_looked_up: true, looked_up_contacts: true };
@@ -2051,7 +2060,7 @@ function _badgeWithCount(map, action) {
 }
 
 const _CMP_ACTION_BADGE = {
-  campaign_created:    { cls: 'badge-scheduled', label: '📨 캠페인 예약됨 — "내 캠페인" 탭에서 확인' },
+  campaign_created:    { cls: 'badge-scheduled', label: '📨 캠페인 접수됨 — "내 캠페인" 탭에서 확인' },   // state가 없는 옛 서버 응답용
   campaign_started:    { cls: 'badge-pending',   label: '📌 캠페인 시작됨(진행 중) — "내 캠페인" 탭에서 확인' },
   searched_contacts:   { cls: 'badge-pending',   label: '🔍 웹 검색 결과' },
   looked_up_contacts:  { cls: 'badge-none',      label: '📇 주소록 조회' },
