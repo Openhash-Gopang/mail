@@ -978,8 +978,29 @@
     if (root.document.readyState === 'loading') root.document.addEventListener('DOMContentLoaded', bind); else bind();
   }
 
+  /** 등록 폼용 — 지금 있는 분류 경로('학교>대학>제주대학교' 형식)를 최신으로 받아 돌려준다. */
+  async function listPaths() {
+    await refreshNodes();
+    return flatten(S.tree).map(function (n) { return n.path; });
+  }
+
+  /** 등록 폼용 — 연락처 한 건을 경로에 지정한다. 없는 단계는 새로 만든다(이미 있는 단계는 재사용).
+   *  경로가 비어 있으면 아무것도 하지 않는다. → { path, created } (created = 새로 만든 단계 수) */
+  async function assignContactToPath(pathText, contactId) {
+    var text = String(pathText || '').trim();
+    if (!text) return { path: '', created: 0 };
+    var p = parsePathInput(text); if (!p.ok) throw new Error(p.message);
+    await refreshNodes();
+    var created = planEnsurePath(S.tree, p.segments).toCreate.length;
+    var unitId = await ensurePath(p.segments);
+    var r = await post('/kmail/contacts/assign-org', { unit_id: unitId, contact_ids: [contactId] });
+    if (!(r && r.assigned > 0)) throw new Error('분류를 지정하지 못했습니다');
+    return { path: p.segments.join(SEP), created: created };
+  }
+
   var API = {
     mode: function () { return S.mode; },
+    listPaths: listPaths, assignContactToPath: assignContactToPath,
     modeSwitchHtml: modeSwitchHtml, renderSummary: renderSummary,
     beginTable: beginTable, pathCellHtml: pathCellHtml, breadcrumbHtml: breadcrumbHtml,
     _pure: { validateName: validateName, parseAliases: parseAliases, aliasesInvalid: aliasesInvalid, buildTree: buildTree, flatten: flatten,

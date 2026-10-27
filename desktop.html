@@ -672,15 +672,20 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
     <div class="card">
       <h2>새 연락처 등록</h2>
-      <div class="sub">이름과 이메일을 입력하면 승인 대기(pending_review) 상태로 등록됩니다. 아래에서 확인 후 승인해야 캠페인에 쓸 수 있습니다.</div>
+      <div class="sub">이름과 이메일을 입력하면 <b>바로 주소록에 등록(확인됨)</b>되어 캠페인·메일에 쓸 수 있습니다. 분류는 기존 것을 고르거나 새로 적어 넣을 수 있습니다.</div>
       <div class="field-row">
         <div class="field"><label>이름</label><input type="text" id="ct-new-name" placeholder="홍길동"></div>
         <div class="field"><label>이메일</label><input type="email" id="ct-new-email" placeholder="name@example.com"></div>
         <div class="field"><label>소속(선택)</label><input type="text" id="ct-new-org" placeholder="예: OO단체"></div>
         <div class="field"><label>전화번호(선택)</label><input type="text" id="ct-new-phone" placeholder="010-0000-0000"></div>
       </div>
+      <div class="field-row">
+        <div class="field"><label>주소록 분류(선택)</label><input type="text" id="ct-new-path" list="ct-new-path-list" autocomplete="off" placeholder="예: 지인>제주 — 목록에서 고르거나 새로 적기 (비우면 미분류)" onfocus="_ctNewPathLoad()"><datalist id="ct-new-path-list"></datalist></div>
+      </div>
+      <div class="sub" style="margin:-8px 0 12px">분류는 ‘&gt;’로 단계를 나눕니다. 목록에 있는 분류를 고르면 그 아래로, 없는 이름을 적으면 <b>새 분류를 만들어</b> 추가합니다.</div>
       <div id="ct-new-err" class="errbox" style="display:none"></div>
-      <div style="margin-top:6px"><button class="btn btn-primary btn-sm" onclick="_ctAddNew()">등록</button></div>
+      <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-new-btn" onclick="_ctAddNew()">등록</button></div>
+      <div id="ct-new-result" style="display:none"></div>
     </div>
 
     <div class="card">
@@ -2845,27 +2850,106 @@ async function _ctCsvUpload() {
   }
 }
 
-async function _ctAddNew() {
-  const name = document.getElementById('ct-new-name').value.trim();
-  const email = document.getElementById('ct-new-email').value.trim();
-  const org = document.getElementById('ct-new-org').value.trim();
-  const phone = document.getElementById('ct-new-phone').value.trim();
-  const errEl = document.getElementById('ct-new-err');
-  errEl.style.display = 'none';
-  if (!email) { errEl.textContent = '이메일을 입력해 주세요.'; errEl.style.display = ''; return; }
+// 2026-10-28 개편(주피터 지시) — ① 직접 등록한 연락처는 승인 대기가 아니라 바로 '확인됨'으로 주소록에 넣는다(사용자가 직접 입력한 정보라
+// 따로 검토할 후보가 아니다 — 승인 대기는 AI가 웹에서 찾아온 후보용). ② 주소록 분류(소속 기관 트리)를 고르거나 새로 만들어 지정한다.
+// ③ 결과를 폼 아래에 보여 준다(서버에 실제로 저장된 값을 다시 읽어 와서 보여 준다).
+// 서버는 그대로다: propose(승인 대기로 스테이징) → decide(confirm) → org-units/create·assign-org. 같은 이메일이 이미 있으면 새로 만들지 않는다.
+let _ctNewPathLoaded = false;
+async function _ctNewPathLoad() {
+  if (_ctNewPathLoaded || typeof OrgTree === 'undefined' || typeof OrgTree.listPaths !== 'function') return;
+  _ctNewPathLoaded = true;
   try {
-    await kmailApi('/kmail/contacts/propose', { method: 'POST', body: { recipient_query: '수동 등록(웹앱)', candidates: [{ name, email, org, phone }] } });
-    document.getElementById('ct-new-name').value = '';
-    document.getElementById('ct-new-email').value = '';
-    document.getElementById('ct-new-org').value = '';
-    document.getElementById('ct-new-phone').value = '';
-    document.getElementById('ct-filter-status').value = 'pending_review';
-    // 카테고리 요약 화면으로 가면 방금 등록한 연락처가 안 보이므로
-    // (분류가 아직 안 됐거나 목록이 커서 카테고리 클릭이 필요해짐),
-    // 검색어에 이메일을 넣어 바로 찾은 결과를 보여준다.
-    document.getElementById('ct-filter-q').value = email;
+    const paths = await OrgTree.listPaths();
+    document.getElementById('ct-new-path-list').innerHTML = paths.map(p => `<option value="${escHtml(p)}"></option>`).join('');
+  } catch (e) { _ctNewPathLoaded = false; }
+}
+async function _ctFindByEmail(emailKey) {
+  const data = await kmailApi('/kmail/contacts', { query: { status: 'all', q: emailKey } });
+  return (data.items || []).find(c => String(c.email || '').toLowerCase() === emailKey) || null;
+}
+const _CT_STATUS_LABEL = { confirmed: '확인됨(발송 가능)', pending_review: '승인 대기', rejected: '거부됨' };
+function _ctNewResultHtml(kind, rec, lines) {
+  const head = {
+    created: ['✅ 주소록에 등록했습니다', 'var(--gbg)', '#B7E4C7'],
+    existing: ['ℹ️ 이미 주소록에 있는 이메일입니다', 'var(--teal-bg)', '#C7D2FE'],
+    warn: ['⚠️ 등록은 됐지만 마무리하지 못한 일이 있습니다', 'var(--obg)', '#F6D7A8'],
+  }[kind];
+  const row = (k, v) => `<tr><th style="text-align:left;padding:3px 14px 3px 0;color:var(--sub);font-weight:700;white-space:nowrap">${k}</th><td style="padding:3px 0;word-break:break-all">${v}</td></tr>`;
+  const path = rec && rec.org_path ? escHtml(String(rec.org_path).split('>').join(' › ')) : '미분류';
+  return `<div style="margin-top:14px;padding:14px 16px;border:1px solid ${head[2]};border-radius:var(--r);background:${head[1]}">
+    <div style="font-weight:800;margin-bottom:8px">${head[0]}</div>
+    ${rec ? `<table style="border-collapse:collapse;font-size:14px">
+      ${row('이름', escHtml(rec.name || '(없음)'))}${row('이메일', escHtml(rec.email || ''))}${row('소속', escHtml(rec.org || '—'))}${row('전화번호', escHtml(rec.phone || '—'))}${row('분류', path)}${row('상태', escHtml(_CT_STATUS_LABEL[rec.status] || rec.status || ''))}
+    </table>` : ''}
+    ${(lines || []).map(t => `<div style="margin-top:8px;font-size:14px">${t}</div>`).join('')}
+    <div style="margin-top:10px"><button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('ct-filter-q').scrollIntoView({behavior:'smooth',block:'center'})">아래 주소록에서 보기 ↓</button></div>
+  </div>`;
+}
+async function _ctAddNew() {
+  const $ = (id) => document.getElementById(id);
+  const name = $('ct-new-name').value.trim();
+  const email = $('ct-new-email').value.trim();
+  const org = $('ct-new-org').value.trim();
+  const phone = $('ct-new-phone').value.trim();
+  const pathText = $('ct-new-path').value.trim();
+  const errEl = $('ct-new-err'), resEl = $('ct-new-result'), btn = $('ct-new-btn');
+  const fail = (msg) => { errEl.textContent = msg; errEl.style.display = ''; };
+  errEl.style.display = 'none'; resEl.style.display = 'none'; resEl.innerHTML = '';
+  if (!email) return fail('이메일을 입력해 주세요.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('이메일 형식이 올바르지 않습니다. 예: name@example.com');
+  if (pathText) {
+    if (typeof OrgTree === 'undefined' || typeof OrgTree.assignContactToPath !== 'function') return fail('분류 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
+    const p = OrgTree._pure.parsePathInput(pathText);
+    if (!p.ok) return fail(p.message);
+  }
+  const emailKey = email.toLowerCase();
+  const origLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = '등록 중…';
+  const notes = [];
+  let kind = 'created', contactId = '', existing = null;
+  try {
+    const prop = await kmailApi('/kmail/contacts/propose', { method: 'POST', body: { recipient_query: '수동 등록(웹앱)', candidates: [{ name, email, org, phone }] } });
+    if (prop.ids && prop.ids.length) {
+      contactId = prop.ids[0];
+      await kmailApi('/kmail/contacts/decide', { method: 'POST', body: { contact_id: contactId, decision: 'confirm' } });
+    } else if (prop.skippedDup) {
+      kind = 'existing';
+      existing = await _ctFindByEmail(emailKey);
+      if (!existing) throw new Error('이미 등록된 이메일이라고 하는데 주소록에서 찾지 못했습니다. 잠시 뒤 다시 시도해 주세요.');
+      contactId = existing.id;
+      if (existing.status !== 'confirmed') {            // 이전에 승인 대기·거부로 남아 있던 연락처 — 직접 다시 등록했으니 확인됨으로 바꾼다
+        await kmailApi('/kmail/contacts/decide', { method: 'POST', body: { contact_id: contactId, decision: 'confirm' } });
+        notes.push(`이전에 <b>${escHtml(_CT_STATUS_LABEL[existing.status] || existing.status)}</b> 상태였던 연락처라 <b>확인됨</b>으로 바꿨습니다.`);
+      }
+      const differs = (name && name !== (existing.name || '')) || (org && org !== (existing.org || '')) || (phone && phone !== (existing.phone || ''));
+      if (differs) notes.push('입력한 이름·소속·전화번호는 기존 정보와 달라서 반영하지 않았습니다(기존 정보 유지). 고치려면 아래 주소록에서 수정해 주세요.');
+    } else {
+      throw new Error('등록하지 못했습니다. 이메일 주소를 확인해 주세요.');
+    }
+    if (pathText) {
+      try {
+        const r = await OrgTree.assignContactToPath(pathText, contactId);
+        notes.push(r.created > 0 ? `분류 <b>${escHtml(r.path.split('>').join(' › '))}</b>을(를) 새로 만들어 추가했습니다.` : `기존 분류 <b>${escHtml(r.path.split('>').join(' › '))}</b>에 추가했습니다.`);
+        _ctNewPathLoaded = false;                     // 새 분류가 생겼을 수 있으니 다음에 입력칸을 누를 때 목록을 다시 받는다
+      } catch (e) {
+        kind = 'warn';
+        notes.push(`분류를 지정하지 못했습니다: ${escHtml(e.message || '알 수 없는 오류')} — 아래 주소록에서 이 연락처를 체크하고 <b>소속 지정</b>으로 다시 지정할 수 있습니다.`);
+      }
+    }
+    const saved = (await _ctFindByEmail(emailKey)) || existing;   // 서버에 실제로 저장된 값을 다시 읽어 보여 준다
+    resEl.innerHTML = _ctNewResultHtml(kind, saved, notes);
+    resEl.style.display = '';
+    if (kind !== 'warn') {
+      ['ct-new-name', 'ct-new-email', 'ct-new-org', 'ct-new-phone', 'ct-new-path'].forEach(id => { $(id).value = ''; });
+    }
+    $('ct-filter-status').value = 'confirmed';
+    $('ct-filter-q').value = email;                   // 아래 주소록 목록도 이 연락처로 좁혀 보여 준다
     _ctLoad();
-  } catch (e) { errEl.textContent = e.message || '등록에 실패했습니다.'; errEl.style.display = ''; }
+  } catch (e) {
+    fail(e.message || '등록에 실패했습니다.');
+  } finally {
+    btn.disabled = false; btn.textContent = origLabel;
+  }
 }
 
 const _ctSearchDebounced = debounce(() => { _ctViewCategory = null; _ctViewTag = null; _ctViewOrg = null; _ctLoad(); }, 350);
