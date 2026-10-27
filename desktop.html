@@ -129,6 +129,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .mail-subnav{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .mail-subnav button{background:#F2F4F3;border:1px solid transparent;border-radius:999px;padding:7px 14px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer}
 .mail-subnav button.active{background:var(--pri);color:#fff}
+/* 2026-10-28 — 안 읽은 메일 개수 배지(받은메일함 오른쪽) */
+.unread-badge{display:inline-block;min-width:18px;padding:1px 6px;margin-left:6px;border-radius:999px;background:#D92D20;color:#fff;font-size:11.5px;font-weight:800;line-height:16px;text-align:center;vertical-align:middle}
+.unread-badge[hidden]{display:none}
+.nav-subitem .unread-badge{float:right;margin-top:1px}
+.list-item.is-unread .li-title{font-weight:800}
+.list-item.is-unread .li-title::before{content:"● ";color:#D92D20;font-size:10px;vertical-align:middle}
 .mail-sub{display:none}
 .mail-sub.active{display:block}
 .tab-panel.active{display:block}
@@ -578,7 +584,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" class="nav-subitem" data-sub="compose" onclick="_navMailSub('compose')">편지쓰기</button>
         <button type="button" class="nav-subitem" data-sub="drafts" onclick="_navMailSub('drafts')">임시보관함</button>
         <button type="button" class="nav-subitem" data-sub="sent" onclick="_navMailSub('sent')">보낸메일함</button>
-        <button type="button" class="nav-subitem" data-sub="inbox" onclick="_navMailSub('inbox')">받은메일함</button>
+        <button type="button" class="nav-subitem" data-sub="inbox" onclick="_navMailSub('inbox')">받은메일함<span class="unread-badge" data-for="inbox" hidden></span></button>
         <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
       </div>
     </div>
@@ -779,7 +785,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" id="mail-subnav-compose" class="active" onclick="_mailSwitchSub('compose')">편지쓰기</button>
         <button type="button" id="mail-subnav-drafts" onclick="_mailSwitchSub('drafts')">임시보관함</button>
         <button type="button" id="mail-subnav-sent" onclick="_mailSwitchSub('sent')">보낸메일함</button>
-        <button type="button" id="mail-subnav-inbox" onclick="_mailSwitchSub('inbox')">받은메일함</button>
+        <button type="button" id="mail-subnav-inbox" onclick="_mailSwitchSub('inbox')">받은메일함<span class="unread-badge" data-for="inbox" hidden></span></button>
         <button type="button" id="mail-subnav-tags" onclick="_mailSwitchSub('tags')">태그별 보관함</button>
       </div>
 
@@ -822,7 +828,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
       <!-- 받은메일함 -->
       <div id="mail-sub-inbox" class="mail-sub">
-        <div class="sub">받은 메일에 라벨을 달면 "태그별 보관함"에서 모아볼 수 있습니다.</div>
+        <div class="sub">받은 메일에 라벨을 달면 "태그별 보관함"에서 모아볼 수 있습니다. 제목을 눌러 펼치면 읽음으로 표시됩니다.</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" id="mail-inbox-markall" onclick="_mailMarkAllRead()">모두 읽음으로 표시</button></div>
         <div id="mail-inbox-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-inbox-empty" style="display:none;font-size:14px;color:var(--hint)">받은 메일이 없습니다.</div>
         <div id="mail-inbox-items"></div>
@@ -1546,7 +1553,7 @@ function _senderNameCheck(raw) {
   if (/[<>"@\\;:,]/.test(v)) return { ok: false, value: v, message: '이름에는 < > " @ \\ ; : , 문자를 쓸 수 없습니다.' };
   return { ok: true, value: v };
 }
-function _senderNamePreview() {
+function _senderNamePreview(keepMsg) {
   const input = document.getElementById('sender-name-input');
   const prev = document.getElementById('sender-name-preview');
   const msg = document.getElementById('sender-name-msg');
@@ -1554,9 +1561,11 @@ function _senderNamePreview() {
   const r = _senderNameCheck(input.value);
   const addr = _senderAddress();
   prev.textContent = r.ok && r.value ? `${r.value} <${addr}>` : addr;
-  document.getElementById('sender-name-ok').style.display = 'none'; document.getElementById('sender-name-err').style.display = 'none';
+  if (!keepMsg) { document.getElementById('sender-name-ok').style.display = 'none'; document.getElementById('sender-name-err').style.display = 'none'; }   // 저장 직후에는 결과 문구를 남긴다
   if (!r.ok) { msg.textContent = r.message; msg.style.color = 'var(--red)'; save.disabled = true; return; }
-  msg.textContent = ''; save.disabled = (r.value === _senderNameCurrent);
+  const same = (r.value === _senderNameCurrent);
+  msg.textContent = same && r.value ? '현재 저장된 이름입니다. 다른 이름으로 바꾸면 저장할 수 있습니다.' : ''; msg.style.color = 'var(--sub)';
+  save.disabled = same;
 }
 async function _senderNameApply(value, okText) {
   const err = document.getElementById('sender-name-err'), ok = document.getElementById('sender-name-ok');
@@ -1572,7 +1581,7 @@ async function _senderNameApply(value, okText) {
     ok.textContent = okText; ok.style.display = 'block';
   } catch (e) {
     err.textContent = '저장 실패: ' + e.message; err.style.display = 'block';
-  } finally { clear.disabled = false; _senderNamePreview(); }
+  } finally { clear.disabled = false; _senderNamePreview(true); }
 }
 async function _senderNameSave() {
   const r = _senderNameCheck(document.getElementById('sender-name-input').value);
@@ -2086,11 +2095,11 @@ function _mailRenderMailItem(m, { showLabels } = {}) {
   const bodyId = `mail-body-${m.id}`;
   const labelInputId = `mail-labelinput-${m.id}`;
   return `
-    <div class="list-item" style="cursor:default;align-items:flex-start" >
+    <div class="list-item${_mailIsUnread(m) ? ' is-unread' : ''}" data-mid="${escHtml(m.id)}" style="cursor:default;align-items:flex-start" >
       <div class="li-main">
-        <div class="li-title" style="cursor:pointer" onclick="_mailToggleExpand('${bodyId}')">${escHtml(m.subject || '(제목 없음)')}</div>
+        <div class="li-title" style="cursor:pointer" onclick="_mailToggleExpand('${bodyId}', '${escHtml(m.id)}')">${escHtml(m.subject || '(제목 없음)')}</div>
         <div class="li-sub">${m.direction === 'sent' ? '받는 사람' : '보낸 사람'}: ${escHtml(m.counterparty)} · ${fmtDt(m.created)}</div>
-        <div class="li-sub" style="margin-top:2px;cursor:pointer" onclick="_mailToggleExpand('${bodyId}')">${escHtml(_mailSnippet(m.body))}</div>
+        <div class="li-sub" style="margin-top:2px;cursor:pointer" onclick="_mailToggleExpand('${bodyId}', '${escHtml(m.id)}')">${escHtml(_mailSnippet(m.body))}</div>
         <div id="${bodyId}" style="display:none;margin-top:8px;font-size:14px;white-space:pre-wrap;border-top:1px solid var(--bdr);padding-top:8px">${escHtml(m.body)}</div>
         ${showLabels ? `
           <div style="margin-top:8px">${labelPills}</div>
@@ -2101,9 +2110,10 @@ function _mailRenderMailItem(m, { showLabels } = {}) {
       </div>
     </div>`;
 }
-function _mailToggleExpand(bodyId) {
+function _mailToggleExpand(bodyId, mid) {
   const el = document.getElementById(bodyId);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (mid && el.style.display === 'block') _mailMarkRead(mid);   // 2026-10-28: 펼치면 읽음으로 기록
 }
 async function _mailLoadSent() {
   const loadingEl = document.getElementById('mail-sent-loading');
@@ -2128,6 +2138,7 @@ async function _mailLoadInbox() {
     if (!_mailMessageStates) await _mailLoadMessageStates();
     if (!_mailInboxCache) _mailInboxCache = await _mailFetchBox('inbox');
     const items = _mailInboxCache;
+    _mailRenderUnreadBadge();
     if (!items.length) { emptyEl.style.display = ''; return; }
     itemsEl.innerHTML = items.map(m => _mailRenderMailItem(m, { showLabels: true })).join('');
   } catch (e) {
@@ -2158,6 +2169,77 @@ async function _mailLoadMessageStates() {
   _mailMessageStates = map;
   return map;
 }
+
+// ── 안 읽은 메일 개수(2026-10-28, 주피터 지시) ───────────────────────────
+// 안 읽음 = 받은 메일(direction 'received') 중 kmail_message_state 에 read_at 이 없는 것. 읽음 기록은 이미 서버에 있던
+// POST /kmail/messages/state {message_id, mark_read:true} 를 쓴다. 개수는 받은메일함(최대 200건) 안에서 센다.
+function _mailIsUnread(m) {
+  if (!m || m.direction !== 'received') return false;
+  const st = _mailMessageStates && _mailMessageStates[m.id];
+  return !(st && st.read_at);
+}
+function _mailUnreadCount() {
+  return (_mailInboxCache || []).filter(_mailIsUnread).length;
+}
+function _mailRenderUnreadBadge() {
+  const n = _mailUnreadCount();
+  document.querySelectorAll('.unread-badge[data-for="inbox"]').forEach(el => {
+    if (n > 0) { el.textContent = n > 99 ? '99+' : String(n); el.hidden = false; el.setAttribute('aria-label', '안 읽은 메일 ' + n + '통'); }
+    else { el.hidden = true; el.textContent = ''; el.removeAttribute('aria-label'); }
+  });
+}
+let _mailUnreadBusy = false;
+async function _mailRefreshUnread() {
+  if (_mailUnreadBusy) return;
+  if (typeof KAuth === 'undefined' || typeof KAuth.getToken !== 'function' || !KAuth.getToken()) return;   // 로그인 전에는 조용히 건너뜀(로그인 창을 띄우지 않는다)
+  _mailUnreadBusy = true;
+  try {
+    const prevLen = _mailInboxCache ? _mailInboxCache.length : -1;
+    const [, inbox] = await Promise.all([_mailLoadMessageStates(), _mailFetchBox('inbox')]);
+    _mailInboxCache = inbox;
+    _mailRenderUnreadBadge();
+    // 받은메일함을 보고 있는데 새 메일이 왔으면 목록도 새로 그린다(펼쳐 둔 메일이 접히지 않도록 개수가 달라졌을 때만)
+    const onInbox = document.getElementById('mail-sub-inbox') && document.getElementById('mail-sub-inbox').classList.contains('active')
+      && document.getElementById('tab-mail') && document.getElementById('tab-mail').classList.contains('active');
+    if (onInbox && prevLen >= 0 && inbox.length !== prevLen) _mailLoadInbox();
+  } catch (e) { /* 배지는 보조 기능 — 실패해도 조용히 */ }
+  finally { _mailUnreadBusy = false; }
+}
+async function _mailMarkRead(mid) {
+  const m = (_mailInboxCache || []).find(x => x.id === mid);
+  if (!_mailIsUnread(m)) return;
+  if (!_mailMessageStates) _mailMessageStates = {};
+  const prev = _mailMessageStates[mid];
+  _mailMessageStates[mid] = { ...(prev || { message_id: mid, labels: [] }), read_at: new Date().toISOString() };
+  document.querySelectorAll('.list-item[data-mid="' + mid + '"]').forEach(el => el.classList.remove('is-unread'));
+  _mailRenderUnreadBadge();
+  try {
+    await kmailApi('/kmail/messages/state', { method: 'POST', body: { message_id: mid, mark_read: true } });
+  } catch (e) {                                   // 기록 실패 — 화면을 원래대로 되돌린다
+    if (prev) _mailMessageStates[mid] = prev; else delete _mailMessageStates[mid];
+    document.querySelectorAll('.list-item[data-mid="' + mid + '"]').forEach(el => el.classList.add('is-unread'));
+    _mailRenderUnreadBadge();
+  }
+}
+async function _mailMarkAllRead() {
+  const ids = (_mailInboxCache || []).filter(_mailIsUnread).map(m => m.id);
+  if (!ids.length) { alert('안 읽은 메일이 없습니다.'); return; }
+  if (!confirm('안 읽은 메일 ' + ids.length + '통을 모두 읽음으로 표시할까요?')) return;
+  const btn = document.getElementById('mail-inbox-markall');
+  if (btn) { btn.disabled = true; btn.textContent = '처리 중…'; }
+  let failed = 0;
+  for (let i = 0; i < ids.length; i += 5) {
+    await Promise.all(ids.slice(i, i + 5).map(id => kmailApi('/kmail/messages/state', { method: 'POST', body: { message_id: id, mark_read: true } }).catch(() => { failed++; })));
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '모두 읽음으로 표시'; }
+  await _mailRefreshUnread();
+  _mailLoadInbox();
+  if (failed) alert(failed + '통은 읽음으로 기록하지 못했습니다. 잠시 뒤 다시 시도해 주세요.');
+}
+setTimeout(_mailRefreshUnread, 1500);
+setTimeout(_mailRefreshUnread, 6000);
+setInterval(_mailRefreshUnread, 90000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) _mailRefreshUnread(); });
 async function _mailTagsShowSummary() {
   document.getElementById('mail-tags-back').style.display = 'none';
   document.getElementById('mail-tags-items').innerHTML = '';
