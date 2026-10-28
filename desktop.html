@@ -952,8 +952,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <div class="set-row">
           <div class="set-lbl">서명</div>
           <div>
-            <textarea id="set-sig-input" maxlength="1000" placeholder="예: 혼디 개발 총괄 도영민 드림" oninput="_sigDirty()"></textarea>
-            <div class="set-hint">내가 보내는 메일의 <b>본문 끝</b>에 한 줄을 띄우고 자동으로 붙습니다(글자만, 1000자까지). 비워 두면 붙지 않습니다. 저장한 뒤 <b>보내는 메일부터</b> 적용됩니다.</div>
+            <textarea id="set-sig-input" maxlength="1000" placeholder="비워 두면 Signed by 내 이름 이 붙습니다. 예: 혼디 개발 총괄 {이름} 드림" oninput="_sigDirty()"></textarea>
+            <div class="set-hint">내가 보내는 메일의 <b>본문 끝</b>에 한 줄을 띄우고 자동으로 붙습니다(글자만, 1000자까지). <b>비워 두면 “Signed by 내 이름”</b>(보내는 이름, 없으면 메일 아이디)이 붙고, 글 안의 <code>{이름}</code>은 보내는 이름으로 바뀝니다. 서명을 아예 붙이지 않으려면 <code>-</code> 한 글자만 적으세요. 저장한 뒤 <b>보내는 메일부터</b> 적용됩니다.</div>
             <div id="set-sig-err" class="errbox" style="display:none"></div>
             <div id="set-sig-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
             <div class="set-actions">
@@ -1701,7 +1701,7 @@ async function _sigSave() {
     _sigCurrent = v;
     if (_mailIdCurrentSettings) _mailIdCurrentSettings.signature = v;
     document.getElementById('set-sig-input').value = v;
-    _setBox('set-sig-ok', v ? '저장했습니다. 이제 보내는 메일의 본문 끝에 이 서명이 붙습니다.' : '저장했습니다. 서명을 비웠습니다 — 메일 끝에 아무것도 붙지 않습니다.');
+    _setBox('set-sig-ok', v ? '저장했습니다. 이제 보내는 메일의 본문 끝에 이 서명이 붙습니다.' : '저장했습니다. 서명을 비웠습니다 — 이제 “Signed by 내 이름”이 붙습니다(붙이지 않으려면 - 한 글자).');
   } catch (e) {
     _setBox('set-sig-err', '저장 실패: ' + e.message);
   } finally { _sigPaint(); }
