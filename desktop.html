@@ -3507,7 +3507,7 @@ function _ctEdit(contactId) {
   _ctEditClose();
   const fld = ([k, label, type]) => `<div class="field" style="margin-bottom:10px"><label>${label}</label>${type === 'textarea'
     ? `<textarea id="ct-edit-${k}" rows="3" style="width:100%">${escHtml(c[k] || '')}</textarea>`
-    : `<input type="${type}" id="ct-edit-${k}" value="${escHtml(c[k] || '')}">`}</div>`;
+    : `<input type="${type}" id="ct-edit-${k}" style="width:100%" value="${escHtml(c[k] || '')}">`}</div>`;
   const m = document.createElement('div');
   m.id = 'ct-edit-modal';
   m.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px');
@@ -3515,6 +3515,7 @@ function _ctEdit(contactId) {
     <h2 style="margin:0 0 4px">연락처 수정</h2>
     <div class="sub" style="margin-bottom:12px">이메일 <b>${escHtml(c.email || '')}</b>은(는) 바꿀 수 없습니다. 다른 이메일이 필요하면 새로 등록하세요.</div>
     ${_CT_EDIT_FIELDS.map(fld).join('')}
+    ${typeof OrgTree !== 'undefined' ? `<div class="field" style="margin-bottom:10px"><label>소속 분류</label><input type="text" id="ct-edit-orgpath" list="ct-edit-path-list" autocomplete="off" style="width:100%" value="${escHtml(String(c.org_path || ''))}" placeholder="예: 학교>대학>제주대학교 — 목록에서 고르거나 새로 적기 (비우면 미분류)"><datalist id="ct-edit-path-list"></datalist></div>` : ''}
     <div id="ct-edit-err" class="errbox" style="display:none"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
       <button type="button" class="btn btn-outline btn-sm" onclick="_ctEditClose()">취소</button>
@@ -3524,6 +3525,21 @@ function _ctEdit(contactId) {
   m.addEventListener('keydown', (e) => { if (e.key === 'Escape') _ctEditClose(); });
   document.body.appendChild(m);
   const first = document.getElementById('ct-edit-name'); if (first) first.focus();
+  if (typeof OrgTree !== 'undefined' && typeof OrgTree.listPaths === 'function') {
+    OrgTree.listPaths().then(ps => { const dl = document.getElementById('ct-edit-path-list'); if (dl) dl.innerHTML = ps.map(p => `<option value="${escHtml(p)}"></option>`).join(''); }).catch(() => {});
+  }
+}
+// 2026-10-28: 연락처 수정 창의 "소속 분류"(소속 기관 트리 경로) 저장 — 바뀐 경우에만. 비우면 미분류로.
+async function _ctEditSavePath(contactId) {
+  const el = document.getElementById('ct-edit-orgpath'); if (!el) return;
+  const norm = s => String(s || '').split('>').map(x => x.trim()).filter(Boolean).join('>');
+  const next = norm(el.value), prev = norm((_ctRowCache[contactId] || {}).org_path);
+  if (next === prev) return;
+  try {
+    if (!next) { await kmailApi('/kmail/contacts/assign-org', { method: 'POST', body: { unit_id: '', contact_ids: [contactId] } }); return; }
+    if (typeof OrgTree === 'undefined' || typeof OrgTree.assignContactToPath !== 'function') throw new Error('분류 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
+    await OrgTree.assignContactToPath(next, contactId);
+  } catch (e) { throw new Error('다른 항목은 저장됐지만 소속 분류를 지정하지 못했습니다: ' + (e.message || '알 수 없는 오류')); }
 }
 async function _ctEditSave(contactId) {
   const errEl = document.getElementById('ct-edit-err'), btn = document.getElementById('ct-edit-save');
@@ -3532,6 +3548,7 @@ async function _ctEditSave(contactId) {
   errEl.style.display = 'none'; btn.disabled = true; btn.textContent = '저장 중…';
   try {
     await _ctUpdateFields(contactId, fields);
+    await _ctEditSavePath(contactId);
     _ctEditClose();
     _ctLoad();
   } catch (e) {
