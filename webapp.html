@@ -293,8 +293,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 <main>
   <div class="tabbar">
     <button id="tab-btn-compose" class="active" onclick="_switchTab('compose')">새 캠페인</button>
-    <button id="tab-btn-contacts" onclick="_switchTab('contacts')">주소록</button>
-    <button id="tab-btn-campaigns" onclick="_switchTab('campaigns')">내 캠페인</button>
+    <button id="tab-btn-contacts" onclick="_ctNavClick()">주소록</button>
+    <button id="tab-btn-campaigns" onclick="_campNavClick()">내 캠페인</button>
     <button id="tab-btn-quicksend" onclick="_switchTab('quicksend')">빠른 발송</button>
     <button id="tab-btn-mail" onclick="_switchTab('mail')">메일</button>
   </div>
@@ -2493,6 +2493,20 @@ function _ctOpenTag(tag) {
   _ctLoad();
 }
 function _ctShowCategories() { _ctViewCategory = null; _ctViewTag = null; _ctViewOrg = null; _ctLoad(); }
+// 2026-10-28: 메뉴(탭 버튼) 클릭 — 세부 화면·검색 중이거나 이미 이 탭이면 처음(전체 요약) 화면으로 되돌린다.
+function _ctNavClick() {
+  const active = document.getElementById('tab-contacts').classList.contains('active');
+  const q = document.getElementById('ct-filter-q');
+  const drilled = _ctViewCategory !== null || _ctViewTag !== null || _ctViewOrg !== null || (q && q.value.trim() !== '');
+  _switchTab('contacts');
+  if (active || drilled) { if (q) q.value = ''; _ctShowCategories(); }
+}
+function _campNavClick() {
+  const detail = document.getElementById('camp-detail-card');
+  const inDetail = detail && detail.style.display !== 'none';
+  _switchTab('campaigns');
+  if (inDetail) _campBackToList();
+}
 // 2026-09-21 신설 — 소속 기관 트리(orgtree.js)에서 노드를 눌렀을 때: 그 노드와 하위 전부의 연락처 목록.
 function _ctOpenOrg(path) {
   _ctViewOrg = path;

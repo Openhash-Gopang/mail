@@ -617,8 +617,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     </div>
     <div class="side-group">
       <div class="side-label">관리</div>
-      <button id="tab-btn-contacts" class="nav-btn" data-label="주소록" onclick="_switchTab('contacts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>주소록</button>
-      <button id="tab-btn-campaigns" class="nav-btn" data-label="내 캠페인" onclick="_switchTab('campaigns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>내 캠페인</button>
+      <button id="tab-btn-contacts" class="nav-btn" data-label="주소록" onclick="_ctNavClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>주소록</button>
+      <button id="tab-btn-campaigns" class="nav-btn" data-label="내 캠페인" onclick="_campNavClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>내 캠페인</button>
     </div>
     <div class="side-group">
       <div class="side-label">행정 업무</div>
@@ -3340,6 +3340,20 @@ function _ctOpenTag(tag) {
   _ctLoad();
 }
 function _ctShowCategories() { _ctViewCategory = null; _ctViewTag = null; _ctViewOrg = null; _ctLoad(); }
+// 2026-10-28: 메뉴(탭 버튼) 클릭 — 세부 화면·검색 중이거나 이미 이 탭이면 처음(전체 요약) 화면으로 되돌린다.
+function _ctNavClick() {
+  const active = document.getElementById('tab-contacts').classList.contains('active');
+  const q = document.getElementById('ct-filter-q');
+  const drilled = _ctViewCategory !== null || _ctViewTag !== null || _ctViewOrg !== null || (q && q.value.trim() !== '');
+  _switchTab('contacts');
+  if (active || drilled) { if (q) q.value = ''; _ctShowCategories(); }
+}
+function _campNavClick() {
+  const detail = document.getElementById('camp-detail-card');
+  const inDetail = detail && detail.style.display !== 'none';
+  _switchTab('campaigns');
+  if (inDetail) _campBackToList();
+}
 // 2026-09-21 신설 — 소속 기관 트리(orgtree.js)에서 노드를 눌렀을 때: 그 노드와 하위 전부의 연락처 목록.
 function _ctOpenOrg(path) {
   _ctViewOrg = path;
