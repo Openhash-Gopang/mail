@@ -289,12 +289,17 @@
 
   /** 미분류 연락처 목록 → 그룹. 같은 소속 원문끼리 묶고, 대학처럼 부서를 하위 노드로 쓰는 유형은 부서별로 다시 나눈다. */
   function buildGroups(contacts, tree) {
-    var idx = makeIndex(tree), byOrg = new Map(), byGuess = new Map(), noOrg = [], groups = [];
+    var idx = makeIndex(tree), byOrg = new Map(), byGuess = new Map(), byTag = new Map(), noOrg = [], groups = [];
     (contacts || []).forEach(function (c) {
       var org = normText(c.org);
       if (!org) {
         var gOrg = guessOrgFromEmail(c.email);
-        if (gOrg) { if (!byGuess.has(gOrg)) byGuess.set(gOrg, []); byGuess.get(gOrg).push(c); } else noOrg.push(c);
+        if (gOrg) { if (!byGuess.has(gOrg)) byGuess.set(gOrg, []); byGuess.get(gOrg).push(c); }
+        else {
+          // 2026-10-28: 소속·대학 이메일 단서가 없으면 첫 번째 태그(그룹 이름)로 묶는다
+          var tg = (Array.isArray(c.tags) ? c.tags : []).map(sanitizeName).filter(Boolean)[0];
+          if (tg) { if (!byTag.has(tg)) byTag.set(tg, []); byTag.get(tg).push(c); } else noOrg.push(c);
+        }
         return;
       }
       if (!byOrg.has(org)) byOrg.set(org, []);
@@ -322,6 +327,12 @@
       var cls = classifyOrg(name, '', idx);
       var g = mk(name, '', list, cls.segs ? { segs: cls.segs, conf: 'high', why: '소속 비어 있음 — 이메일 도메인(' + String(list[0].email).split('@')[1] + ')으로 판단', useDept: false } : cls);
       g.via = 'email';
+      groups.push(g);
+    });
+    byTag.forEach(function (list, tag) {
+      var hits = idx.get(normKey(tag)), segs = (hits && hits.length === 1) ? hits[0].node.path.split(SEP) : [tag];
+      var g = mk(tag, '', list, { segs: segs, conf: 'high', why: '소속 비어 있음 — 태그(그룹) \u201c' + tag + '\u201d로 묶음', useDept: false });
+      g.via = 'tag';
       groups.push(g);
     });
     groups.sort(function (a, b) { return b.count - a.count || String(a.org).localeCompare(String(b.org), 'ko'); });
@@ -814,6 +825,7 @@
     var rows = g.map(function (x, i) {
       var sub = [];
       if (x.via === 'email') sub.push('소속 칸이 비어 있어 이메일 도메인으로 추정');
+      if (x.via === 'tag') sub.push('소속 칸이 비어 있어 태그로 묶음');
       if (x.dept) sub.push('부서: ' + esc(x.dept));
       if (x.names.length) sub.push(esc(x.names.join(', ')) + (x.count > x.names.length ? ' 등' : ''));
       var autoChecked = x.conf === 'high' && safeToAutoCheck(x);
