@@ -70,7 +70,7 @@ test('planEnsurePath: 가장 깊이 존재하는 노드를 재사용하고 나�
 test('chunk / crumbText', () => {
   assert.deepEqual(P.chunk([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]]);
   assert.deepEqual(P.chunk([], 100), []);
-  assert.equal(P.crumbText('학교>대학>제주대학교'), '학교 › 대학 › 제주대학교');
+  assert.equal(P.crumbText('학교>제주대학교'), '학교 › 제주대학교');
   assert.equal(P.crumbText(''), '');
 });
 
@@ -80,17 +80,17 @@ const cls = (org, dept = '', tree = emptyTree()) => P.classifyOrg(org, dept, P.m
 const path = c => c.segs && c.segs.join('>');
 
 test('분류기: 사용자 예시 — "제주대학교 컴퓨터공학과" → 학교>대학>제주대학교>컴퓨터공학과', () => {
-  assert.equal(path(cls('제주대학교 컴퓨터공학과')), '학교>대학>제주대학교>컴퓨터공학과');
-  assert.equal(path(cls('제주대학교')), '학교>대학>제주대학교');
-  assert.equal(path(cls('제주대학교', '컴퓨터공학과')), '학교>대학>제주대학교>컴퓨터공학과');   // 부서 필드를 하위 노드로
+  assert.equal(path(cls('제주대학교 컴퓨터공학과')), '학교>제주대학교>학부>컴퓨터공학과');
+  assert.equal(path(cls('제주대학교')), '학교>제주대학교');
+  assert.equal(path(cls('제주대학교', '컴퓨터공학과')), '학교>제주대학교>학부>컴퓨터공학과');   // 부서 필드를 하위 노드로
   assert.equal(cls('제주대학교').conf, 'high');
 });
 test('분류기: 대학 규칙보다 병원·동문회·대학원 규칙이 먼저(우선순위)', () => {
   assert.equal(path(cls('제주대학교병원')), '의료기관>병원>제주대학교병원');
   assert.equal(path(cls('서울대학교 치과병원')), '의료기관>병원>서울대학교 치과병원');
   assert.equal(path(cls('제주대학교 총동문회')), '협회·단체>제주대학교 총동문회');
-  assert.equal(path(cls('제주대학교 대학원')), '학교>대학원>제주대학교');   // 2026-09-22 수정: 중복 리프 제거
-  assert.equal(path(cls('한국방송통신대학교')), '학교>대학>한국방송통신대학교');   // 방송 키워드가 아니라 대학
+  assert.equal(path(cls('제주대학교 대학원')), '학교>제주대학교>대학원');   // 2026-09-22 수정: 중복 리프 제거
+  assert.equal(path(cls('한국방송통신대학교')), '학교>한국방송통신대학교');   // 방송 키워드가 아니라 대학
 });
 test('분류기: 초·중·고, 대학 아닌 학교', () => {
   assert.equal(path(cls('한림초등학교')), '학교>초등학교>한림초등학교');
@@ -136,10 +136,10 @@ test('분류기: 이미 있는 노드의 이름·별칭이 규칙보다 우선(�
     { id: 'c', name: '제주대학교', parent_id: 'b', path: '학교>대학>제주대학교', depth: 3, aliases: ['제주대', 'JNU'] },
     { id: 'd', name: '혼디', parent_id: '', path: '협력사>혼디', depth: 2, aliases: ['Hondi Inc'] },
   ]);
-  assert.equal(path(cls('제주대', '', tree)), '학교>대학>제주대학교');
-  assert.equal(path(cls('jnu', '', tree)), '학교>대학>제주대학교');          // 대소문자 무시
-  assert.equal(path(cls('제주 대학교', '', tree)), '학교>대학>제주대학교');   // 공백 무시
-  assert.equal(path(cls('제주대', '컴퓨터공학과', tree)), '학교>대학>제주대학교>컴퓨터공학과');   // 대학 하위면 부서 추가
+  assert.equal(path(cls('제주대', '', tree)), '학교>제주대학교');
+  assert.equal(path(cls('jnu', '', tree)), '학교>제주대학교');          // 대소문자 무시
+  assert.equal(path(cls('제주 대학교', '', tree)), '학교>제주대학교');   // 공백 무시
+  assert.equal(path(cls('제주대', '컴퓨터공학과', tree)), '학교>제주대학교>학부>컴퓨터공학과');   // 대학 하위면 부서 추가
   assert.equal(path(cls('Hondi Inc', '개발팀', tree)), '협력사>혼디>개발팀');   // 2026-09-22 수정: 대학이 아니어도 부서는 붙인다
   assert.equal(cls('제주대', '', tree).why, '이미 있는 소속(이름·별칭 일치)');
   assert.equal(path(cls('혼디', '', tree)), '협력사>혼디');                    // 규칙이 없던 표기도 노드 이름이면 매칭
@@ -173,8 +173,8 @@ test('buildGroups: 소속별 묶음·건수 순 정렬, 대학은 부서별로 �
   const by = Object.fromEntries(groups.map(g => [g.org + '|' + g.dept, g]));
   assert.equal(by['(주)혼디|'].count, 3, '기업은 부서로 나누지 않고 공백만 다른 표기를 한 그룹으로');
   assert.equal(by['제주대학교|컴퓨터공학과'].count, 2);
-  assert.deepEqual(by['제주대학교|컴퓨터공학과'].segs, ['학교', '대학', '제주대학교', '컴퓨터공학과']);
-  assert.equal(by['제주대학교|'].count, 1); assert.deepEqual(by['제주대학교|'].segs, ['학교', '대학', '제주대학교']);
+  assert.deepEqual(by['제주대학교|컴퓨터공학과'].segs, ['학교', '제주대학교', '학부', '컴퓨터공학과']);
+  assert.equal(by['제주대학교|'].count, 1); assert.deepEqual(by['제주대학교|'].segs, ['학교', '제주대학교']);
   assert.equal(by['미지의곳|'].segs, null);
   assert.equal(by['제주대학교|컴퓨터공학과'].deptUsed, true); assert.equal(by['(주)혼디|'].deptUsed, false);
   assert.deepEqual(groups.map(g => g.count), [3, 2, 1, 1], '건수 내림차순');
@@ -188,44 +188,44 @@ test('buildGroups: 소속별 묶음·건수 순 정렬, 대학은 부서별로 �
 test('분류기(수정): 대학원 소속도 대학별로 나뉜다 — 실사용 재현 사례', () => {
   const idx = P.makeIndex(emptyTree());
   const a = P.classifyOrg('고려대학교 정보대학 대학원 뇌공학과', '', idx);
-  assert.equal(path(a), '학교>대학원>고려대학교>정보대학 대학원 뇌공학과');
+  assert.equal(path(a), '학교>고려대학교>대학원>정보대학 대학원 뇌공학과');
   assert.equal(a.conf, 'high');
   const b = P.classifyOrg('이화여자대학교 법학전문대학원(특임·연구교수)', '', idx);
-  assert.equal(path(b), '학교>대학원>이화여자대학교>법학전문대학원(특임·연구교수)');
+  assert.equal(path(b), '학교>이화여자대학교>대학원>법학전문대학원(특임·연구교수)');
 });
 test('분류기(수정): 대학원 텍스트가 "대학원" 그 자체뿐이면 중복 리프를 만들지 않는다', () => {
-  assert.equal(path(cls('제주대학교 대학원')), '학교>대학원>제주대학교');
+  assert.equal(path(cls('제주대학교 대학원')), '학교>제주대학교>대학원');
 });
 test('분류기(수정): 부서 필드에 "대학원"이 있으면 대학원으로 라우팅', () => {
-  assert.equal(path(cls('제주대학교', '대학원 컴퓨터공학과')), '학교>대학원>제주대학교>대학원 컴퓨터공학과');
+  assert.equal(path(cls('제주대학교', '대학원 컴퓨터공학과')), '학교>제주대학교>대학원>대학원 컴퓨터공학과');
 });
 test('분류기(수정): 대학명을 못 뽑는 경우(공백 없는 표기)만 종전처럼 평평한 대체 규칙으로', () => {
-  assert.equal(path(cls('정보대학원')), '학교>대학원>정보대학원');
+  assert.equal(path(cls('정보대학원')), '학교>대학원(대학 미상)>정보대학원');
   assert.equal(cls('정보대학원').why, '대학원(대학명 인식 불가)');
 });
 test('분류기(수정): 회귀 — 병원·동문회·일반 대학·부서 필드는 그대로', () => {
   assert.equal(path(cls('제주대학교병원')), '의료기관>병원>제주대학교병원');
   assert.equal(path(cls('제주대학교 총동문회')), '협회·단체>제주대학교 총동문회');
-  assert.equal(path(cls('연세대학교', '컴퓨터과학과')), '학교>대학>연세대학교>컴퓨터과학과');
-  assert.equal(path(cls('성균관대학교 소프트웨어학과(초빙교수)')), '학교>대학>성균관대학교>소프트웨어학과(초빙교수)');
+  assert.equal(path(cls('연세대학교', '컴퓨터과학과')), '학교>연세대학교>학부>컴퓨터과학과');
+  assert.equal(path(cls('성균관대학교 소프트웨어학과(초빙교수)')), '학교>성균관대학교>학부>소프트웨어학과(초빙교수)');
 });
 
 // ═════════ 2026-09-22 신설: 과학기술원 계열 영문 약칭(KAIST/POSTECH 등) 인식 ═════════
 // 실사용 확인 — '대학교/대학' 접미어가 없어 규칙이 걸리지 않고, 사용자가 직접 입력한 경로에
 // '>' 구분자가 없어 트리 최상위에 KAIST/POSTECH 노드 3개가 학교 계층 밖으로 따로 생긴 사례.
 test('분류기(신설): 과학기술원 계열 — 학부/대학원 구분, 학과 없으면 대학까지만', () => {
-  assert.equal(path(cls('KAIST 전산학부')), '학교>대학>KAIST>전산학부');
-  assert.equal(path(cls('KAIST AI 대학원')), '학교>대학원>KAIST>AI 대학원');
-  assert.equal(path(cls('POSTECH 컴퓨터공학과')), '학교>대학>POSTECH>컴퓨터공학과');
-  assert.equal(path(cls('KAIST')), '학교>대학>KAIST');   // 학과 정보 없음 — 대학 노드까지만 제안
-  assert.equal(path(cls('GIST')), '학교>대학>GIST');
-  assert.equal(path(cls('UNIST 물리학과')), '학교>대학>UNIST>물리학과');
-  assert.equal(path(cls('DGIST 대학원 로봇공학과')), '학교>대학원>DGIST>대학원 로봇공학과');
+  assert.equal(path(cls('KAIST 전산학부')), '학교>KAIST>학부>전산학부');
+  assert.equal(path(cls('KAIST AI 대학원')), '학교>KAIST>대학원>AI 대학원');
+  assert.equal(path(cls('POSTECH 컴퓨터공학과')), '학교>POSTECH>학부>컴퓨터공학과');
+  assert.equal(path(cls('KAIST')), '학교>KAIST');   // 학과 정보 없음 — 대학 노드까지만 제안
+  assert.equal(path(cls('GIST')), '학교>GIST');
+  assert.equal(path(cls('UNIST 물리학과')), '학교>UNIST>학부>물리학과');
+  assert.equal(path(cls('DGIST 대학원 로봇공학과')), '학교>DGIST>대학원>대학원 로봇공학과');
 });
 test('분류기(신설): 대소문자가 섞여도 표준 표기(대문자)로 정규화되어 같은 노드로 모인다', () => {
-  assert.equal(path(cls('kaist 전산학부')), '학교>대학>KAIST>전산학부');
-  assert.equal(path(cls('Kaist 전산학부')), '학교>대학>KAIST>전산학부');
-  assert.equal(path(cls('postech 컴퓨터공학과')), '학교>대학>POSTECH>컴퓨터공학과');
+  assert.equal(path(cls('kaist 전산학부')), '학교>KAIST>학부>전산학부');
+  assert.equal(path(cls('Kaist 전산학부')), '학교>KAIST>학부>전산학부');
+  assert.equal(path(cls('postech 컴퓨터공학과')), '학교>POSTECH>학부>컴퓨터공학과');
 });
 test('분류기(신설): 회귀 — 목록에 없는 영문 약칭·한글 음역은 여전히 규칙 없음(억지 추측 안 함)', () => {
   assert.equal(cls('카이스트').segs, null);
@@ -255,36 +255,36 @@ test('재분류 필터: 실사용 재현 — 옛 평평한 배정은 changed, �
     { id: 'a', org: '고려대학교 정보대학 대학원 뇌공학과', dept: '', org_path: '학교>대학원>고려대학교 정보대학 대학원 뇌공학과' },
     // 실사용 사례 2: dept 미검사 시절 대학(학부) 밑에 잘못 들어간 법학전문대학원
     { id: 'b1', org: '연세대학교', dept: '법학전문대학원', org_path: '학교>대학>연세대학교>법학전문대학원' },
-    { id: 'b2', org: '연세대학교', dept: '컴퓨터과학과', org_path: '학교>대학>연세대학교>컴퓨터과학과' },   // 이건 원래 맞음
+    { id: 'b2', org: '연세대학교', dept: '컴퓨터과학과', org_path: '학교>연세대학교>학부>컴퓨터과학과' },   // 이건 원래 맞음
     // 실사용 사례 3: KAIST 약칭 미인식 시절 평평한 배정
     { id: 'c', org: 'KAIST 전산학부', dept: '', org_path: 'KAIST 전산학부' },
     // 실사용 사례 4: 학과 정보 없는 KAIST — 사용자가 직접 'KAIST AI 대학원'으로 골랐던 값(더 정확할 수 있음)
     { id: 'd', org: 'KAIST', dept: '', org_path: 'KAIST AI 대학원' },
     // 이미 올바르게 배정된 것 — 표에 나오면 안 됨
-    { id: 'e', org: '제주대학교', dept: '인공지능학과', org_path: '학교>대학>제주대학교>인공지능학과' },
+    { id: 'e', org: '제주대학교', dept: '인공지능학과', org_path: '학교>제주대학교>학부>인공지능학과' },
   ];
   const { groups } = P.buildGroups(contacts, emptyTree());
   const by = Object.fromEntries(groups.map(g => [g.org + '|' + g.dept, g]));
 
   const grad = by['고려대학교 정보대학 대학원 뇌공학과|'];
   assert.equal(P.needsChange(grad), true);
-  assert.equal(grad.segs.join('>'), '학교>대학원>고려대학교>정보대학 대학원 뇌공학과');
+  assert.equal(grad.segs.join('>'), '학교>고려대학교>대학원>정보대학 대학원 뇌공학과');
   assert.equal(P.isUnclassified(grad), false);   // 이미 배정된 적 있음 → 기본 체크 금지 대상
 
   const yonseiLaw = by['연세대학교|법학전문대학원'];
   assert.equal(P.needsChange(yonseiLaw), true);
-  assert.equal(yonseiLaw.segs.join('>'), '학교>대학원>연세대학교>법학전문대학원');
+  assert.equal(yonseiLaw.segs.join('>'), '학교>연세대학교>대학원>법학전문대학원');
 
   const yonseiCS = by['연세대학교|컴퓨터과학과'];
   assert.equal(P.needsChange(yonseiCS), false, '이미 올바른 배정은 재분류 대상에서 빠져야 함');
 
   const kaistDept = by['KAIST 전산학부|'];
   assert.equal(P.needsChange(kaistDept), true);
-  assert.equal(kaistDept.segs.join('>'), '학교>대학>KAIST>전산학부');
+  assert.equal(kaistDept.segs.join('>'), '학교>KAIST>학부>전산학부');
 
   const kaistBare = by['KAIST|'];
   assert.equal(P.needsChange(kaistBare), true);   // 표에는 뜬다(제안이 다르므로)
-  assert.equal(kaistBare.segs.join('>'), '학교>대학>KAIST');   // 하지만 규칙의 제안일 뿐 — UI가 기본 체크하지 않아 사용자가 직접 판단
+  assert.equal(kaistBare.segs.join('>'), '학교>KAIST');   // 하지만 규칙의 제안일 뿐 — UI가 기본 체크하지 않아 사용자가 직접 판단
 
   const jeju = by['제주대학교|인공지능학과'];
   assert.equal(P.needsChange(jeju), false);
@@ -306,10 +306,10 @@ test('makeIndex(수정): 원문 그대로인 노드 이름은 매칭에서 제�
   ]);
   const idx = P.makeIndex(tree);
   // 원문 그대로인 노드 이름 — 다시 입력해도 규칙이 재구성한 새 경로가 나와야 한다(자기 자신 재확인 금지)
-  assert.equal(path(P.classifyOrg('고려대학교 정보대학 대학원 뇌공학과', '', idx)), '학교>대학원>고려대학교>정보대학 대학원 뇌공학과');
+  assert.equal(path(P.classifyOrg('고려대학교 정보대학 대학원 뇌공학과', '', idx)), '학교>고려대학교>대학원>정보대학 대학원 뇌공학과');
   // 사람이 고른 고유명·별칭은 여전히 신뢰
-  assert.equal(path(P.classifyOrg('제주대학교', '', idx)), '학교>대학>제주대학교');
-  assert.equal(path(P.classifyOrg('제주대', '', idx)), '학교>대학>제주대학교');
+  assert.equal(path(P.classifyOrg('제주대학교', '', idx)), '학교>제주대학교');
+  assert.equal(path(P.classifyOrg('제주대', '', idx)), '학교>제주대학교');
 });
 test('isRawLeafName: 규칙이 그대로 리프로 남기면 고유명, 더 쪼개면 원문', () => {
   assert.equal(P.isRawLeafName('제주대학교'), false);
@@ -327,9 +327,9 @@ test('classifyOrg(수정): 대학명이 일치해도 대학/대학원은 항상 
     { id: 'e', name: '연세대학교', parent_id: 'd', path: '학교>대학>연세대학교', depth: 3, aliases: [] },   // 예전에 잘못 놓인 위치(전부 대학 밑)
   ]);
   const idx = P.makeIndex(tree);
-  assert.equal(path(P.classifyOrg('연세대학교', '법학전문대학원', idx)), '학교>대학원>연세대학교>법학전문대학원');
-  assert.equal(path(P.classifyOrg('연세대학교', '컴퓨터과학과', idx)), '학교>대학>연세대학교>컴퓨터과학과');
-  assert.equal(path(P.classifyOrg('연세대학교', '', idx)), '학교>대학>연세대학교', '기존 위치가 그대로 기본값');
+  assert.equal(path(P.classifyOrg('연세대학교', '법학전문대학원', idx)), '학교>연세대학교>대학원>법학전문대학원');
+  assert.equal(path(P.classifyOrg('연세대학교', '컴퓨터과학과', idx)), '학교>연세대학교>학부>컴퓨터과학과');
+  assert.equal(path(P.classifyOrg('연세대학교', '', idx)), '학교>연세대학교', '기존 위치가 그대로 기본값');
 });
 test('classifyOrg(수정): 대학이 아닌 범주(회사 등)는 이름 일치 시 기존 경로를 그대로 재사용', () => {
   const tree = P.buildTree([
@@ -347,7 +347,7 @@ test('classifyOrg(수정): 루트 노드 이름이 "학교"가 아니어도(사�
     { id: 'e', name: 'KAIST', parent_id: 'd', path: '교육기관>대학원>KAIST', depth: 3, aliases: [] },
   ]);
   const idx = P.makeIndex(tree);
-  assert.equal(path(P.classifyOrg('KAIST', 'AI 대학원', idx)), '교육기관>대학원>KAIST>AI 대학원');
+  assert.equal(path(P.classifyOrg('KAIST', 'AI 대학원', idx)), '교육기관>KAIST>대학원>AI 대학원');
 });
 
 // ═════════ 2026-09-22 신설: needsChange가 "규칙 없음 + 미분류" 그룹을 놓치던 회귀 ═════════
@@ -370,11 +370,11 @@ test('needsChange(수정): 규칙 없음이지만 이미 사람이 수동 배정
 // 적용해도 아무것도 안 바뀌는데도(안전) 예전 판정은 자동 선택을 막았다. 반대로 이미 "다른" 값으로
 // 배정된 것은 여전히 막아야 한다(위험).
 test('safeToAutoCheck: 미분류+이미 올바름이 섞인 그룹은 안전 → 자동 선택 가능', () => {
-  const g = { segs: ['학교', '대학', '제주대학교'], conf: 'high', currentPaths: ['', '학교>대학>제주대학교'] };
+  const g = { segs: ['학교', '제주대학교'], conf: 'high', currentPaths: ['', '학교>제주대학교'] };
   assert.equal(P.safeToAutoCheck(g), true);
 });
 test('safeToAutoCheck: 이미 다른 값으로 배정된 것은 섞여 있어도 자동 선택 금지', () => {
-  const g = { segs: ['학교', '대학', 'KAIST'], conf: 'high', currentPaths: ['', 'KAIST AI 대학원'] };
+  const g = { segs: ['학교', 'KAIST'], conf: 'high', currentPaths: ['', 'KAIST AI 대학원'] };
   assert.equal(P.safeToAutoCheck(g), false);
 });
 test('safeToAutoCheck: 제안이 없으면 항상 false', () => {
@@ -383,4 +383,24 @@ test('safeToAutoCheck: 제안이 없으면 항상 false', () => {
 test('hasAnyUnclassified: 미분류 구성원이 하나라도 있으면 true(규칙 없음 그룹도 보여줌)', () => {
   assert.equal(P.hasAnyUnclassified({ currentPaths: ['', '기타>카이스트'] }), true);
   assert.equal(P.hasAnyUnclassified({ currentPaths: ['기타>카이스트'] }), false);
+});
+
+test('대학교 우선 트리: 학교>대학교>학부|대학원>학과 — 대학원이 대학별로 갈린다', () => {
+  assert.equal(path(cls('연세대학교', '경영대학원')), '학교>연세대학교>대학원>경영대학원');
+  assert.equal(path(cls('고려대학교', '경영학과')), '학교>고려대학교>학부>경영학과');
+  assert.equal(path(cls('KAIST', 'AI 대학원')), '학교>KAIST>대학원>AI 대학원');
+  assert.equal(path(cls('POSTECH', '컴퓨터공학과')), '학교>POSTECH>학부>컴퓨터공학과');
+  assert.equal(path(cls('한림초등학교')), '학교>초등학교>한림초등학교');
+});
+test('대학교 우선 트리: 대학명을 알 수 없는 대학원은 한 곳에 모은다', () => {
+  assert.equal(path(cls('정보대학원')), '학교>대학원(대학 미상)>정보대학원');
+});
+test('대학교 우선 트리: 옛 위치(학교>대학>X, 학교>대학원>X)의 대학교 노드도 새 위치로 제안', () => {
+  const tree = P.buildTree([
+    { id: 'a', name: '학교', parent_id: '', path: '학교', depth: 1, aliases: [] },
+    { id: 'b', name: '대학원', parent_id: 'a', path: '학교>대학원', depth: 2, aliases: [] },
+    { id: 'c', name: '연세대학교', parent_id: 'b', path: '학교>대학원>연세대학교', depth: 3, aliases: ['연세대'] },
+  ]);
+  assert.equal(path(cls('연세대', '경제학부', tree)), '학교>연세대학교>학부>경제학부');
+  assert.equal(path(cls('연세대', '법학전문대학원', tree)), '학교>연세대학교>대학원>법학전문대학원');
 });
