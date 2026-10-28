@@ -25,7 +25,7 @@ test('대학 이메일이 태그보다 우선, 소속이 있으면 태그는 쓰
   const { groups } = P.buildGroups([C('1', 'a@yonsei.ac.kr', ['팀 주피터']), C('2', 'b@gmail.com', ['팀 주피터'], '제주대학교')], emptyTree());
   const byOrg = Object.fromEntries(groups.map(g => [g.org, g]));
   assert.equal(byOrg['연세대학교'].via, 'email');
-  assert.deepEqual(byOrg['제주대학교'].segs, ['학교', '대학', '제주대학교']);
+  assert.deepEqual(byOrg['제주대학교'].segs, ['학교', '제주대학교']);
   assert.equal(groups.some(g => g.via === 'tag'), false);
 });
 test('태그가 여러 개면 첫 번째로 묶고, 태그 이름에 쓸 수 없는 문자는 정리', () => {
