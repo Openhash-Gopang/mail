@@ -173,6 +173,13 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-textarea::-webkit-scrollbar{width:6px}
 .chat-textarea::-webkit-scrollbar-button{display:none;width:0;height:0}
 .chat-textarea::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+.camp-bulk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 12px;font-size:14px}
+.camp-bulk label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.camp-bulk .btn-danger,.camp-del-btn{border:1px solid #d92d20;color:#d92d20;background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
+.camp-bulk .btn-danger:disabled{opacity:.4;cursor:default}
+.camp-del-btn{padding:4px 10px;flex-shrink:0}
+.camp-del-btn:hover,.camp-bulk .btn-danger:not(:disabled):hover{background:#fef3f2}
+.camp-sel{width:17px;height:17px;flex-shrink:0;cursor:pointer}
 .rcpt-wrap{position:relative}
 .rcpt-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:6px 8px;background:var(--card,#fff);cursor:text}
 .rcpt-box:focus-within{border-color:var(--teal,#0d9488)}
@@ -747,6 +754,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <h2>내 캠페인</h2>
       <div class="sub">이 화면 하나로 모든 캠페인을 검색·인출할 수 있습니다. 제목으로 찾아보고, 자세히 보려면 항목을 눌러 K-Mail에게 직접 물어보세요.</div>
       <div class="filter-row"><input type="text" id="camp-filter-q" placeholder="제목으로 검색" oninput="_campFilterApply()"></div>
+      <div class="camp-bulk" id="camp-bulk" style="display:none"><label><input type="checkbox" id="camp-sel-all" onchange="_campSelAll(this.checked)"> 전체 선택</label><button type="button" class="btn-danger" id="camp-del-sel" onclick="_campDeleteSelected()" disabled>선택 삭제</button><button type="button" class="btn-danger" id="camp-del-all" onclick="_campDeleteAll()">전체 삭제</button><span id="camp-del-msg" style="color:var(--hint)"></span></div>
       <div id="camp-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">아직 만든 캠페인이 없습니다 — "새 캠페인" 탭에서 K-Mail과 대화를 시작해 보세요.</div>
       <div id="camp-items"></div>
@@ -3580,6 +3588,53 @@ async function _ctDecide(contactId, decision) {
 // ══════════════════════════════════════════════════════════════
 let _campCurrentDetail = null;
 
+// ── 2026-10-28: 내 캠페인 삭제(개별·선택·전체) ───────────────────────────
+const _campSel = new Set();
+function _campSelUpdate() {
+  const bulk = document.getElementById('camp-bulk'); if (!bulk) return;
+  bulk.style.display = _campAllItems.length ? 'flex' : 'none';
+  const n = _campSel.size;
+  const btn = document.getElementById('camp-del-sel');
+  btn.disabled = n === 0; btn.textContent = n ? `선택 삭제 (${n})` : '선택 삭제';
+  const visible = Array.from(document.querySelectorAll('#camp-items .camp-sel'));
+  const all = document.getElementById('camp-sel-all');
+  all.checked = visible.length > 0 && visible.every(cb => cb.checked);
+}
+function _campToggleSel(id, on) { if (on) _campSel.add(id); else _campSel.delete(id); _campSelUpdate(); }
+function _campSelAll(on) {
+  document.querySelectorAll('#camp-items .camp-sel').forEach(cb => {
+    cb.checked = on;
+    const m = (cb.getAttribute('onchange') || '').match(/'([^']+)'/);
+    if (m) { if (on) _campSel.add(m[1]); else _campSel.delete(m[1]); }
+  });
+  _campSelUpdate();
+}
+async function _campDeleteCall(body, confirmText) {
+  if (!window.confirm(confirmText + '\n\n※ 예약 중인 캠페인은 발송이 취소됩니다. 이미 보낸 메일은 "보낸메일함"에 그대로 남습니다.\n삭제하면 되돌릴 수 없습니다.')) return;
+  const msg = document.getElementById('camp-del-msg');
+  msg.textContent = '삭제 중…';
+  try {
+    const data = await kmailApi('/kmail/campaigns/delete', { method: 'POST', body });
+    msg.textContent = `${data.deleted}건 삭제했습니다.` + (data.failed ? ` (${data.failed}건은 삭제하지 못했습니다)` : '');
+    _campSel.clear();
+    await _campLoad();
+    _campSelUpdate();
+  } catch (e) { msg.textContent = '삭제 실패: ' + e.message; }
+}
+function _campDelete(ids) {
+  const c = _campAllItems.find(x => x.id === ids[0]);
+  return _campDeleteCall({ campaign_ids: ids }, `"${c ? _campDisplayName(c) : '이 캠페인'}" 캠페인을 삭제할까요?`);
+}
+function _campDeleteSelected() {
+  const ids = Array.from(_campSel).filter(id => _campAllItems.some(c => c.id === id));
+  if (!ids.length) return;
+  return _campDeleteCall({ campaign_ids: ids }, `선택한 캠페인 ${ids.length}건을 삭제할까요?`);
+}
+function _campDeleteAll() {
+  if (!_campAllItems.length) return;
+  return _campDeleteCall({ all: true }, `내 캠페인 전체 ${_campAllItems.length}건을 삭제할까요?`);
+}
+
 async function _campLoad() {
   const loadingEl = document.getElementById('camp-loading');
   const emptyEl = document.getElementById('camp-empty');
@@ -3600,6 +3655,7 @@ function _campFilterApply() {
   const itemsEl = document.getElementById('camp-items');
   const emptyEl = document.getElementById('camp-empty');
   const filtered = q ? _campAllItems.filter(c => _campDisplayName(c).toLowerCase().includes(q)) : _campAllItems;
+  setTimeout(_campSelUpdate, 0);
   if (!filtered.length) { itemsEl.innerHTML = ''; emptyEl.style.display = ''; return; }
   emptyEl.style.display = 'none';
   itemsEl.innerHTML = filtered.map(c => {
@@ -3608,10 +3664,12 @@ function _campFilterApply() {
     else if (c.digest_status && c.digest_status !== 'none') badges.push(`<span class="badge badge-${escHtml(c.digest_status)}">보고 ${c.digest_status === 'sent' ? '완료' : '대기'}</span>`);
     return `
       <div class="list-item" onclick='_campOpenDetail(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+        <input type="checkbox" class="camp-sel" aria-label="선택" ${_campSel.has(c.id) ? 'checked' : ''} onclick="event.stopPropagation()" onchange="_campToggleSel('${escHtml(c.id)}', this.checked)">
         <div class="li-main">
           <div class="li-title">${escHtml(_campDisplayName(c))} ${badges.join(' ')}</div>
           <div class="li-sub">수신자 ${c.recipients}명 · 발송 ${fmtDt(c.send_at)}${c.kplan_plan_id ? ` · K-Plan 연결됨` : ''}</div>
         </div>
+        <button type="button" class="camp-del-btn" onclick="event.stopPropagation();_campDelete(['${escHtml(c.id)}'])">삭제</button>
       </div>`;
   }).join('');
 }
