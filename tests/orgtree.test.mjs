@@ -404,3 +404,53 @@ test('대학교 우선 트리: 옛 위치(학교>대학>X, 학교>대학원>X)�
   assert.equal(path(cls('연세대', '경제학부', tree)), '학교>연세대학교>학부>경제학부');
   assert.equal(path(cls('연세대', '법학전문대학원', tree)), '학교>연세대학교>대학원>법학전문대학원');
 });
+
+// ── 옛 구조 이전 / 하위 분류 패널 (2026-10-28) ──
+const T = (id, name, parent, p, direct = 0, subtree = 0) => ({ id, name, parent_id: parent, path: p, depth: p.split('>').length, aliases: [], direct, subtree });
+test('planLegacyMoves: 옛 대학/대학원 경로를 학교>대학교>학부|대학원>… 로, 평평한 원문은 소속·부서로 재판단', () => {
+  const tree = P.buildTree([T('a', '학교', '', '학교')]);
+  const cs = [
+    { id: '1', org: 'KAIST 김재철AI대학원', dept: '', org_path: '학교>대학원>KAIST>김재철AI대학원' },
+    { id: '2', org: '경희대학교 법학전문대학원', dept: '', org_path: '학교>대학원>경희대학교>법학전문대학원' },
+    { id: '3', org: '제주대학교', dept: '컴퓨터공학과', org_path: '학교>대학>제주대학교>컴퓨터공학과' },
+    { id: '4', org: '연세대학교', dept: '법학전문대학원', org_path: '학교>대학>연세대학교>법학전문대학원' },
+    { id: '5', org: '한국방송통신대학교', dept: '', org_path: '학교>대학>한국방송통신대학교' },
+    { id: '6', org: '제주대학교', dept: '', org_path: '학교>대학원>제주대학교' },
+    { id: '7', org: '고려대학교 정보대학 대학원 뇌공학과', dept: '', org_path: '학교>대학원>고려대학교 정보대학 대학원 뇌공학과' },
+    { id: '8', org: '혼디', dept: '', org_path: '학교>대학원>혼디 연구소 어쩌구' },
+    { id: '9', org: '이미 새 구조', dept: '', org_path: '학교>제주대학교>학부>인공지능학과' },
+  ];
+  const r = P.planLegacyMoves(cs, tree), by = Object.fromEntries(r.moves.map(m => [m.path, m.ids]));
+  assert.deepEqual(by['학교>KAIST>대학원>김재철AI대학원'], ['1']);
+  assert.deepEqual(by['학교>경희대학교>대학원>법학전문대학원'], ['2']);
+  assert.deepEqual(by['학교>제주대학교>학부>컴퓨터공학과'], ['3']);
+  assert.deepEqual(by['학교>연세대학교>대학원>법학전문대학원'], ['4']);   // 학부 밑에 잘못 들어간 법전원은 대학원으로
+  assert.deepEqual(by['학교>한국방송통신대학교'], ['5']);
+  assert.deepEqual(by['학교>제주대학교>대학원'], ['6']);
+  assert.deepEqual(by['학교>고려대학교>대학원>정보대학 대학원 뇌공학과'], ['7']);
+  assert.equal(r.skipped, 1); assert.equal(r.count, 7);
+});
+test('legacyEmptyNodeIds: 비어 있는 옛 노드·잔재 노드만, 깊은 것부터', () => {
+  const tree = P.buildTree([
+    T('a', '학교', '', '학교', 0, 5), T('b', '대학원', 'a', '학교>대학원', 0, 0), T('c', '대학', 'a', '학교>대학', 0, 2),
+    T('d', '제주대학교', 'b', '학교>대학원>제주대학교', 0, 0),
+    T('e', 'KAIST 전산학부', '', 'KAIST 전산학부', 0, 0), T('f', 'KAIST AI 대학원', '', 'KAIST AI 대학원', 0, 0), T('g', '전산학부', 'f', 'KAIST AI 대학원>전산학부', 0, 0),
+    T('h', '연세대학교', 'a', '학교>연세대학교', 0, 3), T('i', '팀 주피터', '', '팀 주피터', 56, 56),
+  ]);
+  const ids = P.legacyEmptyNodeIds(tree);
+  assert.deepEqual(new Set(ids), new Set(['b', 'd', 'e', 'f', 'g']));       // c(건수 남음)·h·i 는 유지, g 는 잔재 f 의 빈 하위라 함께
+  assert.ok(ids.indexOf('d') < ids.indexOf('b') && ids.indexOf('g') < ids.indexOf('f'), '하위가 상위보다 먼저');
+});
+test('breadcrumbHtml: 하위 분류가 있으면 접고 펴는 패널, 없으면 경로만', () => {
+  const OT = (globalThis.OrgTree), S = OT._state;
+  S.nodes = [T('a', '학교', '', '학교', 0, 9), T('b', '연세대학교', 'a', '학교>연세대학교', 0, 6), T('c', '대학원', 'b', '학교>연세대학교>대학원', 4, 4), T('d', '학부', 'b', '학교>연세대학교>학부', 2, 2)];
+  S.tree = P.buildTree(S.nodes); S.subOpen = new Set(); S.subPanel = true;
+  let h = OT.breadcrumbHtml('학교>연세대학교');
+  assert.match(h, /id="ot-crumbbox"/); assert.match(h, /하위 분류 2개/); assert.match(h, /data-ot-act="sub-panel"/);
+  assert.match(h, /data-ot-act="open" data-path="학교&gt;연세대학교&gt;대학원"|data-path="학교>연세대학교>대학원"/);
+  S.subPanel = false;
+  h = OT.breadcrumbHtml('학교>연세대학교'); assert.doesNotMatch(h, /ot-sublist/);       // 접으면 목록 없음
+  h = OT.breadcrumbHtml('학교>연세대학교>학부'); assert.doesNotMatch(h, /ot-subbox/);   // 하위 없는 분류는 패널 없음
+  S.subPanel = true; S.subOpen = new Set(['b']);
+  h = OT.breadcrumbHtml('학교'); assert.match(h, /aria-expanded="true"/); assert.match(h, /학교>연세대학교>학부|학교&gt;연세대학교&gt;학부/);
+});
