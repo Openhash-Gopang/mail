@@ -137,7 +137,7 @@
     return t === '__NONE__' ? '' : t;
   }
   var MINISTRY = /(기획재정|교육|과학기술정보통신|외교|통일|법무|국방|행정안전|국가보훈|문화체육관광|농림축산식품|산업통상자원|보건복지|환경|고용노동|여성가족|국토교통|해양수산|중소벤처기업)부$|(경찰청|소방청|국세청|관세청|조달청|통계청|병무청|방위사업청|농촌진흥청|산림청|문화재청|기상청|특허청|해양경찰청|질병관리청|식품의약품안전처|국가정보원|감사원|인사혁신처|법제처|국무조정실|대통령실)$/;
-  var UNIV_TOKEN = /^(\S+?(?:대학교|대학))(?:\s+(.+))?$/;
+  var UNIV_TOKEN = /^(\S+?(?:대학교|대학))(?:(?:\s+|\s*[·・\/|,:]\s*)(.+))?$/;   // 2026-10-28: 공백 없이 '/' 등으로 이어진 표기도
   // 2026-09-22 신설 — '대학교/대학' 접미어가 없는 과학기술원 계열 영문 약칭
   // (실사용 확인: KAIST, POSTECH). UNIV_TOKEN과 같은 구조로 "약칭 + 나머지"를 뽑는다.
   // 학과 정보 없이 약칭만 단독으로 온 경우(예: 'KAIST'만, 부서 미상)는 이 규칙도 매칭되지만
@@ -245,7 +245,7 @@
           if (m) { uniName = ACRONYM_LIST.filter(function (a) { return a.toLowerCase() === m[1].toLowerCase(); })[0]; why = '대학교·대학(약칭 포함)'; }
         }
         if (m) {
-          var rest = normText(m[2] || '');
+          var rest = normText(m[2] || '').replace(/^[·・\-–—\/,|:]+\s*/, '');   // '연세대학교 · 경제학부' 같은 구분 기호 제거
           var grad = GRAD_RE.test(rest) || GRAD_RE.test(dept);
           var segs = ['학교', grad ? '대학원' : '대학', uniName];
           if (rest && normKey(rest) !== normKey('대학원')) segs.push(rest);
@@ -258,12 +258,45 @@
     return { segs: null, conf: 'none', why: '규칙에 맞는 기관 유형 없음', useDept: false };
   }
 
+  // 2026-10-28 신설 — 이메일 도메인 → 대학(소속이 비어 있는 연락처 분류용). 하위 도메인(mail.yonsei.ac.kr)도 같은 곳으로 본다.
+  var EMAIL_DOMAIN_ORGS = {
+    'snu.ac.kr': '서울대학교', 'yonsei.ac.kr': '연세대학교', 'korea.ac.kr': '고려대학교', 'kaist.ac.kr': 'KAIST', 'kaist.edu': 'KAIST',
+    'postech.ac.kr': 'POSTECH', 'gist.ac.kr': 'GIST', 'unist.ac.kr': 'UNIST', 'dgist.ac.kr': 'DGIST',
+    'skku.edu': '성균관대학교', 'hanyang.ac.kr': '한양대학교', 'sogang.ac.kr': '서강대학교', 'cau.ac.kr': '중앙대학교',
+    'khu.ac.kr': '경희대학교', 'hufs.ac.kr': '한국외국어대학교', 'uos.ac.kr': '서울시립대학교', 'ewha.ac.kr': '이화여자대학교',
+    'konkuk.ac.kr': '건국대학교', 'dongguk.edu': '동국대학교', 'hongik.ac.kr': '홍익대학교', 'kookmin.ac.kr': '국민대학교',
+    'sejong.ac.kr': '세종대학교', 'ssu.ac.kr': '숭실대학교', 'sookmyung.ac.kr': '숙명여자대학교', 'kw.ac.kr': '광운대학교',
+    'smu.ac.kr': '상명대학교', 'seoultech.ac.kr': '서울과학기술대학교', 'snue.ac.kr': '서울교육대학교', 'catholic.ac.kr': '가톨릭대학교',
+    'inha.ac.kr': '인하대학교', 'ajou.ac.kr': '아주대학교', 'dankook.ac.kr': '단국대학교', 'kyonggi.ac.kr': '경기대학교',
+    'pusan.ac.kr': '부산대학교', 'knu.ac.kr': '경북대학교', 'jnu.ac.kr': '전남대학교', 'jbnu.ac.kr': '전북대학교',
+    'chungbuk.ac.kr': '충북대학교', 'cnu.ac.kr': '충남대학교', 'kangwon.ac.kr': '강원대학교', 'jejunu.ac.kr': '제주대학교',
+    'ulsan.ac.kr': '울산대학교', 'yu.ac.kr': '영남대학교', 'chosun.ac.kr': '조선대학교', 'knou.ac.kr': '한국방송통신대학교',
+    'pknu.ac.kr': '부경대학교', 'gnu.ac.kr': '경상국립대학교', 'changwon.ac.kr': '창원대학교', 'kmu.ac.kr': '계명대학교',
+    'korea.edu': '고려대학교', 'yonsei.edu': '연세대학교', 'snu.edu': '서울대학교'
+  };
+  /** 이메일 도메인으로 대학 이름 추정 — 맞는 곳이 없으면 ''. */
+  function guessOrgFromEmail(email) {
+    var m = /@([^@\s]+)$/.exec(String(email || '').trim().toLowerCase());
+    if (!m) return '';
+    var d = m[1];
+    while (d) {
+      if (Object.prototype.hasOwnProperty.call(EMAIL_DOMAIN_ORGS, d)) return EMAIL_DOMAIN_ORGS[d];
+      var dot = d.indexOf('.'); if (dot < 0) break;
+      d = d.slice(dot + 1);
+    }
+    return '';
+  }
+
   /** 미분류 연락처 목록 → 그룹. 같은 소속 원문끼리 묶고, 대학처럼 부서를 하위 노드로 쓰는 유형은 부서별로 다시 나눈다. */
   function buildGroups(contacts, tree) {
-    var idx = makeIndex(tree), byOrg = new Map(), noOrg = [], groups = [];
+    var idx = makeIndex(tree), byOrg = new Map(), byGuess = new Map(), noOrg = [], groups = [];
     (contacts || []).forEach(function (c) {
       var org = normText(c.org);
-      if (!org) { noOrg.push(c); return; }
+      if (!org) {
+        var gOrg = guessOrgFromEmail(c.email);
+        if (gOrg) { if (!byGuess.has(gOrg)) byGuess.set(gOrg, []); byGuess.get(gOrg).push(c); } else noOrg.push(c);
+        return;
+      }
       if (!byOrg.has(org)) byOrg.set(org, []);
       byOrg.get(org).push(c);
     });
@@ -284,6 +317,12 @@
       } else {
         groups.push(mk(org, '', list, base));
       }
+    });
+    byGuess.forEach(function (list, name) {
+      var cls = classifyOrg(name, '', idx);
+      var g = mk(name, '', list, cls.segs ? { segs: cls.segs, conf: 'high', why: '소속 비어 있음 — 이메일 도메인(' + String(list[0].email).split('@')[1] + ')으로 판단', useDept: false } : cls);
+      g.via = 'email';
+      groups.push(g);
     });
     groups.sort(function (a, b) { return b.count - a.count || String(a.org).localeCompare(String(b.org), 'ko'); });
     return { groups: groups, noOrg: noOrg };
@@ -680,11 +719,12 @@
     injectStyle(); S.sel.clear();
     return '<div class="ot-selbar" id="ot-selbar"><span id="ot-selcount">선택 0건</span>' +
       '<button type="button" class="btn btn-primary btn-sm" data-ot-act="assign" disabled>소속 지정…</button>' +
-      '<button type="button" class="btn btn-outline btn-sm" data-ot-act="unassign" disabled>미분류로</button></div>';
+      '<button type="button" class="btn btn-outline btn-sm" data-ot-act="unassign" disabled>미분류로</button>' +
+      '<button type="button" class="btn btn-outline btn-sm" data-ot-act="wizard">소속 자동 분류…</button></div>';
   }
   function updateSelBar() {
     var n = S.sel.size, c = $('ot-selcount'); if (c) c.textContent = '선택 ' + n + '건';
-    root.document.querySelectorAll('#ot-selbar button').forEach(function (b) { b.disabled = n === 0; });
+    root.document.querySelectorAll('#ot-selbar button:not([data-ot-act="wizard"])').forEach(function (b) { b.disabled = n === 0; });
     var all = root.document.querySelector('.ot-sel-all'), cbs = root.document.querySelectorAll('.ot-sel-cb');
     if (all) all.checked = cbs.length > 0 && n === cbs.length;
   }
@@ -773,6 +813,7 @@
     var g = res.groups, sug = g.filter(function (x) { return x.segs; }).length, hi = g.filter(function (x) { return x.segs && x.conf === 'high'; }).length;
     var rows = g.map(function (x, i) {
       var sub = [];
+      if (x.via === 'email') sub.push('소속 칸이 비어 있어 이메일 도메인으로 추정');
       if (x.dept) sub.push('부서: ' + esc(x.dept));
       if (x.names.length) sub.push(esc(x.names.join(', ')) + (x.count > x.names.length ? ' 등' : ''));
       var autoChecked = x.conf === 'high' && safeToAutoCheck(x);
@@ -887,7 +928,7 @@
         if (!assignMap.has(tid)) assignMap.set(tid, []);
         Array.prototype.push.apply(assignMap.get(tid), row.g.ids);
         var last = row.segs[row.segs.length - 1];
-        if (aliasOn && !row.g.deptUsed && normKey(last) !== normKey(row.g.org) && validateName(row.g.org).ok) {
+        if (aliasOn && !row.g.deptUsed && !row.g.via && normKey(last) !== normKey(row.g.org) && validateName(row.g.org).ok) {
           if (!aliasMap.has(tid)) aliasMap.set(tid, []);
           if (aliasMap.get(tid).indexOf(normText(row.g.org)) < 0) aliasMap.get(tid).push(normText(row.g.org));
         }
@@ -1007,7 +1048,7 @@
              descendantIds: descendantIds, parsePathInput: parsePathInput, planEnsurePath: planEnsurePath, chunk: chunk, crumbText: crumbText,
              normText: normText, normKey: normKey, sanitizeName: sanitizeName, makeIndex: makeIndex, classifyOrg: classifyOrg, buildGroups: buildGroups, isRawLeafName: isRawLeafName,
              isUnclassified: isUnclassified, hasAnyUnclassified: hasAnyUnclassified, safeToAutoCheck: safeToAutoCheck,
-             needsChange: needsChange },
+             needsChange: needsChange, guessOrgFromEmail: guessOrgFromEmail },
     _state: S, _bind: bind,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
