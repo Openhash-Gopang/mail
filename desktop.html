@@ -169,7 +169,10 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
 .chat-inputbar{display:flex;align-items:flex-end;gap:4px;background:#fff;border:1.5px solid var(--bdr);border-radius:24px;padding:7px 9px 7px 13px;box-shadow:var(--sh);transition:border-color .12s}
 .chat-inputbar:focus-within{border-color:var(--pri-lt)}
-.chat-textarea{flex:1;min-width:0;border:none;outline:none;resize:none;font-size:15px;line-height:1.5;max-height:140px;padding:8px 4px;background:transparent;overflow-y:auto}
+.chat-textarea{flex:1;min-width:0;border:none;outline:none;resize:none;font-size:15px;line-height:1.5;max-height:max(200px,40vh);padding:8px 4px;background:transparent;overflow-y:hidden;scrollbar-width:thin}
+.chat-textarea::-webkit-scrollbar{width:6px}
+.chat-textarea::-webkit-scrollbar-button{display:none;width:0;height:0}
+.chat-textarea::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
 .chat-send-btn{flex-shrink:0;width:36px;height:36px;border-radius:50%;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .08s}
 .chat-send-btn:disabled{opacity:.35;cursor:not-allowed}
 .chat-send-btn:not(:disabled):hover{transform:scale(1.06)}
@@ -1299,7 +1302,36 @@ function mdToHtml(md) {
 }
 function _mdInline(s) { return escHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`(.+?)`/g, '<code>$1</code>'); }
 
-function _kmailAutoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+// 2026-10-28 — 대화 입력창 높이 자동 조절. ① 자리 표시 문구가 보일 때는 문구가 접힌 줄 수까지 높이에 넣는다(안 그러면 아래쪽이 잘려 숨는다).
+// ② 한도(CSS max-height: 화면 40%·최소 200px)까지는 스크롤바 없이 늘어나고, 넘을 때만 얇은 스크롤을 켠다. ③ 첫 입력 뒤에는 자리 표시 문구를 지운다.
+function _kmailPlaceholderOff(el) { if (el.placeholder) { el.dataset.ph = el.placeholder; el.placeholder = ''; } }
+function _kmailPlaceholderRestore(el) { if (el.dataset.ph !== undefined) { el.placeholder = el.dataset.ph; delete el.dataset.ph; } }
+function _kmailPlaceholderHeight(el) {
+  const cs = getComputedStyle(el), probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.cssText = 'position:absolute;visibility:hidden;left:-9999px;top:0;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:break-word;'
+    + 'width:' + el.clientWidth + 'px;font:' + cs.font + ';line-height:' + cs.lineHeight + ';padding:' + cs.padding + ';letter-spacing:' + cs.letterSpacing;
+  probe.textContent = el.placeholder;
+  document.body.appendChild(probe);
+  const h = probe.offsetHeight;
+  probe.remove();
+  return h;
+}
+function _kmailAutoResize(el) {
+  if (!el.__arWatch && typeof ResizeObserver !== 'undefined') {           // 숨어 있던 탭이 열리거나 창 너비가 바뀌면 다시 계산
+    el.__arWatch = true;
+    let w = el.clientWidth;
+    new ResizeObserver(() => { if (el.clientWidth !== w) { w = el.clientWidth; _kmailAutoResize(el); } }).observe(el);
+  }
+  if (el.value) _kmailPlaceholderOff(el);
+  if (!el.clientWidth) return;                                            // 보이지 않는 상태(숨은 탭)에서는 재지 않는다
+  el.style.height = 'auto';
+  let h = el.scrollHeight;
+  if (!el.value && el.placeholder) h = Math.max(h, _kmailPlaceholderHeight(el));
+  const max = parseFloat(getComputedStyle(el).maxHeight) || 280;
+  el.style.overflowY = h > max ? 'auto' : 'hidden';
+  el.style.height = Math.min(h, max) + 'px';
+}
 
 function _switchTab(name) {
   _sentCardHide('mail'); _sentCardHide('qs');
@@ -2560,6 +2592,7 @@ function _cmpChatStartNew() {
   if (_cmpMicOn) _cmpRecognition && _cmpRecognition.stop();
   _cmpPendingAttachments = []; _cmpRenderAttachList();
   const input = document.getElementById('cmp-input');
+  _kmailPlaceholderRestore(input);                       // '+ 새 대화'에서는 예시 문구를 다시 보여 준다
   input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
 }
 
