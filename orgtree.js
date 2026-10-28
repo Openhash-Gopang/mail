@@ -194,47 +194,6 @@
     var n = normText(name), m = UNIV_TOKEN.exec(n) || ACRONYM_UNIV.exec(n);
     return !!(m && !m[2]);
   }
-  // ── 옛 구조('학교>대학|대학원>대학교>…') → 새 구조('학교>대학교>학부|대학원>…') 이전 계획(2026-10-28) ──
-  var LEGACY_MID = { '대학': 1, '대학원': 1 };
-  function planLegacyMoves(contacts, tree) {
-    var idx = makeIndex(tree), byTarget = new Map(), skipped = 0;
-    (contacts || []).forEach(function (c) {
-      var p = normText(c.org_path || ''), parts = p ? p.split(SEP) : [];
-      if (parts.length < 3 || !LEGACY_MID[parts[1]]) return;
-      var segs = null;
-      if (isUnivName(parts[2])) {
-        var rest = parts.slice(3), grad = parts[1] === '대학원' || GRAD_RE.test(rest.join(' '));
-        if (grad) rest = rest.filter(function (x) { return normKey(x) !== normKey('대학원'); });
-        segs = [parts[0], parts[2]];
-        if (grad) segs.push('대학원'); else if (rest.length) segs.push('학부');
-        segs = segs.concat(rest);
-      } else {
-        // 옛 평평한 원문(예: '학교>대학원>고려대학교 정보대학 대학원 뇌공학과') — 소속·부서 원문으로 다시 판단
-        var r = classifyOrg(c.org, c.dept, idx);
-        if (r.segs && r.segs.length >= 2 && r.segs[0] === parts[0] && r.segs.join(SEP) !== p) segs = r.segs;
-      }
-      if (!segs) { skipped++; return; }
-      var key = segs.join(SEP), e = byTarget.get(key);
-      if (!e) { e = { segs: segs, path: key, ids: [], from: {} }; byTarget.set(key, e); }
-      e.ids.push(c.id); e.from[p] = (e.from[p] || 0) + 1;
-    });
-    var moves = Array.from(byTarget.values()).sort(function (a, b) { return b.ids.length - a.ids.length || a.path.localeCompare(b.path, 'ko'); });
-    return { moves: moves, count: moves.reduce(function (n, m) { return n + m.ids.length; }, 0), skipped: skipped };
-  }
-  /** 옛 구조의 잔재 중 연락처가 하나도 없는 노드 id(깊은 것부터). 옛 '대학'/'대학원' 밑 전부, '원문 전체'처럼 만들어진 대학명+학과 노드와 그 하위. */
-  function legacyEmptyNodeIds(tree, counts) {
-    var out = [];
-    function isStrayName(name) { var n = normText(name), m = UNIV_TOKEN.exec(n) || ACRONYM_UNIV.exec(n); return !!(m && m[2]); }
-    function empty(n) { var c = counts ? counts.get(n.id) : null; return (c ? c.subtree : Number(n.subtree)) === 0 && (c ? c.direct : Number(n.direct)) === 0; }
-    tree.byId.forEach(function (n) {
-      var parts = String(n.path || '').split(SEP);
-      var legacy = parts.length >= 2 && !!LEGACY_MID[parts[1]];
-      var stray = parts.some(isStrayName);
-      if ((legacy || stray) && empty(n)) out.push(n);
-    });
-    out.sort(function (a, b) { return String(b.path).split(SEP).length - String(a.path).split(SEP).length; });
-    return out.map(function (n) { return n.id; });
-  }
   function makeIndex(tree) {
     var idx = new Map();
     tree.byId.forEach(function (n) {
@@ -262,6 +221,16 @@
   }
 
   /** org 원문(+부서) → { segs|null, conf:'high'|'medium'|'none', why, useDept }. idx는 makeIndex(tree). */
+  var LEGACY_MID_NAMES = { '대학': 1, '대학원': 1 };
+  /** 옛 경로 조각(['학교','대학원','KAIST','김재철AI대학원'])을 새 구조 조각으로. 옛 구조가 아니거나 대학교 이름을 알 수 없으면 null. */
+  function legacySegs(parts) {
+    if (!parts || parts.length < 3 || !LEGACY_MID_NAMES[parts[1]] || !isUnivName(parts[2])) return null;
+    var rest = parts.slice(3), grad = parts[1] === '대학원' || GRAD_RE.test(rest.join(' '));
+    if (grad) rest = rest.filter(function (x) { return normKey(x) !== normKey('대학원'); });
+    var segs = [parts[0], parts[2]];
+    if (grad) segs.push('대학원'); else if (rest.length) segs.push('학부');
+    return segs.concat(rest);
+  }
   function classifyOrg(orgRaw, deptRaw, idx) {
     var org = normText(orgRaw);
     if (!org) return { segs: null, conf: 'none', why: '소속 미기재', useDept: false };
@@ -269,6 +238,16 @@
     var hits = idx ? idx.get(normKey(org)) : null;
     if (hits && hits.length === 1) {
       var node = hits[0].node;
+      // 2026-10-28: 별칭·이름이 옛 구조('학교>대학|대학원>…') 노드를 가리키면 그 경로를 답습하지 않고 새 구조로 변환한다.
+      var nParts = node.path.split(SEP);
+      if (nParts.length >= 3 && LEGACY_MID_NAMES[nParts[1]] && !isUnivName(node.name)) {
+        var ls = legacySegs(nParts);
+        if (ls) return finishSegs(ls, dept, true, 'high', '이미 있는 소속(옛 위치 → 새 구조로 변환)');
+        hits = null;
+      }
+    }
+    if (hits && hits.length === 1) {
+      node = hits[0].node;
       // 대학 계열(hits[0].univLevel — 부모 노드 이름이 '대학'/'대학원')로 매칭됐으면, 대학명만 재사용하고
       // 대학/대학원 갈림은 항상 dept로 다시 판단한다. 기존 위치를 그대로 답습하면, 예전에 부서를 안 보고
       // 잘못 놓인 노드(예: 법학전문대학원 학생이 '대학' 밑 대학교 노드에 붙어 있던 경우)가 앞으로 들어오는
@@ -426,13 +405,13 @@
       '.ot-kids{margin-left:18px;border-left:1px dashed var(--bdr);padding-left:8px}',
       '.ot-row{display:flex;align-items:center;gap:6px;padding:4px 2px;border-radius:6px;flex-wrap:wrap}',
       '.ot-row:hover{background:var(--pri-bg)}',
-      '.ot-tgl{width:26px;height:26px;border:0;background:transparent;cursor:pointer;color:var(--pri);font-size:15px;padding:0;border-radius:6px}',
+      '.ot-tgl{width:52px;height:44px;border:0;background:transparent;cursor:pointer;color:var(--pri);font-size:30px;line-height:1;padding:0;border-radius:8px;flex:none}',
       '.ot-tgl:hover{background:var(--pri-bg)}',
       '.ot-kidn{font-size:11px;color:var(--hint);border:1px solid var(--bdr);border-radius:999px;padding:0 7px}',
       '.ot-subbox{border:1px solid var(--bdr);border-radius:10px;padding:6px 10px;margin:6px 0 10px;background:var(--sur)}',
       '.ot-subhead{border:0;background:transparent;cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--sub);padding:2px 0}',
       '.ot-sublist{list-style:none;margin:4px 0 0;padding-left:0}',
-      '.ot-sublist .ot-sublist{padding-left:18px;border-left:1px dashed var(--bdr);margin-left:11px}',
+      '.ot-sublist .ot-sublist{padding-left:18px;border-left:1px dashed var(--bdr);margin-left:24px}',
       '.ot-tgl.leaf{visibility:hidden}',
       '.ot-name{border:0;background:transparent;cursor:pointer;font-size:15px;font-weight:700;color:var(--txt);font-family:inherit;padding:2px 4px;text-align:left}',
       '.ot-name:hover{color:var(--pri);text-decoration:underline}',
@@ -507,7 +486,6 @@
           '<button type="button" class="btn btn-primary btn-sm" data-ot-act="add-root">＋ 최상위 소속</button>' +
           (S.tree.roots.length ? '<button type="button" class="btn btn-outline btn-sm" data-ot-act="expand-all">모두 펼치기</button><button type="button" class="btn btn-outline btn-sm" data-ot-act="collapse-all">접기</button>' : '') +
           '<button type="button" class="btn btn-primary btn-sm" data-ot-act="wizard">소속 자동 분류…</button>' +
-          '<button type="button" class="btn btn-outline btn-sm" data-ot-act="legacy">옛 구조 이전…</button>' +
           '<button type="button" class="btn btn-outline btn-sm" data-ot-act="resync">정합성 점검</button>' +
         '</div>' +
       '</div>';
@@ -1053,95 +1031,6 @@
   }
   function chunk_total(map) { var n = 0; map.forEach(function (ids) { n += chunk(ids, ASSIGN_BATCH).length; }); return n; }
 
-  // ── 옛 구조 이전(2026-10-28) ────────────────────────────
-  var LG = { moves: [], emptyBefore: 0 };
-  function legacyModal() {
-    injectStyle();
-    openModal({
-      title: '옛 구조 이전', wide: true, confirmLabel: '이전하고 정리',
-      html: '<div id="ot-lg"><div class="loading-row"><span class="spinner"></span> 연락처를 불러오는 중…</div></div>',
-      onOpen: function (m) {
-        var ok = m.querySelector('[data-ot-act="modal-ok"]'), host = m.querySelector('#ot-lg');
-        ok.disabled = true;
-        (async function () {
-          try {
-            await refreshNodes();
-            var got = await loadAllForClassification(function (n, t) { host.textContent = '연락처를 불러오는 중… ' + n + (t ? ' / ' + t : '') + '건'; });
-            var plan = planLegacyMoves(got.contacts, S.tree);
-            LG.moves = plan.moves; LG.emptyBefore = legacyEmptyNodeIds(S.tree).length;
-            if (!plan.moves.length && !LG.emptyBefore) { host.innerHTML = '<p style="font-size:14px">옮길 연락처도, 정리할 옛 노드도 없습니다. 이미 새 구조입니다.' + (plan.skipped ? ' (옛 위치에 있으나 대학명을 알 수 없어 건너뛴 ' + plan.skipped + '건은 “소속 자동 분류…”에서 처리하세요.)' : '') + '</p>'; return; }
-            var rows = plan.moves.map(function (mv) {
-              var from = Object.keys(mv.from).map(function (f) { return esc(crumbText(f)) + ' (' + mv.from[f] + ')'; }).join('<br>');
-              return '<tr><td style="font-size:12px;color:var(--sub)">' + from + '</td><td><b>' + esc(crumbText(mv.path)) + '</b></td><td style="text-align:right">' + mv.ids.length + '</td></tr>';
-            }).join('');
-            host.innerHTML = '<p style="font-size:14px;line-height:1.7">옛 <code>학교&gt;대학</code>·<code>학교&gt;대학원</code> 밑의 연락처 <b>' + plan.count + '건</b>(' + plan.moves.length + '개 경로)을 ' +
-              '<code>학교&gt;대학교&gt;학부|대학원&gt;…</code>으로 옮기고, 비게 된 옛 노드(현재 비어 있는 ' + LG.emptyBefore + '개 포함)를 삭제합니다.' +
-              (plan.skipped ? '<br><span style="color:var(--hint)">대학명을 알 수 없어 건너뛰는 ' + plan.skipped + '건은 그대로 둡니다.</span>' : '') + '</p>' +
-              (plan.moves.length ? '<div class="ot-wz-scroll" style="max-height:46vh;overflow:auto"><table class="ot-wz-table"><thead><tr><th>지금 경로 (건수)</th><th>새 경로</th><th>건수</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '');
-            ok.disabled = false;
-          } catch (e) { host.innerHTML = '<div class="errbox">' + esc(e && e.message || e) + '</div>'; }
-        })();
-      },
-      onConfirm: applyLegacy,
-    });
-  }
-  async function applyLegacy() {
-    var moves = LG.moves;
-    await refreshNodes();
-    var pathToId = new Map(S.nodes.map(function (n) { return [n.path, n.id]; })), created = 0, failed = [];
-    async function ensure(segs) {
-      var path = '', parentId = '';
-      for (var i = 0; i < segs.length; i++) {
-        path = path ? path + SEP + segs[i] : segs[i];
-        var id = pathToId.get(path);
-        if (!id) {
-          var body = { name: segs[i] }; if (parentId) body.parent_id = parentId;
-          try { var r = await post('/kmail/org-units/create', body); id = r.node.id; created++; }
-          catch (e) {
-            if (!/이미 있습니다/.test(e && e.message || '')) throw e;
-            await refreshNodes(); S.nodes.forEach(function (n) { pathToId.set(n.path, n.id); });
-            id = pathToId.get(path); if (!id) throw e;
-          }
-          pathToId.set(path, id);
-        }
-        parentId = id;
-      }
-      return parentId;
-    }
-    var moved = 0, step = 0;
-    for (var i = 0; i < moves.length; i++) {
-      toast('옮기는 중… ' + (i + 1) + ' / ' + moves.length + ' 경로', '', true);
-      try {
-        var tid = await ensure(moves[i].segs), chunks = chunk(moves[i].ids, ASSIGN_BATCH);
-        for (var c = 0; c < chunks.length; c++) { var r2 = await post('/kmail/contacts/assign-org', { unit_id: tid, contact_ids: chunks[c] }); moved += r2.assigned || 0; step++; }
-      } catch (e) { failed.push(moves[i].path + ' (' + (e && e.message || e) + ')'); }
-    }
-    // 비게 된 옛 노드 정리 — 상태와 무관하게 집계(보류·거부 포함)한 건수가 0인 것만, 깊은 것부터.
-    var removed = 0;
-    try {
-      var all = await api('/kmail/org-units', { query: { status: 'all' } });
-      var nodes = all.nodes || [], tree = buildTree(nodes), ids = legacyEmptyNodeIds(tree);
-      for (var d = 0; d < ids.length; d++) {
-        toast('빈 옛 노드 삭제 중… ' + (d + 1) + ' / ' + ids.length, '', true);
-        try {
-          var r, last = Infinity, stuck = 0;
-          for (var k = 0; k < 20; k++) {
-            r = await post('/kmail/org-units/delete', { unit_id: ids[d] });
-            if (r.deleted) break;
-            if (r.remaining >= last) { if (++stuck >= 3) break; } else stuck = 0;
-            last = r.remaining;
-          }
-          if (r && r.deleted) removed++;
-        } catch (e) { /* 하위 노드가 남은 경우 등 — 다음 실행에서 다시 시도 */ }
-      }
-    } catch (e) { failed.push('정리 실패 (' + (e && e.message || e) + ')'); }
-    S.sel.clear();
-    await refreshNodes().catch(function () {});
-    root._ctLoad();
-    toast(moved + '건을 새 구조로 옮겼습니다 (새 소속 ' + created + '개, 옛 노드 ' + removed + '개 삭제)' +
-      (failed.length ? ' · 실패 ' + failed.length + '건: ' + failed.slice(0, 2).join('; ') : ''), failed.length ? 'err' : 'ok');
-  }
-
   // ── 이벤트 위임 ──────────────────────────────────────────
   function onClick(e) {
     var t = e.target.closest ? e.target.closest('[data-ot-act]') : null;
@@ -1154,7 +1043,6 @@
       case 'open-none': root._ctOpenOrg('__NONE__'); break;
       case 'sub-toggle': if (S.subOpen.has(id)) S.subOpen.delete(id); else S.subOpen.add(id); rerenderCrumb(); break;
       case 'sub-panel': S.subPanel = !S.subPanel; rerenderCrumb(); break;
-      case 'legacy': guarded(async function () { legacyModal(); }); break;
       case 'expand-all': S.nodes.forEach(function (n) { S.expanded.add(n.id); }); rerender(); break;
       case 'collapse-all': S.expanded.clear(); rerender(); break;
       case 'add-root': addNodeModal(''); break;
@@ -1233,8 +1121,7 @@
              descendantIds: descendantIds, parsePathInput: parsePathInput, planEnsurePath: planEnsurePath, chunk: chunk, crumbText: crumbText,
              normText: normText, normKey: normKey, sanitizeName: sanitizeName, makeIndex: makeIndex, classifyOrg: classifyOrg, buildGroups: buildGroups, isRawLeafName: isRawLeafName,
              isUnclassified: isUnclassified, hasAnyUnclassified: hasAnyUnclassified, safeToAutoCheck: safeToAutoCheck,
-             needsChange: needsChange, guessOrgFromEmail: guessOrgFromEmail, isUnivName: isUnivName,
-             planLegacyMoves: planLegacyMoves, legacyEmptyNodeIds: legacyEmptyNodeIds },
+             needsChange: needsChange, guessOrgFromEmail: guessOrgFromEmail, isUnivName: isUnivName, legacySegs: legacySegs },
     _state: S, _bind: bind,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
