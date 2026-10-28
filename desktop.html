@@ -173,6 +173,18 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-textarea::-webkit-scrollbar{width:6px}
 .chat-textarea::-webkit-scrollbar-button{display:none;width:0;height:0}
 .chat-textarea::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+.rcpt-wrap{position:relative}
+.rcpt-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:6px 8px;background:var(--card,#fff);cursor:text}
+.rcpt-box:focus-within{border-color:var(--teal,#0d9488)}
+.rcpt-box input{flex:1;min-width:180px;width:auto!important;border:none!important;outline:none!important;box-shadow:none!important;padding:5px 4px!important;background:transparent!important;font-size:15px}
+.rcpt-chip{display:inline-flex;align-items:center;gap:4px;background:#e6f4f1;color:#0f5f58;border-radius:14px;padding:3px 6px 3px 10px;font-size:14px;max-width:100%}
+.rcpt-chip button{border:none;background:transparent;cursor:pointer;font-size:16px;line-height:1;color:inherit;padding:0 2px}
+.rcpt-sug{position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--card,#fff);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.14);max-height:260px;overflow-y:auto;margin-top:2px}
+.rcpt-sug div{padding:8px 12px;cursor:pointer;font-size:14px}
+.rcpt-sug div:hover,.rcpt-sug div.on{background:#e6f4f1}
+.rcpt-sug small{color:var(--hint);margin-left:6px}
+.rcpt-toggles{margin:-4px 0 10px;font-size:13px;display:flex;gap:12px}
+.rcpt-toggles button{border:none;background:transparent;color:var(--teal,#0d9488);cursor:pointer;padding:2px 0;font-size:13px}
 .cmp-approve-row{display:flex;gap:8px;margin:2px 0 10px 0}
 .cmp-approve-btn{background:var(--teal,#0d9488);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:15px;font-weight:600;cursor:pointer}
 .cmp-approve-btn:disabled{opacity:.5;cursor:default}
@@ -801,7 +813,10 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div id="mail-sub-compose" class="mail-sub active">
       <div id="mail-sent-card" class="sent-card" role="status" aria-live="polite" tabindex="-1" style="display:none"></div>
         <div id="mail-compose-editing-note" style="display:none;font-size:13px;color:var(--hint);margin-bottom:8px"></div>
-        <div class="field"><label>받는 사람</label><input type="email" id="mail-to" placeholder="example@email.com"></div>
+        <div class="field"><label>받는 사람</label><div class="rcpt-wrap"><div class="rcpt-box" id="rcpt-box-mail-to" onclick="this.querySelector('input').focus()"><input type="text" id="mail-to" autocomplete="off" placeholder="이름·이메일로 주소록 검색 또는 주소 직접 입력" oninput="_rcptInput('mail-to')" onkeydown="_rcptKey(event,'mail-to')" onblur="_rcptBlur('mail-to')"></div><div class="rcpt-sug" id="rcpt-sug-mail-to" style="display:none"></div></div></div>
+        <div class="rcpt-toggles"><button type="button" id="rcpt-tg-cc" onclick="_rcptToggle('mail-cc')">+ 참조(CC)</button><button type="button" id="rcpt-tg-bcc" onclick="_rcptToggle('mail-bcc')">+ 숨은참조(BCC)</button></div>
+        <div class="field" id="rcpt-row-mail-cc" style="display:none"><label>참조(CC)</label><div class="rcpt-wrap"><div class="rcpt-box" id="rcpt-box-mail-cc" onclick="this.querySelector('input').focus()"><input type="text" id="mail-cc" autocomplete="off" placeholder="참조로 받을 사람" oninput="_rcptInput('mail-cc')" onkeydown="_rcptKey(event,'mail-cc')" onblur="_rcptBlur('mail-cc')"></div><div class="rcpt-sug" id="rcpt-sug-mail-cc" style="display:none"></div></div></div>
+        <div class="field" id="rcpt-row-mail-bcc" style="display:none"><label>숨은참조(BCC)</label><div class="rcpt-wrap"><div class="rcpt-box" id="rcpt-box-mail-bcc" onclick="this.querySelector('input').focus()"><input type="text" id="mail-bcc" autocomplete="off" placeholder="숨은참조로 받을 사람(다른 수신자에게 보이지 않음)" oninput="_rcptInput('mail-bcc')" onkeydown="_rcptKey(event,'mail-bcc')" onblur="_rcptBlur('mail-bcc')"></div><div class="rcpt-sug" id="rcpt-sug-mail-bcc" style="display:none"></div></div></div>
         <div class="field"><label>제목</label><input type="text" id="mail-subject" placeholder="제목"></div>
         <div class="field"><label>내용</label><div id="mail-body-editor"></div></div>
         <div class="field">
@@ -1877,7 +1892,7 @@ async function _mailIdAuto() {
 function _mailLoadDraftIntoEditor({ subject, body, draftId, sourceNote, switchTo }) {
   document.getElementById('mail-subject').value = subject || '';
   _mailSetBodyText(body || '');
-  document.getElementById('mail-to').value = '';
+  _rcptClearAll();
   _mailPendingAttachments = [];
   _mailRenderAttachList();
   _mailEditingDraftId = draftId || null;
@@ -1933,7 +1948,7 @@ async function _mailHandleFileSelect() {
 function _mailEditDraft(draft) {
   _mailEditingDraftId = draft.id;
   const recipients = Array.isArray(draft.recipients) ? draft.recipients : [];
-  document.getElementById('mail-to').value = recipients[0]?.email || '';
+  _rcptLoadDraft(recipients);
   document.getElementById('mail-subject').value = draft.subject || '';
   _mailSetBodyText(draft.body || '');
   _mailPendingAttachments = [];
@@ -1946,7 +1961,7 @@ function _mailEditDraft(draft) {
 }
 function _mailDiscardEditing() {
   _mailEditingDraftId = null;
-  document.getElementById('mail-to').value = '';
+  _rcptClearAll();
   document.getElementById('mail-subject').value = '';
   _mailSetBodyText('');
   _mailPendingAttachments = [];
@@ -1959,10 +1974,11 @@ async function _mailSaveDraft() {
   const err = document.getElementById('mail-compose-err');
   const ok = document.getElementById('mail-compose-ok');
   err.style.display = 'none'; ok.style.display = 'none';
-  const to = document.getElementById('mail-to').value.trim();
+  const rc = _rcptCollect();
+  const to = rc.to.join(', ');
   const subject = document.getElementById('mail-subject').value.trim();
   const body = _mailGetBodyText();
-  if (!to && !subject && !body) {
+  if (!to && !rc.cc.length && !rc.bcc.length && !subject && !body) {
     err.textContent = '저장할 내용이 없습니다.';
     err.style.display = 'block';
     return;
@@ -1974,7 +1990,7 @@ async function _mailSaveDraft() {
       method: 'POST',
       body: {
         draft_id: _mailEditingDraftId || undefined,
-        recipients: to ? [{ email: to }] : [],
+        recipients: _rcptDraftRecipients(rc),
         subject, body,
       },
     });
@@ -2044,14 +2060,146 @@ function _sentCardNew(which) {
   if (f) { f.scrollIntoView({ block: 'center' }); f.focus(); }
 }
 
+// ── 2026-10-28: 받는 사람 칩 입력 + 주소록 검색 + 참조/숨은참조 ─────────────────────────
+const _RCPT_EMAIL_RE = /^[^\s<>,;"'@]+@[^\s<>,;"'@]+\.[^\s<>,;"'@]+$/;
+const _rcptState = { 'mail-to': [], 'mail-cc': [], 'mail-bcc': [] };      // 칩: { email, name }
+const _rcptTimers = {}, _rcptSeq = {}, _rcptHits = {};
+function _rcptParseText(text) {
+  const ok = [], bad = [];
+  String(text || '').split(/[,;\n]+/).forEach(p => {
+    const s = p.trim(); if (!s) return;
+    const m = s.match(/^(.*?)\s*<([^<>]+)>$/);
+    const email = (m ? m[2] : s).trim().toLowerCase();
+    if (_RCPT_EMAIL_RE.test(email)) ok.push({ email, name: m ? m[1].replace(/^["']|["']$/g, '').trim() : '' }); else bad.push(s);
+  });
+  return { ok, bad };
+}
+function _rcptRender(id) {
+  const box = document.getElementById('rcpt-box-' + id), input = document.getElementById(id);
+  box.querySelectorAll('.rcpt-chip').forEach(el => el.remove());
+  _rcptState[id].forEach((c, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'rcpt-chip'; chip.title = c.email;
+    chip.appendChild(document.createTextNode(c.name ? c.name + ' <' + c.email + '>' : c.email));
+    const x = document.createElement('button');
+    x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', '삭제');
+    x.onclick = ev => { ev.stopPropagation(); _rcptState[id].splice(i, 1); _rcptRender(id); input.focus(); };
+    chip.appendChild(x);
+    box.insertBefore(chip, input);
+  });
+}
+function _rcptAdd(id, email, name) {
+  email = String(email || '').trim().toLowerCase();
+  if (!_RCPT_EMAIL_RE.test(email)) return false;
+  if (!_rcptState[id].some(c => c.email === email)) _rcptState[id].push({ email, name: name || '' });
+  _rcptRender(id);
+  return true;
+}
+// 입력칸에 남은 글자를 칩으로 확정. 올바르지 않은 부분은 칸에 남기고 false.
+function _rcptCommit(id) {
+  const input = document.getElementById(id);
+  const r = _rcptParseText(input.value);
+  r.ok.forEach(c => _rcptAdd(id, c.email, c.name));
+  input.value = r.bad.join(', ');
+  return r.bad.length === 0;
+}
+function _rcptList(id) { return _rcptState[id].map(c => c.email); }
+function _rcptSet(id, list) {
+  _rcptState[id] = [];
+  (Array.isArray(list) ? list : _rcptParseText(list).ok).forEach(c => { if (typeof c === 'string') _rcptAdd(id, c, ''); else _rcptAdd(id, c.email, c.name); });
+  document.getElementById(id).value = '';
+  _rcptRender(id); _rcptSugHide(id);
+  if (id !== 'mail-to') _rcptShow(id, _rcptState[id].length > 0);
+}
+function _rcptShow(id, on) {
+  const row = document.getElementById('rcpt-row-' + id); if (row) row.style.display = on ? '' : 'none';
+  const tg = document.getElementById('rcpt-tg-' + (id === 'mail-cc' ? 'cc' : 'bcc')); if (tg) tg.style.display = on ? 'none' : '';
+}
+function _rcptToggle(id) { _rcptShow(id, true); document.getElementById(id).focus(); }
+function _rcptSugHide(id) { const s = document.getElementById('rcpt-sug-' + id); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
+function _rcptKey(ev, id) {
+  const input = document.getElementById(id), sug = document.getElementById('rcpt-sug-' + id);
+  const items = sug ? Array.from(sug.children) : [];
+  const cur = items.findIndex(e => e.classList.contains('on'));
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+    if (!items.length) return;
+    ev.preventDefault();
+    const n = ev.key === 'ArrowDown' ? (cur + 1) % items.length : (cur <= 0 ? items.length - 1 : cur - 1);
+    items.forEach((e, i) => e.classList.toggle('on', i === n));
+  } else if (ev.key === 'Enter' || ev.key === ',' || ev.key === ';' || ev.key === 'Tab') {
+    if (ev.key === 'Enter' && cur >= 0) { ev.preventDefault(); _rcptPick(id, cur); return; }
+    if (!input.value.trim()) return;                                  // 빈 칸의 Tab 은 평소대로 다음 칸으로
+    ev.preventDefault(); _rcptCommit(id); _rcptSugHide(id);
+  } else if (ev.key === 'Backspace' && !input.value && _rcptState[id].length) {
+    _rcptState[id].pop(); _rcptRender(id);
+  } else if (ev.key === 'Escape') { _rcptSugHide(id); }
+}
+function _rcptBlur(id) { setTimeout(() => { _rcptCommit(id); _rcptSugHide(id); }, 180); }   // 목록 클릭(mousedown)이 먼저 처리되도록 약간 늦춘다
+function _rcptInput(id) {
+  clearTimeout(_rcptTimers[id]);
+  const q = document.getElementById(id).value.trim();
+  if (q.length < 1 || /[,;]/.test(q)) { _rcptSugHide(id); return; }
+  _rcptTimers[id] = setTimeout(async () => {
+    const seq = (_rcptSeq[id] = (_rcptSeq[id] || 0) + 1);
+    try {
+      const data = await kmailApi('/kmail/contacts', { query: { status: 'confirmed', q } });
+      if (seq !== _rcptSeq[id]) return;                               // 더 새 검색이 있으면 버린다
+      const have = new Set(_rcptList(id));
+      const hits = (data.items || []).filter(c => c.email && !have.has(String(c.email).toLowerCase())).slice(0, 8);
+      _rcptHits[id] = hits;
+      const sug = document.getElementById('rcpt-sug-' + id);
+      sug.innerHTML = '';
+      if (!hits.length) { sug.style.display = 'none'; return; }
+      hits.forEach((c, i) => {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode((c.name ? c.name + ' ' : '') + '<' + c.email + '>'));
+        const sm = document.createElement('small'); sm.textContent = [c.org, c.occupation].filter(Boolean).join(' · ');
+        d.appendChild(sm);
+        d.onmousedown = ev => { ev.preventDefault(); _rcptPick(id, i); };
+        sug.appendChild(d);
+      });
+      sug.style.display = '';
+    } catch (e) { _rcptSugHide(id); }                                 // 로그인 전·네트워크 오류면 주소 직접 입력만 가능
+  }, 250);
+}
+function _rcptPick(id, i) {
+  const c = (_rcptHits[id] || [])[i]; if (!c) return;
+  _rcptAdd(id, c.email, c.name);
+  const input = document.getElementById(id);
+  input.value = ''; _rcptSugHide(id); input.focus();                  // 계속 입력해 여러 명을 고를 수 있다
+}
+// 세 칸을 확정하고 {to,cc,bcc,bad} 로 돌려준다.
+function _rcptCollect() {
+  const bad = [];
+  ['mail-to', 'mail-cc', 'mail-bcc'].forEach(id => { if (!_rcptCommit(id)) bad.push(document.getElementById(id).value); });
+  return { to: _rcptList('mail-to'), cc: _rcptList('mail-cc'), bcc: _rcptList('mail-bcc'), bad };
+}
+function _rcptDraftRecipients(r) {
+  return [...r.to.map(email => ({ email })), ...r.cc.map(email => ({ email, kind: 'cc' })), ...r.bcc.map(email => ({ email, kind: 'bcc' }))];
+}
+function _rcptLoadDraft(recipients) {
+  const list = Array.isArray(recipients) ? recipients : [];
+  _rcptSet('mail-to', list.filter(x => !x.kind || x.kind === 'to').map(x => x.email));
+  _rcptSet('mail-cc', list.filter(x => x.kind === 'cc').map(x => x.email));
+  _rcptSet('mail-bcc', list.filter(x => x.kind === 'bcc').map(x => x.email));
+}
+function _rcptClearAll() { _rcptSet('mail-to', []); _rcptSet('mail-cc', []); _rcptSet('mail-bcc', []); }
+function _rcptSummary(r) { return r.to.join(', ') + (r.cc.length ? ` (참조 ${r.cc.length}명)` : '') + (r.bcc.length ? ` (숨은참조 ${r.bcc.length}명)` : ''); }
+
 async function _mailSend() {
   const err = document.getElementById('mail-compose-err');
   const ok = document.getElementById('mail-compose-ok');
   err.style.display = 'none'; ok.style.display = 'none'; _sentCardHide('mail');
-  const to = document.getElementById('mail-to').value.trim();
+  const rc = _rcptCollect();
+  const to = _rcptSummary(rc);
   const subject = document.getElementById('mail-subject').value.trim();
   const text = _mailGetBodyText();
-  if (!to || !subject || !text) {
+  if (rc.bad.length) {
+    err.textContent = '올바르지 않은 이메일 주소가 있습니다: ' + rc.bad.join(', ');
+    err.style.display = 'block';
+    return;
+  }
+  if (!rc.to.length || !subject || !text) {
     err.textContent = '받는 사람·제목·내용을 모두 입력해 주세요.';
     err.style.display = 'block';
     return;
@@ -2061,7 +2209,7 @@ async function _mailSend() {
   try {
     const data = await kmailApi('/mail/send', {
       method: 'POST',
-      body: { to, subject, text, attachment_ids: _mailPendingAttachments.map(a => a.id) },
+      body: { to: rc.to, cc: rc.cc, bcc: rc.bcc, subject, text, attachment_ids: _mailPendingAttachments.map(a => a.id) },
     });
     // 발송에 성공했으면 이어 쓰던 초안은 임시보관함에서 지운다 — 이미
     // 보낸 편지가 "임시보관함"에 남아있으면 혼란스럽다.
