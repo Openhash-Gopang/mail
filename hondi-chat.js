@@ -29,9 +29,29 @@
     if (ev.origin !== allowedOrigin) return false;
     return ev.data.type === 'hondi:incoming';
   }
+  /**
+   * 순수 함수 — 공유 로그인 쿠키(hondi_pvt)에서 K-Mail 로그인 아이디 뽑기.
+   * 혼디 앱은 같은 쿠키를 쓰는 서비스끼리 로그인을 공유한다. 테스트 기간 아이디 로그인의 토큰 형식은 'tid-<아이디>:<만료>.<서명>'.
+   * 전화 인증 토큰(tid- 로 시작하지 않음)이면 아이디를 알 수 없으므로 ''.
+   */
+  function testIdFromToken(token) {
+    var t = String(token == null ? '' : token);
+    if (t.indexOf('tid-') !== 0) return '';
+    var end = t.indexOf(':'); var id = (end < 0 ? t.slice(4) : t.slice(4, end)).trim();
+    return /^[A-Za-z0-9가-힣_-]{2,20}$/.test(id) ? id : '';
+  }
+  /** 순수 함수 — 패널 주소. 아이디를 알면 ?testid= 로 혼디 앱이 그 아이디로 입장하게 한다(혼디 앱이 이미 지원하는 전환 주소). */
+  function panelUrl(base, id) {
+    if (!id) return base;
+    return base + (base.indexOf('?') < 0 ? '?' : '&') + 'testid=' + encodeURIComponent(id);
+  }
+  function readCookie(name) {
+    try { var m = root.document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; }
+  }
+  function currentLoginId() { return testIdFromToken(readCookie('hondi_pvt')); }
   function originOf(url) { try { return new URL(url).origin; } catch (e) { return ''; } }
 
-  var S = { mounted: false, loaded: false, open: false, badge: false, url: URL_DEFAULT, els: null };
+  var S = { mounted: false, loaded: false, loadedId: '', open: false, badge: false, url: URL_DEFAULT, els: null };
 
   function storeGet() { try { return root.localStorage.getItem(KEY_OPEN) === '1'; } catch (e) { return false; } }
   function storeSet(v) { try { root.localStorage.setItem(KEY_OPEN, v ? '1' : '0'); } catch (e) { /* 저장은 편의 기능 */ } }
@@ -70,10 +90,19 @@
     S.els.fab.setAttribute('aria-expanded', String(S.open));
     S.els.fab.title = S.open ? '혼디 대화 닫기' : '혼디 대화';
   }
+  function setNote(id) {
+    var n = S.els && S.els.panel.querySelector('#hchat-note'); if (!n) return;
+    n.textContent = id ? 'K-Mail 아이디 “' + id + '”로 혼디에 연결했습니다. 대화 상대는 혼디 앱 안에서 찾으세요.'
+                       : 'K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.';
+  }
+  /** 처음 열 때 불러오고, K-Mail 로그인 아이디가 바뀌었으면(다른 아이디로 다시 로그인) 새 아이디로 다시 불러온다. */
   function ensureLoaded() {
-    if (S.loaded || !S.els) return;
-    S.loaded = true;
-    S.els.frame.setAttribute('src', S.url);
+    if (!S.els) return;
+    var id = currentLoginId();
+    if (S.loaded && id === S.loadedId) return;
+    S.loaded = true; S.loadedId = id;
+    S.els.frame.setAttribute('src', panelUrl(S.url, id));
+    setNote(id);
   }
   function open() {
     if (!S.mounted) return;
@@ -121,7 +150,7 @@
 
   var API = {
     mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; },
-    _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf },
+    _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
