@@ -11,7 +11,7 @@
    - 주소록 요약 화면: [소속 기관 | 카테고리·태그] 전환. 소속 기관은 트리 — 노드 이름을
      누르면 그 노드와 하위 전부의 연락처 목록, 노드마다 하위 추가·이름/별칭·이동·삭제.
    - 목록 표: 체크박스로 여러 건을 골라 [소속 지정] — 기존 노드를 고르거나
-     "학교>대학>제주대학교" 경로를 적으면 없는 노드는 만들어서 지정한다. 검색 결과에서도
+     "학교>제주대학교>학부>컴퓨터공학과" 경로를 적으면 없는 노드는 만들어서 지정한다. 검색 결과에서도
      그대로 동작하므로 "제주대"로 검색 → 전체 선택 → 경로 지정으로 기존 연락처를 분류한다.
 
    서버 한도 처리
@@ -94,7 +94,7 @@
   /** "학교 > 대학 > 제주대학교" → { ok, segments } (구분자는 '>'만) */
   function parsePathInput(text) {
     var segs = String(text || '').split(SEP).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!segs.length) return { ok: false, message: '경로를 입력해 주세요 (예: 학교>대학>제주대학교)' };
+    if (!segs.length) return { ok: false, message: '경로를 입력해 주세요 (예: 학교>제주대학교>학부>컴퓨터공학과)' };
     if (segs.length > ORG_MAX_DEPTH) return { ok: false, message: '계층은 최대 ' + ORG_MAX_DEPTH + '단계까지입니다' };
     var out = [];
     for (var i = 0; i < segs.length; i++) {
@@ -158,8 +158,8 @@
     { re: /중학교$/, root: ['학교', '중학교'], conf: 'high', why: '중학교' },
     { re: /(고등학교|고교)$/, root: ['학교', '고등학교'], conf: 'high', why: '고등학교' },
     { univ: true },
-    { re: GRAD_RE, root: ['학교', '대학원'], conf: 'high', why: '대학원(대학명 인식 불가)' },
-    { re: /(university|college)/i, root: ['학교', '대학'], conf: 'medium', why: '대학(영문)', dept: true },
+    { re: GRAD_RE, root: ['학교', '대학원(대학 미상)'], conf: 'high', why: '대학원(대학명 인식 불가)' },
+    { re: /(university|college)/i, root: ['학교'], conf: 'medium', why: '대학(영문)', dept: true },
     { re: /(특별자치도청|특별시청|광역시청|도청|시청|군청|구청|읍사무소|면사무소|동사무소|주민센터|행정복지센터|시의회|도의회|군의회|구의회|교육청|교육지원청|보건소)$/, root: ['정부·공공기관', '지방자치단체'], conf: 'high', why: '지방자치단체·교육청' },
     { re: /(경찰서|소방서|세무서|우체국|등기소)$/, root: ['정부·공공기관', '중앙정부'], conf: 'high', why: '국가기관 지방청' },
     { re: /(국회|법원|검찰청|헌법재판소)/, root: ['정부·공공기관', '국회·법원'], conf: 'high', why: '국회·법원' },
@@ -188,6 +188,11 @@
   function isRawLeafName(name) {
     var r = classifyOrg(name, '', new Map());
     return !!(r.segs && r.segs[r.segs.length - 1] !== name);
+  }
+  /** 노드 이름이 대학교 자체(…대학교·…대학, KAIST 등 약칭, 뒤에 붙는 학과 없음)인지 — 대학교 노드는 위치와 무관하게 '학교>대학교'로 정규화한다. */
+  function isUnivName(name) {
+    var n = normText(name), m = UNIV_TOKEN.exec(n) || ACRONYM_UNIV.exec(n);
+    return !!(m && !m[2]);
   }
   function makeIndex(tree) {
     var idx = new Map();
@@ -228,10 +233,13 @@
       // 잘못 놓인 노드(예: 법학전문대학원 학생이 '대학' 밑 대학교 노드에 붙어 있던 경우)가 앞으로 들어오는
       // 모든 대학원 소속까지 계속 틀린 위치로 끌고 간다(실사용 확인). 다른 범주(회사·병원 등)는 종전대로
       // 기존 경로를 그대로 재사용한다.
-      if (hits[0].univLevel) {
-        var schoolRoot = node.path.split(SEP)[0];
-        var grad = GRAD_RE.test(dept);
-        return finishSegs([schoolRoot, grad ? '대학원' : '대학', node.name], dept, true, 'high', '이미 있는 소속(이름·별칭 일치)');
+      if (isUnivName(node.name)) {
+        // 2026-10-28 재설계 — 대학교는 '학교' 바로 아래 1단계, 그 밑에서 학부/대학원을 가른다. 옛 '학교>대학|대학원>대학교' 위치는 따르지 않고,
+        // 루트 이름만 노드가 속한 트리의 것을 그대로 쓴다(사용자가 '학교'를 다른 이름으로 바꾼 경우).
+        var parts = node.path.split(SEP), uRoot = parts.length > 1 ? parts[0] : '학교';
+        var gradU = GRAD_RE.test(dept), uSegs = [uRoot, node.name];
+        if (dept) uSegs.push(gradU ? '대학원' : '학부');
+        return finishSegs(uSegs, dept, true, 'high', '이미 있는 소속(이름·별칭 일치)');
       }
       return finishSegs(node.path.split(SEP), dept, true, 'high', '이미 있는 소속(이름·별칭 일치)');
     }
@@ -247,13 +255,16 @@
         if (m) {
           var rest = normText(m[2] || '').replace(/^[·・\-–—\/,|:]+\s*/, '');   // '연세대학교 · 경제학부' 같은 구분 기호 제거
           var grad = GRAD_RE.test(rest) || GRAD_RE.test(dept);
-          var segs = ['학교', grad ? '대학원' : '대학', uniName];
-          if (rest && normKey(rest) !== normKey('대학원')) segs.push(rest);
+          // 2026-10-28 재설계: 학교 > 대학교 > 학부|대학원 > (단과대학·학과). 학과·부서 정보가 전혀 없으면 학부/대학원을 단정하지 않고 대학교 노드까지만.
+          var restReal = rest && normKey(rest) !== normKey('대학원');
+          var segs = ['학교', uniName];
+          if (restReal || dept || grad) segs.push(grad ? '대학원' : '학부');
+          if (restReal) segs.push(rest);
           return finishSegs(segs, dept, true, 'high', grad ? '대학원(대학명 인식)' : why);
         }
         continue;
       }
-      if (r.re.test(org)) return finishSegs(r.root.concat([org]), dept, !!r.dept || r.root[1] === '대학원', r.conf, r.why);
+      if (r.re.test(org)) return finishSegs(r.root.concat([org]), dept, !!r.dept || r.root[1] === '대학원(대학 미상)', r.conf, r.why);
     }
     return { segs: null, conf: 'none', why: '규칙에 맞는 기관 유형 없음', useDept: false };
   }
@@ -325,7 +336,7 @@
     });
     byGuess.forEach(function (list, name) {
       var cls = classifyOrg(name, '', idx);
-      var g = mk(name, '', list, cls.segs ? { segs: cls.segs, conf: 'high', why: '소속 비어 있음 — 이메일 도메인(' + String(list[0].email).split('@')[1] + ')으로 판단', useDept: false } : cls);
+      var g = mk(name, '', list, cls.segs ? { segs: cls.segs.slice(0, 2), conf: 'high', why: '소속 비어 있음 — 이메일 도메인(' + String(list[0].email).split('@')[1] + ')으로 판단', useDept: false } : cls);
       g.via = 'email';
       groups.push(g);
     });
@@ -665,7 +676,7 @@
         '<label><input type="radio" name="ot-how" value="path"> 경로로 지정(없으면 생성)</label></div>' +
         '<div id="ot-how-pick"><input type="text" id="ot-f-filter" placeholder="소속 검색(경로 일부)"><label for="ot-f-unit">소속</label>' +
         '<select id="ot-f-unit" size="8">' + optionsHtml(null, false, '') + '</select></div>' +
-        '<div id="ot-how-path" style="display:none"><label for="ot-f-path">소속 경로</label><input type="text" id="ot-f-path" placeholder="학교>대학>제주대학교>컴퓨터공학과">' +
+        '<div id="ot-how-path" style="display:none"><label for="ot-f-path">소속 경로</label><input type="text" id="ot-f-path" placeholder="학교>제주대학교>학부>컴퓨터공학과">' +
         '<div class="hint">‘&gt;’로 단계를 나눕니다. 이미 있는 단계는 재사용하고, 없는 단계만 새로 만듭니다.</div></div>',
       onOpen: function (m) {
         var pick = m.querySelector('#ot-how-pick'), path = m.querySelector('#ot-how-path');
@@ -833,7 +844,7 @@
         '<td>' + esc(x.org) + '<div class="ot-wz-sub">' + sub.join(' · ') + '</div></td>' +
         '<td style="text-align:right">' + x.count + '</td>' +
         '<td class="ot-wz-sub">' + esc(currentLabel(x)) + '</td>' +
-        '<td><input type="text" class="ot-wz-path" list="ot-paths" value="' + esc(x.segs ? x.segs.join(SEP) : '') + '" placeholder="예: 학교>대학>제주대학교" aria-label="소속 경로"></td>' +
+        '<td><input type="text" class="ot-wz-path" list="ot-paths" value="' + esc(x.segs ? x.segs.join(SEP) : '') + '" placeholder="예: 학교>제주대학교>학부>컴퓨터공학과" aria-label="소속 경로"></td>' +
         '<td><span class="ot-conf-' + esc(x.conf) + '">' + confLabel(x.conf) + '</span><div class="ot-wz-sub">' + esc(x.why) + '</div></td></tr>';
     }).join('');
     var paths = flatten(S.tree).map(function (n) { return '<option value="' + esc(n.path) + '"></option>'; }).join('');
@@ -1031,7 +1042,7 @@
     if (root.document.readyState === 'loading') root.document.addEventListener('DOMContentLoaded', bind); else bind();
   }
 
-  /** 등록 폼용 — 지금 있는 분류 경로('학교>대학>제주대학교' 형식)를 최신으로 받아 돌려준다. */
+  /** 등록 폼용 — 지금 있는 분류 경로('학교>제주대학교>학부' 형식)를 최신으로 받아 돌려준다. */
   async function listPaths() {
     await refreshNodes();
     return flatten(S.tree).map(function (n) { return n.path; });
