@@ -946,7 +946,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div class="set-lbl">내 메일 주소</div>
           <div>
             <input type="text" id="mail-id-fixed-address" readonly style="background:var(--bg);color:var(--sub)">
-            <div class="set-hint">내가 보내는 메일의 <b>보내는 주소</b>이자, 다른 사람이 나에게 메일을 보낼 때 쓰는 <b>받는 주소</b>입니다(아이디@hondi.kr).</div>
+            <div class="set-hint">내가 보내는 메일의 <b>보내는 주소</b>이자, 다른 사람이 나에게 메일을 보낼 때 쓰는 <b>받는 주소</b>입니다(아이디@naviweb.kr).</div>
           </div>
         </div>
 
@@ -971,7 +971,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <div class="set-row">
           <div class="set-lbl">보내는 사람 표시<small>(선택)</small></div>
           <div>
-            <div class="set-hint" style="margin:0 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@hondi.kr&gt;</b>로 보입니다. 받는 모든 사람에게 보이며, 이후에 보내는 메일부터 적용됩니다.</div>
+            <div class="set-hint" style="margin:0 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@naviweb.kr&gt;</b>로 보입니다. 받는 모든 사람에게 보이며, 이후에 보내는 메일부터 적용됩니다.</div>
             <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 도 영민 (40자까지)" oninput="_senderNamePreview()">
             <div class="set-hint" style="margin-top:10px">받는 사람에게 이렇게 보입니다</div>
             <div id="sender-name-preview" style="margin-top:2px;padding:10px 12px;border:1px solid var(--bdr,#ddd);border-radius:8px;background:var(--bg);font-weight:700;font-size:16px;word-break:break-all"></div>
@@ -1011,7 +1011,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div class="set-lbl">부재중 자동응답</div>
           <div>
             <label class="set-switch"><input type="checkbox" id="set-ar-enabled" onchange="_arDirty()">부재중 자동응답 사용</label>
-            <div class="set-hint">켜 두면 <b>@hondi.kr이 아닌 주소</b>에서 온 메일에 아래 문구를 자동으로 회신합니다. 같은 사람에게는 <b>24시간에 한 번</b>만 보내고, 제목은 "자동 응답: 부재중 안내"로 나갑니다.</div>
+            <div class="set-hint">켜 두면 <b>@naviweb.kr이 아닌 주소</b>에서 온 메일에 아래 문구를 자동으로 회신합니다. 같은 사람에게는 <b>24시간에 한 번</b>만 보내고, 제목은 "자동 응답: 부재중 안내"로 나갑니다.</div>
           </div>
         </div>
         <div class="set-row">
@@ -1887,7 +1887,7 @@ function _navSyncMailSub() {
 // ══════════════════════════════════════════════════════════════
 // 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)를 노출하지 않고
 // 검색/호출·메일 로컬파트를 겸하는 별도 식별자(mail_id)를 화면에서
-// 조회·설정한다. 2026-10-27부터 mail_id가 보내는 주소이자 받는 주소다(<mail_id>@hondi.kr) —
+// 조회·설정한다. 2026-10-27부터 mail_id가 보내는 주소이자 받는 주소다(<mail_id>@naviweb.kr) —
 // 바꾸면 이후 메일은 새 주소로 나가고, 이전 아이디로 온 메일은 받지 못한다.
 // ══════════════════════════════════════════════════════════════
 let _mailIdLoadedOnce = false;
@@ -1895,13 +1895,13 @@ let _mailIdCurrentSettings = null; // 최근 GET /kmail/settings 결과 캐시
 let _mailIdCheckToken = 0; // 늦게 도착하는 과거 요청 응답을 무시하기 위한 순번
 
 // ══════════════════════════════════════════════════════════════
-// 보내는 사람 표시 — 2026-10-27 신설(주피터 지시). 받는 사람 화면에는 기본으로 주소(ceo@hondi.kr)만 보이고,
-// 사용자가 이름을 정하면 "도 영민 <ceo@hondi.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
+// 보내는 사람 표시 — 2026-10-27 신설(주피터 지시). 받는 사람 화면에는 기본으로 주소(ceo@naviweb.kr)만 보이고,
+// 사용자가 이름을 정하면 "도 영민 <ceo@naviweb.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
 // 서버가 최종 판정자이고, 여기서는 미리 알려 주기만 한다.
 // ══════════════════════════════════════════════════════════════
 let _senderNameCurrent = '';
 const _SENDER_NAME_MAX = 40;
-function _senderAddress() { return (_mailIdCurrentSettings && _mailIdCurrentSettings.kmail_address) || '(아이디)@hondi.kr'; }
+function _senderAddress() { return (_mailIdCurrentSettings && _mailIdCurrentSettings.kmail_address) || '(아이디)@naviweb.kr'; }
 function _senderNameCheck(raw) {
   const v = String(raw || '').replace(/\s+/g, ' ').trim();
   if (/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u2028\u2029\u202A-\u202E\u2060-\u206F\uFEFF]/.test(raw || '')) return { ok: false, value: v, message: '줄바꿈이나 보이지 않는 문자는 쓸 수 없습니다.' };
@@ -2076,7 +2076,7 @@ async function _mailIdLoad() {
     if (data.mail_id) {
       emptyState.style.display = 'none';
       document.getElementById('mail-id-input').value = data.mail_id;
-      document.getElementById('mail-id-check-msg').textContent = `현재 메일 ID: ${data.mail_id}@hondi.kr`;
+      document.getElementById('mail-id-check-msg').textContent = `현재 메일 ID: ${data.mail_id}@naviweb.kr`;
       document.getElementById('mail-id-check-msg').style.color = 'var(--sub)';
     } else {
       emptyState.style.display = '';
@@ -2105,7 +2105,7 @@ async function _mailIdCheckNow() {
 
   // 이미 내가 쓰고 있는 값 그대로면 서버에 물어볼 필요 없이 통과.
   if (_mailIdCurrentSettings && raw.trim().toLowerCase() === (_mailIdCurrentSettings.mail_id || '')) {
-    msg.textContent = `현재 메일 ID: ${raw.trim().toLowerCase()}@hondi.kr`;
+    msg.textContent = `현재 메일 ID: ${raw.trim().toLowerCase()}@naviweb.kr`;
     msg.style.color = 'var(--sub)';
     saveBtn.disabled = true;
     return;
@@ -2127,7 +2127,7 @@ async function _mailIdCheckNow() {
       msg.style.color = 'var(--red)';
       saveBtn.disabled = true;
     } else {
-      msg.textContent = `사용 가능합니다: ${data.normalized}@hondi.kr`;
+      msg.textContent = `사용 가능합니다: ${data.normalized}@naviweb.kr`;
       msg.style.color = 'var(--grn)';
       saveBtn.disabled = false;
     }
@@ -2171,7 +2171,7 @@ async function _mailIdAuto() {
   btn.disabled = true;
   try {
     const data = await kmailApi('/kmail/mail-id/auto', { method: 'POST' });
-    ok.textContent = `메일 ID가 자동으로 만들어졌습니다: ${data.mail_id}@hondi.kr`;
+    ok.textContent = `메일 ID가 자동으로 만들어졌습니다: ${data.mail_id}@naviweb.kr`;
     _settingsNotifyBadge();
     ok.style.display = 'block';
     _mailIdLoadedOnce = false;
