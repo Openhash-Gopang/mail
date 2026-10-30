@@ -138,6 +138,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .mail-sub{display:none}
 .mail-sub.active{display:block}
 .tab-panel.active{display:block}
+.doc-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.doc-bar select{min-height:36px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;background:var(--sur)}
+#doc-frame{width:100%;height:calc(100vh - 230px);min-height:520px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff}
 
 /* ══════════════════════════════════════════════════════════════
    대화형 캠페인 설계 — plan.hondi.net/webapp.html의 채팅 UI 그대로
@@ -622,6 +625,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     </div>
     <div class="side-group">
       <div class="side-label">행정 업무</div>
+      <button id="tab-btn-doc" class="nav-btn" data-label="문서 작성" onclick="_switchTab('doc')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
       <button id="tab-btn-foi" class="nav-btn" data-label="정보 공개 청구" onclick="_switchTab('foi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>정보 공개 청구</button>
     </div>
     <div class="side-settings">
@@ -1007,6 +1011,16 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
        청구인의 성명·주소·연락처는 서버로 보내지 않고 이 브라우저에만 둔다. 동작 코드는 foi.js.
        제출(정보공개시스템 등)은 사용자가 직접 한다.
        ══════════════════════════════════════════════════════════ -->
+  <div id="tab-doc" class="tab-panel">
+    <div class="doc-bar">
+      <h1 style="margin:0;font-size:20px">문서 작성</h1>
+      <select id="doc-site" aria-label="서류 종류" onchange="_docLoad(this.value)"></select>
+      <span id="doc-note" class="hint" style="margin:0" role="status"></span>
+    </div>
+    <iframe id="doc-frame" title="서류 작성" allow="clipboard-write"></iframe>
+    <div class="hint">서류를 다 쓴 뒤 <b>메일에 첨부</b>를 누르면 Word 파일이 편지쓰기 화면에 첨부됩니다. 받는 사람은 그 화면에서 고르세요.</div>
+  </div>
+
   <div id="tab-foi" class="tab-panel">
     <div class="foi-head">
       <h1>정보 공개 청구</h1>
@@ -1361,6 +1375,65 @@ function _kmailAutoResize(el) {
   el.style.height = Math.min(h, max) + 'px';
 }
 
+// ── 문서 작성: 서류 작성 페이지를 불러오고, 완성한 서류(Word)를 편지 첨부로 받는다 ──────────
+// 서류 작성 페이지는 ?embed=mail 일 때만 "메일에 첨부" 버튼을 보이고, window.postMessage 로
+// { type: 'navi-doc-done', title, filename, mime, data(ArrayBuffer), text } 를 보낸다.
+// 보낸 창이 이 화면의 iframe 이고 출처가 아래 목록에 있을 때만 받는다.
+const _DOC_SITES = [
+  { id: 'law', label: '법률 서류', url: 'https://law.hondi.net/' },
+  { id: 'tax', label: '세무·회계 서류', url: 'https://tax.hondi.net/' },
+  { id: 'doctor', label: '병원·의원 서류', url: 'https://doctor.hondi.net/' },
+];
+let _docCurrent = '';
+function _docInit() {
+  const sel = document.getElementById('doc-site');
+  if (!sel.options.length) _DOC_SITES.forEach(s => sel.add(new Option(s.label, s.id)));
+  if (!_docCurrent) _docLoad(sel.value);
+}
+function _docLoad(id) {
+  const site = _DOC_SITES.find(s => s.id === id);
+  if (!site) return;
+  _docCurrent = id;
+  document.getElementById('doc-note').textContent = '불러오는 중…';
+  document.getElementById('doc-frame').src = site.url + '?embed=mail';
+}
+function _docBase64(buf) {
+  const u8 = new Uint8Array(buf); let bin = '';
+  for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function _docAttach(d, src, origin) {
+  const reply = (ok, msg) => { try { src.postMessage({ type: 'navi-doc-attached', ok, msg }, origin); } catch (e) {} };
+  const note = document.getElementById('doc-note');
+  try {
+    if (!(d.data instanceof ArrayBuffer) || !d.data.byteLength || d.data.byteLength > 10 * 1024 * 1024) throw new Error('첨부할 파일이 없거나 너무 큽니다.');
+    const filename = String(d.filename || '서류.docx').slice(0, 120);
+    const up = await kmailApi('/kmail/attachments/upload', {
+      method: 'POST', body: { file_base64: _docBase64(d.data), filename, content_type: String(d.mime || 'application/octet-stream') },
+    });
+    _switchTab('mail'); _mailSwitchSub('compose');
+    const title = String(d.title || '').slice(0, 200);
+    const subj = document.getElementById('mail-subject');
+    if (subj && !subj.value.trim()) subj.value = title;
+    if (!_mailGetBodyText().trim()) _mailSetBodyText('첨부: ' + title + '\n');
+    _mailPendingAttachments.push({ id: up.attachment_id, filename });
+    _mailRenderAttachList();
+    note.textContent = '';
+    reply(true);
+  } catch (e) {
+    reply(false, e.message);
+    note.textContent = '첨부 실패: ' + e.message;
+  }
+}
+window.addEventListener('message', (e) => {
+  const fr = document.getElementById('doc-frame');
+  if (!fr || e.source !== fr.contentWindow) return;
+  if (!_DOC_SITES.some(s => new URL(s.url).origin === e.origin)) return;
+  const d = e.data || {};
+  if (d.type === 'navi-doc-ready') document.getElementById('doc-note').textContent = '';
+  else if (d.type === 'navi-doc-done') _docAttach(d, e.source, e.origin);
+});
+
 function _switchTab(name) {
   _sentCardHide('mail'); _sentCardHide('qs');
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
@@ -1373,6 +1446,7 @@ function _switchTab(name) {
   const _crumb = document.getElementById('crumb-cur');
   if (_crumb) _crumb.textContent = _navBtn.getAttribute('data-label') || '';
   if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
+  if (name === 'doc') _docInit();
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
