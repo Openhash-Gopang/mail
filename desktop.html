@@ -364,15 +364,24 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 /* side-collapse */
 @media (min-width:961px){
   .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:width .16s ease,margin-right .16s ease,box-shadow .16s ease}
-  .side-nav:hover,.side-nav:focus-within{width:232px;margin-right:-168px;box-shadow:6px 0 18px rgba(0,0,0,.12)}
-  .side-nav:not(:hover):not(:focus-within) .nav-btn{font-size:0;gap:0;justify-content:center;padding-left:0;padding-right:0}
-  .side-nav:not(:hover):not(:focus-within) .nav-btn svg{width:20px;height:20px}
-  .side-nav:not(:hover):not(:focus-within) .side-label{font-size:0;letter-spacing:0;padding:0;margin:10px 8px 8px;border-top:1px solid var(--bdr);height:0}
-  .side-nav:not(:hover):not(:focus-within) .side-group:first-child .side-label{border-top:0;margin-top:0}
-  .side-nav:not(:hover):not(:focus-within) .nav-sub,.side-nav:not(:hover):not(:focus-within) .side-foot{display:none}
+  .side-nav.sn-open{width:232px;margin-right:-168px;box-shadow:6px 0 18px rgba(0,0,0,.12)}
+  .side-nav:not(.sn-open) .nav-btn{font-size:0;gap:0;justify-content:center;padding-left:0;padding-right:0}
+  .side-nav:not(.sn-open) .nav-btn svg{width:20px;height:20px}
+  .side-nav:not(.sn-open) .side-label{font-size:0;letter-spacing:0;padding:0;margin:10px 8px 8px;border-top:1px solid var(--bdr);height:0}
+  .side-nav:not(.sn-open) .side-group:first-child .side-label{border-top:0;margin-top:0}
+  .side-nav:not(.sn-open) .nav-sub,.side-nav:not(.sn-open) .side-foot{display:none}
   .side-nav .nav-btn{white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){.side-nav{transition:none}}
+#cmp-attach-menu{position:fixed;z-index:90;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;min-width:176px}
+#cmp-attach-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 12px;font:inherit;font-size:14.5px;font-weight:600;color:var(--sub);cursor:pointer}
+#cmp-attach-menu button:hover{background:var(--bg);color:var(--txt)}
+#cmp-attach-menu svg{width:17px;height:17px;flex-shrink:0;color:var(--hint)}
+#doc-modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:center;justify-content:center}
+#doc-modal.open{display:flex}
+#doc-modal .dm-box{background:var(--sur);width:min(1100px,94vw);height:min(860px,92vh);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+#doc-modal .dm-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--bdr)}
+#doc-modal iframe{flex:1;border:0;width:100%}
 @media (max-width:960px){
   .app-body{flex-direction:column}
   .side-nav{position:static;width:100%;height:auto;flex-direction:row;overflow-x:auto;padding:8px 10px;border-right:none;border-bottom:1px solid var(--bdr)}
@@ -676,7 +685,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="chat-attach-list" id="cmp-attach-list"></div>
       <div class="chat-inputbar">
         <input type="file" id="cmp-file" style="display:none">
-        <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="파일 첨부" onclick="document.getElementById('cmp-file').click()">
+        <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
+        <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
         <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="예: 다음 주 세미나 초청 메일을 서울대 컴퓨터공학부 교수님들께 보내고 싶어요"></textarea>
@@ -1024,6 +1034,17 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
        청구인의 성명·주소·연락처는 서버로 보내지 않고 이 브라우저에만 둔다. 동작 코드는 foi.js.
        제출(정보공개시스템 등)은 사용자가 직접 한다.
        ══════════════════════════════════════════════════════════ -->
+  <div id="doc-modal" role="dialog" aria-modal="true" aria-label="문서 작성" onclick="if(event.target===this)_docModalClose()">
+    <div class="dm-box">
+      <div class="dm-bar">
+        <strong>문서 작성</strong>
+        <select id="doc-modal-site" aria-label="서류 종류" style="min-height:36px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;background:var(--sur)" onchange="_docLoadInto(this.value,{frame:'doc-modal-frame',sel:'doc-modal-site',note:'doc-modal-note'})"></select>
+        <span id="doc-modal-note" class="hint" style="margin:0" role="status"></span>
+        <button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="_docModalClose()">닫기</button>
+      </div>
+      <iframe id="doc-modal-frame" title="서류 작성" allow="clipboard-write"></iframe>
+    </div>
+  </div>
   <div id="tab-doc" class="tab-panel">
     <div class="doc-bar">
       <h1 style="margin:0;font-size:20px">문서 작성</h1>
@@ -1031,7 +1052,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <span id="doc-note" class="hint" style="margin:0" role="status"></span>
     </div>
     <iframe id="doc-frame" title="서류 작성" allow="clipboard-write"></iframe>
-    <div class="hint">서류를 다 쓴 뒤 <b>메일에 첨부</b>를 누르면 Word 파일이 편지쓰기 화면에 첨부됩니다. 받는 사람은 그 화면에서 고르세요.</div>
+    <div class="hint">서류를 다 쓴 뒤 <b>완료</b>를 누르면 Word 파일이 편지쓰기 화면에 첨부됩니다. 받는 사람은 그 화면에서 고르세요.</div>
   </div>
 
   <div id="tab-foi" class="tab-panel">
@@ -1388,11 +1409,27 @@ function _kmailAutoResize(el) {
   el.style.height = Math.min(h, max) + 'px';
 }
 
+// 왼쪽 메뉴: 마우스를 올리면 펼치고, 항목을 고르거나 마우스가 나가면 접는다
+(function () {
+  const nav = document.querySelector('.side-nav');
+  if (!nav) return;
+  nav.addEventListener('mouseenter', () => nav.classList.add('sn-open'));
+  nav.addEventListener('mouseleave', () => nav.classList.remove('sn-open'));
+  nav.addEventListener('focusin', (e) => { try { if (e.target.matches(':focus-visible')) nav.classList.add('sn-open'); } catch (x) {} });
+  nav.addEventListener('focusout', (e) => { if (!nav.contains(e.relatedTarget)) nav.classList.remove('sn-open'); });
+  nav.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-btn,.nav-subitem')) return;
+    nav.classList.remove('sn-open');
+    if (document.activeElement && nav.contains(document.activeElement)) document.activeElement.blur();
+  });
+})();
+
 // ── 문서 작성: 서류 작성 페이지를 불러오고, 완성한 서류(Word)를 편지 첨부로 받는다 ──────────
 // 서류 작성 페이지는 ?embed=mail 일 때만 "메일에 첨부" 버튼을 보이고, window.postMessage 로
 // { type: 'navi-doc-done', title, filename, mime, data(ArrayBuffer), text } 를 보낸다.
 // 보낸 창이 이 화면의 iframe 이고 출처가 아래 목록에 있을 때만 받는다.
 const _DOC_SITES = [
+  { id: 'all', label: '전체', url: 'https://pro.hondi.net/' },
   { id: 'law', label: '법률 서류', url: 'https://law.hondi.net/' },
   { id: 'tax', label: '세무·회계 서류', url: 'https://tax.hondi.net/' },
   { id: 'doctor', label: '병원·의원 서류', url: 'https://doctor.hondi.net/' },
@@ -1403,13 +1440,21 @@ function _docInit() {
   if (!sel.options.length) _DOC_SITES.forEach(s => sel.add(new Option(s.label, s.id)));
   if (!_docCurrent) _docLoad(sel.value);
 }
-function _docLoad(id) {
+// 어느 화면(탭 안 / 창 안)에 서류 작성 페이지를 불러올지: where = { frame, sel, note }
+function _docLoadInto(id, where) {
   const site = _DOC_SITES.find(s => s.id === id);
   if (!site) return;
-  _docCurrent = id;
-  document.getElementById('doc-note').textContent = '불러오는 중…';
-  document.getElementById('doc-frame').src = site.url + '?embed=mail';
+  const frame = document.getElementById(where.frame), note = document.getElementById(where.note), sel = document.getElementById(where.sel);
+  const go = (u) => { frame.src = u + '?embed=mail'; };
+  note.textContent = '불러오는 중…';
+  if (id !== 'all') { go(site.url); return; }
+  // "전체" 주소(pro.hondi.net)가 아직 준비되지 않았으면 법률 서류로 연다
+  fetch(site.url, { mode: 'no-cors', cache: 'no-store' }).then(() => go(site.url)).catch(() => {
+    const law = _DOC_SITES.find(x => x.id === 'law');
+    sel.value = 'law'; note.textContent = '“전체” 주소가 아직 준비되지 않아 법률 서류를 엽니다.'; go(law.url);
+  });
 }
+function _docLoad(id) { _docCurrent = id; _docLoadInto(id, { frame: 'doc-frame', sel: 'doc-site', note: 'doc-note' }); }
 function _docBase64(buf) {
   const u8 = new Uint8Array(buf); let bin = '';
   for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
@@ -1438,13 +1483,78 @@ async function _docAttach(d, src, origin) {
     note.textContent = '첨부 실패: ' + e.message;
   }
 }
+// 편지 작성(AI) 첨부(+) 버튼: 카메라 / 내 컴퓨터 / 문서 작성
+function _cmpAttachMenu(ev) {
+  ev.stopPropagation();
+  const old = document.getElementById('cmp-attach-menu');
+  if (old) { old.remove(); return; }
+  const m = document.createElement('div');
+  m.id = 'cmp-attach-menu'; m.setAttribute('role', 'menu');
+  const ic = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  m.innerHTML =
+    '<button type="button" role="menuitem" data-k="cam">' + ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + '카메라</button>' +
+    '<button type="button" role="menuitem" data-k="pc">' + ic('<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>') + '내 컴퓨터</button>' +
+    '<button type="button" role="menuitem" data-k="doc">' + ic('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>') + '문서 작성</button>';
+  document.body.appendChild(m);
+  const r = ev.currentTarget.getBoundingClientRect();
+  m.style.left = Math.max(8, r.left) + 'px';
+  m.style.top = Math.max(8, r.top - m.offsetHeight - 8) + 'px';
+  const close = () => { m.remove(); document.removeEventListener('click', close); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  m.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    e.stopPropagation(); close();
+    if (b.dataset.k === 'pc') document.getElementById('cmp-file').click();
+    else if (b.dataset.k === 'cam') document.getElementById('cmp-cam').click();
+    else _docModalOpen();
+  });
+  document.addEventListener('keydown', onKey);
+  setTimeout(() => document.addEventListener('click', close), 0);
+}
+// 카메라로 찍은 사진도 내 컴퓨터에서 고른 파일과 같은 첨부 흐름을 쓴다
+function _cmpFeedFile(file) {
+  const dt = new DataTransfer(); dt.items.add(file);
+  document.getElementById('cmp-file').files = dt.files;
+  return _cmpHandleFileSelect();
+}
+document.getElementById('cmp-cam').addEventListener('change', function () {
+  const f = this.files && this.files[0]; this.value = '';
+  if (f) _cmpFeedFile(f);
+});
+
+function _docModalOpen() {
+  const sel = document.getElementById('doc-modal-site');
+  if (!sel.options.length) _DOC_SITES.forEach(x => sel.add(new Option(x.label, x.id)));
+  document.getElementById('doc-modal').classList.add('open');
+  if (!document.getElementById('doc-modal-frame').src) _docLoadInto(sel.value, { frame: 'doc-modal-frame', sel: 'doc-modal-site', note: 'doc-modal-note' });
+}
+function _docModalClose() { document.getElementById('doc-modal').classList.remove('open'); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('doc-modal').classList.contains('open')) _docModalClose(); });
+
+// 창에서 "완료"가 오면: 서류(Word)를 편지 작성(AI)의 첨부로 붙이고 창을 닫는다
+async function _docAttachToChat(d, src, origin) {
+  const reply = (ok, msg) => { try { src.postMessage({ type: 'navi-doc-attached', ok, msg }, origin); } catch (e) {} };
+  const note = document.getElementById('doc-modal-note');
+  try {
+    if (!(d.data instanceof ArrayBuffer) || !d.data.byteLength || d.data.byteLength > 10 * 1024 * 1024) throw new Error('첨부할 파일이 없거나 너무 큽니다.');
+    const filename = String(d.filename || '서류.docx').slice(0, 120);
+    await _cmpFeedFile(new File([d.data], filename, { type: String(d.mime || 'application/octet-stream') }));
+    reply(true);
+    _docModalClose();
+  } catch (e) {
+    reply(false, e.message);
+    note.textContent = '첨부 실패: ' + e.message;
+  }
+}
+
 window.addEventListener('message', (e) => {
-  const fr = document.getElementById('doc-frame');
-  if (!fr || e.source !== fr.contentWindow) return;
+  const fr = document.getElementById('doc-frame'), fm = document.getElementById('doc-modal-frame');
+  const fromTab = !!fr && e.source === fr.contentWindow, fromModal = !!fm && e.source === fm.contentWindow;
+  if (!fromTab && !fromModal) return;
   if (!_DOC_SITES.some(s => new URL(s.url).origin === e.origin)) return;
   const d = e.data || {};
-  if (d.type === 'navi-doc-ready') document.getElementById('doc-note').textContent = '';
-  else if (d.type === 'navi-doc-done') _docAttach(d, e.source, e.origin);
+  if (d.type === 'navi-doc-ready') document.getElementById(fromModal ? 'doc-modal-note' : 'doc-note').textContent = '';
+  else if (d.type === 'navi-doc-done') (fromModal ? _docAttachToChat : _docAttach)(d, e.source, e.origin);
 });
 
 function _switchTab(name) {
