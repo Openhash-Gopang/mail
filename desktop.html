@@ -320,6 +320,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .nav-expert-frame{width:100%;height:min(62vh,560px);border:0;display:block}
 .nav-expert-doc{align-self:flex-end;margin:8px 10px;padding:6px 14px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;cursor:pointer}
 .nav-expert-doc:hover{background:#f3f4f6}
+.nav-ask{align-self:flex-start;margin:6px 10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;max-width:min(92%,460px)}
+.nav-ask-q{font-size:14px;color:#111827;margin-bottom:8px}
+.nav-ask-opts{display:flex;flex-wrap:wrap;gap:6px}
+.nav-ask-opts button{padding:6px 14px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;cursor:pointer}
+.nav-ask-opts button:hover{background:#f3f4f6}
+.nav-ask-opts button:disabled{opacity:.5;cursor:default}
 </style>
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -3501,8 +3507,9 @@ async function _cmpChatSendText(text, attachments) {
 const NAVI_ASSIST_URL = PROXY + '/kmail/assist';
 const NAVI_HONDI_ORIGIN = 'https://hondi.net';
 const _NAV_EXPERT_LABEL = { physician: '의사', lawyer: '변호사', 'tax-accounting': '세무사', accountant: '세무사' };
-const _navRoute = { cur: null, msgs: [], frame: null, ready: false, queue: [] };
-function _navRouteReset() { _navRoute.cur = null; _navRoute.msgs = []; _navRoute.frame = null; _navRoute.ready = false; _navRoute.queue = []; }
+// asked: 한 요청에서 되묻은 횟수(서버가 2회 상한을 강제), stay: "그냥 대화로 계속"을 고른 뒤에는 규칙 분류를 건너뛴다(noQuick)
+const _navRoute = { cur: null, msgs: [], frame: null, ready: false, queue: [], asked: 0, stay: false };
+function _navRouteReset() { _navRoute.cur = null; _navRoute.msgs = []; _navRoute.frame = null; _navRoute.ready = false; _navRoute.queue = []; _navRoute.asked = 0; _navRoute.stay = false; }
 function _navBegin() {
   _cmpClearApprove();
   document.getElementById('cmp-landing').style.display = 'none';
@@ -3561,38 +3568,73 @@ function _navToDoc(site, text) {
   input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
   _docHostSubmit();
 }
-async function _navAssistTurn(text) {
+// 라우팅이 확정됨 — 질의 상태를 비우고 해당 화면으로 연다. text 는 사용자가 처음 보낸 문장.
+async function _navApplyRoute(route, text) {
+  _navRoute.asked = 0; _navRoute.stay = false;
+  if (route.type === 'kmail') {
+    _navRoute.cur = { type: 'kmail' }; _navRoute.msgs = [];
+    _navDropLastUserBubble();
+    const letter = route.mode === 'letter';
+    _navChip('K-Mail(' + (letter ? '편지 작성' : '캠페인') + ')로 연결했습니다');
+    _cmpSetMode(letter ? 'letter' : 'campaign', { keep: true });   // 칩에 "메일 · 편지 작성/캠페인"을 띄워 어느 SP 로 넘어갔는지 보이게 한다(× 로 해제)
+    await _cmpChatSendText(text, []);
+  } else if (route.type === 'doc') {
+    _navDropLastUserBubble(); _navRoute.msgs = [];
+    _navToDoc(route.site || 'all', text);
+  } else if (route.type === 'expert') {
+    _navDropLastUserBubble(); _navRoute.msgs = [];
+    _navOpenExpert(route, text);
+  }
+}
+// 모호할 때 선택 버튼으로 되묻는다(최대 2회). 선택하면 서버를 다시 부르지 않고 그 경로를 바로 적용한다.
+function _navShowAsk(route, text) {
+  _navRoute.asked += 1;
+  _navRoute.msgs.pop();                  // 사용자 메시지는 확정 전까지 AI 대화 이력에 두지 않는다(그냥 대화를 고르면 다시 넣는다)
+  const thread = document.getElementById('cmp-thread');
+  const box = document.createElement('div'); box.className = 'nav-ask';
+  const q = document.createElement('div'); q.className = 'nav-ask-q'; q.textContent = route.question || '어떻게 도와드릴까요?';
+  const opts = document.createElement('div'); opts.className = 'nav-ask-opts';
+  (route.options || []).forEach((o) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = o.label;
+    b.onclick = async () => {
+      opts.querySelectorAll('button').forEach(x => { x.disabled = true; });
+      box.remove();
+      if (o.route && o.route.stay) { _navRoute.stay = true; _navRoute.msgs.push({ role: 'user', content: text }); await _navAssistTurn(text, { again: true }); }
+      else await _navApplyRoute(o.route, text);
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(q); box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
+}
+async function _navAssistTurn(text, opt) {
+  document.querySelectorAll('#cmp-thread .nav-ask').forEach(x => x.remove());   // 답하지 않고 새로 입력하면 이전 되묻기는 접는다
+  const again = !!(opt && opt.again);       // 되묻기에서 "그냥 대화"를 고른 재호출 — 사용자 말풍선·이력은 이미 있다
   _navBegin();
-  _cmpAppendBubble('user', { text });
-  _navRoute.msgs.push({ role: 'user', content: text });
+  if (!again) { _cmpAppendBubble('user', { text }); _navRoute.msgs.push({ role: 'user', content: text }); }
   const loading = document.getElementById('cmp-loading');
   const lbl = loading.querySelector('span:last-child'); const lblOrig = lbl ? lbl.textContent : '';
   if (lbl) lbl.textContent = '확인하고 있습니다…';
   document.getElementById('cmp-send-btn').disabled = true; loading.style.display = 'flex';
   try {
-    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs }) });
+    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs, asked: _navRoute.asked, noQuick: _navRoute.stay }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || ('HTTP ' + res.status));
     const route = data.route || { type: 'assistant' };
-    if (route.type === 'kmail') {
-      _navRoute.cur = { type: 'kmail' }; _navRoute.msgs = [];
-      _navDropLastUserBubble(); _navChip('K-Mail로 연결했습니다');
+    if (route.type === 'ask') {
       loading.style.display = 'none';
-      _cmpSetMode('campaign', { keep: true });   // 칩에 "메일 · 캠페인"을 띄워 어느 SP 로 넘어갔는지 보이게 한다(× 로 해제)
-      await _cmpChatSendText(text, []);
-    } else if (route.type === 'doc') {
-      _navToDoc(route.site || 'all', text);
-    } else if (route.type === 'expert') {
-      _navDropLastUserBubble(); _navRoute.msgs = [];
-      _navOpenExpert(route, text);
+      _navShowAsk(route, text);
+    } else if (route.type === 'kmail' || route.type === 'doc' || route.type === 'expert') {
+      loading.style.display = 'none';
+      await _navApplyRoute(route, text);
     } else {
       _navRoute.cur = { type: 'assistant' };
+      if (route.asking) _navRoute.asked += 1;      // AC 가 직접 되물음 — 같은 2회 상한에 포함
       const reply = data.reply || '';
       _navRoute.msgs.push({ role: 'assistant', content: reply });
       _cmpAppendBubble('assistant', { md: reply, badge: null });
     }
   } catch (e) {
-    _navRoute.msgs.pop();
+    if (!again) _navRoute.msgs.pop();
     const err = document.getElementById('cmp-err');
     err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.'; err.style.display = '';
   } finally {
