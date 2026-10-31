@@ -2992,7 +2992,7 @@ async function kmailChatCall(messages, attachment_ids, campaign_id, mode) {
 // ══════════════════════════════════════════════════════════════
 // 새 캠페인 — 대화형 채팅 컨트롤러
 // ══════════════════════════════════════════════════════════════
-const _cmpChat = { messages: [], campaignId: null };
+const _cmpChat = { messages: [], campaignId: null, done: false };   // done: 발송·접수까지 끝나 잃을 작업이 없는 상태(모드 전환 시 확인창 생략)
 let _cmpPendingAttachments = []; // { id, filename, uploading }
 
 // ── 첨부파일 텍스트 추출 (2026-09-10 신설) ───────────────────────
@@ -3240,7 +3240,7 @@ function _cmpAppendBubble(role, opts) {
 
 function _cmpChatStartNew() {
   _cmpChat.messages = [];
-  _cmpChat.campaignId = null;
+  _cmpChat.campaignId = null; _cmpChat.done = false;
   document.getElementById('cmp-thread').innerHTML = '';
   document.getElementById('cmp-thread-header').style.display = 'none';
   document.getElementById('cmp-landing').style.display = '';
@@ -3292,6 +3292,7 @@ let _cmpMode = 'default';
 function _cmpHasWork() {
   if (_cmpMode === 'doc') return _docHost.loaded && document.getElementById('tab-compose').classList.contains('doc-live');
   const nr = _navRoute.cur;
+  if (_cmpChat.done && _navRoute.msgs.length === 0 && !(nr && nr.type === 'expert')) return false;   // 편지 발송·캠페인 접수가 끝난 뒤에는 잃을 작업이 없다
   return _cmpChat.messages.length > 0 || _navRoute.msgs.length > 0 || !!(nr && nr.type === 'expert');
 }
 // 칩·인사말·예시 문구·메일 아이콘·서류 드롭다운을 현재 모드에 맞춘다
@@ -3441,6 +3442,7 @@ async function _cmpChatSendText(text, attachments) {
     : '';
   const fullText = text + attachNote;
 
+  _cmpChat.done = false;                 // 끝난 뒤 이어서 새 요청을 하면 다시 진행 중인 작업으로 본다
   _cmpChat.messages.push({ role: 'user', content: fullText });
   _cmpAppendBubble('user', { text: text + (attachments && attachments.length ? '\n📎 ' + attachments.map(a => a.filename).join(', ') : '') });
 
@@ -3456,6 +3458,7 @@ async function _cmpChatSendText(text, attachments) {
     _cmpMaybeApprove(data.reply, data.action);
     _schedTrack(data.action);
     if (data.action && data.action.type === 'letter_sent') { _mailSentCache = null; }
+    if (data.action && (data.action.type === 'letter_sent' || data.action.type === 'campaign_created')) _cmpChat.done = true;
     // campaign_id(2026-09-10 신설): 캠페인이 시작/확정되면 그 id를
     // 대화가 끝날 때까지(또는 "+ 새 대화" 전까지) 기억해뒀다가 이후
     // 모든 턴에 함께 보낸다 — 서버가 대화 전문을 계속 그 캠페인에
