@@ -23,6 +23,13 @@ function fakeServer() {
     if (route === '/case/mailbox/push') { const e = body.envelope; if (e.from !== guid) return J(403, { ok: false, code: 'FROM_MISMATCH' }); (boxes[e.to] = boxes[e.to] || []).push({ id: String(++n), envelope: e }); return J(200, { ok: true }); }
     if (route === '/case/mailbox/pull') return J(200, { ok: true, items: (boxes[guid] || []).slice() });
     if (route === '/case/mailbox/ack') { boxes[guid] = (boxes[guid] || []).filter(i => !body.ids.includes(i.id)); return J(200, { ok: true }); }
+    if (route === '/case/invite/claim') {
+      const th = await CaseCore.sha256Hex('inv:' + body.token), inviter = invites[th];
+      if (!inviter) return J(404, { ok: false, code: 'INVITE_NOT_FOUND' });
+      if (body.key_record) keys[guid] = body.key_record;
+      (boxes[inviter] = boxes[inviter] || []).push({ id: String(++n), server_notice: { type: 'invite_signed_up', token_hash: th, invitee_user_id: guid, invitee_mail_id: body.mail_id + '@naviweb.kr', email_match: true, signed_up_at: '2026-11-01T00:00:00Z' } });
+      return J(200, { ok: true, inviter_user_id: inviter, inviter_keys: keys[inviter] || null });
+    }
     return J(404, { ok: false, code: 'NO_ROUTE' });
   };
   return { handler, boxes, invites, keys, drop: (to, item) => (boxes[to] = boxes[to] || []).push(Object.assign({ id: String(++n) }, item)) };
@@ -156,4 +163,50 @@ test('내가 쓴 공유 메모는 collectShared 로 이벤트가 되어 상대 �
   assert.equal(pe.length, 1); assert.equal(pe[0].payload.text, '서류 접수했습니다');
   assert.deepEqual(await CaseHost.flush('c1'), { ok: true, sent: 0 });           // 다시 보내지 않는다
   void srv;
+});
+
+test('초청자(화면) → 가입 알림 → 제안 자동 전송 → 초대받은 상대 기기가 일을 만들고 키를 맞춘다', async () => {
+  const { srv, storeA, netB, storeB, idA, idB } = await setup();
+  const inv = await G.CaseInvite.createInvitation({ case_id: 'c7', inviter_id: 'A', inviter_side: 'provider', invitee_email: 'x@y.co' });
+  await storeA.createCase({ case_id: 'c7', title: '○○ 사건', kind: 'case', my_side: 'provider' });
+  await storeA.patchCase('c7', { invitation: inv.invitation });
+  await CaseHost.registerInvite('c7');
+  const cl = await netB.claimInvite(inv.token, 'bmail');
+  assert.equal(cl.ok, true);
+  const r = await CaseHost.poll();                                   // 알림 → 키 → 제안 전송
+  assert.deepEqual(r.joined, ['c7']);
+  assert.equal((await storeA.getCase('c7')).proposal_sent, true);
+  let made = null;
+  const rb = await netB.poll({ onProposal: async (pv, env) => { made = pv; await storeB.createCase({ case_id: pv.case_id, title: pv.title, kind: pv.kind, my_side: 'consumer' }); return { ok: true }; } });
+  assert.equal(rb.proposals, 1); assert.equal(made.title, '○○ 사건');
+  assert.equal((await CaseHost.flush('c7')).ok, true);               // 제안은 한 번만 간다
+  assert.equal((srv.boxes.B || []).length, 0);
+  void idA; void idB;
+});
+
+test('초대받은 쪽(화면): claim → 제안 도착 시 일이 만들어지고(제안됨·받은 제안), 초청자 키가 일에 기록된다', async () => {
+  const srv = fakeServer();
+  CaseHost._reset(); G.CaseUI._reset(); G.CASE_UI_CONFIG = { adapter: MemoryAdapter(), };
+  G.CASE_HOST_CFG = { mailId: async () => 'bmail' };
+  const idB = await CaseSync.generateIdentity(), boxB = await CaseSeal.generateBoxKey();
+  await CaseHost.initLocal({ identity: idB, box: boxB });
+  const storeB = G.CaseUI._store(); await CaseHost.net(srv.handler('B'), 'B');
+  // 초청자 A(직접)
+  const idA = await CaseSync.generateIdentity(), boxA = await CaseSeal.generateBoxKey(), storeA = new CaseStore(MemoryAdapter(), { identity: idA });
+  const netA = CaseNet({ store: storeA, box: boxA, identity: idA, call: srv.handler('A'), guid: 'A' }); await netA.registerKeys();
+  const inv = await G.CaseInvite.createInvitation({ case_id: 'c8', inviter_id: 'A', inviter_side: 'consumer', invitee_email: 'x@y.co' });
+  await srv.handler('A')('/case/invite/register', { token_hash: inv.invitation.token_hash });
+  await storeA.createCase({ case_id: 'c8', title: '무릎 치료', kind: 'case', my_side: 'consumer' });
+  const cl = await CaseHost.claim(inv.token);
+  assert.equal(cl.ok, true); assert.equal(cl.inviter, 'A');
+  await netA.poll(); await storeA.patchCase('c8', { peer: 'B' });
+  assert.equal((await netA.sendProposal('c8', 'B', { case_id: 'c8', title: '무릎 치료', kind: 'case', inviter_side: 'consumer' })).ok, true);
+  const r = await CaseHost.poll();
+  assert.equal(r.proposals, 1);
+  const c = await storeB.getCase('c8');
+  assert.equal(c.state, 'proposed'); assert.equal(c.my_side, 'provider'); assert.equal(c.peer, 'A'); assert.equal(c.incoming, true);
+  assert.equal(c.keys.provider, idB.pub); assert.equal(c.keys.consumer, idA.pub);
+  // 메일 아이디가 없으면 수락하지 않는다
+  G.CASE_HOST_CFG = { mailId: async () => '' };
+  assert.equal((await CaseHost.claim(inv.token)).code, 'NO_MAIL_ID');
 });

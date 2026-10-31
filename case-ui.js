@@ -30,14 +30,21 @@
     }
     return store;
   }
+  // 초대 링크(?inv=토큰)로 들어오면 토큰을 이 탭에만 기억해 로그인 과정을 거쳐도 잃지 않는다.
+  function invToken() {
+    var m = (typeof location !== 'undefined' && location.search || '').match(/[?&]inv=([^&#]+)/);
+    try { if (m) sessionStorage.setItem('case_inv', decodeURIComponent(m[1])); return sessionStorage.getItem('case_inv') || ''; }
+    catch (_) { return m ? decodeURIComponent(m[1]) : ''; }
+  }
   function enabled() {
+    if (invToken()) return true;   // 초대 링크로 들어온 사람은 업무 메뉴가 보여야 한다
     try { if (/[?&]case=1\b/.test(location.search)) { localStorage.setItem('kmail_case_ui', '1'); return true; } return localStorage.getItem('kmail_case_ui') === '1'; }
     catch (_) { return /[?&]case=1\b/.test(location.search); }
   }
   function fmt(iso) { try { return new Date(iso).toLocaleString('ko-KR', { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (_) { return iso; } }
   function host() { return root.CaseHost || null; }
   function proposalOf(c) { return { case_id: c.case_id, title: c.title, kind: c.kind }; }
-  var ERR = { NO_PEER: '상대가 아직 가입하지 않았습니다', KEY_CHANGED: '상대의 키가 바뀌었습니다 — 상대와 직접 확인하기 전에는 진행하지 않습니다', BAD_KEY_SIGNATURE: '상대 키 서명이 올바르지 않습니다', KEYS_REQUIRED: '키 교환 전입니다', FROM_MISMATCH: '로그인 정보가 맞지 않습니다', NO_RELATION: '초대·가입으로 연결된 상대가 아닙니다', BLOCKED: '차단된 관계입니다' };
+  var ERR = { INVITE_NOT_FOUND: '초대를 찾을 수 없습니다(만료되었거나 잘못된 링크)', INVITE_EXPIRED: '만료된 초대입니다', INVITE_REVOKED: '초대한 분이 취소한 초대입니다', INVITE_USED: '이미 사용된 초대입니다', SELF_INVITE: '내가 보낸 초대는 수락할 수 없습니다', NO_MAIL_ID: '메일 아이디를 먼저 만들어 주세요(설정)', NO_PEER: '상대가 아직 가입하지 않았습니다', KEY_CHANGED: '상대의 키가 바뀌었습니다 — 상대와 직접 확인하기 전에는 진행하지 않습니다', BAD_KEY_SIGNATURE: '상대 키 서명이 올바르지 않습니다', KEYS_REQUIRED: '키 교환 전입니다', FROM_MISMATCH: '로그인 정보가 맞지 않습니다', NO_RELATION: '초대·가입으로 연결된 상대가 아닙니다', BLOCKED: '차단된 관계입니다' };
   function errText(r) { return (r && (ERR[r.code] || r.error || r.message || r.code)) || '실패'; }
   // 맡은 일/맡긴 일의 변경은 만든 뒤 바로 상대에게 보낸다(실패하면 대기열에 남아 다음 새로 고침 때 다시 보낸다).
   async function pushOut(id, events) {
@@ -117,12 +124,13 @@
   // 맡은 일/맡긴 일의 "상대와의 연결" 카드: 초대 링크, 가입 여부, 키 지문(상대와 직접 대조), 보내지 못한 항목.
   function connHtml(c, ki, h) {
     var parts = [];
+    if (c.incoming && c.state === 'proposed') parts.push('<div><b>받은 제안</b> — 초대한 분이 보낸 일입니다. 제목·종류를 확인하고 “합의 확인(서명)” 또는 “거절”을 누르세요. 내용은 이 기기에만 저장됩니다.</div>');
     if (!c.peer) {
       parts.push('<b>상대 가입 대기 중</b>' + (c.invite_link ? ' — 아래 초대 링크를 메일로 보내세요(자동 발송은 준비 중).<div class="cs-link-box"><input readonly id="cs-invite-link" value="' + esc(c.invite_link) + '"><button class="cs-btn" data-act="copy">복사</button></div>' +
         '<div class="cs-sub">링크 유효기간 14일 · 상대가 가입하면 가입 사실과 아이디, 메일 아이디가 전달되고 키가 교환됩니다.</div>' : ' — 초대 링크가 없습니다.'));
       if (c.invitation && !c.invite_registered) parts.push('<div class="cs-msg">초대가 서버에 등록되지 않았습니다. 로그인 후 <button class="cs-link" data-act="reg-invite">초대 등록</button>을 누르세요(등록해야 상대가 가입 후 연결됩니다).</div>');
     } else {
-      parts.push('<b>상대</b> ' + esc(c.peer_mail || c.peer) + (c.peer_email_match === false ? ' <span class="cs-bad">⚠ 초대한 메일 주소와 다른 계정으로 가입했습니다. 본인이 맞는지 확인하세요.</span>' : ''));
+      parts.push('<b>상대</b> ' + esc(c.peer_mail || (c.incoming ? '초대한 분' : c.peer)) + (c.peer_email_match === false ? ' <span class="cs-bad">⚠ 초대한 메일 주소와 다른 계정으로 가입했습니다. 본인이 맞는지 확인하세요.</span>' : ''));
     }
     if (ki) {
       parts.push('<div class="cs-fp">내 키 지문 <code>' + esc(ki.mine) + '</code>' + (ki.peer ? ' · 상대 키 지문 <code>' + esc(ki.peer) + '</code>' : '') + '</div>' +
@@ -151,7 +159,7 @@
       var ready = !!(c.keys && c.keys.provider && c.keys.consumer), prov = c.my_side === 'provider';
       var b = function (ev, label, pri) { return '<button class="cs-btn' + (pri ? ' cs-pri' : '') + '" data-act="tr" data-ev="' + ev + '">' + label + '</button>'; };
       if (ready && root.CaseSync) amReq = await root.CaseSync.closeRequestedBy(h, c.keys);
-      if (c.state === 'proposed') { if (ready) acts = '<button class="cs-btn cs-pri" data-act="confirm">합의 확인(서명)</button>' + (prov ? b('accept', '합의 성립', false) : ''); }
+      if (c.state === 'proposed') { acts = (ready ? '<button class="cs-btn cs-pri" data-act="confirm">합의 확인(서명)</button>' + (prov ? b('accept', '합의 성립', false) : '') : '') + b('decline', '거절'); }
       else if (c.state === 'agreed') acts = prov ? b('activate', '진행 시작', true) : '';
       else if (c.state === 'active') acts = b('hold', '보류') + b('request_close', '종료 요청');
       else if (c.state === 'on_hold') acts = b('resume', '재개') + b('request_close', '종료 요청');
@@ -256,7 +264,35 @@
       return go();
     });
   }
-  function applyFlag() { var g = $('side-group-case'); if (g) g.hidden = !enabled(); }
+  // ── 초대 수락 배너 ─────────────────────────────────────
+  function inviteBanner() {
+    var t = invToken(); if (!t || !host() || $('cs-inv') || typeof document === 'undefined' || !document.body) return;
+    var d = document.createElement('div'); d.id = 'cs-inv'; d.className = 'cs-inv';
+    d.innerHTML = '<b>초대를 받았습니다.</b><div class="cs-sub">수락하면 내 가입 사실과 아이디·메일 아이디가 초대한 분께 전달되고, 서로의 서명 키를 주고받습니다. 일의 내용은 초대한 분이 제안을 보내면 이 기기에만 나타납니다.</div>' +
+      '<div class="cs-actions"><button class="cs-btn cs-pri" id="cs-inv-ok" data-requires-login="초대 수락">수락</button><button class="cs-btn" id="cs-inv-no">나중에</button></div><div id="cs-inv-msg" class="cs-sub"></div>';
+    document.body.appendChild(d);
+    var msg = function (m, bad) { var e = $('cs-inv-msg'); if (e) { e.textContent = m; e.style.color = bad ? '#c0392b' : ''; } };
+    $('cs-inv-no').onclick = function () { d.remove(); };
+    $('cs-inv-ok').onclick = async function () {
+      var btn = this; btn.disabled = true; msg('수락하는 중…');
+      try {
+        await host().initLocal();
+        var r = await host().claim(t);
+        if (!r.ok) { msg(errText(r), true); btn.disabled = false; return; }
+        try { sessionStorage.removeItem('case_inv'); history.replaceState(null, '', location.pathname + location.search.replace(/([?&])inv=[^&#]*&?/, '$1').replace(/[?&]$/, '') + location.hash); } catch (_) {}
+        btn.style.display = 'none'; $('cs-inv-no').textContent = '닫기';
+        msg('수락했습니다. 초대한 분이 제안을 보내면 자동으로 나타납니다…');
+        for (var i = 0; i < 15; i++) {
+          var pr = await host().poll();
+          if (pr && pr.proposals) { var cs = await getStore().listCases(), nw = cs.filter(function (c) { return c.incoming; }).sort(function (a, b) { return (b.incoming_at || '').localeCompare(a.incoming_at || ''); })[0];
+            msg('제안이 도착했습니다: ' + (nw ? nw.title : '')); var tab = nw && nw.my_side === 'provider' ? 'caseprov' : 'casecons'; cur[tab] = nw ? nw.case_id : null; if (typeof root._switchTab === 'function') root._switchTab(tab); setTimeout(function () { d.remove(); }, 4000); return; }
+          await new Promise(function (res) { setTimeout(res, 4000); });
+        }
+        msg('아직 제안이 오지 않았습니다. 초대한 분이 확인하면 “맡은 일/맡긴 일”에 자동으로 나타납니다.');
+      } catch (e) { msg(e.message || '실패', true); btn.disabled = false; }
+    };
+  }
+  function applyFlag() { var g = $('side-group-case'); if (g) g.hidden = !enabled(); inviteBanner(); }
 
   root.CaseUI = { show: show, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
   if (typeof document !== 'undefined') {

@@ -58,9 +58,9 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="case-store.js?v=20261101b"></script>
 <script src="case-sync.js?v=20261101b"></script>
 <script src="case-seal.js?v=20261101b"></script>
-<script src="case-net.js?v=20261101b"></script>
-<script src="case-host.js?v=20261101b"></script>
-<script src="case-ui.js?v=20261101b"></script>
+<script src="case-net.js?v=20261101c"></script>
+<script src="case-host.js?v=20261101c"></script>
+<script src="case-ui.js?v=20261101c"></script>
 <script src="guide.js?v=20261101"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -715,6 +715,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .cs-vis{font-weight:800;border-radius:4px;padding:0 6px;border:1px solid var(--bdr)}.cs-vis-shared{border-color:var(--pri);color:var(--pri)}.cs-vis-internal{color:#667}
 .cs-ok{color:#1d7a46;font-weight:700}.cs-bad{color:#c0392b;font-weight:800}.cs-msg{color:#c0392b;font-size:13px;margin-top:6px}.cs-note{margin-top:18px;font-size:12.5px;color:var(--hint)}
 .cs-fp{margin:6px 0;font-size:13.5px}.cs-fp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border:1px solid var(--bdr);border-radius:5px;padding:1px 6px;letter-spacing:.04em}
+.cs-inv{position:fixed;right:20px;bottom:20px;max-width:380px;z-index:300;border:1px solid var(--pri);background:var(--bg,#fff);border-radius:12px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
 .cs-empty{padding:28px;text-align:center;color:var(--hint);border:1px dashed var(--bdr);border-radius:10px}.cs-link-box{display:flex;gap:6px;margin:8px 0}.cs-link-box input{margin:0!important}
 @media(max-width:760px){.cs-two{grid-template-columns:1fr}.cs-panel{padding:14px}}
 </style>
@@ -1544,7 +1545,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 <script>
 const PROXY = 'https://hondi-proxy.tensor-city.workers.dev';
-window.CASE_HOST_CFG = { proxy: PROXY, fetch: (u, o) => KAuth.fetchWithAuth(u, o) };   // case-host.js — /case/* 호출(로그인 토큰 자동 첨부)
+window.CASE_HOST_CFG = { proxy: PROXY, fetch: (u, o) => KAuth.fetchWithAuth(u, o), mailId: async () => { const d = await kmailApi('/kmail/settings'); return d.mail_id || String(d.kmail_address || '').replace(/@.*$/, ''); } };   // case-host.js — /case/* 호출(로그인 토큰 자동 첨부)
 const KMAIL_CHAT_URL = PROXY + '/kmail/chat';
 // 2026-09-11 신설 — K-Address(SP-26) 대화형 주소록 관리, K-Mail과
 // 완전히 격리된 별도 엔드포인트.

@@ -47,8 +47,27 @@
       return { ok: true, sent: sent };
     }
 
+    // 초대받은 사람: 가입 직후 호출. 내 키 기록을 함께 보내 초청자 키를 받는다(서버가 둘 사이 우편함 관계를 연다).
+    async function claimInvite(token, mail_id) {
+      var rec = await Seal().bindBoxKey(identity, box.pub);
+      var r = await call('/case/invite/claim', { token: token, mail_id: mail_id, key_record: rec });
+      if (r.status !== 200) return { ok: false, code: r.json && r.json.code, message: r.json && r.json.message };
+      return { ok: true, inviter: r.json.inviter_user_id, inviter_keys: r.json.inviter_keys || null };
+    }
+
+    // 초청자: 가입 알림 뒤 제안 내용(일 제목·종류·내 쪽)을 상대에게 봉인해 보낸다. 상대가 이 기기에 일을 만든다.
+    async function sendProposal(case_id, peer, proposal) {
+      var pk = await peerKeys(case_id, peer); if (!pk.ok) return pk;
+      var p = { type: 'proposal', proposal: { case_id: proposal.case_id, title: proposal.title, kind: proposal.kind, inviter_side: proposal.inviter_side } };
+      var env = await Seal().seal({ from: guid, to: peer, kind: 'agreement', case_id_hash: await C().sha256Hex('case:' + case_id) }, p, pk.record.box_pub);
+      var r = await call('/case/mailbox/push', { envelope: env });
+      return r.status === 200 ? { ok: true } : { ok: false, code: r.json && r.json.code };
+    }
+
     // 내 우편함 수신: 서버 알림은 notices 로, 봉투는 복호화해 해당 일에 반영. 처리된 것은 ack 로 서버에서 지운다.
-    async function poll() {
+    // o.onProposal(proposal, env) → { ok, code? } : 아직 모르는 일의 제안(kind 'agreement')을 받았을 때 화면이 일을 만든다.
+    async function poll(o) {
+      o = o || {};
       var r = await call('/case/mailbox/pull', {});
       if (r.status !== 200) return { ok: false, code: r.json && r.json.code };
       var cases = await store.listCases(), byHash = {};
@@ -60,6 +79,14 @@
         var env = it.envelope, cs = byHash[env.case_id_hash];
         var op = await Seal().open(env, box);
         if (!op.ok) { res.errors.push({ id: it.id, code: op.code }); if (PERMANENT.indexOf(op.code) >= 0) ack.push(it.id); continue; }
+        if (env.kind === 'agreement') {
+          var pv = op.value && op.value.type === 'proposal' ? op.value.proposal : null;
+          if (!pv || !pv.case_id || await C().sha256Hex('case:' + pv.case_id) !== env.case_id_hash || (pv.inviter_side !== 'provider' && pv.inviter_side !== 'consumer')) { res.errors.push({ id: it.id, code: 'BAD_PROPOSAL' }); ack.push(it.id); continue; }
+          if (cs) { ack.push(it.id); continue; }   // 이미 만든 일의 중복 제안
+          var pr = o.onProposal ? await o.onProposal(pv, env) : { ok: false, code: 'NO_HANDLER' };
+          if (pr && pr.ok) { res.proposals = (res.proposals || 0) + 1; ack.push(it.id); } else res.errors.push({ id: it.id, code: (pr && pr.code) || 'PROPOSAL_FAILED' });
+          continue;
+        }
         if (!cs) { res.errors.push({ id: it.id, code: 'UNKNOWN_CASE' }); continue; }   // 일이 아직 없으면 남겨 둔다(제안 수락 후 다시 처리)
         var ing = await store.ingestEvent(cs.case_id, op.value);
         if (ing.ok) { res.applied++; ack.push(it.id); }
@@ -69,7 +96,7 @@
       return res;
     }
 
-    return { registerKeys: registerKeys, peerKeys: peerKeys, fingerprint: fingerprint, sendEvents: sendEvents, poll: poll };
+    return { registerKeys: registerKeys, peerKeys: peerKeys, fingerprint: fingerprint, sendEvents: sendEvents, claimInvite: claimInvite, sendProposal: sendProposal, poll: poll };
   }
   root.CaseNet = { CaseNet: CaseNet };
 })(typeof window !== 'undefined' ? window : globalThis);
