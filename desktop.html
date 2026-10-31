@@ -354,6 +354,7 @@ header.topbar{padding:0 22px;gap:18px}
 header.topbar .logo{color:#fff;text-decoration:none}
 /* topbar-navi */
 header.topbar .logo{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.04em}
+header.topbar .logo-wide{display:block;height:40px;width:auto}
 header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-sizing:border-box;background:#fff;border-radius:9px;object-fit:contain}
 .crumb{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,.7)}
 .crumb a{color:inherit;text-decoration:none}
@@ -741,7 +742,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <body>
 
 <header class="topbar">
-  <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-img" src="icons/navi-icon-96.png" alt="" width="34" height="34">NAVI</a>
+  <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"></a>
   <div class="topbar-right">
     <a href="https://hondi.net" target="_blank">hondi.net ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
