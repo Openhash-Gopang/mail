@@ -779,6 +779,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="doc-host-row" id="cmp-doc-row">
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)"></select>
         <span id="cmp-doc-count" role="status"></span>
+        <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
         <input type="file" id="doc-host-file" multiple accept=".txt,.md,.html,.htm,.csv,.json,text/*,image/*,.pdf" style="display:none">
       </div>
@@ -1688,6 +1689,12 @@ const _docHost = { loaded: false, id: '', ready: false, cap: false, queue: [], m
 function _docHostMetaKey(id) { return 'kmail_dochost_meta_' + id; }
 function _docHostFrame() { return document.getElementById('doc-host-frame'); }
 function _docHostOrigin() { const fr = _docHostFrame(); try { return new URL(fr.src).origin; } catch (e) { return ''; } }
+function _docBar(pct) {   // pct < 0 이면 숨김
+  const b = document.getElementById('cmp-doc-bar'); if (!b) return;
+  b.hidden = pct < 0; if (pct >= 0) b.value = Math.round(pct);
+  clearTimeout(_docBar.t);
+  if (pct >= 0 && pct < 100) _docBar.t = setTimeout(() => { _docBar(-1); _docHostApplyMeta(); }, 45000);   // 서류 쪽 응답이 끊기면 멈춘 채 두지 않는다
+}
 function _docHostApplyMeta() {
   if (_cmpMode !== 'doc') return;
   const input = document.getElementById('cmp-input');
@@ -1786,7 +1793,13 @@ function _docHostMessage(d, e) {
       : d.status === 'added' ? '서식 DB 에 없던 양식이라 「' + t + '」로 새로 구성했습니다. 공용 저장은 대화 창의 저장 제안에서 동의하면 됩니다.'
       : d.status === 'filled' ? String(d.msg || '첨부 자료를 반영했습니다.').slice(0, 120)
       : (d.msg ? String(d.msg).slice(0, 120) : '파일을 읽지 못했습니다. 더 선명한 이미지로 다시 올려 주세요.');
-    document.getElementById('cmp-doc-count').textContent = msg;
+    if (d.status === 'progress') {   // 첨부 자료를 읽는 중 — 진행 막대와 문구
+      _docBar(Number(d.pct)); if (Number(d.pct) >= 0) document.getElementById('cmp-doc-count').textContent = String(d.msg || '첨부 자료를 읽는 중…').slice(0, 120);
+      return;
+    }
+    _docBar(d.status === 'held' ? -1 : (d.status === 'filled' ? 100 : -1));
+    if (d.status === 'filled') setTimeout(() => _docBar(-1), 1200);
+    document.getElementById('cmp-doc-count').textContent = d.status === 'held' ? String(d.msg || '자료를 보관했습니다.').slice(0, 120) : msg;
     setTimeout(_docHostApplyMeta, 8000);
   } else if (d.type === 'navi-doc-empty') {
     _dr.capture = null;
@@ -1812,8 +1825,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const files = Array.from(this.files || []).slice(0, 8); this.value = '';
     if (!files.length) return;
     const c = document.getElementById('cmp-doc-count');
-    const bad = (m) => { c.textContent = m; setTimeout(_docHostApplyMeta, 3000); };
-    c.textContent = files.length > 1 ? files.length + '개 파일을 읽는 중…' : '파일을 읽는 중…';
+    const bad = (m) => { c.textContent = m; _docBar(-1); setTimeout(_docHostApplyMeta, 3000); };
+    c.textContent = files.length > 1 ? files.length + '개 파일을 읽는 중…' : '파일을 읽는 중…'; _docBar(3);
     files.forEach(f => {
       if (/^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|webp|gif|pdf)$/i.test(f.name)) {
         if (f.size > 8 * 1024 * 1024) { bad(f.name.slice(0, 30) + ': 8MB 이하만 올릴 수 있습니다.'); return; }
