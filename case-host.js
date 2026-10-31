@@ -6,7 +6,7 @@
    · 내 키를 서버에 등록(1회), 초대 가입 알림(invite_signed_up)으로 상대 키를 받아 일에 기록(TOFU)한다.
    · 로컬에서 만든 서명 이벤트·공유 항목을 일별 대기열(case.outq)에 쌓았다가 상대 우편함으로 보내고, 우편함을 읽어 반영한다.
    · 서버로 가는 것은 암호문과 해시뿐이다. 기록 원본은 이 기기의 PDV 에만 있다.
-   설정: window.CASE_HOST_CFG = { proxy: 'https://…', fetch: (url, opts) => Promise<Response> }  (desktop.html 이 지정)
+   설정: window.CASE_HOST_CFG = { proxy: 'https://…', fetch: (url, opts) => Promise<Response>, mailId: async () => '내 메일 아이디' }  (desktop.html 이 지정)
    의존: case-core, case-sync, case-seal, case-net, case-store
    ═════════════════════════════════════════════════ */
 (function (root) {
@@ -108,8 +108,34 @@
     if (hit.length !== 1) return { handled: false, unmatched: true };
     var c = hit[0];
     await ns.store.patchCase(c.case_id, { peer: n.invitee_user_id, peer_mail: n.invitee_mail_id, peer_email_match: n.email_match == null ? null : !!n.email_match, peer_joined_at: n.signed_up_at });
-    var k = await ensureKeys(c.case_id);
-    return { handled: true, case_id: c.case_id, keys: k };
+    var k = await ensureKeys(c.case_id), pr = k.ok ? await sendProposalIfNeeded(c.case_id) : { ok: false };
+    return { handled: true, case_id: c.case_id, keys: k, proposal: pr };
+  }
+
+  // 초청자: 상대에게 일의 제안(제목·종류·내 쪽)을 한 번 보낸다. 상대 기기가 이 내용으로 일을 만든다. 실패하면 다음 새로 고침 때 다시.
+  async function sendProposalIfNeeded(case_id) {
+    var ns = await net(), cs = await ns.store.getCase(case_id);
+    if (!cs || cs.mode !== 'engaged' || cs.incoming || cs.proposal_sent || !cs.peer) return { ok: true, skipped: true };
+    var r = await ns.net.sendProposal(case_id, cs.peer, { case_id: cs.case_id, title: cs.title, kind: cs.kind, inviter_side: cs.my_side });
+    if (r.ok) await ns.store.patchCase(case_id, { proposal_sent: true });
+    return r;
+  }
+
+  // 초대받은 쪽: 모르는 일의 제안이 도착하면 이 기기에 일을 만든다(맡은 쪽/맡긴 쪽은 초청자의 반대편). 아직 합의 전(제안됨) 상태다.
+  async function onProposal(pv, env) {
+    var ns = await net();
+    var r = await ns.store.createCase({ case_id: pv.case_id, title: String(pv.title || '').slice(0, 120), kind: ['case', 'transaction', 'event'].indexOf(pv.kind) >= 0 ? pv.kind : 'case', my_side: oppo(pv.inviter_side) });
+    if (!r.ok && !/이미/.test(r.error || '')) return { ok: false, code: 'CREATE_FAILED' };
+    await ns.store.patchCase(pv.case_id, { peer: env.from, incoming: true, incoming_at: new Date().toISOString() });
+    try { await ensureKeys(pv.case_id); } catch (_) { /* 키는 새로 고침 때 다시 시도 */ }
+    return { ok: true };
+  }
+
+  // 초대 수락(가입 확인): 내 키를 서버에 등록하고 초청자와 우편함 관계를 연다.
+  async function claim(token) {
+    var ns = await net(), mid = cfg().mailId ? await cfg().mailId() : '';
+    if (!mid) return { ok: false, code: 'NO_MAIL_ID', message: '메일 아이디를 먼저 만들어 주세요(설정)' };
+    return ns.net.claimInvite(token, mid);
   }
 
   // 대기열에 이벤트를 쌓는다(보내기 실패해도 잃지 않도록 일 레코드에 저장).
@@ -131,6 +157,8 @@
   async function flush(case_id) {
     var ns = await net(), cs = await ns.store.getCase(case_id);
     if (!cs || !cs.peer) return { ok: false, code: 'NO_PEER', sent: 0 };
+    var pp = await sendProposalIfNeeded(case_id);
+    if (!pp.ok) return { ok: false, code: pp.code, sent: 0 };
     await collectShared(case_id);
     cs = await ns.store.getCase(case_id);
     var q = cs.outq || []; if (!q.length) return { ok: true, sent: 0 };
@@ -150,12 +178,12 @@
 
   // 우편함 읽기 → 알림 처리 → 대기 중인 내 이벤트 전송. 화면은 반환값으로 상태를 안내한다.
   async function poll() {
-    var ns = await net(), r = await ns.net.poll();
+    var ns = await net(), r = await ns.net.poll({ onProposal: onProposal });
     if (!r.ok) return { ok: false, code: r.code };
     var joined = [];
     for (var i = 0; i < r.notices.length; i++) { var h = await onNotice(r.notices[i]); if (h.handled) joined.push(h.case_id); }
     var f = await flushAll();
-    var out = { ok: true, applied: r.applied, errors: r.errors, joined: joined, sent: f.sent, failed: f.failed };
+    var out = { ok: true, applied: r.applied, proposals: r.proposals || 0, errors: r.errors, joined: joined, sent: f.sent, failed: f.failed };
     listeners.forEach(function (fn) { try { fn(out); } catch (_) {} });
     return out;
   }
@@ -183,5 +211,5 @@
 
   function _reset() { local = null; netState = null; stopAutoPoll(); listeners = []; }
   root.CaseHost = { initLocal: initLocal, net: net, call: call, ensureKeys: ensureKeys, onNotice: onNotice, enqueue: enqueue, flush: flush, flushAll: flushAll,
-    poll: poll, onUpdate: onUpdate, startAutoPoll: startAutoPoll, stopAutoPoll: stopAutoPoll, registerInvite: registerInvite, keyInfo: keyInfo, _reset: _reset };
+    poll: poll, onUpdate: onUpdate, startAutoPoll: startAutoPoll, stopAutoPoll: stopAutoPoll, registerInvite: registerInvite, claim: claim, onProposal: onProposal, sendProposalIfNeeded: sendProposalIfNeeded, keyInfo: keyInfo, _reset: _reset };
 })(typeof window !== 'undefined' ? window : globalThis);
