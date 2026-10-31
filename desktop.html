@@ -57,6 +57,7 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="case-invite.js?v=20261101"></script>
 <script src="case-store.js?v=20261101"></script>
 <script src="case-ui.js?v=20261101"></script>
+<script src="guide.js?v=20261101"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -710,6 +711,31 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .cs-empty{padding:28px;text-align:center;color:var(--hint);border:1px dashed var(--bdr);border-radius:10px}.cs-link-box{display:flex;gap:6px;margin:8px 0}.cs-link-box input{margin:0!important}
 @media(max-width:760px){.cs-two{grid-template-columns:1fr}.cs-panel{padding:14px}}
 </style>
+<style>
+/* 사용법(단계별 퀴즈) — guide.js */
+.gd-panel{padding:20px 24px;max-width:860px}
+.gd-top{position:sticky;top:54px;z-index:5;background:var(--bg,#f5f6f8);padding:10px 0 12px;margin-bottom:6px}
+.gd-steps{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px}
+.gd-step{width:34px;height:34px;border-radius:50%;border:2px solid var(--bdr);background:#fff;color:var(--sub);font-weight:800;font-size:14px;cursor:pointer;flex:none}
+.gd-step.done{background:var(--pri);border-color:var(--pri);color:#fff}.gd-step.cur{border-color:var(--pri);color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
+.gd-step.done.cur{color:#fff}.gd-step.next{border-color:var(--pri);color:var(--pri)}.gd-step:disabled{background:#eef0f3;color:#aab;cursor:not-allowed;border-color:#e1e4e9}
+.gd-bar{display:inline-block;width:16px;height:2px;background:var(--bdr);flex:none}
+.gd-prog{font-size:13px;color:var(--sub);margin-top:6px;font-weight:700}
+.gd-card{border:1px solid var(--bdr);background:#fff;border-radius:12px;padding:16px 18px;margin:12px 0}
+.gd-h{margin:6px 0 10px;font-size:22px}.gd-body{margin:0;padding-left:20px;line-height:1.75;font-size:15.5px}.gd-body li{margin-bottom:6px}
+.gd-lv{display:inline-block;font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;background:var(--pri-bg);color:var(--pri)}.gd-lv-활용{background:#fff4dc;color:#9a5b00}.gd-lv-고급{background:#ece9ff;color:#4b3fb5}
+.gd-qh{margin:0 0 8px;font-size:17px}.gd-sub{font-size:13px;color:var(--sub);font-weight:600}
+.gd-q{border:1px solid var(--bdr);border-radius:10px;margin:10px 0;padding:10px 14px}.gd-q legend{font-weight:800;padding:0 6px;font-size:15px}
+.gd-q.ok{border-color:#7cc89b;background:#f3fbf6}.gd-q.bad{border-color:#e2a29b;background:#fff6f5}
+.gd-o{display:flex;align-items:center;gap:8px;padding:7px 4px;font-size:15px;cursor:pointer}.gd-o input{width:18px;height:18px;flex:none}
+.gd-fb{font-size:13.5px;font-weight:700;margin-top:4px}.gd-fb.ok{color:#1d7a46}.gd-fb.bad{color:#c0392b}
+.gd-foot{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.gd-pass{font-weight:800;color:#1d7a46}
+.gd-btn{border:1px solid var(--bdr);background:#fff;border-radius:8px;padding:9px 16px;font-size:14.5px;font-weight:800;color:var(--sub);cursor:pointer;text-decoration:none;display:inline-block}
+.gd-pri{background:var(--pri);border-color:var(--pri);color:#fff}.gd-btn:disabled{opacity:.45;cursor:not-allowed}
+.gd-link{background:none;border:none;color:var(--pri);font-weight:700;cursor:pointer;padding:0;font-size:13.5px}.gd-nav{margin-top:6px}
+.gd-end{text-align:center;padding:34px 18px}
+@media(max-width:760px){.gd-panel{padding:12px}.gd-step{width:30px;height:30px;font-size:13px}.gd-bar{width:8px}}
+</style>
 </head>
 <body>
 
@@ -765,6 +791,10 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <div class="side-group">
       <div class="side-label">행정 업무</div>
       <button id="tab-btn-foi" class="nav-btn" data-label="정보 공개 청구" onclick="_switchTab('foi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>정보 공개 청구</button>
+    </div>
+    <div class="side-group">
+      <div class="side-label">도움말</div>
+      <button id="tab-btn-guide" class="nav-btn" data-label="사용법" onclick="_switchTab('guide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>사용법</button>
     </div>
     <div class="side-settings">
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
@@ -1204,6 +1234,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     </div>
   </div>
 
+  <div id="tab-guide" class="tab-panel gd-panel"></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
   <div id="tab-casesolo" class="tab-panel cs-panel"></div>
@@ -2184,7 +2215,8 @@ function _switchTab(name) {
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'settings') _settingsInit();
-  if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);   // 업무(Case) — 기능 플래그 뒤
+  if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
+  if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
   _navSyncMailSub();
 }
 
