@@ -946,7 +946,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <div class="field"><label>내용</label><div id="mail-body-editor"></div></div>
         <div class="field">
           <label>첨부파일 <span style="color:var(--hint);font-weight:400">(선택, 최대 25MB)</span></label>
-          <input type="file" id="mail-file">
+          <input type="file" id="mail-file" hidden>
+          <button type="button" class="btn-sec" id="mail-file-btn" style="padding:6px 14px;border:1px solid var(--border,#d9e0ea);border-radius:8px;background:var(--bg,#fff);color:inherit;cursor:pointer" onclick="document.getElementById('mail-file').click()">파일 선택</button>
           <div id="mail-attach-list" style="font-size:13px;color:var(--sub);margin-top:6px"></div>
         </div>
         <div id="mail-compose-err" class="errbox" style="display:none"></div>
@@ -2747,10 +2748,21 @@ function _mailFileToBase64(file) {
   });
 }
 function _mailRenderAttachList() {
-  document.getElementById('mail-attach-list').textContent = _mailPendingAttachments.length
-    ? '첨부됨: ' + _mailPendingAttachments.map(a => a.filename).join(', ')
-    : '';
+  // 브라우저 기본 "선택된 파일 없음" 대신, 실제 첨부 목록(서류에서 붙은 파일 포함)을 보여 준다
+  const box = document.getElementById('mail-attach-list');
+  box.textContent = '';
+  if (!_mailPendingAttachments.length) { box.textContent = '첨부된 파일 없음'; return; }
+  _mailPendingAttachments.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:4px';
+    const nm = document.createElement('span'); nm.textContent = a.filename;
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', a.filename + ' 첨부 빼기');
+    x.style.cssText = 'border:0;background:none;color:inherit;font-size:16px;line-height:1;cursor:pointer;padding:0 4px';
+    x.onclick = () => { _mailPendingAttachments.splice(i, 1); _mailRenderAttachList(); };
+    row.append(nm, x); box.appendChild(row);
+  });
 }
+try { _mailRenderAttachList(); } catch (e) {}
 async function _mailHandleFileSelect() {
   const input = document.getElementById('mail-file');
   const file = input.files[0];
