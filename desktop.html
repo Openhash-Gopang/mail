@@ -780,7 +780,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)"></select>
         <span id="cmp-doc-count" role="status"></span>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
-        <input type="file" id="doc-host-file" accept=".txt,.md,.html,.htm,.csv,.json,text/*,image/*,.pdf" style="display:none">
+        <input type="file" id="doc-host-file" multiple accept=".txt,.md,.html,.htm,.csv,.json,text/*,image/*,.pdf" style="display:none">
       </div>
       <div class="hint">발송을 확정하기 전에 K-Mail이 수신자·제목·본문·시각을 한 번에 정리해 "이대로 보낼까요?"라고 반드시 확인합니다. 회신을 모아 정리해달라고 말하면 그 시점도 함께 정하고, 도착한 보고는 "내 캠페인" 탭에서 볼 수 있습니다.</div>
     </div>
@@ -1779,11 +1779,12 @@ function _docHostMessage(d, e) {
     try { const id = document.getElementById('cmp-doc-site').value; localStorage.setItem(_docHostMetaKey(id), JSON.stringify(_docHost.meta)); } catch (x) {}
     _docHostApplyMeta();
   } else if (d.type === 'navi-doc-template-result') {
-    // 서류 쪽이 양식 이미지를 양식 DB 와 대조한 결과: matched(기존 양식 불러옴) | added(DB 에 없어 새로 구성) | failed
+    // 서류 쪽이 올린 파일을 처리한 결과: matched(양식 DB 의 양식) | added(DB 에 없어 새로 구성) | filled(자료로 항목을 채움) | failed
     const t = String(d.title || '').slice(0, 80);
     const msg = d.status === 'matched' ? '서식 DB 의 「' + t + '」 서식을 불러왔습니다.'
       : d.status === 'added' ? '서식 DB 에 없던 양식이라 「' + t + '」로 새로 구성했습니다. 공용 저장은 대화 창의 저장 제안에서 동의하면 됩니다.'
-      : (d.msg ? String(d.msg).slice(0, 120) : '양식을 읽지 못했습니다. 더 선명한 이미지로 다시 올려 주세요.');
+      : d.status === 'filled' ? String(d.msg || '첨부 자료를 반영했습니다.').slice(0, 120)
+      : (d.msg ? String(d.msg).slice(0, 120) : '파일을 읽지 못했습니다. 더 선명한 이미지로 다시 올려 주세요.');
     document.getElementById('cmp-doc-count').textContent = msg;
     setTimeout(_docHostApplyMeta, 8000);
   } else if (d.type === 'navi-doc-empty') {
@@ -1806,21 +1807,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const file = document.getElementById('doc-host-file');
   if (file) file.addEventListener('change', function () {
-    const f = this.files && this.files[0]; this.value = '';
-    if (!f) return;
+    // 서류를 고른 뒤라면 서류 쪽이 올린 파일을 '항목을 채울 자료'로 쓰고, 고르기 전이라면 '양식'으로 읽는다(판단은 서류 쪽)
+    const files = Array.from(this.files || []).slice(0, 8); this.value = '';
+    if (!files.length) return;
     const c = document.getElementById('cmp-doc-count');
-    if (/^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|webp|gif|pdf)$/i.test(f.name)) {
-      // 양식 이미지 — 서류 쪽이 읽어 양식 DB 와 대조한다(있으면 불러오고, 없으면 추가)
-      if (f.size > 8 * 1024 * 1024) { c.textContent = '양식 이미지는 8MB 이하만 올릴 수 있습니다.'; setTimeout(_docHostApplyMeta, 3000); return; }
-      c.textContent = '양식을 읽는 중…';
-      f.arrayBuffer().then(buf => _docHostPost({ type: 'navi-doc-template', name: f.name.slice(0, 120), mime: f.type || 'application/octet-stream', data: buf }))
-        .catch(() => { c.textContent = '파일을 읽지 못했습니다.'; setTimeout(_docHostApplyMeta, 3000); });
-      return;
-    }
-    if (!/^text\//.test(f.type) && !/\.(txt|md|html?|csv|json)$/i.test(f.name)) { c.textContent = '텍스트·이미지·PDF 파일만 올릴 수 있습니다.'; setTimeout(_docHostApplyMeta, 3000); return; }
-    const r = new FileReader();
-    r.onload = () => _docHostPost({ type: 'navi-doc-attach', name: f.name.slice(0, 120), text: String(r.result).slice(0, 20000) });
-    r.readAsText(f);
+    const bad = (m) => { c.textContent = m; setTimeout(_docHostApplyMeta, 3000); };
+    c.textContent = files.length > 1 ? files.length + '개 파일을 읽는 중…' : '파일을 읽는 중…';
+    files.forEach(f => {
+      if (/^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|webp|gif|pdf)$/i.test(f.name)) {
+        if (f.size > 8 * 1024 * 1024) { bad(f.name.slice(0, 30) + ': 8MB 이하만 올릴 수 있습니다.'); return; }
+        f.arrayBuffer().then(buf => _docHostPost({ type: 'navi-doc-template', name: f.name.slice(0, 120), mime: f.type || 'application/octet-stream', data: buf }))
+          .catch(() => bad('파일을 읽지 못했습니다.'));
+      } else if (/^text\//.test(f.type) || /\.(txt|md|html?|csv|json)$/i.test(f.name)) {
+        const r = new FileReader();
+        r.onload = () => _docHostPost({ type: 'navi-doc-attach', name: f.name.slice(0, 120), text: String(r.result).slice(0, 20000) });
+        r.readAsText(f);
+      } else bad('텍스트·이미지·PDF 파일만 올릴 수 있습니다.');
+    });
   });
 });
 
