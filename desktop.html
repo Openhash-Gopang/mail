@@ -1857,6 +1857,14 @@ window.addEventListener('message', (e) => {
   if (d.type === 'navi-doc-done') (fromModal ? _docAttachToChat : _docAttach)(d, e.source, e.origin);
 });
 
+/* 서류 사이트(새 창)의 '전송' — #doc-attach 로 열린 창이 opener 에게서 받은 서류를 메일 쓰기 화면에 첨부한다 */
+window.addEventListener('message', (e) => {
+  if (!window.opener || e.source !== window.opener) return;
+  if (!_DOC_SITES.some(s => new URL(s.url).origin === e.origin)) return;
+  const d = e.data || {};
+  if (d.type === 'navi-doc-done') _docAttach(d, e.source, e.origin);
+});
+
 // ══════════════════════════════════════════════════════════════
 // Draft 자동 저장 — 2026-10-31. 편지·캠페인·서류를 쓰다가 나가면(모드 전환 · 다른 화면 · 창 닫기) 이 기기의 PDV 에 보관한다.
 // PDV 는 hondi.net 출처의 브라우저 저장소라 mail.hondi.net 이 직접 쓸 수 없다 → hondi.net/pdv-draft-bridge.html 을 숨은 iframe 으로 열어 postMessage 로 부탁한다.
@@ -4919,6 +4927,11 @@ window.kmailOpenSettings = function (section) {
 (function () {
   const h = (location.hash || '').replace('#', '');
   if (h === 'idsettings') { kmailOpenSettings('account'); return; }
+  if (h === 'doc-attach' && window.opener && window.opener !== window) {   // 서류 사이트의 '전송' 버튼이 연 창: 준비됐다고 알리면 서류가 온다
+    _switchTab('mail'); _mailSwitchSub('compose');
+    _DOC_SITES.forEach(function (x) { try { window.opener.postMessage({ type: 'navi-doc-mail-ready' }, new URL(x.url).origin); } catch (e) {} });
+    return;
+  }
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
