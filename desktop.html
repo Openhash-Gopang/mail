@@ -1571,6 +1571,18 @@ function _docBase64(buf) {
   for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
   return btoa(bin);
 }
+// 서류 페이지의 "첨부서류" 항목별로 사용자가 올린 파일 — navi-doc-done 의 attachments: [{ id, label, name, mime, data(ArrayBuffer) }]
+// 최대 12개 · 파일당 10MB · 합계 25MB. 잘못된 항목은 건너뛴다.
+function _docExtras(d) {
+  const out = []; let total = 0;
+  (Array.isArray(d && d.attachments) ? d.attachments : []).forEach(a => {
+    if (!a || !(a.data instanceof ArrayBuffer) || !a.data.byteLength || a.data.byteLength > 10 * 1024 * 1024) return;
+    if (out.length >= 12 || total + a.data.byteLength > 25 * 1024 * 1024) return;
+    total += a.data.byteLength;
+    out.push({ label: String(a.label || a.id || '').slice(0, 80), name: String(a.name || '첨부서류').replace(/[\\/:*?"<>|]/g, '_').slice(0, 120), mime: String(a.mime || 'application/octet-stream'), data: a.data });
+  });
+  return out;
+}
 async function _docAttach(d, src, origin) {
   const reply = (ok, msg) => { try { src.postMessage({ type: 'navi-doc-attached', ok, msg }, origin); } catch (e) {} };
   const note = document.getElementById('doc-note');
@@ -1586,6 +1598,10 @@ async function _docAttach(d, src, origin) {
     if (subj && !subj.value.trim()) subj.value = title;
     if (!_mailGetBodyText().trim()) _mailSetBodyText('첨부: ' + title + '\n');
     _mailPendingAttachments.push({ id: up.attachment_id, filename });
+    for (const x of _docExtras(d)) {   // 첨부서류(사용자가 항목별로 올린 파일)도 함께 붙인다
+      const ux = await kmailApi('/kmail/attachments/upload', { method: 'POST', body: { file_base64: _docBase64(x.data), filename: x.name, content_type: x.mime } });
+      _mailPendingAttachments.push({ id: ux.attachment_id, filename: x.name });
+    }
     _mailRenderAttachList();
     note.textContent = '';
     reply(true);
@@ -1800,6 +1816,7 @@ async function _docAttachToChat(d, src, origin) {
     const filename = String(d.filename || '서류.docx').slice(0, 120);
     const f = new File([d.data], filename, { type: String(d.mime || 'application/octet-stream') });
     if (_docTarget === 'qs') await _qsFeedFile(f); else await _cmpFeedFile(f);
+    for (const x of _docExtras(d)) { const fx = new File([x.data], x.name, { type: x.mime }); if (_docTarget === 'qs') await _qsFeedFile(fx); else await _cmpFeedFile(fx); }
     reply(true);
     _docModalClose();
   } catch (e) {
@@ -1907,6 +1924,7 @@ async function _drStoreCaptured(cap, d) {
   try {
     if (!(d.data instanceof ArrayBuffer) || !d.data.byteLength) throw new Error('EMPTY');
     const item = { id: cap.id, kind: 'doc', site: cap.site, fileName: String(d.filename || '서류.docx').slice(0, 160), fileMime: String(d.mime || ''), fileData: d.data };
+    const ex = _docExtras(d); if (ex.length) item.extras = ex;
     if (d.title) item.title = String(d.title).slice(0, 120);
     await _drCall('put', { item });
     if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _cmpChat.draftId = null; _dr.lastSig = ''; _drToast('작성한 서류에 저장했습니다 — 왼쪽 메뉴 서류 ▸ 작성한 서류'); }
@@ -1928,7 +1946,7 @@ function _drRecordDone(d) {
   const id = _cmpChat.draftId || _drNewId(); _cmpChat.draftId = null; _dr.lastSig = '';
   const t = document.getElementById('cmp-input').value.trim();
   _drCall('put', { item: { id, kind: 'doc', site: _docHost.id || '', title: String(d.title || t || '서류').slice(0, 120), text: t,
-    fileName: String(d.filename || '서류.docx').slice(0, 160), fileMime: String(d.mime || ''), fileData: d.data } })
+    fileName: String(d.filename || '서류.docx').slice(0, 160), fileMime: String(d.mime || ''), fileData: d.data, extras: _docExtras(d) } })
     .then(() => _drCall('done', { id })).catch(() => {});
 }
 // 발송·접수가 끝난 편지·캠페인은 Draft 에서 지운다
@@ -1943,13 +1961,18 @@ window.addEventListener('pagehide', () => { _drAutoSave('hide'); });
 // ── Draft 목록(서류 Draft · 작성한 서류 · 메일 Draft 의 이 기기 대화) ──
 const _DR_KIND_LABEL = { doc: '서류', letter: '편지', campaign: '캠페인' };
 function _drSiteLabel(id) { const s = _DOC_SITES.find(x => x.id === id); return s ? s.label : '서류'; }
-function _drDownload(it) {
-  const blob = new Blob([it.fileData], { type: it.fileMime || 'application/octet-stream' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = it.fileName || '서류.docx';
+function _drDownloadOne(data, name, mime) {
+  const blob = new Blob([data], { type: mime || 'application/octet-stream' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name || '서류.docx';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
+// 작성본 Word 파일과 첨부서류를 차례로 내려받는다(브라우저가 여러 파일 내려받기를 물어볼 수 있다)
+async function _drDownload(it) {
+  if (it.fileData) _drDownloadOne(it.fileData, it.fileName, it.fileMime);
+  for (const x of (it.extras || [])) { await new Promise(r => setTimeout(r, 250)); _drDownloadOne(x.data, x.name, x.mime); }
+}
 function _drItemRow(it, acts) {
-  const sub = (it.kind === 'doc' ? _drSiteLabel(it.site) : (_DR_KIND_LABEL[it.kind] + ' 대화 · 메시지 ' + it.msgCount + '개')) + ' · ' + fmtDt(it.updated) + (it.status === 'done' ? ' 작성 완료' : ' 저장됨') + (it.hasFile ? ' · Word 파일 있음' : '');
+  const sub = (it.kind === 'doc' ? _drSiteLabel(it.site) : (_DR_KIND_LABEL[it.kind] + ' 대화 · 메시지 ' + it.msgCount + '개')) + ' · ' + fmtDt(it.updated) + (it.status === 'done' ? ' 작성 완료' : ' 저장됨') + (it.hasFile ? ' · Word 파일 있음' : '') + (it.extraCount ? ' · 첨부서류 ' + it.extraCount + '개' : '');
   return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title || '(제목 없음)') + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions">' +
     acts.map(a => '<button type="button" class="btn btn-outline btn-sm" data-act="' + a[0] + '">' + a[1] + '</button>').join('') + '</div></div>';
 }
@@ -1967,8 +1990,8 @@ async function _drRenderDocList(status) {
     loading.style.display = 'none';
     if (!r.items.length) { empty.style.display = ''; return; }
     box.innerHTML = r.items.map(it => _drItemRow(it, status === 'done'
-      ? (it.hasFile ? [['dl', '파일 받기'], ['mail', '메일에 첨부'], ['del', '삭제']] : [['del', '삭제']])
-      : [['resume', '이어 쓰기']].concat(it.hasFile ? [['done', '작성 완료'], ['dl', '파일 받기']] : []).concat([['del', '삭제']]))).join('');
+      ? ((it.hasFile || it.extraCount) ? [['dl', '파일 받기'], ['mail', '메일에 첨부'], ['del', '삭제']] : [['del', '삭제']])
+      : [['resume', '이어 쓰기']].concat((it.hasFile || it.extraCount) ? [['done', '작성 완료'], ['dl', '파일 받기']] : []).concat([['del', '삭제']]))).join('');
     _drBindRows(box, (id, act) => _drDocAction(id, act, status));
   } catch (e) {
     loading.style.display = 'none'; empty.style.display = ''; empty.textContent = 'PDV 연결을 확인하지 못했습니다. 잠시 후 다시 열어 주세요.';
@@ -1979,8 +2002,14 @@ async function _drDocAction(id, act, status) {
     if (act === 'del') { if (!confirm('이 항목을 삭제할까요?')) return; await _drCall('delete', { id }); _drRenderDocList(status); return; }
     if (act === 'done') { await _drCall('done', { id }); _drToast('작성한 서류로 옮겼습니다'); _drRenderDocList(status); return; }
     const it = (await _drCall('get', { id })).item;
-    if (act === 'dl') { if (it.fileData) _drDownload(it); return; }
-    if (act === 'mail') { if (!it.fileData) return; _switchTab('letter'); await _cmpFeedFile(new File([it.fileData], it.fileName || '서류.docx', { type: it.fileMime || 'application/octet-stream' })); return; }
+    if (act === 'dl') { if (it.fileData || (it.extras || []).length) await _drDownload(it); return; }
+    if (act === 'mail') {
+      if (!it.fileData && !(it.extras || []).length) return;
+      _switchTab('letter');
+      if (it.fileData) await _cmpFeedFile(new File([it.fileData], it.fileName || '서류.docx', { type: it.fileMime || 'application/octet-stream' }));
+      for (const x of (it.extras || [])) await _cmpFeedFile(new File([x.data], x.name, { type: x.mime }));
+      return;
+    }
     if (it.kind === 'doc') _drResumeDoc(it);
   } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
 }
