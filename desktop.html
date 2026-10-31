@@ -1779,13 +1779,13 @@ function _docHostMessage(d, e) {
     try { const id = document.getElementById('cmp-doc-site').value; localStorage.setItem(_docHostMetaKey(id), JSON.stringify(_docHost.meta)); } catch (x) {}
     _docHostApplyMeta();
   } else if (d.type === 'navi-doc-template-result') {
-    // 서류 쪽이 양식 이미지를 양식 DB 와 대조한 결과: matched(기존 양식 불러옴) | added(새 양식 추가) | failed
+    // 서류 쪽이 양식 이미지를 양식 DB 와 대조한 결과: matched(기존 양식 불러옴) | added(DB 에 없어 새로 구성) | failed
     const t = String(d.title || '').slice(0, 80);
-    const msg = d.status === 'matched' ? '기존 양식 「' + t + '」을 불러왔습니다.'
-      : d.status === 'added' ? '새 양식 「' + t + '」을 양식 DB 에 추가했습니다.'
+    const msg = d.status === 'matched' ? '서식 DB 의 「' + t + '」 서식을 불러왔습니다.'
+      : d.status === 'added' ? '서식 DB 에 없던 양식이라 「' + t + '」로 새로 구성했습니다. 공용 저장은 대화 창의 저장 제안에서 동의하면 됩니다.'
       : (d.msg ? String(d.msg).slice(0, 120) : '양식을 읽지 못했습니다. 더 선명한 이미지로 다시 올려 주세요.');
     document.getElementById('cmp-doc-count').textContent = msg;
-    setTimeout(_docHostApplyMeta, 6000);
+    setTimeout(_docHostApplyMeta, 8000);
   } else if (d.type === 'navi-doc-empty') {
     _dr.capture = null;
     const c = document.getElementById('cmp-doc-count'); c.textContent = d.msg || '먼저 서류를 작성해 주세요.';
