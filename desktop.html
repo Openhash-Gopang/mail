@@ -171,6 +171,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="campaign"] #cmp-mail-btn,#tab-compose[data-mode="letter"] #cmp-mail-btn{background:var(--pri-bg);color:var(--pri)}
 #doc-host-frame{display:none;width:100%;height:max(640px,calc(100vh - 230px));border:0;background:transparent;margin-top:8px}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{display:block}
+/* 서류 페이지가 navi-doc-size 로 문서 높이를 알려 주면 iframe 이 그 높이로 늘어나 이중 스크롤이 없어진다(높이는 스크립트가 style 로 지정). 길어진 서류를 내려도 입력창은 위에 붙어 있다 */
+#tab-compose[data-mode="doc"].doc-live.doc-auto .chat-composer{position:sticky;top:54px;z-index:6;background:var(--bg,#fff)}
 /* nav-mail-group — 메일 하위 메뉴가 길어졌으므로 묶음 사이에 가는 선, 링크 모양을 버튼과 같게 */
 .side-nav .nav-sub .nav-sep{height:1px;background:var(--bdr);margin:6px 8px}
 .side-nav .nav-sub a.nav-subitem{text-decoration:none;box-sizing:border-box}
@@ -1691,6 +1693,16 @@ function _cmpDocSelChange(sel) {
   if (_cmpMode !== 'doc') { if (!_cmpSetMode('doc')) sel.value = ''; return; }   // 모드가 바뀌면 _docHostMode 가 고른 서류를 불러온다
   _docHostSite(sel.value);
 }
+// 서류 페이지가 알려 준 문서 높이(px)로 iframe 높이를 맞춘다. 0·잘못된 값이면 자동 높이를 풀고 기본 높이(CSS)로 돌아간다.
+function _docHostAutoHeight(h) {
+  const fr = _docHostFrame(), tab = document.getElementById('tab-compose');
+  if (!fr) return;
+  h = Math.round(Number(h));
+  if (!(h > 0) || !isFinite(h)) { fr.style.height = ''; fr.removeAttribute('scrolling'); if (tab) tab.classList.remove('doc-auto'); return; }
+  fr.style.height = Math.min(Math.max(h, 240), 30000) + 'px';
+  fr.setAttribute('scrolling', 'no');   // 안쪽 스크롤바 없이 페이지 스크롤 하나로
+  if (tab) tab.classList.add('doc-auto');
+}
 function _docHostMode(on) {
   const input = document.getElementById('cmp-input');
   if (_docHost.phOrig === null) _docHost.phOrig = input.dataset.ph !== undefined ? input.dataset.ph : input.placeholder;
@@ -1701,6 +1713,7 @@ function _docHostMode(on) {
   else _docHostApplyMeta();
 }
 function _docHostLoad(id) {
+  _docHostAutoHeight(0);
   _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = [];
   try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
   _docHostApplyMeta();
@@ -1743,6 +1756,8 @@ function _docHostMessage(d, e) {
     else document.getElementById('tab-compose').classList.add('doc-live');   // 옛 서류 페이지: 그 페이지의 입력창을 그대로 쓴다
     const q = _docHost.queue; _docHost.queue = [];
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
+  } else if (d.type === 'navi-doc-size') {
+    _docHostAutoHeight(d.height);
   } else if (d.type === 'navi-doc-meta') {
     _docHost.meta = { count: String(d.count || '').slice(0, 200), placeholder: String(d.placeholder || '').slice(0, 200) };
     try { const id = document.getElementById('cmp-doc-site').value; localStorage.setItem(_docHostMetaKey(id), JSON.stringify(_docHost.meta)); } catch (x) {}
