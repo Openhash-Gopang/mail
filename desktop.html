@@ -59,8 +59,13 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="case-sync.js?v=20261101b"></script>
 <script src="case-seal.js?v=20261101b"></script>
 <script src="case-net.js?v=20261101c"></script>
+<script src="assistant-core.js?v=20261101e"></script>
+<script src="assistant-rules.js?v=20261101e"></script>
+<script src="assistant-runtime.js?v=20261101e"></script>
+<script src="assistant-host.js?v=20261101e"></script>
 <script src="case-host.js?v=20261101d"></script>
-<script src="case-ui.js?v=20261101d"></script>
+<script src="case-ui.js?v=20261101e"></script>
+<script src="case-assist.js?v=20261101e"></script>
 <script src="guide.js?v=20261101"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -716,6 +721,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .cs-ok{color:#1d7a46;font-weight:700}.cs-bad{color:#c0392b;font-weight:800}.cs-msg{color:#c0392b;font-size:13px;margin-top:6px}.cs-note{margin-top:18px;font-size:12.5px;color:var(--hint)}
 .cs-fp{margin:6px 0;font-size:13.5px}.cs-fp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border:1px solid var(--bdr);border-radius:5px;padding:1px 6px;letter-spacing:.04em}
 .cs-inv{position:fixed;right:20px;bottom:20px;max-width:380px;z-index:300;border:1px solid var(--pri);background:var(--bg,#fff);border-radius:12px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.cs-note-row{font-size:14px;margin:4px 0}.cs-dl{display:flex;justify-content:space-between;align-items:center;margin:4px 0;font-size:14px}
 .cs-empty{padding:28px;text-align:center;color:var(--hint);border:1px dashed var(--bdr);border-radius:10px}.cs-link-box{display:flex;gap:6px;margin:8px 0}.cs-link-box input{margin:0!important}
 @media(max-width:760px){.cs-two{grid-template-columns:1fr}.cs-panel{padding:14px}}
 </style>
@@ -4070,7 +4076,7 @@ async function _navAssistTurn(text, opt) {
   if (lbl) lbl.textContent = '확인하고 있습니다…';
   document.getElementById('cmp-send-btn').disabled = true; loading.style.display = 'flex';
   try {
-    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs, asked: _navRoute.asked, noQuick: _navRoute.stay }) });
+    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs, asked: _navRoute.asked, noQuick: _navRoute.stay, assist_lines: (window.CaseAssist ? await CaseAssist.lines() : []) }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || ('HTTP ' + res.status));
     const route = data.route || { type: 'assistant' };
