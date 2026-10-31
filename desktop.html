@@ -308,6 +308,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .sent-card .sc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .sent-card .sc-x{position:absolute;top:8px;right:10px;width:30px;height:30px;border:none;background:none;font-size:22px;line-height:1;color:var(--sub);cursor:pointer;border-radius:6px}
 .sent-card .sc-x:hover{background:rgba(0,0,0,.06)}
+/* sp-route — 경로 안내 줄 · 끼운 전문가 대화 */
+.nav-route-chip{align-self:center;margin:6px auto;padding:3px 12px;border-radius:999px;background:rgba(0,0,0,.05);color:#6b7280;font-size:12px}
+.nav-expert-box{width:100%;max-width:760px;margin:8px auto 14px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.nav-expert-frame{width:100%;height:min(62vh,560px);border:0;display:block}
+.nav-expert-doc{align-self:flex-end;margin:8px 10px;padding:6px 14px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;cursor:pointer}
+.nav-expert-doc:hover{background:#f3f4f6}
 </style>
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -3198,6 +3204,7 @@ function _cmpChatStartNew() {
   document.getElementById('cmp-landing').style.display = '';
   document.getElementById('tab-compose').classList.remove('cmp-started', 'doc-live');
   if (typeof _docHostReset === 'function') _docHostReset();
+  if (typeof _navRouteReset === 'function') _navRouteReset();
   document.getElementById('cmp-err').style.display = 'none';
   if (_cmpMicOn) _cmpRecognition && _cmpRecognition.stop();
   _cmpPendingAttachments = []; _cmpRenderAttachList();
@@ -3380,6 +3387,118 @@ async function _cmpChatSendText(text, attachments) {
   }
 }
 
+/* sp-route — 2026-10-31: 메인 화면 기본 SP는 "혼디 나만의 AI 비서"(AC-PRO-CORE). 입력 내용에 따라 K-Mail · 전문가 · 서류 작성 · 그대로 답변으로 보낸다. */
+const NAVI_ASSIST_URL = PROXY + '/kmail/assist';
+const NAVI_HONDI_ORIGIN = 'https://hondi.net';
+const _NAV_EXPERT_LABEL = { physician: '의사', lawyer: '변호사', 'tax-accounting': '세무사', accountant: '세무사' };
+const _navRoute = { cur: null, msgs: [], frame: null, ready: false, queue: [] };
+function _navRouteReset() { _navRoute.cur = null; _navRoute.msgs = []; _navRoute.frame = null; _navRoute.ready = false; _navRoute.queue = []; }
+function _navBegin() {
+  _cmpClearApprove();
+  document.getElementById('cmp-landing').style.display = 'none';
+  document.getElementById('tab-compose').classList.add('cmp-started');
+  document.getElementById('cmp-thread-header').style.display = 'flex';
+  document.getElementById('cmp-err').style.display = 'none';
+}
+function _navChip(text) {
+  const thread = document.getElementById('cmp-thread');
+  const row = document.createElement('div');
+  row.className = 'nav-route-chip'; row.textContent = text;
+  thread.appendChild(row); _cmpScrollToBottom();
+}
+function _navDropLastUserBubble() {
+  const th = document.getElementById('cmp-thread'); const last = th.lastElementChild;
+  if (last && last.classList.contains('user')) last.remove();
+}
+function _navExpertPost(msg) {
+  const r = _navRoute;
+  if (!r.frame) return;
+  if (!r.ready) { r.queue.push(msg); return; }
+  try { r.frame.contentWindow.postMessage(msg, NAVI_HONDI_ORIGIN); } catch (e) {}
+}
+window.addEventListener('message', (e) => {
+  const r = _navRoute;
+  if (e.origin !== NAVI_HONDI_ORIGIN || !r.frame || e.source !== r.frame.contentWindow || !e.data) return;
+  if (e.data.type === 'expert-embed-ready') { r.ready = true; const q = r.queue; r.queue = []; q.forEach(_navExpertPost); }
+});
+function _navOpenExpert(route, text) {
+  const persona = route.persona || route.id;
+  const label = _NAV_EXPERT_LABEL[persona] || route.label || persona;
+  _navChip(label + ' 상담으로 연결했습니다');
+  const thread = document.getElementById('cmp-thread');
+  const box = document.createElement('div'); box.className = 'nav-expert-box';
+  const fr = document.createElement('iframe');
+  fr.className = 'nav-expert-frame'; fr.title = label + ' 상담'; fr.allow = 'microphone';
+  fr.src = NAVI_HONDI_ORIGIN + '/pages/expert-chat.html?persona=' + encodeURIComponent(persona) + '&embed=1&hostinput=1&label=' + encodeURIComponent(label);
+  box.appendChild(fr);
+  if (route.site) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'nav-expert-doc'; b.textContent = '이어서 서류 작성';
+    b.onclick = () => _navToDoc(route.site, _navRoute.lastText || text);
+    box.appendChild(b);
+  }
+  thread.appendChild(box);
+  _navRoute.cur = { type: 'expert', persona, site: route.site || '' };
+  _navRoute.frame = fr; _navRoute.ready = false; _navRoute.queue = [];
+  _navRoute.lastText = text;
+  _navExpertPost({ type: 'expert-embed-send', text });
+  _cmpScrollToBottom();
+}
+function _navToDoc(site, text) {
+  _switchTab('doc');
+  const sel = document.getElementById('cmp-doc-site');
+  if (sel && site && sel.value !== site && [...sel.options].some(o => o.value === site)) { sel.value = site; _docHostSite(site); }
+  const input = document.getElementById('cmp-input');
+  input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
+  _docHostSubmit();
+}
+async function _navAssistTurn(text) {
+  _navBegin();
+  _cmpAppendBubble('user', { text });
+  _navRoute.msgs.push({ role: 'user', content: text });
+  const loading = document.getElementById('cmp-loading');
+  const lbl = loading.querySelector('span:last-child'); const lblOrig = lbl ? lbl.textContent : '';
+  if (lbl) lbl.textContent = '확인하고 있습니다…';
+  document.getElementById('cmp-send-btn').disabled = true; loading.style.display = 'flex';
+  try {
+    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || ('HTTP ' + res.status));
+    const route = data.route || { type: 'assistant' };
+    if (route.type === 'kmail') {
+      _navRoute.cur = { type: 'kmail' }; _navRoute.msgs = [];
+      _navDropLastUserBubble(); _navChip('K-Mail로 연결했습니다');
+      loading.style.display = 'none';
+      await _cmpChatSendText(text, []);
+    } else if (route.type === 'doc') {
+      _navToDoc(route.site || 'all', text);
+    } else if (route.type === 'expert') {
+      _navDropLastUserBubble(); _navRoute.msgs = [];
+      _navOpenExpert(route, text);
+    } else {
+      _navRoute.cur = { type: 'assistant' };
+      const reply = data.reply || '';
+      _navRoute.msgs.push({ role: 'assistant', content: reply });
+      _cmpAppendBubble('assistant', { md: reply, badge: null });
+    }
+  } catch (e) {
+    _navRoute.msgs.pop();
+    const err = document.getElementById('cmp-err');
+    err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.'; err.style.display = '';
+  } finally {
+    loading.style.display = 'none'; if (lbl) lbl.textContent = lblOrig; _cmpChatUpdateSendState();
+  }
+}
+// 반환 true = 여기서 처리함. K-Mail 대화가 이미 진행 중이거나 첨부가 있으면 기존 K-Mail 대화로 둔다.
+async function _navRouteSend(text, attachments) {
+  if (_cmpMode !== 'campaign') return false;
+  const cur = _navRoute.cur;
+  if (cur && cur.type === 'expert') {
+    _navRoute.lastText = text; _navExpertPost({ type: 'expert-embed-send', text }); return true;
+  }
+  if ((cur && cur.type === 'kmail') || _cmpChat.messages.length || (attachments && attachments.length)) { _navRoute.cur = { type: 'kmail' }; return false; }
+  await _navAssistTurn(text); return true;
+}
+
 async function _cmpChatSend() {
   if (_cmpMode === 'doc') { _docHostSubmit(); return; }
   const input = document.getElementById('cmp-input');
@@ -3394,6 +3513,7 @@ async function _cmpChatSend() {
   }
   input.value = ''; _kmailAutoResize(input);
   _cmpPendingAttachments = []; _cmpRenderAttachList();
+  if (typeof _navRouteSend === 'function' && await _navRouteSend(text, attachments)) return;   // sp-route: 기본 SP 라우팅이 처리했다
   await _cmpChatSendText(text, attachments);
 }
 
