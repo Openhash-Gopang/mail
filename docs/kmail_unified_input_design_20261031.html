@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K-Mail 통합 입력창 설계안</title>
+<style>
+:root{
+  --bg:#f5f6fa; --card:#fff; --ink:#1a1f2b; --sub:#5b6475; --line:#e3e6ee;
+  --brand:#145a4c; --brand-soft:#e3f4ef; --warn:#b4540a; --warn-soft:#fff3e6;
+  --mail:#2b5fb4; --mail-soft:#e8f0fc; --doc:#7a3fb0; --doc-soft:#f1e8fa;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 "Pretendard","Noto Sans KR",system-ui,sans-serif}
+header{background:var(--brand);color:#fff;padding:28px 20px}
+header .in,main{max-width:960px;margin:0 auto}
+header h1{margin:0 0 6px;font-size:24px}
+header p{margin:0;opacity:.85;font-size:14px}
+main{padding:24px 20px 64px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:18px 0}
+h2{margin:0 0 12px;font-size:19px;color:var(--brand)}
+h3{margin:18px 0 6px;font-size:16px}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f0f2f7}
+code{background:#eef0f5;padding:1px 6px;border-radius:5px;font-size:13px}
+.tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.t-def{background:var(--brand-soft);color:var(--brand)}
+.t-doc{background:var(--doc-soft);color:var(--doc)}
+.t-mail{background:var(--mail-soft);color:var(--mail)}
+.note{background:var(--warn-soft);border-left:4px solid var(--warn);padding:10px 14px;border-radius:6px;margin:12px 0;font-size:14px}
+.ok{background:var(--brand-soft);border-left:4px solid var(--brand);padding:10px 14px;border-radius:6px;margin:12px 0;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+/* wireframes */
+.wf{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:18px}
+.wf .greet{text-align:center;font-weight:700;margin:10px 0 14px}
+.input{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 12px;min-height:46px}
+.input .ico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;color:var(--sub);flex:none}
+.input .ico.on{background:var(--mail-soft);color:var(--mail)}
+.input .ph{flex:1;color:#9aa1b0;font-size:13px}
+.input .send{width:30px;height:30px;border-radius:50%;background:#a9d8d0;color:#fff;display:grid;place-items:center;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;flex:none}
+.chip b{cursor:pointer;opacity:.7}
+.chip.mail{background:var(--mail-soft);color:var(--mail)}
+.chip.doc{background:var(--doc-soft);color:var(--doc)}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center;font-size:12px;color:var(--sub)}
+.sel{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:12px}
+.pop{margin-top:8px;display:inline-block;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.pop div{padding:7px 14px;border-radius:7px;font-size:13px}
+.pop div small{display:block;color:var(--sub);font-size:11px}
+.pop div:hover{background:var(--mail-soft)}
+.panel{margin-top:10px;background:#fff;border:1px dashed var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub)}
+.cap{font-size:12px;color:var(--sub);margin-top:6px;text-align:center}
+ul{padding-left:20px;margin:6px 0}
+li{margin:3px 0}
+svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <h1>K-Mail 통합 입력창 설계안</h1>
+  <p>mail.hondi.net/desktop.html · 작성일 2026-10-31 · 나만의 AI 비서(pro core) + 문서 작성 SP + 메일 SP(편지 작성·캠페인)를 입력창 하나로 통합</p>
+</div></header>
+<main>
+
+<section>
+  <h2>1. 확정된 결정 사항</h2>
+  <table>
+    <tr><th style="width:26%">항목</th><th>결정</th></tr>
+    <tr><td>기본 모드</td><td>입력창 기본값은 <b>나만의 AI 비서</b>(pro core SP)를 호출한다.</td></tr>
+    <tr><td>서류 모드</td><td>서류 드롭다운에서 카테고리를 선택하면 해당 카테고리의 <b>문서 작성 SP</b>를 호출하고 서류 작성 화면을 펼친다.</td></tr>
+    <tr><td>메일 모드</td><td>입력창 왼쪽 <b>메일 아이콘 하나</b>에 팝오버를 붙이고, 팝오버 항목은 <b>편지 작성(AI)</b>, <b>캠페인</b> 2개로 한다.</td></tr>
+    <tr><td>빠른 발송</td><td>AI SP를 호출하지 않는 폼 화면이므로 <b>왼쪽 메뉴에 유지</b>한다.</td></tr>
+    <tr><td>SP 구조</td><td><b>화면은 통합, SP는 분리 유지</b>. 모드 전환 시 SP를 교체(스왑)하며 한꺼번에 합쳐 보내지 않는다.</td></tr>
+    <tr><td>모드 표시</td><td>입력창 안에 칩으로 현재 모드를 표시하고 × 로 해제한다. 하위 모드까지 표시한다(예: "메일 · 캠페인").</td></tr>
+    <tr><td>자동 라우팅</td><td>기본 모드에서 서류·메일 의도가 감지되면 <b>전환을 제안</b>하고, 사용자가 승인해야 전환한다.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>2. 모드 모델</h2>
+  <table>
+    <tr><th>모드</th><th>진입 방법</th><th>호출 SP</th><th>화면 변화</th><th>인사말(안)</th></tr>
+    <tr><td><span class="tag t-def">기본</span></td><td>페이지 진입, 새 대화, × 해제</td><td>나만의 AI 비서 (pro core)</td><td>입력창만 표시</td><td>무엇을 도와드릴까요?</td></tr>
+    <tr><td><span class="tag t-doc">서류</span></td><td>서류 드롭다운에서 카테고리 선택</td><td>해당 카테고리 문서 작성 SP (예: 법률 서류)</td><td>서류 작성 화면 펼침, 건수 안내 문구 노출</td><td>어떤 서류를 작성할까요?</td></tr>
+    <tr><td><span class="tag t-mail">메일 · 편지 작성</span></td><td>메일 아이콘 → 편지 작성(AI)</td><td>편지 작성 SP (기존 "편지 작성(AI)" 기능)</td><td>입력창 유지, 초안 미리보기가 아래에 붙음</td><td>(확정 필요) 예: 누구에게 어떤 편지를 쓸까요?</td></tr>
+    <tr><td><span class="tag t-mail">메일 · 캠페인</span></td><td>메일 아이콘 → 캠페인</td><td>메일 캠페인 SP</td><td>입력창 유지, 수신자·초안·일정 미리보기가 아래에 붙음</td><td>(확정 필요) 예: 어떤 캠페인을 보낼까요?</td></tr>
+  </table>
+  <div class="note">SP의 실제 파일명·ID는 저장소 확인 후 구현 단계에서 매핑한다. 이 문서의 SP 명칭은 역할 이름(가칭)이다.</div>
+</section>
+
+<section>
+  <h2>3. 화면 와이어프레임</h2>
+  <div class="grid">
+    <div>
+      <div class="wf">
+        <div class="greet">무엇을 도와드릴까요?</div>
+        <div class="input"><span class="ico">📎</span><span class="ico">✉</span><span class="ph">예: 다음 주 세미나 초청 메일을 …</span><span class="send">↑</span></div>
+        <div class="row"><span class="sel">서류 선택 ▾</span></div>
+      </div>
+      <div class="cap">① 기본 모드 (나만의 AI 비서)</div>
+    </div>
+    <div>
+      <div class="wf">
+        <div class="greet">무엇을 도와드릴까요?</div>
+        <div class="input"><span class="ico">📎</span><span class="ico on">✉</span><span class="ph">예: 다음 주 세미나 초청 메일을 …</span><span class="send">↑</span></div>
+        <div class="pop">
+          <div>편지 작성(AI)<small>1:1 편지를 AI와 작성</small></div>
+          <div>캠페인<small>다수 수신자 대상 설계·발송</small></div>
+        </div>
+      </div>
+      <div class="cap">② 메일 아이콘 클릭 → 팝오버 2항목</div>
+    </div>
+    <div>
+      <div class="wf">
+        <div class="greet">어떤 서류를 작성할까요?</div>
+        <div class="input"><span class="ico">📎</span><span class="ico">✉</span><span class="chip doc">법률 서류 <b>×</b></span><span class="ph">예: 소유권이전등기 신청서</span><span class="send">↑</span></div>
+        <div class="row"><span class="sel">법률 서류 ▾</span><span>2026년 10월 31일 현재, 11,289건의 민원 &amp; 법원 서류를 작성합니다.</span></div>
+        <div class="panel">서류 작성 화면(펼침)</div>
+      </div>
+      <div class="cap">③ 서류 모드</div>
+    </div>
+    <div>
+      <div class="wf">
+        <div class="greet">어떤 캠페인을 보낼까요?</div>
+        <div class="input"><span class="ico">📎</span><span class="ico on">✉</span><span class="chip mail">메일 · 캠페인 <b>×</b></span><span class="ph">예: 교수님들께 …</span><span class="send">↑</span></div>
+        <div class="panel">수신자 · 초안 · 일정 미리보기</div>
+      </div>
+      <div class="cap">④ 메일 · 캠페인 모드</div>
+    </div>
+  </div>
+  <ul>
+    <li>아이콘 순서는 <b>클립 → 메일</b>. 메일 모드가 켜져 있는 동안 메일 아이콘은 강조색을 유지한다.</li>
+    <li>"건수 안내 문구"는 서류 모드에서만 노출하고, 기본·메일 모드에서는 숨긴다.</li>
+    <li>서류 모드에서는 입력창을 화면 하단에 두고 위쪽에 작성 화면을 펼치는 방식(채팅 앱 관습)을 검토한다. 메일 모드는 입력창 위치를 유지하고 결과물만 아래에 붙인다.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>4. 모드 상태 머신</h2>
+  <svg viewBox="0 0 880 330" width="100%" role="img" aria-label="모드 상태 전이도">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b6475"/></marker></defs>
+    <rect x="340" y="20" width="200" height="60" rx="12" fill="#e3f4ef" stroke="#145a4c"/>
+    <text x="440" y="48" text-anchor="middle" font-size="15" font-weight="700" fill="#145a4c">기본</text>
+    <text x="440" y="67" text-anchor="middle" font-size="12" fill="#145a4c">나만의 AI 비서</text>
+
+    <rect x="30" y="220" width="220" height="70" rx="12" fill="#f1e8fa" stroke="#7a3fb0"/>
+    <text x="140" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#7a3fb0">서류</text>
+    <text x="140" y="270" text-anchor="middle" font-size="12" fill="#7a3fb0">카테고리별 문서 작성 SP</text>
+
+    <rect x="330" y="220" width="220" height="70" rx="12" fill="#e8f0fc" stroke="#2b5fb4"/>
+    <text x="440" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#2b5fb4">메일 · 편지 작성</text>
+    <text x="440" y="270" text-anchor="middle" font-size="12" fill="#2b5fb4">편지 작성 SP</text>
+
+    <rect x="630" y="220" width="220" height="70" rx="12" fill="#e8f0fc" stroke="#2b5fb4"/>
+    <text x="740" y="250" text-anchor="middle" font-size="15" font-weight="700" fill="#2b5fb4">메일 · 캠페인</text>
+    <text x="740" y="270" text-anchor="middle" font-size="12" fill="#2b5fb4">메일 캠페인 SP</text>
+
+    <path d="M390 80 L170 220" stroke="#5b6475" fill="none" marker-end="url(#a)"/>
+    <text x="230" y="140" font-size="11" fill="#5b6475" transform="rotate(-38 230 140)">드롭다운 선택 / 제안 승인</text>
+    <path d="M440 80 L440 220" stroke="#5b6475" fill="none" marker-end="url(#a)"/>
+    <text x="448" y="155" font-size="11" fill="#5b6475">메일 아이콘 → 편지 작성</text>
+    <path d="M490 80 L700 220" stroke="#5b6475" fill="none" marker-end="url(#a)"/>
+    <text x="600" y="135" font-size="11" fill="#5b6475" transform="rotate(38 600 135)">메일 아이콘 → 캠페인</text>
+
+    <path d="M60 220 C 20 120, 200 20, 340 40" stroke="#145a4c" stroke-dasharray="4 3" fill="none" marker-end="url(#a)"/>
+    <text x="30" y="110" font-size="11" fill="#145a4c">× / 작성 완료 / 새 대화</text>
+  </svg>
+  <h3>전이 규칙</h3>
+  <table>
+    <tr><th>상황</th><th>동작</th></tr>
+    <tr><td>× 클릭, 서류·메일 작업 완료, 새 대화 시작</td><td>기본 모드로 복귀</td></tr>
+    <tr><td>모드 사이 직접 전환 (예: 서류 → 메일 · 캠페인)</td><td>이전 모드의 작업 상태(작성 중인 서류 등)를 <b>임시보관함에 보존</b>한 뒤 SP를 교체</td></tr>
+    <tr><td>페이지 진입 직후</td><td>항상 기본 모드에서 시작</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. SP 호출 흐름</h2>
+  <ol>
+    <li>페이지 로드 시 <code>mode = "default"</code>, 활성 SP는 pro core로 설정한다.</li>
+    <li>서류 드롭다운 선택 또는 메일 팝오버 선택 시 <code>mode</code>와 <code>submode</code>를 갱신하고, 활성 SP를 해당 SP <b>하나로 교체</b>한다.</li>
+    <li>사용자 입력은 항상 "현재 활성 SP 1개 + 대화 내역"만 모델에 전달한다. 다른 모드의 SP는 요청에 포함하지 않는다.</li>
+    <li>모드 해제(×) 시 활성 SP를 pro core로 되돌리고, 진행 중이던 작업 상태는 임시보관함에 저장한다.</li>
+  </ol>
+  <div class="ok">SP를 하나로 합치지 않는 이유: 토큰 낭비와 지시 충돌을 막고, 편지(산출물 1통)와 캠페인(수신자 목록·일정·성과 추적)처럼 산출물이 다른 작업을 각자의 SP에서 독립적으로 개선할 수 있기 때문이다.</div>
+
+  <h3>자동 라우팅 제안 (기본 모드 한정)</h3>
+  <p>pro core SP에 한 줄 규칙을 추가한다: <em>"사용자 요청이 서류 작성 또는 메일 발송 의도로 판단되면 직접 처리하지 말고, 해당 모드 전환을 제안하는 응답(전환 대상 모드 포함)을 반환한다."</em></p>
+  <ul>
+    <li>제안은 응답 안의 버튼 형태(예: [서류 작성 모드로 전환])로 표시하고, 클릭 시에만 SP를 교체한다.</li>
+    <li>사용자가 제안을 무시하면 기본 모드에서 계속 대화한다.</li>
+    <li>전환 시 원래 입력 문장을 새 모드의 첫 입력으로 이어 넘긴다.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>6. 왼쪽 메뉴 변경</h2>
+  <div class="grid">
+    <div>
+      <h3>제거 (입력창으로 이동)</h3>
+      <ul>
+        <li>문서 작성 (서류 드롭다운으로 이동)</li>
+        <li>메일 &gt; 편지 작성(AI)</li>
+        <li>메일 &gt; 새 캠페인</li>
+      </ul>
+    </div>
+    <div>
+      <h3>유지</h3>
+      <ul>
+        <li>빠른 발송 (폼 화면, SP 미호출)</li>
+        <li>내 캠페인, 주소록</li>
+        <li>편지쓰기, 임시보관함, 보낸메일함, 받은메일함, 태그별 보관함</li>
+        <li>소개 페이지, 모바일 화면, 사용법</li>
+        <li>행정 업무 &gt; 정보 공개 청구</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">"문서 작성" 메뉴 항목을 제거하면 기본 화면 자체가 통합 입력창이 된다. 사이드바 최상단의 활성 항목을 무엇으로 둘지(예: "홈" 또는 "AI 비서")는 구현 전에 결정이 필요하다.</div>
+</section>
+
+<section>
+  <h2>7. 모바일 대응</h2>
+  <ul>
+    <li>입력창이 좁아 클립·메일·서류 드롭다운을 모두 노출할 수 없으므로 <b>"+" 버튼 하나</b>에 첨부 / 서류 / 메일(편지 작성·캠페인)을 모은다.</li>
+    <li>모드 칩은 입력창 위쪽 별도 줄에 표시한다.</li>
+    <li>기존 "모바일 화면" 메뉴 항목과의 관계(별도 페이지 유지 여부)는 구현 시 확인한다.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>8. 위험 요소와 대응</h2>
+  <table>
+    <tr><th>위험</th><th>대응</th></tr>
+    <tr><td>사용자가 현재 모드를 인지하지 못함</td><td>칩 + 아이콘 강조 + 모드별 인사말·플레이스홀더로 3중 표시</td></tr>
+    <tr><td>SP 지시 충돌·토큰 증가</td><td>요청마다 활성 SP 1개만 전달(스왑 구조)</td></tr>
+    <tr><td>모드 전환 중 작업 손실</td><td>전환 전 임시보관함 자동 저장</td></tr>
+    <tr><td>자동 라우팅 오작동</td><td>제안만 하고 승인 시에만 전환</td></tr>
+    <tr><td>3개 화면 통합에 따른 회귀</td><td>기존 문서 작성·편지 작성·캠페인 화면의 동작을 모드별 체크리스트로 검증 후 배포</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>9. 구현 전 확정이 필요한 남은 항목</h2>
+  <ol>
+    <li>메일 · 편지 작성 / 메일 · 캠페인 모드의 <b>인사말·플레이스홀더 문구</b></li>
+    <li>사이드바 최상단 활성 항목의 이름(문서 작성 제거 후)</li>
+    <li>서류 모드에서 입력창을 하단으로 내릴지, 현재 위치를 유지할지</li>
+    <li>기존 desktop.html·모바일 페이지·SP 파일의 실제 구조 확인 (구현 착수 시 현재 저장소 상태 기준으로 진행)</li>
+  </ol>
+</section>
+
+</main>
+</body>
+</html>
