@@ -156,6 +156,15 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-landing-title{font-size:30px;font-weight:500;letter-spacing:-.01em;margin-bottom:34px}
 #tab-compose[data-mode="campaign"] .chat-landing-sub{display:none}
 #tab-compose:not(.cmp-started) .chat-composer>.hint{display:none}
+/* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
+#tab-compose[data-mode="doc"] .chat-landing-sub{display:none}
+#tab-compose[data-mode="doc"] .chat-composer{position:static}
+#tab-compose[data-mode="doc"] .chat-composer>.hint{display:none}
+.doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
+#tab-compose[data-mode="doc"] .doc-host-row{display:flex}
+.doc-host-row select{min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
+#doc-host-frame{display:none;width:100%;height:max(640px,calc(100vh - 230px));border:0;background:transparent;margin-top:8px}
+#tab-compose[data-mode="doc"].doc-live #doc-host-frame{display:block}
 /* 사이드바 '메일' 접기/펼치기 */
 .side-nav .nav-group{position:relative}
 .side-nav .nav-group>.nav-btn{padding-right:40px}
@@ -726,6 +735,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" class="chat-send-btn" id="cmp-send-btn" data-requires-login="메일 대화" title="전송" disabled onclick="_cmpChatSend()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
+      </div>
+      <div class="doc-host-row" id="cmp-doc-row">
+        <select id="cmp-doc-site" aria-label="서류 종류" onchange="_docHostSite(this.value)"></select>
+        <span id="cmp-doc-count" role="status"></span>
+        <input type="file" id="doc-host-file" accept=".txt,.md,.html,.htm,.csv,.json,text/*" style="display:none">
       </div>
       <div class="hint">발송을 확정하기 전에 K-Mail이 수신자·제목·본문·시각을 한 번에 정리해 "이대로 보낼까요?"라고 반드시 확인합니다. 회신을 모아 정리해달라고 말하면 그 시점도 함께 정하고, 도착한 보고는 "내 캠페인" 탭에서 볼 수 있습니다.</div>
     </div>
@@ -1522,6 +1536,7 @@ async function _docAttach(d, src, origin) {
 // 편지 작성(AI) 첨부(+) 버튼: 카메라 / 내 컴퓨터 / 문서 작성
 function _cmpAttachMenu(ev) {
   ev.stopPropagation();
+  if (_cmpMode === 'doc') { document.getElementById('doc-host-file').click(); return; }
   const old = document.getElementById('cmp-attach-menu');
   if (old) { old.remove(); return; }
   const m = document.createElement('div');
@@ -1586,6 +1601,103 @@ function _docModalAttach() {
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('doc-modal').classList.contains('open')) _docModalClose(); });
 
+// ── 문서 작성(홈 입력창 방식) ──────────────────────────────────────────────
+// 입력창은 새 캠페인 화면과 같은 것을 그대로 쓴다. 입력하는 대로 서류 작성 페이지(iframe)에 전달하고,
+// 서류 작성 페이지는 자기 입력창을 숨긴 채(navi-doc-host { hostInput:true }) 미리보기·작성 화면만 보여 준다.
+// 서류 작성 페이지가 아직 이 방식을 모르는 옛 버전이면(ready 에 v 가 없음) 그 페이지의 입력창을 그대로 보여 준다.
+const _DOC_PH_DEFAULT = '예: 소유권이전등기 신청서, 답변서, 내용증명';
+const _docHost = { loaded: false, ready: false, cap: false, queue: [], meta: {}, phOrig: null };
+function _docHostMetaKey(id) { return 'kmail_dochost_meta_' + id; }
+function _docHostFrame() { return document.getElementById('doc-host-frame'); }
+function _docHostOrigin() { const fr = _docHostFrame(); try { return new URL(fr.src).origin; } catch (e) { return ''; } }
+function _docHostApplyMeta() {
+  if (_cmpMode !== 'doc') return;
+  const input = document.getElementById('cmp-input');
+  delete input.dataset.ph;
+  input.placeholder = _docHost.meta.placeholder || _DOC_PH_DEFAULT;
+  document.getElementById('cmp-doc-count').textContent = _docHost.meta.count || '';
+}
+function _docHostMode(on) {
+  const input = document.getElementById('cmp-input');
+  if (_docHost.phOrig === null) _docHost.phOrig = input.dataset.ph !== undefined ? input.dataset.ph : input.placeholder;
+  if (!on) { delete input.dataset.ph; input.placeholder = _docHost.phOrig; return; }
+  const sel = document.getElementById('cmp-doc-site');
+  if (!sel.options.length) _DOC_SITES.forEach(x => sel.add(new Option(x.label, x.id)));
+  if (!_docHost.loaded) _docHostLoad(sel.value);
+  else _docHostApplyMeta();
+}
+function _docHostLoad(id) {
+  _docHost.loaded = true; _docHost.ready = false; _docHost.cap = false; _docHost.queue = [];
+  try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
+  _docHostApplyMeta();
+  _docLoadInto(id, { frame: 'doc-host-frame', sel: 'cmp-doc-site', note: 'cmp-doc-count' });
+}
+function _docHostSite(id) {
+  document.getElementById('tab-compose').classList.remove('doc-live');
+  _docHostLoad(id);
+}
+function _docHostPost(msg) {
+  const fr = _docHostFrame();
+  if (!fr || !fr.src) return;
+  if (!_docHost.ready) {
+    const last = _docHost.queue[_docHost.queue.length - 1];
+    if (last && last.type === msg.type && msg.type !== 'navi-doc-attach') _docHost.queue[_docHost.queue.length - 1] = msg; else _docHost.queue.push(msg);
+    return;
+  }
+  const o = _docHostOrigin();
+  try { fr.contentWindow.postMessage(msg, o); } catch (e) {}
+}
+function _docHostInput() {
+  if (_cmpMode !== 'doc') return;
+  const t = document.getElementById('cmp-input').value;
+  document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
+  _docHostPost({ type: 'navi-doc-input', text: t });
+}
+function _docHostSubmit() {
+  const t = document.getElementById('cmp-input').value.trim();
+  if (!t) return;
+  document.getElementById('tab-compose').classList.add('doc-live');
+  _docHostPost({ type: 'navi-doc-submit', text: t });
+}
+function _docHostReset() {
+  if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
+}
+function _docHostMessage(d, e) {
+  if (d.type === 'navi-doc-ready') {
+    _docHost.ready = true; _docHost.cap = (d.v | 0) >= 2;
+    if (_docHost.cap) { try { e.source.postMessage({ type: 'navi-doc-host', hostInput: true }, e.origin); } catch (x) {} }
+    else document.getElementById('tab-compose').classList.add('doc-live');   // 옛 서류 페이지: 그 페이지의 입력창을 그대로 쓴다
+    const q = _docHost.queue; _docHost.queue = [];
+    q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
+  } else if (d.type === 'navi-doc-meta') {
+    _docHost.meta = { count: String(d.count || '').slice(0, 200), placeholder: String(d.placeholder || '').slice(0, 200) };
+    try { const id = document.getElementById('cmp-doc-site').value; localStorage.setItem(_docHostMetaKey(id), JSON.stringify(_docHost.meta)); } catch (x) {}
+    _docHostApplyMeta();
+  } else if (d.type === 'navi-doc-empty') {
+    const c = document.getElementById('cmp-doc-count'); c.textContent = d.msg || '먼저 서류를 작성해 주세요.';
+    setTimeout(_docHostApplyMeta, 4000);
+  } else if (d.type === 'navi-doc-done') {
+    _docAttach(d, e.source, e.origin);
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const comp = document.querySelector('#tab-compose .chat-composer');
+  if (comp && !document.getElementById('doc-host-frame')) {
+    const fr = document.createElement('iframe');
+    fr.id = 'doc-host-frame'; fr.title = '서류 작성'; fr.setAttribute('allow', 'clipboard-write');
+    comp.after(fr);
+  }
+  const file = document.getElementById('doc-host-file');
+  if (file) file.addEventListener('change', function () {
+    const f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    if (!/^text\//.test(f.type) && !/\.(txt|md|html?|csv|json)$/i.test(f.name)) { const c = document.getElementById('cmp-doc-count'); c.textContent = '텍스트 파일만 첨부할 수 있습니다.'; setTimeout(_docHostApplyMeta, 3000); return; }
+    const r = new FileReader();
+    r.onload = () => _docHostPost({ type: 'navi-doc-attach', name: f.name.slice(0, 120), text: String(r.result).slice(0, 20000) });
+    r.readAsText(f);
+  });
+});
+
 // 창에서 "완료"가 오면: 서류(Word)를 편지 작성(AI)의 첨부로 붙이고 창을 닫는다
 async function _docAttachToChat(d, src, origin) {
   const reply = (ok, msg) => { try { src.postMessage({ type: 'navi-doc-attached', ok, msg }, origin); } catch (e) {} };
@@ -1604,11 +1716,13 @@ async function _docAttachToChat(d, src, origin) {
 }
 
 window.addEventListener('message', (e) => {
-  const fr = document.getElementById('doc-frame'), fm = document.getElementById('doc-modal-frame');
+  const fr = document.getElementById('doc-frame'), fm = document.getElementById('doc-modal-frame'), fh = document.getElementById('doc-host-frame');
   const fromTab = !!fr && e.source === fr.contentWindow, fromModal = !!fm && e.source === fm.contentWindow;
-  if (!fromTab && !fromModal) return;
+  const fromHost = !!fh && !!fh.contentWindow && e.source === fh.contentWindow;
+  if (!fromTab && !fromModal && !fromHost) return;
   if (!_DOC_SITES.some(s => new URL(s.url).origin === e.origin)) return;
   const d = e.data || {};
+  if (fromHost) { _docHostMessage(d, e); return; }
   if (d.type === 'navi-doc-ready') {
     document.getElementById(fromModal ? 'doc-modal-note' : 'doc-note').textContent = '';
     if (fromModal) { try { e.source.postMessage({ type: 'navi-doc-host', attachBar: true }, e.origin); } catch (x) {} }
@@ -1620,15 +1734,14 @@ function _switchTab(name) {
   _sentCardHide('mail'); _sentCardHide('qs');
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.side-nav .nav-btn').forEach(el => el.classList.remove('active'));
-  const _panelName = name === 'letter' ? 'compose' : name;
+  const _panelName = (name === 'letter' || name === 'doc') ? 'compose' : name;
   document.getElementById('tab-' + _panelName).classList.add('active');
-  if (_panelName === 'compose') _cmpSetMode(name === 'letter' ? 'letter' : 'campaign');
+  if (_panelName === 'compose') _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : 'campaign');
   const _navBtn = document.getElementById('tab-btn-' + name);
   _navBtn.classList.add('active');
   const _crumb = document.getElementById('crumb-cur');
   if (_crumb) _crumb.textContent = _navBtn.getAttribute('data-label') || '';
   if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
-  if (name === 'doc') _docInit();
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
@@ -2997,7 +3110,7 @@ function _cmpToggleMic() {
     let text = '';
     for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
     input.value = _cmpMicBaseText + text;
-    _kmailAutoResize(input); _cmpChatUpdateSendState();
+    _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
   };
   _cmpRecognition.onerror = (e) => {
     if (e.error !== 'no-speech' && e.error !== 'aborted') {
@@ -3084,7 +3197,8 @@ function _cmpChatStartNew() {
   document.getElementById('cmp-thread').innerHTML = '';
   document.getElementById('cmp-thread-header').style.display = 'none';
   document.getElementById('cmp-landing').style.display = '';
-  document.getElementById('tab-compose').classList.remove('cmp-started');
+  document.getElementById('tab-compose').classList.remove('cmp-started', 'doc-live');
+  if (typeof _docHostReset === 'function') _docHostReset();
   document.getElementById('cmp-err').style.display = 'none';
   if (_cmpMicOn) _cmpRecognition && _cmpRecognition.stop();
   _cmpPendingAttachments = []; _cmpRenderAttachList();
@@ -3119,10 +3233,13 @@ function _cmpSetMode(mode) {
   _cmpMode = mode;
   document.getElementById('tab-compose').setAttribute('data-mode', mode);
   _cmpChatStartNew();
+  _docHostMode(mode === 'doc');
   const t = document.querySelector('#cmp-landing .chat-landing-title');
   const s = document.querySelector('#cmp-landing .chat-landing-sub');
   if (s && _cmpLandingSubOrig === null) { _cmpLandingSubOrig = s.textContent; if (t) t.dataset.orig = t.textContent; }
-  if (mode === 'letter') {
+  if (mode === 'doc') {
+    if (t) t.textContent = '어떤 서류를 작성할까요?';
+  } else if (mode === 'letter') {
     if (t) t.textContent = '어떤 편지를 쓸까요?';
     if (s) s.textContent = '누구에게 무엇을 쓰고 싶은지 말씀해 주세요. 수신자·제목·본문을 정리해 확인받은 뒤 바로 보내며, 캠페인이 아니라 "보낸메일함"에만 기록됩니다. (예약·여러 명 발송은 "새 캠페인"을 이용하세요.)';
   } else {
@@ -3265,6 +3382,7 @@ async function _cmpChatSendText(text, attachments) {
 }
 
 async function _cmpChatSend() {
+  if (_cmpMode === 'doc') { _docHostSubmit(); return; }
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();
   const attachments = _cmpPendingAttachments.filter(a => !a.uploading);
@@ -3283,7 +3401,7 @@ async function _cmpChatSend() {
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('cmp-input');
   _kmailAutoResize(input);
-  input.addEventListener('input', () => { _kmailAutoResize(input); _cmpChatUpdateSendState(); });
+  input.addEventListener('input', () => { _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput(); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _cmpChatSend(); } });
 });
 
