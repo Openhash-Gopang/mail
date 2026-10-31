@@ -154,15 +154,21 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 /* home-ui */
 .chat-landing{padding-top:12vh}
 .chat-landing-title{font-size:30px;font-weight:500;letter-spacing:-.01em;margin-bottom:34px}
-#tab-compose[data-mode="campaign"] .chat-landing-sub{display:none}
-#tab-compose:not(.cmp-started) .chat-composer>.hint{display:none}
+#tab-compose[data-mode="default"] .chat-landing-sub,#tab-compose[data-mode="campaign"] .chat-landing-sub{display:none}
+#tab-compose:not(.cmp-started) .chat-composer>.hint,#tab-compose[data-mode="default"] .chat-composer>.hint{display:none}
 /* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
 #tab-compose[data-mode="doc"] .chat-landing-sub{display:none}
 #tab-compose[data-mode="doc"] .chat-composer{position:static}
 #tab-compose[data-mode="doc"] .chat-composer>.hint{display:none}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
-#tab-compose[data-mode="doc"] .doc-host-row{display:flex}
+#tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row{display:flex}
 .doc-host-row select{min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
+/* unified-input — 입력창 하나로 통합(2026-10-31): 모드 칩(현재 SP 표시 · × 로 해제) + 메일 아이콘(편지 작성·캠페인 팝오버) */
+.cmp-mode-chip{align-self:center;display:inline-flex;align-items:center;gap:2px;flex:none;margin:0 2px 0 0;padding:3px 3px 3px 10px;border-radius:999px;background:var(--pri-bg);color:var(--pri);font-size:12.5px;font-weight:700;white-space:nowrap}
+.cmp-mode-chip[hidden]{display:none}
+.cmp-mode-chip button{border:0;background:none;color:inherit;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;opacity:.7;padding:0}
+.cmp-mode-chip button:hover{opacity:1;background:rgba(0,0,0,.07)}
+#tab-compose[data-mode="campaign"] #cmp-mail-btn,#tab-compose[data-mode="letter"] #cmp-mail-btn{background:var(--pri-bg);color:var(--pri)}
 #doc-host-frame{display:none;width:100%;height:max(640px,calc(100vh - 230px));border:0;background:transparent;margin-top:8px}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{display:block}
 /* nav-mail-group — 메일 하위 메뉴가 길어졌으므로 묶음 사이에 가는 선, 링크 모양을 버튼과 같게 */
@@ -415,6 +421,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 #cmp-attach-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 12px;font:inherit;font-size:14.5px;font-weight:600;color:var(--sub);cursor:pointer}
 #cmp-attach-menu button:hover{background:var(--bg);color:var(--txt)}
 #cmp-attach-menu svg{width:17px;height:17px;flex-shrink:0;color:var(--hint)}
+#cmp-mail-menu{position:fixed;z-index:90;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;min-width:230px}
+#cmp-mail-menu button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 12px;font:inherit;cursor:pointer;color:var(--txt)}
+#cmp-mail-menu button:hover,#cmp-mail-menu button[aria-current="true"]{background:var(--pri-bg)}
+#cmp-mail-menu b{display:block;font-size:14.5px;font-weight:700}
+#cmp-mail-menu small{display:block;font-size:12.5px;color:var(--hint);margin-top:1px}
 #doc-modal{display:none;margin-top:14px}
 #doc-modal.open{display:block}
 #doc-modal .dm-box{position:relative;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
@@ -659,7 +670,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <body>
 
 <header class="topbar">
-  <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('compose'); return false; }"><img class="logo-img" src="icons/navi-icon-96.png" alt="" width="34" height="34">NAVI</a>
+  <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-img" src="icons/navi-icon-96.png" alt="" width="34" height="34">NAVI</a>
   <div class="topbar-right">
     <a href="https://hondi.net" target="_blank">hondi.net ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
@@ -670,15 +681,13 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   <nav class="side-nav" aria-label="K-Mail 메뉴">
     <div class="side-group">
       <div class="side-label">작성·발송</div>
-      <button id="tab-btn-doc" class="nav-btn" data-label="문서 작성" onclick="_switchTab('doc')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-        문서 작성</button>
+      <button id="tab-btn-home" class="nav-btn active" data-label="홈" onclick="_switchTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        홈</button>
       <div class="nav-group collapsed" id="nav-group-mail">
         <button id="tab-btn-mail" class="nav-btn" data-label="메일" onclick="_switchTab('mail')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>메일</button>
         <button type="button" class="nav-toggle" id="nav-toggle-mail" aria-label="메일 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-mail" onclick="_navToggleMail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="nav-sub" id="nav-sub-mail" role="group" aria-label="메일 하위 메뉴">
-          <button id="tab-btn-letter" class="nav-subitem nav-mv" data-tab="letter" data-label="편지 작성(AI)" onclick="_switchTab('letter')">편지 작성(AI)</button>
           <button id="tab-btn-quicksend" class="nav-subitem nav-mv" data-tab="quicksend" data-label="빠른 발송" onclick="_switchTab('quicksend')">빠른 발송</button>
-          <button id="tab-btn-compose" class="nav-subitem nav-mv active" data-tab="compose" data-label="새 캠페인" onclick="_switchTab('compose')">새 캠페인</button>
           <button id="tab-btn-campaigns" class="nav-subitem nav-mv" data-tab="campaigns" data-label="내 캠페인" onclick="_campNavClick()">내 캠페인</button>
           <button id="tab-btn-contacts" class="nav-subitem nav-mv" data-tab="contacts" data-label="주소록" onclick="_ctNavClick()">주소록</button>
           <div class="nav-sep" role="separator"></div>
@@ -710,14 +719,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
        K-Mail은 업무용 메일이므로 단 한 통이라도 "캠페인"으로 설계한다
        (주피터 지시) — 이 화면 하나가 그 설계·확정 과정 전체를 담당.
        ══════════════════════════════════════════════════════════ -->
-  <div id="tab-compose" class="tab-panel active" data-mode="campaign">
+  <div id="tab-compose" class="tab-panel active" data-mode="default">
     <div class="chat-landing" id="cmp-landing">
       <div class="chat-landing-title">무엇을 도와드릴까요?</div>
       <div class="chat-landing-sub">누구에게, 왜, 무엇을 보내고 싶은지 편하게 말씀해 주세요. 대상을 못 찾으면 검색해서 후보를 찾아드리고, 제목·본문·발송 시각까지 정리해 확인받은 뒤에만 실제로 보냅니다.</div>
     </div>
 
     <div class="chat-thread-header" id="cmp-thread-header" style="display:none">
-      <button type="button" onclick="_cmpChatStartNew()">+ 새 대화</button>
+      <button type="button" onclick="_cmpNewConversation()">+ 새 대화</button>
     </div>
     <div class="chat-thread" id="cmp-thread"></div>
 
@@ -732,7 +741,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
-        <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="예: 다음 주 세미나 초청 메일을 서울대 컴퓨터공학부 교수님들께 보내고 싶어요"></textarea>
+        <button type="button" class="chat-icon-btn" id="cmp-mail-btn" title="메일 — 편지 작성 · 캠페인" aria-label="메일" aria-haspopup="menu" onclick="_cmpMailMenu(event)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </button>
+        <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpSetMode('default')">×</button></span>
+        <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다"></textarea>
         <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </button>
@@ -741,7 +754,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         </button>
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
-        <select id="cmp-doc-site" aria-label="서류 종류" onchange="_docHostSite(this.value)"></select>
+        <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)"></select>
         <span id="cmp-doc-count" role="status"></span>
         <input type="file" id="doc-host-file" accept=".txt,.md,.html,.htm,.csv,.json,text/*" style="display:none">
       </div>
@@ -831,7 +844,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="filter-row"><input type="text" id="camp-filter-q" placeholder="제목으로 검색" oninput="_campFilterApply()"></div>
       <div class="camp-bulk" id="camp-bulk" style="display:none"><label><input type="checkbox" id="camp-sel-all" onchange="_campSelAll(this.checked)"> 전체 선택</label><button type="button" class="btn-danger" id="camp-del-sel" onclick="_campDeleteSelected()" disabled>선택 삭제</button><button type="button" class="btn-danger" id="camp-del-all" onclick="_campDeleteAll()">전체 삭제</button><span id="camp-del-msg" style="color:var(--hint)"></span></div>
       <div id="camp-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">아직 만든 캠페인이 없습니다 — "새 캠페인" 탭에서 K-Mail과 대화를 시작해 보세요.</div>
+      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">아직 만든 캠페인이 없습니다 — 홈 화면 입력창의 메일(✉) → "캠페인"에서 K-Mail과 대화를 시작해 보세요.</div>
       <div id="camp-items"></div>
     </div>
 
@@ -845,7 +858,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button class="btn btn-primary btn-sm" onclick="_campAskChatAboutThis()">💬 K-Mail에게 이 캠페인 자세히 물어보기</button>
         <button class="btn btn-primary btn-sm" id="camp-resume-btn" style="display:none" onclick="_campResumeConversation()">🔄 이어서 대화하기</button>
       </div>
-      <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 "새 캠페인" 탭으로 이동해 이 캠페인에 대해 바로 물어봅니다. "진행 중(초안)" 상태인 캠페인은 "이어서 대화하기"로 지금까지 나눴던 대화를 그대로 불러와 이어갈 수 있습니다.</div>
+      <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 홈 화면의 "메일 · 캠페인" 모드로 이동해 이 캠페인에 대해 바로 물어봅니다. "진행 중(초안)" 상태인 캠페인은 "이어서 대화하기"로 지금까지 나눴던 대화를 그대로 불러와 이어갈 수 있습니다.</div>
     </div>
   </div>
 
@@ -1610,7 +1623,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document
 // 서류 작성 페이지는 자기 입력창을 숨긴 채(navi-doc-host { hostInput:true }) 미리보기·작성 화면만 보여 준다.
 // 서류 작성 페이지가 아직 이 방식을 모르는 옛 버전이면(ready 에 v 가 없음) 그 페이지의 입력창을 그대로 보여 준다.
 const _DOC_PH_DEFAULT = '예: 소유권이전등기 신청서, 답변서, 내용증명';
-const _docHost = { loaded: false, ready: false, cap: false, queue: [], meta: {}, phOrig: null };
+const _docHost = { loaded: false, id: '', ready: false, cap: false, queue: [], meta: {}, phOrig: null };
 function _docHostMetaKey(id) { return 'kmail_dochost_meta_' + id; }
 function _docHostFrame() { return document.getElementById('doc-host-frame'); }
 function _docHostOrigin() { const fr = _docHostFrame(); try { return new URL(fr.src).origin; } catch (e) { return ''; } }
@@ -1620,18 +1633,33 @@ function _docHostApplyMeta() {
   delete input.dataset.ph;
   input.placeholder = _docHost.meta.placeholder || _DOC_PH_DEFAULT;
   document.getElementById('cmp-doc-count').textContent = _docHost.meta.count || '';
+  if (typeof _cmpSyncModeUi === 'function') _cmpSyncModeUi();   // 서류 종류가 바뀌었을 수 있으니 모드 칩도 맞춘다
+}
+// 서류 드롭다운: 맨 앞 "서류 선택"(값 없음)은 기본 모드(나만의 AI 비서)의 표시이고, 종류를 고르면 서류 모드로 들어간다
+function _cmpDocSelInit() {
+  const sel = document.getElementById('cmp-doc-site');
+  if (!sel.options.length) {
+    sel.add(new Option('서류 선택', ''));
+    _DOC_SITES.forEach(x => sel.add(new Option(x.label, x.id)));
+  }
+  return sel;
+}
+function _cmpDocSelChange(sel) {
+  if (!sel.value) { if (_cmpMode === 'doc') { if (!_cmpSetMode('default')) _cmpSyncModeUi(); } return; }
+  if (_cmpMode !== 'doc') { if (!_cmpSetMode('doc')) sel.value = ''; return; }   // 모드가 바뀌면 _docHostMode 가 고른 서류를 불러온다
+  _docHostSite(sel.value);
 }
 function _docHostMode(on) {
   const input = document.getElementById('cmp-input');
   if (_docHost.phOrig === null) _docHost.phOrig = input.dataset.ph !== undefined ? input.dataset.ph : input.placeholder;
-  if (!on) { delete input.dataset.ph; input.placeholder = _docHost.phOrig; return; }
-  const sel = document.getElementById('cmp-doc-site');
-  if (!sel.options.length) _DOC_SITES.forEach(x => sel.add(new Option(x.label, x.id)));
-  if (!_docHost.loaded) _docHostLoad(sel.value);
+  if (!on) { delete input.dataset.ph; input.placeholder = _docHost.phOrig; document.getElementById('cmp-doc-count').textContent = ''; return; }
+  const sel = _cmpDocSelInit();
+  if (!sel.value) sel.value = 'all';
+  if (!_docHost.loaded || _docHost.id !== sel.value) _docHostLoad(sel.value);
   else _docHostApplyMeta();
 }
 function _docHostLoad(id) {
-  _docHost.loaded = true; _docHost.ready = false; _docHost.cap = false; _docHost.queue = [];
+  _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = [];
   try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
   _docHostApplyMeta();
   _docLoadInto(id, { frame: 'doc-host-frame', sel: 'cmp-doc-site', note: 'cmp-doc-count' });
@@ -1734,16 +1762,24 @@ window.addEventListener('message', (e) => {
   if (d.type === 'navi-doc-done') (fromModal ? _docAttachToChat : _docAttach)(d, e.source, e.origin);
 });
 
+// 'home'(왼쪽 메뉴 "홈" · 로고) · 'compose'/'letter'/'doc'(다른 화면에서 이 입력창의 특정 모드로 넘어올 때)는 모두 같은 화면(#tab-compose)이다.
+// home: 다른 화면에서 돌아오면 하던 그대로 보여 주고, 이미 이 화면이면 기본 모드(나만의 AI 비서)로 돌아간다.
+const _NAV_COMPOSE_NAMES = ['home', 'compose', 'letter', 'doc'];
 function _switchTab(name) {
   _sentCardHide('mail'); _sentCardHide('qs');
+  const _wasComposeActive = document.getElementById('tab-compose').classList.contains('active');
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-mv').forEach(el => el.classList.remove('active'));
-  const _panelName = (name === 'letter' || name === 'doc') ? 'compose' : name;
+  const _isCompose = _NAV_COMPOSE_NAMES.indexOf(name) >= 0;
+  const _panelName = _isCompose ? 'compose' : name;
   document.getElementById('tab-' + _panelName).classList.add('active');
-  if (_panelName === 'compose') _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : 'campaign');
-  const _navBtn = document.getElementById('tab-btn-' + name);
+  if (_isCompose) {
+    if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
+    else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : 'campaign', { force: true });
+  }
+  const _navBtn = document.getElementById('tab-btn-' + (_isCompose ? 'home' : name));
   _navBtn.classList.add('active');
-  if (_navBtn.classList.contains('nav-mv') && name !== 'compose') _navToggleMail(true);   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
+  if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
   if (_crumb) _crumb.textContent = _navBtn.getAttribute('data-label') || '';
   if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
@@ -3231,28 +3267,102 @@ function _cmpMaybeApprove(reply, action) {
   thread.appendChild(row);
   _cmpScrollToBottom();
 }
-// 모드: 'campaign'(새 캠페인, 내 캠페인에 기록) | 'letter'(편지 작성(AI), 보낸메일함에만 기록)
-let _cmpMode = 'campaign';
-let _cmpLandingSubOrig = null;
-function _cmpSetMode(mode) {
-  if (mode === _cmpMode) return;
-  _cmpMode = mode;
-  document.getElementById('tab-compose').setAttribute('data-mode', mode);
-  _cmpChatStartNew();
-  _docHostMode(mode === 'doc');
+// ── 2026-10-31: 입력창 하나로 통합 — 모드마다 호출하는 SP가 다르다(화면은 하나, SP는 모드마다 하나만 쓴다) ──
+//   'default'  나만의 AI 비서(AC-PRO-CORE, /kmail/assist) — 입력 내용에 따라 K-Mail · 전문가 · 서류 작성 · 그대로 답변으로 보낸다
+//   'campaign' 메일 · 캠페인(/kmail/chat, 내 캠페인에 기록)       ← 메일 아이콘 → 캠페인
+//   'letter'   메일 · 편지 작성(AI)(/kmail/chat mode=letter, 보낸메일함에만 기록) ← 메일 아이콘 → 편지 작성(AI)
+//   'doc'      서류 작성(고른 카테고리의 서류 작성 SP, iframe)       ← 서류 드롭다운에서 종류 선택
+// 현재 모드는 입력창 안의 칩(×로 해제 → 기본 모드)과 인사말·예시 문구로 항상 보인다.
+const _CMP_MODE_UI = {
+  default:  { title: '무엇을 도와드릴까요?', chip: '', ph: '무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다', sub: '' },
+  campaign: { title: '어떤 캠페인을 보낼까요?', chip: '메일 · 캠페인', ph: '예: 다음 주 세미나 초청 메일을 서울대 컴퓨터공학부 교수님들께 보내고 싶어요',
+              sub: '누구에게, 왜, 무엇을 보내고 싶은지 편하게 말씀해 주세요. 대상을 못 찾으면 검색해서 후보를 찾아드리고, 제목·본문·발송 시각까지 정리해 확인받은 뒤에만 실제로 보냅니다.' },
+  letter:   { title: '누구에게 어떤 편지를 쓸까요?', chip: '메일 · 편지 작성', ph: '예: 김 교수님께 지난 세미나 참석에 감사드리는 편지를 쓰고 싶어요',
+              sub: '누구에게 무엇을 쓰고 싶은지 말씀해 주세요. 수신자·제목·본문을 정리해 확인받은 뒤 바로 보내며, 캠페인이 아니라 "보낸메일함"에만 기록됩니다. (예약·여러 명 발송은 메일(✉) → "캠페인"을 이용하세요.)' },
+  doc:      { title: '어떤 서류를 작성할까요?', chip: '서류', ph: null, sub: '' },   // 칩에는 고른 서류 종류가, 예시 문구에는 그 서류 페이지가 알려 준 문구가 들어간다
+};
+let _cmpMode = 'default';
+// 지금 모드에서 진행 중인 작업이 있는가(모드를 바꾸면 사라지는 것) — 확인창을 띄울지 판단한다
+function _cmpHasWork() {
+  if (_cmpMode === 'doc') return _docHost.loaded && document.getElementById('tab-compose').classList.contains('doc-live');
+  const nr = _navRoute.cur;
+  return _cmpChat.messages.length > 0 || _navRoute.msgs.length > 0 || !!(nr && nr.type === 'expert');
+}
+// 칩·인사말·예시 문구·메일 아이콘·서류 드롭다운을 현재 모드에 맞춘다
+function _cmpSyncModeUi() {
+  const ui = _CMP_MODE_UI[_cmpMode] || _CMP_MODE_UI.default;
+  const sel = document.getElementById('cmp-doc-site');
   const t = document.querySelector('#cmp-landing .chat-landing-title');
   const s = document.querySelector('#cmp-landing .chat-landing-sub');
-  if (s && _cmpLandingSubOrig === null) { _cmpLandingSubOrig = s.textContent; if (t) t.dataset.orig = t.textContent; }
-  if (mode === 'doc') {
-    if (t) t.textContent = '어떤 서류를 작성할까요?';
-  } else if (mode === 'letter') {
-    if (t) t.textContent = '어떤 편지를 쓸까요?';
-    if (s) s.textContent = '누구에게 무엇을 쓰고 싶은지 말씀해 주세요. 수신자·제목·본문을 정리해 확인받은 뒤 바로 보내며, 캠페인이 아니라 "보낸메일함"에만 기록됩니다. (예약·여러 명 발송은 "새 캠페인"을 이용하세요.)';
-  } else {
-    if (t && t.dataset.orig) t.textContent = t.dataset.orig;
-    if (s && _cmpLandingSubOrig !== null) s.textContent = _cmpLandingSubOrig;
+  if (t) t.textContent = ui.title;
+  if (s) s.textContent = ui.sub;
+  if (_cmpMode !== 'doc') {
+    const input = document.getElementById('cmp-input');
+    delete input.dataset.ph; input.placeholder = ui.ph;
+    if (sel && sel.value) sel.value = '';
   }
+  let chip = ui.chip;
+  if (_cmpMode === 'doc') { const o = sel && sel.options[sel.selectedIndex]; chip = (o && o.value) ? o.textContent : ui.chip; }
+  const chipEl = document.getElementById('cmp-mode-chip');
+  if (chipEl) { chipEl.hidden = !chip; document.getElementById('cmp-mode-chip-text').textContent = chip; }
+  const mb = document.getElementById('cmp-mail-btn');
+  if (mb) mb.setAttribute('aria-pressed', (_cmpMode === 'campaign' || _cmpMode === 'letter') ? 'true' : 'false');
 }
+// opts.keep  : 지금 대화(말풍선)를 그대로 둔 채 모드만 바꾼다(기본 모드가 K-Mail 로 연결할 때)
+// opts.force : 확인창 없이 바꾼다(다른 화면에서 이 입력창으로 넘어오는 내부 이동 — 캠페인 상세, 주소록 등)
+// 반환 false = 사용자가 모드 전환을 취소했다
+function _cmpSetMode(mode, opts) {
+  opts = opts || {};
+  if (!_CMP_MODE_UI[mode]) mode = 'default';
+  if (mode === _cmpMode) { _cmpSyncModeUi(); return true; }
+  const hadWork = _cmpHasWork();
+  if (!opts.keep && !opts.force && hadWork &&
+      !confirm('진행 중인 작업이 사라집니다. 모드를 바꿀까요?\n(캠페인 초안은 "내 캠페인"에서 이어서 열 수 있습니다.)')) { _cmpSyncModeUi(); return false; }
+  const input = document.getElementById('cmp-input');
+  // 아직 시작한 작업이 없으면 적어 둔 글과 첨부는 새 모드로 가져간다
+  const carry = !opts.keep && !hadWork;
+  const carryText = carry ? input.value : '';
+  const carryAtt = carry ? _cmpPendingAttachments.slice() : [];
+  _cmpMode = mode;
+  document.getElementById('tab-compose').setAttribute('data-mode', mode);
+  if (!opts.keep) _cmpChatStartNew();
+  _docHostMode(mode === 'doc');
+  if (carry && (carryText || carryAtt.length)) {
+    input.value = carryText; _cmpPendingAttachments = carryAtt; _cmpRenderAttachList();
+    _kmailAutoResize(input); _cmpChatUpdateSendState();
+    if (mode === 'doc') _docHostInput();
+  }
+  _cmpSyncModeUi();
+  return true;
+}
+// "+ 새 대화": 새 대화는 항상 기본 모드(나만의 AI 비서)에서 시작한다
+function _cmpNewConversation() {
+  if (_cmpMode !== 'default') _cmpSetMode('default', { force: true }); else _cmpChatStartNew();
+}
+// 입력창 왼쪽 메일(✉) 아이콘 — 편지 작성(AI) / 캠페인 중 고르는 팝오버. 둘 다 AI SP 를 부르는 모드다(빠른 발송은 폼 화면이라 왼쪽 메뉴에 둔다).
+function _cmpMailMenu(ev) {
+  ev.stopPropagation();
+  const old = document.getElementById('cmp-mail-menu');
+  if (old) { old.remove(); return; }
+  const m = document.createElement('div');
+  m.id = 'cmp-mail-menu'; m.setAttribute('role', 'menu');
+  const item = (k, name, sub) => '<button type="button" role="menuitem" data-k="' + k + '"' + (_cmpMode === k ? ' aria-current="true"' : '') + '><b>' + name + '</b><small>' + sub + '</small></button>';
+  m.innerHTML = item('letter', '편지 작성(AI)', '한 사람에게 보내는 편지를 AI와 함께 작성') + item('campaign', '캠페인', '여러 수신자 대상 설계 · 예약 · 발송');
+  document.body.appendChild(m);
+  const r = ev.currentTarget.getBoundingClientRect();
+  m.style.left = Math.max(8, r.left) + 'px';
+  m.style.top = Math.max(8, r.top - m.offsetHeight - 8) + 'px';
+  const close = () => { m.remove(); document.removeEventListener('click', close); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  m.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    e.stopPropagation(); close();
+    if (_cmpSetMode(b.dataset.k)) { try { document.getElementById('cmp-input').focus(); } catch (x) {} }
+  });
+  document.addEventListener('keydown', onKey);
+  setTimeout(() => document.addEventListener('click', close), 0);
+}
+document.addEventListener('DOMContentLoaded', () => { _cmpDocSelInit(); _cmpSyncModeUi(); });
 // 예약 발송 추적 — 예약이 접수되면 id를 저장해 두고, 30초마다 목록을 확인해 실제로 발송된 즉시 알린다.
 const _SCHED_KEY = 'kmail_sched_watch';
 function _schedLoad() { try { return JSON.parse(localStorage.getItem(_SCHED_KEY) || '[]'); } catch (e) { return []; } }
@@ -3468,6 +3578,7 @@ async function _navAssistTurn(text) {
       _navRoute.cur = { type: 'kmail' }; _navRoute.msgs = [];
       _navDropLastUserBubble(); _navChip('K-Mail로 연결했습니다');
       loading.style.display = 'none';
+      _cmpSetMode('campaign', { keep: true });   // 칩에 "메일 · 캠페인"을 띄워 어느 SP 로 넘어갔는지 보이게 한다(× 로 해제)
       await _cmpChatSendText(text, []);
     } else if (route.type === 'doc') {
       _navToDoc(route.site || 'all', text);
@@ -3490,12 +3601,12 @@ async function _navAssistTurn(text) {
 }
 // 반환 true = 여기서 처리함. K-Mail 대화가 이미 진행 중이거나 첨부가 있으면 기존 K-Mail 대화로 둔다.
 async function _navRouteSend(text, attachments) {
-  if (_cmpMode !== 'campaign') return false;
+  if (_cmpMode !== 'default') return false;   // 메일·서류 모드를 직접 고른 경우에는 라우팅하지 않고 그 모드의 SP 로 보낸다
   const cur = _navRoute.cur;
   if (cur && cur.type === 'expert') {
     _navRoute.lastText = text; _navExpertPost({ type: 'expert-embed-send', text }); return true;
   }
-  if ((cur && cur.type === 'kmail') || _cmpChat.messages.length || (attachments && attachments.length)) { _navRoute.cur = { type: 'kmail' }; return false; }
+  if ((cur && cur.type === 'kmail') || _cmpChat.messages.length || (attachments && attachments.length)) { _navRoute.cur = { type: 'kmail' }; _cmpSetMode('campaign', { keep: true }); return false; }
   await _navAssistTurn(text); return true;
 }
 
@@ -4432,6 +4543,7 @@ window.kmailOpenSettings = function (section) {
 (function () {
   const h = (location.hash || '').replace('#', '');
   if (h === 'idsettings') { kmailOpenSettings('account'); return; }
+  if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
 window.addEventListener('hashchange', function () {
