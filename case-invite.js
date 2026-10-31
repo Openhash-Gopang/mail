@@ -25,7 +25,9 @@
     return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
   }
   function newToken() { return b64url(root.crypto.getRandomValues(new Uint8Array(16))); }
-  function inviteLink(token) { return SIGNUP_BASE + '?inv=' + encodeURIComponent(token); }
+  // base 를 주면 그 주소로(이미 ? 가 있으면 & 로 이어 붙임). 기본은 naviweb.kr 가입 주소.
+  // 앱이 자기 주소(예: https://mail.hondi.net/desktop.html?case=1)를 넘기면, 도메인 연결(naviweb.kr → K-Mail)이 끝나기 전에도 링크가 바로 열린다.
+  function inviteLink(token, base) { base = base || SIGNUP_BASE; return base + (base.indexOf('?') < 0 ? '?' : '&') + 'inv=' + encodeURIComponent(token); }
   function emailOk(e) { return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && e.length <= 254; }
   function other(side) { return side === 'provider' ? 'consumer' : side === 'consumer' ? 'provider' : null; }
 
@@ -37,12 +39,13 @@
     if (!i.inviter_id) errs.push('초청자 id 필수');
     if (i.inviter_side !== 'provider' && i.inviter_side !== 'consumer') errs.push('inviter_side 는 provider|consumer');
     if (!emailOk(i.invitee_email)) errs.push('초대받는 사람 메일 주소 오류');
+    if (i.signup_base != null && !/^https:\/\/[^\s]+$/.test(i.signup_base)) errs.push('signup_base 는 https 주소');
     if (errs.length) return { ok: false, errors: errs };
     var now = nowIso || new Date().toISOString();
     var token = newToken(), token_hash = await sha256Hex('inv:' + token);
     var expires_at = new Date(Date.parse(now) + TTL_DAYS * 864e5).toISOString();
     return {
-      ok: true, token: token, link: inviteLink(token),
+      ok: true, token: token, link: inviteLink(token, i.signup_base),
       invitation: { token_hash: token_hash, case_id: i.case_id, inviter_id: i.inviter_id, inviter_side: i.inviter_side,
         invitee_side: other(i.inviter_side), invitee_email: i.invitee_email, created_at: now, expires_at: expires_at, state: 'issued' },
       server_record: { token_hash: token_hash, inviter_id: i.inviter_id, expires_at: expires_at, state: 'issued' },

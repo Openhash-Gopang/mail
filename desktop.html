@@ -54,13 +54,13 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="orgtree.js"></script>
 <script src="case-core.js?v=20261101b"></script>
-<script src="case-invite.js?v=20261101b"></script>
+<script src="case-invite.js?v=20261101d"></script>
 <script src="case-store.js?v=20261101b"></script>
 <script src="case-sync.js?v=20261101b"></script>
 <script src="case-seal.js?v=20261101b"></script>
 <script src="case-net.js?v=20261101c"></script>
-<script src="case-host.js?v=20261101c"></script>
-<script src="case-ui.js?v=20261101c"></script>
+<script src="case-host.js?v=20261101d"></script>
+<script src="case-ui.js?v=20261101d"></script>
 <script src="guide.js?v=20261101"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -1545,7 +1545,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 <script>
 const PROXY = 'https://hondi-proxy.tensor-city.workers.dev';
-window.CASE_HOST_CFG = { proxy: PROXY, fetch: (u, o) => KAuth.fetchWithAuth(u, o), mailId: async () => { const d = await kmailApi('/kmail/settings'); return d.mail_id || String(d.kmail_address || '').replace(/@.*$/, ''); } };   // case-host.js — /case/* 호출(로그인 토큰 자동 첨부)
+window.CASE_HOST_CFG = { proxy: PROXY, fetch: (u, o) => KAuth.fetchWithAuth(u, o), sendMail: async (to, subject, text) => { await kmailApi('/mail/send', { method: 'POST', body: { to, subject, text } }); }, mailId: async () => { const d = await kmailApi('/kmail/settings'); return d.mail_id || String(d.kmail_address || '').replace(/@.*$/, ''); } };   // case-host.js — /case/* 호출(로그인 토큰 자동 첨부)
 const KMAIL_CHAT_URL = PROXY + '/kmail/chat';
 // 2026-09-11 신설 — K-Address(SP-26) 대화형 주소록 관리, K-Mail과
 // 완전히 격리된 별도 엔드포인트.

@@ -210,3 +210,25 @@ test('초대받은 쪽(화면): claim → 제안 도착 시 일이 만들어지�
   G.CASE_HOST_CFG = { mailId: async () => '' };
   assert.equal((await CaseHost.claim(inv.token)).code, 'NO_MAIL_ID');
 });
+
+test('초대 메일: 링크와 안내만 보내고 사건 제목은 넣지 않는다. 실패하면 보냄 표시를 하지 않는다', async () => {
+  const { storeA } = await setup();
+  const inv = await G.CaseInvite.createInvitation({ case_id: 'cm', inviter_id: 'A', inviter_side: 'provider', invitee_email: 'client@example.com', signup_base: 'https://mail.hondi.net/desktop.html?case=1' });
+  await storeA.createCase({ case_id: 'cm', title: '비밀 사건명', kind: 'case', my_side: 'provider' });
+  await storeA.patchCase('cm', { invitation: inv.invitation, invite_link: inv.link });
+  assert.ok(inv.link.startsWith('https://mail.hondi.net/desktop.html?case=1&inv='));
+  const sent = [];
+  G.CASE_HOST_CFG = { sendMail: async (to, subject, text) => { sent.push({ to, subject, text }); } };
+  G.CASE_UI_CONFIG.userName = '홍변호사';
+  assert.deepEqual(await CaseHost.sendInviteMail('cm'), { ok: true });
+  assert.equal(sent[0].to, 'client@example.com'); assert.ok(sent[0].text.includes(inv.link)); assert.ok(sent[0].text.includes('홍변호사'));
+  assert.ok(!sent[0].text.includes('비밀 사건명') && !sent[0].subject.includes('비밀 사건명'));
+  assert.ok((await storeA.getCase('cm')).invite_mail_sent_at);
+  await storeA.patchCase('cm', { invite_mail_sent_at: null });
+  G.CASE_HOST_CFG = { sendMail: async () => { throw new Error('boom'); } };
+  const r = await CaseHost.sendInviteMail('cm');
+  assert.equal(r.ok, false); assert.equal(r.code, 'SEND_FAILED');
+  assert.equal((await storeA.getCase('cm')).invite_mail_sent_at, null);
+  G.CASE_HOST_CFG = {};
+  assert.equal((await CaseHost.sendInviteMail('cm')).code, 'NO_MAILER');
+});

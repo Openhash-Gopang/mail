@@ -6,7 +6,7 @@
    · 내 키를 서버에 등록(1회), 초대 가입 알림(invite_signed_up)으로 상대 키를 받아 일에 기록(TOFU)한다.
    · 로컬에서 만든 서명 이벤트·공유 항목을 일별 대기열(case.outq)에 쌓았다가 상대 우편함으로 보내고, 우편함을 읽어 반영한다.
    · 서버로 가는 것은 암호문과 해시뿐이다. 기록 원본은 이 기기의 PDV 에만 있다.
-   설정: window.CASE_HOST_CFG = { proxy: 'https://…', fetch: (url, opts) => Promise<Response>, mailId: async () => '내 메일 아이디' }  (desktop.html 이 지정)
+   설정: window.CASE_HOST_CFG = { proxy: 'https://…', fetch: (url, opts) => Promise<Response>, mailId: async () => '내 메일 아이디', sendMail: async (to, subject, text) => void }  (desktop.html 이 지정)
    의존: case-core, case-sync, case-seal, case-net, case-store
    ═════════════════════════════════════════════════ */
 (function (root) {
@@ -203,6 +203,22 @@
     return { ok: false, code: r.json && r.json.code, message: r.json && r.json.message };
   }
 
+  // 초대 메일 보내기: 내 K-Mail 주소로 상대에게 링크를 보낸다. 사건 제목·내용은 메일에 넣지 않는다(메일 서버를 지나므로).
+  async function sendInviteMail(case_id) {
+    var store = root.CaseUI._store(), cs = await store.getCase(case_id), c = cfg();
+    if (!cs || !cs.invitation || !cs.invite_link) return { ok: false, code: 'NO_INVITATION' };
+    if (!c.sendMail) return { ok: false, code: 'NO_MAILER' };
+    var who = (root.CASE_UI_CONFIG && root.CASE_UI_CONFIG.userName) || '';
+    var subject = '[NAVI] 일을 함께 진행하자는 초대가 도착했습니다';
+    var text = (who ? who + '님이' : '지인이') + ' NAVI(나비웹)에서 일을 함께 진행하자고 초대했습니다.\n\n' +
+      '아래 링크에서 수락하면 가입 사실과 아이디가 초대한 분께 전달되고, 서로의 서명 키를 주고받습니다. 일의 내용은 수락 후에 이 링크를 연 기기에만 나타납니다.\n\n' +
+      cs.invite_link + '\n\n링크는 14일간 유효합니다. 모르는 분의 초대라면 이 메일을 무시하세요.';
+    try { await c.sendMail(cs.invitation.invitee_email, subject, text); }
+    catch (e) { return { ok: false, code: 'SEND_FAILED', message: e.message }; }
+    await store.patchCase(case_id, { invite_mail_sent_at: new Date().toISOString() });
+    return { ok: true };
+  }
+
   // 화면에서 쓰는 요약: 내 키 지문, 상대 키 지문
   async function keyInfo(case_id) {
     var l = await initLocal(), store = root.CaseUI._store(), cs = await store.getCase(case_id), fp = function (p) { return String(p).replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toUpperCase().replace(/(.{4})/g, '$1 ').trim(); };
@@ -211,5 +227,5 @@
 
   function _reset() { local = null; netState = null; stopAutoPoll(); listeners = []; }
   root.CaseHost = { initLocal: initLocal, net: net, call: call, ensureKeys: ensureKeys, onNotice: onNotice, enqueue: enqueue, flush: flush, flushAll: flushAll,
-    poll: poll, onUpdate: onUpdate, startAutoPoll: startAutoPoll, stopAutoPoll: stopAutoPoll, registerInvite: registerInvite, claim: claim, onProposal: onProposal, sendProposalIfNeeded: sendProposalIfNeeded, keyInfo: keyInfo, _reset: _reset };
+    poll: poll, onUpdate: onUpdate, startAutoPoll: startAutoPoll, stopAutoPoll: stopAutoPoll, registerInvite: registerInvite, sendInviteMail: sendInviteMail, claim: claim, onProposal: onProposal, sendProposalIfNeeded: sendProposalIfNeeded, keyInfo: keyInfo, _reset: _reset };
 })(typeof window !== 'undefined' ? window : globalThis);
