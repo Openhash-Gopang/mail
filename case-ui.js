@@ -4,7 +4,8 @@
    - 기능 플래그: URL ?case=1 또는 localStorage kmail_case_ui=1 일 때만 메뉴가 보인다(기본 숨김).
    - 모든 기록은 이 기기의 PDV(IndexedDB hondi_case_store)에만 저장한다. 서버로는 해시만(큐에 쌓임).
    - 의존: case-core.js, case-invite.js, case-store.js (hondi 저장소가 원본 — 복사본).
-   - 아직 없는 것(화면에 숨기지 않고 안내): 상대 응답 수신(우편함 서버), 초대 메일 자동 발송, 소비자 투영 동기화.
+   - 2026-11-01(S5 후반): case-host.js 와 연결 — 키 지문, 합의 확인·성립, 종료 요청·응답, 우편함 새로 고침(60초 자동), 공유 항목 전송.
+   - 아직 없는 것(화면에 숨기지 않고 안내): 초대 메일 자동 발송, 초대받은 쪽(가입 후)의 일 생성 화면(naviweb.kr 가입 화면과 함께).
    ═════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
@@ -34,6 +35,15 @@
     catch (_) { return /[?&]case=1\b/.test(location.search); }
   }
   function fmt(iso) { try { return new Date(iso).toLocaleString('ko-KR', { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (_) { return iso; } }
+  function host() { return root.CaseHost || null; }
+  function proposalOf(c) { return { case_id: c.case_id, title: c.title, kind: c.kind }; }
+  var ERR = { NO_PEER: '상대가 아직 가입하지 않았습니다', KEY_CHANGED: '상대의 키가 바뀌었습니다 — 상대와 직접 확인하기 전에는 진행하지 않습니다', BAD_KEY_SIGNATURE: '상대 키 서명이 올바르지 않습니다', KEYS_REQUIRED: '키 교환 전입니다', FROM_MISMATCH: '로그인 정보가 맞지 않습니다', NO_RELATION: '초대·가입으로 연결된 상대가 아닙니다', BLOCKED: '차단된 관계입니다' };
+  function errText(r) { return (r && (ERR[r.code] || r.error || r.message || r.code)) || '실패'; }
+  // 맡은 일/맡긴 일의 변경은 만든 뒤 바로 상대에게 보낸다(실패하면 대기열에 남아 다음 새로 고침 때 다시 보낸다).
+  async function pushOut(id, events) {
+    var H = host(); if (!H) return { ok: true, sent: 0 };
+    try { if (events && events.length) await H.enqueue(id, events); return await H.flush(id); } catch (e) { return { ok: false, code: 'OFFLINE', error: e.message }; }
+  }
   function newId() { return 'case-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function mineOf(name, cases) {
     var m = MODES[name];
@@ -79,6 +89,7 @@
         if (!inv.ok) { msg.textContent = inv.errors.join(', '); return; }
         await s.patchCase(id, { invitation: inv.invitation, invite_link: inv.link });
         await s.append(id, { type: 'invite_issued', actor_side: m.side, visibility: 'internal', payload: { token_hash: inv.invitation.token_hash, expires_at: inv.invitation.expires_at } });
+        if (host()) { try { await host().registerInvite(id); } catch (_) { /* 로그인 전·오프라인이면 상세 화면의 "초대 등록" 버튼으로 다시 */ } }
       }
     }
     await openCase(name, id);
@@ -95,10 +106,32 @@
         ' · ' + (c.how === 'manual' ? '직접 기록' : c.how === 'auto' ? '자동 수집' : 'AI 보조') + (c.confirm_status === 'unconfirmed' ? ' · <i>상대 미확인</i>' : '') + '</div>' +
         '<div>' + esc(c.summary) + '</div>';
     } else if (e.type === 'note') body = esc((e.payload || {}).text);
-    else if (e.type.indexOf('state_') === 0) body = '상태 변경: ' + esc(STATE[e.payload.from] || e.payload.from) + ' → <b>' + esc(STATE[e.payload.to] || e.payload.to) + '</b>' + (e.payload.outcome ? ' · 결과: ' + esc(e.payload.outcome) : '');
+    else if (e.type.indexOf('state_') === 0) body = '상태 변경: ' + esc(STATE[e.payload.from] || e.payload.from) + ' → <b>' + esc(STATE[e.payload.to] || e.payload.to) + '</b>' + (e.payload.outcome ? ' · 결과: ' + esc(e.payload.outcome) : '') + (e.payload.proof ? ' <span class="cs-6h">(' + (e.actor_side === 'provider' ? '맡은 쪽' : '맡긴 쪽') + ' 서명)</span>' : '');
+    else if (e.type === 'peer_entry') { var pe = (e.payload || {}).entry || {}, pp = pe.payload || {}; body = '<b>상대 기록</b> · ' + esc(pe.type === 'comm' ? '소통 — ' + (pp.summary || '') : (pp.text || pe.type || '')); }
+    else if (e.type === 'agreement_confirm') body = '<b>합의 확인</b> 서명 — ' + (e.actor_side === 'provider' ? '맡은 쪽' : '맡긴 쪽') + ' <span class="cs-6h">(전자서명 검증됨)</span>';
     else if (e.type === 'invite_issued') body = '초대권 발행 (만료 ' + esc(fmt(e.payload.expires_at)) + ')';
     else body = esc(e.type);
     return '<div class="cs-ev"><div class="cs-ev-h"><span>#' + e.seq + ' · ' + esc(fmt(e.at)) + '</span>' + vis + '</div>' + body + '</div>';
+  }
+
+  // 맡은 일/맡긴 일의 "상대와의 연결" 카드: 초대 링크, 가입 여부, 키 지문(상대와 직접 대조), 보내지 못한 항목.
+  function connHtml(c, ki, h) {
+    var parts = [];
+    if (!c.peer) {
+      parts.push('<b>상대 가입 대기 중</b>' + (c.invite_link ? ' — 아래 초대 링크를 메일로 보내세요(자동 발송은 준비 중).<div class="cs-link-box"><input readonly id="cs-invite-link" value="' + esc(c.invite_link) + '"><button class="cs-btn" data-act="copy">복사</button></div>' +
+        '<div class="cs-sub">링크 유효기간 14일 · 상대가 가입하면 가입 사실과 아이디, 메일 아이디가 전달되고 키가 교환됩니다.</div>' : ' — 초대 링크가 없습니다.'));
+      if (c.invitation && !c.invite_registered) parts.push('<div class="cs-msg">초대가 서버에 등록되지 않았습니다. 로그인 후 <button class="cs-link" data-act="reg-invite">초대 등록</button>을 누르세요(등록해야 상대가 가입 후 연결됩니다).</div>');
+    } else {
+      parts.push('<b>상대</b> ' + esc(c.peer_mail || c.peer) + (c.peer_email_match === false ? ' <span class="cs-bad">⚠ 초대한 메일 주소와 다른 계정으로 가입했습니다. 본인이 맞는지 확인하세요.</span>' : ''));
+    }
+    if (ki) {
+      parts.push('<div class="cs-fp">내 키 지문 <code>' + esc(ki.mine) + '</code>' + (ki.peer ? ' · 상대 키 지문 <code>' + esc(ki.peer) + '</code>' : '') + '</div>' +
+        (ki.ready ? '<div class="cs-sub">서명 키를 주고받았습니다. 합의 전에 상대와 전화·대면으로 지문이 같은지 한 번 확인하면 가장 안전합니다. 상대 키가 나중에 바뀌면 진행이 중단됩니다.</div>' : (c.peer ? '<div class="cs-sub">키 교환 중입니다. “새로 고침”을 눌러 주세요.</div>' : '')));
+    }
+    var q = (c.outq || []).length;
+    parts.push('<div class="cs-actions"><button class="cs-btn" data-act="sync">새로 고침(우편함)</button>' + (q ? '<span class="cs-bad">보내지 못한 항목 ' + q + '건</span>' : '') + '</div><div id="cs-sync-msg" class="cs-msg"></div>');
+    var pending = c.state === 'proposed' ? '<div class="cs-sub">양측이 같은 제안 내용에 서명해야 합의가 성립합니다. 서명은 이 기기의 키로만 만들어지고, 상대의 서명이 없으면 상대가 했다고 인정하지 않습니다.</div>' : '';
+    return '<div class="cs-card ' + (c.state === 'proposed' ? 'cs-warn' : '') + '">' + parts.join('') + pending + '</div>';
   }
 
   async function openCase(name, id) {
@@ -108,14 +141,22 @@
     var h = await s.history(id), v = await s.verify(id);
     var tab = (cur[name + ':tab'] || 'all');
     var shown = h.filter(function (e) { return tab === 'all' || (tab === 'comm' && e.type === 'comm'); }).slice().reverse();
-    var acts = '';
+    var acts = '', ki = null, H = host(), amReq = null;
     if (m.solo) {
       if (c.state === 'active') acts = '<button class="cs-btn" data-act="tr" data-ev="hold">보류</button><button class="cs-btn" data-act="tr" data-ev="close_self">종료</button>';
       else if (c.state === 'on_hold') acts = '<button class="cs-btn" data-act="tr" data-ev="resume">재개</button><button class="cs-btn" data-act="tr" data-ev="close_self">종료</button>';
       else if (c.state === 'closed') acts = '<button class="cs-btn" data-act="tr" data-ev="archive">보관</button>';
     } else {
-      if (c.state === 'active') acts = '<button class="cs-btn" data-act="tr" data-ev="hold">보류</button>';
-      else if (c.state === 'on_hold') acts = '<button class="cs-btn" data-act="tr" data-ev="resume">재개</button>';
+      if (H) { try { ki = await H.keyInfo(id); } catch (_) { ki = null; } }
+      var ready = !!(c.keys && c.keys.provider && c.keys.consumer), prov = c.my_side === 'provider';
+      var b = function (ev, label, pri) { return '<button class="cs-btn' + (pri ? ' cs-pri' : '') + '" data-act="tr" data-ev="' + ev + '">' + label + '</button>'; };
+      if (ready && root.CaseSync) amReq = await root.CaseSync.closeRequestedBy(h, c.keys);
+      if (c.state === 'proposed') { if (ready) acts = '<button class="cs-btn cs-pri" data-act="confirm">합의 확인(서명)</button>' + (prov ? b('accept', '합의 성립', false) : ''); }
+      else if (c.state === 'agreed') acts = prov ? b('activate', '진행 시작', true) : '';
+      else if (c.state === 'active') acts = b('hold', '보류') + b('request_close', '종료 요청');
+      else if (c.state === 'on_hold') acts = b('resume', '재개') + b('request_close', '종료 요청');
+      else if (c.state === 'closing') acts = amReq && amReq !== c.my_side ? b('close_agree', '종료 동의', true) + b('close_dispute', '이의(진행 계속)') + b('close_hold', '보류로 전환') : '<span class="cs-sub">상대의 응답을 기다리는 중입니다.</span>';
+      else if (c.state === 'closed') acts = b('archive', '보관');
     }
     var pending = (await getStore().flushAnchors(0)).pending;
     p.innerHTML =
@@ -123,9 +164,7 @@
       '<div class="cs-sub">' + esc(KIND[c.kind] || c.kind) + ' · <span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span>' +
       ' · <span class="' + (v.ok ? 'cs-ok' : 'cs-bad') + '">' + (v.ok ? '기록 무결성 확인됨 (' + v.length + '건)' : '⚠ 기록 변조 의심 (#' + v.brokenAt + ')') + '</span>' +
       ' · 이 기기의 해시 전송 대기 ' + pending + '건</div></div><div class="cs-actions">' + acts + '</div></div>' +
-      (!m.solo && c.state === 'proposed' ? '<div class="cs-card cs-warn">상대방의 확인이 있어야 합의가 완료됩니다.' +
-        (c.invite_link ? ' 아래 초대 링크를 메일로 보내세요(자동 발송·응답 수신은 준비 중).<div class="cs-link-box"><input readonly id="cs-invite-link" value="' + esc(c.invite_link) + '"><button class="cs-btn" data-act="copy">복사</button></div>' +
-          '<div class="cs-sub">링크 유효기간 14일 · 가입하면 가입 사실과 아이디, 메일 아이디가 전달되고 대화방이 열립니다.</div>' : '') + '</div>' : '') +
+      (!m.solo ? connHtml(c, ki, h) : '') +
       '<div class="cs-tabs"><button class="cs-tab' + (tab === 'all' ? ' on' : '') + '" data-act="tab" data-t="all">진행 기록</button>' +
       '<button class="cs-tab' + (tab === 'comm' ? ' on' : '') + '" data-act="tab" data-t="comm">소통 이력</button></div>' +
       (c.state !== 'archived' ? '<div class="cs-card"><div class="cs-two">' +
@@ -156,6 +195,7 @@
       var txt = ($('cs-note').value || '').trim(); if (!txt) return;
       var sh = $('cs-note-shared');
       await s.append(id, { type: 'note', actor_side: m.side, visibility: sh && sh.checked ? 'shared' : 'internal', payload: { text: txt } });
+      if (!m.solo) await pushOut(id);
       await openCase(name, id);
     } else if (act === 'add-comm') {
       var at = $('cs-c-at').value ? new Date($('cs-c-at').value).toISOString() : new Date().toISOString();
@@ -164,28 +204,61 @@
       if (!r.ok) { $('cs-c-msg').textContent = r.errors.join(' · '); return; }
       var sh2 = $('cs-c-shared');
       await s.append(id, { type: 'comm', actor_side: m.side, visibility: sh2 && sh2.checked ? 'shared' : 'internal', payload: r.value });
+      if (!m.solo) await pushOut(id);
       cur[name + ':tab'] = 'comm'; await openCase(name, id);
     } else if (act === 'tr') {
       var evn = t.getAttribute('data-ev'), ctx = { side: m.side }, entry = {};
-      if (evn === 'close_self') {
+      if (evn === 'close_self' || evn === 'request_close') {
         var o = (typeof prompt === 'function') ? prompt('결과를 한 줄로 기록하세요 (예: 승소 / 완치 / 취하)') : null;
         if (!o) return; ctx.outcome = o; entry.payload = { outcome: o };
       }
       var rr = await s.applyTransition(id, evn, ctx, Object.assign({ visibility: m.solo ? 'internal' : 'shared' }, entry));
-      if (rr.ok && entry.payload) { /* outcome 은 payload 에 from/to 와 함께 저장 */ }
+      if (!rr.ok) { note(name, rr); return; }
+      if (!m.solo && rr.event) { var pr = await pushOut(id, [rr.event]); if (pr && !pr.ok) { await openCase(name, id); note(name, { error: '기록은 저장됐지만 상대에게 아직 보내지 못했습니다(' + errText(pr) + '). 새로 고침 때 다시 보냅니다.' }); return; } }
+      await openCase(name, id);
+    } else if (act === 'confirm') {
+      var H = host(); if (!H) return;
+      var kr = await H.ensureKeys(id); if (!kr.ok) { note(name, kr); return; }
+      var c0 = await s.getCase(id), cf = await s.confirmAgreement(id, proposalOf(c0));
+      if (!cf.ok) { note(name, cf); return; }
+      var p1 = await pushOut(id, [cf.event]);
+      await openCase(name, id);
+      if (p1 && !p1.ok) note(name, { error: '서명은 저장됐지만 상대에게 아직 보내지 못했습니다(' + errText(p1) + '). 새로 고침 때 다시 보냅니다.' });
+    } else if (act === 'sync') {
+      var H2 = host(); if (!H2) return;
+      var msg = $('cs-sync-msg'); if (msg) msg.textContent = '확인 중…';
+      try {
+        await H2.ensureKeys(id).catch(function () {});
+        var r2 = await H2.poll();
+        await openCase(name, id);
+        var m2 = $('cs-sync-msg');
+        if (m2) { m2.style.color = r2.ok ? 'var(--sub)' : ''; m2.textContent = r2.ok ? ('받은 항목 ' + r2.applied + '건 반영 · 보낸 항목 ' + r2.sent + '건' + (r2.errors && r2.errors.length ? ' · 처리하지 못한 항목 ' + r2.errors.length + '건(' + r2.errors.map(function (e) { return e.code; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(', ') + ')' : '')) : errText(r2); }
+      } catch (e) { var m3 = $('cs-sync-msg'); if (m3) { m3.style.color = ''; m3.textContent = e.message || '실패'; } }
+    } else if (act === 'reg-invite') {
+      var H3 = host(); if (!H3) return;
+      try { var ri = await H3.registerInvite(id); if (!ri.ok) { note(name, ri); return; } } catch (e) { note(name, { error: e.message }); return; }
       await openCase(name, id);
     }
   }
+
+  function note(name, r) { var el = $('cs-sync-msg') || $('cs-c-msg'); if (el) { el.style.color = ''; el.textContent = errText(r); } else if (typeof alert === 'function') alert(errText(r)); }
 
   function show(name) {
     if (!MODES[name]) return;
     var p = $('tab-' + name); if (!p) return;
     if (!p.__csBound) { p.__csBound = true; p.addEventListener('click', function (ev) { onClick(name, ev); }); }
-    return cur[name] ? openCase(name, cur[name]) : renderList(name);
+    var go = function () { return cur[name] ? openCase(name, cur[name]) : renderList(name); };
+    var H = host();
+    if (!H) return go();
+    // 키(이 기기)를 먼저 준비해야 CaseStore 가 서명 키를 갖고 만들어진다. 우편함 자동 확인은 로그인 후 60초마다.
+    return H.initLocal().catch(function () {}).then(function () {
+      if (name !== 'casesolo' && !H.__auto) { H.__auto = true; H.onUpdate(function (o) { if (!o || !(o.applied || (o.joined && o.joined.length))) return; var ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return; var n = ['caseprov', 'casecons'].filter(function (k) { return cur[k]; }); n.forEach(function (k) { var pn = $('tab-' + k); if (pn && pn.classList.contains('active')) openCase(k, cur[k]); }); }); H.startAutoPoll(60000); }
+      return go();
+    });
   }
   function applyFlag() { var g = $('side-group-case'); if (g) g.hidden = !enabled(); }
 
-  root.CaseUI = { show: show, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore };
+  root.CaseUI = { show: show, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyFlag); else applyFlag();
   }

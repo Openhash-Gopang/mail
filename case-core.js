@@ -90,7 +90,8 @@
     if (event === 'close_agree') {
       if (!ctx.closeRequestedBy) return { ok: false, error: '종료 요청 기록 없음' };
       if (ctx.side === ctx.closeRequestedBy) return { ok: false, error: '종료 동의는 요청하지 않은 상대편이 해야 함' };
-      if ((ctx.unpaidInvoices || 0) > 0) return { ok: false, error: '미결제 청구서가 있어 종료 불가' };
+      if (!(Number.isInteger(ctx.unpaidInvoices) && ctx.unpaidInvoices >= 0)) return { ok: false, error: '미결제 청구서 수를 확인할 수 없어 종료 불가(unpaidInvoices 필요)' };
+      if (ctx.unpaidInvoices > 0) return { ok: false, error: '미결제 청구서가 있어 종료 불가' };
     }
     if (event === 'close_dispute' || event === 'close_hold') {
       if (ctx.side === ctx.closeRequestedBy) return { ok: false, error: '요청한 쪽은 자기 종료 요청에 이의/보류 불가' };
@@ -158,6 +159,16 @@
     return { ok: true, head: history.length ? prevHash : GENESIS, length: history.length };
   }
 
+  // 두 기기의 기록 비교(S4, G7 일부): same / ahead(a 가 더 앞섬) / behind / forked(어느 시점부터 갈라짐)
+  async function compareChains(a, b) {
+    var n = Math.min(a.length, b.length), i = 0;
+    while (i < n && a[i].hash === b[i].hash) i++;
+    if (i === a.length && i === b.length) return { relation: 'same', common: i };
+    if (i === a.length) return { relation: 'behind', common: i };
+    if (i === b.length) return { relation: 'ahead', common: i };
+    return { relation: 'forked', common: i, forkSeq: a[i].seq };
+  }
+
   // 네트워크에 올리는 것은 이것뿐 — 본문 없이 해시와 식별 메타만(/pdv/report용 입력).
   function anchorPayload(entry) {
     return { type: 'case_' + entry.type, content_hash: entry.hash, case_id_hash: null, seq: entry.seq, at: entry.at };
@@ -176,13 +187,25 @@
     var corrected = {};
     shared.forEach(function (e) { if (e.corrects) corrected[e.corrects] = e.seq; });
     return shared.map(function (e) {
+      // 소비자가 해시를 직접 재계산할 수 있도록 해시 입력 필드를 모두 담는다(내부 항목은 prev_hash 로만 흔적이 남고 내용은 없음).
       return {
         link_id: e.case_id + '#' + e.seq,
-        seq: e.seq, type: e.type, at: e.at, actor_side: e.actor_side,
-        payload: e.payload, hash: e.hash,
+        case_id: e.case_id, seq: e.seq, type: e.type, at: e.at, actor_side: e.actor_side, actor: e.actor == null ? null : e.actor,
+        visibility: e.visibility, payload: e.payload, corrects: e.corrects || null, prev_hash: e.prev_hash, hash: e.hash,
         superseded_by: corrected[e.seq] || null,
       };
     });
+  }
+
+  // 항목 하나의 해시를 그 항목의 필드만으로 다시 계산한다(투영 항목도 가능 — 원본 전체가 필요 없다).
+  var HASH_FIELDS = ['case_id', 'seq', 'type', 'actor_side', 'actor', 'visibility', 'payload', 'at', 'corrects', 'prev_hash'];
+  async function entryHash(e) {
+    var o = {};
+    HASH_FIELDS.forEach(function (k) { o[k] = e[k] === undefined ? null : e[k]; });
+    return sha256Hex(canonical(o));
+  }
+  async function verifyEntryHash(e) {
+    try { return !!e && typeof e.hash === 'string' && (await entryHash(e)) === e.hash; } catch (_) { return false; }
   }
 
   // 소비자가 보유한 투영이 공급자 원본의 shared 부분과 일치하는지(해시 대조).
@@ -250,9 +273,9 @@
   var API = {
     canonical: canonical, sha256Hex: sha256Hex,
     STATES: STATES, KINDS: KINDS, SIDES: SIDES, MODES: MODES, createSolo: createSolo, TRANSITIONS: TRANSITIONS, transition: transition,
-    GENESIS: GENESIS, appendEntry: appendEntry, verifyChain: verifyChain,
+    GENESIS: GENESIS, appendEntry: appendEntry, verifyChain: verifyChain, compareChains: compareChains,
     anchorPayloadFor: anchorPayloadFor,
-    projectForConsumer: projectForConsumer, verifyProjection: verifyProjection,
+    projectForConsumer: projectForConsumer, verifyProjection: verifyProjection, entryHash: entryHash, verifyEntryHash: verifyEntryHash,
     CHANNELS: CHANNELS, PURPOSES: PURPOSES, CONFIRM: CONFIRM,
     buildCommunication: buildCommunication, respondCommunication: respondCommunication,
   };
