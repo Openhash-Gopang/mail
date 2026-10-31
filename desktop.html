@@ -1731,7 +1731,7 @@ function _docHostMode(on) {
 }
 function _docHostLoad(id) {
   _docHostAutoHeight(0);
-  _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = [];
+  _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = []; _docHost.title = '';
   try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
   _docHostApplyMeta();
   _docLoadInto(id, { frame: 'doc-host-frame', sel: 'cmp-doc-site', note: 'cmp-doc-count' });
@@ -1775,6 +1775,8 @@ function _docHostMessage(d, e) {
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
   } else if (d.type === 'navi-doc-size') {
     _docHostAutoHeight(d.height);
+  } else if (d.type === 'navi-doc-title') {   // 서류 쪽에서 고른(또는 미리보기 중인) 서류의 정확한 이름
+    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
   } else if (d.type === 'navi-doc-meta') {
     _docHost.meta = { count: String(d.count || '').slice(0, 200), placeholder: String(d.placeholder || '').slice(0, 200) };
     try { const id = document.getElementById('cmp-doc-site').value; localStorage.setItem(_docHostMetaKey(id), JSON.stringify(_docHost.meta)); } catch (x) {}
@@ -1924,7 +1926,7 @@ function _drSnapshot() {
   if (_cmpMode === 'doc') {
     const t = input.value.trim();
     if (!t) return null;
-    return { kind: 'doc', site: _docHost.id || '', title: oneLine(t, 40), text: t };
+    return { kind: 'doc', site: _docHost.id || '', title: oneLine(_docHost.title || t, 40), text: t };
   }
   return null;
 }
@@ -1964,7 +1966,7 @@ function _drDocComplete() {
   if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
   const t = document.getElementById('cmp-input').value.trim();
   const id = _cmpChat.draftId || (_cmpChat.draftId = _drNewId());
-  _drCall('put', { item: { id, kind: 'doc', site: _docHost.id || '', title: (t || '서류').replace(/\s+/g, ' ').slice(0, 40), text: t } })
+  _drCall('put', { item: { id, kind: 'doc', site: _docHost.id || '', title: (_docHost.title || t || '서류').replace(/\s+/g, ' ').slice(0, 40), text: t } })
     .then(() => _drCapture('done', id, _docHost.id || ''))
     .catch(() => _drToast('저장하지 못했습니다. (PDV 연결 확인)'));
 }
