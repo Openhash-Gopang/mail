@@ -31,10 +31,20 @@
     return store;
   }
   // 초대 링크(?inv=토큰)로 들어오면 토큰을 이 탭에만 기억해 로그인 과정을 거쳐도 잃지 않는다.
+  // 같은 기기의 다른 탭·로그인 이동에서도 잃지 않게 localStorage 에도 7일간 둔다(다른 기기로는 넘어가지 않는다). 수락·거절·시한 경과 시 지운다.
+  var INV_TTL = 7 * 86400000;
+  function invStored() {
+    try { var t = sessionStorage.getItem('case_inv'); if (t) return t; } catch (_) {}
+    try { var o = JSON.parse(localStorage.getItem('case_inv') || 'null'); if (o && o.t && o.exp > Date.now()) return o.t; if (o) localStorage.removeItem('case_inv'); } catch (_) {}
+    return '';
+  }
+  function invClear() { try { sessionStorage.removeItem('case_inv'); } catch (_) {} try { localStorage.removeItem('case_inv'); } catch (_) {} }
   function invToken() {
-    var m = (typeof location !== 'undefined' && location.search || '').match(/[?&]inv=([^&#]+)/);
-    try { if (m) sessionStorage.setItem('case_inv', decodeURIComponent(m[1])); return sessionStorage.getItem('case_inv') || ''; }
-    catch (_) { return m ? decodeURIComponent(m[1]) : ''; }
+    var m = (typeof location !== 'undefined' && location.search || '').match(/[?&]inv=([^&#]+)/), t = '';
+    if (m) { try { t = decodeURIComponent(m[1]); } catch (_) { t = m[1]; }
+      try { sessionStorage.setItem('case_inv', t); } catch (_) {} try { localStorage.setItem('case_inv', JSON.stringify({ t: t, exp: Date.now() + INV_TTL })); } catch (_) {}
+      return t; }
+    return invStored();
   }
   function enabled() {
     if (invToken()) return true;   // 초대 링크로 들어온 사람은 업무 메뉴가 보여야 한다
@@ -333,7 +343,7 @@
         await host().initLocal();
         var r = await host().claim(t);
         if (!r.ok) { msg(errText(r), true); btn.disabled = false; return; }
-        try { sessionStorage.removeItem('case_inv'); history.replaceState(null, '', location.pathname + location.search.replace(/([?&])inv=[^&#]*&?/, '$1').replace(/[?&]$/, '') + location.hash); } catch (_) {}
+        try { invClear(); history.replaceState(null, '', location.pathname + location.search.replace(/([?&])inv=[^&#]*&?/, '$1').replace(/[?&]$/, '') + location.hash); } catch (_) {}
         btn.style.display = 'none'; $('cs-inv-no').textContent = '닫기';
         msg('수락했습니다. 초대한 분이 제안을 보내면 자동으로 나타납니다…');
         for (var i = 0; i < 15; i++) {
