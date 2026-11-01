@@ -15,12 +15,16 @@ addEventListener('message',e=>{const d=e.data||{};
 });
 toHost({type:'navi-doc-ready',v:3});
 </script>`;
+const FAKE_PANEL = `<!doctype html><meta charset=utf-8><script>
+addEventListener('message',e=>{const d=e.data||{}; (window.__in=window.__in||[]).push(d);});
+</script>`;
 (async () => {
-  const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') console.log('console.error', m.text().slice(0,200)); });
   const posted = [];
   await pg.route('**/*', async r => {
     const u = new URL(r.request().url());
     if (u.hostname === 'mail.hondi.net') { const p = path.join(ROOT, u.pathname === '/' ? 'desktop.html' : u.pathname); return fs.existsSync(p) ? r.fulfill({ path: p }) : r.fulfill({ status: 404, body: '' }); }
+    if (u.hostname === 'hondi.net' && u.pathname === '/webapp.html') return r.fulfill({ contentType: 'text/html', body: FAKE_PANEL });
     if (u.hostname === 'law.hondi.net') return r.fulfill({ contentType: 'text/html', body: FAKE_DOC });
     if (u.pathname.endsWith('k-service-auth-client.js')) return r.fulfill({ contentType: 'text/javascript', body: 'window.KAuth={fetchWithAuth:(u,o)=>fetch(u,o),getGuid:()=>"g",isLoggedIn:()=>true,ensure:async()=>true};' });
     if (u.pathname.endsWith('/kmail/assist')) { const body = JSON.parse(r.request().postData()); posted.push(body); const edit = /고쳐|바꿔|정중/.test(body.messages.slice(-1)[0].content);
@@ -48,6 +52,17 @@ toHost({type:'navi-doc-ready',v:3});
   // non-edit → falls through to doc page submit
   await pg.fill('#cmp-input', '오늘 날씨'); await pg.evaluate(() => _cmpChatSend()); await pg.waitForTimeout(500);
   ck('non-edit falls through', (await fr.evaluate(() => window.__submit)).text === '오늘 날씨');
+  // 패널 위임
+  await pg.evaluate(() => HondiChat.open()); await pg.waitForTimeout(600);
+  const pf = pg.frames().find(f => f.url().includes('hondi.net/webapp.html'));
+  ck('panel got delegate announce', (await pf.evaluate(() => window.__in || [])).some(m => m.type === 'hondi-embed-host' && m.ai === 'delegate'));
+  await pf.evaluate(() => parent.postMessage({ type: 'hondi-embed-ai', id: 'p1', text: '신청 사유를 더 정중하게 고쳐 줘' }, '*'));
+  await pg.waitForTimeout(1200);
+  const ins = await pf.evaluate(() => window.__in);
+  const rep = ins.find(m => m.type === 'hondi-embed-ai-reply');
+  ck('panel got reply', rep && rep.id === 'p1' && /고쳐 드릴게요/.test(rep.text));
+  ck('panel got note after revise', ins.some(m => m.type === 'hondi-embed-ai-note' && /고쳤습니다/.test(m.text)));
+  await pg.evaluate(() => { window.__bad = 0; });
   ck('no page errors', errs.length === 0); if (errs.length) console.log(errs);
   await b.close();
 })();
