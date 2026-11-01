@@ -50,6 +50,19 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="orgtree.js"></script>
+<script src="case-core.js?v=20261101b"></script>
+<script src="case-invite.js?v=20261101d"></script>
+<script src="case-store.js?v=20261101b"></script>
+<script src="case-sync.js?v=20261101b"></script>
+<script src="case-seal.js?v=20261101b"></script>
+<script src="case-net.js?v=20261101c"></script>
+<script src="assistant-core.js?v=20261101e"></script>
+<script src="assistant-rules.js?v=20261101e"></script>
+<script src="assistant-runtime.js?v=20261101e"></script>
+<script src="assistant-host.js?v=20261101e"></script>
+<script src="case-host.js?v=20261101d"></script>
+<script src="case-ui.js?v=20261101e"></script>
+<script src="case-assist.js?v=20261101e"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -119,6 +132,37 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .tabbar{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--bdr);overflow-x:auto}
 .tabbar button{background:none;border:none;padding:10px 16px;font-size:14px;font-weight:700;color:var(--hint);border-bottom:2px solid transparent;white-space:nowrap}
 .tabbar button.active{color:var(--pri);border-bottom-color:var(--pri)}
+/* 업무(Case) 화면 — case-ui.js */
+.cs-panel{padding:20px 24px;max-width:980px}
+.cs-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.cs-h{margin:2px 0 4px;font-size:22px;color:var(--txt,#1a1d24)}.cs-sub{font-size:13.5px;color:var(--sub)}
+.cs-btn{white-space:nowrap;border:1px solid var(--bdr);background:transparent;border-radius:8px;padding:7px 13px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;margin-right:6px}
+.cs-btn:hover{background:rgba(0,0,0,.04)}.cs-pri{background:var(--pri);border-color:var(--pri);color:#fff}.cs-pri:hover{background:var(--pri);opacity:.9}
+.cs-link{background:none;border:none;color:var(--pri);font-weight:700;padding:0;cursor:pointer;font-size:13.5px}
+.cs-list{display:flex;flex-direction:column;gap:6px}
+.cs-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--bdr);background:transparent;border-radius:10px;padding:12px 14px;cursor:pointer;font-size:15px}
+.cs-row:hover{background:rgba(0,0,0,.04)}.cs-title{font-weight:800;flex:1;color:var(--txt,#1a1d24)}.cs-meta{font-size:13px;color:var(--hint)}
+.cs-badge{font-size:12.5px;font-weight:800;border-radius:999px;padding:1px 9px;border:1px solid var(--bdr);color:var(--sub)}
+.cs-st-active{border-color:var(--pri);color:var(--pri)}.cs-st-closed,.cs-st-archived{color:#667}.cs-st-proposed,.cs-st-closing,.cs-st-on_hold{border-color:#e0b865;color:#9a5b00}
+.cs-card{border:1px solid var(--bdr);border-radius:10px;padding:14px;margin:10px 0}.cs-warn{border-color:#e0b865}
+.cs-card label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:8px}
+.cs-card input,.cs-card select,.cs-card textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;border:1px solid var(--bdr);background:transparent;border-radius:7px;padding:7px 9px;font-size:14px;font-family:inherit}
+.cs-card select{appearance:none;-webkit-appearance:none;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667' stroke-width='3' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:28px}
+.cs-inl{display:flex!important;align-items:center;gap:6px;font-weight:600!important}.cs-inl input{width:auto;margin:0}
+.cs-two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}.cs-grid input,.cs-grid select{margin-top:0!important}
+.cs-tabs{display:flex;gap:4px;margin:12px 0 4px;border-bottom:1px solid var(--bdr)}.cs-tab{background:none;border:none;border-bottom:3px solid transparent;padding:8px 14px;font-size:14.5px;font-weight:800;color:var(--sub);cursor:pointer}.cs-tab.on{color:var(--pri);border-bottom-color:var(--pri)}
+.cs-tl{display:flex;flex-direction:column;gap:8px;margin-top:10px}.cs-ev{border-left:3px solid var(--bdr);padding:6px 12px;font-size:14.5px;line-height:1.5}
+.cs-ev-h{display:flex;justify-content:space-between;font-size:12.5px;color:var(--hint);margin-bottom:2px}.cs-6h{font-size:12.5px;color:var(--sub)}
+.cs-vis{font-weight:800;border-radius:4px;padding:0 6px;border:1px solid var(--bdr)}.cs-vis-shared{border-color:var(--pri);color:var(--pri)}.cs-vis-internal{color:#667}
+.cs-ok{color:#1d7a46;font-weight:700}.cs-bad{color:#c0392b;font-weight:800}.cs-msg{color:#c0392b;font-size:13px;margin-top:6px}.cs-note{margin-top:18px;font-size:12.5px;color:var(--hint)}
+.cs-fp{margin:6px 0;font-size:13.5px}.cs-fp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border:1px solid var(--bdr);border-radius:5px;padding:1px 6px;letter-spacing:.04em}
+.cs-inv{position:fixed;right:20px;bottom:20px;max-width:380px;z-index:300;border:1px solid var(--pri);background:var(--bg,#fff);border-radius:12px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.cs-note-row{font-size:14px;margin:4px 0}.cs-dl{display:flex;justify-content:space-between;align-items:center;margin:4px 0;font-size:14px}
+.cs-empty{padding:28px;text-align:center;color:var(--hint);border:1px dashed var(--bdr);border-radius:10px}.cs-link-box{display:flex;gap:6px;margin:8px 0}.cs-link-box input{margin:0!important}
+@media(max-width:760px){.cs-two{grid-template-columns:1fr}.cs-panel{padding:14px}}
+.cs-inv{left:12px;right:12px;bottom:92px;max-width:none}   /* 폰: 우하단 채팅 버튼과 겹치지 않게 */
+#side-group-case{display:contents}#side-group-case[hidden]{display:none}
+.tabbar #side-group-case button{display:inline-block}
 .tab-panel{display:none}
 /* 2026-09-11 신설 — "메일" 탭 내부 서브네비(편지쓰기/임시보관함/
    보낸메일함/받은메일함/태그별 보관함). 상위 .tabbar보다 한 단계
@@ -297,6 +341,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
     <button id="tab-btn-campaigns" onclick="_campNavClick()">내 캠페인</button>
     <button id="tab-btn-quicksend" onclick="_switchTab('quicksend')">빠른 발송</button>
     <button id="tab-btn-mail" onclick="_switchTab('mail')">메일</button>
+    <span id="side-group-case" hidden>
+      <button id="tab-btn-caseprov" onclick="_switchTab('caseprov')">맡은 일</button>
+      <button id="tab-btn-casecons" onclick="_switchTab('casecons')">맡긴 일</button>
+      <button id="tab-btn-casesolo" onclick="_switchTab('casesolo')">나 홀로</button>
+    </span>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -471,6 +520,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
        지갑 SSO를 안 쓰는 것에 맞춰 공용 인증 게이트로 이관만 함(hondi
        PR feat/kmail-tab-backend 참고).
        ══════════════════════════════════════════════════════════ -->
+  <div id="tab-caseprov" class="tab-panel cs-panel"></div>
+  <div id="tab-casecons" class="tab-panel cs-panel"></div>
+  <div id="tab-casesolo" class="tab-panel cs-panel"></div>
   <div id="tab-mail" class="tab-panel">
     <div class="card">
       <div class="mail-subnav">
@@ -599,6 +651,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
 <script>
 const PROXY = 'https://hondi-proxy.tensor-city.workers.dev';
+window.CASE_HOST_CFG = { proxy: PROXY, fetch: (u, o) => KAuth.fetchWithAuth(u, o), sendMail: async (to, subject, text) => { await kmailApi('/mail/send', { method: 'POST', body: { to, subject, text } }); }, mailId: async () => { const d = await kmailApi('/kmail/settings'); return d.mail_id || String(d.kmail_address || '').replace(/@.*$/, ''); } };   // case-host.js — /case/* 호출(로그인 토큰 자동 첨부)
 const KMAIL_CHAT_URL = PROXY + '/kmail/chat';
 // 2026-09-11 신설 — K-Address(SP-26) 대화형 주소록 관리, K-Mail과
 // 완전히 격리된 별도 엔드포인트.
@@ -664,6 +717,7 @@ function _switchTab(name) {
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
+  if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);   // 업무(Case) — 기능 플래그 뒤
 }
 
 // ══════════════════════════════════════════════════════════════
