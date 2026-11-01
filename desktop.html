@@ -1771,7 +1771,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document
 // 서류 작성 페이지는 자기 입력창을 숨긴 채(navi-doc-host { hostInput:true }) 미리보기·작성 화면만 보여 준다.
 // 서류 작성 페이지가 아직 이 방식을 모르는 옛 버전이면(ready 에 v 가 없음) 그 페이지의 입력창을 그대로 보여 준다.
 const _DOC_PH_DEFAULT = '예: 소유권이전등기 신청서, 답변서, 내용증명';
-const _docHost = { loaded: false, id: '', ready: false, cap: false, queue: [], meta: {}, phOrig: null };
+const _docHost = { loaded: false, id: '', ready: false, cap: false, v3: false, queue: [], meta: {}, phOrig: null, snapWait: null, cards: {}, msgs: [] };
 function _docHostMetaKey(id) { return 'kmail_dochost_meta_' + id; }
 function _docHostFrame() { return document.getElementById('doc-host-frame'); }
 function _docHostOrigin() { const fr = _docHostFrame(); try { return new URL(fr.src).origin; } catch (e) { return ''; } }
@@ -1824,7 +1824,7 @@ function _docHostMode(on) {
 }
 function _docHostLoad(id) {
   _docHostAutoHeight(0);
-  _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = []; _docHost.title = '';
+  _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = []; _docHost.title = ''; _docHost.v3 = false; _docHost.cards = {}; _docHost.msgs = []; _docHost.snapWait = null;
   try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
   _docHostApplyMeta();
   _docLoadInto(id, { frame: 'doc-host-frame', sel: 'cmp-doc-site', note: 'cmp-doc-count' });
@@ -1850,11 +1850,89 @@ function _docHostInput() {
   document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
   _docHostPost({ type: 'navi-doc-input', text: t });
 }
-function _docHostSubmit() {
+async function _docHostSubmit() {
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
+  try { if (await _docEditTurn(t)) return; } catch (e) {}   // 열린 서류를 고치는 말이면 기본 SP(나비)가 처리한다
   _docHostPost({ type: 'navi-doc-submit', text: t });
+}
+// ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
+// 서류가 다 만들어져 있고(서류 사이트 v3) 수정 가능하면, 입력은 먼저 기본 SP(AC-PRO-CORE, /kmail/assist)가 본다.
+// 서버가 doc_edit 경로를 내면 값은 서류 사이트의 SP 가 쓰고(navi-doc-revise), 보호 규칙은 서류 사이트가 적용한다. 그 밖의 말은 예전처럼 서류 사이트로 간다.
+function _docSnapshot() {
+  if (!_docHost.v3 || !_docHost.ready) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const w = { resolve, t: setTimeout(() => { if (_docHost.snapWait === w) _docHost.snapWait = null; resolve(null); }, 1500) };
+    _docHost.snapWait = w;
+    _docHostPost({ type: 'navi-doc-snapshot-request' });
+  });
+}
+function _docBubble(text) { _cmpAppendBubble('assistant', { md: text, badge: null }); }
+async function _docEditTurn(text) {
+  const snap = await _docSnapshot();
+  if (!snap || !snap.ok || snap.busy || !Array.isArray(snap.fields) || !snap.fields.length) return false;
+  const msgs = _docHost.msgs.concat([{ role: 'user', content: text }]).slice(-8);
+  const loading = document.getElementById('cmp-loading');
+  const lbl = loading.querySelector('span:last-child'); const lblOrig = lbl ? lbl.textContent : '';
+  if (lbl) lbl.textContent = '확인하고 있습니다…'; loading.style.display = 'flex';
+  let data;
+  try {
+    const doc = { ok: true, busy: false, rev: snap.rev | 0, title: snap.title, fields: snap.fields.slice(0, 60) };
+    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, doc, assist_lines: (window.CaseAssist ? await CaseAssist.lines() : []) }) });
+    data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) return false;
+  } catch (e) { return false; }
+  finally { loading.style.display = 'none'; if (lbl) lbl.textContent = lblOrig; }
+  const route = data.route || {};
+  const reply = String(data.reply || '');
+  if (route.type !== 'doc_edit' && !(route.type === 'assistant' && route.asking)) return false;
+  _navBegin();
+  _cmpAppendBubble('user', { text });
+  _docHost.msgs = msgs.concat(reply ? [{ role: 'assistant', content: reply }] : []).slice(-8);
+  if (reply) _docBubble(reply);
+  const input = document.getElementById('cmp-input'); input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
+  if (route.type === 'doc_edit') {
+    const id = 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
+    const card = document.createElement('div'); card.className = 'nav-ask doc-edit-card'; card.textContent = '서류를 고치는 중입니다…';
+    document.getElementById('cmp-thread').appendChild(card); _cmpScrollToBottom();
+    _docHost.cards[id] = { el: card };
+    _docHostPost({ type: 'navi-doc-revise', id, instruction: String(route.instruction || text).slice(0, 500), keys: Array.isArray(route.keys) ? route.keys.slice(0, 40) : [], explicit: Array.isArray(route.explicit) ? route.explicit.slice(0, 40) : [] });
+  }
+  return true;
+}
+const _DOC_WHY = { busy: '지금 서류를 작성 중이라 잠시 뒤 다시 요청해 주세요.', unsupported: '이 서류는 아직 대화로 고칠 수 없습니다.', invalid: '요청을 이해하지 못했습니다.', failed: '서류를 고치지 못했습니다. 다시 시도해 주세요.', timeout: '서류 SP 응답이 늦어 중단했습니다.' };
+function _docEditResult(d) {
+  const card = (_docHost.cards[String(d.id || '')] || {}).el;
+  if (!card) return;
+  const line = (r) => { const li = document.createElement('li'); li.textContent = (r.l || r.k) + ': ' + (r.from ? r.from + ' → ' : '') + (r.to || '(비움)'); return li; };
+  const btn = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = () => { b.parentNode.querySelectorAll('button').forEach(x => { x.disabled = true; }); fn(); }; return b; };
+  if (d.status === 'ok') {
+    card.textContent = '';
+    const applied = Array.isArray(d.applied) ? d.applied : [], conf = Array.isArray(d.conflicts) ? d.conflicts : [];
+    const q = document.createElement('div'); q.className = 'nav-ask-q';
+    q.textContent = applied.length ? 'SP가 ' + applied.length + '개 항목을 고쳤습니다. 서류에서 표시된 칸을 확인해 주세요.' : (conf.length ? '직접 쓰신 칸은 확인이 필요합니다.' : '고칠 항목을 찾지 못했습니다.');
+    card.appendChild(q);
+    if (applied.length) { const ul = document.createElement('ul'); ul.style.cssText = 'margin:0 0 8px 18px;padding:0;font-size:13px'; applied.slice(0, 12).forEach(r => ul.appendChild(line(r))); card.appendChild(ul); }
+    if (applied.length) { const o = document.createElement('div'); o.className = 'nav-ask-opts'; o.appendChild(btn('되돌리기', () => _docHostPost({ type: 'navi-doc-undo', id: d.id, rev: d.rev | 0 }))); card.appendChild(o); }
+    conf.slice(0, 12).forEach((c) => {
+      const box = document.createElement('div'); box.style.cssText = 'margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb';
+      const t = document.createElement('div'); t.className = 'nav-ask-q'; t.textContent = '직접 쓰신 "' + (c.l || c.k) + '" 칸을 바꿀까요? ' + (c.from || '(빈 칸)') + ' → ' + (c.to || '(비움)');
+      const o = document.createElement('div'); o.className = 'nav-ask-opts';
+      o.appendChild(btn('바꾸기', () => _docHostPost({ type: 'navi-doc-resolve', id: d.id, k: c.k, accept: true })));
+      o.appendChild(btn('그대로 두기', () => { _docHostPost({ type: 'navi-doc-resolve', id: d.id, k: c.k, accept: false }); box.remove(); }));
+      box.appendChild(t); box.appendChild(o); card.appendChild(box);
+    });
+  } else if (d.status === 'resolved') {
+    if (d.accepted) { const p = document.createElement('div'); p.className = 'nav-ask-q'; p.textContent = '"' + ((d.applied && d.applied[0] && (d.applied[0].l || d.applied[0].k)) || d.k) + '" 칸을 바꿨습니다.'; card.appendChild(p); }
+  } else if (d.status === 'undone') {
+    card.textContent = '되돌렸습니다.';
+  } else if (d.status === 'undo_failed') {
+    const p = document.createElement('div'); p.className = 'nav-ask-q'; p.textContent = '되돌리지 못했습니다. 그 사이 칸이 다시 바뀌었을 수 있습니다.'; card.appendChild(p);
+  } else {
+    card.textContent = _DOC_WHY[d.status] || '서류를 고치지 못했습니다.';
+  }
+  _cmpScrollToBottom();
 }
 function _docHostReset() {
   if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
@@ -1862,10 +1940,15 @@ function _docHostReset() {
 function _docHostMessage(d, e) {
   if (d.type === 'navi-doc-ready') {
     _docHost.ready = true; _docHost.cap = (d.v | 0) >= 2;
+    _docHost.v3 = (d.v | 0) >= 3;
     if (_docHost.cap) { try { e.source.postMessage({ type: 'navi-doc-host', hostInput: true }, e.origin); } catch (x) {} }
     else document.getElementById('tab-compose').classList.add('doc-live');   // 옛 서류 페이지: 그 페이지의 입력창을 그대로 쓴다
     const q = _docHost.queue; _docHost.queue = [];
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
+  } else if (d.type === 'navi-doc-snapshot') {
+    const w = _docHost.snapWait; if (w) { _docHost.snapWait = null; clearTimeout(w.t); w.resolve(d); }
+  } else if (d.type === 'navi-doc-revise-result') {
+    _docEditResult(d);
   } else if (d.type === 'navi-doc-size') {
     _docHostAutoHeight(d.height);
   } else if (d.type === 'navi-doc-title') {   // 서류 쪽에서 고른(또는 미리보기 중인) 서류의 정확한 이름
