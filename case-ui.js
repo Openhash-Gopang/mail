@@ -111,7 +111,7 @@
     if (!m.solo) {
       var email = (($('cs-f-email') || {}).value || '').trim();
       if (email) {
-        var inv = await root.CaseInvite.createInvitation({ case_id: id, inviter_id: cfg().userId || 'me', inviter_side: m.side, invitee_email: email, signup_base: cfg().signupBase || (typeof location !== 'undefined' && /^https:/.test(location.origin) ? location.origin + '/desktop.html?case=1' : undefined) });
+        var inv = await root.CaseInvite.createInvitation({ case_id: id, inviter_id: cfg().userId || 'me', inviter_side: m.side, invitee_email: email, signup_base: cfg().signupBase || 'https://naviweb.kr/i' }   // naviweb.kr/i → Cloudflare 리디렉션 → K-Mail(?case=1&inv=…), PC·폰 공통);
         if (!inv.ok) { msg.textContent = inv.errors.join(', '); return; }
         await s.patchCase(id, { invitation: inv.invitation, invite_link: inv.link });
         await s.append(id, { type: 'invite_issued', actor_side: m.side, visibility: 'internal', payload: { token_hash: inv.invitation.token_hash, expires_at: inv.invitation.expires_at } });
