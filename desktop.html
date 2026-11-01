@@ -1896,14 +1896,14 @@ async function _docEditTurn(text) {
     const id = 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
     const card = document.createElement('div'); card.className = 'nav-ask doc-edit-card'; card.textContent = '서류를 고치는 중입니다…';
     document.getElementById('cmp-thread').appendChild(card); _cmpScrollToBottom();
-    _docHost.cards[id] = { el: card };
+    _docHost.cards[id] = { el: card, embed: _embedCap ? _embedCap.src : null };
     _docHostPost({ type: 'navi-doc-revise', id, instruction: String(route.instruction || text).slice(0, 500), keys: Array.isArray(route.keys) ? route.keys.slice(0, 40) : [], explicit: Array.isArray(route.explicit) ? route.explicit.slice(0, 40) : [] });
   }
   return true;
 }
 const _DOC_WHY = { busy: '지금 서류를 작성 중이라 잠시 뒤 다시 요청해 주세요.', unsupported: '이 서류는 아직 대화로 고칠 수 없습니다.', invalid: '요청을 이해하지 못했습니다.', failed: '서류를 고치지 못했습니다. 다시 시도해 주세요.', timeout: '서류 SP 응답이 늦어 중단했습니다.' };
 function _docEditResult(d) {
-  const card = (_docHost.cards[String(d.id || '')] || {}).el;
+  const ent = _docHost.cards[String(d.id || '')] || {}, card = ent.el;
   if (!card) return;
   const line = (r) => { const li = document.createElement('li'); li.textContent = (r.l || r.k) + ': ' + (r.from ? r.from + ' → ' : '') + (r.to || '(비움)'); return li; };
   const btn = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = () => { b.parentNode.querySelectorAll('button').forEach(x => { x.disabled = true; }); fn(); }; return b; };
@@ -1932,6 +1932,7 @@ function _docEditResult(d) {
   } else {
     card.textContent = _DOC_WHY[d.status] || '서류를 고치지 못했습니다.';
   }
+  if (ent.embed) _embedNote(ent.embed, card.firstChild && card.firstChild.textContent || card.textContent);
   _cmpScrollToBottom();
 }
 function _docHostReset() {
@@ -3756,6 +3757,7 @@ const _CMP_ACTION_BADGE = {
 };
 
 function _cmpAppendBubble(role, opts) {
+  if (role !== 'user' && typeof _embedCapPush === 'function') _embedCapPush(opts && opts.md);
   const thread = document.getElementById('cmp-thread');
   const row = document.createElement('div');
   row.className = 'chat-bubble-row ' + role;
@@ -4061,6 +4063,7 @@ function _navBegin() {
   document.getElementById('cmp-err').style.display = 'none';
 }
 function _navChip(text) {
+  if (typeof _embedCapPush === 'function') _embedCapPush(text);
   const thread = document.getElementById('cmp-thread');
   const row = document.createElement('div');
   row.className = 'nav-route-chip'; row.textContent = text;
@@ -4196,7 +4199,7 @@ async function _navRouteSend(text, attachments) {
 }
 
 async function _cmpChatSend() {
-  if (_cmpMode === 'doc') { _docHostSubmit(); return; }
+  if (_cmpMode === 'doc') { await _docHostSubmit(); return; }
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();
   const attachments = _cmpPendingAttachments.filter(a => !a.uploading);
@@ -5173,6 +5176,31 @@ window.addEventListener('hashchange', function () {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initial); else initial();
 })();
 </script>
-<script src="hondi-chat.js?v=20261028"></script>
+<script>
+/* 혼디 대화 패널(hondi.net 페이지, iframe)이 AI 입력을 이 화면의 기본 SP 로 넘겨 온다(2026-11-01, 규약은 hondi 저장소 embed-delegate.js).
+ * 원칙: 입력 필드와 패널이 한 화면에 있으면 패널의 SP 는 입력 필드의 SP 다. 입력창에 쓴 것과 똑같이 처리하고, 결과 요약을 패널 말풍선으로 돌려준다. */
+let _embedCap = null, _embedBusy = false;
+function _embedCapPush(t) { if (_embedCap && t) _embedCap.buf.push(String(t).replace(/[*_`#>]/g, '').trim()); }
+function _embedNote(src, text) { try { if (src && text) HondiChat.post({ type: 'hondi-embed-ai-note', text: String(text).slice(0, 1500) }); } catch (e) {} }
+window.addEventListener('message', async (e) => {
+  const d = e.data;
+  if (!d || d.type !== 'hondi-embed-ai' || e.origin !== 'https://hondi.net') return;
+  if (!window.HondiChat || e.source !== HondiChat.frameWindow()) return;
+  const id = String(d.id || '').slice(0, 40), text = String(d.text || '').trim().slice(0, 2000);
+  const reply = (t) => HondiChat.post({ type: 'hondi-embed-ai-reply', id, text: String(t || '').slice(0, 1800) });
+  if (!id || !text) return;
+  if (_embedBusy) { reply('앞의 요청을 처리하는 중입니다. 잠시 뒤 다시 보내 주세요.'); return; }
+  _embedBusy = true; _embedCap = { buf: [], src: true };
+  try {
+    if (!document.getElementById('tab-compose').classList.contains('active')) _switchTab(_cmpMode === 'doc' ? 'doc' : 'home');   // 입력창 화면으로(모드는 그대로)
+    const input = document.getElementById('cmp-input');
+    input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
+    await _cmpChatSend();
+    reply(_embedCap.buf.filter(Boolean).join('\n').trim() || '입력창으로 보냈습니다. 화면을 확인해 주세요.');
+  } catch (err) { reply('처리하지 못했습니다: ' + (err && err.message || err)); }
+  finally { _embedCap = null; _embedBusy = false; }
+});
+</script>
+<script src="hondi-chat.js?v=20261101"></script>
 </body>
 </html>

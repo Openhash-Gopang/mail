@@ -98,6 +98,13 @@
                 : real ? 'K-Mail에 로그인한 계정으로 혼디에 연결합니다. 대화 상대는 혼디 앱 안에서 찾으세요.'
                        : 'K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.';
   }
+  /** 패널 안 혼디 페이지에 "이 화면의 기본 SP 로 AI 입력을 넘겨 달라"고 알린다(embed-delegate.js 규약). 페이지가 그 규약을 모르면 아무 일도 없다. */
+  function post(msg) {
+    var f = S.els && S.els.frame; if (!f || !f.contentWindow) return false;
+    try { f.contentWindow.postMessage(msg, originOf(S.url)); return true; } catch (e) { return false; }
+  }
+  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: 'delegate' }); }
+  function frameWindow() { return S.els && S.els.frame ? S.els.frame.contentWindow : null; }
   /** 처음 열 때 불러오고, K-Mail 로그인 아이디가 바뀌었으면(다른 아이디로 다시 로그인) 새 아이디로 다시 불러온다. */
   function ensureLoaded() {
     if (!S.els) return;
@@ -105,6 +112,7 @@
     if (S.loaded && key === S.loadedId) return;
     S.loaded = true; S.loadedId = key;
     S.els.frame.setAttribute('src', panelUrl(S.url, id));
+    if (!S.loadHook) { S.loadHook = true; S.els.frame.addEventListener('load', announce); }
     setNote(id, real);
   }
   function open() {
@@ -152,7 +160,7 @@
   }
 
   var API = {
-    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; },
+    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow,
     _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };
