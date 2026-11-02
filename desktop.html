@@ -486,10 +486,21 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .vd-btn:hover{border-color:var(--pri-lt)}
 .vd-caution{background:var(--obg);padding:11px 20px;font-size:13px;color:var(--sub);line-height:1.6}
 @media (max-width:560px){.vd-conf{grid-template-columns:repeat(2,1fr)}}
-@media (prefers-reduced-motion:reduce){#cmp-attach-btn,#cmp-mail-btn,.chat-inputbar,.chat-textarea,.vd-notice,.vd-mark,.topbar-page{transition-duration:.01ms!important}.topbar-page{font-weight:500}.topbar-page b{font-weight:800}
+@media (prefers-reduced-motion:reduce){#cmp-attach-btn,#cmp-mail-btn,.chat-inputbar,.chat-textarea,.vd-notice,.vd-mark,.topbar-page{transition-duration:.01ms!important}
 .topbar-page.vd-swap{animation:none!important}.chat-landing-title.vd-swap,.vd-dot{animation:none!important}}
 /* 상단 바 가운데: 지금 보고 있는 페이지(메일 · 서류 작성 · 가상 판결 …). 좁은 화면에서는 아래 탭 줄이 그 역할을 하므로 숨긴다. */
-.topbar-page{position:absolute;left:50%;top:0;height:54px;transform:translateX(-50%);display:flex;align-items:center;max-width:34vw;padding:0 8px;font-size:16px;font-weight:700;letter-spacing:-.01em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.topbar-page{letter-spacing:.06em;font-weight:500;gap:7px}.topbar-page b{font-weight:800}
+.topbar-page.can-intro{pointer-events:auto;cursor:pointer;border-radius:10px;transition:background .2s}
+.topbar-page.can-intro:hover,.topbar-page.can-intro:focus-visible{background:rgba(255,255,255,.12);outline:none}
+.topbar-page .tp-chev{flex:none;opacity:.85;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.topbar-page[aria-expanded=true] .tp-chev{transform:rotate(180deg)}
+#intro-backdrop{position:fixed;inset:54px 0 0 0;z-index:90;background:rgba(15,23,42,.35);opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+#intro-backdrop.open{opacity:1;visibility:visible}
+#intro-panel{position:fixed;left:0;right:0;top:54px;z-index:95;height:0;overflow:hidden;background:var(--bg,#fff);box-shadow:0 18px 40px rgba(0,0,0,.28);transition:height .5s cubic-bezier(.22,1,.36,1)}
+#intro-panel.open{height:min(78vh,760px)}
+#intro-panel iframe{display:block;width:100%;height:min(78vh,760px);border:0;background:#fff}
+@media (prefers-reduced-motion:reduce){#intro-panel,#intro-backdrop,.topbar-page .tp-chev{transition:none}}
+.topbar-page{position:absolute;left:50%;top:0;height:54px;transform:translateX(-50%);display:flex;align-items:center;max-width:34vw;padding:0 12px;font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .topbar-page.vd-swap{animation:vd-title .3s cubic-bezier(.2,.8,.2,1)}
 @media (max-width:960px){.topbar-page{display:none}}
 </style>
@@ -718,9 +729,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 </head>
 <body>
 
+<div id="intro-backdrop" onclick="_introClose()"></div>
+<div id="intro-panel" aria-hidden="true"><iframe id="intro-frame" title="나만의 AI 비서 소개"></iframe></div>
 <header class="topbar">
   <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"></a>
-  <div class="topbar-page" id="topbar-page" role="status" aria-live="polite">나만의 AI 비서, <b>나비</b></div>
+  <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_introToggle()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_introToggle();}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
   <div class="topbar-right">
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
@@ -4009,6 +4022,21 @@ function _cmpSyncModeUi() {
   _topbarSyncPage();   // 상단 바 가운데의 현재 페이지 표시도 모드에 맞춘다
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
+// ── '나만의 AI 비서, 나비' 문구 → 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(2026-11-03) ──
+const _INTRO_URL = 'index.html?embed=mail';
+function _introIsOpen() { const p = document.getElementById('intro-panel'); return !!(p && p.classList.contains('open')); }
+function _introOpen() {
+  const p = document.getElementById('intro-panel'), f = document.getElementById('intro-frame'), b = document.getElementById('intro-backdrop'), t = document.getElementById('topbar-page');
+  if (!p || !t || !t.classList.contains('can-intro')) return;
+  if (f && !f.getAttribute('src')) f.setAttribute('src', _INTRO_URL);
+  p.classList.add('open'); if (b) b.classList.add('open'); p.setAttribute('aria-hidden', 'false'); t.setAttribute('aria-expanded', 'true');
+}
+function _introClose() {
+  const p = document.getElementById('intro-panel'), b = document.getElementById('intro-backdrop'), t = document.getElementById('topbar-page');
+  if (p) { p.classList.remove('open'); p.setAttribute('aria-hidden', 'true'); } if (b) b.classList.remove('open'); if (t) t.setAttribute('aria-expanded', 'false');
+}
+function _introToggle() { if (_introIsOpen()) _introClose(); else _introOpen(); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIsOpen()) _introClose(); });
 const _TOPBAR_HOME = '나만의 AI 비서, 나비';
 const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
 function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => n.textContent).join('').trim(); }   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
@@ -4032,7 +4060,9 @@ function _topbarSyncPage() {
       label = btn.getAttribute('data-label') || _topbarOwnText(btn);
     }
   }
-  if (el.textContent !== label) { if (label === _TOPBAR_HOME) el.innerHTML = '나만의 AI 비서, <b>나비</b>'; else el.textContent = label; el.classList.remove('vd-swap'); void el.offsetWidth; el.classList.add('vd-swap'); }
+  const _home = label === _TOPBAR_HOME;
+  el.classList.toggle('can-intro', _home); if (_home) { el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-haspopup', 'true'); el.title = '나만의 AI 비서 소개'; } else { el.setAttribute('role', 'status'); el.removeAttribute('tabindex'); el.removeAttribute('aria-haspopup'); el.removeAttribute('aria-expanded'); el.title = ''; if (_introIsOpen()) _introClose(); }
+  if (el.textContent !== label) { if (_home) el.innerHTML = '<span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>'; else el.textContent = label; el.classList.remove('vd-swap'); void el.offsetWidth; el.classList.add('vd-swap'); }
 }
 // opts.keep  : 지금 대화(말풍선)를 그대로 둔 채 모드만 바꾼다(기본 모드가 K-Mail 로 연결할 때)
 // opts.force : 확인창 없이 바꾼다(다른 화면에서 이 입력창으로 넘어오는 내부 이동 — 캠페인 상세, 주소록 등)

@@ -226,9 +226,12 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
    입력창·placeholder·버튼·코드·외부 라이브러리(Quill 등) 포함 모든 글자에 적용한다.
    글꼴 스택은 --font(Pretendard 우선, 로딩 실패 시에만 시스템 글꼴)이다. */
 *,*::before,*::after,::placeholder{font-family:var(--font)!important}
+/* 나비웹 화면 위쪽에서 내려오는 소개 패널(?embed=mail): 자체 상단 바·정부 바·화면 진입 버튼을 숨긴다. */
+body.embed .gov-bar,body.embed .topnav,body.embed .hero-btns,body.embed a[href="desktop.html"],body.embed a[href="webapp.html"]{display:none!important}
 </style>
 </head>
 <body>
+<script>if (/[?&]embed=mail/.test(location.search)) document.body.classList.add('embed');</script>
 
 <div class="gov-bar">혼디넷(hondi.net) K-서비스 — <a href="https://hondi.net" target="_blank">hondi.net으로 돌아가기 ↗</a></div>
 
