@@ -77,7 +77,7 @@ test('desktop.html: 입력창은 서류 검색·선택만, 대화는 혼디 대�
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   for (const k of ['.doc-live .chat-composer{order:1', 'border-bottom:2px solid', '#doc-host-frame{order:3;flex:1 1 0', '.doc-live .chat-thread{display:none}',
-    'edited = await _docEditTurn(text, true)', 'const ans = await _docAsk(text);', '!t.trim() && _docHost.confirmed']) assert.ok(s.includes(k), k);
-  for (const k of ['_docConverse', '_DOC_CHAT_PH', '_docHost.chatting']) assert.ok(!s.includes(k), k + ' 없음');
+    'const ans = await _docAsk(text);', '!t.trim() && _docHost.confirmed']) assert.ok(s.includes(k), k);
+  for (const k of ['edited = await _docEditTurn(text, true)', '_docConverse', '_DOC_CHAT_PH', '_docHost.chatting']) assert.ok(!s.includes(k), k + ' 없음');
   assert.ok(!/fr\.style\.height = Math\.min/.test(s));
 });
