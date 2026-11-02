@@ -15,7 +15,7 @@ if (location.hostname === 'mail.hondi.net') {
 }
 </script>
 <script>
-/* 기기별 진입 분기 — desktop.html은 PC용 화면이다. 폰에서 열렸으면 webapp.html(모바일 UI)로
+/* 기기별 진입 분기 — desktop.html은 PC용 화면이다. 폰에서 열렸으면 hondi.net/webapp.html(나비 앱 화면)로
    보낸다. 판별식은 hondi.net/index.html과 같다. ?view=desktop 이면 폰에서도 PC 화면을 유지,
    ?view=mobile 이면 PC에서도 모바일 화면(webapp.html)으로 간다(반대편 파일도 같은 규칙). */
 (function () {
@@ -27,7 +27,7 @@ if (location.hostname === 'mail.hondi.net') {
   var view = new URLSearchParams(location.search).get('view');
   if (view === 'desktop') isMobile = false;
   if (view === 'mobile') isMobile = true;
-  if (isMobile) location.replace('webapp.html' + location.search + location.hash);
+  if (isMobile) location.replace('https://hondi.net/webapp.html' + location.search + location.hash);
 })();
 </script>
 <title>나비웹</title>
