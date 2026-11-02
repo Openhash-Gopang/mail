@@ -5313,6 +5313,24 @@ window.addEventListener('hashchange', function () {
 <script>
 /* 혼디 대화 패널(hondi.net 페이지, iframe)이 AI 입력을 이 화면의 기본 SP 로 넘겨 온다(2026-11-01, 규약은 hondi 저장소 embed-delegate.js).
  * 원칙: 입력 필드와 패널이 한 화면에 있으면 패널의 SP 는 입력 필드의 SP 다. 입력창에 쓴 것과 똑같이 처리하고, 결과 요약을 패널 말풍선으로 돌려준다. */
+let _docAskWait = null;
+function _embedLooksLikeQuestion(t) { if (/(바꿔|고쳐|수정|변경|써\s?줘|작성해|채워|삭제)/.test(t)) return false; return /[?？]\s*$/.test(t) || /(뭐|무엇|어떤|어느|왜|어떻게|알려|설명|인가요|입니까|나요)/.test(t); }
+/** 서류 사이트에 질문을 보내 답을 받는다. 사이트가 지원하지 않으면(1.5초 안에 응답 없음) null. */
+function _docAsk(text) {
+  return new Promise((resolve) => {
+    const id = 'q' + Date.now().toString(36), w = { id, resolve, acked: false };
+    w.t0 = setTimeout(() => { if (_docAskWait === w && !w.acked) { _docAskWait = null; resolve(null); } }, 1500);
+    w.t1 = setTimeout(() => { if (_docAskWait === w) { _docAskWait = null; resolve('답변이 늦어지고 있습니다. 잠시 뒤 다시 물어봐 주세요.'); } }, 65000);
+    _docAskWait = w;
+    _docHostPost({ type: 'navi-doc-ask', id, text: String(text).slice(0, 1000) });
+  });
+}
+window.addEventListener('message', (e) => {
+  const d = e.data, w = _docAskWait;
+  if (!d || !w || d.id !== w.id || e.origin !== _docHostOrigin()) return;
+  if (d.type === 'navi-doc-ask-ack') w.acked = true;
+  else if (d.type === 'navi-doc-answer') { clearTimeout(w.t0); clearTimeout(w.t1); _docAskWait = null; w.resolve(String(d.text || '').slice(0, 1800)); }
+});
 let _embedCap = null, _embedBusy = false;
 function _embedCapPush(t) { if (_embedCap && t) _embedCap.buf.push(String(t).replace(/[*_`#>]/g, '').trim()); }
 function _embedNote(src, text) { try { if (src && text) HondiChat.post({ type: 'hondi-embed-ai-note', text: String(text).slice(0, 1500) }); } catch (e) {} }
@@ -5326,6 +5344,12 @@ window.addEventListener('message', async (e) => {
   if (_embedBusy) { reply('앞의 요청을 처리하는 중입니다. 잠시 뒤 다시 보내 주세요.'); return; }
   _embedBusy = true; _embedCap = { buf: [], src: true };
   try {
+    /* 서류 작성 화면에서 묻는 말(질문)은 입력창에 넣지 않고, 이 화면의 SP(서류 사이트의 AI)가 현재 화면을 알고 답하게 한다.
+       서류 사이트가 navi-doc-ask 를 받지 못하면(응답 없음) 예전처럼 입력창으로 넘긴다. 서류를 고치라는 말은 예전 경로를 그대로 탄다. */
+    if (_cmpMode === 'doc' && _docHost && _docHost.loaded && _embedLooksLikeQuestion(text)) {
+      const ans = await _docAsk(text);
+      if (ans != null) { reply(ans); return; }
+    }
     if (!document.getElementById('tab-compose').classList.contains('active')) _switchTab(_cmpMode === 'doc' ? 'doc' : 'home');   // 입력창 화면으로(모드는 그대로)
     const input = document.getElementById('cmp-input');
     input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
