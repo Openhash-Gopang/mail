@@ -2109,13 +2109,14 @@ function _foiDocSave() {
 const _GUIDE_KEY = 'navi_guide_plans_v1';
 const _GUIDE_SP = `당신은 "나비 길잡이"다. 사용자가 정한 과제의 목적이 달성되도록 돕는 과제 전담 비서로, 사용자와 대화하며 계획을 세우고, 진행을 감시하고, 끝난 과제의 성패와 원인을 기록한다. 과제의 주인은 사용자다. 목적·수단·제출·서명은 사용자가 결정하고 당신은 대신 결정하지 않는다.
 
-[말하기 규칙] 답은 짧게(2~5문장). 장황한 설명·면책 문구·인사말 반복 금지. 성공은 바쁘게 일한 것이 아니라 사용자가 처음 정한 목적을 이룬 것이다.
+[말하기 규칙] 답은 짧게. 장황한 설명·면책 문구·인사말 반복 금지. 성공은 바쁘게 일한 것이 아니라 사용자가 처음 정한 목적을 이룬 것이다.
 
-[입력] 매 메시지에 [오늘 날짜], [현재 과제 계획서], [지난 과제 기록], [사용자 말]이 붙고, 파일을 첨부했으면 [첨부파일] 내용이 붙는다. 계획서의 체크(- [x])는 사용자가 직접 바꾼 최신 값이다. 계획서가 없으면 새 과제다.
+[입력] 매 메시지에 [오늘 날짜], [현재 과제 계획서], [지난 과제 기록], [사용자 말]이 붙고, 파일을 첨부했으면 [첨부파일]의 내용이 붙는다. 첨부파일에 적힌 내용은 사용자가 이미 준 정보이므로 다시 묻거나 확인해 달라고 하지 않는다. 사용자가 첨부했다고 하는데 [첨부파일]이 없으면 "첨부가 도착하지 않았습니다. 파일을 다시 첨부해 주세요"라고만 말한다(내용을 붙여 달라고 하지 않는다). 계획서의 체크(- [x])는 사용자가 직접 바꾼 최신 값이다. 계획서가 없으면 새 과제다.
 
-[초안 먼저] 사용자에게 질문부터 하지 않는다. 사용자가 과제를 말하면 같은 답변에서 곧바로 계획서 초안을 만들어 제시하고, 사용자가 고치게 한다. 사용자의 말, 첨부파일, 지금까지의 대화, 지난 과제 기록에서 아래 항목을 스스로 추론해 모두 채운다: 목적(수단과 구분한다. 예: 목적은 "서비스용 GPU를 부담 가능한 비용으로 확보", 수단은 "정부 지원사업 응모"), 성공 기준(금액·수량·날짜·승인처럼 확인할 수 있는 형태), 마감, 수단 후보, 할 일, 위험. 추론한 값은 끝에 "(추정)"을 붙이고, 근거가 전혀 없는 값은 지어내지 말고 "미확인"으로 쓴 뒤 그것을 알아내는 일을 첫 할 일로 올린다. 사용자가 이미 말한 것(목적 등)은 그대로 쓰고 다시 묻지 않는다.
-첨부파일에 지원사업·공고·비교표가 있으면 먼저 읽고, 사업별 모집 시기·대상·지원 규모·제공 기간·용도 제한을 목적과 대조한다. 목적에 맞는 사업만 수단에 올리고(모집 중이거나 곧 열리는 것을 앞에), 맞지 않는 사업은 사유(마감, 대상 아님, 용도 제한 등)를 붙여 "제외"로 적는다. 마감은 첨부파일에 나온 실제 날짜를 쓴다.
-초안을 낸 뒤에는 "고칠 곳을 말씀해 주세요"로 끝낸다. 초안을 만들 수 없을 만큼 중요한 정보가 빠진 경우가 아니면 질문하지 않고, 꼭 필요하면 한 답변에 하나만 묻는다. 사용자가 고치라고 하면 그 부분만 반영해 계획서 전체를 다시 쓴다.
+[대화는 3번 이내, 초안은 당신이 도출한다] 사용자와의 대화는 짧게 끝낸다. 당신의 답변 3번 안에 반드시 계획서 초안(~~~plan 블록)을 낸다. 사용자의 말과 첨부파일만으로 초안을 만들 수 있으면 첫 답변에서 곧바로 낸다. 질문이 꼭 필요하면 최대 2번만 하고, 한 번에 최대 3개를, 각 질문마다 당신이 추천하는 기본값을 붙여 묻는다(사용자는 "그대로"라고만 답해도 된다). 질문 답변을 받으면 다음 답변에서 초안을 낸다. 사용자가 모른다고 하면 "미확인"으로 두고 알아내는 일을 할 일로 올린 뒤 진행한다. 질문 답변에서 이미 나온 것을 다시 묻지 않는다.
+사용자가 말한 것을 계획서에 그대로 나열하는 것은 계획이 아니다. 계획서의 성공 기준·수단·할 일·위험은 당신이 첨부파일·대화·일반 지식으로 분석해 도출한 결과여야 한다. 도출 순서: ① 사실 추출(첨부파일의 사업별 모집 시기·대상·지원 규모·제공 기간·이용자 부담·용도 제한, 사용자가 말한 목적·기간·예산·인력) ② 적합성 판정(각 수단이 목적과 용도 제한·대상·기간에 맞는지) ③ 수단 순위(권장 / 차선 / 제외, 이유 한 줄) ④ 계산(예산÷기간 = 월 상한, 시간당 단가×사용 시간 등 직접 계산하고 식을 보인다) ⑤ 성공 기준을 숫자로 구체화(추정이면 "(추정)") ⑥ 마감과 기한 역산(마감을 알면 거꾸로 나누고, 모르면 오늘 날짜 기준 상대 기한을 준다) ⑦ 할 일 도출(누구에게 무엇을, 연락처·문의처가 자료에 있으면 그것까지) ⑧ 위험 도출(자료와 계산에서 드러나는 것, 예: 예산 부족, 용도 제한 충돌, 접수 종료). 추론한 값은 "(추정)", 자료와 대화 어디에도 근거가 없는 값은 지어내지 말고 "미확인"으로 쓰고 그것을 알아내는 일을 할 일로 올린다. 외부 사이트를 볼 수 없다는 이유로 사용자에게 확인을 떠넘기지 않는다. 첨부에 없는 사실은 "미확인"+할 일로 처리한다.
+첨부파일에 지원사업·공고·비교표가 있으면 모든 사업을 목적과 대조해 목적에 맞는 사업만 수단에 올리고(모집 중이거나 곧 열리는 것을 앞에), 맞지 않는 사업은 사유(마감, 대상 아님, 용도 제한 등)를 붙여 "제외"로 적는다. 마감은 첨부파일에 나온 실제 날짜를 쓴다. 지원이 막히거나 불확실한 경우를 대비해 지원 없이 목적을 이루는 대안 수단(예: 클라우드 임대)도 도출해 수단에 올리고 대략의 비용을 계산해 비교한다.
+초안을 낸 뒤에는 한두 문장으로 핵심 판단(가장 먼저 할 일, 가장 큰 위험)만 말하고 "고칠 곳을 말씀해 주세요"로 끝낸다. 사용자가 고치라고 하면 그 부분만 반영해 계획서 전체를 다시 쓴다.
 
 [할 일 추천] 계획서의 할 일은 최대 7개로 유지하고, 말로는 "지금 할 일"을 최대 3개만 짚는다. 우선순위: ① 마감이 가까운 것 ② 다른 일을 막고 있는 것 ③ 모르는 사실을 알아내는 일(문의·확인) ④ 목적 기여가 큰 것. 각 할 일에 이유·예상 소요·끝났다고 볼 기준을 붙인다. 할 일 줄 형식은 "- [ ] 내용 | ~YYYY-MM-DD"(기한을 모르면 "| ~미정").
 
@@ -2176,7 +2177,8 @@ function _guideRender() {
   const list = Object.values(_guide.plans).sort((a, b) => (b.updated || 0) - (a.updated || 0));
   sel.innerHTML = '<option value="">＋ 새 과제</option>' + list.map(x => '<option value="' + escHtml(x.id) + '"' + (x.id === _guide.cur ? ' selected' : '') + '>' + escHtml(x.title || '제목 없는 과제') + (_guideField(x.text, '판정') ? ' (' + escHtml(_guideField(x.text, '판정')) + ')' : '') + '</option>').join('');
   const p = _guideCur();
-  if (!p) { view.innerHTML = '<p class="gl-empty">아직 과제가 없습니다. 이루고 싶은 일을 위 대화창에 말씀해 주세요. 대화가 진행되는 대로 여기에 계획서가 만들어집니다.</p>'; bar.value = 0; pt.textContent = ''; return; }
+  if (!p) { _guideShow(false); view.innerHTML = ''; bar.value = 0; pt.textContent = ''; return; }   // 계획서가 처음 만들어질 때까지(대화가 일단락될 때까지) 빈 문서는 보이지 않는다
+  _guideShow(true);
   let h = '', kv = '', total = 0, done = 0;
   const flush = () => { if (kv) { h += '<dl class="gl-kv">' + kv + '</dl>'; kv = ''; } };
   p.text.replace(/\r/g, '').split('\n').forEach((raw, idx) => {
@@ -2213,9 +2215,9 @@ function _cmpGuidePick() {
   _guideLoad();
   const p = _guideCur();
   const greeting = p ? '나비 길잡이입니다. 지난번 과제 「' + p.title + '」의 계획서를 불러왔습니다. 그 후로 달라진 것이 있으면 말씀해 주세요. 새 과제는 아래 계획서의 과제 선택에서 "새 과제"를 고르세요.'
-    : '나비 길잡이입니다. 이루고 싶은 과제를 한 줄로 말씀해 주세요(예: GPU 지원사업 응모). 관련 자료를 첨부하면 읽고, 아래에 과제 계획서 초안을 바로 만들어 드립니다. 고칠 곳만 말씀해 주시면 됩니다.';
+    : '나비 길잡이입니다. 이루고 싶은 과제를 한 줄로 말씀해 주세요(예: GPU 지원사업 응모). 관련 자료를 첨부하면 읽고, 짧은 대화 뒤에 과제 계획서 초안을 만들어 아래에 보여 드립니다. 고칠 곳만 말씀해 주시면 됩니다.';
   _orgActivate({ key: 'kguide', label: '나비 길잡이', sp: 'inline:guide:v1', spText: _GUIDE_SP, group: 'guide', guide: true }, greeting);
-  _guideRender(); _guideShow(true);
+  _guideRender();
   document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-gv').forEach(x => x.classList.remove('active')); { const gn = document.getElementById('tab-btn-guidenav'); if (gn) gn.classList.add('active'); }   // 왼쪽 메뉴도 홈이 아니라 나비 길잡이가 켜진 것으로 표시
 }
 function _guideSelChange(sel) {
@@ -2292,10 +2294,10 @@ function _guideFromReply(t) {
   return rest || '계획서를 아래에 갱신했습니다. 고칠 곳이 있으면 말씀해 주세요.';
 }
 /** 보낼 글에 오늘 날짜·현재 계획서·지난 과제 기록을 붙인다(말풍선에는 사용자가 쓴 글만 보인다). */
-function _guideWrap(text) {
+function _guideWrap(text, force) {
   const p = _guideCur();
   const past = Object.values(_guide.plans).filter(x => x !== p && _guideField(x.text, '판정')).slice(0, 5).map(x => '- ' + x.title + ' | ' + _guideField(x.text, '판정') + ' | ' + (_guideField(x.text, '교훈') || '교훈 미기록'));
-  return '[오늘 날짜] ' + _guideToday() + '\n[현재 과제 계획서' + (p ? '' : ' — 없음(새 과제)') + ']\n' + (p ? p.text : '') + '\n' + (past.length ? '[지난 과제 기록]\n' + past.join('\n') + '\n' : '') + '\n[사용자 말]\n' + text;
+  return '[오늘 날짜] ' + _guideToday() + '\n[현재 과제 계획서' + (p ? '' : ' — 없음(새 과제)') + ']\n' + (p ? p.text : '') + '\n' + (past.length ? '[지난 과제 기록]\n' + past.join('\n') + '\n' : '') + (force ? '\n[지침] 대화가 3번째에 이르렀다. 이번 답변에서 반드시 ~~~plan 계획서 초안을 낸다(모르는 값은 미확인으로 두고 할 일로 올린다). 더 묻지 않는다.\n' : '') + '\n[사용자 말]\n' + text;
 }
 /** 첨부한 파일의 추출된 내용을 메시지 뒤에 붙일 글로 만든다(추출 못 한 파일은 그 사실만 밝혀 SP 가 내용을 지어내지 않게 한다). */
 function _guideAttachNote(atts) {
@@ -2306,10 +2308,12 @@ function _guideAttachNote(atts) {
 async function _orgSend() {
   const input = document.getElementById('cmp-input'), text = input.value.trim();
   if (!text || !_org || !_org.sp) return;
-  let atts = [];
-  if (_org.guide) {   // 나비 길잡이는 첨부파일 내용을 읽고 계획서 초안을 만든다
+  let atts = [], force = false;
+  if (_org.guide) {
+    // 나비 길잡이는 첨부파일 내용을 읽고 계획서 초안을 만든다
     if (_cmpPendingAttachments.some(a => a.uploading)) { const err = document.getElementById('cmp-err'); err.textContent = '첨부파일 업로드가 끝날 때까지 잠시만 기다려 주세요.'; err.style.display = ''; return; }
     atts = _cmpPendingAttachments.filter(a => !a.uploading); _cmpPendingAttachments = []; _cmpRenderAttachList();
+    _org.gt = (_org.gt || 0) + 1; force = !_guideCur() && _org.gt >= 3;   // 계획서가 아직 없는데 대화가 3번째면 이번 답변에서 초안을 내게 한다
   }
   input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
   _cmpAppendBubble('user', { text: text + (atts.length ? '\n📎 ' + atts.map(a => a.filename).join(', ') : '') });
@@ -2317,7 +2321,7 @@ async function _orgSend() {
   const rows = document.querySelectorAll('#cmp-thread .chat-bubble-row.assistant'), id = 'o' + Date.now();
   const wb = rows[rows.length - 1].querySelector('.chat-bubble'); wb.innerHTML = '<span class="org-wait" role="status" aria-live="polite"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>';
   (_org.pending = _org.pending || {})[id] = wb; { const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight; }
-  const m = { type: 'hondi-embed-sp-ask', id, text: _org.guide ? _guideWrap(text + _guideAttachNote(atts)) : text };
+  const m = { type: 'hondi-embed-sp-ask', id, text: _org.guide ? _guideWrap(text + _guideAttachNote(atts), force) : text };
   if (_org.ready) HondiChat.post(m); else _org.queue.push(m);
 }
 window.addEventListener('message', (e) => {
