@@ -235,3 +235,12 @@ test('서류 SP 가 대신 채우고 사용자가 검토·수정한다 + 대화�
   const c = readFileSync(new URL('../hondi-chat.js', import.meta.url), 'utf8');
   assert.match(c, /function say\(/);
 });
+
+test('예시: 라벨 + "소장 작성해 주세요" 같은 문장은 서류 이름이 맞으면 바로 서류 작성', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /<span class="doc-host-ex"[^>]*>예시:<\/span>/);
+  assert.match(h, /_navQuickDoc\(text\)/);
+  const re = /^\s*(.{1,30}?)\s*(?:을|를)?\s*(?:좀\s*)?(?:작성|써|만들|초안)/;
+  assert.ok(h.includes(String(re).slice(1, String(re).lastIndexOf('/')).replace(/\\/g, '\\')) || h.includes('(?:작성|써|만들|초안)'));
+  assert.equal(re.exec('소장 작성해 주세요')[1], '소장'); assert.equal(re.exec('진단서를 써 줘')[1], '진단서'); assert.equal(re.exec('안녕하세요'), null);
+});

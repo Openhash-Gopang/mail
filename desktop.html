@@ -219,6 +219,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-it b{font-size:14px;font-weight:600}
 .doc-combo-it small{display:block;font-size:12px;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-combo-sec{font-size:12px;color:var(--hint);padding:6px 9px 2px}
+.doc-host-ex{font-size:13px;font-weight:600;color:var(--hint);margin-right:-2px;user-select:none}
 .doc-host-row select{min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
 /* unified-input — 입력창 하나로 통합(2026-10-31): 모드 칩(현재 SP 표시 · × 로 해제) + 메일 아이콘(편지 작성·캠페인 팝오버) */
 .cmp-mode-chip{align-self:center;display:inline-flex;align-items:center;gap:2px;flex:none;margin:0 2px 0 0;padding:3px 3px 3px 10px;border-radius:999px;background:var(--pri-bg);color:var(--pri);font-size:12.5px;font-weight:700;white-space:nowrap}
@@ -1000,6 +1001,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         </button>
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
+        <span class="doc-host-ex" id="cmp-ex-label" title="이 버튼들은 입력창에 쓸 수 있는 말의 줄임입니다. 예: &quot;소장 작성해 주세요&quot;">예시:</span>
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
         <div class="doc-combo" id="cmp-doc-combo">
           <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -4788,7 +4790,18 @@ async function _navRouteSend(text, attachments) {
     _navRoute.lastText = text; _navExpertPost({ type: 'expert-embed-send', text }); return true;
   }
   if ((cur && cur.type === 'kmail') || _cmpChat.messages.length || (attachments && attachments.length)) { _navRoute.cur = { type: 'kmail' }; _cmpSetMode('campaign', { keep: true }); return false; }
+  const dn = await _navQuickDoc(text); if (dn) { _navToDoc(dn.site, text); return true; }   // "소장 작성해 주세요" — 서류 이름이 분명하면 바로 서류 작성을 시작한다
   await _navAssistTurn(text); return true;
+}
+/** 서류 작성 요청 문장("○○ 작성해 주세요/써 줘/만들어 줘")에서 서류 이름이 서류 목록과 정확히 맞으면 그 서류를 돌려준다. 아니면 null(서버 라우팅에 맡김). */
+async function _navQuickDoc(text) {
+  const m = /^\s*(.{1,30}?)\s*(?:을|를)?\s*(?:좀\s*)?(?:작성|써|만들|초안)/.exec(String(text || ''));
+  if (!m) return null;
+  try { await _docIndexLoad(); } catch (e) { return null; }
+  if (!_docIndex) return null;
+  const nm = _docNorm(m[1]); if (!nm) return null;
+  const hit = _docSearch(_docIndex, m[1], 3).find(d => d.n === nm);
+  return hit || null;
 }
 
 async function _cmpChatSend() {
