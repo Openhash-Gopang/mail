@@ -276,3 +276,13 @@ test('상단 바 링크 문구는 "나비웹 ↗"(주소는 hondi.net)', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('<a href="https://hondi.net" target="_blank">나비웹 ↗</a>'));
 });
+
+test('가상 판결은 예시 줄(서류 작성 왼쪽)로, PDV 는 설정의 첫 탭으로 옮겼다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(!h.includes('id="tab-btn-verdict"') && !h.includes('id="tab-btn-pdv"'));
+  const v = h.indexOf('id="cmp-verdict-btn"'), d = h.indexOf('id="cmp-doc-combo"');
+  assert.ok(v > 0 && v < d && h.slice(v, d).includes('<svg') && h.slice(v, d).includes('가상 판결'));
+  assert.match(h, /const _SET_SECTIONS = \['pdv', /);
+  assert.ok(h.indexOf('id="set-tab-pdv"') < h.indexOf('id="set-tab-account"') && h.includes('id="set-sec-pdv"'));
+  assert.ok(!h.includes('<div class="side-label">서비스</div>'));
+});

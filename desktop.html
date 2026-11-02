@@ -207,8 +207,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-bubble.org-md th{background:var(--pri-bg)}
 #tab-gdc iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
-#tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row{display:flex}
+#tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
+.ex-verdict svg{width:16px;height:16px;flex:none}.ex-verdict[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
 .doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
 .doc-combo-pop[hidden]{display:none}
@@ -949,12 +950,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <button id="tab-btn-foi" class="nav-btn" data-label="정보 공개 청구" onclick="_switchTab('foi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>정보 공개 청구</button>
     </div>
     <div class="side-group">
-      <div class="side-label">서비스</div>
-      <button id="tab-btn-verdict" class="nav-btn" data-label="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg>가상 판결</button>
-      <button id="tab-btn-pdv" class="nav-btn" data-label="PDV" title="PDV (Private Data Vault) — 새 탭에서 열기" aria-label="PDV, Private Data Vault (새 탭에서 열기)" onclick="_navOpenPdv()"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g stroke="none"><polygon fill="#119FFA" points="6.77,1.02 6.53,1.2 6.3,1.98 5.94,2.68 5.48,3.2 4.64,3.72 2.98,4.14 2.74,4.38 2.54,5.9 2.54,10.11 2.9,12.49 3.42,14.45 3.9,15.71 4.94,17.68 6.46,19.64 7.87,20.84 9.27,21.78 11.37,22.72 11.79,22.82 12.21,22.8 13.75,22.2 15.15,21.44 16.97,20.06 18.28,18.66 19.04,17.54 19.82,16.13 20.7,13.61 21.08,11.93 21.32,10.25 21.32,5.9 21.12,4.64 21.02,4.38 20.74,4.14 19.36,3.8 18.8,3.54 18.24,3.1 17.72,2.4 17.25,1.2 16.95,1.02"/><polygon fill="#FFFFFF" points="8.01,2.44 7.53,2.72 6.83,3.8 6.04,4.56 5.34,5.02 4.24,5.4 4,5.66 3.94,5.9 3.94,10.11 4.3,12.49 4.92,14.59 5.38,15.71 6.22,17.11 7.47,18.66 8.99,19.9 10.81,20.94 11.65,21.26 12.21,21.26 13.05,20.94 14.45,20.18 16.41,18.64 17.49,17.25 18.42,15.71 19.22,13.75 19.56,12.49 19.92,9.83 19.86,5.9 19.76,5.66 19.48,5.4 18.52,5.02 17.39,4.22 16.89,3.66 16.29,2.72 15.85,2.44"/><polygon fill="#000032" points="8.15,2.7 7.71,2.98 7.11,3.94 6.32,4.7 5.48,5.24 4.52,5.58 4.24,5.92 4.22,9.97 4.58,12.35 5.2,14.45 5.66,15.57 6.51,16.97 7.75,18.52 9.27,19.76 10.95,20.72 11.65,20.98 12.21,20.98 13.05,20.66 14.17,20.04 16.13,18.5 17.21,17.11 18.14,15.57 18.94,13.61 19.28,12.35 19.64,9.69 19.58,6.04 19.3,5.64 17.82,4.92 17.11,4.36 16.61,3.8 16.01,2.88 15.69,2.7"/><circle cx="12.07" cy="12.63" r="3.22" fill="#FFFFFF"/><path d="M10.08 9.55V8.22A1.92 1.92 0 0 1 13.92 8.22V9.55" fill="none" stroke="#FFFFFF" stroke-width="0.78"/><circle cx="12" cy="11.96" r="1.01" fill="#000032"/><polygon fill="#000032" points="11.55,12.07 12.45,12.07 12.34,14.59 11.66,14.59"/></g></svg>
-        PDV</button>
-    </div>
-    <div class="side-group">
       <div class="side-label">도움말</div>
       <button id="tab-btn-guide" class="nav-btn" data-label="사용법" onclick="_switchTab('guide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>사용법</button>
     </div>
@@ -1008,6 +1003,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="doc-host-row" id="cmp-doc-row">
         <span class="doc-host-ex" id="cmp-ex-label" title="이 버튼들은 입력창에 쓸 수 있는 말의 줄임입니다. 예: &quot;소장 작성해 주세요&quot;">예시:</span>
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
+        <button type="button" class="doc-combo-btn ex-verdict" id="cmp-verdict-btn" data-label="가상 판결" title="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg><span>가상 판결</span></button>
         <div class="doc-combo" id="cmp-doc-combo">
           <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
@@ -1272,12 +1268,24 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="sub">메일 아이디, 받는 사람에게 보이는 이름, 보내는 메일 끝에 붙는 서명, 부재중 자동응답을 정합니다.</div>
     </div>
     <div class="set-tabs" role="tablist" aria-label="설정 항목">
+      <button type="button" role="tab" id="set-tab-pdv" aria-selected="false" onclick="_settingsSwitch('pdv')">PDV</button>
       <button type="button" role="tab" id="set-tab-account" class="active" aria-selected="true" onclick="_settingsSwitch('account')">계정</button>
       <button type="button" role="tab" id="set-tab-signature" aria-selected="false" onclick="_settingsSwitch('signature')">서명</button>
       <button type="button" role="tab" id="set-tab-autoreply" aria-selected="false" onclick="_settingsSwitch('autoreply')">부재중 자동응답</button>
     </div>
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+
+    <!-- PDV -->
+    <section id="set-sec-pdv" class="set-sec">
+      <div class="set-row">
+        <div class="set-lbl">PDV (내 정보 금고)</div>
+        <div>
+          <div class="set-hint">이름·주소 같은 <b>내 정보</b>와 쓰던 서류(Draft), 작성한 서류를 보관하는 <b>내 금고</b>입니다. 서류의 해당 칸을 자동으로 채우고, 정부 AI를 열 때 주소지로 알맞은 기관을 고르는 데 쓰입니다. 보통 <b>이 컴퓨터 안</b>에만 있습니다.</div>
+          <div style="margin-top:12px"><button type="button" class="btn" onclick="_navOpenPdv()">PDV 열기 (새 탭)</button></div>
+        </div>
+      </div>
+    </section>
 
     <!-- 계정 -->
     <section id="set-sec-account" class="set-sec active">
@@ -2861,14 +2869,15 @@ function _switchTab(name) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : name === 'verdict' ? 'verdict' : _isCompose ? 'home' : name));
-  _navBtn.classList.add('active');
+  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  if (name !== 'verdict') _navBtn.classList.add('active');
+  const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
   if (name === 'docdrafts') _drRenderDocList('draft');
   if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
-  if (_crumb) _crumb.textContent = _navBtn.getAttribute('data-label') || '';
+  if (_crumb) _crumb.textContent = name === 'verdict' ? '가상 판결' : (_navBtn.getAttribute('data-label') || '');
   if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
@@ -3233,7 +3242,7 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 // 서버(GET·POST /kmail/settings)가 전화 인증 토큰만으로 받는 항목에 맞춘다.
 // 진입: 왼쪽 맨 아래 '설정' · 공용 배지의 ⋮(window.kmailOpenSettings) · 주소의 #settings
 // ══════════════════════════════════════════════════════════════
-const _SET_SECTIONS = ['account', 'signature', 'autoreply'];
+const _SET_SECTIONS = ['pdv', 'account', 'signature', 'autoreply'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
   _SET_SECTIONS.forEach(n => {
