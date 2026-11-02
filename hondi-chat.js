@@ -66,7 +66,7 @@
       '#hchat-fab:hover{filter:brightness(1.08)}',
       '#hchat-fab .hchat-dot{position:absolute;top:6px;right:6px;width:14px;height:14px;border-radius:50%;background:#E5484D;border:2px solid #fff;display:none}',
       '#hchat-fab.badge .hchat-dot{display:block}',
-      '#hchat-panel{position:fixed;right:20px;bottom:86px;z-index:9991;display:none;flex-direction:column;background:#fff;border:1px solid var(--bdr,#d8dee6);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden}',
+      '#hchat-panel{position:fixed;right:20px;bottom:86px;z-index:9991;display:none;flex-direction:column;background:#fff;border:1px solid var(--bdr,#d8dee6);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;opacity:.8;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}',   /* 반투명 — 뒤 화면(서류·입력창)이 흐릿하게 비쳐 입력칸이 비었는지 알 수 있다 */
       '#hchat-panel.open{display:flex}',
       '#hchat-panel.full{right:0;bottom:0;left:0;top:0;border-radius:0;border:0}',
       '#hchat-head{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--gov,#0B3B33);color:#fff;font-size:14px;font-weight:700}',
