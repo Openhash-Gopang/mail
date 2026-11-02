@@ -245,11 +245,13 @@ test('예시: 라벨 + "소장 작성해 주세요" 같은 문장은 서류 이�
   assert.equal(re.exec('소장 작성해 주세요')[1], '소장'); assert.equal(re.exec('진단서를 써 줘')[1], '진단서'); assert.equal(re.exec('안녕하세요'), null);
 });
 
-test('우측 상단 "기능 개선 제안" 버튼은 제안 게시판(hondi.net/feedback.html)으로 연결된다', () => {
+test('우측 상단 "기능 개선 제안"은 새 탭이 아니라 현재 화면의 탭에 제안 게시판(hondi feedback.html?embed=mail)을 끼워 보여 준다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(h, /<div class="topbar-right">\s*<a [^>]*id="suggest-btn"[^>]*href="https:\/\/hondi\.net\/feedback\.html"[^>]*>기능 개선 제안<\/a>/);
-  assert.ok(!h.includes('suggest-dlg') && !h.includes('_suggestSend'));
+  assert.match(h, /id="suggest-btn" onclick="_switchTab\('feedback'\)"/);
+  assert.ok(h.includes('id="tab-feedback"') && h.includes('https://hondi.net/feedback.html?embed=mail'));
+  assert.ok(!h.includes('href="https://hondi.net/feedback.html" target="_blank"'));
 });
+
 test('상단 바 가운데: 홈 = "나만의 AI 비서, 나비"(나비 굵게)', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('aria-live="polite">나만의 AI 비서, <b>나비</b></div>'));

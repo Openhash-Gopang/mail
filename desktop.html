@@ -205,6 +205,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-bubble.org-md table{border-collapse:collapse;margin:6px 0 10px;font-size:13.5px;display:block;overflow-x:auto}
 .chat-bubble.org-md th,.chat-bubble.org-md td{border:1px solid var(--bdr);padding:5px 9px;text-align:left}
 .chat-bubble.org-md th{background:var(--pri-bg)}
+#tab-feedback iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #tab-gdc iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
@@ -898,7 +899,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"></a>
   <div class="topbar-page" id="topbar-page" role="status" aria-live="polite">나만의 AI 비서, <b>나비</b></div>
   <div class="topbar-right">
-    <a class="suggest-btn" id="suggest-btn" href="https://hondi.net/feedback.html" target="_blank" rel="noopener">기능 개선 제안</a>
+    <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
   </div>
@@ -1439,6 +1440,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   </div>
 
   <div id="tab-guide" class="tab-panel gd-panel"></div>
+  <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
   <div id="tab-gdc" class="tab-panel"><iframe id="gdc-frame" title="GDC 사용량" allow="clipboard-write"></iframe></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
@@ -2869,20 +2871,21 @@ function _switchTab(name) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
-  if (name !== 'verdict') _navBtn.classList.add('active');
+  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : name === 'verdict' || name === 'feedback' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  if (name !== 'verdict' && name !== 'feedback') _navBtn.classList.add('active');
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
   if (name === 'docdrafts') _drRenderDocList('draft');
   if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
-  if (_crumb) _crumb.textContent = name === 'verdict' ? '가상 판결' : (_navBtn.getAttribute('data-label') || '');
+  if (_crumb) _crumb.textContent = name === 'verdict' ? '가상 판결' : name === 'feedback' ? '기능 개선 제안' : (_navBtn.getAttribute('data-label') || '');
   if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'settings') _settingsInit();
+  if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'https://hondi.net/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'https://hondi.net/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프) — 처음 열 때 불러온다
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
@@ -4443,9 +4446,11 @@ function _topbarSyncPage() {
   if (compose && compose.classList.contains('active')) {
     label = (_cmpMode === 'org' && _org) ? _org.label : (_TOPBAR_MODE_LABEL[_cmpMode] || _TOPBAR_HOME);
   } else {
+    const fbp = document.getElementById('tab-feedback');
     const sub = document.querySelector('.side-nav .nav-subitem.active');
     const btn = document.querySelector('.side-nav .nav-btn.active');
-    if (sub) {
+    if (fbp && fbp.classList.contains('active')) label = '기능 개선 제안';
+    else if (sub) {
       const g = sub.closest('.nav-group');
       const head = g && g.id === 'nav-group-mail' ? '메일 · ' : g && g.id === 'nav-group-docs' ? '서류 · ' : '';
       label = head + (sub.getAttribute('data-label') || _topbarOwnText(sub));
