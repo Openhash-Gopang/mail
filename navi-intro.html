@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나만의 AI 비서, 나비</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--bg:#fff;--txt:#14213D;--sub:#4B5675;--hint:#7B86A6;--bd:#E3E7F2;--card:#F5F7FC;--pri:#14594A;--pri-bg:#E6F3EF}
+@media (prefers-color-scheme:dark){:root{--bg:#0F172A;--txt:#EEF1FA;--sub:#C3CAE0;--hint:#9AA4C4;--bd:#2B3555;--card:#18223D;--pri:#5FD0B2;--pri-bg:#12332C}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt);line-height:1.75;font-size:16px;word-break:keep-all;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:34px 28px 40px}
+.lead{font-size:26px;font-weight:600;letter-spacing:.04em;line-height:1.5}.lead b{font-weight:800;color:var(--pri)}
+.lead-sub{margin-top:8px;color:var(--sub);font-size:17px;max-width:720px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:26px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 18px}
+.card h2{font-size:15px;font-weight:800;color:var(--pri);margin-bottom:6px;letter-spacing:.02em}
+.card p{font-size:15px;color:var(--sub);line-height:1.7}
+.card p b{color:var(--txt)}
+.steps{margin-top:26px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;counter-reset:s}
+.step{border-left:3px solid var(--pri);padding:2px 0 2px 14px;font-size:15px;color:var(--sub);counter-increment:s}
+.step::before{content:counter(s);display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--pri);color:var(--bg);font-size:13px;font-weight:800;margin-right:8px}
+.step b{color:var(--txt)}
+.kinds{margin-top:26px;display:flex;flex-wrap:wrap;gap:8px}
+.kinds span{background:var(--pri-bg);color:var(--pri);border-radius:999px;padding:5px 14px;font-size:14px;font-weight:700}
+.note{margin-top:22px;font-size:14px;color:var(--hint)}
+.more{display:inline-block;margin-top:18px;color:var(--pri);font-weight:800;text-decoration:none;font-size:15px}
+.more:hover{text-decoration:underline}
+@media (max-width:760px){.grid,.steps{grid-template-columns:1fr}.lead{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="lead">나만의 AI 비서, <b>나비</b></p>
+  <p class="lead-sub">회사 사장님 곁의 비서처럼, 누구나 한 명씩 두는 나만의 비서입니다. 말로 시키면 서류를 만들고, 메일을 보내고, 일의 기한을 챙깁니다.</p>
+
+  <div class="grid">
+    <div class="card"><h2>나비는</h2><p>오직 <b>나 한 사람</b>을 위해 일하는 AI 비서입니다. 광고를 보여 주거나 남의 편을 들지 않고, 대답에서 그치지 않고 <b>실제 일</b>을 거듭니다.</p></div>
+    <div class="card"><h2>나비웹은</h2><p>수많은 나비가 모이는 <b>메신저</b>입니다. 사람과 사람, 사람과 AI, AI와 AI가 한 화면에서 대화합니다. 상대가 병원이든 구청이든 화면은 같고, 그 자리의 비서만 달라집니다.</p></div>
+    <div class="card"><h2>기존 웹과 다른 점</h2><p>메뉴를 찾아 눌러 처리하는 대신 <b>"무엇을 하고 싶은지"</b>만 말합니다. 일은 AI가 하고, 사람은 결과를 확인하고 승인하는 감독을 맡습니다.</p></div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><b>용건을 말합니다.</b> "이사해서 전입신고 서류를 준비하고 싶어요."</div>
+    <div class="step"><b>나비가 준비합니다.</b> 모자란 정보는 묻고, 필요하면 기관·전문가의 나비와도 소통합니다.</div>
+    <div class="step"><b>내가 확인합니다.</b> 보내기·제출 같은 중요한 단계는 내가 "좋아요" 한 뒤에만 진행됩니다.</div>
+  </div>
+
+  <div class="kinds"><span>서류 작성</span><span>메일·주소록</span><span>각종 기관</span><span>전문가 AI</span><span>정부 AI</span><span>정보 공개 청구</span><span>가상 판결</span></div>
+
+  <div class="grid">
+    <div class="card"><h2>내 정보는 내 금고에</h2><p>이름·주소 같은 내 정보는 서버가 아니라 <b>내 컴퓨터·폰의 PDV(개인 데이터 금고)</b>에 보관합니다. 대화 내용을 쌓아 두거나 AI 학습에 쓰지 않습니다.</p></div>
+    <div class="card"><h2>마지막 판단은 사람이</h2><p>나비는 허가·진단·법률 자문을 하지 않는 <b>보조 도구</b>입니다. 나비가 쓴 서류와 메일은 보내기 전에 꼭 읽어 보세요.</p></div>
+    <div class="card"><h2>전문가와 함께</h2><p>법률·의료·세무 등 전문 분야의 AI는 <b>인간 전문가의 판단을 돕는</b> 참고 의견을 냅니다. 중요한 결정은 전문가와 상의하세요.</p></div>
+  </div>
+
+  <a class="more" href="manual.html">나비웹 사용 설명서 보기 →</a>
+  <p class="note">주민등록번호·카드번호는 AI에게 말하거나 입력창에 적지 마세요.</p>
+</div>
+</body>
+</html>
