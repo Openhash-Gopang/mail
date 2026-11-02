@@ -300,3 +300,11 @@ test('서류 작성 팝업: 검색 필드 아래 "양식 업로드" → 올린 �
   assert.ok(h.includes('id="doc-host-form"'));
   assert.match(h, /_docHost\.confirmed = true; document\.getElementById\('tab-compose'\)\.classList\.add\('doc-live'\)/);
 });
+
+test('서류 사이트 주소가 정해지기 전에 보낸 메시지(양식 업로드)는 버리지 않고 준비될 때까지 대기열에 둔다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const a = h.indexOf('function _docHostPost('), b = h.indexOf('\n}', a);
+  const f = h.slice(a, b);
+  assert.ok(f.indexOf('if (!_docHost.ready)') < f.indexOf('if (!fr.src) return;'));
+  assert.ok(!/if \(!fr \|\| !fr\.src\) return;/.test(f));
+});
