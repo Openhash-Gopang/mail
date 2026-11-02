@@ -179,7 +179,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"] .chat-composer{position:static}
 #tab-compose[data-mode="doc"] .chat-composer>.hint{display:none}
 /* 각종 기관·전문가 AI(2026-11-02): 고르면 대화창이 입력창 위로 펼쳐지고 입력창은 아래로 밀려 내려간다(slide out). */
-#tab-compose[data-mode="org"]{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:420px}
+#tab-compose.active[data-mode="org"]{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:420px}
 #tab-compose[data-mode="org"] .chat-thread-header{display:none!important}
 #tab-compose[data-mode="org"] .chat-landing{max-height:420px;overflow:hidden;transition:max-height .55s cubic-bezier(.22,1,.36,1),opacity .35s,margin .55s,padding .55s}
 #tab-compose[data-mode="org"].org-open .chat-landing{max-height:0;opacity:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0}
@@ -232,7 +232,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"].doc-live.doc-auto .chat-composer{position:sticky;top:54px;z-index:6;background:var(--bg,#fff)}
 /* 서류 양식이 보이면(2026-11-02): 입력창을 화면 맨 위로 올리고, 구분선 아래 서류 칸만 따로 스크롤한다. 입력 칸의 높이는 서류를 내려도 그대로다.
    대화(질문·지시와 답)는 입력창과 구분선 사이에 쌓인다. */
-#tab-compose[data-mode="doc"].doc-live{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:420px}
+#tab-compose.active[data-mode="doc"].doc-live{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:420px}
 #tab-compose[data-mode="doc"].doc-live .chat-landing,#tab-compose[data-mode="doc"].doc-live .chat-thread-header{display:none!important}
 #tab-compose[data-mode="doc"].doc-live .chat-composer{order:1;flex:none;position:static;padding-bottom:10px;border-bottom:2px solid var(--bdr);box-shadow:0 8px 10px -9px rgba(0,0,0,.35);background:var(--bg,#fff);z-index:6}
 #tab-compose[data-mode="doc"].doc-live .chat-thread{display:none}   /* 대화는 혼디 대화창이 맡는다 */
