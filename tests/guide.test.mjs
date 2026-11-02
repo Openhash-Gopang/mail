@@ -153,3 +153,9 @@ test('기관·전문가 대화: 답변 준비 중 표시, 면책 문구는 시�
   assert.match(h, /다시 보지 않기<b>×<\/b>/);
   assert.match(h, /orgDisclaimerOff/);
 });
+
+test('기관·전문가 답변: 마크다운(제목·목록·표·구분선) 렌더', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /function _orgMd\(md\)/);
+  assert.match(h, /el\.classList\.add\('org-md'\); el\.innerHTML = _orgMd/);
+});
