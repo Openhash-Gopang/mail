@@ -505,17 +505,9 @@ header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-siz
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:18px}
 .topbar-right a{font-size:13px;color:rgba(255,255,255,.72);text-decoration:none}
 .topbar-right a:hover{color:#fff}
+.topbar-right a.suggest-btn{color:#fff;text-decoration:none}
 .suggest-btn{font:inherit;font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 14px;cursor:pointer;white-space:nowrap}
 .suggest-btn:hover{background:rgba(255,255,255,.22)}
-#suggest-dlg{border:1px solid var(--bdr);border-radius:14px;padding:0;width:min(480px,92vw);background:var(--sur);color:var(--txt);box-shadow:0 20px 60px rgba(0,0,0,.25)}
-#suggest-dlg::backdrop{background:rgba(15,23,42,.45)}
-#suggest-dlg form{display:flex;flex-direction:column;gap:10px;padding:18px 20px}
-#suggest-dlg h3{margin:0;font-size:16px}#suggest-dlg p{margin:0;font-size:13px;color:var(--hint)}
-#suggest-dlg textarea{min-height:140px;resize:vertical;border:1px solid var(--bdr);border-radius:10px;padding:10px;font:inherit;font-size:14px;background:var(--bg,#fff);color:var(--txt)}
-#suggest-dlg .row{display:flex;justify-content:flex-end;gap:8px}
-#suggest-dlg button{font:inherit;font-size:14px;font-weight:700;border-radius:8px;padding:8px 16px;border:1px solid var(--bdr);background:var(--sur);color:var(--txt);cursor:pointer}
-#suggest-dlg button.go{background:#0f766e;border-color:#0f766e;color:#fff}
-#suggest-dlg button.go:disabled{opacity:.5;cursor:default}
 
 .app-body{display:flex;align-items:flex-start;min-height:calc(100vh - 54px)}
 .side-nav{width:232px;flex-shrink:0;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;background:var(--sur);border-right:1px solid var(--bdr);padding:16px 12px 24px;display:flex;flex-direction:column}
@@ -901,12 +893,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 </head>
 <body>
 
-<dialog id="suggest-dlg" aria-label="기능 개선 제안"><form method="dialog" onsubmit="return false"><h3>기능 개선 제안</h3><p>불편한 점이나 바라는 기능을 적어 주세요. 보내기를 누르면 메일 앱이 열립니다.</p><textarea id="suggest-text" maxlength="2000" placeholder="예: 서류 제출 단계에서 …" oninput="document.getElementById('suggest-go').disabled=!this.value.trim()"></textarea><div class="row"><button type="button" onclick="document.getElementById('suggest-dlg').close()">닫기</button><button type="button" class="go" id="suggest-go" disabled onclick="_suggestSend()">보내기</button></div></form></dialog>
 <header class="topbar">
   <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"></a>
   <div class="topbar-page" id="topbar-page" role="status" aria-live="polite">나만의 AI 비서, <b>나비</b></div>
   <div class="topbar-right">
-    <button type="button" class="suggest-btn" id="suggest-btn" onclick="_suggestOpen()">기능 개선 제안</button>
+    <a class="suggest-btn" id="suggest-btn" href="https://hondi.net/feedback.html" target="_blank" rel="noopener">기능 개선 제안</a>
     <a href="https://hondi.net" target="_blank">hondi.net ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
   </div>
@@ -5825,13 +5816,6 @@ window.addEventListener('message', (e) => {
   if (d.type === 'navi-doc-ask-ack') w.acked = true;
   else if (d.type === 'navi-doc-answer') { clearTimeout(w.t0); clearTimeout(w.t1); _docAskWait = null; w.resolve(String(d.text || '').slice(0, 1800)); }
 });
-function _suggestOpen() { const d = document.getElementById('suggest-dlg'); if (!d) return; document.getElementById('suggest-text').value = ''; document.getElementById('suggest-go').disabled = true; if (d.showModal) d.showModal(); else d.setAttribute('open', ''); document.getElementById('suggest-text').focus(); }
-function _suggestSend() {
-  const t = document.getElementById('suggest-text').value.trim(); if (!t) return;
-  const body = t.slice(0, 1800) + '\n\n— 화면: ' + location.origin + location.pathname + ' / ' + (_cmpMode || '');
-  window.open('mailto:tensor.city@gmail.com?subject=' + encodeURIComponent('[나비웹] 기능 개선 제안') + '&body=' + encodeURIComponent(body), '_self');
-  document.getElementById('suggest-dlg').close();
-}
 let _embedCap = null, _embedBusy = false, _embedAttachPending = false;
 /** 혼디 대화창이 보낸 첨부(name,mime,isImage,text,dataUrl)를 검증·정리한다 — 최대 4개, 이름·종류·크기 제한. */
 function _embedFiles(a) {
