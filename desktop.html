@@ -2212,6 +2212,24 @@ async function _cmpGovPick(k) {
   const o = _govResolve(k, await _govRegion());
   _orgActivate(o, '안녕하세요! 나비 ' + o.label + ' 서비스입니다.' + (o.context ? ' (' + o.context.replace('사용자 거주지: ', '').replace(/ \(출처.*$/, '') + ' 기준)' : '') + (o.note ? ' ' + o.note : '') + ' 원하시는 것을 말씀해 주세요.');
 }
+// ── 서류 '제출'(2026-11-02): 관계 당국 제출용 dpaper API 가 아직 없다 → 혼디 대화창이 사용자에게 제출 절차를 하나씩 안내한다 ──
+let _submitGuideOn = false;
+const _SUBMIT_GREETING = '아직 한국 정부로부터 dpaper API를 발급받지 못했으므로, 사용자가 직접 제출해야 합니다. 절차를 안내하겠습니다. 먼저, 공동인증서를 준비해 주십시오.';
+function _submitGuideSp(title) {
+  return '당신은 나비웹의 "서류 제출 안내" 도우미다. 사용자가 방금 작성한 서류 「' + title + '」를 관계 당국에 직접 제출하도록 한 단계씩 안내한다.\n\n' +
+    '[상황] 한국 정부의 전자문서 제출 API(dpaper)를 아직 발급받지 못해 나비웹이 대신 제출할 수 없다. 사용자가 직접 제출해야 한다. 첫 안내(공동인증서 준비)는 이미 사용자에게 전달됐으니 반복하지 않는다.\n\n' +
+    '[진행 방식]\n- 한 번에 한 단계만, 2~4문장으로 안내하고 사용자의 확인("됐어요", 질문 등)을 받은 뒤 다음 단계로 간다.\n- 사용자가 막히면 그 단계를 더 쉽게 풀어 준다. 사용자의 말에 먼저 답하고 절차로 돌아온다.\n' +
+    '[기본 단계] ① 공동인증서(구 공인인증서, 또는 금융인증서·간편인증)가 사용 가능한지 확인 ② 서류 「' + title + '」의 제출처 확인(서류 종류로 판단하되 불확실하면 사용자에게 어디에 내는 서류인지 묻는다) ③ 제출처 사이트 접속·로그인 ④ 이 화면의 [PDF] 또는 [MS-Word] 버튼으로 서류 파일 저장·첨부 ⑤ 수수료·인지대 등 납부(해당 시) ⑥ 제출하고 접수증·접수번호 보관 ⑦ 처리 상황 확인 방법 안내.\n' +
+    '[제출처 예] 법원 소송 서류=대한민국 법원 전자소송(ecfs.scourt.go.kr) · 행정 민원·증명서=정부24(www.gov.kr) · 세금 관련=홈택스(www.hometax.go.kr) · 특허·상표=특허로(www.patent.go.kr). 이 밖의 제출처는 사이트 주소를 지어내지 말고 기관의 공식 사이트에서 확인하도록 안내한다.\n' +
+    '[금지] 공동인증서 비밀번호·주민등록번호·계좌번호 등을 이 대화에 입력하라고 하지 않는다(오히려 입력하지 말라고 알린다). 접수·처리 결과를 보장하지 않는다. 법률 판단은 하지 않는다.';
+}
+function _submitGuideStart(title) {
+  if (!window.HondiChat) { _drToast('대화창을 열 수 없습니다.'); return; }
+  _submitGuideOn = true;
+  HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:submit:' + title.slice(0, 40), spText: _submitGuideSp(title), label: '서류 제출 안내', greeting: _SUBMIT_GREETING });
+  HondiChat.open();
+}
+function _submitGuideEnd() { if (!_submitGuideOn) return; _submitGuideOn = false; if (window.HondiChat && !_org) HondiChat.setSp(null); }
 // 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
 const _ORG_DESC = {k119:'신고부터 출동·병원 연계까지, 응급 상황을 돕는 시스템입니다.',klaw:'분쟁을 정리하고 판결을 예측하는 법률 시스템입니다.',kpolice:'사건·사고 신고를 접수하고 처리하는 치안 시스템입니다.',ksecurity:'개인과 조직의 보안을 지키는 시스템입니다.',khealth:'증상 상담부터 진료 연계까지 돕는 의료 시스템입니다.',kschool:'수강·학적·학교 서류를 처리하는 교육 시스템입니다.',gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다.',kstock:'상장·공시·투자 정보를 다루는 투자 시스템입니다.',kinsurance:'보험 가입과 보험금 청구를 돕는 시스템입니다.',ktax:'세금 신고와 납부를 돕는 세무 시스템입니다.',kmarket:'상품을 사고팔고 주문을 처리하는 거래 시스템입니다.',ktraffic:'도로·대중교통·교통 민원을 다루는 교통 시스템입니다.',klogistics:'배송과 화물을 추적하고 연결하는 물류 시스템입니다.',kcleaner:'폐기물·재활용 등 환경 민원을 처리하는 시스템입니다.',kpublic:'증명서 발급과 각종 행정 민원을 처리하는 시스템입니다.',kdemocracy:'정책 제안과 참여를 돕는 시스템입니다.',ktelecom:'통신 서비스 가입과 문의를 돕는 시스템입니다.',ksearch:'원하는 정보를 찾아 정리해 주는 검색 시스템입니다.',kbiz:'사업자 등록과 운영을 돕는 시스템입니다.',kplan:'목표를 세우고 실행 계획을 짜는 시스템입니다.',kwatch:'위험과 이상 징후를 신고하고 살피는 시스템입니다.',kjob:'일자리를 찾고 지원하는 직업 시스템입니다.',kjit:'조달과 납품을 연결하는 시스템입니다.',kcity:'도시 계획과 설계를 돕는 시스템입니다.',kestate:'부동산 평가·매물 검색·등록을 돕는 시스템입니다.',ksocial:'관심사가 맞는 사람들과 모임을 잇는 시스템입니다.'};
@@ -2479,6 +2497,8 @@ function _docHostMessage(d, e) {
     _dr.capture = null;
     const c = document.getElementById('cmp-doc-count'); c.textContent = d.msg || '먼저 서류를 작성해 주세요.';
     setTimeout(_docHostApplyMeta, 4000);
+  } else if (d.type === 'navi-doc-submit-gov') {
+    _submitGuideStart(String(d.title || '서류').slice(0, 60));
   } else if (d.type === 'navi-doc-done') {
     const cap = _dr.capture;
     if (cap && Date.now() - cap.t < 9000) { _dr.capture = null; _drStoreCaptured(cap, d); return; }   // Draft·완료 저장을 위해 우리가 요청한 작성본 — 메일에 첨부하지 않는다
@@ -4412,6 +4432,7 @@ function _cmpSetMode(mode, opts) {
   if (!opts.keep) _cmpChatStartNew();
   _docHostMode(mode === 'doc');
   if (mode !== 'org' && _org) _orgLeave();
+  if (mode !== 'doc') _submitGuideEnd();
   if (window.VerdictHost) VerdictHost.onMode(mode === 'verdict');   // 판결 시뮬레이션은 들어올 때 준비하고 나갈 때 정리한다
   if (carry && (carryText || carryAtt.length)) {
     input.value = carryText; _cmpPendingAttachments = carryAtt; _cmpRenderAttachList();

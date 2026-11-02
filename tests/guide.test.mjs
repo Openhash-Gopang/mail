@@ -212,3 +212,12 @@ test('작성 화면(compose)의 flex 레이아웃은 활성일 때만 — 다른
   assert.match(h, /#tab-compose\.active\[data-mode="org"\]\{display:flex/);
   assert.ok(!/\n#tab-compose\[data-mode="(doc"\]\.doc-live|org")\{display:flex/.test(h));
 });
+
+test('서류 제출: dpaper API 미발급 안내 대화(혼디 대화창, 인사말 고정·단계별 안내 SP)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /d\.type === 'navi-doc-submit-gov'/);
+  assert.ok(h.includes('아직 한국 정부로부터 dpaper API를 발급받지 못했으므로, 사용자가 직접 제출해야 합니다. 절차를 안내하겠습니다. 먼저, 공동인증서를 준비해 주십시오.'));
+  assert.match(h, /sp: 'inline:submit:'/);
+  assert.match(h, /HondiChat\.open\(\)/);
+  assert.match(h, /if \(mode !== 'doc'\) _submitGuideEnd\(\)/);
+});
