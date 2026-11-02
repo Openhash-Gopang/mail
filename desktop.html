@@ -1232,7 +1232,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
-    <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(처음엔 이름만 공개) -->
+    <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(개인 정보는 처음엔 이름만 공개, 상품·서비스는 공개) -->
     <section id="set-sec-profile" class="set-sec">
         <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우면 <b>나의 프로필 웹페이지</b>가 만들어집니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
@@ -1257,7 +1257,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div class="pf-side">
           <div class="pf-fields">
             <div class="pf-fields-head"><b>내 정보 항목</b><span id="pf-count" class="pf-count"></span><button type="button" class="btn btn-outline btn-sm" onclick="_profReset()">처음부터</button></div>
-            <div class="pf-fields-note">처음에는 <b>이름만 공개</b>이고 나머지는 모두 <b>비공개</b>입니다. 내가 <b>공개</b>로 바꾼 항목만 페이지와 저장한 HTML 파일에 들어갑니다.</div>
+            <div class="pf-fields-note">개인 정보는 처음에는 <b>이름만 공개</b>이고 나머지는 모두 <b>비공개</b>입니다. 내가 <b>공개</b>로 바꾼 항목만 페이지와 저장한 HTML 파일에 들어갑니다.</div>
             <div id="pf-rows"></div>
             <div class="pf-add">
               <input type="text" id="pf-add-label" maxlength="20" placeholder="새 항목 이름 (예: 좋아하는 음식)" aria-label="새 항목 이름" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_profAddField();}">
@@ -1267,14 +1267,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           </div>
           <div class="pf-fields" id="pf-bizbox">
             <div class="pf-fields-head"><b>상품·서비스</b><span id="pf-offcount" class="pf-count"></span></div>
-            <div class="pf-fields-note">판매하는 <b>상품</b>이나 제공하는 <b>서비스</b>를 추가하세요. 추가한 것은 <b>비공개</b>로 시작하고, 공개로 바꾼 것만 페이지에 카드로 나옵니다. 가격·재고는 내가 적은 값이 그대로 나오며 페이지에는 기준일이 표시됩니다.</div>
+            <div class="pf-fields-note">판매하는 <b>상품</b>이나 제공하는 <b>서비스</b>를 추가하세요. 추가한 것은 <b>공개</b>로 시작해 페이지에 카드로 나옵니다. 숨기고 싶은 것은 <b>공개</b> 버튼을 눌러 <b>비공개</b>로 바꾸세요. 가격·재고는 내가 적은 값이 그대로 나오며 페이지에는 기준일이 표시됩니다.</div>
             <div id="pf-offers"></div>
             <div class="pf-addoffer">
               <button type="button" class="btn btn-primary btn-sm" onclick="_profAddOffer('product')">＋ 상품 추가</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="_profAddOffer('service')">＋ 서비스 추가</button>
             </div>
             <div class="pf-biz-title">주문·예약·배송·방문 안내</div>
-            <div class="pf-sub">이 페이지는 주문·결제를 직접 받지 않습니다. 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
+            <div class="pf-sub">이 페이지는 주문·결제를 직접 받지 않습니다. 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 적은 안내는 공개로 시작하지만, 위치가 드러날 수 있는 <b>찾아가는 길·지도 링크</b>는 비공개로 시작합니다. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
             <div id="pf-biz-rows"></div>
           </div>
           </div>
@@ -2109,11 +2109,13 @@ function _foiDocSave() {
 const _GUIDE_KEY = 'navi_guide_plans_v1';
 const _GUIDE_SP = `당신은 "나비 길잡이"다. 사용자가 정한 과제의 목적이 달성되도록 돕는 과제 전담 비서로, 사용자와 대화하며 계획을 세우고, 진행을 감시하고, 끝난 과제의 성패와 원인을 기록한다. 과제의 주인은 사용자다. 목적·수단·제출·서명은 사용자가 결정하고 당신은 대신 결정하지 않는다.
 
-[말하기 규칙] 답은 짧게(2~5문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구·인사말 반복 금지. 성공은 바쁘게 일한 것이 아니라 사용자가 처음 정한 목적을 이룬 것이다.
+[말하기 규칙] 답은 짧게(2~5문장). 장황한 설명·면책 문구·인사말 반복 금지. 성공은 바쁘게 일한 것이 아니라 사용자가 처음 정한 목적을 이룬 것이다.
 
-[입력] 매 메시지에 [오늘 날짜], [현재 과제 계획서], [지난 과제 기록], [사용자 말]이 붙는다. 계획서의 체크(- [x])는 사용자가 직접 바꾼 최신 값이다. 계획서가 없으면 새 과제다.
+[입력] 매 메시지에 [오늘 날짜], [현재 과제 계획서], [지난 과제 기록], [사용자 말]이 붙고, 파일을 첨부했으면 [첨부파일] 내용이 붙는다. 계획서의 체크(- [x])는 사용자가 직접 바꾼 최신 값이다. 계획서가 없으면 새 과제다.
 
-[새 과제 만들기] 한 번에 하나씩 물어 정한다. ① 목적 한 문장(수단과 구분한다. 예: 목적은 "서비스용 GPU를 부담 가능한 비용으로 확보", 수단은 "정부 지원사업 응모") ② 성공 기준(금액·수량·날짜·승인처럼 확인할 수 있는 것) ③ 마감과 결정 시점(모르면 "미확인"으로 두고 알아내는 일을 첫 할 일로 올린다) ④ 쓸 수 있는 시간·사람·돈 ⑤ 확정된 사실과 불확실한 사실 ⑥ 수단이 막힐 때의 대안. 정보가 어느 정도 모이면 묻기를 멈추고 곧바로 계획서를 만든다. 비슷한 지난 과제가 있으면 그 교훈을 최대 3개 인용한다.
+[초안 먼저] 사용자에게 질문부터 하지 않는다. 사용자가 과제를 말하면 같은 답변에서 곧바로 계획서 초안을 만들어 제시하고, 사용자가 고치게 한다. 사용자의 말, 첨부파일, 지금까지의 대화, 지난 과제 기록에서 아래 항목을 스스로 추론해 모두 채운다: 목적(수단과 구분한다. 예: 목적은 "서비스용 GPU를 부담 가능한 비용으로 확보", 수단은 "정부 지원사업 응모"), 성공 기준(금액·수량·날짜·승인처럼 확인할 수 있는 형태), 마감, 수단 후보, 할 일, 위험. 추론한 값은 끝에 "(추정)"을 붙이고, 근거가 전혀 없는 값은 지어내지 말고 "미확인"으로 쓴 뒤 그것을 알아내는 일을 첫 할 일로 올린다. 사용자가 이미 말한 것(목적 등)은 그대로 쓰고 다시 묻지 않는다.
+첨부파일에 지원사업·공고·비교표가 있으면 먼저 읽고, 사업별 모집 시기·대상·지원 규모·제공 기간·용도 제한을 목적과 대조한다. 목적에 맞는 사업만 수단에 올리고(모집 중이거나 곧 열리는 것을 앞에), 맞지 않는 사업은 사유(마감, 대상 아님, 용도 제한 등)를 붙여 "제외"로 적는다. 마감은 첨부파일에 나온 실제 날짜를 쓴다.
+초안을 낸 뒤에는 "고칠 곳을 말씀해 주세요"로 끝낸다. 초안을 만들 수 없을 만큼 중요한 정보가 빠진 경우가 아니면 질문하지 않고, 꼭 필요하면 한 답변에 하나만 묻는다. 사용자가 고치라고 하면 그 부분만 반영해 계획서 전체를 다시 쓴다.
 
 [할 일 추천] 계획서의 할 일은 최대 7개로 유지하고, 말로는 "지금 할 일"을 최대 3개만 짚는다. 우선순위: ① 마감이 가까운 것 ② 다른 일을 막고 있는 것 ③ 모르는 사실을 알아내는 일(문의·확인) ④ 목적 기여가 큰 것. 각 할 일에 이유·예상 소요·끝났다고 볼 기준을 붙인다. 할 일 줄 형식은 "- [ ] 내용 | ~YYYY-MM-DD"(기한을 모르면 "| ~미정").
 
@@ -2133,7 +2135,7 @@ const _GUIDE_SP = `당신은 "나비 길잡이"다. 사용자가 정한 과제�
 판정: (종료했을 때만: 성공 / 부분 성공 / 실패 / 중단 / 무효)
 
 ## 수단
-- (수단 이름) — (검토 / 진행 / 제출 / 막힘 / 탈락) · 기준일 YYYY-MM-DD
+- (수단 이름) — (검토 / 진행 / 제출 / 막힘 / 탈락 / 제외) · 기준일 YYYY-MM-DD · (근거나 사유)
 
 ## 할 일
 - [ ] (할 일) | ~YYYY-MM-DD
@@ -2211,7 +2213,7 @@ function _cmpGuidePick() {
   _guideLoad();
   const p = _guideCur();
   const greeting = p ? '나비 길잡이입니다. 지난번 과제 「' + p.title + '」의 계획서를 불러왔습니다. 그 후로 달라진 것이 있으면 말씀해 주세요. 새 과제는 아래 계획서의 과제 선택에서 "새 과제"를 고르세요.'
-    : '나비 길잡이입니다. 이루고 싶은 과제를 말씀해 주세요(예: GPU 지원사업 응모). 목적과 성공 기준부터 함께 정하고, 아래에 과제 계획서를 만들어 가겠습니다.';
+    : '나비 길잡이입니다. 이루고 싶은 과제를 한 줄로 말씀해 주세요(예: GPU 지원사업 응모). 관련 자료를 첨부하면 읽고, 아래에 과제 계획서 초안을 바로 만들어 드립니다. 고칠 곳만 말씀해 주시면 됩니다.';
   _orgActivate({ key: 'kguide', label: '나비 길잡이', sp: 'inline:guide:v1', spText: _GUIDE_SP, group: 'guide', guide: true }, greeting);
   _guideRender(); _guideShow(true);
   document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-gv').forEach(x => x.classList.remove('active')); { const gn = document.getElementById('tab-btn-guidenav'); if (gn) gn.classList.add('active'); }   // 왼쪽 메뉴도 홈이 아니라 나비 길잡이가 켜진 것으로 표시
@@ -2295,16 +2297,27 @@ function _guideWrap(text) {
   const past = Object.values(_guide.plans).filter(x => x !== p && _guideField(x.text, '판정')).slice(0, 5).map(x => '- ' + x.title + ' | ' + _guideField(x.text, '판정') + ' | ' + (_guideField(x.text, '교훈') || '교훈 미기록'));
   return '[오늘 날짜] ' + _guideToday() + '\n[현재 과제 계획서' + (p ? '' : ' — 없음(새 과제)') + ']\n' + (p ? p.text : '') + '\n' + (past.length ? '[지난 과제 기록]\n' + past.join('\n') + '\n' : '') + '\n[사용자 말]\n' + text;
 }
+/** 첨부한 파일의 추출된 내용을 메시지 뒤에 붙일 글로 만든다(추출 못 한 파일은 그 사실만 밝혀 SP 가 내용을 지어내지 않게 한다). */
+function _guideAttachNote(atts) {
+  return atts.length ? '\n\n[첨부파일]\n' + atts.map(a => a.extractedText
+    ? '(' + a.filename + ')\n--- 파일 내용 시작 ---\n' + a.extractedText + (a.extractTruncated ? '\n(※ 파일이 길어 앞부분만 반영됨)' : '') + '\n--- 파일 내용 끝 ---'
+    : '(' + a.filename + ' — 내용을 자동으로 읽지 못했습니다)').join('\n\n') : '';
+}
 async function _orgSend() {
   const input = document.getElementById('cmp-input'), text = input.value.trim();
   if (!text || !_org || !_org.sp) return;
+  let atts = [];
+  if (_org.guide) {   // 나비 길잡이는 첨부파일 내용을 읽고 계획서 초안을 만든다
+    if (_cmpPendingAttachments.some(a => a.uploading)) { const err = document.getElementById('cmp-err'); err.textContent = '첨부파일 업로드가 끝날 때까지 잠시만 기다려 주세요.'; err.style.display = ''; return; }
+    atts = _cmpPendingAttachments.filter(a => !a.uploading); _cmpPendingAttachments = []; _cmpRenderAttachList();
+  }
   input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
-  _cmpAppendBubble('user', { text });
+  _cmpAppendBubble('user', { text: text + (atts.length ? '\n📎 ' + atts.map(a => a.filename).join(', ') : '') });
   _cmpAppendBubble('assistant', { md: '' });
   const rows = document.querySelectorAll('#cmp-thread .chat-bubble-row.assistant'), id = 'o' + Date.now();
   const wb = rows[rows.length - 1].querySelector('.chat-bubble'); wb.innerHTML = '<span class="org-wait" role="status" aria-live="polite"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>';
   (_org.pending = _org.pending || {})[id] = wb; { const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight; }
-  const m = { type: 'hondi-embed-sp-ask', id, text: _org.guide ? _guideWrap(text) : text };
+  const m = { type: 'hondi-embed-sp-ask', id, text: _org.guide ? _guideWrap(text + _guideAttachNote(atts)) : text };
   if (_org.ready) HondiChat.post(m); else _org.queue.push(m);
 }
 window.addEventListener('message', (e) => {
@@ -3244,7 +3257,7 @@ window.addEventListener('hondi-mail-info-change', (ev) => {
   if (inp && document.activeElement !== inp) { inp.value = d.sender_display_name; _senderNamePreview(); }
 });
 // ── 설정 > 프로필(2026-11-03, 주피터 지시) ──────────────────────────────────────────────
-// 기본 항목(템플릿)과 사용자가 더한 항목을 한 목록(fields)으로 다룬다. 항목마다 공개 여부(pub)가 있고, 처음에는 이름만 공개다.
+// 기본 항목(템플릿)과 사용자가 더한 항목을 한 목록(fields)으로 다룬다. 항목마다 공개 여부(pub)가 있다. 개인 정보는 이름만 공개로 시작하고, 상품·서비스와 판매 안내는 공개로 시작한다.
 // 내 웹페이지(스크립트 없는 단일 HTML)에는 공개로 정한 항목만 들어간다. 나비(프로필 작성 SP)는 값만 채울 수 있고 공개 여부는 바꾸지 못한다.
 // 입력 필드는 SP 대화창이 되고, 답변 끝의 ~~~profile JSON 이 항목 값에 합쳐진다. 초안(값·공개 여부)은 이 브라우저에만 보관한다.
 const _PROF_KEY = 'naviProfileDraft2:', _PROF_KEY_OLD = 'naviProfileDraft:', _PROF_MAXF = 40, _PROF_MAXO = 30, _PROF_TYPES = ['text', 'long', 'list', 'link'];
@@ -3260,17 +3273,17 @@ const _PROF_TPL = [
   { id: 'hobby', label: '취미', type: 'text' },
   { id: 'age', label: '나이', type: 'text', sens: true },
   { id: 'gender', label: '성별', type: 'text', sens: true },
-  // 판매·서비스 안내(grp: 'biz') — 상품·서비스 패널에서 편집한다. 모두 비공개로 시작한다
-  { id: 'order', label: '주문 방법', type: 'long', grp: 'biz' },
-  { id: 'orderUrl', label: '주문 링크', type: 'link', grp: 'biz' },
-  { id: 'reserve', label: '예약 방법', type: 'long', grp: 'biz' },
-  { id: 'reserveUrl', label: '예약 링크', type: 'link', grp: 'biz' },
-  { id: 'delivery', label: '배송 방법', type: 'long', grp: 'biz' },
-  { id: 'pay', label: '결제·환불 안내', type: 'long', grp: 'biz' },
-  { id: 'hours', label: '영업시간', type: 'text', grp: 'biz' },
+  // 판매·서비스 안내(grp: 'biz') — 상품·서비스 패널에서 편집한다. 개인 정보가 아니라 판매 정보이므로 공개로 시작하되, 위치가 드러날 수 있는 찾아가는 길·지도 링크만 비공개로 시작한다
+  { id: 'order', label: '주문 방법', type: 'long', grp: 'biz', pub: true },
+  { id: 'orderUrl', label: '주문 링크', type: 'link', grp: 'biz', pub: true },
+  { id: 'reserve', label: '예약 방법', type: 'long', grp: 'biz', pub: true },
+  { id: 'reserveUrl', label: '예약 링크', type: 'link', grp: 'biz', pub: true },
+  { id: 'delivery', label: '배송 방법', type: 'long', grp: 'biz', pub: true },
+  { id: 'pay', label: '결제·환불 안내', type: 'long', grp: 'biz', pub: true },
+  { id: 'hours', label: '영업시간', type: 'text', grp: 'biz', pub: true },
   { id: 'directions', label: '찾아가는 길', type: 'long', grp: 'biz', sens: true },
   { id: 'mapUrl', label: '지도 링크', type: 'link', grp: 'biz', sens: true },
-  { id: 'reviewUrl', label: '후기 보기 링크', type: 'link', grp: 'biz' },
+  { id: 'reviewUrl', label: '후기 보기 링크', type: 'link', grp: 'biz', pub: true },
 ];
 const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용자와 짧게 대화하며 사용자 본인의 소개 웹페이지에 들어갈 값을 채우고, 모인 내용을 깔끔하고 단순한 한 페이지로 정리한다.\n\n' +
   '[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 존댓말.\n\n' +
@@ -3281,7 +3294,7 @@ const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용
   '~~~profile\n{"name":"이름","headline":"한 줄 소개","intro":"소개 글","fields":[{"label":"주문 방법","value":"나비웹으로 주문"},{"label":"취미","value":"사진"}],"offerings":[{"name":"한라봉 5kg","kind":"product","desc":"당도 높은 제주 한라봉","price":25000,"unit":"박스","stock":"in","qty":12,"reserve":false}]}\n~~~\n' +
   'fields 의 type 은 text(기본, 한 줄) · long(긴 글) · list(목록) · link(https 주소) 중 하나. offerings 의 kind 는 product(상품) 또는 service(서비스), price 는 원 단위 숫자(무료는 0, 모르면 생략), stock 은 in(여유 있음) · low(소량 남음) · out(품절·마감) · made(주문 제작) 중 하나(모르면 생략), qty 는 남은 수량 숫자, reserve 는 예약 가능 여부(true/false). 같은 name 의 상품은 바뀐 키만 넣으면 된다. 유효한 JSON 한 덩어리여야 하며 줄바꿈이 필요하면 \\n 으로 쓴다.\n\n' +
   '[정리 요청] "정리해 달라"는 요청이 오면: 소개는 3~5문장, 한 줄 소개는 30자 안팎으로 다듬고, 상품 설명은 한두 문장으로 줄이고, 빠진 것 중 가장 중요한 한 가지를 물어본다. 이름·가격·재고·수량·주소 같은 사실 값은 사용자가 말하지 않았다면 바꾸지 않는다.\n\n' +
-  '[공개 여부] 공개할지 말지는 사용자가 화면의 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(처음엔 이름만 공개이고 나머지는 모두 비공개다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
+  '[공개 여부] 공개할지 말지는 사용자가 화면의 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(개인 정보는 처음엔 이름만 공개이고 나머지는 비공개이며, 상품·서비스와 판매 안내는 공개로 시작한다. 찾아가는 길·지도 링크만 비공개로 시작한다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
   '[금지] 사용자가 말하지 않은 사실을 지어내지 않는다. 소비자 후기·평점·판매량·수상·인증은 만들어 쓰지 않는다(후기는 주소만 받아 "후기 보기 링크"에 적는다). 할인·한정·최고 같은 광고 문구를 덧붙이지 않는다. 주소·이메일·나이·성별과 전화번호·주민등록번호·계좌 같은 개인 식별 정보는 먼저 묻지 않으며, 사용자가 스스로 말한 경우에만 해당 항목에 적는다. 건강·종교·정치 성향 같은 민감한 내용은 사용자가 직접 원할 때만 넣는다.';
 let _prof = { active: false, ready: false, queue: [], pending: {}, fields: null, offers: null, busy: false, firstSent: false, timer: null, rt: null };
 const _pfEl = (id) => document.getElementById(id);
@@ -3436,7 +3449,7 @@ function _profFromReply(t) {
   const rest = (t.slice(0, m.index) + t.slice(m.index + m[0].length)).trim();
   return { obj, text: rest || (obj ? '항목에 반영했습니다. 고칠 곳이 있으면 말씀해 주세요.' : '항목을 정리하는 중 형식 오류가 있었습니다. 한 번 더 말씀해 주세요.') };
 }
-/** 순수 함수 — 답변의 값을 항목·상품에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 항목·새 상품은 비공개로 만든다. */
+/** 순수 함수 — 답변의 값을 항목·상품에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 개인 항목은 비공개, 새 상품·서비스는 공개로 만든다. */
 function _profMergeInto(F, r, O) {
   ['name', 'headline', 'intro'].forEach(id => { const f = F.find(x => x.id === id); if (f && r[id]) f.value = r[id]; });
   r.fields.forEach(x => {
@@ -3446,7 +3459,7 @@ function _profMergeInto(F, r, O) {
   });
   if (O && Array.isArray(r.offerings)) r.offerings.forEach(x => {
     let o = O.find(y => y.name === x.name);
-    if (!o) { if (O.length >= _PROF_MAXO) return; o = { id: _profNewId(), kind: 'product', name: x.name, desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: false }; O.push(o); }
+    if (!o) { if (O.length >= _PROF_MAXO) return; o = { id: _profNewId(), kind: 'product', name: x.name, desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: true }; O.push(o); }
     Object.keys(x).forEach(k => { if (k !== 'name') o[k] = x[k]; });
   });
   return F;
@@ -3575,7 +3588,7 @@ function _profRenderOffers() {
 function _profAddOffer(kind) {
   if (!_prof.fields) { _profLoad(); _profRenderRows(); }
   if (_prof.offers.length >= _PROF_MAXO) { _drToast('상품·서비스는 최대 ' + _PROF_MAXO + '개까지 둘 수 있습니다.'); return; }
-  _prof.offers.push({ id: _profNewId(), kind: kind === 'service' ? 'service' : 'product', name: '', desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: false });   // 새로 추가한 것은 비공개로 시작
+  _prof.offers.push({ id: _profNewId(), kind: kind === 'service' ? 'service' : 'product', name: '', desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: true });   // 상품·서비스는 공개로 시작(숨기려면 '공개' 버튼)
   _profRenderOffers(); _profRefresh();
   const last = _pfEl('pf-offers').querySelector('.pf-offer:last-child input[type=text]'); if (last) last.focus();
 }
@@ -3600,7 +3613,7 @@ function _profDownload() {
   a.download = '내 프로필.html'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 function _profReset() {
-  if (!confirm('채운 항목·상품·서비스와 대화를 모두 지우고 기본 항목(이름만 공개)으로 되돌릴까요?')) return;
+  if (!confirm('채운 항목·상품·서비스와 대화를 모두 지우고 기본 상태(개인 정보는 이름만 공개)로 되돌릴까요?')) return;
   _prof.fields = _profTplFields(); _prof.offers = []; _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
   try { localStorage.removeItem(_profStoreKey()); } catch (x) {}
   _pfEl('pf-thread').innerHTML = ''; _pfEl('pf-box').classList.remove('pf-started'); _pfEl('pf-live').hidden = true;
