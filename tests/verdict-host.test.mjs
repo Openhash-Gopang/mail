@@ -23,7 +23,7 @@ function fakeUi(initial = '') {
     readInput: () => input, clearInput: () => { input = ''; log.push(['clearInput']); }, setInput: (t) => { input = t; log.push(['setInput', t]); },
     setSendEnabled: (on) => log.push(['send', on]), setMeter: (c) => log.push(['meter', c]),
     lock: (ph) => log.push(['lock', ph]), unlock: (ph) => log.push(['unlock', ph]), setLoginLabel: (on) => log.push(['loginLabel', on]),
-    toast: rec('toast'), reset: rec('reset'), addUser: rec('addUser'), brief: rec('brief'), error: (msg, retry) => { log.push(['error', msg]); ui.lastRetry = retry; },
+    focusInput: rec('focusInput'), toast: rec('toast'), reset: rec('reset'), addUser: rec('addUser'), brief: rec('brief'), error: (msg, retry) => { log.push(['error', msg]); ui.lastRetry = retry; },
     ask: (q, skip) => { log.push(['ask', q]); ui.skip = skip; }, removeQuestionButtons: rec('removeQuestionButtons'), removeQuestions: rec('removeQuestions'),
     status: (t) => { log.push(['status', t]); return { tail: (x) => log.push(['tail', x]), remove: () => log.push(['statusRemove', t]) }; },
     progressBegin: (steps, labels, resume) => log.push(['progressBegin', steps.length, !!resume]), progressEnd: (ok) => log.push(['progressEnd', ok]),
@@ -74,9 +74,10 @@ test('입력 가능 조건: 사건 개요는 20자 이상, 추가질문 답변�
   assert.equal(h.longForm(), true);
 });
 
-test('enter: 로그인 안내 문구를 이 기능 이름으로 바꾸고 입력창을 연다', () => {
+test('enter: 로그인 안내 문구를 이 기능 이름으로 바꾸고 입력창을 열어 커서를 둔다', () => {
   const ui = fakeUi(); host(ui, fakeEngine()).enter();
   assert.deepEqual(ui.log.find(x => x[0] === 'loginLabel'), ['loginLabel', true]);
+  assert.ok(ui.names().includes('focusInput'), '왼쪽 메뉴로 들어오므로 바로 쓸 수 있게 커서를 둔다');
   assert.ok(ui.log.some(x => x[0] === 'unlock' && /언제, 누구와/.test(x[1])));
 });
 
