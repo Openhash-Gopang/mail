@@ -197,6 +197,14 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .org-wait .org-dots::after{content:'';animation:org-dots 1.4s steps(4,end) infinite}
 @keyframes org-sand{0%,45%{transform:rotate(0)}55%,100%{transform:rotate(180deg)}}
 @keyframes org-dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%,100%{content:'...'}}
+.chat-bubble.org-md{padding:14px 18px;line-height:1.75}
+.chat-bubble.org-md h4{margin:10px 0 4px;font-size:15px;color:var(--pri)}
+.chat-bubble.org-md h4:first-child{margin-top:0}
+.chat-bubble.org-md ol{margin:0 0 8px 22px}
+.chat-bubble.org-md hr{border:0;border-top:1px solid var(--bdr);margin:10px 0}
+.chat-bubble.org-md table{border-collapse:collapse;margin:6px 0 10px;font-size:13.5px;display:block;overflow-x:auto}
+.chat-bubble.org-md th,.chat-bubble.org-md td{border:1px solid var(--bdr);padding:5px 9px;text-align:left}
+.chat-bubble.org-md th{background:var(--pri-bg)}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
@@ -2119,6 +2127,27 @@ function _orgActivate(o, greeting) {
   const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
   if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
 }
+/** 기관·전문가 답변용 마크다운 → HTML(제목·번호/글머리 목록·표·구분선·굵게). 모든 글자는 먼저 이스케이프한다. */
+function _orgMd(md) {
+  const L = String(md || '').replace(/\r/g, '').split('\n'); let h = '', list = '', i = 0;
+  const end = () => { if (list) { h += '</' + list + '>'; list = ''; } };
+  const cells = (r) => r.trim().replace(/^\||\|$/g, '').split('|').map(c => _mdInline(c.trim()));
+  while (i < L.length) {
+    const t = L[i].trim(); let m;
+    if (!t) { end(); i++; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(t)) { end(); h += '<hr>'; i++; continue; }
+    if (t.startsWith('|') && i + 1 < L.length && /^\|?\s*:?-{2,}/.test(L[i + 1].trim())) {
+      end(); const head = cells(t); i += 2; let rows = '';
+      while (i < L.length && L[i].trim().startsWith('|')) { rows += '<tr>' + cells(L[i]).map(c => '<td>' + c + '</td>').join('') + '</tr>'; i++; }
+      h += '<table><thead><tr>' + head.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>' + rows + '</tbody></table>'; continue;
+    }
+    if ((m = t.match(/^#{1,6}\s+(.*)/))) { end(); h += '<h4>' + _mdInline(m[1]) + '</h4>'; i++; continue; }
+    if ((m = t.match(/^[-*•]\s+(.*)/))) { if (list !== 'ul') { end(); h += '<ul>'; list = 'ul'; } h += '<li>' + _mdInline(m[1]) + '</li>'; i++; continue; }
+    if ((m = t.match(/^\d+[.)]\s+(.*)/))) { if (list !== 'ol') { end(); h += '<ol>'; list = 'ol'; } h += '<li>' + _mdInline(m[1]) + '</li>'; i++; continue; }
+    end(); h += '<p>' + _mdInline(t) + '</p>'; i++;
+  }
+  end(); return h;
+}
 /** 면책 문구는 대화를 시작할 때 한 번만 게시한다(개별 답변에는 넣지 않는다). × 다시 보지 않기 를 누르면 이후로 보이지 않는다. */
 const _ORG_NOTICE_KEY = 'orgDisclaimerOff';
 function _orgNotice1() {
@@ -2151,7 +2180,7 @@ async function _orgSend() {
 window.addEventListener('message', (e) => {
   const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || e.origin !== 'https://hondi.net' || !_org || !_org.pending) return;
   const el = _org.pending[d.id]; if (!el) return; delete _org.pending[d.id];
-  el.innerHTML = mdToHtml(String(d.text || '')); const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight;
+  el.classList.add('org-md'); el.innerHTML = _orgMd(String(d.text || '')); const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight;
 });
 window.addEventListener('message', (e) => {
   const d = e.data; if (!d || d.type !== 'hondi-embed-sp-ready' || e.origin !== 'https://hondi.net' || !_org) return;
