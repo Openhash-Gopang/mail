@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <!-- desktop.html — K-Mail PC 화면(2026-09-20). webapp.html(모바일)에서 파생: 패널 마크업·인라인
-     스크립트는 그대로이고, 사이드바 셸·PC 레이아웃 CSS·"정보 공개 청구" 탭(foi.js)·_switchTab만 다르다.
+     스크립트는 그대로이고, 사이드바 셸·PC 레이아웃 CSS·_switchTab만 다르다.
      공통 기능을 고칠 때는 webapp.html과 이 파일 양쪽을 함께 고칠 것(K-Law의 desktop/webapp과 같은 구조). -->
 <head>
 <meta charset="UTF-8">
@@ -211,6 +211,14 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
+/* 정보 공개 청구(2026-11-03): 입력창이 대화창이 되고, 그 아래에 청구서가 만들어진다. */
+#tab-compose[data-mode="org"].foi-on #cmp-foi-doc{display:flex;flex-direction:column;flex:1.2 1 0;min-height:0;margin-top:8px;border:1px solid var(--bdr);border-radius:12px;background:var(--sur);padding:10px 12px;gap:8px}
+#cmp-foi-doc[hidden]{display:none!important}
+.foi-doc-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.foi-doc-sp{flex:1}
+#cmp-foi-text{flex:1 1 auto;min-height:160px;width:100%;resize:none;border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;font:inherit;font-size:14px;line-height:1.75;background:#fff;color:var(--txt)}
+.foi-doc-note{font-size:12px;color:var(--hint)}
+.ex-foi svg{flex:none}.ex-foi[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 .ex-verdict svg{width:16px;height:16px;flex:none}.ex-verdict[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 .doc-combo-up{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:6px 0 2px;padding:9px 12px;border:1px dashed var(--pri);border-radius:10px;background:var(--sur);color:var(--pri);font:inherit;font-size:13px;cursor:pointer;text-align:left}.doc-combo-up small{font-size:11.5px;color:var(--hint)}.doc-combo-up:hover{background:var(--bg)}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
@@ -627,212 +635,25 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 }
 
 /* ══════════════ 정보 공개 청구 탭 ══════════════ */
-.foi-head h1{font-size:20px;font-weight:800;margin-bottom:6px}
-.foi-head p{font-size:14px;color:var(--sub);max-width:720px;margin-bottom:16px;line-height:1.75}
-.foi-subnav{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
-.foi-subnav button{background:#F2F4F3;border:1px solid transparent;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:700;color:var(--sub)}
-.foi-subnav button.active{background:var(--pri);color:#fff}
-.foi-sub{display:none}
-.foi-sub.active{display:block}
-.foi-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:20px;align-items:start}
-.foi-col .card:last-child{margin-bottom:0}
-.foi-sticky{position:sticky;top:74px}
-.foi-select,.foi-textarea,.foi-item input[type=text],#foi-form input[type=date],#foi-d-form input[type=date],#foi-d-form input[type=text]{width:100%;font-size:15px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);background:#fff}
-.foi-textarea{resize:vertical;line-height:1.6}
-.foi-select:focus,.foi-textarea:focus,.foi-item input:focus,#foi-form input:focus,#foi-d-form input:focus{outline:none;border-color:var(--pri)}
-.foi-opt{font-weight:400;color:var(--hint)}
-.foi-checks{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
-.foi-checks.col{flex-direction:column;gap:9px}
-.foi-checks label,.foi-keep{display:flex;align-items:flex-start;gap:8px;font-weight:500;color:var(--txt);margin:0;cursor:pointer}
-.foi-checks input,.foi-keep input{margin-top:4px}
-.foi-keep{font-size:14px;margin-top:2px}
-.foi-note{background:var(--teal-bg);border:1px solid #CBD3F5;color:var(--teal);border-radius:var(--r);padding:11px 15px;font-size:14px;margin-bottom:14px}
 
-.foi-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;padding:10px;border:1px solid var(--bdr);border-radius:var(--r);background:#FAFBFC}
-.foi-item-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-.foi-item-warn{font-size:13px;color:var(--org);line-height:1.6}
-.foi-item-warn:empty{display:none}
-.foi-item-note{font-size:14px;color:var(--sub);background:#F1F5FB;border-radius:8px;padding:6px 10px;line-height:1.6}
-.foi-known .row .btn{flex-shrink:0;align-self:center}
-.foi-item-del{flex-shrink:0;width:30px;height:30px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--hint);font-size:18px;line-height:1}
-.foi-item-del:hover{color:var(--red);border-color:var(--red)}
 
-.foi-preview-card{margin-bottom:0}
-#foi-preview{width:100%;height:420px;resize:vertical;border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;font-family:var(--font);font-size:14px;line-height:1.85;color:var(--txt);background:#FCFCFD;white-space:pre-wrap}
-.foi-status{font-size:14px;border-radius:var(--r);padding:9px 13px;margin-bottom:10px;line-height:1.6}
-.foi-status.warn{background:var(--obg);color:var(--org);border:1px solid #F3D9B5}
-.foi-status.ok{background:var(--gbg);color:var(--grn);border:1px solid #B7E4CE}
-.foi-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.foi-flash{font-size:14px;border-radius:var(--r);padding:9px 13px;margin-top:10px}
-.foi-flash.ok{background:var(--gbg);color:var(--grn)}
-.foi-flash.err{background:var(--rbg);color:var(--red)}
 
-.foi-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-.foi-tile{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh);padding:14px 18px}
-.foi-tile .n{font-size:24px;font-weight:800;line-height:1.2}
-.foi-tile .l{font-size:13px;color:var(--hint);font-weight:700}
-.foi-tile.warn .n{color:var(--org)}
-.foi-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
-.foi-toolbar-right{display:flex;gap:8px}
-.foi-table td{vertical-align:middle}
-.foi-table .badge{white-space:nowrap}
-.foi-table tr.sel td{background:var(--pri-bg)}
-.foi-ag{font-weight:700}
-.foi-dl{font-weight:800;font-size:14px}
-.foi-dl.soon{color:var(--org)}
-.foi-dl.over{color:var(--red)}
-.foi-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;margin-top:14px}
-.foi-calc{background:var(--pri-bg);border:1px solid var(--pri-bd);border-radius:var(--r);padding:14px 16px;font-size:14px;line-height:1.8;margin-bottom:14px}
-.foi-calc div+div{margin-top:6px}
-.foi-label-sm{font-size:13px;font-weight:800;color:var(--sub);margin-bottom:6px}
-.foi-d-items{margin:0 0 0 18px;font-size:14px;line-height:1.75}
 
-.foi-guide h3{font-size:15px;font-weight:800;margin:22px 0 8px}
-.foi-steps{margin:0 0 0 20px;font-size:14px;line-height:1.85}
-.foi-steps li{margin-bottom:9px}
-.foi-tips{margin:0 0 0 20px;font-size:14px;line-height:1.85}
-.foi-tips li{margin-bottom:5px}
 
 @media (max-width:1180px){
-  .foi-grid{grid-template-columns:minmax(0,1fr)}
-  .foi-sticky{position:static}
-  .foi-detail-grid{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:640px){
-  .foi-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* ── 정보 공개 청구: 청구 건(캠페인)·AI 입력창·공유 아카이브 (2026-09-20 개편) ── */
-.foi-count{display:inline-block;min-width:18px;padding:0 6px;margin-left:4px;border-radius:9px;background:var(--org);color:#fff;font-size:13px;font-weight:800;line-height:18px;text-align:center}
-.foi-subnav button.active .foi-count{background:#fff;color:var(--pri)}
-.foi-ai{margin-bottom:24px}
-.foi-ai-thread{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
-.foi-ai-thread:empty{display:none}
-.foi-ai-thread .chat-bubble-row.assistant .chat-bubble{background:#FAFBFC}
-.foi-ai-progress{font-size:14px;color:var(--sub);background:var(--pri-bg);border:1px solid var(--pri-bd);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;line-height:1.8}
-.foi-ai-progress .row{display:flex;align-items:center;gap:8px}
-.foi-ai-progress .spinner{flex-shrink:0}
-.foi-ai-foot{display:flex;justify-content:flex-end;margin-top:10px}
-.foi-ai-foot:has(> button[style*="display:none"]){margin-top:0}
 
 /* ── 대화 창(Claude 형식의 입력 상자) ─────────────────────────────── */
-.foi-chatwin{display:flex;flex-direction:column}
-.foi-chatwin .foi-ai-thread{max-height:520px;overflow-y:auto;padding:2px 4px 6px 2px;margin-bottom:14px}
-.foi-composer{background:#fff;border:1.5px solid var(--bdr);border-radius:24px;box-shadow:var(--sh);padding:14px 16px 12px;transition:border-color .12s,box-shadow .12s}
-.foi-composer:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px rgba(15,143,126,.13)}
-.foi-composer-ta{display:block;width:100%;box-sizing:border-box;min-height:84px;max-height:320px;resize:none;border:none;outline:none;background:transparent;padding:6px 8px;font-family:inherit;font-size:17px;line-height:1.7;color:var(--txt)}
-.foi-composer-ta::placeholder{color:#9AA3AF;opacity:1}
-.foi-composer-bar{display:flex;align-items:center;gap:6px;margin-top:6px}
-.foi-cbar-spacer{flex:1}
-.foi-ibtn{width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--sub);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .12s,color .12s}
-.foi-ibtn:hover{background:#F0F2F5;color:var(--txt)}
-.foi-ibtn.recording{background:var(--rbg);color:var(--red);animation:foiPulse 1.2s infinite}
-@keyframes foiPulse{0%,100%{box-shadow:0 0 0 0 rgba(214,69,69,.35)}50%{box-shadow:0 0 0 7px rgba(214,69,69,0)}}
-.foi-send{width:40px;height:40px;border:none;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:opacity .12s,transform .08s}
-.foi-send:hover:not(:disabled){transform:scale(1.05)}
-.foi-send:disabled{opacity:.35;cursor:default}
-.foi-model-wrap{position:relative}
-.foi-model-btn{display:flex;align-items:center;gap:6px;height:40px;padding:0 12px;border:none;border-radius:20px;background:transparent;font-size:15px;color:var(--txt);cursor:pointer}
-.foi-model-btn:hover,.foi-model-btn[aria-expanded="true"]{background:#F0F2F5}
-.foi-model-btn .nm{font-weight:600;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.foi-model-btn .eff{color:var(--hint);font-weight:500}
-.foi-model-btn svg{color:var(--hint);flex-shrink:0}
-.foi-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
-.foi-chips:not(:empty){margin-bottom:8px}
-.foi-chip-file{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:6px 12px;border:1px solid var(--bdr);border-radius:12px;background:#FAFBFC;font-size:14px;color:var(--txt)}
-.foi-chip-file .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
-.foi-chip-file .st{color:var(--hint);font-size:13px;white-space:nowrap}
-.foi-chip-file.bad .st{color:var(--org)}
-.foi-chip-file button{border:none;background:none;color:var(--hint);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}
-.foi-chip-file button:hover{color:var(--red)}
 
 /* LLM 선택 메뉴 */
-.foi-menu{position:absolute;right:0;top:calc(100% + 10px);width:380px;max-width:calc(100vw - 48px);max-height:560px;overflow-y:auto;background:#fff;border:1px solid var(--bdr);border-radius:16px;box-shadow:0 14px 36px rgba(15,23,42,.18);padding:8px;z-index:60}
-.foi-menu.up{top:auto;bottom:calc(100% + 10px)}
-.foi-menu[hidden]{display:none}
-.foi-mgroup{font-size:13px;font-weight:800;color:var(--hint);padding:10px 12px 4px}
-.foi-mi{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;border:none;background:none;border-radius:12px;padding:8px 12px;cursor:pointer;color:var(--txt)}
-.foi-mi:hover{background:#F3F5F7}
-.foi-mi .tx{flex:1;min-width:0}
-.foi-mi .t{font-weight:700;font-size:15px}
-.foi-mi .s{font-size:13px;color:var(--hint);line-height:1.5;margin-top:1px}
-.foi-mi .ck{width:18px;color:var(--pri);font-weight:800;padding-top:1px}
-.foi-mi .tag{font-size:13px;font-weight:700;color:var(--pri);background:var(--pri-bg);border-radius:9px;padding:1px 8px;margin-left:6px}
-.foi-mdiv{height:1px;background:var(--bdr);margin:8px 4px}
-.foi-effort{position:sticky;top:-8px;z-index:2;background:#fff;padding:8px 12px 8px;margin:-8px -8px 0;border-bottom:1px solid var(--bdr);border-radius:16px 16px 0 0}
-.foi-effort .lb{font-size:13px;font-weight:800;color:var(--hint);margin-bottom:6px}
-.foi-effort .seg{display:flex;border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
-.foi-effort .seg button{flex:1;border:none;background:#fff;padding:8px 0;font-size:14px;font-weight:700;color:var(--sub);border-right:1px solid var(--bdr);cursor:pointer}
-.foi-effort .seg button:last-child{border-right:none}
-.foi-effort .seg button.on{background:var(--pri);color:#fff}
-.foi-effort .ds{font-size:13px;color:var(--hint);margin-top:6px;line-height:1.55}
-.foi-mkey{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 12px;font-size:14px;color:var(--pri);cursor:pointer;border-radius:10px}
-.foi-mkey:hover{background:#F3F5F7}
 
 /* API 키 팝업 */
-.foi-modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px}
-.foi-modal[hidden]{display:none}
-.foi-modal-card{width:480px;max-width:100%;max-height:92vh;overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.35);padding:26px 28px 22px}
-.foi-modal-card h3{font-size:19px;font-weight:800;margin-bottom:6px}
-.foi-modal-desc{font-size:14.5px;color:var(--sub);line-height:1.7;margin-bottom:14px}
-.foi-modal-card input[type=text],.foi-modal-card input[type=password]{width:100%;font-size:15px;padding:11px 13px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff;font-family:inherit}
-.foi-modal-card input:focus{outline:none;border-color:var(--pri)}
-.foi-modal-note{font-size:13.5px;color:var(--hint);line-height:1.65;margin-top:8px}
-.foi-modal-actions{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
-.foi-modal-link{font-size:14px;color:var(--pri);text-decoration:none}
-.foi-modal-link:hover{text-decoration:underline}
-.foi-known{margin-bottom:20px}
-.foi-known h2{margin-bottom:10px}
-.foi-known .row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #F0F1F5;font-size:14px;line-height:1.7}
-.foi-known .row:last-child{border-bottom:none}
-.foi-known .row .t{flex:1;min-width:0}
-.foi-known .row a{color:var(--pri);word-break:break-all}
-.foi-known .sec{font-size:13px;font-weight:800;color:var(--sub);margin:14px 0 4px}
-.foi-known .unv{font-size:14px;color:var(--org);line-height:1.8}
 
-.foi-seg{display:inline-flex;border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
-.foi-seg button{background:#fff;border:none;padding:6px 14px;font-size:13px;font-weight:700;color:var(--sub);border-right:1px solid var(--bdr)}
-.foi-seg button:last-child{border-right:none}
-.foi-seg button.active{background:var(--pri);color:#fff}
-.foi-bar{height:7px;border-radius:4px;background:#E8EAF0;overflow:hidden;min-width:110px}
-.foi-bar > span{display:block;height:100%;background:var(--pri-lt)}
-.foi-prog-txt{font-size:13px;color:var(--hint);margin-top:4px}
-.foi-chip{display:inline-block;padding:1px 8px;border-radius:9px;font-size:13px;font-weight:700;margin-right:4px;background:#EDEFF3;color:var(--sub)}
-.foi-chip.warn{background:var(--obg);color:var(--org)}
-.foi-chip.ok{background:var(--gbg);color:var(--grn)}
-.foi-chip.bad{background:var(--rbg);color:var(--red)}
-.foi-table td .sub-line{font-size:13px;color:var(--hint)}
 
-.foi-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--gbg);border:1px solid #B7E4CE;color:var(--grn);border-radius:var(--r);padding:12px 16px;font-size:14px;margin:14px 0}
-.foi-d-meta{font-size:14px;color:var(--sub);margin:6px 0 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.foi-d-title-in{width:100%;font-size:16px;font-weight:800;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);margin-top:10px}
-.foi-h3{font-size:14px;font-weight:800;margin:20px 0 8px}
-.foi-itbl{width:100%;border-collapse:collapse;font-size:14px}
-.foi-itbl th{text-align:left;font-size:13px;color:var(--hint);font-weight:700;padding:6px 8px;border-bottom:2px solid var(--bdr);white-space:nowrap}
-.foi-itbl td{padding:8px;border-bottom:1px solid var(--bdr);vertical-align:top}
-.foi-itbl input[type=text],.foi-itbl select{width:100%;font-size:14px;padding:6px 8px;border:1px solid var(--bdr);border-radius:6px;background:#fff}
-.foi-itbl .it-title{font-weight:700}
-.foi-itbl .it-scope{font-size:13px;color:var(--hint)}
-.foi-round{border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;background:#FAFBFC}
-.foi-round-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.foi-round-head b{font-size:14px}
-.foi-round .field-row .field{min-width:140px;margin-bottom:10px}
-.foi-round input,.foi-round select,.foi-round textarea{width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);background:#fff}
-.foi-round .foi-calc{margin:6px 0 0}
-.foi-round-items{font-size:13px;color:var(--sub);margin-top:6px}
-.foi-panel-box{border:1px solid var(--pri-bd);background:var(--pri-bg);border-radius:var(--r);padding:16px 18px;margin:14px 0}
-.foi-panel-box h4{font-size:14px;font-weight:800;margin-bottom:8px}
-.foi-panel-box label.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:4px 0;cursor:pointer}
-.foi-share-preview{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-size:14px;line-height:1.8;margin:10px 0}
-.foi-share-preview ul{margin:4px 0 4px 18px}
-.foi-share-no{font-size:13px;color:var(--hint);margin-top:6px}
-.foi-arc-card{border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;background:#fff;cursor:pointer}
-.foi-arc-card:hover{border-color:var(--pri-lt)}
-.foi-arc-card .t{font-weight:800;font-size:15px}
-.foi-arc-card .m{font-size:13px;color:var(--hint);margin-top:2px}
-.foi-arc-card .s{font-size:14px;color:var(--sub);margin-top:6px;line-height:1.7}
-.foi-empty-cta{padding:22px 4px;font-size:14px;color:var(--sub);line-height:1.8}
-@media (max-width:1180px){ .foi-itbl th:nth-child(4),.foi-itbl td:nth-child(4){display:none} }
 
 /* ── 혼디 글꼴 정책(2026-09-21): 예외 없이 Pretendard ─────────────────────────
    입력창·placeholder·버튼·코드·외부 라이브러리(Quill 등) 포함 모든 글자에 적용한다.
@@ -937,7 +758,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
           <div class="nav-sep" role="separator"></div>
           <a class="nav-subitem nav-link" href="https://mail.hondi.net">소개 페이지</a>
-          <a class="nav-subitem nav-link" href="webapp.html?view=mobile">모바일 화면</a>
           <a class="nav-subitem nav-link" href="manual.html">사용 설명서</a>
         </div>
       </div>
@@ -947,10 +767,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <button id="tab-btn-caseprov" class="nav-btn" data-label="맡은 일" onclick="_switchTab('caseprov')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>맡은 일</button>
       <button id="tab-btn-casecons" class="nav-btn" data-label="맡긴 일" onclick="_switchTab('casecons')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13"/><polyline points="7 10 12 15 17 10"/><path d="M4 20h16"/></svg>맡긴 일</button>
       <button id="tab-btn-casesolo" class="nav-btn" data-label="나 홀로" onclick="_switchTab('casesolo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>나 홀로</button>
-    </div>
-    <div class="side-group">
-      <div class="side-label">행정 업무</div>
-      <button id="tab-btn-foi" class="nav-btn" data-label="정보 공개 청구" onclick="_switchTab('foi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>정보 공개 청구</button>
     </div>
     <div class="side-group">
       <div class="side-label">도움말</div>
@@ -1035,6 +851,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <div class="doc-combo-list" id="cmp-gov-list" role="listbox" aria-label="정부 기관"></div>
           </div>
         </div>
+        <button type="button" class="doc-combo-btn ex-foi" id="cmp-foi-btn" aria-pressed="false" onclick="_cmpFoiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span>정보 공개 청구</span></button>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -1046,6 +863,15 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <p class="vd-meter-row"><span id="cmp-verdict-meter" aria-live="polite"></span><span class="vd-keyhint">줄바꿈은 Enter, 보내기는 Ctrl 또는 ⌘ + Enter</span></p>
       </div></div>
       <div class="hint">발송을 확정하기 전에 K-Mail이 수신자·제목·본문·시각을 한 번에 정리해 "이대로 보낼까요?"라고 반드시 확인합니다. 회신을 모아 정리해달라고 말하면 그 시점도 함께 정하고, 도착한 보고는 "내 캠페인" 탭에서 볼 수 있습니다.</div>
+    </div>
+    <div id="cmp-foi-doc" aria-label="정보 공개 청구서" hidden>
+      <div class="foi-doc-bar"><strong id="cmp-foi-title">정보 공개 청구서</strong><span class="foi-doc-sp"></span>
+        <button type="button" class="btn btn-sm" onclick="_foiDocCopy()">복사</button>
+        <button type="button" class="btn btn-sm" onclick="_foiDocSave()">파일로 받기</button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="window.open('https://www.open.go.kr','_blank','noopener')">정보공개포털 열기</button>
+      </div>
+      <textarea id="cmp-foi-text" spellcheck="false" aria-label="정보 공개 청구서 본문(고쳐 쓸 수 있습니다)" placeholder="대화로 알려 주시면 청구서가 여기에 만들어집니다. 만들어진 청구서는 직접 고쳐 쓸 수 있습니다."></textarea>
+      <div class="foi-doc-note">청구서는 정보공개포털(open.go.kr) 등에 사용자가 직접 제출합니다. 청구인 정보는 [대괄호] 칸에 직접 적어 주세요.</div>
     </div>
   </div>
 
@@ -1389,18 +1215,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       정보 공개 청구 — 2026-09-20 신설, 같은 날 "청구 건(캠페인)" 구조로 개편(desktop.html 전용).
-
-       · 새 청구서: 맨 위 입력창에 알고 싶은 것을 적으면 K-FOI(SP-28)가 기관을 특정하고, 다른
-         사용자가 공유한 아카이브 → 웹 순으로 이미 공개된 정보를 확인한 뒤, 아직 얻지 못한 것만
-         청구 목록으로 만들어 아래 폼을 채운다.
-       · 내 청구 건: 청구는 대개 1회로 끝나지 않는다. 한 건(캠페인) 안에 얻고 싶은 정보(항목)와
-         청구 회차를 쌓아 추적하고, 후속 청구를 만든다. 다 얻으면 종료·보관한다.
-       · 공유 아카이브: 종료·보관하며 공유를 선택한 건을 혼디 사용자 전체가 검색한다.
-       청구인의 성명·주소·연락처는 서버로 보내지 않고 이 브라우저에만 둔다. 동작 코드는 foi.js.
-       제출(정보공개시스템 등)은 사용자가 직접 한다.
-       ══════════════════════════════════════════════════════════ -->
   <div id="doc-modal" role="region" aria-label="문서 작성">
     <div class="dm-box">
       <div class="dm-bar">
@@ -1448,298 +1262,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
   <div id="tab-casesolo" class="tab-panel cs-panel"></div>
 
-  <div id="tab-foi" class="tab-panel">
-    <div class="foi-head">
-      <h1>정보 공개 청구</h1>
-      <p>기관이 이미 보유한 문서를 「공공기관의 정보공개에 관한 법률」에 따라 청구합니다. 알고 싶은 것을 적으면 이미 공개됐거나 다른 사용자가 얻은 정보는 걸러내고, 청구가 필요한 것만 청구서로 만들어 드립니다. 청구가 여러 번에 걸쳐 이어져도 한 건으로 추적하세요.</p>
-    </div>
-
-    <div class="foi-subnav">
-      <button type="button" id="foi-subnav-new" class="active" onclick="_foi.sub('new')">새 청구서</button>
-      <button type="button" id="foi-subnav-list" onclick="_foi.sub('list')">내 청구 건 <span class="foi-count" id="foi-nav-count" style="display:none"></span></button>
-      <button type="button" id="foi-subnav-archive" onclick="_foi.sub('archive')">공유 아카이브</button>
-      <button type="button" id="foi-subnav-guide" onclick="_foi.sub('guide')">안내</button>
-    </div>
-
-    <!-- ══ 새 청구서 ══ -->
-    <div id="foi-sub-new" class="foi-sub active">
-
-      <!-- 첫 섹션 — 대화 창(Claude와 같은 형식의 입력 상자). 대화는 위에 쌓이고, 입력 상자는 아래에 둔다.
-           왼쪽 "+" = 파일 첨부, 오른쪽 = LLM 선택(모델·조사 깊이) · 음성 입력 · 보내기.
-           안내 문구는 placeholder(회색)라 입력을 시작하면 사라진다. -->
-      <div class="foi-ai">
-        <div class="foi-chatwin">
-          <div id="foi-ai-thread" class="foi-ai-thread"></div>
-          <div id="foi-ai-progress" class="foi-ai-progress" style="display:none"></div>
-          <div id="foi-ai-err" class="errbox" style="display:none"></div>
-          <div class="foi-composer" id="foi-composer">
-            <div id="foi-chips" class="foi-chips"></div>
-            <textarea id="foi-ai-input" data-requires-login="정보 공개 청구" class="foi-composer-ta" rows="3" aria-label="얻고자 하는 공공 정보" placeholder="귀하가 얻고자하는 공공 정보를 기술하면, AI가 기관 및 청구 문서 목록을 자동으로 작성합니다. 물론, 귀하가 수정할 수 있습니다."></textarea>
-            <div class="foi-composer-bar">
-              <button type="button" id="foi-attach-btn" class="foi-ibtn" title="파일 첨부 (PDF·DOCX·XLSX·CSV·TXT)" aria-label="파일 첨부"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-              <input type="file" id="foi-attach-input" multiple hidden accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md">
-              <span class="foi-cbar-spacer"></span>
-              <div class="foi-model-wrap">
-                <button type="button" id="foi-model-btn" class="foi-model-btn" aria-haspopup="listbox" aria-expanded="false" title="LLM 선택">
-                  <span id="foi-model-name" class="nm">혼디 기본</span><span id="foi-model-effort" class="eff">중간</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <div id="foi-model-menu" class="foi-menu" role="listbox" hidden></div>
-              </div>
-              <button type="button" id="foi-mic-btn" class="foi-ibtn" title="음성 입력" aria-label="음성 입력"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></button>
-              <button type="button" id="foi-ai-send" data-requires-login="정보 공개 청구" class="foi-send" title="AI로 청구서 작성 (Enter)" aria-label="AI로 청구서 작성" disabled><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
-            </div>
-          </div>
-        </div>
-        <div class="foi-ai-foot">
-          <button type="button" class="btn btn-outline btn-sm" id="foi-ai-reset" style="display:none" onclick="_foi.aiReset()">+ 새 요청</button>
-        </div>
-      </div>
-
-      <!-- LLM API 키 입력 팝업 — 기본(혼디 기본) 외의 LLM을 고르면 뜬다 -->
-      <div id="foi-key-modal" class="foi-modal" hidden role="dialog" aria-modal="true" aria-labelledby="foi-key-title">
-        <div class="foi-modal-card">
-          <h3 id="foi-key-title">API 키 입력</h3>
-          <p id="foi-key-desc" class="foi-modal-desc"></p>
-          <div class="field" id="foi-key-model-row" style="display:none">
-            <label for="foi-key-model">모델 ID</label>
-            <input type="text" id="foi-key-model" autocomplete="off" spellcheck="false" placeholder="해당 회사가 안내하는 모델 ID를 그대로 입력">
-          </div>
-          <div class="field">
-            <label for="foi-key-input">API 키</label>
-            <input type="password" id="foi-key-input" autocomplete="off" spellcheck="false" placeholder="키를 붙여 넣으세요">
-          </div>
-          <label class="foi-keep" style="margin:0 0 6px"><input type="checkbox" id="foi-key-remember"><span>이 브라우저에 저장 <span class="foi-opt">(끄면 이 탭을 닫을 때 사라집니다 · 공용 PC에서는 끄세요)</span></span></label>
-          <div class="foi-modal-note">키는 이 브라우저에만 보관됩니다. AI 조사를 요청할 때마다 혼디 서버를 거쳐 해당 회사로 전달되며, 혼디는 키를 저장하거나 기록하지 않도록 만들어져 있습니다. 사용료는 해당 회사가 키 소유자에게 청구합니다.</div>
-          <div id="foi-key-err" class="foi-item-warn" style="margin-top:8px"></div>
-          <div class="foi-modal-actions">
-            <a id="foi-key-link" href="#" target="_blank" rel="noopener" class="foi-modal-link">키 발급 안내 ↗</a>
-            <span class="foi-cbar-spacer"></span>
-            <button type="button" id="foi-key-delete" class="btn btn-outline btn-sm" style="display:none;color:var(--red)">저장된 키 삭제</button>
-            <button type="button" id="foi-key-cancel" class="btn btn-outline btn-sm">취소</button>
-            <button type="button" id="foi-key-save" class="btn btn-primary btn-sm">저장하고 사용</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="foi-known-card" class="card foi-known" style="display:none">
-        <h2>이미 확인된 정보 <span class="foi-opt" style="font-size:13px">— 청구서에는 넣지 않습니다</span></h2>
-        <div id="foi-known-items"></div>
-        <div id="foi-known-matches"></div>
-        <div id="foi-known-others"></div>
-        <div id="foi-known-unverified"></div>
-      </div>
-
-      <div id="foi-editing-note" class="foi-note" style="display:none"></div>
-
-      <div class="foi-grid" id="foi-form">
-        <div class="foi-col">
-          <div class="card">
-            <h2>① 청구 기관·대상</h2>
-            <div class="sub">청구서 한 장은 기관 한 곳에 냅니다. 같은 문서를 여러 기관에 청구하려면 한 장을 저장한 뒤 “내 청구 건”의 <b>재사용</b>으로 기관만 바꿔 다시 만드세요.</div>
-            <div class="field">
-              <label for="foi-preset">문서 묶음 (선택하면 아래 목록이 채워집니다)</label>
-              <select id="foi-preset" class="foi-select"></select>
-            </div>
-            <div class="field-row">
-              <div class="field"><label for="foi-agency">청구 기관</label><input type="text" id="foi-agency" list="foi-agency-list" placeholder="예: 제주특별자치도 / 제주시 / ○○부" autocomplete="off"><datalist id="foi-agency-list"></datalist></div>
-              <div class="field"><label for="foi-dept">대상 부서 <span class="foi-opt">(선택)</span></label><input type="text" id="foi-dept" placeholder="예: 청정환경국 생활환경과 / 소관 전 부서"></div>
-            </div>
-            <div class="field" style="margin-bottom:0">
-              <label for="foi-purpose">청구 목적 <span class="foi-opt">(선택 — 적지 않아도 됩니다)</span></label>
-              <textarea id="foi-purpose" rows="2" class="foi-textarea" placeholder="예: 민원 안내 서비스 개선을 위한 업무 자료 확인"></textarea>
-              <div id="foi-purpose-warn" class="foi-item-warn"></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>② 청구할 문서</h2>
-            <div class="sub">질문이 아니라 <b>문서 이름</b>으로 지목하세요. 새로 작성·취합해야 하는 자료는 “부존재”로 답이 올 수 있고, “관련 자료 일체”처럼 넓은 표현은 보정 요구를 받기 쉽습니다.</div>
-            <div id="foi-items"></div>
-            <button type="button" class="btn btn-outline btn-sm" id="foi-add-item">+ 문서 항목 추가</button>
-          </div>
-
-          <div class="card">
-            <h2>③ 공개·수령 방법과 요청 사항</h2>
-            <div class="field">
-              <label>공개 방법</label>
-              <div class="foi-checks">
-                <label><input type="checkbox" id="foi-pub-file" checked> 전자파일</label>
-                <label><input type="checkbox" id="foi-pub-copy"> 사본·출력물 교부</label>
-                <label><input type="checkbox" id="foi-pub-view"> 열람</label>
-              </div>
-            </div>
-            <div class="field">
-              <label for="foi-recv">수령 방법</label>
-              <select id="foi-recv" class="foi-select">
-                <option value="net">정보통신망 (정보공개시스템·전자우편)</option>
-                <option value="post">우편</option>
-                <option value="visit">방문 수령</option>
-                <option value="fax">팩스</option>
-              </select>
-            </div>
-            <div class="field" style="margin-bottom:0">
-              <label>청구서에 넣을 요청 문구</label>
-              <div class="foi-checks col">
-                <label><input type="checkbox" id="foi-opt-nocreate" checked> 새로 작성·취합을 요구하는 것이 아니라 <b>보유 문서 그대로</b> 청구함을 명시</label>
-                <label><input type="checkbox" id="foi-opt-partial" checked> 비공개 사유가 있는 부분만 가리고 <b>부분공개</b> 요청</label>
-                <label><input type="checkbox" id="foi-opt-nonexist" checked> 부존재이면 그 사실과 <b>유사 보유 문서명</b> 안내 요청</label>
-                <label><input type="checkbox" id="foi-opt-personal" checked> <b>개인정보</b>는 청구 대상이 아님을 명시</label>
-                <label><input type="checkbox" id="foi-opt-cost" checked> 비용(수수료·우송료) 발생 시 <b>사전 안내</b> 요청</label>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>④ 청구인</h2>
-            <div class="sub">법은 청구서에 청구인의 성명·연락처 등을 적도록 합니다. 기관 서식에 따라 생년월일·주소를 더 요구할 수 있습니다. 여기 입력한 내용은 <b>이 브라우저 밖으로 나가지 않습니다</b> — 청구 건을 저장해도 서버에는 올라가지 않습니다.</div>
-            <div class="field-row">
-              <div class="field"><label for="foi-req-type">구분</label>
-                <select id="foi-req-type" class="foi-select"><option value="person">개인</option><option value="org">법인·단체</option></select></div>
-              <div class="field"><label for="foi-req-name">성명(단체는 명칭)</label><input type="text" id="foi-req-name" autocomplete="name"></div>
-              <div class="field" id="foi-org-only-rep" style="display:none"><label for="foi-req-rep">대표자</label><input type="text" id="foi-req-rep"></div>
-              <div class="field" id="foi-person-only-birth"><label for="foi-req-birth">생년월일 <span class="foi-opt">(선택)</span></label><input type="text" id="foi-req-birth" placeholder="예: 1980-01-01" autocomplete="bday"></div>
-            </div>
-            <div class="field"><label for="foi-req-addr">주소(단체는 소재지)</label><input type="text" id="foi-req-addr" autocomplete="street-address"></div>
-            <div class="field-row">
-              <div class="field"><label for="foi-req-phone">전화</label><input type="text" id="foi-req-phone" placeholder="010-0000-0000" autocomplete="tel"></div>
-              <div class="field"><label for="foi-req-email">전자우편</label><input type="email" id="foi-req-email" placeholder="name@example.com" autocomplete="email"></div>
-              <div class="field"><label for="foi-date">청구일</label><input type="date" id="foi-date"></div>
-            </div>
-            <label class="foi-keep"><input type="checkbox" id="foi-req-keep"> 청구인 정보를 이 브라우저에 저장해 다음에도 채워 넣기 <span class="foi-opt">(공용 PC에서는 끄세요)</span></label>
-          </div>
-        </div>
-
-        <div class="foi-col foi-sticky">
-          <div class="card foi-preview-card">
-            <h2>청구서 미리보기</h2>
-            <div id="foi-status-box" class="foi-status"></div>
-            <textarea id="foi-preview" readonly spellcheck="false"></textarea>
-            <div id="foi-flash" class="foi-flash" style="display:none"></div>
-            <div class="foi-actions">
-              <button type="button" class="btn btn-primary btn-sm" onclick="_foi.copy()">복사</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.download()">TXT 다운로드</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.toMail()">메일 작성으로 보내기</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.portal()">정보공개포털 ↗</button>
-            </div>
-            <div class="foi-actions" style="margin-top:8px">
-              <button type="button" class="btn btn-primary btn-sm" id="foi-save-btn" data-requires-login="청구 건 저장" onclick="_foi.save()">청구 건에 저장</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="_foi.reset()">새로 시작</button>
-            </div>
-            <div class="hint">이 화면은 청구서를 대신 제출하지 않습니다. 복사하거나 내려받아 정보공개시스템(open.go.kr) 등 기관이 안내한 방법으로 제출하고, 접수되면 “내 청구 건”에서 그 회차의 접수일·접수번호를 기록하세요. “메일 작성으로 보내기”는 기관이 전자우편 청구를 받는다고 확인된 경우에만 쓰세요.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ 내 청구 건 ══ -->
-    <div id="foi-sub-list" class="foi-sub">
-      <div class="foi-summary">
-        <div class="foi-tile"><div class="n" id="foi-sum-active">0</div><div class="l">진행 중인 건</div></div>
-        <div class="foi-tile"><div class="n" id="foi-sum-open">0</div><div class="l">아직 못 얻은 항목</div></div>
-        <div class="foi-tile warn"><div class="n" id="foi-sum-soon">0</div><div class="l">기한 3일 이내</div></div>
-        <div class="foi-tile"><div class="n" id="foi-sum-closed">0</div><div class="l">보관된 건</div></div>
-      </div>
-      <div id="foi-legacy-box" class="foi-note" style="display:none">
-        <span id="foi-legacy-text"></span>
-        <button type="button" class="btn btn-outline btn-sm" style="margin-left:8px" onclick="_foi.importLegacy()">가져오기</button>
-      </div>
-      <div class="card">
-        <div class="foi-toolbar">
-          <h2 style="margin:0">내 청구 건</h2>
-          <div class="foi-toolbar-right">
-            <div class="foi-seg" id="foi-filter">
-              <button type="button" data-f="active" class="active" onclick="_foi.setFilter('active')">진행 중</button>
-              <button type="button" data-f="closed" onclick="_foi.setFilter('closed')">보관됨</button>
-              <button type="button" data-f="all" onclick="_foi.setFilter('all')">전체</button>
-            </div>
-          </div>
-        </div>
-        <div class="sub" style="margin-top:6px">청구 한 건은 얻고 싶은 정보(항목)와 청구 회차로 이뤄집니다. 회차 결과를 기록하면 항목 상태가 갱신되고, 남은 항목은 <b>후속 청구</b>로 이어갈 수 있습니다. 원하는 정보를 모두 얻으면 <b>종료·보관</b>하세요.</div>
-        <div id="foi-list-flash" class="foi-flash" style="display:none"></div>
-        <div id="foi-list-loading" class="loading-row" style="display:none"><span class="spinner"></span>불러오는 중…</div>
-        <div id="foi-list-empty" style="font-size:14px;color:var(--hint);padding:14px 2px;display:none"></div>
-        <div id="foi-list-wrap" class="ct-table-wrap" style="display:none">
-          <table class="ct-table foi-table">
-            <thead><tr><th>청구 건</th><th>진행</th><th>회차·상태</th><th>다음 기한</th><th></th></tr></thead>
-            <tbody id="foi-list-body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card" id="foi-detail-card" style="display:none">
-        <div class="foi-toolbar">
-          <h2 id="foi-d-title" style="margin:0"></h2>
-          <div class="foi-toolbar-right"><button type="button" class="btn btn-outline btn-sm" onclick="_foi.closeDetail()">닫기</button></div>
-        </div>
-        <div id="foi-d-body"></div>
-      </div>
-    </div>
-
-    <!-- ══ 공유 아카이브 ══ -->
-    <div id="foi-sub-archive" class="foi-sub">
-      <div class="card">
-        <h2>공유 아카이브</h2>
-        <div class="sub">다른 혼디 사용자가 종료·보관하면서 공유를 선택한 청구 건입니다. 같은 정보가 이미 있는지 먼저 찾아보세요 — 새 청구서의 AI도 청구 목록을 만들기 전에 이곳을 먼저 확인합니다. <b>청구인 정보·요청 원문·접수번호·메모는 공유되지 않습니다</b>(기관, 문서 이름, 결과 상태, 공개 자료 주소, 작성자가 승인한 요약만 공유).</div>
-        <div class="filter-row">
-          <input type="text" id="foi-arc-agency" placeholder="기관 (예: 제주시)" style="max-width:220px">
-          <input type="text" id="foi-arc-q" placeholder="찾을 내용 — 부서, 문서 이름 등 (비우면 최근 건)">
-          <button type="button" class="btn btn-primary btn-sm" onclick="_foi.archiveSearch()">검색</button>
-        </div>
-        <div id="foi-arc-flash" class="foi-flash" style="display:none"></div>
-        <div id="foi-arc-loading" class="loading-row" style="display:none"><span class="spinner"></span>찾는 중…</div>
-        <div id="foi-arc-empty" style="font-size:14px;color:var(--hint);display:none">일치하는 공유 건이 없습니다.</div>
-        <div id="foi-arc-results"></div>
-      </div>
-      <div class="card" id="foi-arc-detail-card" style="display:none">
-        <div class="foi-toolbar">
-          <h2 id="foi-arc-d-title" style="margin:0"></h2>
-          <div class="foi-toolbar-right"><button type="button" class="btn btn-outline btn-sm" onclick="_foi.archiveCloseDetail()">닫기</button></div>
-        </div>
-        <div id="foi-arc-d-body"></div>
-      </div>
-    </div>
-
-    <!-- ══ 안내 ══ -->
-    <div id="foi-sub-guide" class="foi-sub">
-      <div class="card foi-guide">
-        <h2>정보 공개 청구, 이렇게 진행됩니다</h2>
-        <div class="sub">2026-09-20 기준으로 국가법령정보센터의 「공공기관의 정보공개에 관한 법률」 본문을 확인해 정리했습니다. 법률 자문이 아니며, 구체적인 사안은 기관 안내와 법령 원문을 확인하세요.</div>
-        <ol class="foi-steps">
-          <li><b>청구서 작성</b> — 청구인 정보와, 공개를 청구하는 정보의 내용·공개 방법을 적습니다(법 제10조). 말로도 청구할 수 있지만 기록이 남도록 서면(전자문서 포함)을 권합니다. 청구 정보는 사회 일반인의 관점에서 내용과 범위를 확정할 수 있을 만큼 <b>특정</b>해야 합니다.</li>
-          <li><b>제출</b> — 정보를 보유한 기관에 냅니다. 정보공개포털(open.go.kr)에서 온라인으로 청구할 수 있는 기관이 많고, 기관별 접수 방식은 각 기관 안내를 따르세요.</li>
-          <li><b>결정 (10일)</b> — 기관은 청구를 받은 날부터 10일 이내에 공개 여부를 결정해야 합니다. 부득이하면 그 기간이 끝나는 날의 다음 날부터 10일의 범위에서 연장할 수 있고, 연장 사실과 사유를 청구인에게 문서로 통지해야 합니다(법 제11조).</li>
-          <li><b>결과</b> — 공개, 부분공개, 비공개, 또는 부존재(보유하지 않음)로 통지됩니다. 비공개 대상은 법 제9조에 정해져 있으며, 예를 들어 개인 식별 정보, 감사·계약·인사 관련 사항, 의사결정·내부검토 과정에 있는 사항 등이 있습니다.</li>
-          <li><b>후속 청구 또는 불복</b> — 결과가 부분공개·비공개·부존재이거나 더 필요한 자료가 생기면 같은 건 안에서 <b>후속 청구</b>를 이어갑니다. 비공개·부분공개 결정에 불복하거나 청구 후 20일이 지나도록 결정이 없으면, 통지를 받은 날 또는 20일이 경과한 날부터 30일 이내에 그 기관에 문서로 <b>이의신청</b>할 수 있습니다(법 제18조). 이의신청을 거치지 않고 <b>행정심판</b>을 청구할 수도 있으며(법 제19조), 청구 기간은 행정심판법이 정합니다.</li>
-          <li><b>종료·보관</b> — 원하는 정보를 모두 얻으면 건을 종료·보관합니다. 이때 공유를 선택하면 다른 사용자가 같은 정보를 다시 청구하지 않고 결과를 참고할 수 있습니다.</li>
-        </ol>
-
-        <h3>공유 아카이브에 대해</h3>
-        <ul class="foi-tips">
-          <li>공유는 <b>종료·보관할 때 직접 고르는 선택</b>이며, 미리보기로 나갈 내용을 확인한 뒤 결정합니다. 나중에 언제든 공유를 끄거나 건을 삭제할 수 있습니다.</li>
-          <li>공유되는 것: 기관·부서·제목, 항목의 문서 이름·범위·결과 상태, 회차별 결과 상태(월 단위), 이미 공개돼 있던 자료의 주소, 작성자가 승인한 요약. 공유되지 않는 것: 청구인 정보, 요청 원문, 접수번호, 메모.</li>
-          <li>이번 버전은 <b>문서 파일 자체는 공유하지 않습니다.</b> 어떤 문서를 어느 기관에서 어떤 결과로 얻었는지를 공유해, 같은 청구를 반복하지 않게 돕는 것이 목적입니다.</li>
-          <li>공유 자료는 다른 사용자가 쓴 것이므로 정확성을 보증하지 않습니다. 결과 상태는 참고용으로 보고, 필요하면 직접 확인하세요.</li>
-        </ul>
-
-        <h3>잘 되는 청구서의 요령</h3>
-        <ul class="foi-tips">
-          <li><b>문서 이름으로 지목</b>합니다. “○○ 처리지침 최신 시행본”은 되지만 “○○는 어떻게 처리하나요?”는 청구 대상이 아닙니다.</li>
-          <li><b>새로 만드는 자료는 청구할 수 없습니다.</b> 통계·분석을 새로 작성해 달라는 청구는 부존재로 끝나기 쉽습니다. 기존 집계 문서가 있는지를 지목하세요.</li>
-          <li><b>범위와 시점</b>을 붙입니다(“최근 2개년”, “현재 시행 중인 최신본”). “관련 자료 일체”는 피하세요.</li>
-          <li>이미 공개된 자료(자치법규, 사전공표 자료, 민원편람 등)는 기관 누리집에서 먼저 찾아보면 청구 없이 얻을 수 있습니다.</li>
-          <li>목록 먼저, 원문은 나중에 — 처음에는 <b>문서 목록</b>과 공통 문서만 청구하고, 결과를 보고 필요한 원문을 <b>후속 청구</b>로 이어가면 부담이 작습니다.</li>
-        </ul>
-
-        <h3>이 화면의 한계</h3>
-        <ul class="foi-tips">
-          <li>청구서를 대신 제출하지 않습니다. 작성·복사·다운로드까지이며 제출과 접수는 직접 하셔야 합니다.</li>
-          <li>AI가 찾은 “이미 공개된 자료”는 웹 검색과 페이지 열람 결과에 근거하며 오류가 있을 수 있습니다. 출처 주소를 열어 확인하세요. 기관 누리집이 열리지 않으면 확인하지 못한 것으로 표시됩니다.</li>
-          <li>기한 계산은 <b>참고용</b>입니다. 토·일요일만 반영하고 공휴일은 반영하지 않으며, 기관이 보낸 통지의 기한이 항상 우선합니다.</li>
-          <li>청구 건은 혼디 서버에 저장되어 어느 PC에서든 이어볼 수 있습니다. 청구인 정보(성명·주소·연락처)만 이 브라우저에 남습니다.</li>
-        </ul>
-      </div>
-    </div>
-  </div>
 </main>
 </div>
 
@@ -2300,9 +1822,10 @@ function _orgActivate(o, greeting) {
   const gl = document.getElementById('cmp-gov-combo-label'), grp = o.expert ? 'exp' : (o.group || 'org');
   if (ol) ol.textContent = grp === 'org' ? o.label : '각종 기관'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
-  if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '' });
+  if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined });
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (input) input.disabled = !_org.sp;
+  tab.classList.toggle('foi-on', !!o.foi); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', o.foi ? 'true' : 'false'); } if (!o.foi) _foiDocReset();
   const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
   if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
 }
@@ -2338,12 +1861,44 @@ function _orgNotice1() {
   th.appendChild(d);
 }
 function _orgLeave() {
-  _org = null; document.getElementById('tab-compose').classList.remove('org-open');
+  _org = null; document.getElementById('tab-compose').classList.remove('org-open', 'foi-on'); _foiDocReset(); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', 'false'); }
   const l = document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
   const input = document.getElementById('cmp-input'); if (input) input.disabled = false;
   if (window.HondiChat) HondiChat.setSp(null);
+}
+// ── 정보 공개 청구(2026-11-03): 입력창이 정보 공개 청구 대화창이 되고, 대화로 알려 준 내용으로 아래에 청구서를 만든다 ──────────
+// 예전 "정보 공개 청구" 페이지는 없앴다. 대화 SP 는 인라인으로 두고(spText), 청구서는 답변 안의 ~~~foi 블록으로 받는다.
+const _FOI_SP = '당신은 나비웹의 "정보 공개 청구" 도우미다. 사용자가 알고 싶은 정보를 「공공기관의 정보공개에 관한 법률」에 따라 공공기관에 청구하는 정보공개 청구서를 대화로 만들어 준다.\n\n' +
+  '[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 인사말은 반복하지 않는다.\n\n' +
+  '[진행] ① 사용자가 알고 싶은 것을 파악해 청구 대상 기관과 청구할 정보(문서 이름·기간·범위)를 특정한다. 불분명하면 가장 중요한 것 하나만 묻는다. ② 정보가 충분하면 곧바로 청구서를 만들어 제시한다. ③ 이후 사용자의 수정 지시가 오면 청구서 전체를 고쳐 다시 제시한다.\n\n' +
+  '[청구서 출력 형식] 청구서를 만들거나 고칠 때마다, 답변 맨 끝에 다음 형식의 블록을 정확히 하나 쓴다(블록 밖에는 한두 문장의 안내만 쓴다).\n' +
+  '~~~foi\n정보공개 청구서\n\n1. 수신: ○○○(기관명)\n2. 청구인: [성명] / [주소] / [연락처]\n3. 청구 내용: (문서 이름·기간·범위를 특정해 번호로 나열)\n4. 공개 방법: 열람 / 사본 / 전자파일 중 선택(기본: 전자파일)\n5. 수령 방법: 정보공개시스템 전자 수령 / 우편 / 직접 방문 중 선택\n6. 청구 일자: (오늘 날짜)\n~~~\n' +
+  '청구인의 성명·주소·연락처는 대화에서 받지 말고 [대괄호] 칸으로 비워 둔다. 모르는 사실은 지어내지 말고 비워 둔다.\n\n' +
+  '[법령 안내(필요할 때만 한 줄)] 청구서는 기관이 청구를 받은 날부터 10일 이내에 공개 여부를 결정하고(부득이하면 10일 연장), 비공개·부분공개에 불복하면 통지를 받은 날부터 30일 이내에 이의신청을 하거나 행정심판을 청구할 수 있다. 법적 조언이 필요하면 전문가와 상의하라고 한 줄로 알린다.\n' +
+  '[금지] 이미 공개된 정보나 개인정보·비밀 정보를 청구서에 쓰지 않는다. 제출을 대신했다고 말하지 않는다(제출은 사용자가 정보공개포털 등에서 직접 한다).';
+function _cmpFoiPick() {
+  _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
+  _orgActivate({ key: 'kfoi', label: '정보 공개 청구', sp: 'inline:foi:v1', spText: _FOI_SP, group: 'foi', foi: true },
+    '정보 공개 청구입니다. 어느 기관에서 어떤 정보를 알고 싶으신지 말씀해 주세요. 대화로 알려 주시면 아래에 청구서를 만들어 드립니다.');
+}
+/** 답변에서 ~~~foi 블록을 떼어 청구서 칸에 쓰고, 말풍선에 남길 나머지 글을 돌려준다. */
+function _foiDocFromReply(t) {
+  const m = /~~~foi\s*\n([\s\S]*?)\n?~~~/.exec(t);
+  if (!m) return t;
+  const ta = document.getElementById('cmp-foi-text'), doc = document.getElementById('cmp-foi-doc');
+  if (ta) { ta.value = m[1].trim(); const first = ta.value.split('\n')[0].trim(); const ti = document.getElementById('cmp-foi-title'); if (ti) ti.textContent = first || '정보 공개 청구서'; }
+  if (doc) doc.hidden = false;
+  const rest = (t.slice(0, m.index) + t.slice(m.index + m[0].length)).trim();
+  return rest || '청구서를 아래에 만들었습니다. 내용을 검토하고 고칠 곳을 말씀해 주세요.';
+}
+function _foiDocReset() { const ta = document.getElementById('cmp-foi-text'), d = document.getElementById('cmp-foi-doc'); if (ta) ta.value = ''; if (d) d.hidden = true; }
+function _foiDocCopy() { const ta = document.getElementById('cmp-foi-text'); if (!ta || !ta.value.trim()) return; try { navigator.clipboard.writeText(ta.value).then(() => _drToast('청구서를 복사했습니다.')); } catch (e) { ta.select(); document.execCommand('copy'); } }
+function _foiDocSave() {
+  const ta = document.getElementById('cmp-foi-text'); if (!ta || !ta.value.trim()) return;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ta.value], { type: 'text/plain;charset=utf-8' })); a.download = '정보공개청구서.txt';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 async function _orgSend() {
   const input = document.getElementById('cmp-input'), text = input.value.trim();
@@ -2360,7 +1915,9 @@ async function _orgSend() {
 window.addEventListener('message', (e) => {
   const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || e.origin !== 'https://hondi.net' || !_org || !_org.pending) return;
   const el = _org.pending[d.id]; if (!el) return; delete _org.pending[d.id];
-  el.classList.add('org-md'); el.innerHTML = _orgMd(String(d.text || '')); const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight;
+  let reply = String(d.text || '');
+  if (_org.foi) reply = _foiDocFromReply(reply);   // ~~~foi 블록은 말풍선이 아니라 아래 청구서 칸에 쓴다
+  el.classList.add('org-md'); el.innerHTML = _orgMd(reply); const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight;
 });
 window.addEventListener('message', (e) => {
   const d = e.data; if (!d || d.type !== 'hondi-embed-sp-ready' || e.origin !== 'https://hondi.net' || !_org) return;
@@ -2897,7 +2454,6 @@ function _switchTab(name) {
   if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
   if (_crumb) _crumb.textContent = name === 'verdict' ? '가상 판결' : name === 'feedback' ? '기능 개선 제안' : (_navBtn.getAttribute('data-label') || '');
-  if (name === 'foi' && typeof _foiInit === 'function') _foiInit();
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
@@ -5787,6 +5343,7 @@ window.kmailOpenSettings = function (section) {
     _DOC_SITES.forEach(function (x) { try { window.opener.postMessage({ type: 'navi-doc-mail-ready' }, new URL(x.url).origin); } catch (e) {} });
     return;
   }
+  if (h === 'foi') { _switchTab('home'); setTimeout(_cmpFoiPick, 0); return; }
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
@@ -5795,7 +5352,6 @@ window.addEventListener('hashchange', function () {
   if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
 });
 </script>
-<script src="foi.js?v=20260921"></script>
 <script src="https://hondi.net/auth/user-badge.js?v=20261028" defer></script>
 <script>
 /* 2026-10-27 — 입력을 시작하면 예시 문구(placeholder)를 숨긴다(한글 입력기 조합 중 포함). 문서 전체에서 이벤트를 받으므로
