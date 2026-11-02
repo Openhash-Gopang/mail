@@ -2227,14 +2227,36 @@ function _submitGuideSp(title, blank, text) {
     '[금지] 인증서 비밀번호·주민등록번호·계좌번호를 이 대화에 입력하라고 하지 않는다(입력하지 말라고 알린다). 접수·처리 결과를 보장하지 않는다.';
 }
 function _koIga(w) { const c = String(w || '').trim().slice(-1).charCodeAt(0); return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0) ? '이군요' : '군요'; }
-function _submitGuideStart(title, blank, text) {
+// 제출 흐름: ① 빈 칸이 있으면 먼저 "도와드릴까요?"(서류 SP 가 대신 채움 → 사용자가 검토·수정) ② 준비되면 "제출 진행" → 제출 안내 SP(서류 검토·기관 특정·단계 안내)
+let _submitFlow = null;   // { title, stage: 'offer' | 'review' }
+function _submitGuideStart(title, blank, text, proceed) {
   if (!window.HondiChat) { _drToast('대화창을 열 수 없습니다.'); return; }
-  _submitGuideOn = true; blank = Math.max(0, Number(blank) || 0);
-  const greet = title + _koIga(title) + '. ' + (blank > 0 ? '아직 내용을 다 채우지 않으셨습니다. 제가 도와드릴까요?' : '내용이 적절한지 검토하겠습니다. 잠시 기다려주십시오.');
-  HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:submit:' + Date.now(), spText: _submitGuideSp(title, blank, String(text || '').slice(0, 5000)), label: '서류 제출 안내', greeting: greet, autoAsk: blank > 0 ? '' : '서류 내용을 검토하고 제출 기관을 알려 주세요.' });
+  blank = Math.max(0, Number(blank) || 0);
+  if (blank > 0 && !proceed) {
+    _submitFlow = { title, stage: 'offer' };
+    HondiChat.say(title + _koIga(title) + '. 아직 내용을 다 채우지 않으셨습니다. 제가 도와드릴까요?');
+    return;
+  }
+  _submitFlow = null; _submitGuideOn = true;
+  const greet = title + _koIga(title) + '. ' + (blank > 0 ? '빈 칸이 남아 있지만 제출 절차를 안내하겠습니다.' : '내용이 적절한지 검토하겠습니다. 잠시 기다려주십시오.');
+  HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:submit:' + Date.now(), spText: _submitGuideSp(title, blank, String(text || '').slice(0, 5000)), label: '서류 제출 안내', greeting: greet, autoAsk: '서류 내용을 검토하고 제출 기관을 알려 주세요.' });
   HondiChat.open();
 }
-function _submitGuideEnd() { if (!_submitGuideOn) return; _submitGuideOn = false; if (window.HondiChat && !_org) HondiChat.setSp(null); }
+/** 혼디 대화창의 말이 제출 흐름에 걸리면 처리하고 답을 돌려준다(null 이면 걸리지 않음 → 서류 SP 가 일반 대화로 처리). */
+async function _submitFlowTurn(text) {
+  if (!_submitFlow) return null;
+  const t = String(text || '').trim();
+  const go = /(제출\s*진행|진행|다음\s*단계|제출|그냥|괜찮|됐어|아니)/.test(t) && !/(채워|도와)/.test(t);
+  const yes = /^(네|넵|예|응|그래|좋아|좋습니다|부탁|도와|채워|해\s?주|해줘)/.test(t) || /(채워|도와)/.test(t);
+  if (go || (_submitFlow.stage === 'review' && /진행/.test(t))) { _submitFlow = null; _docHostPost({ type: 'navi-doc-request-submit' }); return '제출 절차 안내를 시작합니다. 위 대화창의 안내를 따라 주세요.'; }
+  if (_submitFlow.stage === 'offer' && yes) {
+    _submitFlow.stage = 'review';
+    const ans = await _docAsk('서류의 비어 있는 칸을 가능한 만큼 모두 채워 주세요. 모르는 사항은 지어내지 말고 비워 두고, 사용자가 직접 알려 줘야 할 것만 한 줄로 알려 주세요.');
+    return (ans || '서류 화면이 응답하지 않습니다.') + '\n더 필요한 자료(신분증·계약서·사진 등)는 대화창의 클립 버튼으로 첨부해 주세요. 채운 내용은 서류 화면에서 검토하고 고쳐 주세요(말씀하셔도 고칩니다). 준비되면 "제출 진행"이라고 말씀해 주세요.';
+  }
+  return null;
+}
+function _submitGuideEnd() { _submitFlow = null; if (!_submitGuideOn) return; _submitGuideOn = false; if (window.HondiChat && !_org) HondiChat.setSp(null); }
 // 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
 const _ORG_DESC = {k119:'신고부터 출동·병원 연계까지, 응급 상황을 돕는 시스템입니다.',klaw:'분쟁을 정리하고 판결을 예측하는 법률 시스템입니다.',kpolice:'사건·사고 신고를 접수하고 처리하는 치안 시스템입니다.',ksecurity:'개인과 조직의 보안을 지키는 시스템입니다.',khealth:'증상 상담부터 진료 연계까지 돕는 의료 시스템입니다.',kschool:'수강·학적·학교 서류를 처리하는 교육 시스템입니다.',gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다.',kstock:'상장·공시·투자 정보를 다루는 투자 시스템입니다.',kinsurance:'보험 가입과 보험금 청구를 돕는 시스템입니다.',ktax:'세금 신고와 납부를 돕는 세무 시스템입니다.',kmarket:'상품을 사고팔고 주문을 처리하는 거래 시스템입니다.',ktraffic:'도로·대중교통·교통 민원을 다루는 교통 시스템입니다.',klogistics:'배송과 화물을 추적하고 연결하는 물류 시스템입니다.',kcleaner:'폐기물·재활용 등 환경 민원을 처리하는 시스템입니다.',kpublic:'증명서 발급과 각종 행정 민원을 처리하는 시스템입니다.',kdemocracy:'정책 제안과 참여를 돕는 시스템입니다.',ktelecom:'통신 서비스 가입과 문의를 돕는 시스템입니다.',ksearch:'원하는 정보를 찾아 정리해 주는 검색 시스템입니다.',kbiz:'사업자 등록과 운영을 돕는 시스템입니다.',kplan:'목표를 세우고 실행 계획을 짜는 시스템입니다.',kwatch:'위험과 이상 징후를 신고하고 살피는 시스템입니다.',kjob:'일자리를 찾고 지원하는 직업 시스템입니다.',kjit:'조달과 납품을 연결하는 시스템입니다.',kcity:'도시 계획과 설계를 돕는 시스템입니다.',kestate:'부동산 평가·매물 검색·등록을 돕는 시스템입니다.',ksocial:'관심사가 맞는 사람들과 모임을 잇는 시스템입니다.'};
@@ -2494,6 +2516,10 @@ function _docHostMessage(d, e) {
       _docBar(Number(d.pct)); if (Number(d.pct) >= 0) document.getElementById('cmp-doc-count').textContent = String(d.msg || '첨부 자료를 읽는 중…').slice(0, 120);
       return;
     }
+    if (_embedAttachPending && d.status !== 'progress') {   // 혼디 대화창에서 첨부한 자료의 처리 결과를 대화창에 알린다
+      _embedAttachPending = false;
+      _embedNote(true, d.status === 'filled' ? msg + ' 서류 화면에서 검토하고 고쳐 주세요(말씀하셔도 고칩니다).' : msg);
+    }
     _docBar(d.status === 'held' ? -1 : (d.status === 'filled' ? 100 : -1));
     if (d.status === 'filled') setTimeout(() => _docBar(-1), 1200);
     document.getElementById('cmp-doc-count').textContent = d.status === 'held' ? String(d.msg || '자료를 보관했습니다.').slice(0, 120) : msg;
@@ -2503,7 +2529,7 @@ function _docHostMessage(d, e) {
     const c = document.getElementById('cmp-doc-count'); c.textContent = d.msg || '먼저 서류를 작성해 주세요.';
     setTimeout(_docHostApplyMeta, 4000);
   } else if (d.type === 'navi-doc-submit-gov') {
-    _submitGuideStart(String(d.title || '서류').slice(0, 60), d.blank, d.text);
+    _submitGuideStart(String(d.title || '서류').slice(0, 60), d.blank, d.text, !!d.proceed);
   } else if (d.type === 'navi-doc-done') {
     const cap = _dr.capture;
     if (cap && Date.now() - cap.t < 9000) { _dr.capture = null; _drStoreCaptured(cap, d); return; }   // Draft·완료 저장을 위해 우리가 요청한 작성본 — 메일에 첨부하지 않는다
@@ -5771,7 +5797,28 @@ window.addEventListener('message', (e) => {
   if (d.type === 'navi-doc-ask-ack') w.acked = true;
   else if (d.type === 'navi-doc-answer') { clearTimeout(w.t0); clearTimeout(w.t1); _docAskWait = null; w.resolve(String(d.text || '').slice(0, 1800)); }
 });
-let _embedCap = null, _embedBusy = false;
+let _embedCap = null, _embedBusy = false, _embedAttachPending = false;
+/** 혼디 대화창이 보낸 첨부(name,mime,isImage,text,dataUrl)를 검증·정리한다 — 최대 4개, 이름·종류·크기 제한. */
+function _embedFiles(a) {
+  const out = []; if (!Array.isArray(a)) return out;
+  for (const f of a) {
+    if (out.length >= 4 || !f || typeof f.name !== 'string' || !f.name) continue;
+    const du = typeof f.dataUrl === 'string' && /^data:(image\/(png|jpe?g|webp|gif)|application\/pdf);base64,[A-Za-z0-9+\/=]+$/.test(f.dataUrl) && f.dataUrl.length <= 8 * 1024 * 1024 ? f.dataUrl : '';
+    const tx = typeof f.text === 'string' ? f.text.slice(0, 20000) : '';
+    if (!du && !tx.trim()) continue;
+    out.push({ name: f.name.replace(/[\r\n]+/g, ' ').slice(0, 120), mime: String(f.mime || '').slice(0, 80), dataUrl: du, text: tx });
+  }
+  return out;
+}
+function _embedSendFiles(files) {
+  files.forEach(f => {
+    if (f.dataUrl) {
+      const m = /^data:([^;]+);base64,(.*)$/.exec(f.dataUrl), bin = atob(m[2]), buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      _docHostPost({ type: 'navi-doc-template', name: f.name, mime: m[1], data: buf.buffer });
+    } else _docHostPost({ type: 'navi-doc-attach', name: f.name, text: f.text });
+  });
+}
 function _embedCapPush(t) { if (_embedCap && t) _embedCap.buf.push(String(t).replace(/[*_`#>]/g, '').trim()); }
 function _embedNote(src, text) { try { if (src && text) HondiChat.post({ type: 'hondi-embed-ai-note', text: String(text).slice(0, 1500) }); } catch (e) {} }
 window.addEventListener('message', async (e) => {
@@ -5779,8 +5826,9 @@ window.addEventListener('message', async (e) => {
   if (!d || d.type !== 'hondi-embed-ai' || e.origin !== 'https://hondi.net') return;
   if (!window.HondiChat || e.source !== HondiChat.frameWindow()) return;
   const id = String(d.id || '').slice(0, 40), text = String(d.text || '').trim().slice(0, 2000);
+  const files = _embedFiles(d.files);
   const reply = (t) => HondiChat.post({ type: 'hondi-embed-ai-reply', id, text: String(t || '').slice(0, 1800) });
-  if (!id || !text) return;
+  if (!id || (!text && !files.length)) return;
   if (_embedBusy) { reply('앞의 요청을 처리하는 중입니다. 잠시 뒤 다시 보내 주세요.'); return; }
   _embedBusy = true; _embedCap = { buf: [], src: true };
   try {
@@ -5788,10 +5836,18 @@ window.addEventListener('message', async (e) => {
        말은 곧바로 서류 SP 에 보낸다(navi-doc-ask): 서류 SP 가 현재 서류를 보고 짧게 답하고, 수정·기입 지시는 되묻지 않고 화면 칸에 바로 쓴다. (기본 SP 경유는 길게 되묻기만 해서 쓰지 않는다)
        입력창은 서류 검색·선택만 맡으므로 대화 내용은 입력창에 넣지 않는다. 서류가 아직 없으면 예전처럼 입력창에 넣어 서류를 찾는다. */
     if (_cmpMode === 'doc' && _docHost.loaded && document.getElementById('tab-compose').classList.contains('doc-live')) {
+      if (files.length) {   // 대화창에 첨부한 문서·사진 → 서류 사이트가 읽어 칸을 채운다(검토·수정은 사용자)
+        _embedAttachPending = true; _embedSendFiles(files);
+        const ans = text ? await _docAsk(text) : null;
+        reply('첨부한 ' + (files.length > 1 ? files.length + '개 자료' : '「' + files[0].name.slice(0, 30) + '」') + '를 서류에 반영하는 중입니다. 끝나면 알려 드리겠습니다.' + (ans ? '\n' + ans : ''));
+        return;
+      }
+      const flow = await _submitFlowTurn(text); if (flow != null) { reply(flow); return; }
       const ans = await _docAsk(text);
       reply(ans != null ? ans : '서류 화면이 응답하지 않습니다. 잠시 뒤 다시 시도해 주세요.');
       return;
     }
+    if (!text) { reply('서류를 먼저 열어 주세요. 첨부한 자료를 채울 서류가 아직 없습니다.'); return; }
     if (!document.getElementById('tab-compose').classList.contains('active')) _switchTab(_cmpMode === 'doc' ? 'doc' : 'home');   // 입력창 화면으로(모드는 그대로)
     const input = document.getElementById('cmp-input');
     input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
