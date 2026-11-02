@@ -586,7 +586,7 @@ header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-siz
 .set-row input[type=date]{width:auto;min-width:190px}
 .set-row textarea{min-height:120px;resize:vertical;line-height:1.6}
 .set-row input:focus,.set-row textarea:focus{outline:none;border-color:var(--pri)}
-/* ── 설정 > 프로필(2026-11-03): 입력 필드가 대화창으로 늘어나고, 아래에 만들어지는 프로필(=내 웹페이지)을 바로 보여 준다 ── */
+/* ── 설정 > 프로필(2026-11-03): 입력 필드가 대화창으로 늘어나고, 기본 항목(템플릿)과 공개 여부를 정하면 내 웹페이지가 바로 바뀐다 ── */
 #set-sec-profile .pf-head{font-size:15px;color:var(--sub);line-height:1.7;margin:6px 0 14px}
 .pf-box{border:1px solid var(--bdr);border-radius:16px;background:#fff;overflow:hidden;transition:box-shadow .3s}
 .pf-box:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
@@ -599,12 +599,27 @@ header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-siz
 .pf-send{flex:none;border:0;border-radius:12px;background:var(--pri);color:#fff;font-size:15px;font-weight:700;padding:11px 18px;cursor:pointer}
 .pf-send:disabled{background:var(--hint);cursor:not-allowed}
 .pf-hint{font-size:13.5px;color:var(--sub);line-height:1.7;margin:8px 4px 0}
-.pf-prev{margin-top:18px}
-.pf-prev-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
-.pf-prev-bar b{font-size:15px;margin-right:auto}
-.pf-prev-bar .pf-live{font-size:13px;color:var(--pri);font-weight:700}
+.pf-grid{display:grid;gap:22px;margin-top:20px}
+@media (min-width:1000px){.pf-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.pf-prev-bar,.pf-fields-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.pf-prev-bar b,.pf-fields-head b{font-size:16px;margin-right:auto}
+.pf-live{font-size:13px;color:var(--pri);font-weight:700}
+.pf-count{font-size:13px;color:var(--sub);font-weight:700}
 .pf-frame{display:block;width:100%;height:min(70vh,760px);min-height:420px;border:1px solid var(--bdr);border-radius:14px;background:#fff}
-.pf-empty{display:flex;align-items:center;justify-content:center;height:220px;border:1px dashed var(--bdr);border-radius:14px;color:var(--sub);font-size:15px;text-align:center;line-height:1.8;padding:0 20px}
+.pf-fields{background:#fff;border:1px solid var(--bdr);border-radius:14px;padding:16px 16px 14px}
+.pf-fields-note{font-size:13.5px;color:var(--sub);line-height:1.7;margin-bottom:6px}
+.pf-row{display:grid;grid-template-columns:96px minmax(0,1fr) 84px 52px;gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--bdr)}
+.pf-row.tpl{grid-template-columns:96px minmax(0,1fr) 84px}
+.pf-lab{font-size:15px;font-weight:700;padding-top:9px;word-break:keep-all}
+.pf-row input,.pf-row textarea,.pf-add input,.pf-add select{width:100%;min-width:0;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--txt)}
+.pf-row textarea{min-height:68px;resize:vertical;line-height:1.6}
+.pf-row input:focus,.pf-row textarea:focus,.pf-add input:focus,.pf-add select:focus{outline:none;border-color:var(--pri)}
+.pf-vis{border:1px solid var(--bdr);border-radius:999px;background:var(--sur);font:inherit;font-size:13.5px;font-weight:700;padding:8px 0;cursor:pointer;color:var(--sub);margin-top:1px}
+.pf-vis[aria-pressed=true]{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.pf-del{border:0;background:none;color:var(--sub);font:inherit;font-size:13.5px;cursor:pointer;padding:9px 0}
+.pf-del:hover{color:#c0392b}
+.pf-add{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
+@media (max-width:640px){.pf-row,.pf-row.tpl{grid-template-columns:minmax(0,1fr) 84px 52px}.pf-row .pf-lab,.pf-row .pf-lab-in{grid-column:1/-1;padding-top:0}.pf-row input:not(.pf-lab-in),.pf-row textarea{grid-column:1/2}.pf-add{grid-template-columns:1fr 1fr}.pf-add input{grid-column:1/-1}}
 #set-sec-profile [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.pf-thread{transition:none}}
 .set-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -1152,31 +1167,42 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
-    <!-- 프로필: 나비 프로필 작성 도우미와 대화하면 아래에 내 웹페이지가 만들어진다 -->
+    <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(처음엔 이름만 공개) -->
     <section id="set-sec-profile" class="set-sec">
-      <div class="pf-head">나비가 몇 가지를 물어보고 <b>나의 프로필 웹페이지</b>를 만들어 드립니다. 대화로 고칠 곳을 말하면 아래 화면이 바로 바뀝니다.</div>
-      <div id="pf-box" class="pf-box">
-        <div id="pf-thread" class="pf-thread" aria-live="polite"></div>
-        <div class="pf-bar">
-          <textarea id="pf-input" maxlength="2000" rows="2" placeholder="예: 제주에서 사진을 찍는 도영민입니다. 프로필을 만들어 주세요." aria-label="프로필 작성 대화 입력" oninput="_profSyncBtn()" onkeydown="_profKey(event)"></textarea>
-          <button type="button" id="pf-send" class="pf-send" onclick="_profSend()" disabled>보내기</button>
+        <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우면 <b>나의 프로필 웹페이지</b>가 만들어집니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
+        <div id="pf-box" class="pf-box">
+          <div id="pf-thread" class="pf-thread" aria-live="polite"></div>
+          <div class="pf-bar">
+            <textarea id="pf-input" maxlength="2000" rows="2" placeholder="예: 제주에서 사진을 찍는 도영민입니다. 프로필을 만들어 주세요." aria-label="프로필 작성 대화 입력" oninput="_profSyncBtn()" onkeydown="_profKey(event)"></textarea>
+            <button type="button" id="pf-send" class="pf-send" onclick="_profSend()" disabled>보내기</button>
+          </div>
         </div>
-      </div>
-      <div class="pf-hint">Enter로 보내고 Shift+Enter로 줄을 바꿉니다. 주소·전화번호처럼 공개하고 싶지 않은 정보는 말하지 않으셔도 됩니다.</div>
-      <div class="pf-prev">
-        <div class="pf-prev-bar">
-          <b>내 프로필 웹페이지</b>
-          <span id="pf-live" class="pf-live" hidden>작성 중…</span>
-          <button type="button" class="btn btn-outline btn-sm" id="pf-open" onclick="_profOpen()" disabled>새 창으로 보기</button>
-          <button type="button" class="btn btn-outline btn-sm" id="pf-dl" onclick="_profDownload()" disabled>HTML 저장</button>
-          <button type="button" class="btn btn-outline btn-sm" id="pf-reset" onclick="_profReset()" disabled>처음부터</button>
+        <div class="pf-hint">Enter로 보내고 Shift+Enter로 줄을 바꿉니다. 나비는 주소·이메일·나이·성별을 먼저 묻지 않으며, 공개 여부는 나비가 아니라 내가 아래 항목에서 정합니다.</div>
+        <div class="pf-grid">
+          <div class="pf-prev">
+            <div class="pf-prev-bar">
+              <b>내 프로필 웹페이지</b>
+              <span id="pf-live" class="pf-live" hidden>작성 중…</span>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_profOpen()">새 창으로 보기</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_profDownload()">HTML 저장</button>
+            </div>
+            <iframe id="pf-frame" class="pf-frame" title="내 프로필 웹페이지 미리보기" sandbox=""></iframe>
+          </div>
+          <div class="pf-fields">
+            <div class="pf-fields-head"><b>내 정보 항목</b><span id="pf-count" class="pf-count"></span><button type="button" class="btn btn-outline btn-sm" onclick="_profReset()">처음부터</button></div>
+            <div class="pf-fields-note">처음에는 <b>이름만 공개</b>이고 나머지는 모두 <b>비공개</b>입니다. 내가 <b>공개</b>로 바꾼 항목만 페이지와 저장한 HTML 파일에 들어갑니다.</div>
+            <div id="pf-rows"></div>
+            <div class="pf-add">
+              <input type="text" id="pf-add-label" maxlength="20" placeholder="새 항목 이름 (예: 좋아하는 음식)" aria-label="새 항목 이름" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_profAddField();}">
+              <select id="pf-add-type" aria-label="새 항목 형식"><option value="text">글 한 줄</option><option value="long">긴 글</option><option value="list">목록</option><option value="link">링크</option></select>
+              <button type="button" class="btn btn-primary btn-sm" onclick="_profAddField()">항목 추가</button>
+            </div>
+          </div>
         </div>
-        <div id="pf-empty" class="pf-empty">대화를 시작하면 여기에 프로필 페이지가 만들어집니다.</div>
-        <iframe id="pf-frame" class="pf-frame" title="내 프로필 웹페이지 미리보기" sandbox="" hidden></iframe>
-      </div>
-    </section>
+      </section>
 
-    <!-- PDV: hondi.net/pdv.html 을 그대로 끼워 보여 준다(한 곳만 고치면 되도록) -->
+    
+<!-- PDV: hondi.net/pdv.html 을 그대로 끼워 보여 준다(한 곳만 고치면 되도록) -->
     <section id="set-sec-pdv" class="set-sec">
       <iframe id="pdv-frame" title="PDV" allow="clipboard-write"></iframe>
     </section>
@@ -2922,28 +2948,86 @@ window.addEventListener('hondi-mail-info-change', (ev) => {
   if (inp && document.activeElement !== inp) { inp.value = d.sender_display_name; _senderNamePreview(); }
 });
 // ── 설정 > 프로필(2026-11-03, 주피터 지시) ──────────────────────────────────────────────
-// 입력 필드에서 '사용자 프로필 작성 SP'(인라인 SP)와 대화한다. 첫 말을 보내면 입력 필드가 대화창으로 늘어나고,
-// SP 가 답변 끝에 붙인 ~~~profile JSON 블록으로 아래의 '내 프로필 웹페이지'를 다시 그린다(답변이 올 때마다 갱신).
-// 웹페이지는 스크립트 없는 단일 HTML(샌드박스 iframe 미리보기 · 새 창 · HTML 저장). 초안은 이 브라우저에 보관한다.
-const _PROF_KEY = 'naviProfileDraft:';
-const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용자와 짧게 대화하며 사용자 본인의 소개 웹페이지(프로필)를 만들어 준다.\n\n' +
+// 기본 항목(템플릿)과 사용자가 더한 항목을 한 목록(fields)으로 다룬다. 항목마다 공개 여부(pub)가 있고, 처음에는 이름만 공개다.
+// 내 웹페이지(스크립트 없는 단일 HTML)에는 공개로 정한 항목만 들어간다. 나비(프로필 작성 SP)는 값만 채울 수 있고 공개 여부는 바꾸지 못한다.
+// 입력 필드는 SP 대화창이 되고, 답변 끝의 ~~~profile JSON 이 항목 값에 합쳐진다. 초안(값·공개 여부)은 이 브라우저에만 보관한다.
+const _PROF_KEY = 'naviProfileDraft2:', _PROF_KEY_OLD = 'naviProfileDraft:', _PROF_MAXF = 30, _PROF_TYPES = ['text', 'long', 'list', 'link'];
+const _PROF_TPL = [
+  { id: 'name', label: '이름', type: 'text', pub: true },
+  { id: 'headline', label: '한 줄 소개', type: 'text' },
+  { id: 'intro', label: '소개', type: 'long' },
+  { id: 'address', label: '주소', type: 'text', sens: true },
+  { id: 'email', label: '이메일', type: 'text', sens: true },
+  { id: 'industry', label: '업종', type: 'text' },
+  { id: 'job', label: '직업', type: 'text' },
+  { id: 'hobby', label: '취미', type: 'text' },
+  { id: 'age', label: '나이', type: 'text', sens: true },
+  { id: 'gender', label: '성별', type: 'text', sens: true },
+];
+const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용자와 짧게 대화하며 사용자 본인의 소개 웹페이지(프로필)에 들어갈 항목의 값을 채워 준다.\n\n' +
   '[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 존댓말.\n\n' +
-  '[진행] ① 이름(또는 활동명)과 한 줄 소개를 먼저 묻는다. ② 하는 일·경력·관심사·활동 지역·연락 방법 중 사용자가 말한 것만 차례로 묻는다. ③ 이름과 소개가 정해지면 곧바로 프로필을 만들어 보여 주고, 이후 사용자의 수정 요청이 오면 그때마다 프로필 전체를 고쳐 다시 보여 준다.\n\n' +
-  '[프로필 출력 형식] 프로필을 만들거나 고칠 때마다 답변 맨 끝에 아래 형식의 블록을 정확히 하나 쓴다(블록 밖에는 한두 문장의 안내만). 이전 내용은 사용자가 바꾸라고 하지 않았다면 그대로 유지한다. 사용자 메시지가 [현재 프로필(JSON)]으로 시작하면 그것을 출발점으로 삼는다.\n' +
-  '~~~profile\n{"name":"이름","headline":"한 줄 소개","intro":"소개 글(3~6문장)","facts":[{"label":"활동 지역","value":"제주"}],"sections":[{"title":"하는 일","items":["항목1","항목2"]}],"links":[{"label":"블로그","url":"https://..."}]}\n~~~\n' +
-  '유효한 JSON 한 덩어리여야 하며 줄바꿈이 필요하면 \\n 으로 쓴다. facts 는 10개 이하, sections 는 8개 이하(각 항목 12개 이하), links 는 https 주소만 8개 이하.\n\n' +
-  '[금지] 사용자가 말하지 않은 사실을 지어내지 않는다. 전화번호·집 주소·주민등록번호·계좌 같은 개인 식별 정보는 묻지도 쓰지도 않는다. 연락처·이메일은 사용자가 공개하겠다고 분명히 말할 때만 넣는다. 건강·종교·정치 성향 같은 민감한 내용은 사용자가 직접 원할 때만 넣는다. 공개 여부가 애매하면 넣기 전에 한 번 확인한다.';
-let _prof = { active: false, ready: false, queue: [], pending: {}, data: null, busy: false, firstSent: false, timer: null };
+  '[진행] ① 이름(또는 활동명)과 한 줄 소개를 먼저 묻는다. ② 이어서 하는 일(직업·업종)·취미·관심사처럼 사용자가 말하고 싶어 하는 것만 차례로 묻는다. ③ 사용자가 말한 내용은 곧바로 항목 값으로 정리해 보여 준다.\n\n' +
+  '[기본 항목] 이름, 한 줄 소개, 소개, 주소, 이메일, 업종, 직업, 취미, 나이, 성별. 해당하는 값은 이 이름(label)을 그대로 쓴다. 이 밖의 내용은 새 항목으로 만들어도 된다.\n\n' +
+  '[항목 출력 형식] 값을 채우거나 고칠 때마다 답변 맨 끝에 아래 형식의 블록을 정확히 하나 쓴다(블록 밖에는 한두 문장의 안내만). 새로 알게 됐거나 바뀐 항목만 넣으면 되고, 넣지 않은 항목은 그대로 유지된다. 사용자 메시지가 [현재 프로필(JSON)]으로 시작하면 그것이 현재 값이다.\n' +
+  '~~~profile\n{"name":"이름","headline":"한 줄 소개","intro":"소개 글(3~6문장)","fields":[{"label":"직업","value":"개발자"},{"label":"하는 일","type":"list","value":["항목1","항목2"]},{"label":"블로그","type":"link","value":"https://..."}]}\n~~~\n' +
+  'type 은 text(기본, 한 줄) · long(긴 글) · list(목록) · link(https 주소) 중 하나. 유효한 JSON 한 덩어리여야 하며 줄바꿈이 필요하면 \\n 으로 쓴다.\n\n' +
+  '[공개 여부] 공개할지 말지는 사용자가 화면의 항목 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(처음엔 이름만 공개이고 나머지는 비공개다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
+  '[금지] 사용자가 말하지 않은 사실을 지어내지 않는다. 주소·이메일·나이·성별과 전화번호·주민등록번호·계좌 같은 개인 식별 정보는 먼저 묻지 않으며, 사용자가 스스로 말한 경우에만 해당 항목에 적는다. 건강·종교·정치 성향 같은 민감한 내용은 사용자가 직접 원할 때만 넣는다.';
+let _prof = { active: false, ready: false, queue: [], pending: {}, fields: null, busy: false, firstSent: false, timer: null, rt: null };
 const _pfEl = (id) => document.getElementById(id);
 function _profStoreKey() { return _PROF_KEY + ((_mailIdCurrentSettings && _mailIdCurrentSettings.mail_id) || ''); }
+function _profNewId() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function _profTplFields() { return _PROF_TPL.map(t => ({ id: t.id, label: t.label, type: t.type, value: '', pub: !!t.pub, tpl: true, sens: !!t.sens })); }
+/** 순수 함수 — 형식에 맞게 값을 정리한다(list 는 줄바꿈 문자열, link 는 https 만). 쓸 수 없으면 ''. */
+function _profNormVal(type, v) {
+  const ctl = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, one = (x) => String(x == null ? '' : x).replace(ctl, '').trim();
+  if (type === 'list') return (Array.isArray(v) ? v : String(v == null ? '' : v).split('\n')).map(x => one(x).slice(0, 200)).filter(Boolean).slice(0, 12).join('\n');
+  const t = one(v);
+  if (type === 'link') return /^https:\/\/[^\s<>"']+$/i.test(t) ? t.slice(0, 300) : '';
+  if (type === 'long') return t.slice(0, 1200);
+  return t.replace(/\s*\n\s*/g, ' ').slice(0, 200);
+}
+/** 순수 함수 — 저장해 둔 목록을 기본 항목 위에 되살린다(알 수 없는 항목은 버린다). */
+function _profRestore(a) {
+  const F = _profTplFields(); if (!Array.isArray(a)) return F;
+  a.forEach(x => {
+    if (!x || typeof x !== 'object') return;
+    const t = F.find(b => b.tpl && b.id === x.id);
+    if (t) { t.value = String(x.value == null ? '' : x.value).slice(0, 1200); t.pub = !!x.pub; }
+    else if (x.tpl === false && F.length < _PROF_MAXF && _PROF_TYPES.includes(x.type) && typeof x.label === 'string' && x.label.trim())
+      F.push({ id: _profNewId(), label: x.label.trim().slice(0, 20), type: x.type, value: String(x.value == null ? '' : x.value).slice(0, 2400), pub: !!x.pub, tpl: false, sens: false });
+  });
+  return F;
+}
+/** 순수 함수 — 이전 방식(이름·소개·facts·sections·links) 초안을 항목 목록으로 옮긴다. 옮긴 항목은 모두 비공개(이름만 공개). */
+function _profMigrateOld(o) {
+  const F = _profTplFields(); if (!o || typeof o !== 'object') return F;
+  const put = (label, type, v) => {
+    const val = _profNormVal(type, v), l = String(label == null ? '' : label).trim().slice(0, 20); if (!val || !l) return;
+    let f = F.find(x => x.label === l);
+    if (!f) { if (F.length >= _PROF_MAXF) return; f = { id: _profNewId(), label: l, type, value: '', pub: false, tpl: false, sens: false }; F.push(f); }
+    f.value = val;
+  };
+  put('이름', 'text', o.name); put('한 줄 소개', 'text', o.headline); put('소개', 'long', o.intro);
+  (Array.isArray(o.facts) ? o.facts : []).forEach(x => x && put(x.label, 'text', x.value));
+  (Array.isArray(o.sections) ? o.sections : []).forEach(x => x && put(x.title, 'list', x.items));
+  (Array.isArray(o.links) ? o.links : []).forEach(x => x && put(x.label, 'link', x.url));
+  return F;
+}
+function _profLoad() {
+  let F = null;
+  try { const raw = localStorage.getItem(_profStoreKey()); if (raw) F = _profRestore(JSON.parse(raw)); } catch (x) {}
+  if (!F) { try { const old = localStorage.getItem(_PROF_KEY_OLD + ((_mailIdCurrentSettings && _mailIdCurrentSettings.mail_id) || '')); if (old) F = _profMigrateOld(JSON.parse(old)); } catch (x) {} }
+  _prof.fields = F || _profTplFields();
+}
 function _profEnter() {
   if (!window.HondiChat) { _drToast('대화창을 열 수 없습니다.'); return; }
   if (_prof.active) return;
   if (typeof _org !== 'undefined' && _org) _orgLeave();   // 기관·전문가 대화를 쓰고 있었다면 먼저 닫는다(대화창은 하나)
   _prof.active = true; _prof.ready = false; _prof.queue = [];
-  HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:profile:v1', spText: _PROF_SP, label: '프로필 작성', greeting: '', role: '', context: '' });
-  if (!_prof.data) { try { const raw = localStorage.getItem(_profStoreKey()); if (raw) _profApply(_profClean(JSON.parse(raw)), false); } catch (x) {} }
-  _profSyncBtn();
+  HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:profile:v2', spText: _PROF_SP, label: '프로필 작성', greeting: '', role: '', context: '' });
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
+  _profRefresh(); _profSyncBtn();
 }
 function _profLeave() {
   if (!_prof.active) return;
@@ -2971,7 +3055,10 @@ function _profSend() {
   _profBubble('user', text);
   const wb = _profBubble('assistant', '<span class="org-wait" role="status" aria-live="polite"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>');
   let ask = text;
-  if (!_prof.firstSent && _prof.data) ask = '[현재 프로필(JSON)]\n' + JSON.stringify(_prof.data) + '\n\n[사용자 말]\n' + text;   // 저장해 둔 프로필을 이어서 고친다
+  if (!_prof.firstSent) {   // 이미 채운 값을 이어서 고친다. 주소·이메일·나이·성별은 대화창으로 보내지 않는다
+    const cur = _prof.fields.filter(f => !f.sens && String(f.value).trim()).map(f => ({ label: f.label, type: f.type, value: f.type === 'list' ? String(f.value).split('\n') : f.value }));
+    if (cur.length) ask = '[현재 프로필(JSON)]\n' + JSON.stringify({ fields: cur }) + '\n\n[사용자 말]\n' + text;
+  }
   _prof.firstSent = true;
   const id = 'pf' + Date.now(), m = { type: 'hondi-embed-sp-ask', id, text: ask };
   _prof.pending[id] = wb;
@@ -2983,39 +3070,51 @@ function _profSend() {
   }, 120000);
   if (_prof.ready) HondiChat.post(m); else _prof.queue.push(m);
 }
+/** 순수 함수 — SP 가 보낸 JSON 을 길이·개수를 제한한 {name, headline, intro, fields} 로 정리한다. 쓸 내용이 없으면 null. */
+function _profReplyObj(o) {
+  if (!o || typeof o !== 'object') return null;
+  const r = { name: _profNormVal('text', o.name), headline: _profNormVal('text', o.headline), intro: _profNormVal('long', o.intro), fields: [] };
+  (Array.isArray(o.fields) ? o.fields : []).slice(0, _PROF_MAXF).forEach(x => {
+    if (!x || typeof x !== 'object') return;
+    const label = String(x.label == null ? '' : x.label).trim().slice(0, 20), type = _PROF_TYPES.includes(x.type) ? x.type : 'text';
+    if (label) r.fields.push({ label, type, value: x.value });
+  });
+  return (r.name || r.headline || r.intro || r.fields.length) ? r : null;
+}
 /** 답변에서 ~~~profile 블록을 떼어 낸다. 블록이 없으면 글 그대로, JSON 이 깨졌으면 obj 없이 안내만 돌려준다. */
 function _profFromReply(t) {
   t = String(t || '');
   const m = /~~~profile\s*\n([\s\S]*?)\n?~~~/.exec(t);
   if (!m) return { text: t, obj: null };
-  let obj = null; try { obj = _profClean(JSON.parse(m[1])); } catch (x) {}
+  let obj = null; try { obj = _profReplyObj(JSON.parse(m[1])); } catch (x) {}
   const rest = (t.slice(0, m.index) + t.slice(m.index + m[0].length)).trim();
-  return { obj, text: rest || (obj ? '프로필을 아래에 만들었습니다. 고칠 곳이 있으면 말씀해 주세요.' : '프로필을 그리는 중 형식 오류가 있었습니다. 한 번 더 말씀해 주세요.') };
+  return { obj, text: rest || (obj ? '항목에 반영했습니다. 고칠 곳이 있으면 말씀해 주세요.' : '항목을 정리하는 중 형식 오류가 있었습니다. 한 번 더 말씀해 주세요.') };
 }
-/** 순수 함수 — SP 가 보낸 JSON 을 길이·개수를 제한한 프로필로 정리한다(https 링크만 허용). 쓸 내용이 없으면 null. */
-function _profClean(o) {
-  const s = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, n);
-  if (!o || typeof o !== 'object') return null;
-  const p = { name: s(o.name, 40), headline: s(o.headline, 120), intro: s(o.intro, 1200), facts: [], sections: [], links: [] };
-  (Array.isArray(o.facts) ? o.facts : []).slice(0, 10).forEach(f => { if (f && typeof f === 'object') { const l = s(f.label, 20), v = s(f.value, 100); if (l && v) p.facts.push({ label: l, value: v }); } });
-  (Array.isArray(o.sections) ? o.sections : []).slice(0, 8).forEach(x => {
-    if (!x || typeof x !== 'object') return;
-    const t = s(x.title, 40), it = (Array.isArray(x.items) ? x.items : []).slice(0, 12).map(v => s(v, 300)).filter(Boolean);
-    if (t && it.length) p.sections.push({ title: t, items: it });
+/** 순수 함수 — 답변의 값을 항목에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 항목은 비공개로 만든다. */
+function _profMergeInto(F, r) {
+  ['name', 'headline', 'intro'].forEach(id => { const f = F.find(x => x.id === id); if (f && r[id]) f.value = r[id]; });
+  r.fields.forEach(x => {
+    let f = F.find(y => y.label === x.label);
+    if (!f) { if (F.length >= _PROF_MAXF) return; f = { id: _profNewId(), label: x.label, type: x.type, value: '', pub: false, tpl: false, sens: false }; F.push(f); }
+    const v = _profNormVal(f.type, x.value); if (v) f.value = v;
   });
-  (Array.isArray(o.links) ? o.links : []).slice(0, 8).forEach(x => { if (x && typeof x === 'object') { const u = s(x.url, 300); if (/^https:\/\/[^\s<>"']+$/i.test(u)) p.links.push({ label: s(x.label, 40) || u.replace(/^https:\/\//, ''), url: u }); } });
-  return (p.name || p.headline || p.intro || p.sections.length) ? p : null;
+  return F;
 }
-/** 순수 함수 — 프로필을 스크립트 없는 단일 HTML 페이지로 만든다(모든 글자는 이스케이프, 라이트·다크 대응, 큰 글자). */
-function _profPageHtml(p) {
-  const e = escHtml, nl = (v) => e(v).replace(/\n/g, '<br>');
-  const ini = e((p.name || '?').trim().charAt(0) || '?');
-  const facts = p.facts.length ? '<dl class="facts">' + p.facts.map(f => '<div><dt>' + e(f.label) + '</dt><dd>' + e(f.value) + '</dd></div>').join('') + '</dl>' : '';
-  const secs = p.sections.map(x => '<section><h2>' + e(x.title) + '</h2><ul>' + x.items.map(i => '<li>' + e(i) + '</li>').join('') + '</ul></section>').join('');
-  const links = p.links.length ? '<section><h2>링크</h2><p class="links">' + p.links.map(l => '<a href="' + e(l.url) + '" target="_blank" rel="noopener noreferrer nofollow">' + e(l.label) + '</a>').join('') + '</p></section>' : '';
+/** 순수 함수 — 공개로 정한 항목만 골라 스크립트 없는 단일 HTML 페이지로 만든다(모든 글자는 이스케이프, 라이트·다크 대응, 큰 글자). */
+function _profPageHtml(fields) {
+  const e = escHtml, nl = (v) => e(v).replace(/\n/g, '<br>'), pub = [];
+  (Array.isArray(fields) ? fields : []).forEach(f => { if (f && f.pub) { const v = _profNormVal(f.type, f.value); if (v) pub.push({ id: f.id, label: String(f.label || '').slice(0, 20), type: f.type, v }); } });
+  const get = (id) => pub.find(x => x.id === id), nm = get('name'), hl = get('headline'), it = get('intro');
+  const rest = pub.filter(x => x !== nm && x !== hl && x !== it);
+  const facts = rest.filter(x => x.type === 'text'), blocks = rest.filter(x => x.type === 'long' || x.type === 'list'), links = rest.filter(x => x.type === 'link');
+  const hero = (nm || hl) ? '<div class="hero"><div class="av" aria-hidden="true">' + e(nm ? (nm.v.charAt(0) || '?') : '·') + '</div><div>' + (nm ? '<h1>' + e(nm.v) + '</h1>' : '') + (hl ? '<p class="hl">' + e(hl.v) + '</p>' : '') + '</div></div>' : '';
+  const body = hero + (it ? '<div class="intro">' + nl(it.v) + '</div>' : '') +
+    (facts.length ? '<dl class="facts">' + facts.map(f => '<div><dt>' + e(f.label) + '</dt><dd>' + e(f.v) + '</dd></div>').join('') + '</dl>' : '') +
+    blocks.map(b => '<section><h2>' + e(b.label) + '</h2>' + (b.type === 'list' ? '<ul>' + b.v.split('\n').map(i => '<li>' + e(i) + '</li>').join('') + '</ul>' : '<p>' + nl(b.v) + '</p>') + '</section>').join('') +
+    (links.length ? '<section><h2>링크</h2><p class="links">' + links.map(l => '<a href="' + e(l.v) + '" target="_blank" rel="noopener noreferrer nofollow">' + e(l.label) + '</a>').join('') + '</p></section>' : '');
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">' +
-    '<title>' + e(p.name || '프로필') + '</title><style>' +
+    '<title>' + e(nm ? nm.v : '프로필') + '</title><style>' +
     ':root{--bg:#f4f7f9;--card:#fff;--txt:#1b2733;--sub:#5b6676;--pri:#0F8F7E;--pri-bg:#e6f4f1;--bdr:#d8dee6}' +
     '@media (prefers-color-scheme:dark){:root{--bg:#10171c;--card:#18222a;--txt:#e8eef2;--sub:#a3b0bc;--pri:#4cc9b6;--pri-bg:#173733;--bdr:#2a3843}}' +
     '*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px/1.8 Pretendard,"Noto Sans KR","Malgun Gothic",system-ui,sans-serif}' +
@@ -3025,38 +3124,77 @@ function _profPageHtml(p) {
     'h1{margin:0;font-size:28px;line-height:1.3}.hl{margin:4px 0 0;color:var(--sub);font-size:18px}' +
     '.intro{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:20px 24px;margin-top:16px}' +
     '.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:16px 0 0}.facts div{background:var(--pri-bg);border-radius:12px;padding:10px 14px}' +
-    '.facts dt{font-size:14px;color:var(--sub)}.facts dd{margin:0;font-weight:700}' +
+    '.facts dt{font-size:14px;color:var(--sub)}.facts dd{margin:0;font-weight:700;overflow-wrap:anywhere}' +
     'section{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:18px 24px;margin-top:16px}' +
-    'h2{margin:0 0 6px;font-size:19px;color:var(--pri)}ul{margin:0;padding-left:22px}li{margin:3px 0}' +
-    '.links a{display:inline-block;margin:4px 10px 4px 0;color:var(--pri);font-weight:700}' +
-    '</style></head><body><main><div class="hero"><div class="av" aria-hidden="true">' + ini + '</div><div><h1>' + e(p.name || '이름을 정해 주세요') + '</h1>' + (p.headline ? '<p class="hl">' + e(p.headline) + '</p>' : '') + '</div></div>' +
-    (p.intro ? '<div class="intro">' + nl(p.intro) + '</div>' : '') + facts + secs + links + '</main></body></html>';
+    'h2{margin:0 0 6px;font-size:19px;color:var(--pri)}p{margin:0}ul{margin:0;padding-left:22px}li{margin:3px 0}' +
+    '.links a{display:inline-block;margin:4px 10px 4px 0;color:var(--pri);font-weight:700}.none{text-align:center;color:var(--sub);padding:80px 0}' +
+    '</style></head><body><main>' + (body || '<p class="none">아직 공개한 항목이 없습니다.</p>') + '</main></body></html>';
 }
-function _profApply(p, save) {
-  if (!p) return;
-  _prof.data = p;
-  const fr = _pfEl('pf-frame'); fr.srcdoc = _profPageHtml(p); fr.hidden = false; _pfEl('pf-empty').hidden = true;
-  ['pf-open', 'pf-dl', 'pf-reset'].forEach(id => { _pfEl(id).disabled = false; });
-  if (save !== false) { try { localStorage.setItem(_profStoreKey(), JSON.stringify(p)); } catch (x) {} }
+function _profRefresh() {
+  clearTimeout(_prof.rt);
+  _prof.rt = setTimeout(() => {
+    if (!_prof.fields) return;
+    const fr = _pfEl('pf-frame'); if (fr) fr.srcdoc = _profPageHtml(_prof.fields);
+    const n = _prof.fields.filter(f => f.pub && _profNormVal(f.type, f.value)).length, c = _pfEl('pf-count');
+    if (c) c.textContent = '공개 ' + n + ' · 전체 ' + _prof.fields.length;
+    try { localStorage.setItem(_profStoreKey(), JSON.stringify(_prof.fields)); } catch (x) {}
+  }, 200);
+}
+function _profVisPaint(btn, f) {
+  btn.setAttribute('aria-pressed', f.pub ? 'true' : 'false'); btn.textContent = f.pub ? '공개' : '비공개';
+  btn.title = f.pub ? '이 항목은 페이지에 나옵니다. 누르면 비공개로 바꿉니다.' : '이 항목은 페이지에 나오지 않습니다. 누르면 공개로 바꿉니다.';
+}
+function _profToggleVis(f, btn) {
+  if (!f.pub && f.sens && !confirm('“' + f.label + '” 항목은 이 페이지를 보는 누구에게나 보입니다. 공개할까요?')) return;
+  f.pub = !f.pub; _profVisPaint(btn, f); _profRefresh();
+}
+function _profRenderRows() {
+  const box = _pfEl('pf-rows'); if (!box || !_prof.fields) return;
+  box.textContent = '';
+  _prof.fields.forEach(f => {
+    const row = document.createElement('div'); row.className = 'pf-row';
+    let lab;
+    if (f.tpl) { lab = document.createElement('div'); lab.className = 'pf-lab'; lab.textContent = f.label; }
+    else { lab = document.createElement('input'); lab.type = 'text'; lab.className = 'pf-lab-in'; lab.maxLength = 20; lab.value = f.label; lab.setAttribute('aria-label', '항목 이름'); lab.oninput = () => { f.label = lab.value.trim().slice(0, 20); _profRefresh(); }; }
+    const multi = f.type === 'long' || f.type === 'list', inp = document.createElement(multi ? 'textarea' : 'input');
+    if (!multi) inp.type = 'text'; else inp.rows = 3;
+    inp.maxLength = f.type === 'long' ? 1200 : f.type === 'list' ? 2400 : f.type === 'link' ? 300 : 200;
+    inp.placeholder = f.type === 'list' ? '한 줄에 하나씩' : f.type === 'link' ? 'https://로 시작하는 주소' : '';
+    inp.value = f.value; inp.setAttribute('aria-label', f.label);
+    inp.oninput = () => { f.value = inp.value; _profRefresh(); };
+    const vis = document.createElement('button'); vis.type = 'button'; vis.className = 'pf-vis'; _profVisPaint(vis, f); vis.onclick = () => _profToggleVis(f, vis);
+    row.append(lab, inp, vis);
+    if (f.tpl) row.classList.add('tpl');
+    else { const del = document.createElement('button'); del.type = 'button'; del.className = 'pf-del'; del.textContent = '삭제'; del.onclick = () => { _prof.fields = _prof.fields.filter(x => x !== f); _profRenderRows(); _profRefresh(); }; row.append(del); }
+    box.appendChild(row);
+  });
+}
+function _profAddField() {
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
+  const li = _pfEl('pf-add-label'), ty = _pfEl('pf-add-type'), label = li.value.trim().slice(0, 20);
+  if (!label) { li.focus(); return; }
+  if (_prof.fields.length >= _PROF_MAXF) { _drToast('항목은 최대 ' + _PROF_MAXF + '개까지 둘 수 있습니다.'); return; }
+  if (_prof.fields.some(f => f.label === label)) { _drToast('같은 이름의 항목이 이미 있습니다.'); return; }
+  _prof.fields.push({ id: _profNewId(), label, type: _PROF_TYPES.includes(ty.value) ? ty.value : 'text', value: '', pub: false, tpl: false, sens: false });   // 새 항목은 비공개로 시작
+  li.value = ''; _profRenderRows(); _profRefresh();
+  const rows = _pfEl('pf-rows').querySelectorAll('.pf-row'), last = rows[rows.length - 1], inp = last && last.querySelector('input:not(.pf-lab-in),textarea'); if (inp) inp.focus();
 }
 function _profOpen() {
-  if (!_prof.data) return;
-  const u = URL.createObjectURL(new Blob([_profPageHtml(_prof.data)], { type: 'text/html;charset=utf-8' }));
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
+  const u = URL.createObjectURL(new Blob([_profPageHtml(_prof.fields)], { type: 'text/html;charset=utf-8' }));
   window.open(u, '_blank', 'noopener'); setTimeout(() => URL.revokeObjectURL(u), 60000);
 }
 function _profDownload() {
-  if (!_prof.data) return;
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([_profPageHtml(_prof.data)], { type: 'text/html;charset=utf-8' }));
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([_profPageHtml(_prof.fields)], { type: 'text/html;charset=utf-8' }));   // 공개 항목만 들어간다
   a.download = '내 프로필.html'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 function _profReset() {
-  if (!confirm('지금까지 만든 프로필과 대화를 지우고 처음부터 시작할까요?')) return;
-  _prof.data = null; _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
+  if (!confirm('채운 항목과 대화를 모두 지우고 기본 항목(이름만 공개)으로 되돌릴까요?')) return;
+  _prof.fields = _profTplFields(); _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
   try { localStorage.removeItem(_profStoreKey()); } catch (x) {}
   _pfEl('pf-thread').innerHTML = ''; _pfEl('pf-box').classList.remove('pf-started'); _pfEl('pf-live').hidden = true;
-  const fr = _pfEl('pf-frame'); fr.hidden = true; fr.removeAttribute('srcdoc'); _pfEl('pf-empty').hidden = false;
-  ['pf-open', 'pf-dl', 'pf-reset'].forEach(id => { _pfEl(id).disabled = true; });
-  _profSyncBtn();
+  _profRenderRows(); _profRefresh(); _profSyncBtn();
 }
 window.addEventListener('message', (e) => {
   const d = e.data; if (!d || !window.HondiChat || e.source !== HondiChat.frameWindow()) return;
@@ -3065,7 +3203,7 @@ window.addEventListener('message', (e) => {
   const el = _prof.pending[d.id]; delete _prof.pending[d.id]; clearTimeout(_prof.timer);
   const r = _profFromReply(d.text);
   el.classList.add('org-md'); el.innerHTML = _orgMd(r.text);
-  if (r.obj) _profApply(r.obj, true);
+  if (r.obj && _prof.fields) { _profMergeInto(_prof.fields, r.obj); _profRenderRows(); _profRefresh(); }
   _prof.busy = false; _pfEl('pf-live').hidden = true; _profSyncBtn();
   const th = _pfEl('pf-thread'); th.scrollTop = th.scrollHeight;
 });
