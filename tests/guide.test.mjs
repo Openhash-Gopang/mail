@@ -298,4 +298,5 @@ test('서류 작성 팝업: 검색 필드 아래 "양식 업로드" → 올린 �
   assert.ok(q > 0 && q < u && u < l);
   assert.match(h, /function _docUploadForm\(/); assert.match(h, /type: 'navi-doc-template', asTemplate: true/);
   assert.ok(h.includes('id="doc-host-form"'));
+  assert.match(h, /_docHost\.confirmed = true; document\.getElementById\('tab-compose'\)\.classList\.add\('doc-live'\)/);
 });
