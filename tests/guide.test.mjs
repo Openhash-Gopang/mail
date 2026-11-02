@@ -328,9 +328,17 @@ test('정보 공개 청구: 예시 줄(정부 AI 오른쪽) 버튼 → 입력창
 test('상단 바 "나만의 AI 비서, 나비": 글자 간격, 클릭하면 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(▼ 표시)', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /\.topbar-page\{letter-spacing:\.06em/);
-  assert.ok(h.includes('id="topbar-page" role="button"') && h.includes('class="tp-chev"') && h.includes('onclick="_introToggle()"'));
+  assert.ok(h.includes('id="topbar-page" role="button"') && h.includes('class="tp-chev"') && h.includes("onclick=\"_panelToggle('intro')\""));
   assert.match(h, /#intro-panel\{[^}]*height:0;overflow:hidden[^}]*transition:height \.5s/);
-  assert.ok(h.includes("_INTRO_URL = 'navi-intro.html'") && !/\}\.topbar-page\{font-weight:500\}/.test(h));
+  assert.ok(h.includes("intro: 'navi-intro.html'") && !/\}\.topbar-page\{font-weight:500\}/.test(h));
   const i = readFileSync(new URL('../navi-intro.html', import.meta.url), 'utf8');
   assert.ok(i.includes('나만의 AI 비서') && !i.includes('K-Mail') && !i.includes('<header') && !i.includes('<nav'));
+});
+
+test('좌측 상단 NAVIWEB 로고: 누르면 사용 설명서가 상단 바 밑으로 슬라이드(▼ 표시), 설명서는 embed 모드로 심플하게', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="logo-help"') && h.includes("onclick=\"_panelToggle('manual'); return false;\"") && h.includes("manual: 'manual.html?embed=mail'"));
+  assert.match(h, /function _panelToggle\(/);
+  const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
+  assert.match(m, /body\.embed \.topnav,body\.embed \.hero/);
 });
