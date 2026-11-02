@@ -45,3 +45,8 @@ test('panelUrl: 아이디가 있으면 ?testid= 를 붙인다', () => {
   assert.equal(P.panelUrl('https://hondi.net/webapp.html?x=1', 'ceo'), 'https://hondi.net/webapp.html?x=1&testid=ceo');
   assert.equal(P.panelUrl('https://hondi.net/webapp.html', '느긋'), 'https://hondi.net/webapp.html?testid=%EB%8A%90%EA%B8%8B');
 });
+test('대화 패널은 반투명(opacity)·배경 흐림으로 뒤 화면이 비친다', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../hondi-chat.js', import.meta.url), 'utf8');
+  assert.match(s, /#hchat-panel\{[^}]*opacity:\.8;[^}]*backdrop-filter:blur\(2px\)/);
+});
