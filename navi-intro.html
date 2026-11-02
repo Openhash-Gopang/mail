@@ -13,6 +13,15 @@ body{font-family:'Pretendard',-apple-system,'Noto Sans KR',sans-serif;background
 .wrap{max-width:980px;margin:0 auto;padding:34px 28px 40px}
 .lead{font-size:26px;font-weight:600;letter-spacing:.04em;line-height:1.5}.lead b{font-weight:800;color:var(--pri)}
 .lead-sub{margin-top:8px;color:var(--sub);font-size:17px;max-width:720px}
+.sec{margin-top:26px}
+.sec h2{font-size:19px;font-weight:800;color:var(--pri);margin-bottom:8px;letter-spacing:.02em}
+.sec p{color:var(--sub);font-size:16px;margin-bottom:8px;max-width:820px}.sec p b{color:var(--txt)}
+.lead-sub b{color:var(--txt)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 12px;max-width:820px}
+.vs div{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 16px}
+.vs div.on{border-color:var(--pri);background:var(--pri-bg)}
+.vs small{display:block;color:var(--hint);font-weight:700;font-size:13px}
+.vs b{font-size:15px;color:var(--txt)}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:26px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 18px}
 .card h2{font-size:15px;font-weight:800;color:var(--pri);margin-bottom:6px;letter-spacing:.02em}
@@ -27,15 +36,36 @@ body{font-family:'Pretendard',-apple-system,'Noto Sans KR',sans-serif;background
 .note{margin-top:22px;font-size:14px;color:var(--hint)}
 .more{display:inline-block;margin-top:18px;color:var(--pri);font-weight:800;text-decoration:none;font-size:15px}
 .more:hover{text-decoration:underline}
-@media (max-width:760px){.grid,.steps{grid-template-columns:1fr}.lead{font-size:22px}}
+@media (max-width:760px){.grid,.steps,.vs{grid-template-columns:1fr}.lead{font-size:22px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="lead">나만의 AI 비서, <b>나비</b></p>
-  <p class="lead-sub">회사 사장님 곁의 비서처럼, 누구나 한 명씩 두는 나만의 비서입니다. 말로 시키면 서류를 만들고, 메일을 보내고, 일의 기한을 챙깁니다.</p>
+  <p class="lead-sub">나비는 <b>개인용 AI</b>입니다. 모든 개인에게 하나씩 할당된, 오직 그 한 사람만을 위한 AI 비서입니다.</p>
 
-  <div class="grid">
+  <section class="sec">
+    <h2>모든 사람에게, 나만의 집단 지성을</h2>
+    <p>AI는 인류의 모든 지식을 집대성한 <b>집단 지성</b>입니다. 상상해 보십시오. 그 집단 지성이 어느 한 사람의 일상과 업무를, 오직 그 한 사람만을 위해 보조합니다.</p>
+    <p>"근처에 내 입맛에 맞는 맛집을 찾아 줘."와 같은 일상적 요구부터, "이 사건의 대법원 예상 판결문을 작성해 줘."와 같은 고도의 지적 작업까지 모두 처리합니다. 이렇게 나비는 모든 개인의 <b>지능과 업무 능력을 상향 평준화</b>합니다.</p>
+  </section>
+
+  <section class="sec">
+    <h2>하나의 거대 AI가 아니라, 수백 개의 작은 AI</h2>
+    <p>ChatGPT, Claude, Gemini 같은 해외 거대 LLM은 하나의 거대 모델이 모든 요청에 대응합니다. 나비는 요청에 따라 <b>용도별로 세분화된 수백 개의 작은 LLM</b>이 각자 맡은 역할을 수행합니다.</p>
+    <div class="vs">
+      <div><small>거대 LLM</small><b>어떤 배송 요청에도 10톤 화물차가 출동</b></div>
+      <div class="on"><small>나비</small><b>배송물 크기에 딱 맞는 소형 운송 수단을 배정</b></div>
+    </div>
+    <p>그 결과 막대한 <b>AI 에너지 비용이 절감</b>됩니다. 2030년경에는 한국에서만 연간 수 조 원의 AI 비용을 줄일 것으로 예상합니다.</p>
+  </section>
+
+  <section class="sec">
+    <h2>사람이 마주 앉아 처리하던 시간을 1/100 이하로</h2>
+    <p>나비는 업무 처리의 품질과 속도를 비약적으로 높입니다. 모든 사람이 각자의 AI 비서로 일상과 업무를 수행하면, 사람과 사람이 대면하여 업무를 처리하는 시간을 <b>최소 1/100 이하</b>로 줄일 수 있습니다.</p>
+  </section>
+
+<div class="grid">
     <div class="card"><h2>나비는</h2><p>오직 <b>나 한 사람</b>을 위해 일하는 AI 비서입니다. 광고를 보여 주거나 남의 편을 들지 않고, 대답에서 그치지 않고 <b>실제 일</b>을 거듭니다.</p></div>
     <div class="card"><h2>나비웹은</h2><p>수많은 나비가 모이는 <b>메신저</b>입니다. 사람과 사람, 사람과 AI, AI와 AI가 한 화면에서 대화합니다. 상대가 병원이든 구청이든 화면은 같고, 그 자리의 비서만 달라집니다.</p></div>
     <div class="card"><h2>기존 웹과 다른 점</h2><p>메뉴를 찾아 눌러 처리하는 대신 <b>"무엇을 하고 싶은지"</b>만 말합니다. 일은 AI가 하고, 사람은 결과를 확인하고 승인하는 감독을 맡습니다.</p></div>
