@@ -198,7 +198,7 @@ test('정부 AI: 전문가 AI 오른쪽 드롭다운(검색 + 법원·국세청�
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   for (const k of ['id="cmp-gov-combo"', '정부 AI', 'id="cmp-gov-q"', 'function _cmpGovPick(', 'https://hondi.net/pages/k-government.html', "'법원': 'SP-01_klaw'", "'국세청': 'SP-07_ktax'", "'도청': 'SP-10_kpublic'", "'시청': 'SP-10_kpublic'"]) assert.ok(h.includes(k), k);
   assert.ok(h.indexOf('id="cmp-exp-combo"') < h.indexOf('id="cmp-gov-combo"'));
-  assert.match(h, /_orgActivate\(\{ key: 'gov:'/);
+  assert.match(h, /_orgActivate\(o, /);
 });
 
 test('정부 AI: 사용자의 거주지(PDV·가입 정보)·현재 위치로 해당 지역 기관을 호출한다', () => {
