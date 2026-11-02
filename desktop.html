@@ -1888,7 +1888,7 @@ function _docHostApplyMeta() {
   if (_cmpMode !== 'doc') return;
   const input = document.getElementById('cmp-input');
   delete input.dataset.ph;
-  input.placeholder = _docHost.meta.placeholder || _DOC_PH_DEFAULT;
+  input.placeholder = (_docHost.chatting && _DOC_CHAT_PH) || _docHost.meta.placeholder || _DOC_PH_DEFAULT;
   document.getElementById('cmp-doc-count').textContent = _docHost.meta.count || '';
   if (typeof _cmpSyncModeUi === 'function') _cmpSyncModeUi();   // 서류 종류가 바뀌었을 수 있으니 모드 칩도 맞춘다
 }
@@ -1924,7 +1924,7 @@ function _docHostMode(on) {
 }
 function _docHostLoad(id) {
   _docHostAutoHeight(0);
-  _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = []; _docHost.title = ''; _docHost.v3 = false; _docHost.cards = {}; _docHost.msgs = []; _docHost.snapWait = null;
+  _docHost.chatting = false; _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = []; _docHost.title = ''; _docHost.v3 = false; _docHost.cards = {}; _docHost.msgs = []; _docHost.snapWait = null;
   try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
   _docHostApplyMeta();
   _docLoadInto(id, { frame: 'doc-host-frame', sel: 'cmp-doc-site', note: 'cmp-doc-count' });
@@ -1944,8 +1944,11 @@ function _docHostPost(msg) {
   const o = _docHostOrigin();
   try { fr.contentWindow.postMessage(msg, o); } catch (e) {}
 }
+const _DOC_CHAT_PH = '서류에 대해 묻거나 지시하세요 — 예: 주소를 …로 바꿔 줘';
 function _docHostInput() {
   if (_cmpMode !== 'doc') return;
+  // 서류를 확정한(Enter) 뒤의 입력창은 대화창이다 — 지우거나 다시 써도 서류가 사라지지 않고, 글자마다 미리보기를 바꾸지도 않는다.
+  if (_docHost.chatting && document.getElementById('tab-compose').classList.contains('doc-live')) return;
   const t = document.getElementById('cmp-input').value;
   document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
   _docHostPost({ type: 'navi-doc-input', text: t });
@@ -1954,9 +1957,12 @@ async function _docHostSubmit() {
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
+  const wasChat = !!_docHost.chatting; _docHost.chatting = true;
   try { if (await _docEditTurn(t)) return; } catch (e) {}   // 열린 서류를 고치는 말이면 기본 SP(나비)가 처리한다
-  if (await _docConverse(t)) return;   // 양식이 떠 있는 동안의 질문·지시는 서류 SP 가 대화로 답하고 이행한다
+  if (await _docConverse(t, wasChat)) return;   // 양식이 떠 있는 동안의 질문·지시는 서류 SP 가 대화로 답하고 이행한다
   _docHostPost({ type: 'navi-doc-submit', text: t });
+  const inp = document.getElementById('cmp-input'); inp.value = ''; _kmailAutoResize(inp); _cmpChatUpdateSendState();   // 서류가 시작됐으니 입력창은 비우고 대화를 받는다
+  inp.placeholder = _DOC_CHAT_PH;
 }
 // ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
 // 서류가 다 만들어져 있고(서류 사이트 v3) 수정 가능하면, 입력은 먼저 기본 SP(AC-PRO-CORE, /kmail/assist)가 본다.
@@ -1972,9 +1978,9 @@ function _docSnapshot() {
 function _docBubble(text) { _cmpAppendBubble('assistant', { md: text, badge: null }); }
 const _DOC_INSTR_RE = /(바꿔|고쳐|수정|변경|입력해|적어|써\s?줘|채워|지워|삭제|로\s?해)/;
 /** 양식이 화면에 떠 있을 때 입력창은 대화창이다 — 질문에 답하고 지시를 이행한 결과를 입력창 아래 대화로 보인다. 서류 사이트가 응답하지 않으면 false(예전 경로). */
-async function _docConverse(text) {
+async function _docConverse(text, wasChat) {
   if (!_docHost.loaded || !document.getElementById('tab-compose').classList.contains('doc-live')) return false;
-  if (!(_embedLooksLikeQuestion(text) || _DOC_INSTR_RE.test(text))) return false;
+  if (!(wasChat || _embedLooksLikeQuestion(text) || _DOC_INSTR_RE.test(text))) return false;   // 이미 대화 중이면 어떤 말이든 서류 SP 가 받는다
   const ans = await _docAsk(text);
   if (ans == null) return false;
   _navBegin();
@@ -2051,6 +2057,7 @@ function _docEditResult(d) {
   _cmpScrollToBottom();
 }
 function _docHostReset() {
+  _docHost.chatting = false; if (_cmpMode === 'doc') _docHostApplyMeta();
   if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
 }
 function _docHostMessage(d, e) {
