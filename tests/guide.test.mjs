@@ -244,3 +244,9 @@ test('예시: 라벨 + "소장 작성해 주세요" 같은 문장은 서류 이�
   assert.ok(h.includes(String(re).slice(1, String(re).lastIndexOf('/')).replace(/\\/g, '\\')) || h.includes('(?:작성|써|만들|초안)'));
   assert.equal(re.exec('소장 작성해 주세요')[1], '소장'); assert.equal(re.exec('진단서를 써 줘')[1], '진단서'); assert.equal(re.exec('안녕하세요'), null);
 });
+
+test('우측 상단 "기능 개선 제안" 버튼과 입력 대화상자', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /<div class="topbar-right">\s*<button[^>]*id="suggest-btn"[^>]*>기능 개선 제안<\/button>/);
+  assert.match(h, /id="suggest-dlg"/); assert.match(h, /function _suggestSend\(/);
+});
