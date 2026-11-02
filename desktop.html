@@ -232,6 +232,31 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #cmp-foi-text{flex:1 1 auto;min-height:160px;width:100%;resize:none;border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;font:inherit;font-size:14px;line-height:1.75;background:#fff;color:var(--txt)}
 .foi-doc-note{font-size:12px;color:var(--hint)}
 .ex-foi svg{flex:none}.ex-foi[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
+/* 나비 길잡이(2026-11-03): 입력창이 과제 대화창이 되고, 그 아래에 과제 계획서가 대화에 따라 실시간으로 갱신된다. */
+.ex-guide svg{flex:none}.ex-guide[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
+#tab-compose[data-mode="org"].guide-on #cmp-guide-doc{display:flex;flex-direction:column;flex:1.4 1 0;min-height:0;margin-top:8px;border:1px solid var(--bdr);border-radius:12px;background:var(--sur);padding:10px 12px;gap:8px}
+#cmp-guide-doc[hidden]{display:none!important}
+.gl-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none}
+#cmp-guide-doc>.foi-doc-note{flex:none}
+.gl-bar strong{font-size:15px}
+.gl-sp{flex:1}
+.gl-sel{min-height:30px;max-width:46vw;border:1px solid var(--bdr);border-radius:var(--r);padding:0 6px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
+.gl-prog{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--hint);flex:none}
+.gl-prog progress{flex:0 0 160px;max-width:40%;height:8px;accent-color:var(--pri)}
+.gl-view{flex:1 1 auto;min-height:120px;overflow-y:auto;border:1px solid var(--bdr);border-radius:10px;padding:10px 14px;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.7}
+.gl-view h4{margin:0 0 6px;font-size:16px}
+.gl-view h5{margin:12px 0 4px;font-size:13px;color:var(--pri)}
+.gl-view p{margin:0 0 6px}
+.gl-kv{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0 0 8px}
+.gl-kv dt{color:var(--hint);font-size:12.5px}.gl-kv dd{margin:0}
+.gl-task{display:flex;gap:8px;align-items:flex-start;padding:2px 0;cursor:pointer}
+.gl-task input{margin-top:6px;flex:none}
+.gl-task.done .t{text-decoration:line-through;color:var(--hint)}
+.gl-due{font-size:11.5px;border-radius:999px;padding:0 8px;background:var(--pri-bg);color:var(--pri);white-space:nowrap;align-self:center}
+.gl-due.soon{background:#fdf1d6;color:#8a5a00}.gl-due.late{background:#fde8e8;color:#b42318}
+.gl-empty{color:var(--hint);font-size:13.5px}
+#cmp-guide-text{flex:1 1 auto;min-height:160px;width:100%;resize:none;border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;font:inherit;font-size:14px;line-height:1.75;background:#fff;color:var(--txt)}
+#cmp-guide-text[hidden]{display:none}
 .ex-verdict svg{width:16px;height:16px;flex:none}.ex-verdict[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 .doc-combo-up{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:6px 0 2px;padding:9px 12px;border:1px dashed var(--pri);border-radius:10px;background:var(--sur);color:var(--pri);font:inherit;font-size:13px;cursor:pointer;text-align:left}.doc-combo-up small{font-size:11.5px;color:var(--hint)}.doc-combo-up:hover{background:var(--bg)}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
@@ -911,6 +936,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           </div>
         </div>
         <button type="button" class="doc-combo-btn ex-foi" id="cmp-foi-btn" aria-pressed="false" onclick="_cmpFoiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span>정보 공개 청구</span></button>
+        <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -931,6 +957,20 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       </div>
       <textarea id="cmp-foi-text" spellcheck="false" aria-label="정보 공개 청구서 본문(고쳐 쓸 수 있습니다)" placeholder="대화로 알려 주시면 청구서가 여기에 만들어집니다. 만들어진 청구서는 직접 고쳐 쓸 수 있습니다."></textarea>
       <div class="foi-doc-note">청구서는 정보공개포털(open.go.kr) 등에 사용자가 직접 제출합니다. 청구인 정보는 [대괄호] 칸에 직접 적어 주세요.</div>
+    </div>
+    <div id="cmp-guide-doc" aria-label="과제 계획서" hidden>
+      <div class="gl-bar"><strong>과제 계획서</strong>
+        <select id="cmp-guide-sel" class="gl-sel" aria-label="과제 선택" onchange="_guideSelChange(this)"></select>
+        <span class="gl-sp"></span>
+        <button type="button" class="btn btn-sm" id="cmp-guide-edit" aria-pressed="false" onclick="_guideEditToggle()">고치기</button>
+        <button type="button" class="btn btn-sm" onclick="_guideCopy()">복사</button>
+        <button type="button" class="btn btn-sm" onclick="_guideSave()">파일로 받기</button>
+        <button type="button" class="btn btn-sm" onclick="_guideDelete()">삭제</button>
+      </div>
+      <div class="gl-prog"><progress id="cmp-guide-bar" max="100" value="0" aria-label="할 일 진행률"></progress><span id="cmp-guide-prog-t" role="status"></span></div>
+      <div class="gl-view" id="cmp-guide-view" aria-live="polite"></div>
+      <textarea id="cmp-guide-text" spellcheck="false" hidden aria-label="과제 계획서 본문(고쳐 쓸 수 있습니다)"></textarea>
+      <div class="foi-doc-note">계획서는 이 브라우저에 저장됩니다. 할 일의 체크 칸을 누르면 진행 상황이 바뀌고, 다음 메시지부터 나비 길잡이가 그 상태를 보고 답합니다.</div>
     </div>
   </div>
 
@@ -1928,6 +1968,7 @@ function _orgActivate(o, greeting) {
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (input) input.disabled = !_org.sp;
   tab.classList.toggle('foi-on', !!o.foi); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', o.foi ? 'true' : 'false'); } if (!o.foi) _foiDocReset();
+  tab.classList.toggle('guide-on', !!o.guide); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', o.guide ? 'true' : 'false'); } if (!o.guide) _guideReset();
   const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
   if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
 }
@@ -1963,8 +2004,9 @@ function _orgNotice1() {
   th.appendChild(d);
 }
 function _orgLeave() {
-  _org = null; document.getElementById('tab-compose').classList.remove('org-open', 'foi-on'); _foiDocReset(); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', 'false'); }
-  const l = document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
+  _org = null; document.getElementById('tab-compose').classList.remove('org-open', 'foi-on', 'guide-on'); _foiDocReset(); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', 'false'); }
+  _guideReset(); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', 'false'); }
+  const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
   const input = document.getElementById('cmp-input'); if (input) input.disabled = false;
@@ -2002,6 +2044,155 @@ function _foiDocSave() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ta.value], { type: 'text/plain;charset=utf-8' })); a.download = '정보공개청구서.txt';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
+// ── 나비 길잡이(2026-11-03): 입력창이 과제 대화창이 되고, 대화로 세운 계획을 아래 "과제 계획서"에 실시간으로 쓴다 ──────────
+// 대화 SP 는 인라인(spText)이고, 계획서는 답변 안의 ~~~plan 블록으로 받는다(정보 공개 청구의 ~~~foi 와 같은 방식).
+// 계획서·지난 과제 기록은 이 브라우저(localStorage)에 저장하고, 메시지를 보낼 때마다 현재 계획서를 함께 보내 SP 가 진행을 감시하게 한다.
+const _GUIDE_KEY = 'navi_guide_plans_v1';
+const _GUIDE_SP = `당신은 "나비 길잡이"다. 사용자가 정한 과제의 목적이 달성되도록 돕는 과제 전담 비서로, 사용자와 대화하며 계획을 세우고, 진행을 감시하고, 끝난 과제의 성패와 원인을 기록한다. 과제의 주인은 사용자다. 목적·수단·제출·서명은 사용자가 결정하고 당신은 대신 결정하지 않는다.
+
+[말하기 규칙] 답은 짧게(2~5문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구·인사말 반복 금지. 성공은 바쁘게 일한 것이 아니라 사용자가 처음 정한 목적을 이룬 것이다.
+
+[입력] 매 메시지에 [오늘 날짜], [현재 과제 계획서], [지난 과제 기록], [사용자 말]이 붙는다. 계획서의 체크(- [x])는 사용자가 직접 바꾼 최신 값이다. 계획서가 없으면 새 과제다.
+
+[새 과제 만들기] 한 번에 하나씩 물어 정한다. ① 목적 한 문장(수단과 구분한다. 예: 목적은 "서비스용 GPU를 부담 가능한 비용으로 확보", 수단은 "정부 지원사업 응모") ② 성공 기준(금액·수량·날짜·승인처럼 확인할 수 있는 것) ③ 마감과 결정 시점(모르면 "미확인"으로 두고 알아내는 일을 첫 할 일로 올린다) ④ 쓸 수 있는 시간·사람·돈 ⑤ 확정된 사실과 불확실한 사실 ⑥ 수단이 막힐 때의 대안. 정보가 어느 정도 모이면 묻기를 멈추고 곧바로 계획서를 만든다. 비슷한 지난 과제가 있으면 그 교훈을 최대 3개 인용한다.
+
+[할 일 추천] 계획서의 할 일은 최대 7개로 유지하고, 말로는 "지금 할 일"을 최대 3개만 짚는다. 우선순위: ① 마감이 가까운 것 ② 다른 일을 막고 있는 것 ③ 모르는 사실을 알아내는 일(문의·확인) ④ 목적 기여가 큰 것. 각 할 일에 이유·예상 소요·끝났다고 볼 기준을 붙인다. 할 일 줄 형식은 "- [ ] 내용 | ~YYYY-MM-DD"(기한을 모르면 "| ~미정").
+
+[진행 감시] 마감 D-14·7·3·1에 알린다. 7일 넘게 계획서가 갱신되지 않았거나 체크가 늘지 않으면 멈춘 것 같다고 알리고 막힌 이유를 묻는다. 수단이 막히면 목적을 다시 보여 주고 대안을 낸다. 외부 사이트를 볼 수 없으므로 공고·요건은 사용자가 원문으로 확인해 알려 주게 하고, 확인한 날짜를 기록에 남긴다. 확인하지 못한 사실은 "미확인"으로 쓰고 지어내지 않는다. 사실에는 기준일을 붙인다.
+
+[종료와 원인 분석] 목적이 이루어졌거나 사용자가 끝낸다고 하면 판정을 낸다: 성공 / 부분 성공 / 실패 / 중단 / 무효. 실패와 부분 성공은 반드시, 성공은 재현할 요인을 위해 원인을 분석한다. 원인 분류: C1 자격·요건, C2 일정, C3 서류·형식, C4 내용·경쟁력, C5 자원, C6 외부·제도 변화, C7 정보·판단, C8 협업·소통, C9 기타. 원인마다 통제 가능성(가능/부분/불가)과 증거 수준(공식 통보 원문/정황/추정)을 쓴다. 공식 통보서·평가표·심사 의견이 있으면 원문을 요청해 인용한다. "왜"를 3~5번 물어 원인에 닿고, 분석을 사용자에게 보여 준 뒤 사용자가 확인하면 기록을 확정한다. 교훈은 "다음에는 ~한다" 형태로 1~3개 쓴다. 추정을 확정으로 쓰지 않고, 사용자 탓이나 외부 탓으로 단정하지 않고, 불리한 사실을 빼지 않는다. 지난 과제를 소급 기록할 때는 사용자가 말해 주는 대로 같은 틀에 쓰고, 기억에 의존한 항목은 "(기억 기준)"으로 표시하며, 날짜·금액을 지어내지 않는다.
+
+[준법·한계] 신청서·증빙에 사실과 다른 내용을 쓰도록 돕지 않는다. 지원사업의 용도 제한을 먼저 확인하고 허용되지 않는 용도의 계획은 세우지 않는다. 제3자의 정보는 본인 동의가 있을 때만 쓴다. 법률·세무·회계의 전문 판단은 단정하지 말고 사람 전문가에게 확인하라고 권한다. 최종 제출과 서명은 사용자가 직접 한다. "제출했다"는 사용자가 말했을 때만 기록한다. 결과를 장담하지 않는다.
+
+[계획서 출력 형식] 계획서를 만들거나 바꿀 때마다 답변 맨 끝에 다음 형식의 블록을 정확히 하나, 전체를 다시 쓴다(블록 밖에는 한두 문장의 안내만 쓴다). 사용자가 바꾼 체크와 기존 내용은 그대로 보존한다. "종료 기록" 절은 과제를 종료했을 때만 쓴다.
+~~~plan
+# 과제: (과제 이름)
+목적: (한 문장)
+성공 기준: (확인 가능한 기준)
+마감: (YYYY-MM-DD 또는 미확인)
+상태: (준비 / 진행 / 제출 / 결과 대기 / 종료 중 하나)
+판정: (종료했을 때만: 성공 / 부분 성공 / 실패 / 중단 / 무효)
+
+## 수단
+- (수단 이름) — (검토 / 진행 / 제출 / 막힘 / 탈락) · 기준일 YYYY-MM-DD
+
+## 할 일
+- [ ] (할 일) | ~YYYY-MM-DD
+- [x] (끝낸 일)
+
+## 위험
+- (위험이나 막힌 곳)
+
+## 기록
+- YYYY-MM-DD (일어난 일: 공고·문의·제출·통보)
+
+## 종료 기록
+원인: (코드 · 통제 가능성 · 증거 수준)
+교훈: (다음에는 ~한다)
+~~~`;
+let _guide = { cur: null, plans: {} };
+function _guideLoad() { try { const o = JSON.parse(localStorage.getItem(_GUIDE_KEY) || 'null'); if (o && o.plans) _guide = { cur: o.cur || null, plans: o.plans }; } catch (e) {} }
+function _guideStore() { try { localStorage.setItem(_GUIDE_KEY, JSON.stringify(_guide)); } catch (e) {} }
+function _guideToday() { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function _guideField(t, k) { const m = new RegExp('^' + k + '\\s*[:：]\\s*(.*)$', 'm').exec(t || ''); return m ? m[1].trim() : ''; }
+function _guideTitleOf(t) { const m = /^#\s*과제\s*[:：]\s*(.+)$/m.exec(t || ''); return m ? m[1].trim() : '제목 없는 과제'; }
+/** 현재 과제의 계획서 본문을 바꾼다(현재 과제가 없으면 새로 만든다). */
+function _guideSetText(text) {
+  if (!_guide.cur || !_guide.plans[_guide.cur]) { _guide.cur = 'g' + Date.now(); _guide.plans[_guide.cur] = { id: _guide.cur }; }
+  const p = _guide.plans[_guide.cur]; p.text = text; p.title = _guideTitleOf(text); p.updated = Date.now(); _guideStore();
+}
+function _guideCur() { return _guide.cur && _guide.plans[_guide.cur] ? _guide.plans[_guide.cur] : null; }
+/** 기한 칩: 지난 것은 붉게, 3일 이내는 노랗게. 끝낸 일은 날짜만 보인다. */
+function _guideDue(d, done) {
+  if (done) return '<span class="gl-due">' + escHtml(d.slice(5)) + ' 완료</span>';
+  const n = Math.round((Date.parse(d) - Date.parse(_guideToday())) / 864e5); if (isNaN(n)) return '';
+  const cls = n < 0 ? ' late' : n <= 3 ? ' soon' : '', t = n < 0 ? 'D+' + (-n) + ' 지남' : n === 0 ? '오늘' : 'D-' + n;
+  return '<span class="gl-due' + cls + '" title="' + escHtml(d) + '">' + t + '</span>';
+}
+function _guideRender() {
+  const view = document.getElementById('cmp-guide-view'), sel = document.getElementById('cmp-guide-sel'), bar = document.getElementById('cmp-guide-bar'), pt = document.getElementById('cmp-guide-prog-t');
+  if (!view || !sel) return;
+  const list = Object.values(_guide.plans).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  sel.innerHTML = '<option value="">＋ 새 과제</option>' + list.map(x => '<option value="' + escHtml(x.id) + '"' + (x.id === _guide.cur ? ' selected' : '') + '>' + escHtml(x.title || '제목 없는 과제') + (_guideField(x.text, '판정') ? ' (' + escHtml(_guideField(x.text, '판정')) + ')' : '') + '</option>').join('');
+  const p = _guideCur();
+  if (!p) { view.innerHTML = '<p class="gl-empty">아직 과제가 없습니다. 이루고 싶은 일을 위 대화창에 말씀해 주세요. 대화가 진행되는 대로 여기에 계획서가 만들어집니다.</p>'; bar.value = 0; pt.textContent = ''; return; }
+  let h = '', kv = '', total = 0, done = 0;
+  const flush = () => { if (kv) { h += '<dl class="gl-kv">' + kv + '</dl>'; kv = ''; } };
+  p.text.replace(/\r/g, '').split('\n').forEach((raw, idx) => {
+    const t = raw.trim(); if (!t) return; let m;
+    if ((m = /^#\s*과제\s*[:：]\s*(.+)$/.exec(t))) { h += '<h4>' + escHtml(m[1]) + '</h4>'; return; }
+    if ((m = /^##\s+(.*)$/.exec(t))) { flush(); h += '<h5>' + escHtml(m[1]) + '</h5>'; return; }
+    if ((m = /^[-*]\s*\[( |x|X)\]\s*(.*)$/.exec(t))) {
+      flush(); const ck = m[1] !== ' '; total++; if (ck) done++;
+      const parts = m[2].split('|'), due = (/(\d{4}-\d{2}-\d{2})/.exec(parts.slice(1).join('|')) || [])[1];
+      h += '<label class="gl-task' + (ck ? ' done' : '') + '"><input type="checkbox" data-line="' + idx + '"' + (ck ? ' checked' : '') + '><span class="t">' + _mdInline(parts[0].trim()) + '</span>' + (due ? _guideDue(due, ck) : '') + '</label>'; return;
+    }
+    if ((m = /^[-*]\s+(.*)$/.exec(t))) { flush(); h += '<div>• ' + _mdInline(m[1]) + '</div>'; return; }
+    if ((m = /^([^:：]{1,12})\s*[:：]\s*(.+)$/.exec(t))) { kv += '<dt>' + escHtml(m[1].trim()) + '</dt><dd>' + _mdInline(m[2]) + '</dd>'; return; }
+    flush(); h += '<p>' + _mdInline(t) + '</p>';
+  });
+  flush(); view.innerHTML = h;
+  bar.value = total ? Math.round(done / total * 100) : 0;
+  const dl = (/(\d{4}-\d{2}-\d{2})/.exec(_guideField(p.text, '마감')) || [])[1], n = dl ? Math.round((Date.parse(dl) - Date.parse(_guideToday())) / 864e5) : NaN;
+  pt.textContent = [_guideField(p.text, '상태') && '상태 ' + _guideField(p.text, '상태'), total ? '할 일 ' + done + '/' + total + ' 완료' : '할 일 없음', isNaN(n) ? '' : (n < 0 ? '마감 ' + (-n) + '일 지남' : n === 0 ? '오늘 마감' : '마감 D-' + n)].filter(Boolean).join(' · ');
+}
+/** 체크 칸을 누르면 계획서 본문의 해당 줄을 바꾸고 저장한다. 다음 메시지부터 SP 가 그 상태를 본다. */
+document.addEventListener('change', (e) => {
+  const cb = e.target; if (!cb || !cb.matches || !cb.matches('#cmp-guide-view input[type=checkbox]')) return;
+  const p = _guideCur(); if (!p) return;
+  const L = p.text.replace(/\r/g, '').split('\n'), i = +cb.dataset.line;
+  if (L[i] == null) return;
+  L[i] = L[i].replace(/\[( |x|X)\]/, cb.checked ? '[x]' : '[ ]');
+  _guideSetText(L.join('\n')); _guideRender();
+});
+function _guideShow(on) { const d = document.getElementById('cmp-guide-doc'); if (d) d.hidden = !on; }
+function _guideReset() { _guideShow(false); const ta = document.getElementById('cmp-guide-text'), v = document.getElementById('cmp-guide-view'), eb = document.getElementById('cmp-guide-edit'); if (ta) ta.hidden = true; if (v) v.hidden = false; if (eb) eb.setAttribute('aria-pressed', 'false'); }
+function _cmpGuidePick() {
+  _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
+  _guideLoad();
+  const p = _guideCur();
+  const greeting = p ? '나비 길잡이입니다. 지난번 과제 「' + p.title + '」의 계획서를 불러왔습니다. 그 후로 달라진 것이 있으면 말씀해 주세요. 새 과제는 아래 계획서의 과제 선택에서 "새 과제"를 고르세요.'
+    : '나비 길잡이입니다. 이루고 싶은 과제를 말씀해 주세요(예: GPU 지원사업 응모). 목적과 성공 기준부터 함께 정하고, 아래에 과제 계획서를 만들어 가겠습니다.';
+  _orgActivate({ key: 'kguide', label: '나비 길잡이', sp: 'inline:guide:v1', spText: _GUIDE_SP, group: 'guide', guide: true }, greeting);
+  _guideRender(); _guideShow(true);
+}
+function _guideSelChange(sel) {
+  _guide.cur = sel.value || null; _guideStore(); _guideRender();
+  const p = _guideCur();
+  _cmpAppendBubble('assistant', { md: p ? '「' + p.title + '」 계획서를 불러왔습니다.' : '새 과제를 시작합니다. 어떤 과제인지 말씀해 주세요.' });
+}
+function _guideEditToggle() {
+  const ta = document.getElementById('cmp-guide-text'), v = document.getElementById('cmp-guide-view'), eb = document.getElementById('cmp-guide-edit'); if (!ta) return;
+  const on = ta.hidden;   // 지금 숨겨져 있으면 편집을 연다
+  if (on) { if (!_guideCur()) _guideSetText('# 과제: 새 과제\n목적: \n상태: 준비\n\n## 할 일\n'); ta.value = _guideCur().text; ta.oninput = () => { _guideSetText(ta.value); }; }
+  ta.hidden = !on; v.hidden = on; eb.setAttribute('aria-pressed', on ? 'true' : 'false'); eb.textContent = on ? '고치기 끝' : '고치기';
+  if (!on) _guideRender();
+}
+function _guideCopy() { const p = _guideCur(); if (!p) return; try { navigator.clipboard.writeText(p.text).then(() => _drToast('계획서를 복사했습니다.')); } catch (e) {} }
+function _guideSave() {
+  const p = _guideCur(); if (!p) return;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([p.text], { type: 'text/plain;charset=utf-8' })); a.download = '과제계획서_' + p.title.replace(/[\\/:*?"<>|]/g, '').slice(0, 30) + '.txt';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function _guideDelete() {
+  const p = _guideCur(); if (!p || !confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return;
+  delete _guide.plans[p.id]; _guide.cur = null; _guideStore(); _guideRender();
+}
+/** 답변에서 ~~~plan 블록을 떼어 계획서에 쓰고, 말풍선에 남길 나머지 글을 돌려준다. */
+function _guideFromReply(t) {
+  const m = /~~~plan\s*\n([\s\S]*?)\n?~~~/.exec(t);
+  if (!m) return t;
+  _guideSetText(m[1].trim()); _guideRender(); _guideShow(true);
+  const ta = document.getElementById('cmp-guide-text'); if (ta && !ta.hidden) ta.value = m[1].trim();
+  const rest = (t.slice(0, m.index) + t.slice(m.index + m[0].length)).trim();
+  return rest || '계획서를 아래에 갱신했습니다. 고칠 곳이 있으면 말씀해 주세요.';
+}
+/** 보낼 글에 오늘 날짜·현재 계획서·지난 과제 기록을 붙인다(말풍선에는 사용자가 쓴 글만 보인다). */
+function _guideWrap(text) {
+  const p = _guideCur();
+  const past = Object.values(_guide.plans).filter(x => x !== p && _guideField(x.text, '판정')).slice(0, 5).map(x => '- ' + x.title + ' | ' + _guideField(x.text, '판정') + ' | ' + (_guideField(x.text, '교훈') || '교훈 미기록'));
+  return '[오늘 날짜] ' + _guideToday() + '\n[현재 과제 계획서' + (p ? '' : ' — 없음(새 과제)') + ']\n' + (p ? p.text : '') + '\n' + (past.length ? '[지난 과제 기록]\n' + past.join('\n') + '\n' : '') + '\n[사용자 말]\n' + text;
+}
 async function _orgSend() {
   const input = document.getElementById('cmp-input'), text = input.value.trim();
   if (!text || !_org || !_org.sp) return;
@@ -2011,7 +2202,7 @@ async function _orgSend() {
   const rows = document.querySelectorAll('#cmp-thread .chat-bubble-row.assistant'), id = 'o' + Date.now();
   const wb = rows[rows.length - 1].querySelector('.chat-bubble'); wb.innerHTML = '<span class="org-wait" role="status" aria-live="polite"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>';
   (_org.pending = _org.pending || {})[id] = wb; { const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight; }
-  const m = { type: 'hondi-embed-sp-ask', id, text };
+  const m = { type: 'hondi-embed-sp-ask', id, text: _org.guide ? _guideWrap(text) : text };
   if (_org.ready) HondiChat.post(m); else _org.queue.push(m);
 }
 window.addEventListener('message', (e) => {
@@ -2019,6 +2210,7 @@ window.addEventListener('message', (e) => {
   const el = _org.pending[d.id]; if (!el) return; delete _org.pending[d.id];
   let reply = String(d.text || '');
   if (_org.foi) reply = _foiDocFromReply(reply);   // ~~~foi 블록은 말풍선이 아니라 아래 청구서 칸에 쓴다
+  if (_org.guide) reply = _guideFromReply(reply);  // ~~~plan 블록은 아래 과제 계획서에 쓴다
   el.classList.add('org-md'); el.innerHTML = _orgMd(reply); const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight;
 });
 window.addEventListener('message', (e) => {
@@ -5743,6 +5935,7 @@ window.kmailOpenSettings = function (section) {
     return;
   }
   if (h === 'foi') { _switchTab('home'); setTimeout(_cmpFoiPick, 0); return; }
+  if (h === 'guide') { _switchTab('home'); setTimeout(_cmpGuidePick, 0); return; }
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
