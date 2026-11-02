@@ -174,12 +174,13 @@ test('왼쪽 메뉴 펼침·접힘: width(px)와 margin-right 를 같은 시간�
   assert.match(h, /nav\.style\.marginRight = \(-\(w - 64\)\) \+ 'px'/);
 });
 
-test('좌측 메뉴 하단 GDC 항목: 사용량(그래프) 화면을 연다', () => {
+test('GDC 는 설정의 탭(PDV 오른쪽)으로 옮겨 사용량(그래프) 화면을 끼워 보여 준다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(h, /id="tab-btn-gdc"[^>]*_switchTab\('gdc'\)/);
-  assert.match(h, /id="tab-gdc"[^>]*><iframe id="gdc-frame"/);
+  assert.ok(!h.includes('id="tab-btn-gdc"') && !h.includes('id="tab-gdc"'));
+  assert.match(h, /const _SET_SECTIONS = \['account', 'pdv', 'gdc', /);
+  assert.ok(h.indexOf('id="set-tab-pdv"') < h.indexOf('id="set-tab-gdc"') && h.indexOf('id="set-tab-gdc"') < h.indexOf('id="set-tab-signature"'));
+  assert.match(h, /id="set-sec-gdc"[^>]*>\s*<iframe id="gdc-frame"/);
   assert.match(h, /https:\/\/hondi\.net\/usage\.html\?embed=mail/);
-  assert.ok(h.indexOf('id="tab-btn-gdc"') < h.indexOf('id="tab-btn-settings"'));
 });
 
 test('좌측 메뉴: 접힌 상태도 펼친 상태와 세로 배치가 같고, 접을 때 글자를 먼저 지운 뒤 천천히 폭을 줄인다', () => {
