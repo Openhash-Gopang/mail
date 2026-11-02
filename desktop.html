@@ -212,6 +212,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
 .ex-verdict svg{width:16px;height:16px;flex:none}.ex-verdict[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
+.doc-combo-up{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:6px 0 2px;padding:9px 12px;border:1px dashed var(--pri);border-radius:10px;background:var(--sur);color:var(--pri);font:inherit;font-size:13px;cursor:pointer;text-align:left}.doc-combo-up small{font-size:11.5px;color:var(--hint)}.doc-combo-up:hover{background:var(--bg)}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
 .doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
 .doc-combo-pop[hidden]{display:none}
@@ -1009,6 +1010,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
             <input type="search" id="cmp-doc-q" class="doc-combo-q" placeholder="서류 검색 — 이름·별칭 (예: 소장, 진단서)" autocomplete="off" aria-label="서류 검색" oninput="_cmpDocComboFilter()" onkeydown="_cmpDocComboKey(event)">
+            <button type="button" class="doc-combo-up" id="cmp-doc-upload" onclick="_docUploadForm()"><b>양식 업로드</b><small>가지고 있는 서류 양식(이미지·PDF)을 올려 그 양식으로 작성합니다</small></button>
             <div class="doc-combo-list" id="cmp-doc-list" role="listbox" aria-label="서류"></div>
           </div>
         </div>
@@ -1037,6 +1039,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
         <input type="file" id="doc-host-file" multiple accept=".txt,.md,.html,.htm,.csv,.json,text/*,image/*,.pdf" style="display:none">
+        <input type="file" id="doc-host-form" accept="image/*,.pdf,application/pdf" style="display:none">
       </div>
       <div class="vd-notice" id="cmp-verdict-notice"><div>
         <p>참고용 가상 판결문이며 실제 판결이나 법률 자문이 아닙니다. 이름·연락처·주소 같은 개인정보는 빼고 입력해 주세요. 입력한 내용은 AI 제공자에게 전송되고, 작성에 쓴 만큼 GDC가 차감됩니다. <a href="https://klaw.hondi.net/verdict-generate.html" target="_blank" rel="noopener">K-Law에서 자세히 보기</a></p>
@@ -2053,6 +2056,8 @@ function _cmpDocComboToggle(e) {
   pop.hidden = !open; btn.setAttribute('aria-expanded', String(open));
   if (open) { _cmpDocSelInit(); const q = document.getElementById('cmp-doc-q'); q.value = ''; _cmpDocComboFilter(); q.focus(); _docIndexLoad().then(() => { if (!pop.hidden) _cmpDocComboFilter(); }); }
 }
+/** 양식 업로드 — 올린 이미지·PDF 를 항상 "양식"으로 서류 사이트에 넘긴다. 서류 SP 가 서식 DB 를 조회해 있으면 사용자 버전에 맞게 고치고, 없으면 새 서식으로 만들며, 공용 저장(양식 DB 에 쌓기)은 대화창의 저장 제안에서 동의했을 때만 된다. */
+function _docUploadForm() { _cmpDocComboClose(); const f = document.getElementById('doc-host-form'); if (f) f.click(); }
 function _cmpDocComboClose() { const pop = document.getElementById('cmp-doc-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-doc-combo-btn').setAttribute('aria-expanded', 'false'); } }
 function _cmpDocComboFilter() {
   const q = document.getElementById('cmp-doc-q').value.trim(), list = document.getElementById('cmp-doc-list'), esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -2560,6 +2565,18 @@ document.addEventListener('DOMContentLoaded', () => {
     fr.id = 'doc-host-frame'; fr.title = '서류 작성'; fr.setAttribute('allow', 'clipboard-write');
     comp.after(fr);
   }
+  const form = document.getElementById('doc-host-form');
+  if (form) form.addEventListener('change', function () {
+    const f = (this.files || [])[0]; this.value = ''; if (!f) return;
+    const ok = /^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|webp|gif|pdf)$/i.test(f.name);
+    if (!ok) { _drToast('양식은 이미지나 PDF 로 올려 주세요.'); return; }
+    if (f.size > 8 * 1024 * 1024) { _drToast('양식은 8MB 이하만 올릴 수 있습니다.'); return; }
+    if (_cmpMode !== 'doc' && !_cmpSetMode('doc')) return;
+    document.getElementById('tab-compose').classList.add('doc-live');
+    const c = document.getElementById('cmp-doc-count'); c.textContent = '양식을 읽는 중…'; _docBar(3);
+    f.arrayBuffer().then(buf => _docHostPost({ type: 'navi-doc-template', asTemplate: true, name: f.name.slice(0, 120), mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/png'), data: buf }))
+      .catch(() => { c.textContent = '파일을 읽지 못했습니다.'; _docBar(-1); });
+  });
   const file = document.getElementById('doc-host-file');
   if (file) file.addEventListener('change', function () {
     // 서류를 고른 뒤라면 서류 쪽이 올린 파일을 '항목을 채울 자료'로 쓰고, 고르기 전이라면 '양식'으로 읽는다(판단은 서류 쪽)

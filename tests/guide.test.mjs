@@ -291,3 +291,11 @@ test('가상 판결은 예시 줄(서류 작성 왼쪽)로, PDV 는 설정의 �
   assert.match(h, /<button[^>]*id="set-tab-account" class="active"/);
   assert.ok(!h.includes('<div class="side-label">서비스</div>'));
 });
+
+test('서류 작성 팝업: 검색 필드 아래 "양식 업로드" → 올린 파일을 양식(asTemplate)으로 서류 사이트에 보낸다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const q = h.indexOf('id="cmp-doc-q"'), u = h.indexOf('id="cmp-doc-upload"'), l = h.indexOf('id="cmp-doc-list"');
+  assert.ok(q > 0 && q < u && u < l);
+  assert.match(h, /function _docUploadForm\(/); assert.match(h, /type: 'navi-doc-template', asTemplate: true/);
+  assert.ok(h.includes('id="doc-host-form"'));
+});
