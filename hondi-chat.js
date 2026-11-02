@@ -107,7 +107,7 @@
   /** 패널의 SP 를 바꾼다(각종 기관 선택). msg 가 null 이면 이 화면 기본 SP 위임으로 되돌린다. 페이지가 다시 로드돼도 announce() 가 다시 보낸다. */
   function setSp(msg) {
     S.spMsg = msg || null;
-    if (S.mounted) open();
+    if (S.mounted) ensureLoaded();   // 패널은 열지 않는다 — 대화는 메일 화면 안에서 보인다
     post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' });
     post(S.spMsg || { type: 'hondi-embed-sp', sp: null });
   }

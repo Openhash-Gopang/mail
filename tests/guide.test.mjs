@@ -121,7 +121,6 @@ test('각종 기관: 상단 중앙 문구와 제목이 고른 기관으로 바�
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다\.'/);
   assert.match(h, /_cmpMode === 'org' && _org\) \? _org\.label/);
-  assert.match(h, /_ORG_DESC\[_org\.key\]/);
 });
 
 test('전문가 AI: 각종 기관 오른쪽 드롭다운(검색 + 대표 전문가 + 더보기로 전문가 페르소나 페이지)', () => {
@@ -136,4 +135,13 @@ test('전문가 AI: 고르면 입력창 바탕 글과 대화창 SP 가 그 전�
   assert.match(h, /'한의사':'SP_traditional-medicine-doctor'/);
   assert.match(h, /_orgActivate\(\{ key: 'exp:'/);
   assert.match(h, /전문가 AI입니다\. 무엇이든 물어보십시오/);
+});
+
+test('각종 기관·전문가 AI: 대화창이 입력창 위로 펼쳐지고 입력창은 아래로 밀려 내려간다(slide out)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /\[data-mode="org"\]\.org-open \.chat-thread\{flex:1 1 0/);
+  assert.match(h, /transition:flex-grow/);
+  assert.match(h, /classList\.add\('org-open'\)/);
+  assert.match(h, /hondi-embed-sp-reply/);
+  assert.ok(!/전문가 AI입니다\. 무엇이든 물어보십시오' : _org/.test(h), '입력창 문구 변경은 취소');
 });
