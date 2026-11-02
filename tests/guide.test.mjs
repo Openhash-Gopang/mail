@@ -193,3 +193,10 @@ test('서류 드롭다운 버튼 문구는 "서류 작성"', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /id="cmp-doc-combo-label">서류 작성</);
 });
+
+test('정부 AI: 전문가 AI 오른쪽 드롭다운(검색 + 법원·국세청·도청·시청 + 더보기→K-정부 페이지), 고르면 입력창·대화창이 그 SP로 전환', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  for (const k of ['id="cmp-gov-combo"', '정부 AI', 'id="cmp-gov-q"', 'function _cmpGovPick(', 'https://hondi.net/pages/k-government.html', "'법원': 'SP-01_klaw'", "'국세청': 'SP-07_ktax'", "'도청': 'SP-10_kpublic'", "'시청': 'SP-10_kpublic'"]) assert.ok(h.includes(k), k);
+  assert.ok(h.indexOf('id="cmp-exp-combo"') < h.indexOf('id="cmp-gov-combo"'));
+  assert.match(h, /_orgActivate\(\{ key: 'gov:'/);
+});

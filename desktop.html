@@ -1022,6 +1022,13 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <div class="doc-combo-list" id="cmp-exp-list" role="listbox" aria-label="전문가"></div>
           </div>
         </div>
+        <div class="doc-combo" id="cmp-gov-combo">
+          <button type="button" class="doc-combo-btn" id="cmp-gov-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpGovToggle(event)"><span id="cmp-gov-combo-label">정부 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="doc-combo-pop" id="cmp-gov-combo-pop" hidden>
+            <input type="search" id="cmp-gov-q" class="doc-combo-q" placeholder="기관 검색 (예: 법원, 국세청)" autocomplete="off" aria-label="정부 기관 검색" oninput="_cmpGovFilter()" onkeydown="_cmpGovKey(event)">
+            <div class="doc-combo-list" id="cmp-gov-list" role="listbox" aria-label="정부 기관"></div>
+          </div>
+        </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -2023,7 +2030,7 @@ function _cmpDocComboSync() {
   lb.textContent = (o && o.value) ? o.textContent : '서류 작성';
 }
 function _cmpDocComboToggle(e) {
-  if (e) e.stopPropagation();
+  if (e) e.stopPropagation(); _cmpOrgClose(); _cmpExpClose(); _cmpGovClose();
   const pop = document.getElementById('cmp-doc-combo-pop'), btn = document.getElementById('cmp-doc-combo-btn');
   const open = pop.hidden;
   if (typeof _cmpOrgClose === 'function') _cmpOrgClose();
@@ -2069,7 +2076,7 @@ function _cmpDocComboPick(b) {
   input.value = title; _kmailAutoResize(input); _cmpChatUpdateSendState();
   _docHostInput(); _docHostSubmit();   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
 }
-document.addEventListener('click', (e) => { const ex = e.target.closest && e.target.closest('#cmp-exp-list .doc-combo-it'); if (ex) { _cmpExpPick(ex.getAttribute('data-exp')); return; } if (!e.target.closest || !e.target.closest('#cmp-exp-combo')) _cmpExpClose(); const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
+document.addEventListener('click', (e) => { const gv = e.target.closest && e.target.closest('#cmp-gov-list .doc-combo-it'); if (gv) { _cmpGovPick(gv.getAttribute('data-gov')); return; } if (!e.target.closest || !e.target.closest('#cmp-gov-combo')) _cmpGovClose(); const ex = e.target.closest && e.target.closest('#cmp-exp-list .doc-combo-it'); if (ex) { _cmpExpPick(ex.getAttribute('data-exp')); return; } if (!e.target.closest || !e.target.closest('#cmp-exp-combo')) _cmpExpClose(); const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
 // ── 각종 기관(2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
 const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
 let _orgSel = -1;
@@ -2082,7 +2089,7 @@ function _cmpOrgFilter() {
 function _cmpOrgClose() { const pop = document.getElementById('cmp-org-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-org-combo-btn').setAttribute('aria-expanded', 'false'); } }
 function _cmpOrgToggle(e) {
   if (e) e.stopPropagation();
-  _cmpDocComboClose();
+  _cmpDocComboClose(); _cmpExpClose(); _cmpGovClose();
   const pop = document.getElementById('cmp-org-combo-pop'), open = pop.hidden;
   pop.hidden = !open; document.getElementById('cmp-org-combo-btn').setAttribute('aria-expanded', String(open));
   if (open) { const q = document.getElementById('cmp-org-q'); q.value = ''; _cmpOrgFilter(); q.focus(); }
@@ -2110,7 +2117,7 @@ function _cmpExpFilter() {
 function _cmpExpClose() { const pop = document.getElementById('cmp-exp-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-exp-combo-btn').setAttribute('aria-expanded', 'false'); } }
 function _cmpExpToggle(e) {
   if (e) e.stopPropagation();
-  _cmpDocComboClose(); _cmpOrgClose();
+  _cmpDocComboClose(); _cmpOrgClose(); _cmpGovClose();
   const pop = document.getElementById('cmp-exp-combo-pop'), open = pop.hidden;
   pop.hidden = !open; document.getElementById('cmp-exp-combo-btn').setAttribute('aria-expanded', String(open));
   if (open) { const q = document.getElementById('cmp-exp-q'); q.value = ''; _cmpExpFilter(); q.focus(); }
@@ -2129,6 +2136,40 @@ function _cmpExpPick(k) {
   if (k === '__more') { window.open(_EXP_URL, '_blank', 'noopener'); return; }
   if (!_EXP_ITEMS.includes(k)) return;
   _orgActivate({ key: 'exp:' + k, label: k, sp: _EXP_SP[k] || null, expert: true }, k + ' 전문가 AI입니다. 무엇이든 물어보십시오');   // 사용자는 그 분야의 인간 전문가 — AI 는 그의 업무(법리 검토·진단 등)를 보조한다
+}
+// ── 정부 AI(2026-11-02): '전문가 AI' 오른쪽 드롭다운. 검색 + 주요 기관 + 맨 끝 '더보기(...)'(K-정부 페이지). 기관별 SP 는 K-정부 페이지의 영역별 SP 와 같다.
+const _GOV_URL = 'https://hondi.net/pages/k-government.html';
+const _GOV_SP = { '법원': 'SP-01_klaw', '국세청': 'SP-07_ktax', '도청': 'SP-10_kpublic', '시청': 'SP-10_kpublic' };
+const _GOV_ITEMS = Object.keys(_GOV_SP);
+let _govSel = -1;
+function _cmpGovFilter() {
+  const q = _docNorm(document.getElementById('cmp-gov-q').value), list = document.getElementById('cmp-gov-list');
+  const hits = _GOV_ITEMS.filter(x => !q || _docNorm(x).includes(q));
+  list.innerHTML = hits.map(x => `<button type="button" class="doc-combo-it" role="option" data-gov="${x}"><b>${x}</b></button>`).join('') + '<button type="button" class="doc-combo-it" role="option" data-gov="__more"><b>더보기 (...)</b></button>';
+  _govSel = -1; const f = list.querySelector('.doc-combo-it'); if (f && q) { f.classList.add('on'); _govSel = 0; }
+}
+function _cmpGovClose() { const pop = document.getElementById('cmp-gov-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-gov-combo-btn').setAttribute('aria-expanded', 'false'); } }
+function _cmpGovToggle(e) {
+  if (e) e.stopPropagation();
+  _cmpDocComboClose(); _cmpOrgClose(); _cmpExpClose();
+  const pop = document.getElementById('cmp-gov-combo-pop'), open = pop.hidden;
+  pop.hidden = !open; document.getElementById('cmp-gov-combo-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const q = document.getElementById('cmp-gov-q'); q.value = ''; _cmpGovFilter(); q.focus(); }
+}
+function _cmpGovKey(e) {
+  const its = [...document.querySelectorAll('#cmp-gov-list .doc-combo-it')];
+  if (e.key === 'Escape') { _cmpGovClose(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); if (!its.length) return;
+    _govSel = (Math.max(_govSel, -1) + (e.key === 'ArrowDown' ? 1 : -1) + its.length) % its.length;
+    its.forEach((b, i) => b.classList.toggle('on', i === _govSel)); its[_govSel].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') { e.preventDefault(); const b = its[Math.max(_govSel, 0)]; if (b) _cmpGovPick(b.getAttribute('data-gov')); }
+}
+function _cmpGovPick(k) {
+  _cmpGovClose();
+  if (k === '__more') { window.open(_GOV_URL, '_blank', 'noopener'); return; }
+  if (!_GOV_ITEMS.includes(k)) return;
+  _orgActivate({ key: 'gov:' + k, label: k, sp: _GOV_SP[k] || null, group: 'gov' }, '안녕하세요! 나비 ' + k + ' 서비스입니다. 원하시는 것을 말씀해 주세요.');
 }
 // 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
@@ -2149,7 +2190,8 @@ function _orgActivate(o, greeting) {
   const was = _cmpMode === 'org';
   if (!was) { if (!_cmpSetMode('org')) { _org = null; return; } } else { document.getElementById('cmp-thread').innerHTML = ''; _cmpSyncModeUi(); }
   const ol = document.getElementById('cmp-org-combo-label'), el = document.getElementById('cmp-exp-combo-label');
-  if (ol) ol.textContent = o.expert ? '각종 기관' : o.label; if (el) el.textContent = o.expert ? o.label : '전문가 AI';
+  const gl = document.getElementById('cmp-gov-combo-label'), grp = o.expert ? 'exp' : (o.group || 'org');
+  if (ol) ol.textContent = grp === 'org' ? o.label : '각종 기관'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
   if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '' });
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
@@ -2192,6 +2234,7 @@ function _orgLeave() {
   _org = null; document.getElementById('tab-compose').classList.remove('org-open');
   const l = document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
+  const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
   const input = document.getElementById('cmp-input'); if (input) input.disabled = false;
   if (window.HondiChat) HondiChat.setSp(null);
 }
