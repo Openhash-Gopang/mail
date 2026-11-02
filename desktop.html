@@ -180,6 +180,17 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"] .chat-composer>.hint{display:none}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row{display:flex}
+.doc-combo{position:relative}
+.doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
+.doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
+.doc-combo-pop[hidden]{display:none}
+.doc-combo-q{width:100%;box-sizing:border-box;min-height:36px;border:1px solid var(--bdr);border-radius:8px;padding:0 10px;font:inherit;font-size:14px;background:var(--bg);color:var(--txt)}
+.doc-combo-list{max-height:min(340px,50vh);overflow-y:auto;margin-top:6px}
+.doc-combo-it{display:block;width:100%;text-align:left;border:0;background:none;border-radius:6px;padding:7px 9px;cursor:pointer;font:inherit;color:var(--txt)}
+.doc-combo-it:hover,.doc-combo-it.on{background:var(--pri-bg)}
+.doc-combo-it b{font-size:14px;font-weight:600}
+.doc-combo-it small{display:block;font-size:12px;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-combo-sec{font-size:12px;color:var(--hint);padding:6px 9px 2px}
 .doc-host-row select{min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
 /* unified-input — 입력창 하나로 통합(2026-10-31): 모드 칩(현재 SP 표시 · × 로 해제) + 메일 아이콘(편지 작성·캠페인 팝오버) */
 .cmp-mode-chip{align-self:center;display:inline-flex;align-items:center;gap:2px;flex:none;margin:0 2px 0 0;padding:3px 3px 3px 10px;border-radius:999px;background:var(--pri-bg);color:var(--pri);font-size:12.5px;font-weight:700;white-space:nowrap}
@@ -955,7 +966,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         </button>
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
-        <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)"></select>
+        <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
+        <div class="doc-combo" id="cmp-doc-combo">
+          <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 검색</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
+            <input type="search" id="cmp-doc-q" class="doc-combo-q" placeholder="서류 검색 — 이름·별칭 (예: 소장, 진단서)" autocomplete="off" aria-label="서류 검색" oninput="_cmpDocComboFilter()" onkeydown="_cmpDocComboKey(event)">
+            <div class="doc-combo-list" id="cmp-doc-list" role="listbox" aria-label="서류"></div>
+          </div>
+        </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -1902,6 +1920,84 @@ function _cmpDocSelInit() {
   }
   return sel;
 }
+// ── 서류 검색 드롭다운(2026-11-02): 맨 위 '서류 선택' 항목을 실시간 검색 입력으로 바꿨다. 서류 목록은 각 서류 사이트의 공개 목록(data/docs/<id>.json)을 처음 열 때 불러온다.
+const _DOC_INDEX_SRC = [{ site: 'law', url: 'https://law.hondi.net/data/docs/law.json' }, { site: 'tax', url: 'https://tax.hondi.net/data/docs/tax.json' }, { site: 'doctor', url: 'https://doctor.hondi.net/data/docs/doctor.json' }];
+let _docIndex = null, _docIndexP = null, _docComboSel = -1;
+function _docNorm(t) { return String(t || '').toLowerCase().replace(/[\s·()\[\]\-_/]/g, ''); }
+function _docIndexLoad() {
+  if (_docIndexP) return _docIndexP;
+  _docIndexP = Promise.all(_DOC_INDEX_SRC.map(x => fetch(x.url).then(r => r.ok ? r.json() : []).then(j => Array.isArray(j) ? j : (j && j.docs) || []).catch(() => []).then(arr => arr.filter(d => d && d.t && d.p !== 'issued').map(d => ({ site: x.site, t: String(d.t), c: String(d.c || ''), n: _docNorm(d.t), a: _docNorm((d.a || []).join(' ')), cn: _docNorm(d.c) })))))
+    .then(parts => { _docIndex = [].concat(...parts); return _docIndex; });
+  return _docIndexP;
+}
+/** 점수: 이름 정확 > 이름 앞부분 > 이름 포함 > 별칭 포함 > 분류 포함. 공백으로 나눈 낱말은 모두 맞아야 한다. */
+function _docSearch(idx, q, limit) {
+  const toks = String(q || '').toLowerCase().split(/\s+/).map(_docNorm).filter(Boolean);
+  if (!toks.length) return [];
+  const out = [];
+  for (const d of idx) {
+    let sc = 0, ok = true;
+    for (const t of toks) {
+      if (d.n === t) sc += 100; else if (d.n.startsWith(t)) sc += 60; else if (d.n.includes(t)) sc += 40; else if (d.a.includes(t)) sc += 25; else if (d.cn.includes(t)) sc += 8; else { ok = false; break; }
+    }
+    if (ok) out.push([sc - Math.min(d.n.length, 40) / 100, d]);
+  }
+  out.sort((a, b) => b[0] - a[0]);
+  return out.slice(0, limit || 30).map(x => x[1]);
+}
+function _cmpDocComboSync() {
+  const sel = document.getElementById('cmp-doc-site'), lb = document.getElementById('cmp-doc-combo-label');
+  if (!sel || !lb) return;
+  const o = sel.selectedIndex >= 0 && sel.options[sel.selectedIndex];
+  lb.textContent = (o && o.value) ? o.textContent : '서류 검색';
+}
+function _cmpDocComboToggle(e) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById('cmp-doc-combo-pop'), btn = document.getElementById('cmp-doc-combo-btn');
+  const open = pop.hidden;
+  pop.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+  if (open) { _cmpDocSelInit(); const q = document.getElementById('cmp-doc-q'); q.value = ''; _cmpDocComboFilter(); q.focus(); _docIndexLoad().then(() => { if (!pop.hidden) _cmpDocComboFilter(); }); }
+}
+function _cmpDocComboClose() { const pop = document.getElementById('cmp-doc-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-doc-combo-btn').setAttribute('aria-expanded', 'false'); } }
+function _cmpDocComboFilter() {
+  const q = document.getElementById('cmp-doc-q').value.trim(), list = document.getElementById('cmp-doc-list'), esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const label = (id) => { const x = _DOC_SITES.find(z => z.id === id); return x ? x.label : id; };
+  let html = '';
+  if (!q) {
+    html += '<div class="doc-combo-sec">서류 종류</div>' + _DOC_SITES.map(x => `<button type="button" class="doc-combo-it" role="option" data-site="${esc(x.id)}"><b>${esc(x.label)}</b></button>`).join('');
+    if (!_docIndex) html += '<div class="doc-combo-sec">서류 목록을 불러오는 중…</div>';
+    else html += `<div class="doc-combo-sec">${_docIndex.length.toLocaleString('en-US')}건 중에서 검색하려면 위에 입력하세요</div>`;
+  } else if (!_docIndex) html = '<div class="doc-combo-sec">서류 목록을 불러오는 중…</div>';
+  else {
+    const hits = _docSearch(_docIndex, q, 30);
+    html = hits.length ? hits.map((d, i) => `<button type="button" class="doc-combo-it" role="option" data-site="${esc(d.site)}" data-title="${esc(d.t)}"><b>${esc(d.t)}</b><small>${esc(label(d.site))}${d.c ? ' · ' + esc(d.c) : ''}</small></button>`).join('') : '<div class="doc-combo-sec">맞는 서류가 없습니다. 다른 낱말로 검색해 보세요.</div>';
+  }
+  list.innerHTML = html; _docComboSel = -1;
+  const first = list.querySelector('.doc-combo-it'); if (first && q) { first.classList.add('on'); _docComboSel = 0; }
+}
+function _cmpDocComboKey(e) {
+  const its = [...document.querySelectorAll('#cmp-doc-list .doc-combo-it')];
+  if (e.key === 'Escape') { _cmpDocComboClose(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); if (!its.length) return;
+    _docComboSel = (Math.max(_docComboSel, -1) + (e.key === 'ArrowDown' ? 1 : -1) + its.length) % its.length;
+    its.forEach((b, i) => b.classList.toggle('on', i === _docComboSel)); its[_docComboSel].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') { e.preventDefault(); const b = its[Math.max(_docComboSel, 0)]; if (b) _cmpDocComboPick(b); }
+}
+/** 고른 서류를 연다 — 서류 종류(사이트)를 맞추고, 서류 이름을 입력창에 넣어 곧바로 확정(Enter)한다. 종류만 고르면 그 종류를 연다. */
+function _cmpDocComboPick(b) {
+  const site = b.getAttribute('data-site'), title = b.getAttribute('data-title') || '';
+  _cmpDocComboClose();
+  const sel = _cmpDocSelInit();
+  if (sel.value !== site) { sel.value = site; _cmpDocSelChange(sel); }
+  else if (_cmpMode !== 'doc') _cmpDocSelChange(sel);
+  _cmpDocComboSync();
+  if (!title) { document.getElementById('cmp-input').focus(); return; }
+  const input = document.getElementById('cmp-input');
+  input.value = title; _kmailAutoResize(input); _cmpChatUpdateSendState();
+  _docHostInput(); _docHostSubmit();   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
+}
+document.addEventListener('click', (e) => { const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
 function _cmpDocSelChange(sel) {
   if (!sel.value) { if (_cmpMode === 'doc') { if (!_cmpSetMode('default')) _cmpSyncModeUi(); } return; }
   if (_cmpMode !== 'doc') { if (!_cmpSetMode('doc')) sel.value = ''; return; }   // 모드가 바뀌면 _docHostMode 가 고른 서류를 불러온다
@@ -3958,6 +4054,7 @@ function _cmpSyncModeUi() {
   if (_cmpMode === 'doc') { const o = sel && sel.options[sel.selectedIndex]; chip = (o && o.value) ? o.textContent : ui.chip; }
   const chipEl = document.getElementById('cmp-mode-chip');
   if (chipEl) { chipEl.hidden = !chip; document.getElementById('cmp-mode-chip-text').textContent = chip; }
+  if (typeof _cmpDocComboSync === 'function') _cmpDocComboSync();
   const mb = document.getElementById('cmp-mail-btn');
   if (mb) mb.setAttribute('aria-pressed', (_cmpMode === 'campaign' || _cmpMode === 'letter') ? 'true' : 'false');
   _topbarSyncPage();   // 상단 바 가운데의 현재 페이지 표시도 모드에 맞춘다
