@@ -165,3 +165,9 @@ test('전문가 AI: 사용자를 인간 전문가로 상정(role=expert) — 면
   assert.match(h, /role: o\.expert \? 'expert' : ''/);
   assert.match(h, /최종 판단과 책임은 전문가 본인에게 있으니/);
 });
+
+test('왼쪽 메뉴 펼침·접힘: 본문이 밀리지 않도록 width·margin-right 에 transition 을 걸지 않는다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const line = h.split('\n').find(l => l.includes('.side-nav{width:64px;padding-left:10px'));
+  assert.ok(line && !/transition:[^;}]*(width|margin-right)/.test(line), line);
+});
