@@ -1218,7 +1218,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
-    <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(처음엔 이름만 공개) -->
+    <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(개인 정보는 처음엔 이름만 공개, 상품·서비스는 공개) -->
     <section id="set-sec-profile" class="set-sec">
         <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우면 <b>나의 프로필 웹페이지</b>가 만들어집니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
@@ -1243,7 +1243,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div class="pf-side">
           <div class="pf-fields">
             <div class="pf-fields-head"><b>내 정보 항목</b><span id="pf-count" class="pf-count"></span><button type="button" class="btn btn-outline btn-sm" onclick="_profReset()">처음부터</button></div>
-            <div class="pf-fields-note">처음에는 <b>이름만 공개</b>이고 나머지는 모두 <b>비공개</b>입니다. 내가 <b>공개</b>로 바꾼 항목만 페이지와 저장한 HTML 파일에 들어갑니다.</div>
+            <div class="pf-fields-note">개인 정보는 처음에는 <b>이름만 공개</b>이고 나머지는 모두 <b>비공개</b>입니다. 내가 <b>공개</b>로 바꾼 항목만 페이지와 저장한 HTML 파일에 들어갑니다.</div>
             <div id="pf-rows"></div>
             <div class="pf-add">
               <input type="text" id="pf-add-label" maxlength="20" placeholder="새 항목 이름 (예: 좋아하는 음식)" aria-label="새 항목 이름" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_profAddField();}">
@@ -1253,14 +1253,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           </div>
           <div class="pf-fields" id="pf-bizbox">
             <div class="pf-fields-head"><b>상품·서비스</b><span id="pf-offcount" class="pf-count"></span></div>
-            <div class="pf-fields-note">판매하는 <b>상품</b>이나 제공하는 <b>서비스</b>를 추가하세요. 추가한 것은 <b>비공개</b>로 시작하고, 공개로 바꾼 것만 페이지에 카드로 나옵니다. 가격·재고는 내가 적은 값이 그대로 나오며 페이지에는 기준일이 표시됩니다.</div>
+            <div class="pf-fields-note">판매하는 <b>상품</b>이나 제공하는 <b>서비스</b>를 추가하세요. 추가한 것은 <b>공개</b>로 시작해 페이지에 카드로 나옵니다. 숨기고 싶은 것은 <b>공개</b> 버튼을 눌러 <b>비공개</b>로 바꾸세요. 가격·재고는 내가 적은 값이 그대로 나오며 페이지에는 기준일이 표시됩니다.</div>
             <div id="pf-offers"></div>
             <div class="pf-addoffer">
               <button type="button" class="btn btn-primary btn-sm" onclick="_profAddOffer('product')">＋ 상품 추가</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="_profAddOffer('service')">＋ 서비스 추가</button>
             </div>
             <div class="pf-biz-title">주문·예약·배송·방문 안내</div>
-            <div class="pf-sub">이 페이지는 주문·결제를 직접 받지 않습니다. 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
+            <div class="pf-sub">이 페이지는 주문·결제를 직접 받지 않습니다. 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 적은 안내는 공개로 시작하지만, 위치가 드러날 수 있는 <b>찾아가는 길·지도 링크</b>는 비공개로 시작합니다. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
             <div id="pf-biz-rows"></div>
           </div>
           </div>
@@ -3179,7 +3179,7 @@ window.addEventListener('hondi-mail-info-change', (ev) => {
   if (inp && document.activeElement !== inp) { inp.value = d.sender_display_name; _senderNamePreview(); }
 });
 // ── 설정 > 프로필(2026-11-03, 주피터 지시) ──────────────────────────────────────────────
-// 기본 항목(템플릿)과 사용자가 더한 항목을 한 목록(fields)으로 다룬다. 항목마다 공개 여부(pub)가 있고, 처음에는 이름만 공개다.
+// 기본 항목(템플릿)과 사용자가 더한 항목을 한 목록(fields)으로 다룬다. 항목마다 공개 여부(pub)가 있다. 개인 정보는 이름만 공개로 시작하고, 상품·서비스와 판매 안내는 공개로 시작한다.
 // 내 웹페이지(스크립트 없는 단일 HTML)에는 공개로 정한 항목만 들어간다. 나비(프로필 작성 SP)는 값만 채울 수 있고 공개 여부는 바꾸지 못한다.
 // 입력 필드는 SP 대화창이 되고, 답변 끝의 ~~~profile JSON 이 항목 값에 합쳐진다. 초안(값·공개 여부)은 이 브라우저에만 보관한다.
 const _PROF_KEY = 'naviProfileDraft2:', _PROF_KEY_OLD = 'naviProfileDraft:', _PROF_MAXF = 40, _PROF_MAXO = 30, _PROF_TYPES = ['text', 'long', 'list', 'link'];
@@ -3195,17 +3195,17 @@ const _PROF_TPL = [
   { id: 'hobby', label: '취미', type: 'text' },
   { id: 'age', label: '나이', type: 'text', sens: true },
   { id: 'gender', label: '성별', type: 'text', sens: true },
-  // 판매·서비스 안내(grp: 'biz') — 상품·서비스 패널에서 편집한다. 모두 비공개로 시작한다
-  { id: 'order', label: '주문 방법', type: 'long', grp: 'biz' },
-  { id: 'orderUrl', label: '주문 링크', type: 'link', grp: 'biz' },
-  { id: 'reserve', label: '예약 방법', type: 'long', grp: 'biz' },
-  { id: 'reserveUrl', label: '예약 링크', type: 'link', grp: 'biz' },
-  { id: 'delivery', label: '배송 방법', type: 'long', grp: 'biz' },
-  { id: 'pay', label: '결제·환불 안내', type: 'long', grp: 'biz' },
-  { id: 'hours', label: '영업시간', type: 'text', grp: 'biz' },
+  // 판매·서비스 안내(grp: 'biz') — 상품·서비스 패널에서 편집한다. 개인 정보가 아니라 판매 정보이므로 공개로 시작하되, 위치가 드러날 수 있는 찾아가는 길·지도 링크만 비공개로 시작한다
+  { id: 'order', label: '주문 방법', type: 'long', grp: 'biz', pub: true },
+  { id: 'orderUrl', label: '주문 링크', type: 'link', grp: 'biz', pub: true },
+  { id: 'reserve', label: '예약 방법', type: 'long', grp: 'biz', pub: true },
+  { id: 'reserveUrl', label: '예약 링크', type: 'link', grp: 'biz', pub: true },
+  { id: 'delivery', label: '배송 방법', type: 'long', grp: 'biz', pub: true },
+  { id: 'pay', label: '결제·환불 안내', type: 'long', grp: 'biz', pub: true },
+  { id: 'hours', label: '영업시간', type: 'text', grp: 'biz', pub: true },
   { id: 'directions', label: '찾아가는 길', type: 'long', grp: 'biz', sens: true },
   { id: 'mapUrl', label: '지도 링크', type: 'link', grp: 'biz', sens: true },
-  { id: 'reviewUrl', label: '후기 보기 링크', type: 'link', grp: 'biz' },
+  { id: 'reviewUrl', label: '후기 보기 링크', type: 'link', grp: 'biz', pub: true },
 ];
 const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용자와 짧게 대화하며 사용자 본인의 소개 웹페이지에 들어갈 값을 채우고, 모인 내용을 깔끔하고 단순한 한 페이지로 정리한다.\n\n' +
   '[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 존댓말.\n\n' +
@@ -3216,7 +3216,7 @@ const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용
   '~~~profile\n{"name":"이름","headline":"한 줄 소개","intro":"소개 글","fields":[{"label":"주문 방법","value":"나비웹으로 주문"},{"label":"취미","value":"사진"}],"offerings":[{"name":"한라봉 5kg","kind":"product","desc":"당도 높은 제주 한라봉","price":25000,"unit":"박스","stock":"in","qty":12,"reserve":false}]}\n~~~\n' +
   'fields 의 type 은 text(기본, 한 줄) · long(긴 글) · list(목록) · link(https 주소) 중 하나. offerings 의 kind 는 product(상품) 또는 service(서비스), price 는 원 단위 숫자(무료는 0, 모르면 생략), stock 은 in(여유 있음) · low(소량 남음) · out(품절·마감) · made(주문 제작) 중 하나(모르면 생략), qty 는 남은 수량 숫자, reserve 는 예약 가능 여부(true/false). 같은 name 의 상품은 바뀐 키만 넣으면 된다. 유효한 JSON 한 덩어리여야 하며 줄바꿈이 필요하면 \\n 으로 쓴다.\n\n' +
   '[정리 요청] "정리해 달라"는 요청이 오면: 소개는 3~5문장, 한 줄 소개는 30자 안팎으로 다듬고, 상품 설명은 한두 문장으로 줄이고, 빠진 것 중 가장 중요한 한 가지를 물어본다. 이름·가격·재고·수량·주소 같은 사실 값은 사용자가 말하지 않았다면 바꾸지 않는다.\n\n' +
-  '[공개 여부] 공개할지 말지는 사용자가 화면의 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(처음엔 이름만 공개이고 나머지는 모두 비공개다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
+  '[공개 여부] 공개할지 말지는 사용자가 화면의 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(개인 정보는 처음엔 이름만 공개이고 나머지는 비공개이며, 상품·서비스와 판매 안내는 공개로 시작한다. 찾아가는 길·지도 링크만 비공개로 시작한다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
   '[금지] 사용자가 말하지 않은 사실을 지어내지 않는다. 소비자 후기·평점·판매량·수상·인증은 만들어 쓰지 않는다(후기는 주소만 받아 "후기 보기 링크"에 적는다). 할인·한정·최고 같은 광고 문구를 덧붙이지 않는다. 주소·이메일·나이·성별과 전화번호·주민등록번호·계좌 같은 개인 식별 정보는 먼저 묻지 않으며, 사용자가 스스로 말한 경우에만 해당 항목에 적는다. 건강·종교·정치 성향 같은 민감한 내용은 사용자가 직접 원할 때만 넣는다.';
 let _prof = { active: false, ready: false, queue: [], pending: {}, fields: null, offers: null, busy: false, firstSent: false, timer: null, rt: null };
 const _pfEl = (id) => document.getElementById(id);
@@ -3371,7 +3371,7 @@ function _profFromReply(t) {
   const rest = (t.slice(0, m.index) + t.slice(m.index + m[0].length)).trim();
   return { obj, text: rest || (obj ? '항목에 반영했습니다. 고칠 곳이 있으면 말씀해 주세요.' : '항목을 정리하는 중 형식 오류가 있었습니다. 한 번 더 말씀해 주세요.') };
 }
-/** 순수 함수 — 답변의 값을 항목·상품에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 항목·새 상품은 비공개로 만든다. */
+/** 순수 함수 — 답변의 값을 항목·상품에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 개인 항목은 비공개, 새 상품·서비스는 공개로 만든다. */
 function _profMergeInto(F, r, O) {
   ['name', 'headline', 'intro'].forEach(id => { const f = F.find(x => x.id === id); if (f && r[id]) f.value = r[id]; });
   r.fields.forEach(x => {
@@ -3381,7 +3381,7 @@ function _profMergeInto(F, r, O) {
   });
   if (O && Array.isArray(r.offerings)) r.offerings.forEach(x => {
     let o = O.find(y => y.name === x.name);
-    if (!o) { if (O.length >= _PROF_MAXO) return; o = { id: _profNewId(), kind: 'product', name: x.name, desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: false }; O.push(o); }
+    if (!o) { if (O.length >= _PROF_MAXO) return; o = { id: _profNewId(), kind: 'product', name: x.name, desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: true }; O.push(o); }
     Object.keys(x).forEach(k => { if (k !== 'name') o[k] = x[k]; });
   });
   return F;
@@ -3510,7 +3510,7 @@ function _profRenderOffers() {
 function _profAddOffer(kind) {
   if (!_prof.fields) { _profLoad(); _profRenderRows(); }
   if (_prof.offers.length >= _PROF_MAXO) { _drToast('상품·서비스는 최대 ' + _PROF_MAXO + '개까지 둘 수 있습니다.'); return; }
-  _prof.offers.push({ id: _profNewId(), kind: kind === 'service' ? 'service' : 'product', name: '', desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: false });   // 새로 추가한 것은 비공개로 시작
+  _prof.offers.push({ id: _profNewId(), kind: kind === 'service' ? 'service' : 'product', name: '', desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: true });   // 상품·서비스는 공개로 시작(숨기려면 '공개' 버튼)
   _profRenderOffers(); _profRefresh();
   const last = _pfEl('pf-offers').querySelector('.pf-offer:last-child input[type=text]'); if (last) last.focus();
 }
@@ -3535,7 +3535,7 @@ function _profDownload() {
   a.download = '내 프로필.html'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 function _profReset() {
-  if (!confirm('채운 항목·상품·서비스와 대화를 모두 지우고 기본 항목(이름만 공개)으로 되돌릴까요?')) return;
+  if (!confirm('채운 항목·상품·서비스와 대화를 모두 지우고 기본 상태(개인 정보는 이름만 공개)로 되돌릴까요?')) return;
   _prof.fields = _profTplFields(); _prof.offers = []; _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
   try { localStorage.removeItem(_profStoreKey()); } catch (x) {}
   _pfEl('pf-thread').innerHTML = ''; _pfEl('pf-box').classList.remove('pf-started'); _pfEl('pf-live').hidden = true;
