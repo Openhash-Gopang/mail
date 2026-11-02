@@ -66,6 +66,8 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="case-host.js?v=20261101d"></script>
 <script src="case-ui.js?v=20261101f"></script>
 <script src="case-assist.js?v=20261101f"></script>
+<script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
+<script src="verdict-host.js?v=20261102"></script>
 <script src="guide.js?v=20261101"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -348,6 +350,87 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .nav-ask-opts button{padding:6px 14px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;cursor:pointer}
 .nav-ask-opts button:hover{background:#f3f4f6}
 .nav-ask-opts button:disabled{opacity:.5;cursor:default}
+/* ══ 판결 시뮬레이션 모드 (2026-11-02) — 입력창이 모드에 따라 모양을 바꾼다. 흐름·DOM 은 verdict-host.js ══ */
+.vd-mode-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border:1px solid var(--bdr);border-radius:999px;background:var(--sur);color:var(--txt);font:inherit;font-size:13px;font-weight:500;transition:background .25s,border-color .25s,color .25s}
+.vd-mode-btn:hover{border-color:var(--pri-lt)}
+.vd-mode-btn[aria-pressed="true"]{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
+#tab-compose[data-mode="verdict"] .chat-landing-sub,#tab-compose[data-mode="verdict"] .chat-composer>.hint{display:none}
+/* 서류 드롭다운·건수·저장 버튼은 접히고, 아이콘(첨부·메일)도 접힌다 */
+#cmp-doc-site,#cmp-attach-btn,#cmp-mail-btn{overflow:hidden;transition:max-width .4s cubic-bezier(.2,.8,.2,1),opacity .25s,padding .4s,margin .4s,border-width .4s,visibility 0s}
+#cmp-doc-site{max-width:190px}
+#cmp-attach-btn,#cmp-mail-btn{max-width:44px}
+#tab-compose[data-mode="verdict"] #cmp-doc-site,#tab-compose[data-mode="verdict"] #cmp-attach-btn,#tab-compose[data-mode="verdict"] #cmp-mail-btn{max-width:0;opacity:0;padding-left:0;padding-right:0;margin-left:0;margin-right:-10px;border-width:0;visibility:hidden;transition:max-width .4s cubic-bezier(.2,.8,.2,1),opacity .25s,padding .4s,margin .4s,border-width .4s,visibility 0s .4s}
+#tab-compose[data-mode="verdict"] #cmp-doc-count,#tab-compose[data-mode="verdict"] #cmp-doc-bar,#tab-compose[data-mode="verdict"] #cmp-doc-save{display:none}
+/* 처음 입력하는 동안은 입력칸이 넉넉히 커진다(쓰고 나면 일반 대화 크기로) */
+.chat-inputbar{transition:border-color .12s,border-radius .4s cubic-bezier(.2,.8,.2,1)}
+.chat-textarea{transition:min-height .45s cubic-bezier(.2,.8,.2,1)}
+#tab-compose[data-mode="verdict"]:not(.cmp-started) .chat-inputbar{border-radius:18px}
+#tab-compose[data-mode="verdict"]:not(.cmp-started) .chat-textarea{min-height:132px}
+.chat-landing-title.vd-swap{animation:vd-title .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes vd-title{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 안내문: 모드에 들어오면 펼쳐진다 */
+.vd-notice{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.vd-notice>div{min-height:0;overflow:hidden}
+#tab-compose[data-mode="verdict"] .vd-notice{grid-template-rows:1fr;opacity:1}
+.vd-notice p{margin:10px 6px 0;font-size:12.5px;line-height:1.7;color:var(--hint)}
+.vd-notice a{color:var(--pri);text-decoration:underline;text-underline-offset:3px}
+.vd-meter-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+/* 진행·결과 */
+.vd-block{margin:0 0 14px}
+.vd-status{display:flex;align-items:center;gap:10px;color:var(--hint);font-size:14px}
+.vd-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bdr);border-top-color:var(--pri);animation:vd-spin .9s linear infinite;flex:none}
+@keyframes vd-spin{to{transform:rotate(360deg)}}
+.vd-tail{margin:6px 0 0 24px;font-size:13px;color:var(--hint);opacity:.85;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.vd-brief{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px}
+.vd-brief dt{color:var(--hint)}
+.vd-brief dd.name{font-size:17px;font-weight:800}
+.vd-q{margin:0 0 14px;background:var(--pri-bg);border-radius:14px;padding:14px 16px;white-space:pre-wrap}
+.vd-q small{display:block;color:var(--pri);font-weight:700;margin-bottom:4px}
+.vd-ghost{margin-top:10px;border:1px solid var(--bdr);background:var(--sur);border-radius:999px;padding:6px 14px;font-size:13.5px}
+.vd-ghost:hover{border-color:var(--pri-lt)}
+.vd-run-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.vd-run-h strong{font-size:16px}
+.vd-elapsed{font-size:13px;color:var(--hint);font-variant-numeric:tabular-nums}
+.vd-note{font-size:13px;color:var(--hint);margin:0 0 12px}
+.vd-steps{list-style:none;margin:0;padding:0}
+.vd-step{display:grid;grid-template-columns:28px 1fr;column-gap:12px;position:relative;padding-bottom:16px}
+.vd-step::before{content:"";position:absolute;left:13px;top:30px;bottom:2px;width:2px;background:var(--bdr)}
+.vd-step:last-child::before{display:none}
+.vd-mark{width:28px;height:28px;border-radius:50%;border:2px solid var(--bdr);background:var(--bg);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--hint);transition:background .25s,border-color .25s,color .25s}
+.vd-step[data-s="active"] .vd-mark{border-color:var(--pri);color:var(--pri)}
+.vd-step[data-s="done"] .vd-mark{background:var(--pri);border-color:var(--pri);color:#fff}
+.vd-step[data-s="error"] .vd-mark{background:var(--red);border-color:var(--red);color:#fff}
+.vd-step-h{display:flex;align-items:baseline;gap:10px;min-height:28px}
+.vd-step-name{font-weight:700}
+.vd-step[data-s="wait"] .vd-step-name{color:var(--hint);font-weight:500}
+.vd-step-id{font-size:12.5px;color:var(--hint)}
+.vd-live{margin-top:8px;max-height:190px;overflow:auto;white-space:pre-wrap;font-size:13.5px;line-height:1.7;color:var(--sub);border-left:2px solid var(--pri);padding-left:12px}
+.vd-step details{margin-top:4px}
+.vd-step summary,.vd-full summary{cursor:pointer;color:var(--pri);font-size:13.5px}
+.vd-step pre{margin:8px 0 0;white-space:pre-wrap;font:inherit;font-size:13.5px;line-height:1.75;color:var(--sub)}
+.vd-alert{margin:8px 0 14px;background:var(--rbg);color:var(--red);border-radius:12px;padding:10px 14px;font-size:14px}
+.vd-alert .vd-ghost{color:var(--txt)}
+.vd-alert .vd-note{color:var(--sub);margin:6px 0 0}
+.vd-result{background:var(--sur);border:1px solid var(--bdr);border-radius:14px;box-shadow:var(--sh);overflow:hidden;margin:0 0 18px}
+.vd-result header{padding:16px 20px 2px}
+.vd-result h2{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.vd-meta{font-size:13px;color:var(--hint)}
+.vd-meta span+span{margin-left:14px}
+.vd-sum{padding:8px 20px 2px;font-size:15.5px;line-height:1.75}
+.vd-conf{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));margin:12px 20px 0;border-top:1px solid var(--bdr)}
+.vd-conf>div{padding:10px 0 2px}
+.vd-conf dt{font-size:12.5px;color:var(--hint)}
+.vd-conf dd{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.vd-conf dd.txt{font-size:15px;padding-top:4px}
+.vd-full{margin:12px 20px 0}
+.vd-full pre{margin:10px 0 0;white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.85;max-height:420px;overflow:auto}
+.vd-acts{display:flex;flex-wrap:wrap;gap:8px;padding:14px 20px}
+.vd-btn{border:1px solid var(--bdr);background:var(--sur);border-radius:999px;padding:7px 15px;font-size:14px;text-decoration:none;color:var(--txt);display:inline-flex;align-items:center}
+.vd-btn:hover{border-color:var(--pri-lt)}
+.vd-caution{background:var(--obg);padding:11px 20px;font-size:13px;color:var(--sub);line-height:1.6}
+@media (max-width:560px){.vd-conf{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){#cmp-doc-site,#cmp-attach-btn,#cmp-mail-btn,.chat-inputbar,.chat-textarea,.vd-notice,.vd-mark,.vd-mode-btn{transition-duration:.01ms!important}.chat-landing-title.vd-swap,.vd-dot{animation:none!important}}
 </style>
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -776,6 +859,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <button id="tab-btn-docdone" class="nav-subitem nav-dv" data-label="작성한 서류" onclick="_switchTab('docdone')">작성한 서류</button>
         </div>
       </div>
+      <button id="tab-btn-verdict" class="nav-btn" data-label="판결 시뮬레이션" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 7h14M7 7l-3.5 8a3.5 3.5 0 0 0 7 0L7 7zM17 7l-3.5 8a3.5 3.5 0 0 0 7 0L17 7zM8 21h8"/></svg>판결 시뮬레이션</button>
       <div class="nav-group collapsed" id="nav-group-mail">
         <button id="tab-btn-mail" class="nav-btn" data-label="메일" onclick="_switchTab('mail')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>메일</button>
         <button type="button" class="nav-toggle" id="nav-toggle-mail" aria-label="메일 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-mail" onclick="_navToggleMail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -858,11 +942,16 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)"></select>
+        <button type="button" class="vd-mode-btn" id="cmp-verdict-btn" aria-pressed="false" title="판결 시뮬레이션 — 사건 개요를 쓰면 참고용 가상 판결문을 만듭니다" onclick="_cmpVerdictToggle()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 7h14M7 7l-3.5 8a3.5 3.5 0 0 0 7 0L7 7zM17 7l-3.5 8a3.5 3.5 0 0 0 7 0L17 7zM8 21h8"/></svg>판결 시뮬레이션</button>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
         <input type="file" id="doc-host-file" multiple accept=".txt,.md,.html,.htm,.csv,.json,text/*,image/*,.pdf" style="display:none">
       </div>
+      <div class="vd-notice" id="cmp-verdict-notice"><div>
+        <p>참고용 가상 판결문이며 실제 판결이나 법률 자문이 아닙니다. 이름·연락처·주소 같은 개인정보는 빼고 입력해 주세요. 입력한 내용은 AI 제공자에게 전송되고, 작성에 쓴 만큼 GDC가 차감됩니다. <a href="https://klaw.hondi.net/verdict-generate.html" target="_blank" rel="noopener">K-Law에서 자세히 보기</a></p>
+        <p class="vd-meter-row"><span id="cmp-verdict-meter" aria-live="polite"></span><span class="vd-keyhint">줄바꿈은 Enter, 보내기는 Ctrl 또는 ⌘ + Enter</span></p>
+      </div></div>
       <div class="hint">발송을 확정하기 전에 K-Mail이 수신자·제목·본문·시각을 한 번에 정리해 "이대로 보낼까요?"라고 반드시 확인합니다. 회신을 모아 정리해달라고 말하면 그 시점도 함께 정하고, 도착한 보고는 "내 캠페인" 탭에서 볼 수 있습니다.</div>
     </div>
   </div>
@@ -2287,7 +2376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 'home'(왼쪽 메뉴 "홈" · 로고) · 'compose'/'letter'/'doc'(다른 화면에서 이 입력창의 특정 모드로 넘어올 때)는 모두 같은 화면(#tab-compose)이다.
 // home: 다른 화면에서 돌아오면 하던 그대로 보여 주고, 이미 이 화면이면 기본 모드(나만의 AI 비서)로 돌아간다.
-const _NAV_COMPOSE_NAMES = ['home', 'compose', 'letter', 'doc'];
+const _NAV_COMPOSE_NAMES = ['home', 'compose', 'letter', 'doc', 'verdict'];
 function _switchTab(name) {
   _sentCardHide('mail'); _sentCardHide('qs');
   const _wasComposeActive = document.getElementById('tab-compose').classList.contains('active');
@@ -2299,9 +2388,9 @@ function _switchTab(name) {
   document.getElementById('tab-' + _panelName).classList.add('active');
   if (_isCompose) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
-    else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : 'campaign', { force: true });
+    else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : _isCompose ? 'home' : name));
+  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : name === 'verdict' ? 'verdict' : _isCompose ? 'home' : name));
   _navBtn.classList.add('active');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
@@ -3706,6 +3795,7 @@ function _cmpToggleMic() {
 
 function _cmpChatUpdateSendState() {
   const input = document.getElementById('cmp-input');
+  if (_cmpMode === 'verdict' && window.VerdictHost) { VerdictHost.syncSend(); return; }   // 20자 이상·단계별 전송 가능 여부는 호스트가 안다
   document.getElementById('cmp-send-btn').disabled = !input.value.trim();
 }
 function _cmpScrollToBottom() {
@@ -3814,6 +3904,7 @@ function _cmpMaybeApprove(reply, action) {
 //   'campaign' 메일 · 캠페인(/kmail/chat, 내 캠페인에 기록)       ← 메일 아이콘 → 캠페인
 //   'letter'   메일 · 편지 작성(AI)(/kmail/chat mode=letter, 보낸메일함에만 기록) ← 메일 아이콘 → 편지 작성(AI)
 //   'doc'      서류 작성(고른 카테고리의 서류 작성 SP, iframe)       ← 서류 드롭다운에서 종류 선택
+//   'verdict'  판결 시뮬레이션(K-Law 공유 엔진 hondi.net/lib/klaw-engine.js, /klaw/relay)  ← 서류 드롭다운 옆 버튼 · 왼쪽 메뉴. 흐름은 verdict-host.js
 // 현재 모드는 입력창 안의 칩(×로 해제 → 기본 모드)과 인사말·예시 문구로 항상 보인다.
 const _CMP_MODE_UI = {
   default:  { title: '무엇을 도와드릴까요?', chip: '', ph: '무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다', sub: '' },
@@ -3822,10 +3913,12 @@ const _CMP_MODE_UI = {
   letter:   { title: '누구에게 어떤 편지를 쓸까요?', chip: '메일 · 편지 작성', ph: '예: 김 교수님께 지난 세미나 참석에 감사드리는 편지를 쓰고 싶어요',
               sub: '누구에게 무엇을 쓰고 싶은지 말씀해 주세요. 수신자·제목·본문을 정리해 확인받은 뒤 바로 보내며, 캠페인이 아니라 "보낸메일함"에만 기록됩니다. (예약·여러 명 발송은 메일(✉) → "캠페인"을 이용하세요.)' },
   doc:      { title: '어떤 서류를 작성할까요?', chip: '서류', ph: null, sub: '' },   // 칩에는 고른 서류 종류가, 예시 문구에는 그 서류 페이지가 알려 준 문구가 들어간다
+  verdict:  { title: '사건의 개요를 알려주세요', chip: '판결 시뮬레이션', ph: '언제, 누구와, 어떤 일이 있었는지 순서대로 적어 주세요. 자세할수록 결과가 좋아집니다.', sub: '' },
 };
 let _cmpMode = 'default';
 // 지금 모드에서 진행 중인 작업이 있는가(모드를 바꾸면 사라지는 것) — 확인창을 띄울지 판단한다
 function _cmpHasWork() {
+  if (_cmpMode === 'verdict') return !!(window.VerdictHost && VerdictHost.hasWork());   // 분석·추가질문·작성 중일 때만 — 끝난 결과는 이력(/klaw/sessions)에 남는다
   if (_cmpMode === 'doc') return _docHost.loaded && document.getElementById('tab-compose').classList.contains('doc-live');
   const nr = _navRoute.cur;
   if (_cmpChat.done && _navRoute.msgs.length === 0 && !(nr && nr.type === 'expert')) return false;   // 편지 발송·캠페인 접수가 끝난 뒤에는 잃을 작업이 없다
@@ -3837,7 +3930,7 @@ function _cmpSyncModeUi() {
   const sel = document.getElementById('cmp-doc-site');
   const t = document.querySelector('#cmp-landing .chat-landing-title');
   const s = document.querySelector('#cmp-landing .chat-landing-sub');
-  if (t) t.textContent = ui.title;
+  if (t && t.textContent !== ui.title) { t.textContent = ui.title; t.classList.remove('vd-swap'); void t.offsetWidth; t.classList.add('vd-swap'); }
   if (s) s.textContent = ui.sub;
   if (_cmpMode !== 'doc') {
     const input = document.getElementById('cmp-input');
@@ -3850,6 +3943,8 @@ function _cmpSyncModeUi() {
   if (chipEl) { chipEl.hidden = !chip; document.getElementById('cmp-mode-chip-text').textContent = chip; }
   const mb = document.getElementById('cmp-mail-btn');
   if (mb) mb.setAttribute('aria-pressed', (_cmpMode === 'campaign' || _cmpMode === 'letter') ? 'true' : 'false');
+  const vb = document.getElementById('cmp-verdict-btn');
+  if (vb) vb.setAttribute('aria-pressed', _cmpMode === 'verdict' ? 'true' : 'false');
 }
 // opts.keep  : 지금 대화(말풍선)를 그대로 둔 채 모드만 바꾼다(기본 모드가 K-Mail 로 연결할 때)
 // opts.force : 확인창 없이 바꾼다(다른 화면에서 이 입력창으로 넘어오는 내부 이동 — 캠페인 상세, 주소록 등)
@@ -3864,7 +3959,7 @@ function _cmpSetMode(mode, opts) {
   if (!opts.keep && hadWork) {
     const saved = _drAutoSave('mode');
     if (!saved && !opts.force &&
-        !confirm('진행 중인 작업이 사라집니다. 모드를 바꿀까요?\n(캠페인 초안은 "내 캠페인"에서 이어서 열 수 있습니다.)')) { _cmpSyncModeUi(); return false; }
+        !confirm(_cmpMode === 'verdict' ? '진행 중인 판결 시뮬레이션이 중단됩니다. 모드를 바꿀까요?' : '진행 중인 작업이 사라집니다. 모드를 바꿀까요?\n(캠페인 초안은 "내 캠페인"에서 이어서 열 수 있습니다.)')) { _cmpSyncModeUi(); return false; }
   }
   const input = document.getElementById('cmp-input');
   // 아직 시작한 작업이 없으면 적어 둔 글과 첨부는 새 모드로 가져간다
@@ -3875,6 +3970,7 @@ function _cmpSetMode(mode, opts) {
   document.getElementById('tab-compose').setAttribute('data-mode', mode);
   if (!opts.keep) _cmpChatStartNew();
   _docHostMode(mode === 'doc');
+  if (window.VerdictHost) VerdictHost.onMode(mode === 'verdict');   // 판결 시뮬레이션은 들어올 때 준비하고 나갈 때 정리한다
   if (carry && (carryText || carryAtt.length)) {
     input.value = carryText; _cmpPendingAttachments = carryAtt; _cmpRenderAttachList();
     _kmailAutoResize(input); _cmpChatUpdateSendState();
@@ -3886,6 +3982,11 @@ function _cmpSetMode(mode, opts) {
 // "+ 새 대화": 새 대화는 항상 기본 모드(나만의 AI 비서)에서 시작한다
 function _cmpNewConversation() {
   if (_cmpMode !== 'default') _cmpSetMode('default', { force: true }); else _cmpChatStartNew();
+}
+// 서류 드롭다운 옆 '판결 시뮬레이션' 버튼 — 켜고 끄는 토글(켜면 칩이 뜨고 ×로 해제)
+function _cmpVerdictToggle() {
+  if (_cmpMode === 'verdict') { _cmpSetMode('default'); return; }
+  if (_cmpSetMode('verdict')) { try { document.getElementById('cmp-input').focus(); } catch (x) {} }
 }
 // 입력창 왼쪽 메일(✉) 아이콘 — 편지 작성(AI) / 캠페인 중 고르는 팝오버. 둘 다 AI SP 를 부르는 모드다(빠른 발송은 폼 화면이라 왼쪽 메뉴에 둔다).
 function _cmpMailMenu(ev) {
@@ -4200,6 +4301,7 @@ async function _navRouteSend(text, attachments) {
 
 async function _cmpChatSend() {
   if (_cmpMode === 'doc') { await _docHostSubmit(); return; }
+  if (_cmpMode === 'verdict') { if (window.VerdictHost) await VerdictHost.submit(); return; }
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();
   const attachments = _cmpPendingAttachments.filter(a => !a.uploading);
@@ -4220,7 +4322,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('cmp-input');
   _kmailAutoResize(input);
   input.addEventListener('input', () => { _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput(); });
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _cmpChatSend(); } });
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    // 판결 시뮬레이션의 사건 개요는 길게 쓰는 글이고 보내면 바로 비용이 나간다 — Enter 는 줄바꿈, Ctrl/⌘+Enter 가 보내기(추가질문 답변은 Enter 로 보냄)
+    if (_cmpMode === 'verdict' && window.VerdictHost && VerdictHost.longForm() && !(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault(); _cmpChatSend();
+  });
 });
 
 // ══════════════════════════════════════════════════════════════
