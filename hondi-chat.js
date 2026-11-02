@@ -103,7 +103,14 @@
     var f = S.els && S.els.frame; if (!f || !f.contentWindow) return false;
     try { f.contentWindow.postMessage(msg, originOf(S.url)); return true; } catch (e) { return false; }
   }
-  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: 'delegate' }); }
+  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' }); if (S.spMsg) post(S.spMsg); }
+  /** 패널의 SP 를 바꾼다(각종 기관 선택). msg 가 null 이면 이 화면 기본 SP 위임으로 되돌린다. 페이지가 다시 로드돼도 announce() 가 다시 보낸다. */
+  function setSp(msg) {
+    S.spMsg = msg || null;
+    if (S.mounted) open();
+    post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' });
+    post(S.spMsg || { type: 'hondi-embed-sp', sp: null });
+  }
   function frameWindow() { return S.els && S.els.frame ? S.els.frame.contentWindow : null; }
   /** 처음 열 때 불러오고, K-Mail 로그인 아이디가 바뀌었으면(다른 아이디로 다시 로그인) 새 아이디로 다시 불러온다. */
   function ensureLoaded() {
@@ -160,7 +167,7 @@
   }
 
   var API = {
-    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow,
+    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp,
     _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };

@@ -3,6 +3,7 @@
  * 실행: node --test tests/guide.test.mjs
  */
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -97,9 +98,21 @@ test('desktop.html: 서류 선택 드롭다운 맨 위가 실시간 서류 검�
 test('desktop.html: "서류 선택" 오른쪽에 "각종 기관" 드롭다운(검색 입력 + K-서비스 27개 인프라 항목)', async () => {
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  for (const k of ['id="cmp-org-combo"', '각종 기관', 'id="cmp-org-q"', 'function _cmpOrgPick(', 'k-services.html?embed=mail#']) assert.ok(s.includes(k), k);
+  for (const k of ['id="cmp-org-combo"', '각종 기관', 'id="cmp-org-q"', 'function _cmpOrgPick(']) assert.ok(s.includes(k), k);
   const items = s.match(/const _ORG_ITEMS = (\[\[.*?\]\]);/s);
   assert.ok(items); const arr = eval(items[1]); assert.equal(arr.length, 27);
   assert.deepEqual(arr.map((x) => x[1]).slice(0, 4), ['메일', '응급', '법률', '치안 신고']); assert.equal(arr[26][1], '모임');
   assert.ok(s.indexOf('id="cmp-doc-combo"') < s.indexOf('id="cmp-org-combo"'), '서류 선택 오른쪽');
+});
+
+test('각종 기관: 고르면 입력창과 혼디 대화창이 그 SP로 전환된다(k-services 프레임 없음)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(!/org-host-frame|org-live/.test(h));
+  assert.match(h, /org:\s*\{ title:/);
+  assert.match(h, /_ORG_SP\s*=\s*\{[^}]*klaw:'SP-01_klaw'/);
+  assert.match(h, /HondiChat\.setSp\(\{ type: 'hondi-embed-sp'/);
+  assert.match(h, /_cmpMode === 'org'\) \{ await _orgSend/);
+  assert.match(h, /hondi-embed-sp-ask/);
+  assert.match(h, /hondi-embed-sp-ready/);
+  assert.match(h, /_orgLeave\(\)/);
 });
