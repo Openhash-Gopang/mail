@@ -565,7 +565,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 /* side-collapse */
 @media (min-width:961px){
-  .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:width .16s ease,margin-right .16s ease,box-shadow .16s ease}
+  .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:box-shadow .16s ease}
   .side-nav.sn-open{width:max-content;max-width:232px;box-shadow:6px 0 18px rgba(0,0,0,.12)}   /* 펼친 폭 = 문구 폭(고정 232px 가 아님). 본문을 밀지 않도록 늘어난 만큼의 오른쪽 여백(margin-right)은 스크립트가 잰다 */
   .side-nav:not(.sn-open) .nav-btn{font-size:0;gap:0;justify-content:center;padding-left:0;padding-right:0}
   .side-nav:not(.sn-open) .nav-btn svg{width:20px;height:20px}
