@@ -566,13 +566,18 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 /* side-collapse */
 @media (min-width:961px){
-  .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:width .32s cubic-bezier(.4,0,.2,1),margin-right .32s cubic-bezier(.4,0,.2,1),box-shadow .32s ease}
+  .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:width .45s cubic-bezier(.4,0,.2,1),margin-right .45s cubic-bezier(.4,0,.2,1),box-shadow .45s ease}
   .side-nav.sn-open{max-width:232px;box-shadow:6px 0 18px rgba(0,0,0,.12)}   /* 펼친 폭 = 문구 폭(고정 232px 가 아님). 본문을 밀지 않도록 늘어난 만큼의 오른쪽 여백(margin-right)은 스크립트가 잰다 */
-  .side-nav:not(.sn-open) .nav-btn{font-size:0;gap:0;justify-content:center;padding-left:0;padding-right:0}
-  .side-nav:not(.sn-open) .nav-btn svg{width:20px;height:20px}
-  .side-nav:not(.sn-open) .side-label{font-size:0;letter-spacing:0;padding:0;margin:10px 8px 8px;border-top:1px solid var(--bdr);height:0}
-  .side-nav:not(.sn-open) .side-group:first-child .side-label{border-top:0;margin-top:0}
-  .side-nav:not(.sn-open) .nav-sub,.side-nav:not(.sn-open) .side-foot,.side-nav:not(.sn-open) .nav-toggle{display:none}
+  /* 접힌 상태도 펼친 상태와 세로 배치가 같다: 글자·하위 메뉴·화살표는 지우지 않고(자리 유지) 투명하게만 한다 → 아이콘 높이가 변하지 않는다 */
+  .side-nav .nav-btn{padding-left:12px;padding-right:12px;justify-content:flex-start}
+  .side-nav .nav-btn svg{width:20px;height:20px}
+  .side-nav .side-label,.side-nav .nav-subitem,.side-nav .nav-sub{white-space:nowrap;overflow:hidden}   /* 폭이 좁아져도 글자가 줄바꿈되어 높이가 달라지지 않게 */
+  .side-nav .nl,.side-nav .nav-sub,.side-nav .side-foot,.side-nav .nav-toggle{transition:opacity .2s ease}
+  .side-nav:not(.sn-open) .nl,.side-nav:not(.sn-open) .nav-sub,.side-nav:not(.sn-open) .side-foot,.side-nav:not(.sn-open) .nav-toggle,
+  .side-nav.sn-closing .nl,.side-nav.sn-closing .nav-sub,.side-nav.sn-closing .side-foot,.side-nav.sn-closing .nav-toggle{opacity:0;pointer-events:none}
+  .side-nav.sn-open:not(.sn-closing) .nl,.side-nav.sn-open:not(.sn-closing) .nav-sub,.side-nav.sn-open:not(.sn-closing) .side-foot,.side-nav.sn-open:not(.sn-closing) .nav-toggle{transition-delay:.15s}   /* 폭이 어느 정도 늘어난 뒤 글자가 나타난다 */
+  .side-nav .side-label{border-top:1px solid transparent;transition:border-color .2s ease}
+  .side-nav:not(.sn-open) .side-group:not(:first-child) .side-label,.side-nav.sn-closing .side-group:not(:first-child) .side-label{border-top-color:var(--bdr)}
   .side-nav .nav-btn{white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){.side-nav{transition:none}}
@@ -997,7 +1002,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="doc-host-row" id="cmp-doc-row">
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
         <div class="doc-combo" id="cmp-doc-combo">
-          <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 검색</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
             <input type="search" id="cmp-doc-q" class="doc-combo-q" placeholder="서류 검색 — 이름·별칭 (예: 소장, 진단서)" autocomplete="off" aria-label="서류 검색" oninput="_cmpDocComboFilter()" onkeydown="_cmpDocComboKey(event)">
             <div class="doc-combo-list" id="cmp-doc-list" role="listbox" aria-label="서류"></div>
@@ -1778,10 +1783,12 @@ function _kmailAutoResize(el) {
   if (!nav) return;
   // 펼침·접힘을 서서히: width(px)와 margin-right 를 같은 시간·같은 곡선으로 함께 움직여, 폭+여백이 늘 64px 로 일정 → 본문은 한 칸도 밀리지 않는다.
   //   (width:max-content 는 transition 이 안 되므로 문구 폭을 먼저 재서 px 로 준다.)
-  let closeT = 0;
+  let closeT = 0, closeT2 = 0;
   const wide = () => window.innerWidth > 960;
+  // 글자만 따로 투명하게 하려고 항목의 글자(텍스트 노드)를 .nl 로 감싼다
+  nav.querySelectorAll('.nav-btn, .side-label').forEach(el => { [...el.childNodes].forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) { const sp = document.createElement('span'); sp.className = 'nl'; n.replaceWith(sp); sp.textContent = n.textContent.replace(/\s+/g, ' ').trim(); } }); });
   const snOpen = () => {
-    clearTimeout(closeT);
+    clearTimeout(closeT); clearTimeout(closeT2); nav.classList.remove('sn-closing');
     if (!wide()) { nav.classList.add('sn-open'); return; }
     if (nav.classList.contains('sn-open') && nav.style.width) return;
     nav.style.transition = 'none'; nav.classList.add('sn-open'); nav.style.width = 'max-content'; nav.style.marginRight = '';
@@ -1789,11 +1796,14 @@ function _kmailAutoResize(el) {
     nav.style.width = ''; nav.style.marginRight = ''; void nav.offsetWidth; nav.style.transition = '';   // 접힌 상태(64px)에서 출발
     nav.style.width = w + 'px'; nav.style.marginRight = (-(w - 64)) + 'px';
   };
+  // 접을 때: ① 글자부터 지워 아이콘만 남기고(0.22초) ② 그다음 천천히 폭을 줄인다(0.45초) ③ 끝나면 접힌 상태로 정리
   const snClose = () => {
-    clearTimeout(closeT);
-    if (!wide()) { nav.classList.remove('sn-open'); nav.style.width = ''; nav.style.marginRight = ''; return; }
-    nav.style.width = ''; nav.style.marginRight = '';
-    closeT = setTimeout(() => nav.classList.remove('sn-open'), 340);   // 문구는 폭이 다 줄어든 뒤에 숨긴다
+    clearTimeout(closeT); clearTimeout(closeT2);
+    if (!wide()) { nav.classList.remove('sn-open', 'sn-closing'); nav.style.width = ''; nav.style.marginRight = ''; return; }
+    if (!nav.classList.contains('sn-open')) return;
+    nav.classList.add('sn-closing');
+    closeT = setTimeout(() => { nav.style.width = ''; nav.style.marginRight = ''; }, 230);
+    closeT2 = setTimeout(() => nav.classList.remove('sn-open', 'sn-closing'), 230 + 480);
   };
   nav.addEventListener('mouseenter', snOpen);
   nav.addEventListener('mouseleave', snClose);
@@ -2010,7 +2020,7 @@ function _cmpDocComboSync() {
   const sel = document.getElementById('cmp-doc-site'), lb = document.getElementById('cmp-doc-combo-label');
   if (!sel || !lb) return;
   const o = sel.selectedIndex >= 0 && sel.options[sel.selectedIndex];
-  lb.textContent = (o && o.value) ? o.textContent : '서류 검색';
+  lb.textContent = (o && o.value) ? o.textContent : '서류 작성';
 }
 function _cmpDocComboToggle(e) {
   if (e) e.stopPropagation();
@@ -4272,7 +4282,7 @@ function _cmpSyncModeUi() {
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
 const _TOPBAR_MODE_LABEL = { default: '홈', letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
-function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3).map(n => n.textContent).join('').trim(); }
+function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => n.textContent).join('').trim(); }   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
 function _topbarSyncPage() {
   const el = document.getElementById('topbar-page');
   if (!el) return;

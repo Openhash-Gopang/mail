@@ -181,3 +181,15 @@ test('좌측 메뉴 하단 GDC 항목: 사용량(그래프) 화면을 연다', (
   assert.match(h, /https:\/\/hondi\.net\/usage\.html\?embed=mail/);
   assert.ok(h.indexOf('id="tab-btn-gdc"') < h.indexOf('id="tab-btn-settings"'));
 });
+
+test('좌측 메뉴: 접힌 상태도 펼친 상태와 세로 배치가 같고, 접을 때 글자를 먼저 지운 뒤 천천히 폭을 줄인다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /sn-closing/);
+  assert.match(h, /\.side-nav \.side-label,\.side-nav \.nav-subitem,\.side-nav \.nav-sub\{white-space:nowrap/);
+  assert.ok(!/\.side-nav:not\(\.sn-open\) \.nav-sub,\.side-nav:not\(\.sn-open\) \.side-foot,\.side-nav:not\(\.sn-open\) \.nav-toggle\{display:none\}/.test(h), '접힌 상태에서 display:none 으로 자리를 없애지 않는다');
+  assert.match(h, /closeT = setTimeout\(\(\) => \{ nav\.style\.width = ''/);
+});
+test('서류 드롭다운 버튼 문구는 "서류 작성"', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /id="cmp-doc-combo-label">서류 작성</);
+});
