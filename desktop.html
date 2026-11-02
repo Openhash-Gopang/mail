@@ -625,7 +625,8 @@ header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-siz
 .pf-send:disabled{background:var(--hint);cursor:not-allowed}
 .pf-hint{font-size:13.5px;color:var(--sub);line-height:1.7;margin:8px 4px 0}
 .pf-grid{display:grid;gap:22px;margin-top:20px}
-@media (min-width:1000px){.pf-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+@media (min-width:1000px){.pf-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}.pf-prev{position:sticky;top:66px}}
+.pf-side{display:flex;flex-direction:column;gap:18px;min-width:0}
 .pf-prev-bar,.pf-fields-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
 .pf-prev-bar b,.pf-fields-head b{font-size:16px;margin-right:auto}
 .pf-live{font-size:13px;color:var(--pri);font-weight:700}
@@ -634,17 +635,27 @@ header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-siz
 .pf-fields{background:#fff;border:1px solid var(--bdr);border-radius:14px;padding:16px 16px 14px}
 .pf-fields-note{font-size:13.5px;color:var(--sub);line-height:1.7;margin-bottom:6px}
 .pf-row{display:grid;grid-template-columns:96px minmax(0,1fr) 84px 52px;gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--bdr)}
-.pf-row.tpl{grid-template-columns:96px minmax(0,1fr) 84px}
 .pf-lab{font-size:15px;font-weight:700;padding-top:9px;word-break:keep-all}
-.pf-row input,.pf-row textarea,.pf-add input,.pf-add select{width:100%;min-width:0;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--txt)}
+.pf-row input,.pf-row textarea,.pf-add input,.pf-add select,.pf-offer input,.pf-offer textarea,.pf-offer select{width:100%;min-width:0;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--txt)}
 .pf-row textarea{min-height:68px;resize:vertical;line-height:1.6}
-.pf-row input:focus,.pf-row textarea:focus,.pf-add input:focus,.pf-add select:focus{outline:none;border-color:var(--pri)}
+.pf-row input:focus,.pf-row textarea:focus,.pf-add input:focus,.pf-add select:focus,.pf-offer input:focus,.pf-offer textarea:focus,.pf-offer select:focus{outline:none;border-color:var(--pri)}
 .pf-vis{border:1px solid var(--bdr);border-radius:999px;background:var(--sur);font:inherit;font-size:13.5px;font-weight:700;padding:8px 0;cursor:pointer;color:var(--sub);margin-top:1px}
 .pf-vis[aria-pressed=true]{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
 .pf-del{border:0;background:none;color:var(--sub);font:inherit;font-size:13.5px;cursor:pointer;padding:9px 0}
 .pf-del:hover{color:#c0392b}
 .pf-add{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
-@media (max-width:640px){.pf-row,.pf-row.tpl{grid-template-columns:minmax(0,1fr) 84px 52px}.pf-row .pf-lab,.pf-row .pf-lab-in{grid-column:1/-1;padding-top:0}.pf-row input:not(.pf-lab-in),.pf-row textarea{grid-column:1/2}.pf-add{grid-template-columns:1fr 1fr}.pf-add input{grid-column:1/-1}}
+@media (max-width:640px){.pf-row{grid-template-columns:minmax(0,1fr) 84px 52px}.pf-row .pf-lab,.pf-row .pf-lab-in{grid-column:1/-1;padding-top:0}.pf-row input:not(.pf-lab-in),.pf-row textarea{grid-column:1/2}.pf-add{grid-template-columns:1fr 1fr}.pf-add input{grid-column:1/-1}}
+.pf-sub{font-size:13.5px;color:var(--sub);line-height:1.7;margin:2px 0 8px}
+.pf-offer{display:grid;grid-template-columns:92px minmax(0,1fr) 84px 52px;gap:8px;align-items:start;border:1px solid var(--bdr);border-radius:12px;padding:12px;margin-top:10px;background:#fff}
+.pf-offer .pf-full{grid-column:1/-1}
+.pf-offer textarea{min-height:56px;resize:vertical;line-height:1.6}
+.pf-offer-meta{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.85fr) minmax(0,1.6fr) minmax(0,1fr);gap:8px;grid-column:1/-1}
+.pf-offer-chk{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:14.5px;color:var(--txt)}
+.pf-offer-chk input{width:auto}
+.pf-offers-empty{font-size:14.5px;color:var(--sub);padding:12px 2px}
+.pf-addoffer{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pf-biz-title{font-size:15px;font-weight:800;margin:18px 0 2px}
+@media (max-width:640px){.pf-offer{grid-template-columns:92px minmax(0,1fr) 84px 52px}.pf-offer-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #set-sec-profile [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.pf-thread{transition:none}}
 .set-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -1223,11 +1234,13 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <div class="pf-prev-bar">
               <b>내 프로필 웹페이지</b>
               <span id="pf-live" class="pf-live" hidden>작성 중…</span>
+              <button type="button" class="btn btn-outline btn-sm" id="pf-tidy" onclick="_profTidy()" title="지금까지 모은 내용을 나비가 깔끔하게 정리합니다">나비로 정리</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="_profOpen()">새 창으로 보기</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="_profDownload()">HTML 저장</button>
             </div>
             <iframe id="pf-frame" class="pf-frame" title="내 프로필 웹페이지 미리보기" sandbox=""></iframe>
           </div>
+          <div class="pf-side">
           <div class="pf-fields">
             <div class="pf-fields-head"><b>내 정보 항목</b><span id="pf-count" class="pf-count"></span><button type="button" class="btn btn-outline btn-sm" onclick="_profReset()">처음부터</button></div>
             <div class="pf-fields-note">처음에는 <b>이름만 공개</b>이고 나머지는 모두 <b>비공개</b>입니다. 내가 <b>공개</b>로 바꾼 항목만 페이지와 저장한 HTML 파일에 들어갑니다.</div>
@@ -1237,6 +1250,19 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
               <select id="pf-add-type" aria-label="새 항목 형식"><option value="text">글 한 줄</option><option value="long">긴 글</option><option value="list">목록</option><option value="link">링크</option></select>
               <button type="button" class="btn btn-primary btn-sm" onclick="_profAddField()">항목 추가</button>
             </div>
+          </div>
+          <div class="pf-fields" id="pf-bizbox">
+            <div class="pf-fields-head"><b>상품·서비스</b><span id="pf-offcount" class="pf-count"></span></div>
+            <div class="pf-fields-note">판매하는 <b>상품</b>이나 제공하는 <b>서비스</b>를 추가하세요. 추가한 것은 <b>비공개</b>로 시작하고, 공개로 바꾼 것만 페이지에 카드로 나옵니다. 가격·재고는 내가 적은 값이 그대로 나오며 페이지에는 기준일이 표시됩니다.</div>
+            <div id="pf-offers"></div>
+            <div class="pf-addoffer">
+              <button type="button" class="btn btn-primary btn-sm" onclick="_profAddOffer('product')">＋ 상품 추가</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="_profAddOffer('service')">＋ 서비스 추가</button>
+            </div>
+            <div class="pf-biz-title">주문·예약·배송·방문 안내</div>
+            <div class="pf-sub">이 페이지는 주문·결제를 직접 받지 않습니다. 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
+            <div id="pf-biz-rows"></div>
+          </div>
           </div>
         </div>
       </section>
@@ -3143,7 +3169,8 @@ window.addEventListener('hondi-mail-info-change', (ev) => {
 // 기본 항목(템플릿)과 사용자가 더한 항목을 한 목록(fields)으로 다룬다. 항목마다 공개 여부(pub)가 있고, 처음에는 이름만 공개다.
 // 내 웹페이지(스크립트 없는 단일 HTML)에는 공개로 정한 항목만 들어간다. 나비(프로필 작성 SP)는 값만 채울 수 있고 공개 여부는 바꾸지 못한다.
 // 입력 필드는 SP 대화창이 되고, 답변 끝의 ~~~profile JSON 이 항목 값에 합쳐진다. 초안(값·공개 여부)은 이 브라우저에만 보관한다.
-const _PROF_KEY = 'naviProfileDraft2:', _PROF_KEY_OLD = 'naviProfileDraft:', _PROF_MAXF = 30, _PROF_TYPES = ['text', 'long', 'list', 'link'];
+const _PROF_KEY = 'naviProfileDraft2:', _PROF_KEY_OLD = 'naviProfileDraft:', _PROF_MAXF = 40, _PROF_MAXO = 30, _PROF_TYPES = ['text', 'long', 'list', 'link'];
+const _PROF_STOCK = { '': '표시 안 함', in: '여유 있음', low: '소량 남음', out: '품절·마감', made: '주문 제작' };
 const _PROF_TPL = [
   { id: 'name', label: '이름', type: 'text', pub: true },
   { id: 'headline', label: '한 줄 소개', type: 'text' },
@@ -3155,21 +3182,34 @@ const _PROF_TPL = [
   { id: 'hobby', label: '취미', type: 'text' },
   { id: 'age', label: '나이', type: 'text', sens: true },
   { id: 'gender', label: '성별', type: 'text', sens: true },
+  // 판매·서비스 안내(grp: 'biz') — 상품·서비스 패널에서 편집한다. 모두 비공개로 시작한다
+  { id: 'order', label: '주문 방법', type: 'long', grp: 'biz' },
+  { id: 'orderUrl', label: '주문 링크', type: 'link', grp: 'biz' },
+  { id: 'reserve', label: '예약 방법', type: 'long', grp: 'biz' },
+  { id: 'reserveUrl', label: '예약 링크', type: 'link', grp: 'biz' },
+  { id: 'delivery', label: '배송 방법', type: 'long', grp: 'biz' },
+  { id: 'pay', label: '결제·환불 안내', type: 'long', grp: 'biz' },
+  { id: 'hours', label: '영업시간', type: 'text', grp: 'biz' },
+  { id: 'directions', label: '찾아가는 길', type: 'long', grp: 'biz', sens: true },
+  { id: 'mapUrl', label: '지도 링크', type: 'link', grp: 'biz', sens: true },
+  { id: 'reviewUrl', label: '후기 보기 링크', type: 'link', grp: 'biz' },
 ];
-const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용자와 짧게 대화하며 사용자 본인의 소개 웹페이지(프로필)에 들어갈 항목의 값을 채워 준다.\n\n' +
+const _PROF_SP = '당신은 나비웹의 "프로필 작성" 도우미다. 사용자와 짧게 대화하며 사용자 본인의 소개 웹페이지에 들어갈 값을 채우고, 모인 내용을 깔끔하고 단순한 한 페이지로 정리한다.\n\n' +
   '[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 존댓말.\n\n' +
-  '[진행] ① 이름(또는 활동명)과 한 줄 소개를 먼저 묻는다. ② 이어서 하는 일(직업·업종)·취미·관심사처럼 사용자가 말하고 싶어 하는 것만 차례로 묻는다. ③ 사용자가 말한 내용은 곧바로 항목 값으로 정리해 보여 준다.\n\n' +
-  '[기본 항목] 이름, 한 줄 소개, 소개, 주소, 이메일, 업종, 직업, 취미, 나이, 성별. 해당하는 값은 이 이름(label)을 그대로 쓴다. 이 밖의 내용은 새 항목으로 만들어도 된다.\n\n' +
+  '[진행] ① 이름(또는 활동명)과 한 줄 소개를 먼저 묻는다. ② 사용자가 상품을 판매하거나 서비스를 제공한다고 하면 상품·서비스를 하나씩 묻는다(이름 → 가격·단위 → 재고 상태 → 예약 가능 여부). 그다음 주문 방법, 배송 방법, 영업시간·찾아가는 길, 예약 방법을 한 가지씩 묻는다. ③ 직업·업종·취미 같은 소개는 사용자가 말하고 싶어 하는 만큼만. ④ 사용자가 말한 내용은 곧바로 값으로 정리해 보여 준다.\n\n' +
+  '[페이지 구성] 값은 다음처럼 한 페이지로 그려진다. 맨 위에 이름·한 줄 소개·소개, 그 아래 상품·서비스 카드(이름·설명·가격·재고·예약 가능), 주문·예약(주문 방법·예약 방법·주문 링크·예약 링크), 배송·결제, 찾아오시는 길(영업시간·찾아가는 길·지도 링크), 후기 링크. 이 페이지는 정적이어서 주문·결제를 받거나 재고를 스스로 갱신하지 못하고, 사용자가 적은 값이 그대로 나온다. 사용자가 물으면 이 점을 사실대로 말한다.\n\n' +
+  '[기본 항목] 이름, 한 줄 소개, 소개, 주소, 이메일, 업종, 직업, 취미, 나이, 성별, 주문 방법, 주문 링크, 예약 방법, 예약 링크, 배송 방법, 결제·환불 안내, 영업시간, 찾아가는 길, 지도 링크, 후기 보기 링크. 해당하는 값은 이 이름(label)을 그대로 쓴다. 이 밖의 내용은 새 항목으로 만들어도 된다.\n\n' +
   '[항목 출력 형식] 값을 채우거나 고칠 때마다 답변 맨 끝에 아래 형식의 블록을 정확히 하나 쓴다(블록 밖에는 한두 문장의 안내만). 새로 알게 됐거나 바뀐 항목만 넣으면 되고, 넣지 않은 항목은 그대로 유지된다. 사용자 메시지가 [현재 프로필(JSON)]으로 시작하면 그것이 현재 값이다.\n' +
-  '~~~profile\n{"name":"이름","headline":"한 줄 소개","intro":"소개 글(3~6문장)","fields":[{"label":"직업","value":"개발자"},{"label":"하는 일","type":"list","value":["항목1","항목2"]},{"label":"블로그","type":"link","value":"https://..."}]}\n~~~\n' +
-  'type 은 text(기본, 한 줄) · long(긴 글) · list(목록) · link(https 주소) 중 하나. 유효한 JSON 한 덩어리여야 하며 줄바꿈이 필요하면 \\n 으로 쓴다.\n\n' +
-  '[공개 여부] 공개할지 말지는 사용자가 화면의 항목 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(처음엔 이름만 공개이고 나머지는 비공개다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
-  '[금지] 사용자가 말하지 않은 사실을 지어내지 않는다. 주소·이메일·나이·성별과 전화번호·주민등록번호·계좌 같은 개인 식별 정보는 먼저 묻지 않으며, 사용자가 스스로 말한 경우에만 해당 항목에 적는다. 건강·종교·정치 성향 같은 민감한 내용은 사용자가 직접 원할 때만 넣는다.';
-let _prof = { active: false, ready: false, queue: [], pending: {}, fields: null, busy: false, firstSent: false, timer: null, rt: null };
+  '~~~profile\n{"name":"이름","headline":"한 줄 소개","intro":"소개 글","fields":[{"label":"주문 방법","value":"카카오톡 채널로 주문"},{"label":"취미","value":"사진"}],"offerings":[{"name":"한라봉 5kg","kind":"product","desc":"당도 높은 제주 한라봉","price":25000,"unit":"박스","stock":"in","qty":12,"reserve":false}]}\n~~~\n' +
+  'fields 의 type 은 text(기본, 한 줄) · long(긴 글) · list(목록) · link(https 주소) 중 하나. offerings 의 kind 는 product(상품) 또는 service(서비스), price 는 원 단위 숫자(무료는 0, 모르면 생략), stock 은 in(여유 있음) · low(소량 남음) · out(품절·마감) · made(주문 제작) 중 하나(모르면 생략), qty 는 남은 수량 숫자, reserve 는 예약 가능 여부(true/false). 같은 name 의 상품은 바뀐 키만 넣으면 된다. 유효한 JSON 한 덩어리여야 하며 줄바꿈이 필요하면 \\n 으로 쓴다.\n\n' +
+  '[정리 요청] "정리해 달라"는 요청이 오면: 소개는 3~5문장, 한 줄 소개는 30자 안팎으로 다듬고, 상품 설명은 한두 문장으로 줄이고, 빠진 것 중 가장 중요한 한 가지를 물어본다. 이름·가격·재고·수량·주소 같은 사실 값은 사용자가 말하지 않았다면 바꾸지 않는다.\n\n' +
+  '[공개 여부] 공개할지 말지는 사용자가 화면의 목록에서 직접 정한다. 나비는 공개 여부를 정하거나 바꾸거나 권하지 않는다(처음엔 이름만 공개이고 나머지는 모두 비공개다). 필요하면 "공개할 항목은 오른쪽(아래) 목록에서 골라 주세요"라고 한 줄로만 안내한다.\n\n' +
+  '[금지] 사용자가 말하지 않은 사실을 지어내지 않는다. 소비자 후기·평점·판매량·수상·인증은 만들어 쓰지 않는다(후기는 주소만 받아 "후기 보기 링크"에 적는다). 할인·한정·최고 같은 광고 문구를 덧붙이지 않는다. 주소·이메일·나이·성별과 전화번호·주민등록번호·계좌 같은 개인 식별 정보는 먼저 묻지 않으며, 사용자가 스스로 말한 경우에만 해당 항목에 적는다. 건강·종교·정치 성향 같은 민감한 내용은 사용자가 직접 원할 때만 넣는다.';
+let _prof = { active: false, ready: false, queue: [], pending: {}, fields: null, offers: null, busy: false, firstSent: false, timer: null, rt: null };
 const _pfEl = (id) => document.getElementById(id);
 function _profStoreKey() { return _PROF_KEY + ((_mailIdCurrentSettings && _mailIdCurrentSettings.mail_id) || ''); }
 function _profNewId() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function _profTplFields() { return _PROF_TPL.map(t => ({ id: t.id, label: t.label, type: t.type, value: '', pub: !!t.pub, tpl: true, sens: !!t.sens })); }
+function _profTplFields() { return _PROF_TPL.map(t => ({ id: t.id, label: t.label, type: t.type, value: '', pub: !!t.pub, tpl: true, sens: !!t.sens, grp: t.grp || '' })); }
 /** 순수 함수 — 형식에 맞게 값을 정리한다(list 는 줄바꿈 문자열, link 는 https 만). 쓸 수 없으면 ''. */
 function _profNormVal(type, v) {
   const ctl = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, one = (x) => String(x == null ? '' : x).replace(ctl, '').trim();
@@ -3187,7 +3227,7 @@ function _profRestore(a) {
     const t = F.find(b => b.tpl && b.id === x.id);
     if (t) { t.value = String(x.value == null ? '' : x.value).slice(0, 1200); t.pub = !!x.pub; }
     else if (x.tpl === false && F.length < _PROF_MAXF && _PROF_TYPES.includes(x.type) && typeof x.label === 'string' && x.label.trim())
-      F.push({ id: _profNewId(), label: x.label.trim().slice(0, 20), type: x.type, value: String(x.value == null ? '' : x.value).slice(0, 2400), pub: !!x.pub, tpl: false, sens: false });
+      F.push({ id: _profNewId(), label: x.label.trim().slice(0, 20), type: x.type, value: String(x.value == null ? '' : x.value).slice(0, 2400), pub: !!x.pub, tpl: false, sens: false, grp: '' });
   });
   return F;
 }
@@ -3197,7 +3237,7 @@ function _profMigrateOld(o) {
   const put = (label, type, v) => {
     const val = _profNormVal(type, v), l = String(label == null ? '' : label).trim().slice(0, 20); if (!val || !l) return;
     let f = F.find(x => x.label === l);
-    if (!f) { if (F.length >= _PROF_MAXF) return; f = { id: _profNewId(), label: l, type, value: '', pub: false, tpl: false, sens: false }; F.push(f); }
+    if (!f) { if (F.length >= _PROF_MAXF) return; f = { id: _profNewId(), label: l, type, value: '', pub: false, tpl: false, sens: false, grp: '' }; F.push(f); }
     f.value = val;
   };
   put('이름', 'text', o.name); put('한 줄 소개', 'text', o.headline); put('소개', 'long', o.intro);
@@ -3206,11 +3246,38 @@ function _profMigrateOld(o) {
   (Array.isArray(o.links) ? o.links : []).forEach(x => x && put(x.label, 'link', x.url));
   return F;
 }
+/** 순수 함수 — 가격(원). 숫자나 '25,000원' 같은 글을 받고, 알 수 없으면 null(가격 문의). */
+function _profPriceNum(v) {
+  if (typeof v !== 'number' && typeof v !== 'string') return null;
+  let n = v; if (typeof v === 'string') { const t = v.replace(/[,\s원₮]/g, ''); if (!/^\d+(\.\d+)?$/.test(t)) return null; n = Number(t); }
+  return (isFinite(n) && n >= 0 && n <= 1e10) ? Math.round(n) : null;
+}
+function _profQtyNum(v) { if (typeof v !== 'number' && typeof v !== 'string') return null; if (v === '') return null; const n = Number(v); return (isFinite(n) && n >= 0 && n <= 99999) ? Math.floor(n) : null; }
+/** 순수 함수 — 상품·서비스 한 건을 정리한다. partial 이면 말해 준 키만 돌려준다(나비가 값 일부만 바꿀 때). 이름이 없으면 null. */
+function _profOfferClean(x, partial) {
+  if (!x || typeof x !== 'object') return null;
+  const has = (k) => Object.prototype.hasOwnProperty.call(x, k), o = {}, name = _profNormVal('text', x.name).slice(0, 40);
+  if (!name) return null; o.name = name;
+  if (!partial || has('kind')) o.kind = x.kind === 'service' ? 'service' : 'product';
+  if (!partial || has('desc')) o.desc = _profNormVal('long', x.desc).replace(/\s*\n\s*/g, ' ').slice(0, 300);
+  if (!partial) o.price = _profPriceNum(x.price); else if (has('price') && _profPriceNum(x.price) !== null) o.price = _profPriceNum(x.price);
+  if (!partial || has('unit')) o.unit = _profNormVal('text', x.unit).slice(0, 10);
+  if (!partial) o.stock = has('stock') && Object.prototype.hasOwnProperty.call(_PROF_STOCK, x.stock) ? x.stock : ''; else if (has('stock') && Object.prototype.hasOwnProperty.call(_PROF_STOCK, x.stock)) o.stock = x.stock;
+  if (!partial) o.qty = _profQtyNum(x.qty); else if (has('qty') && _profQtyNum(x.qty) !== null) o.qty = _profQtyNum(x.qty);
+  if (!partial) o.reserve = x.reserve === true; else if (typeof x.reserve === 'boolean') o.reserve = x.reserve;
+  return o;
+}
+/** 순수 함수 — 저장해 둔 것(이전 방식의 항목 배열 또는 {fields, offers})을 되살린다. */
+function _profRestoreAll(o) {
+  const offers = [];
+  if (o && !Array.isArray(o) && typeof o === 'object' && Array.isArray(o.offers)) o.offers.slice(0, _PROF_MAXO).forEach(x => { const c = _profOfferClean(x, false); if (c) { c.id = _profNewId(); c.pub = !!x.pub; offers.push(c); } });
+  return { fields: _profRestore(Array.isArray(o) ? o : (o && typeof o === 'object' ? o.fields : null)), offers };
+}
 function _profLoad() {
-  let F = null;
-  try { const raw = localStorage.getItem(_profStoreKey()); if (raw) F = _profRestore(JSON.parse(raw)); } catch (x) {}
-  if (!F) { try { const old = localStorage.getItem(_PROF_KEY_OLD + ((_mailIdCurrentSettings && _mailIdCurrentSettings.mail_id) || '')); if (old) F = _profMigrateOld(JSON.parse(old)); } catch (x) {} }
-  _prof.fields = F || _profTplFields();
+  let R = null;
+  try { const raw = localStorage.getItem(_profStoreKey()); if (raw) R = _profRestoreAll(JSON.parse(raw)); } catch (x) {}
+  if (!R) { try { const old = localStorage.getItem(_PROF_KEY_OLD + ((_mailIdCurrentSettings && _mailIdCurrentSettings.mail_id) || '')); if (old) R = { fields: _profMigrateOld(JSON.parse(old)), offers: [] }; } catch (x) {} }
+  _prof.fields = R ? R.fields : _profTplFields(); _prof.offers = R ? R.offers : [];
 }
 function _profEnter() {
   if (!window.HondiChat) { _drToast('대화창을 열 수 없습니다.'); return; }
@@ -3218,7 +3285,7 @@ function _profEnter() {
   if (typeof _org !== 'undefined' && _org) _orgLeave();   // 기관·전문가 대화를 쓰고 있었다면 먼저 닫는다(대화창은 하나)
   _prof.active = true; _prof.ready = false; _prof.queue = [];
   HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:profile:v2', spText: _PROF_SP, label: '프로필 작성', greeting: '', role: '', context: '' });
-  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); _profRenderOffers(); }
   _profRefresh(); _profSyncBtn();
 }
 function _profLeave() {
@@ -3237,19 +3304,27 @@ function _profBubble(role, content) {
   if (role === 'user') b.textContent = content; else b.innerHTML = content;
   row.appendChild(b); th.appendChild(row); th.scrollTop = th.scrollHeight; return b;
 }
-function _profSend() {
-  const inp = _pfEl('pf-input'), text = inp.value.trim();
+function _profSend() { const inp = _pfEl('pf-input'); _profSendText(inp.value.trim(), false, inp); }
+/** 나비에게 모인 내용을 깔끔한 페이지로 정리해 달라고 요청한다(현재 값을 함께 보낸다). */
+function _profTidy() {
+  if (_prof.busy) return;
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); _profRenderOffers(); }
+  _profSendText('지금까지 모은 내용으로 페이지를 깔끔하게 정리해 주세요.', true, null);
+}
+function _profSendText(text, withCtx, inp) {
   if (!text || _prof.busy) return;
   if (!_prof.active) _profEnter();
   if (!_prof.active) return;
-  inp.value = ''; _prof.busy = true; _profSyncBtn();
+  if (inp) inp.value = '';
+  _prof.busy = true; _profSyncBtn();
   _pfEl('pf-box').classList.add('pf-started'); _pfEl('pf-live').hidden = false;
   _profBubble('user', text);
   const wb = _profBubble('assistant', '<span class="org-wait" role="status" aria-live="polite"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>');
   let ask = text;
-  if (!_prof.firstSent) {   // 이미 채운 값을 이어서 고친다. 주소·이메일·나이·성별은 대화창으로 보내지 않는다
+  if (withCtx || !_prof.firstSent) {   // 이미 채운 값을 이어서 고친다. 주소·이메일·나이·성별·찾아가는 길·지도 링크는 대화창으로 보내지 않는다
     const cur = _prof.fields.filter(f => !f.sens && String(f.value).trim()).map(f => ({ label: f.label, type: f.type, value: f.type === 'list' ? String(f.value).split('\n') : f.value }));
-    if (cur.length) ask = '[현재 프로필(JSON)]\n' + JSON.stringify({ fields: cur }) + '\n\n[사용자 말]\n' + text;
+    const offs = (_prof.offers || []).filter(o => o.name).map(o => ({ name: o.name, kind: o.kind, desc: o.desc, price: o.price, unit: o.unit, stock: o.stock, qty: o.qty, reserve: o.reserve }));
+    if (cur.length || offs.length) ask = '[현재 프로필(JSON)]\n' + JSON.stringify({ fields: cur, offerings: offs }) + '\n\n[사용자 말]\n' + text;
   }
   _prof.firstSent = true;
   const id = 'pf' + Date.now(), m = { type: 'hondi-embed-sp-ask', id, text: ask };
@@ -3262,16 +3337,17 @@ function _profSend() {
   }, 120000);
   if (_prof.ready) HondiChat.post(m); else _prof.queue.push(m);
 }
-/** 순수 함수 — SP 가 보낸 JSON 을 길이·개수를 제한한 {name, headline, intro, fields} 로 정리한다. 쓸 내용이 없으면 null. */
+/** 순수 함수 — SP 가 보낸 JSON 을 길이·개수를 제한한 {name, headline, intro, fields, offerings} 로 정리한다. 쓸 내용이 없으면 null. */
 function _profReplyObj(o) {
   if (!o || typeof o !== 'object') return null;
-  const r = { name: _profNormVal('text', o.name), headline: _profNormVal('text', o.headline), intro: _profNormVal('long', o.intro), fields: [] };
+  const r = { name: _profNormVal('text', o.name), headline: _profNormVal('text', o.headline), intro: _profNormVal('long', o.intro), fields: [], offerings: [] };
   (Array.isArray(o.fields) ? o.fields : []).slice(0, _PROF_MAXF).forEach(x => {
     if (!x || typeof x !== 'object') return;
     const label = String(x.label == null ? '' : x.label).trim().slice(0, 20), type = _PROF_TYPES.includes(x.type) ? x.type : 'text';
     if (label) r.fields.push({ label, type, value: x.value });
   });
-  return (r.name || r.headline || r.intro || r.fields.length) ? r : null;
+  (Array.isArray(o.offerings) ? o.offerings : []).slice(0, _PROF_MAXO).forEach(x => { const c = _profOfferClean(x, true); if (c) r.offerings.push(c); });
+  return (r.name || r.headline || r.intro || r.fields.length || r.offerings.length) ? r : null;
 }
 /** 답변에서 ~~~profile 블록을 떼어 낸다. 블록이 없으면 글 그대로, JSON 이 깨졌으면 obj 없이 안내만 돌려준다. */
 function _profFromReply(t) {
@@ -3282,54 +3358,90 @@ function _profFromReply(t) {
   const rest = (t.slice(0, m.index) + t.slice(m.index + m[0].length)).trim();
   return { obj, text: rest || (obj ? '항목에 반영했습니다. 고칠 곳이 있으면 말씀해 주세요.' : '항목을 정리하는 중 형식 오류가 있었습니다. 한 번 더 말씀해 주세요.') };
 }
-/** 순수 함수 — 답변의 값을 항목에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 항목은 비공개로 만든다. */
-function _profMergeInto(F, r) {
+/** 순수 함수 — 답변의 값을 항목·상품에 합친다. 값만 바꾸며 공개 여부(pub)는 절대 건드리지 않는다. 새 항목·새 상품은 비공개로 만든다. */
+function _profMergeInto(F, r, O) {
   ['name', 'headline', 'intro'].forEach(id => { const f = F.find(x => x.id === id); if (f && r[id]) f.value = r[id]; });
   r.fields.forEach(x => {
     let f = F.find(y => y.label === x.label);
-    if (!f) { if (F.length >= _PROF_MAXF) return; f = { id: _profNewId(), label: x.label, type: x.type, value: '', pub: false, tpl: false, sens: false }; F.push(f); }
+    if (!f) { if (F.length >= _PROF_MAXF) return; f = { id: _profNewId(), label: x.label, type: x.type, value: '', pub: false, tpl: false, sens: false, grp: '' }; F.push(f); }
     const v = _profNormVal(f.type, x.value); if (v) f.value = v;
+  });
+  if (O && Array.isArray(r.offerings)) r.offerings.forEach(x => {
+    let o = O.find(y => y.name === x.name);
+    if (!o) { if (O.length >= _PROF_MAXO) return; o = { id: _profNewId(), kind: 'product', name: x.name, desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: false }; O.push(o); }
+    Object.keys(x).forEach(k => { if (k !== 'name') o[k] = x[k]; });
   });
   return F;
 }
-/** 순수 함수 — 공개로 정한 항목만 골라 스크립트 없는 단일 HTML 페이지로 만든다(모든 글자는 이스케이프, 라이트·다크 대응, 큰 글자). */
-function _profPageHtml(fields) {
+/** 순수 함수 — 가격 글자. null 은 '가격 문의', 0 은 '무료'. */
+function _profPriceText(n) { return n == null ? '가격 문의' : n === 0 ? '무료' : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원'; }
+/** 순수 함수 — 공개로 정한 항목·상품만 골라 스크립트 없는 단일 HTML 페이지로 만든다(모든 글자는 이스케이프, 라이트·다크 대응, 큰 글자). */
+function _profPageHtml(fields, offers, now) {
   const e = escHtml, nl = (v) => e(v).replace(/\n/g, '<br>'), pub = [];
-  (Array.isArray(fields) ? fields : []).forEach(f => { if (f && f.pub) { const v = _profNormVal(f.type, f.value); if (v) pub.push({ id: f.id, label: String(f.label || '').slice(0, 20), type: f.type, v }); } });
-  const get = (id) => pub.find(x => x.id === id), nm = get('name'), hl = get('headline'), it = get('intro');
-  const rest = pub.filter(x => x !== nm && x !== hl && x !== it);
+  (Array.isArray(fields) ? fields : []).forEach(f => { if (f && f.pub) { const v = _profNormVal(f.type, f.value); if (v) pub.push({ id: f.id, label: String(f.label || '').slice(0, 20), type: f.type, v, grp: f.grp || '' }); } });
+  const offs = (Array.isArray(offers) ? offers : []).filter(o => o && o.pub && o.name);
+  const d = now instanceof Date ? now : new Date(), day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const get = (id) => pub.find(x => !x.grp && x.id === id), nm = get('name'), hl = get('headline'), it = get('intro');
+  const rest = pub.filter(x => !x.grp && x !== nm && x !== hl && x !== it);
   const facts = rest.filter(x => x.type === 'text'), blocks = rest.filter(x => x.type === 'long' || x.type === 'list'), links = rest.filter(x => x.type === 'link');
+  const bz = (id) => pub.find(x => x.grp === 'biz' && x.id === id);
+  const sec = (title, inner) => inner ? '<section><h2>' + e(title) + '</h2>' + inner + '</section>' : '';
+  const kv = (ids) => { const h = ids.map(id => { const x = bz(id); return x ? '<div class="kv"><dt>' + e(x.label) + '</dt><dd>' + nl(x.v) + '</dd></div>' : ''; }).join(''); return h ? '<dl class="kvs">' + h + '</dl>' : ''; };
+  const btn = (id, text) => { const x = bz(id); return x ? '<a class="btn" href="' + e(x.v) + '" target="_blank" rel="noopener noreferrer nofollow">' + e(text) + '</a>' : ''; };
+  const acts = (list) => { const h = list.join(''); return h ? '<p class="acts">' + h + '</p>' : ''; };
   const hero = (nm || hl) ? '<div class="hero"><div class="av" aria-hidden="true">' + e(nm ? (nm.v.charAt(0) || '?') : '·') + '</div><div>' + (nm ? '<h1>' + e(nm.v) + '</h1>' : '') + (hl ? '<p class="hl">' + e(hl.v) + '</p>' : '') + '</div></div>' : '';
+  const cards = offs.map(o => {
+    const stk = o.stock && _PROF_STOCK[o.stock] ? '<span class="stk ' + e(o.stock) + '">' + e(_PROF_STOCK[o.stock]) + '</span>' : '';
+    const qty = (o.qty != null && o.stock !== 'out') ? '<span class="qty">남은 수량 ' + e(o.qty) + '</span>' : '';
+    return '<article class="offer"><div class="tags"><span class="tag">' + (o.kind === 'service' ? '서비스' : '상품') + '</span>' + (o.reserve ? '<span class="tag rsv">예약 가능</span>' : '') + '</div><h3>' + e(o.name) + '</h3>' +
+      (o.desc ? '<p class="od">' + e(o.desc) + '</p>' : '') + '<div class="ob"><b class="price">' + e(_profPriceText(o.price)) + ((o.unit && o.price) ? '<small> / ' + e(o.unit) + '</small>' : '') + '</b><span class="st">' + stk + qty + '</span></div></article>';
+  }).join('');
   const body = hero + (it ? '<div class="intro">' + nl(it.v) + '</div>' : '') +
     (facts.length ? '<dl class="facts">' + facts.map(f => '<div><dt>' + e(f.label) + '</dt><dd>' + e(f.v) + '</dd></div>').join('') + '</dl>' : '') +
+    (offs.length ? '<section><h2>상품·서비스</h2><div class="offers">' + cards + '</div><p class="asof">가격·재고는 ' + day + ' 기준입니다.</p></section>' : '') +
+    sec('주문·예약', kv(['order', 'reserve']) + acts([btn('orderUrl', '주문하기'), btn('reserveUrl', '예약하기')])) +
+    sec('배송·결제', kv(['delivery', 'pay'])) +
+    sec('찾아오시는 길', kv(['hours', 'directions']) + acts([btn('mapUrl', '지도 보기')])) +
+    sec('소비자 후기', acts([btn('reviewUrl', '후기 보기')])) +
     blocks.map(b => '<section><h2>' + e(b.label) + '</h2>' + (b.type === 'list' ? '<ul>' + b.v.split('\n').map(i => '<li>' + e(i) + '</li>').join('') + '</ul>' : '<p>' + nl(b.v) + '</p>') + '</section>').join('') +
     (links.length ? '<section><h2>링크</h2><p class="links">' + links.map(l => '<a href="' + e(l.v) + '" target="_blank" rel="noopener noreferrer nofollow">' + e(l.label) + '</a>').join('') + '</p></section>' : '');
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">' +
     '<title>' + e(nm ? nm.v : '프로필') + '</title><style>' +
-    ':root{--bg:#f4f7f9;--card:#fff;--txt:#1b2733;--sub:#5b6676;--pri:#0F8F7E;--pri-bg:#e6f4f1;--bdr:#d8dee6}' +
-    '@media (prefers-color-scheme:dark){:root{--bg:#10171c;--card:#18222a;--txt:#e8eef2;--sub:#a3b0bc;--pri:#4cc9b6;--pri-bg:#173733;--bdr:#2a3843}}' +
+    ':root{--bg:#f4f7f9;--card:#fff;--txt:#1b2733;--sub:#5b6676;--pri:#0F8F7E;--onpri:#fff;--pri-bg:#e6f4f1;--bdr:#d8dee6;--ok:#0a7a3c;--ok-bg:#e3f6ea;--warn:#8a5a00;--warn-bg:#fff2cf;--bad:#b42318;--bad-bg:#fde8e6}' +
+    '@media (prefers-color-scheme:dark){:root{--bg:#10171c;--card:#18222a;--txt:#e8eef2;--sub:#a3b0bc;--pri:#4cc9b6;--onpri:#06231f;--pri-bg:#173733;--bdr:#2a3843;--ok:#6fdc9f;--ok-bg:#16352a;--warn:#f0c869;--warn-bg:#3a3014;--bad:#ff9a8f;--bad-bg:#3d1d1a}}' +
     '*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px/1.8 Pretendard,"Noto Sans KR","Malgun Gothic",system-ui,sans-serif}' +
     'main{max-width:720px;margin:0 auto;padding:32px 18px 56px}' +
     '.hero{display:flex;gap:18px;align-items:center;background:var(--card);border:1px solid var(--bdr);border-radius:20px;padding:24px}' +
-    '.av{flex:none;width:72px;height:72px;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800}' +
+    '.av{flex:none;width:72px;height:72px;border-radius:50%;background:var(--pri);color:var(--onpri);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800}' +
     'h1{margin:0;font-size:28px;line-height:1.3}.hl{margin:4px 0 0;color:var(--sub);font-size:18px}' +
     '.intro{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:20px 24px;margin-top:16px}' +
     '.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:16px 0 0}.facts div{background:var(--pri-bg);border-radius:12px;padding:10px 14px}' +
     '.facts dt{font-size:14px;color:var(--sub)}.facts dd{margin:0;font-weight:700;overflow-wrap:anywhere}' +
     'section{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:18px 24px;margin-top:16px}' +
-    'h2{margin:0 0 6px;font-size:19px;color:var(--pri)}p{margin:0}ul{margin:0;padding-left:22px}li{margin:3px 0}' +
+    'h2{margin:0 0 8px;font-size:19px;color:var(--pri)}h3{margin:2px 0 0;font-size:18px;line-height:1.4}p{margin:0}ul{margin:0;padding-left:22px}li{margin:3px 0}' +
+    '.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}' +
+    '.offer{display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--bdr);border-radius:14px;padding:14px 16px}' +
+    '.tags{display:flex;gap:6px;flex-wrap:wrap}.tag{font-size:13px;font-weight:700;color:var(--pri);background:var(--pri-bg);border-radius:999px;padding:1px 10px}.tag.rsv{color:var(--ok);background:var(--ok-bg)}' +
+    '.od{color:var(--sub);font-size:16px;line-height:1.7}.ob{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}' +
+    '.price{font-size:19px}.price small{font-size:14px;font-weight:400;color:var(--sub)}.st{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.qty{font-size:14px;color:var(--sub)}' +
+    '.stk{font-size:13.5px;font-weight:700;border-radius:999px;padding:1px 10px}.stk.in{color:var(--ok);background:var(--ok-bg)}.stk.low{color:var(--warn);background:var(--warn-bg)}.stk.out{color:var(--bad);background:var(--bad-bg)}.stk.made{color:var(--pri);background:var(--pri-bg)}' +
+    '.asof{margin-top:10px;font-size:14px;color:var(--sub)}.kvs{margin:0}.kv{padding:6px 0;border-top:1px solid var(--bdr)}.kv:first-child{border-top:0}.kv dt{font-size:14px;color:var(--sub)}.kv dd{margin:0}' +
+    '.acts{margin-top:8px}.btn{display:inline-block;background:var(--pri);color:var(--onpri);border-radius:999px;padding:8px 20px;font-weight:700;text-decoration:none;margin:4px 8px 4px 0}' +
     '.links a{display:inline-block;margin:4px 10px 4px 0;color:var(--pri);font-weight:700}.none{text-align:center;color:var(--sub);padding:80px 0}' +
     '</style></head><body><main>' + (body || '<p class="none">아직 공개한 항목이 없습니다.</p>') + '</main></body></html>';
 }
+function _profPage() { return _profPageHtml(_prof.fields, _prof.offers); }
 function _profRefresh() {
   clearTimeout(_prof.rt);
   _prof.rt = setTimeout(() => {
     if (!_prof.fields) return;
-    const fr = _pfEl('pf-frame'); if (fr) fr.srcdoc = _profPageHtml(_prof.fields);
+    const fr = _pfEl('pf-frame'); if (fr) fr.srcdoc = _profPage();
     const n = _prof.fields.filter(f => f.pub && _profNormVal(f.type, f.value)).length, c = _pfEl('pf-count');
     if (c) c.textContent = '공개 ' + n + ' · 전체 ' + _prof.fields.length;
-    try { localStorage.setItem(_profStoreKey(), JSON.stringify(_prof.fields)); } catch (x) {}
+    const O = _prof.offers || [], oc = _pfEl('pf-offcount');
+    if (oc) oc.textContent = O.length ? '공개 ' + O.filter(o => o.pub && o.name).length + ' · 전체 ' + O.length : '';
+    try { localStorage.setItem(_profStoreKey(), JSON.stringify({ v: 3, fields: _prof.fields, offers: _prof.offers || [] })); } catch (x) {}
   }, 200);
 }
 function _profVisPaint(btn, f) {
@@ -3341,8 +3453,8 @@ function _profToggleVis(f, btn) {
   f.pub = !f.pub; _profVisPaint(btn, f); _profRefresh();
 }
 function _profRenderRows() {
-  const box = _pfEl('pf-rows'); if (!box || !_prof.fields) return;
-  box.textContent = '';
+  const main = _pfEl('pf-rows'), biz = _pfEl('pf-biz-rows'); if (!main || !biz || !_prof.fields) return;
+  main.textContent = ''; biz.textContent = '';
   _prof.fields.forEach(f => {
     const row = document.createElement('div'); row.className = 'pf-row';
     let lab;
@@ -3358,35 +3470,63 @@ function _profRenderRows() {
     row.append(lab, inp, vis);
     if (f.tpl) row.classList.add('tpl');
     else { const del = document.createElement('button'); del.type = 'button'; del.className = 'pf-del'; del.textContent = '삭제'; del.onclick = () => { _prof.fields = _prof.fields.filter(x => x !== f); _profRenderRows(); _profRefresh(); }; row.append(del); }
-    box.appendChild(row);
+    (f.grp === 'biz' ? biz : main).appendChild(row);
   });
 }
-function _profAddField() {
+function _profRenderOffers() {
+  const box = _pfEl('pf-offers'); if (!box || !_prof.offers) return;
+  box.textContent = '';
+  if (!_prof.offers.length) { const p = document.createElement('div'); p.className = 'pf-offers-empty'; p.textContent = '아직 추가한 상품·서비스가 없습니다. 아래 버튼으로 추가하거나 나비에게 말해 보세요.'; box.appendChild(p); }
+  const mk = (tag, props, parent) => { const el = document.createElement(tag); Object.assign(el, props || {}); if (parent) parent.appendChild(el); return el; };
+  _prof.offers.forEach(o => {
+    const card = mk('div', { className: 'pf-offer' }), upd = () => _profRefresh();
+    const kind = mk('select', {}, card); kind.setAttribute('aria-label', '종류'); [['product', '상품'], ['service', '서비스']].forEach(([v, t]) => kind.add(new Option(t, v))); kind.value = o.kind; kind.onchange = () => { o.kind = kind.value; upd(); };
+    const name = mk('input', { type: 'text', maxLength: 40, placeholder: '이름 (예: 한라봉 5kg)', value: o.name }, card); name.setAttribute('aria-label', '상품·서비스 이름'); name.oninput = () => { o.name = name.value.trim().slice(0, 40); upd(); };
+    const vis = mk('button', { type: 'button', className: 'pf-vis' }, card); _profVisPaint(vis, o); vis.onclick = () => _profToggleVis(o, vis);
+    const del = mk('button', { type: 'button', className: 'pf-del', textContent: '삭제' }, card); del.onclick = () => { _prof.offers = _prof.offers.filter(x => x !== o); _profRenderOffers(); upd(); };
+    const desc = mk('textarea', { rows: 2, maxLength: 300, placeholder: '간단한 설명 (한두 문장)', value: o.desc, className: 'pf-full' }, card); desc.setAttribute('aria-label', '설명'); desc.oninput = () => { o.desc = desc.value; upd(); };
+    const meta = mk('div', { className: 'pf-offer-meta' }, card);
+    const price = mk('input', { type: 'number', min: 0, step: 1, inputMode: 'numeric', placeholder: '가격(원) — 비우면 가격 문의', value: o.price == null ? '' : o.price }, meta); price.setAttribute('aria-label', '가격(원)'); price.oninput = () => { o.price = _profPriceNum(price.value.trim() === '' ? null : Number(price.value)); upd(); };
+    const unit = mk('input', { type: 'text', maxLength: 10, placeholder: '단위 (개·kg·회)', value: o.unit }, meta); unit.setAttribute('aria-label', '단위'); unit.oninput = () => { o.unit = unit.value.trim().slice(0, 10); upd(); };
+    const stock = mk('select', {}, meta); stock.setAttribute('aria-label', '재고 상태'); Object.keys(_PROF_STOCK).forEach(k => stock.add(new Option(k ? _PROF_STOCK[k] : '재고 표시 안 함', k))); stock.value = o.stock; stock.onchange = () => { o.stock = stock.value; upd(); };
+    const qty = mk('input', { type: 'number', min: 0, step: 1, inputMode: 'numeric', placeholder: '남은 수량', value: o.qty == null ? '' : o.qty }, meta); qty.setAttribute('aria-label', '남은 수량'); qty.oninput = () => { o.qty = qty.value.trim() === '' ? null : _profQtyNum(Number(qty.value)); upd(); };
+    const chk = mk('label', { className: 'pf-offer-chk' }, card), cb = mk('input', { type: 'checkbox', checked: !!o.reserve }, chk); chk.append('예약 가능'); cb.onchange = () => { o.reserve = cb.checked; upd(); };
+    box.appendChild(card);
+  });
+}
+function _profAddOffer(kind) {
   if (!_prof.fields) { _profLoad(); _profRenderRows(); }
+  if (_prof.offers.length >= _PROF_MAXO) { _drToast('상품·서비스는 최대 ' + _PROF_MAXO + '개까지 둘 수 있습니다.'); return; }
+  _prof.offers.push({ id: _profNewId(), kind: kind === 'service' ? 'service' : 'product', name: '', desc: '', price: null, unit: '', stock: '', qty: null, reserve: false, pub: false });   // 새로 추가한 것은 비공개로 시작
+  _profRenderOffers(); _profRefresh();
+  const last = _pfEl('pf-offers').querySelector('.pf-offer:last-child input[type=text]'); if (last) last.focus();
+}
+function _profAddField() {
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); _profRenderOffers(); }
   const li = _pfEl('pf-add-label'), ty = _pfEl('pf-add-type'), label = li.value.trim().slice(0, 20);
   if (!label) { li.focus(); return; }
   if (_prof.fields.length >= _PROF_MAXF) { _drToast('항목은 최대 ' + _PROF_MAXF + '개까지 둘 수 있습니다.'); return; }
   if (_prof.fields.some(f => f.label === label)) { _drToast('같은 이름의 항목이 이미 있습니다.'); return; }
-  _prof.fields.push({ id: _profNewId(), label, type: _PROF_TYPES.includes(ty.value) ? ty.value : 'text', value: '', pub: false, tpl: false, sens: false });   // 새 항목은 비공개로 시작
+  _prof.fields.push({ id: _profNewId(), label, type: _PROF_TYPES.includes(ty.value) ? ty.value : 'text', value: '', pub: false, tpl: false, sens: false, grp: '' });   // 새 항목은 비공개로 시작
   li.value = ''; _profRenderRows(); _profRefresh();
   const rows = _pfEl('pf-rows').querySelectorAll('.pf-row'), last = rows[rows.length - 1], inp = last && last.querySelector('input:not(.pf-lab-in),textarea'); if (inp) inp.focus();
 }
 function _profOpen() {
-  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
-  const u = URL.createObjectURL(new Blob([_profPageHtml(_prof.fields)], { type: 'text/html;charset=utf-8' }));
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); _profRenderOffers(); }
+  const u = URL.createObjectURL(new Blob([_profPage()], { type: 'text/html;charset=utf-8' }));
   window.open(u, '_blank', 'noopener'); setTimeout(() => URL.revokeObjectURL(u), 60000);
 }
 function _profDownload() {
-  if (!_prof.fields) { _profLoad(); _profRenderRows(); }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([_profPageHtml(_prof.fields)], { type: 'text/html;charset=utf-8' }));   // 공개 항목만 들어간다
+  if (!_prof.fields) { _profLoad(); _profRenderRows(); _profRenderOffers(); }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([_profPage()], { type: 'text/html;charset=utf-8' }));   // 공개 항목만 들어간다
   a.download = '내 프로필.html'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 function _profReset() {
-  if (!confirm('채운 항목과 대화를 모두 지우고 기본 항목(이름만 공개)으로 되돌릴까요?')) return;
-  _prof.fields = _profTplFields(); _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
+  if (!confirm('채운 항목·상품·서비스와 대화를 모두 지우고 기본 항목(이름만 공개)으로 되돌릴까요?')) return;
+  _prof.fields = _profTplFields(); _prof.offers = []; _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
   try { localStorage.removeItem(_profStoreKey()); } catch (x) {}
   _pfEl('pf-thread').innerHTML = ''; _pfEl('pf-box').classList.remove('pf-started'); _pfEl('pf-live').hidden = true;
-  _profRenderRows(); _profRefresh(); _profSyncBtn();
+  _profRenderRows(); _profRenderOffers(); _profRefresh(); _profSyncBtn();
 }
 window.addEventListener('message', (e) => {
   const d = e.data; if (!d || !window.HondiChat || e.source !== HondiChat.frameWindow()) return;
@@ -3395,7 +3535,7 @@ window.addEventListener('message', (e) => {
   const el = _prof.pending[d.id]; delete _prof.pending[d.id]; clearTimeout(_prof.timer);
   const r = _profFromReply(d.text);
   el.classList.add('org-md'); el.innerHTML = _orgMd(r.text);
-  if (r.obj && _prof.fields) { _profMergeInto(_prof.fields, r.obj); _profRenderRows(); _profRefresh(); }
+  if (r.obj && _prof.fields) { _profMergeInto(_prof.fields, r.obj, _prof.offers); _profRenderRows(); _profRenderOffers(); _profRefresh(); }
   _prof.busy = false; _pfEl('pf-live').hidden = true; _profSyncBtn();
   const th = _pfEl('pf-thread'); th.scrollTop = th.scrollHeight;
 });
