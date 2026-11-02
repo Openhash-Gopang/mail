@@ -56,6 +56,7 @@
       epoch++; unbind(); setPhase('idle');
       ui.setLoginLabel(true);
       ui.unlock(PH.case);
+      if (ui.focusInput) ui.focusInput();   // 칩·버튼 없이 왼쪽 메뉴로 들어오므로, 바로 쓸 수 있게 입력칸에 커서를 둔다
       syncSend();
     }
     function exit() {
@@ -182,6 +183,7 @@
 
     var ui = {
       readInput: function () { return $('cmp-input').value || ''; },
+      focusInput: function () { setTimeout(function () { try { $('cmp-input').focus({ preventScroll: true }); } catch (e) { /* noop */ } }, 250); },
       clearInput: function () { $('cmp-input').value = ''; resize(); },
       setInput: function (t) { $('cmp-input').value = t; resize(); },
       setSendEnabled: function (on) { $('cmp-send-btn').disabled = !on; },
@@ -191,7 +193,7 @@
       setLoginLabel: function (on) {
         var nodes = [$('cmp-input'), $('cmp-send-btn')];
         if (loginLabelOrig === null) loginLabelOrig = nodes[0].getAttribute('data-requires-login');
-        nodes.forEach(function (n) { if (on) n.setAttribute('data-requires-login', '판결 시뮬레이션'); else if (loginLabelOrig) n.setAttribute('data-requires-login', loginLabelOrig); });
+        nodes.forEach(function (n) { if (on) n.setAttribute('data-requires-login', '가상 판결'); else if (loginLabelOrig) n.setAttribute('data-requires-login', loginLabelOrig); });
       },
       setMeter: function (count, min) {
         var m = $('cmp-verdict-meter'); if (!m) return;
@@ -290,7 +292,7 @@
         var full = el('details', 'vd-full'); full.appendChild(el('summary', null, '판결문 전문 보기')); full.appendChild(el('pre', null, r.text));
         var meta = kids(el('p', 'vd-meta'), el('span', null, '사건번호 ' + r.caseNo), el('span', null, 'K-Law ' + (r.version || '')));
         var card = kids(el('article', 'vd-result'),
-          kids(el('header'), el('h2', null, '참고용 가상 판결문'), meta),
+          kids(el('div', 'vd-result-hd'), el('h2', null, '참고용 가상 판결문'), meta),
           el('p', 'vd-sum', m.summary || '요약을 만들지 못했습니다. 전문을 확인해 주세요.'), conf, full,
           kids(el('div', 'vd-acts'), copy, more),
           el('div', 'vd-caution', '본 판결문은 K-Law AI 시뮬레이션 결과입니다(적용 방법론 ' + (r.version || '') + '). 법률 정보 제공 목적이며 법률 자문이 아닙니다. 실제 소송에서는 반드시 자격 있는 법률 전문가와 상담하십시오.'));
