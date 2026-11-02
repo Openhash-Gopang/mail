@@ -7,6 +7,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
+/* 주소 이전(2026-11-03): 나비웹의 주소는 https://naviweb.kr 이다. mail.hondi.net 은 naviweb.kr 이
+   내용을 가져오는 원본 서버로만 남으므로, 브라우저가 직접 mail.hondi.net 으로 열면 naviweb.kr 로 보낸다.
+   (naviweb.kr 쪽 Worker 는 서버에서 가져오므로 이 코드가 실행되지 않아 순환하지 않는다.) */
+if (location.hostname === 'mail.hondi.net') {
+  location.replace('https://naviweb.kr' + (location.pathname === '/desktop.html' ? '/' : location.pathname) + location.search + location.hash);
+}
+</script>
+<script>
 /* 기기별 진입 분기 — desktop.html은 PC용 화면이다. 폰에서 열렸으면 webapp.html(모바일 UI)로
    보낸다. 판별식은 hondi.net/index.html과 같다. ?view=desktop 이면 폰에서도 PC 화면을 유지,
    ?view=mobile 이면 PC에서도 모바일 화면(webapp.html)으로 간다(반대편 파일도 같은 규칙). */
