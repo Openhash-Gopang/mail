@@ -2572,7 +2572,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ok) { _drToast('양식은 이미지나 PDF 로 올려 주세요.'); return; }
     if (f.size > 8 * 1024 * 1024) { _drToast('양식은 8MB 이하만 올릴 수 있습니다.'); return; }
     if (_cmpMode !== 'doc' && !_cmpSetMode('doc')) return;
-    document.getElementById('tab-compose').classList.add('doc-live');
+    _docHost.confirmed = true; document.getElementById('tab-compose').classList.add('doc-live');   // 입력창이 비어 있어도 서류 화면이 접히지 않게 확정 상태로 둔다(_docHostInput 참고)
     const c = document.getElementById('cmp-doc-count'); c.textContent = '양식을 읽는 중…'; _docBar(3);
     f.arrayBuffer().then(buf => _docHostPost({ type: 'navi-doc-template', asTemplate: true, name: f.name.slice(0, 120), mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/png'), data: buf }))
       .catch(() => { c.textContent = '파일을 읽지 못했습니다.'; _docBar(-1); });
