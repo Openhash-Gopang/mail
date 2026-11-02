@@ -3,7 +3,7 @@
  * 실행: node --test tests/guide.test.mjs
  */
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -307,4 +307,19 @@ test('서류 사이트 주소가 정해지기 전에 보낸 메시지(양식 업
   const f = h.slice(a, b);
   assert.ok(f.indexOf('if (!_docHost.ready)') < f.indexOf('if (!fr.src) return;'));
   assert.ok(!/if \(!fr \|\| !fr\.src\) return;/.test(f));
+});
+
+test('정보 공개 청구: 예시 줄(정부 AI 오른쪽) 버튼 → 입력창이 정보 공개 청구 대화창, 아래에 청구서. 예전 페이지(foi.js)는 없앴다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.indexOf('id="cmp-gov-combo"') < h.indexOf('id="cmp-foi-btn"'));
+  assert.ok(!h.includes('id="tab-foi"') && !h.includes('tab-btn-foi') && !h.includes('foi.js') && !h.includes('_foiInit'));
+  assert.ok(!h.includes('행정 업무</div>') && !h.includes('>모바일 화면</a>'));
+  assert.match(h, /function _cmpFoiPick\(/); assert.match(h, /_foiDocFromReply\(reply\)/); assert.match(h, /id="cmp-foi-doc"/);
+  assert.ok(!existsSync(new URL('../foi.js', import.meta.url)));
+  const a = h.indexOf('function _foiDocFromReply'), src = h.slice(a, h.indexOf('\n}\n', a) + 3);
+  const doc = { value: '', hidden: true }, els = { 'cmp-foi-text': doc, 'cmp-foi-doc': doc, 'cmp-foi-title': { textContent: '' } };
+  const run = new Function('document', src + '; return _foiDocFromReply;')({ getElementById: (k) => els[k] });
+  const rest = run('청구서를 만들었습니다.\n~~~foi\n정보공개 청구서\n\n1. 수신: 제주시청\n~~~');
+  assert.equal(rest, '청구서를 만들었습니다.'); assert.ok(doc.value.includes('수신: 제주시청')); assert.equal(els['cmp-foi-title'].textContent, '정보공개 청구서');
+  assert.equal(run('그냥 대화'), '그냥 대화');
 });
