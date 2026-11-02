@@ -271,3 +271,8 @@ test('사용법 코스: 임시로 모든 페이지로 이동할 수 있다(OPEN_
   const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
   assert.match(g, /var OPEN_ALL = true;/);
 });
+
+test('상단 바 링크 문구는 "나비웹 ↗"(주소는 hondi.net)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('<a href="https://hondi.net" target="_blank">나비웹 ↗</a>'));
+});
