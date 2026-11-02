@@ -2098,7 +2098,7 @@ function _cmpExpPick(k) {
   _cmpExpClose();
   if (k === '__more') { window.open(_EXP_URL, '_blank', 'noopener'); return; }
   if (!_EXP_ITEMS.includes(k)) return;
-  _orgActivate({ key: 'exp:' + k, label: k, sp: _EXP_SP[k] || null, expert: true }, k + ' 전문가 AI입니다. 무엇이든 물어보십시오');
+  _orgActivate({ key: 'exp:' + k, label: k, sp: _EXP_SP[k] || null, expert: true }, k + ' 전문가 AI입니다. 무엇이든 물어보십시오');   // 사용자는 그 분야의 인간 전문가 — AI 는 그의 업무(법리 검토·진단 등)를 보조한다
 }
 // 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
@@ -2121,7 +2121,7 @@ function _orgActivate(o, greeting) {
   const ol = document.getElementById('cmp-org-combo-label'), el = document.getElementById('cmp-exp-combo-label');
   if (ol) ol.textContent = o.expert ? '각종 기관' : o.label; if (el) el.textContent = o.expert ? o.label : '전문가 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
-  if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text });
+  if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '' });
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (input) input.disabled = !_org.sp;
   const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
@@ -2154,7 +2154,7 @@ function _orgNotice1() {
   try { if (localStorage.getItem(_ORG_NOTICE_KEY) === '1') return; } catch (x) {}
   const th = document.getElementById('cmp-thread'); if (!th) return;
   const d = document.createElement('div'); d.className = 'org-notice'; d.setAttribute('role', 'note');
-  d.innerHTML = '<span>AI 답변은 일반적인 정보일 뿐 개별 사안에 대한 판단이 아닙니다. 참고만 하시고, 중요한 결정은 반드시 인간 전문가와 상의하십시오.</span><button type="button" aria-label="다시 보지 않기">다시 보지 않기<b>×</b></button>';
+  d.innerHTML = '<span>' + ((_org && _org.expert) ? 'AI는 ' + _org.label + '님의 검토를 보조하는 참고 자료입니다. 최종 판단과 책임은 전문가 본인에게 있으니, 반드시 직접 검증하십시오.' : 'AI 답변은 일반적인 정보일 뿐 개별 사안에 대한 판단이 아닙니다. 참고만 하시고, 중요한 결정은 반드시 인간 전문가와 상의하십시오.') + '</span><button type="button" aria-label="다시 보지 않기">다시 보지 않기<b>×</b></button>';
   d.querySelector('button').onclick = () => { try { localStorage.setItem(_ORG_NOTICE_KEY, '1'); } catch (x) {} d.remove(); };
   th.appendChild(d);
 }
