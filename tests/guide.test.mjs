@@ -346,7 +346,7 @@ test('좌측 상단 NAVIWEB 로고: 누르면 사용 설명서가 상단 바 밑
 test('Whitepaper: 왼쪽 메뉴 하단 항목 + 탭 iframe, 설명서 1장은 짧은 소개와 백서 링크', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('id="tab-btn-whitepaper"') && h.includes("_switchTab('whitepaper')") && h.includes('id="whitepaper-frame"'));
-  assert.ok(h.includes("manual.html?embed=mail');") && h.includes("'navi-open-whitepaper'") && h.includes("'navi-open-manual'"));
+  assert.ok(h.includes("navi: 'manual.html?embed=mail'") && h.includes("'navi-open-whitepaper'") && h.includes("'navi-open-manual'"));
   const w = readFileSync(new URL('../whitepaper.html', import.meta.url), 'utf8');
   assert.ok(w.includes('Whitepaper') && w.includes('<b>수많은 나비가 모이는 메신저</b>') && w.includes('내 정보는 어디에 저장되나요?'));
   const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
@@ -356,4 +356,13 @@ test('Whitepaper: 왼쪽 메뉴 하단 항목 + 탭 iframe, 설명서 1장은 �
 test('입력창 왼쪽 편지(✉) 아이콘 삭제', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(!h.includes('<button type="button" class="chat-icon-btn" id="cmp-mail-btn"'));
+});
+
+test('Whitepaper 탭: 나비와 나비웹 / Openhash, Openhash 백서 페이지', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="wp-tab-navi"') && h.includes('id="wp-tab-openhash"') && h.includes("openhash: 'openhash.html?embed=mail'"));
+  const o = readFileSync(new URL('../openhash.html', import.meta.url), 'utf8');
+  assert.ok((o.match(/<svg /g) || []).length >= 8);
+  for (const k of ['PDV', 'PLSM', 'BIVM', 'ILMV', 'LPBFT', 'Ed25519', 'AES-256-GCM']) assert.ok(o.includes(k), k);
+  assert.equal((o.match(/<section /g) || []).length, (o.match(/<\/section>/g) || []).length);
 });
