@@ -496,9 +496,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .topbar-page[aria-expanded=true] .tp-chev{transform:rotate(180deg)}
 #intro-backdrop{position:fixed;inset:54px 0 0 0;z-index:90;background:rgba(15,23,42,.35);opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
 #intro-backdrop.open{opacity:1;visibility:visible}
-#intro-panel{position:fixed;left:0;right:0;top:54px;z-index:95;height:0;overflow:hidden;background:var(--bg,#fff);box-shadow:0 18px 40px rgba(0,0,0,.28);transition:height .5s cubic-bezier(.22,1,.36,1)}
-#intro-panel.open{height:min(78vh,760px)}
-#intro-panel iframe{display:block;width:100%;height:min(78vh,760px);border:0;background:#fff}
+#intro-panel{position:fixed;left:0;right:0;top:54px;z-index:95;height:0;overflow:hidden;background:var(--bg,#fff);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:0 0 18px 18px;transition:height .5s cubic-bezier(.22,1,.36,1)}
+#intro-panel.open{height:min(72vh,620px)}
+#intro-panel iframe{display:block;width:100%;height:min(72vh,620px);border:0;background:#fff}
 @media (prefers-reduced-motion:reduce){#intro-panel,#intro-backdrop,.topbar-page .tp-chev{transition:none}}
 .topbar-page{position:absolute;left:50%;top:0;height:54px;transform:translateX(-50%);display:flex;align-items:center;max-width:34vw;padding:0 12px;font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .topbar-page.vd-swap{animation:vd-title .3s cubic-bezier(.2,.8,.2,1)}
@@ -4023,7 +4023,7 @@ function _cmpSyncModeUi() {
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
 // ── '나만의 AI 비서, 나비' 문구 → 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(2026-11-03) ──
-const _INTRO_URL = 'index.html?embed=mail';
+const _INTRO_URL = 'navi-intro.html';
 function _introIsOpen() { const p = document.getElementById('intro-panel'); return !!(p && p.classList.contains('open')); }
 function _introOpen() {
   const p = document.getElementById('intro-panel'), f = document.getElementById('intro-frame'), b = document.getElementById('intro-backdrop'), t = document.getElementById('topbar-page');

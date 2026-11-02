@@ -330,7 +330,7 @@ test('상단 바 "나만의 AI 비서, 나비": 글자 간격, 클릭하면 소�
   assert.match(h, /\.topbar-page\{letter-spacing:\.06em/);
   assert.ok(h.includes('id="topbar-page" role="button"') && h.includes('class="tp-chev"') && h.includes('onclick="_introToggle()"'));
   assert.match(h, /#intro-panel\{[^}]*height:0;overflow:hidden[^}]*transition:height \.5s/);
-  assert.ok(h.includes("index.html?embed=mail") && !/\}\.topbar-page\{font-weight:500\}/.test(h));
-  const i = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(i, /body\.embed \.topnav/);
+  assert.ok(h.includes("_INTRO_URL = 'navi-intro.html'") && !/\}\.topbar-page\{font-weight:500\}/.test(h));
+  const i = readFileSync(new URL('../navi-intro.html', import.meta.url), 'utf8');
+  assert.ok(i.includes('나만의 AI 비서') && !i.includes('K-Mail') && !i.includes('<header') && !i.includes('<nav'));
 });
