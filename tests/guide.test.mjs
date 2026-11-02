@@ -159,3 +159,9 @@ test('기관·전문가 답변: 마크다운(제목·목록·표·구분선) 렌
   assert.match(h, /function _orgMd\(md\)/);
   assert.match(h, /el\.classList\.add\('org-md'\); el\.innerHTML = _orgMd/);
 });
+
+test('전문가 AI: 사용자를 인간 전문가로 상정(role=expert) — 면책 문구도 전문가용', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /role: o\.expert \? 'expert' : ''/);
+  assert.match(h, /최종 판단과 책임은 전문가 본인에게 있으니/);
+});
