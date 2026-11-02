@@ -967,7 +967,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <div class="doc-combo-list" id="cmp-gov-list" role="listbox" aria-label="정부 기관"></div>
           </div>
         </div>
-        <button type="button" class="doc-combo-btn ex-foi" id="cmp-foi-btn" aria-pressed="false" onclick="_cmpFoiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span>정보 공개 청구</span></button>
         <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
@@ -1795,15 +1794,17 @@ function _cmpDocComboClose() { const pop = document.getElementById('cmp-doc-comb
 function _cmpDocComboFilter() {
   const q = document.getElementById('cmp-doc-q').value.trim(), list = document.getElementById('cmp-doc-list'), esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const label = (id) => { const x = _DOC_SITES.find(z => z.id === id); return x ? x.label : id; };
+  const foiIt = '<button type="button" class="doc-combo-it" role="option" data-foi="1"><b>정보 공개 청구</b></button>';
+  const foiHit = q && '정보공개청구'.includes(q.replace(/\s+/g, ''));   // 검색할 때도 '정보', '공개', '청구'로 찾을 수 있게
   let html = '';
   if (!q) {
-    html += '<div class="doc-combo-sec">서류 종류</div>' + _DOC_SITES.map(x => `<button type="button" class="doc-combo-it" role="option" data-site="${esc(x.id)}"><b>${esc(x.label)}</b></button>`).join('');
+    html += '<div class="doc-combo-sec">서류 종류</div>' + _DOC_SITES.map(x => `<button type="button" class="doc-combo-it" role="option" data-site="${esc(x.id)}"><b>${esc(x.label)}</b></button>` + (x.id === 'all' ? foiIt : '')).join('');   // 정보 공개 청구는 '전체' 바로 아래(2026-11-03)
     if (!_docIndex) html += '<div class="doc-combo-sec">서류 목록을 불러오는 중…</div>';
     else html += `<div class="doc-combo-sec">${_docIndex.length.toLocaleString('en-US')}건 중에서 검색하려면 위에 입력하세요</div>`;
-  } else if (!_docIndex) html = '<div class="doc-combo-sec">서류 목록을 불러오는 중…</div>';
+  } else if (!_docIndex) html = (foiHit ? foiIt : '') + '<div class="doc-combo-sec">서류 목록을 불러오는 중…</div>';
   else {
     const hits = _docSearch(_docIndex, q, 30);
-    html = hits.length ? hits.map((d, i) => `<button type="button" class="doc-combo-it" role="option" data-site="${esc(d.site)}" data-title="${esc(d.t)}"><b>${esc(d.t)}</b><small>${esc(label(d.site))}${d.c ? ' · ' + esc(d.c) : ''}</small></button>`).join('') : '<div class="doc-combo-sec">맞는 서류가 없습니다. 다른 낱말로 검색해 보세요.</div>';
+    html = (foiHit ? foiIt : '') + (hits.length ? hits.map((d, i) => `<button type="button" class="doc-combo-it" role="option" data-site="${esc(d.site)}" data-title="${esc(d.t)}"><b>${esc(d.t)}</b><small>${esc(label(d.site))}${d.c ? ' · ' + esc(d.c) : ''}</small></button>`).join('') : (foiHit ? '' : '<div class="doc-combo-sec">맞는 서류가 없습니다. 다른 낱말로 검색해 보세요.</div>'));
   }
   list.innerHTML = html; _docComboSel = -1;
   const first = list.querySelector('.doc-combo-it'); if (first && q) { first.classList.add('on'); _docComboSel = 0; }
@@ -1819,6 +1820,7 @@ function _cmpDocComboKey(e) {
 }
 /** 고른 서류를 연다 — 서류 종류(사이트)를 맞추고, 서류 이름을 입력창에 넣어 곧바로 확정(Enter)한다. 종류만 고르면 그 종류를 연다. */
 function _cmpDocComboPick(b) {
+  if (b.getAttribute('data-foi')) { _cmpDocComboClose(); _cmpFoiPick(); return; }   // 정보 공개 청구
     const site = b.getAttribute('data-site'), title = b.getAttribute('data-title') || '';
   _cmpDocComboClose();
   const sel = _cmpDocSelInit();
@@ -2031,6 +2033,7 @@ function _orgActivate(o, greeting) {
   if (!was) { if (!_cmpSetMode('org')) { _org = null; return; } } else { document.getElementById('cmp-thread').innerHTML = ''; _cmpSyncModeUi(); }
   const ol = document.getElementById('cmp-org-combo-label'), el = document.getElementById('cmp-exp-combo-label');
   const gl = document.getElementById('cmp-gov-combo-label'), grp = o.expert ? 'exp' : (o.group || 'org');
+  { const dl = document.getElementById('cmp-doc-combo-label'); if (dl && o.foi) dl.textContent = o.label; }   // 정보 공개 청구는 '서류 작성' 메뉴 안에 있으니, 고르면 그 버튼에 이름이 뜬다
   if (ol) ol.textContent = grp === 'org' ? o.label : '각종 기관'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
   if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined });
@@ -2079,6 +2082,7 @@ function _orgLeave() {
   const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
+  if (typeof _cmpDocComboSync === 'function') _cmpDocComboSync();   // '서류 작성' 버튼 이름을 원래대로
   const input = document.getElementById('cmp-input'); if (input) input.disabled = false;
   if (window.HondiChat) HondiChat.setSp(null);
 }
