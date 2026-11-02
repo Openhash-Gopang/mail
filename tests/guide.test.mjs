@@ -205,3 +205,10 @@ test('정부 AI: 사용자의 거주지(PDV·가입 정보)·현재 위치로 �
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   for (const k of ['function _parseRegion(', 'async function _govRegion(', 'function _govResolve(', "_drCall('region'", 'navigator.geolocation', 'prompts/gov-tree/01-do/JEJU-DO-SP_v1.5.md', 'prompts/gov-tree/04-city/jeju/SP-CITY-JEJU_v1.1.md', "context: o.context || ''"]) assert.ok(h.includes(k), k);
 });
+
+test('작성 화면(compose)의 flex 레이아웃은 활성일 때만 — 다른 화면(메일 등)으로 바꾸면 서류·기관 화면이 숨는다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /#tab-compose\.active\[data-mode="doc"\]\.doc-live\{display:flex/);
+  assert.match(h, /#tab-compose\.active\[data-mode="org"\]\{display:flex/);
+  assert.ok(!/\n#tab-compose\[data-mode="(doc"\]\.doc-live|org")\{display:flex/.test(h));
+});
