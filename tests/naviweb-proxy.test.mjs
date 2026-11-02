@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { route } from '../ops/naviweb-proxy/worker.js';
+import { route, isPhone } from '../ops/naviweb-proxy/worker.js';
+import worker from '../ops/naviweb-proxy/worker.js';
 const r = (p) => route(new URL('https://naviweb.kr' + p));
 test('naviweb-proxy 라우팅', () => {
   assert.equal(r('/').target, 'https://mail.hondi.net/desktop.html');
@@ -17,4 +18,35 @@ test('mail.hondi.net 직접 접속은 naviweb.kr 로 보낸다(desktop·webapp)'
     assert.ok(s.includes("location.hostname === 'mail.hondi.net'"), f);
     assert.ok(s.includes("location.replace('https://naviweb.kr'"), f);
   }
+});
+
+const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1';
+const PIXEL = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36';
+const TABLET = 'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 Chrome/120.0 Safari/537.36';
+const WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36';
+const ph = (path, h) => isPhone(new URL('https://naviweb.kr' + path), new Headers(h));
+test('단말 판별: UA·클라이언트 힌트·?view=', () => {
+  assert.equal(ph('/', { 'user-agent': IPHONE }), true);
+  assert.equal(ph('/', { 'user-agent': PIXEL }), true);
+  assert.equal(ph('/', { 'user-agent': TABLET }), false);
+  assert.equal(ph('/', { 'user-agent': WIN }), false);
+  assert.equal(ph('/', { 'user-agent': WIN, 'sec-ch-ua-mobile': '?1' }), true);
+  assert.equal(ph('/', { 'user-agent': PIXEL, 'sec-ch-ua-mobile': '?0' }), false);
+  assert.equal(ph('/?view=mobile', { 'user-agent': WIN }), true);
+  assert.equal(ph('/?view=desktop', { 'user-agent': IPHONE }), false);
+  assert.equal(ph('/', {}), false);
+});
+test('폰이 / 또는 /webapp.html 을 열면 hondi.net/webapp.html 로 이동(이동 없이 중계하지 않음)', async () => {
+  for (const path of ['/', '/webapp.html']) {
+    const res = await worker.fetch(new Request('https://naviweb.kr' + path, { headers: { 'user-agent': IPHONE } }));
+    assert.equal(res.status, 302, path);
+    assert.equal(res.headers.get('location'), 'https://hondi.net/webapp.html', path);
+    assert.match(res.headers.get('vary'), /User-Agent/);
+  }
+  const pv = await worker.fetch(new Request('https://naviweb.kr/?view=mobile', { headers: { 'user-agent': WIN } }));
+  assert.equal(pv.headers.get('location'), 'https://hondi.net/webapp.html?view=mobile');
+});
+test('desktop.html 의 안전망 분기는 hondi.net/webapp.html 로 보낸다', () => {
+  const s = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(s.includes("location.replace('https://hondi.net/webapp.html'"));
 });
