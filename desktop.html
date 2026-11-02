@@ -565,8 +565,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 /* side-collapse */
 @media (min-width:961px){
-  .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:box-shadow .16s ease}
-  .side-nav.sn-open{width:max-content;max-width:232px;box-shadow:6px 0 18px rgba(0,0,0,.12)}   /* 펼친 폭 = 문구 폭(고정 232px 가 아님). 본문을 밀지 않도록 늘어난 만큼의 오른쪽 여백(margin-right)은 스크립트가 잰다 */
+  .side-nav{width:64px;padding-left:10px;padding-right:10px;overflow-x:hidden;z-index:40;transition:width .32s cubic-bezier(.4,0,.2,1),margin-right .32s cubic-bezier(.4,0,.2,1),box-shadow .32s ease}
+  .side-nav.sn-open{max-width:232px;box-shadow:6px 0 18px rgba(0,0,0,.12)}   /* 펼친 폭 = 문구 폭(고정 232px 가 아님). 본문을 밀지 않도록 늘어난 만큼의 오른쪽 여백(margin-right)은 스크립트가 잰다 */
   .side-nav:not(.sn-open) .nav-btn{font-size:0;gap:0;justify-content:center;padding-left:0;padding-right:0}
   .side-nav:not(.sn-open) .nav-btn svg{width:20px;height:20px}
   .side-nav:not(.sn-open) .side-label{font-size:0;letter-spacing:0;padding:0;margin:10px 8px 8px;border-top:1px solid var(--bdr);height:0}
@@ -1773,8 +1773,25 @@ function _kmailAutoResize(el) {
 (function () {
   const nav = document.querySelector('.side-nav');
   if (!nav) return;
-  const snOpen = () => { nav.classList.add('sn-open'); nav.style.marginRight = ''; const extra = nav.offsetWidth - 64; if (extra > 0 && window.innerWidth > 960) nav.style.marginRight = (-extra) + 'px'; };   // 펼친 폭은 문구 폭, 늘어난 만큼 본문 위로 겹친다
-  const snClose = () => { nav.classList.remove('sn-open'); nav.style.marginRight = ''; };
+  // 펼침·접힘을 서서히: width(px)와 margin-right 를 같은 시간·같은 곡선으로 함께 움직여, 폭+여백이 늘 64px 로 일정 → 본문은 한 칸도 밀리지 않는다.
+  //   (width:max-content 는 transition 이 안 되므로 문구 폭을 먼저 재서 px 로 준다.)
+  let closeT = 0;
+  const wide = () => window.innerWidth > 960;
+  const snOpen = () => {
+    clearTimeout(closeT);
+    if (!wide()) { nav.classList.add('sn-open'); return; }
+    if (nav.classList.contains('sn-open') && nav.style.width) return;
+    nav.style.transition = 'none'; nav.classList.add('sn-open'); nav.style.width = 'max-content'; nav.style.marginRight = '';
+    const w = Math.max(64, Math.min(nav.offsetWidth, 232));
+    nav.style.width = ''; nav.style.marginRight = ''; void nav.offsetWidth; nav.style.transition = '';   // 접힌 상태(64px)에서 출발
+    nav.style.width = w + 'px'; nav.style.marginRight = (-(w - 64)) + 'px';
+  };
+  const snClose = () => {
+    clearTimeout(closeT);
+    if (!wide()) { nav.classList.remove('sn-open'); nav.style.width = ''; nav.style.marginRight = ''; return; }
+    nav.style.width = ''; nav.style.marginRight = '';
+    closeT = setTimeout(() => nav.classList.remove('sn-open'), 340);   // 문구는 폭이 다 줄어든 뒤에 숨긴다
+  };
   nav.addEventListener('mouseenter', snOpen);
   nav.addEventListener('mouseleave', snClose);
   nav.addEventListener('focusin', (e) => { try { if (e.target.matches(':focus-visible')) snOpen(); } catch (x) {} });

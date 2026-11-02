@@ -85,9 +85,9 @@ test('desktop.html: 입력창은 서류 검색·선택만, 대화는 혼디 대�
 test('desktop.html: 왼쪽 메뉴는 펼쳐도 문구 폭만큼만 넓어진다(232px 고정 아님)', async () => {
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(s, /\.side-nav\.sn-open\{width:max-content;max-width:232px/);
+  assert.match(s, /\.side-nav\.sn-open\{max-width:232px/);   // 폭은 JS 가 문구 폭을 재어 px 로 준다
   assert.ok(!/\.side-nav\.sn-open\{width:232px/.test(s));
-  assert.ok(s.includes('const snOpen = ()') && s.includes('nav.offsetWidth - 64'));
+  assert.ok(s.includes('const snOpen = ()') && s.includes("nav.style.width = 'max-content'"));
 });
 test('desktop.html: 서류 선택 드롭다운 맨 위가 실시간 서류 검색 입력이다', async () => {
   const { readFileSync } = await import('node:fs');
@@ -166,8 +166,10 @@ test('전문가 AI: 사용자를 인간 전문가로 상정(role=expert) — 면
   assert.match(h, /최종 판단과 책임은 전문가 본인에게 있으니/);
 });
 
-test('왼쪽 메뉴 펼침·접힘: 본문이 밀리지 않도록 width·margin-right 에 transition 을 걸지 않는다', () => {
+test('왼쪽 메뉴 펼침·접힘: width(px)와 margin-right 를 같은 시간·곡선으로 함께 전환해 본문은 밀리지 않고 서서히 움직인다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   const line = h.split('\n').find(l => l.includes('.side-nav{width:64px;padding-left:10px'));
-  assert.ok(line && !/transition:[^;}]*(width|margin-right)/.test(line), line);
+  const w = /transition:width (\.\d+s cubic-bezier\([^)]*\)),margin-right (\.\d+s cubic-bezier\([^)]*\)),box-shadow/.exec(line || '');
+  assert.ok(w && w[1] === w[2], line);
+  assert.match(h, /nav\.style\.marginRight = \(-\(w - 64\)\) \+ 'px'/);
 });
