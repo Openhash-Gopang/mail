@@ -2400,12 +2400,13 @@ function _docHostSite(id) {
 }
 function _docHostPost(msg) {
   const fr = _docHostFrame();
-  if (!fr || !fr.src) return;
+  if (!fr) return;   // 서류 사이트 주소는 비동기로 정해지므로(전체=pro 확인 뒤) 아직 src 가 없어도 준비될 때까지 대기열에 둔다
   if (!_docHost.ready) {
     const last = _docHost.queue[_docHost.queue.length - 1];
     if (last && last.type === msg.type && msg.type !== 'navi-doc-attach' && msg.type !== 'navi-doc-template') _docHost.queue[_docHost.queue.length - 1] = msg; else _docHost.queue.push(msg);
     return;
   }
+  if (!fr.src) return;
   const o = _docHostOrigin();
   try { fr.contentWindow.postMessage(msg, o); } catch (e) {}
 }
