@@ -73,3 +73,9 @@ test('desktop.html: 서류 화면의 혼디 대화 질문은 서류 사이트 SP
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   for (const k of ['navi-doc-ask', 'navi-doc-answer', '_embedLooksLikeQuestion', '_docAsk(text)']) assert.ok(s.includes(k), k);
 });
+test('desktop.html: 양식이 뜨면 입력창을 위로 올리고 서류 칸만 스크롤하며, 질문·지시는 대화로 처리한다', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  for (const k of ['.doc-live .chat-composer{order:1', 'border-bottom:2px solid', '#doc-host-frame{order:3;flex:1 1 0', 'async function _docConverse', 'if (await _docConverse(t)) return;']) assert.ok(s.includes(k), k);
+  assert.ok(!/fr\.style\.height = Math\.min/.test(s), '문서 높이로 iframe 을 늘리지 않는다');
+});
