@@ -3,6 +3,7 @@
  * 실행: node --test tests/hondi-chat.test.mjs
  */
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -49,4 +50,11 @@ test('대화 패널은 반투명(opacity)·배경 흐림으로 뒤 화면이 비
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../hondi-chat.js', import.meta.url), 'utf8');
   assert.match(s, /#hchat-panel\{[^}]*opacity:\.8;[^}]*backdrop-filter:blur\(2px\)/);
+});
+
+test('setSp: 패널 SP 전환 메시지를 보내고 다시 로드돼도 announce 가 재전송한다', () => {
+  const j = readFileSync(new URL('../hondi-chat.js', import.meta.url), 'utf8');
+  assert.match(j, /function setSp\(msg\)/);
+  assert.match(j, /setSp: setSp/);
+  assert.match(j, /S\.spMsg \? 'self' : 'delegate'/);
 });
