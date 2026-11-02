@@ -192,6 +192,8 @@
     return { ok: ok, all: ok.every(Boolean) };
   }
   // done = 통과한 페이지 수. 열람 가능한 최대 index = done (다음 한 페이지까지).
+  // 임시 해제(2026-11-02): true 이면 퀴즈를 통과하지 않아도 어느 페이지로든 이동할 수 있다. 다시 잠그려면 false 로.
+  var OPEN_ALL = true;
   function canOpen(done, idx, total) { return idx >= 0 && idx < total && idx <= done; }
   function clampDone(n, total) { n = parseInt(n, 10); return isFinite(n) && n > 0 ? Math.min(n, total) : 0; }
   function nextAfterPass(idx, total) { return idx + 1 < total ? idx + 1 : -1; }   // -1 = 마지막(완료 화면)
@@ -211,9 +213,9 @@
     if (S.idx >= total) S.idx = total - 1;
     var finished = S.done >= total && S.idx === -1;
     var steps = list.map(function (p, i) {
-      var st = i < S.done ? 'done' : (i === S.idx ? 'cur' : (i === S.done ? 'next' : 'lock'));
+      var st = i < S.done ? 'done' : (i === S.idx ? 'cur' : (i === S.done || OPEN_ALL ? 'next' : 'lock'));
       if (i === S.idx) st = (i < S.done ? 'done cur' : 'cur');
-      var can = canOpen(S.done, i, total);
+      var can = OPEN_ALL ? (i >= 0 && i < total) : canOpen(S.done, i, total);
       return '<button class="gd-step ' + st + '" ' + (can ? '' : 'disabled ') + 'data-act="go" data-i="' + i + '" aria-label="' + (i + 1) + '단계 ' + esc(p.title) + (i < S.done ? ' (완료)' : can ? '' : ' (잠김)') + '"' + (i === S.idx ? ' aria-current="step"' : '') + '>' + (i < S.done ? '✓' : (i + 1)) + '</button>';
     }).join('<span class="gd-bar' + '"></span>');
     var head = '<div class="gd-top"><div class="gd-steps" role="navigation" aria-label="사용법 진행 상태">' + steps + '</div>' +
@@ -246,7 +248,7 @@
       '<div class="gd-sub gd-nav">' + (S.idx > 0 ? '<button class="gd-link" data-act="go" data-i="' + (S.idx - 1) + '">← 이전 페이지</button>' : '') + '</div>';
   }
 
-  function go(i) { var total = pages(caseOn()).length; if (!canOpen(S.done, i, total)) return; clearTimeout(S.timer); S.idx = i; S.answers = {}; S.result = null; render(); window.scrollTo && $('tab-guide') && $('tab-guide').scrollIntoView && $('tab-guide').scrollIntoView({ block: 'start' }); }
+  function go(i) { var total = pages(caseOn()).length; if (OPEN_ALL ? !(i >= 0 && i < total) : !canOpen(S.done, i, total)) return; clearTimeout(S.timer); S.idx = i; S.answers = {}; S.result = null; render(); window.scrollTo && $('tab-guide') && $('tab-guide').scrollIntoView && $('tab-guide').scrollIntoView({ block: 'start' }); }
   function passAndAdvance() {
     var total = pages(caseOn()).length;
     if (S.idx >= S.done) { S.done = Math.min(S.idx + 1, total); save(S.done); }
@@ -278,7 +280,7 @@
     var total = pages(caseOn()).length; S.done = clampDone(load(), total);
     // 처음 열면 이어서 할 곳(첫 미완료 페이지)으로, 모두 마쳤으면 완료 화면으로. 이미 보던 중이면 그 자리 유지.
     if (S.idx === null) S.idx = S.done >= total ? -1 : S.done;
-    else if (S.idx > S.done && S.idx !== -1) S.idx = Math.min(S.done, total - 1);
+    else if (!OPEN_ALL && S.idx > S.done && S.idx !== -1) S.idx = Math.min(S.done, total - 1);
     render();
   }
 

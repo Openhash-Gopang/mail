@@ -266,3 +266,8 @@ test('사용 설명서: 서류 작성이 앞부분(3~4장)에 있고 PDV·혼디
   assert.ok(h.indexOf('<section id="docs">') < h.indexOf('<section id="what">'));
   assert.equal((h.match(/<section /g) || []).length, (h.match(/<\/section>/g) || []).length);
 });
+
+test('사용법 코스: 임시로 모든 페이지로 이동할 수 있다(OPEN_ALL)', () => {
+  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
+  assert.match(g, /var OPEN_ALL = true;/);
+});
