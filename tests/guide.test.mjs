@@ -116,3 +116,10 @@ test('각종 기관: 고르면 입력창과 혼디 대화창이 그 SP로 전환
   assert.match(h, /hondi-embed-sp-ready/);
   assert.match(h, /_orgLeave\(\)/);
 });
+
+test('각종 기관: 상단 중앙 문구와 제목이 고른 기관으로 바뀐다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다\.'/);
+  assert.match(h, /_cmpMode === 'org' && _org\) \? _org\.label/);
+  assert.match(h, /title: _ORG_DESC\[_org\.key\]/);
+});

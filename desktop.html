@@ -2034,6 +2034,7 @@ function _cmpOrgKey(e) {
 }
 // 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
+const _ORG_DESC = {k119:'신고부터 출동·병원 연계까지, 응급 상황을 돕는 시스템입니다.',klaw:'분쟁을 정리하고 판결을 예측하는 법률 시스템입니다.',kpolice:'사건·사고 신고를 접수하고 처리하는 치안 시스템입니다.',ksecurity:'개인과 조직의 보안을 지키는 시스템입니다.',khealth:'증상 상담부터 진료 연계까지 돕는 의료 시스템입니다.',kschool:'수강·학적·학교 서류를 처리하는 교육 시스템입니다.',gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다.',kstock:'상장·공시·투자 정보를 다루는 투자 시스템입니다.',kinsurance:'보험 가입과 보험금 청구를 돕는 시스템입니다.',ktax:'세금 신고와 납부를 돕는 세무 시스템입니다.',kmarket:'상품을 사고팔고 주문을 처리하는 거래 시스템입니다.',ktraffic:'도로·대중교통·교통 민원을 다루는 교통 시스템입니다.',klogistics:'배송과 화물을 추적하고 연결하는 물류 시스템입니다.',kcleaner:'폐기물·재활용 등 환경 민원을 처리하는 시스템입니다.',kpublic:'증명서 발급과 각종 행정 민원을 처리하는 시스템입니다.',kdemocracy:'정책 제안과 참여를 돕는 시스템입니다.',ktelecom:'통신 서비스 가입과 문의를 돕는 시스템입니다.',ksearch:'원하는 정보를 찾아 정리해 주는 검색 시스템입니다.',kbiz:'사업자 등록과 운영을 돕는 시스템입니다.',kplan:'목표를 세우고 실행 계획을 짜는 시스템입니다.',kwatch:'위험과 이상 징후를 신고하고 살피는 시스템입니다.',kjob:'일자리를 찾고 지원하는 직업 시스템입니다.',kjit:'조달과 납품을 연결하는 시스템입니다.',kcity:'도시 계획과 설계를 돕는 시스템입니다.',kestate:'부동산 평가·매물 검색·등록을 돕는 시스템입니다.',ksocial:'관심사가 맞는 사람들과 모임을 잇는 시스템입니다.'};
 let _org = null;   // { key, label, sp, ready, queue }
 function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비 중입니다.'; }
 /** 각종 기관을 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 혼디 대화창이 그 기관 SP 로 전환된다. */
@@ -4107,9 +4108,10 @@ function _cmpHasWork() {
 }
 // 칩·인사말·예시 문구·메일 아이콘·서류 드롭다운을 현재 모드에 맞춘다
 function _cmpSyncModeUi() {
-  const ui = _CMP_MODE_UI[_cmpMode] || _CMP_MODE_UI.default;
+  let ui = _CMP_MODE_UI[_cmpMode] || _CMP_MODE_UI.default;
   const sel = document.getElementById('cmp-doc-site');
   const t = document.querySelector('#cmp-landing .chat-landing-title');
+  if (_cmpMode === 'org' && _org) ui = Object.assign({}, ui, { title: _ORG_DESC[_org.key] || (_org.label + ' 시스템입니다.') });
   const s = document.querySelector('#cmp-landing .chat-landing-sub');
   if (t && t.textContent !== ui.title) { t.textContent = ui.title; t.classList.remove('vd-swap'); void t.offsetWidth; t.classList.add('vd-swap'); }
   if (s) s.textContent = ui.sub;
@@ -4137,7 +4139,7 @@ function _topbarSyncPage() {
   let label = '';
   const compose = document.getElementById('tab-compose');
   if (compose && compose.classList.contains('active')) {
-    label = _TOPBAR_MODE_LABEL[_cmpMode] || '홈';
+    label = (_cmpMode === 'org' && _org) ? _org.label : (_TOPBAR_MODE_LABEL[_cmpMode] || '홈');
   } else {
     const sub = document.querySelector('.side-nav .nav-subitem.active');
     const btn = document.querySelector('.side-nav .nav-btn.active');
