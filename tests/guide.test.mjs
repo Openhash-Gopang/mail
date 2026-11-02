@@ -73,14 +73,11 @@ test('desktop.html: 서류 화면의 혼디 대화 질문은 서류 사이트 SP
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   for (const k of ['navi-doc-ask', 'navi-doc-answer', '_embedLooksLikeQuestion', '_docAsk(text)']) assert.ok(s.includes(k), k);
 });
-test('desktop.html: 양식이 뜨면 입력창을 위로 올리고 서류 칸만 스크롤하며, 질문·지시는 대화로 처리한다', async () => {
+test('desktop.html: 입력창은 서류 검색·선택만, 대화는 혼디 대화창이 서류 SP 로 처리한다', async () => {
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  for (const k of ['.doc-live .chat-composer{order:1', 'border-bottom:2px solid', '#doc-host-frame{order:3;flex:1 1 0', 'async function _docConverse', 'if (await _docConverse(t, wasChat)) return;']) assert.ok(s.includes(k), k);
-  assert.ok(!/fr\.style\.height = Math\.min/.test(s), '문서 높이로 iframe 을 늘리지 않는다');
-});
-test('desktop.html: Enter 로 서류를 확정하면 입력창은 대화창이 되어 지워도 서류가 사라지지 않는다', async () => {
-  const { readFileSync } = await import('node:fs');
-  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  for (const k of ['_docHost.chatting && document.getElementById(\'tab-compose\').classList.contains(\'doc-live\')) return;', 'const wasChat = !!_docHost.chatting; _docHost.chatting = true;', 'await _docConverse(t, wasChat)', '_DOC_CHAT_PH']) assert.ok(s.includes(k), k);
+  for (const k of ['.doc-live .chat-composer{order:1', 'border-bottom:2px solid', '#doc-host-frame{order:3;flex:1 1 0', '.doc-live .chat-thread{display:none}',
+    'edited = await _docEditTurn(text, true)', 'const ans = await _docAsk(text);', '!t.trim() && _docHost.confirmed']) assert.ok(s.includes(k), k);
+  for (const k of ['_docConverse', '_DOC_CHAT_PH', '_docHost.chatting']) assert.ok(!s.includes(k), k + ' 없음');
+  assert.ok(!/fr\.style\.height = Math\.min/.test(s));
 });
