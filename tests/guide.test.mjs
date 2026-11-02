@@ -218,6 +218,8 @@ test('서류 제출: dpaper API 미발급 안내 대화(혼디 대화창, 인사
   assert.match(h, /d\.type === 'navi-doc-submit-gov'/);
   assert.ok(h.includes('아직 한국 정부로부터 dpaper API를 발급받지 못했으므로, 사용자가 직접 제출해야 합니다. 절차를 안내하겠습니다. 먼저, 공동인증서를 준비해 주십시오.'));
   assert.match(h, /sp: 'inline:submit:'/);
+  assert.ok(h.includes('아직 내용을 다 채우지 않으셨습니다. 제가 도와드릴까요?') && h.includes('내용이 적절한지 검토하겠습니다. 잠시 기다려주십시오.'));
+  assert.match(h, /autoAsk: blank > 0 \? ''/);
   assert.match(h, /HondiChat\.open\(\)/);
   assert.match(h, /if \(mode !== 'doc'\) _submitGuideEnd\(\)/);
 });
