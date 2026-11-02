@@ -981,6 +981,13 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <div class="doc-combo-list" id="cmp-org-list" role="listbox" aria-label="기관"></div>
           </div>
         </div>
+        <div class="doc-combo" id="cmp-exp-combo">
+          <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">전문가 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="doc-combo-pop" id="cmp-exp-combo-pop" hidden>
+            <input type="search" id="cmp-exp-q" class="doc-combo-q" placeholder="전문가 검색 (예: 변호사, 세무사)" autocomplete="off" aria-label="전문가 검색" oninput="_cmpExpFilter()" onkeydown="_cmpExpKey(event)">
+            <div class="doc-combo-list" id="cmp-exp-list" role="listbox" aria-label="전문가"></div>
+          </div>
+        </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -2005,7 +2012,7 @@ function _cmpDocComboPick(b) {
   input.value = title; _kmailAutoResize(input); _cmpChatUpdateSendState();
   _docHostInput(); _docHostSubmit();   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
 }
-document.addEventListener('click', (e) => { const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
+document.addEventListener('click', (e) => { const ex = e.target.closest && e.target.closest('#cmp-exp-list .doc-combo-it'); if (ex) { _cmpExpPick(ex.getAttribute('data-exp')); return; } if (!e.target.closest || !e.target.closest('#cmp-exp-combo')) _cmpExpClose(); const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
 // ── 각종 기관(2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
 const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
 let _orgSel = -1;
@@ -2031,6 +2038,40 @@ function _cmpOrgKey(e) {
     _orgSel = (Math.max(_orgSel, -1) + (e.key === 'ArrowDown' ? 1 : -1) + its.length) % its.length;
     its.forEach((b, i) => b.classList.toggle('on', i === _orgSel)); its[_orgSel].scrollIntoView({ block: 'nearest' });
   } else if (e.key === 'Enter') { e.preventDefault(); const b = its[Math.max(_orgSel, 0)]; if (b) _cmpOrgPick(b.getAttribute('data-org')); }
+}
+// ── 전문가 AI(2026-11-02): '각종 기관' 오른쪽 드롭다운. 검색 + 대표 전문가 + 맨 끝 '더보기(...)'(전문가 페르소나 전체 목록 페이지를 연다).
+const _EXP_URL = 'https://hondi.net/pages/expert-personas.html';
+const _EXP_ITEMS = ['변호사','법무사','세무사','회계사','변리사','감정평가사','공인중개사','행정사','노무사','건축사','의사','약사','한의사'];
+let _expSel = -1;
+function _cmpExpFilter() {
+  const q = _docNorm(document.getElementById('cmp-exp-q').value), list = document.getElementById('cmp-exp-list');
+  const hits = _EXP_ITEMS.filter(x => !q || _docNorm(x).includes(q));
+  list.innerHTML = hits.map(x => `<button type="button" class="doc-combo-it" role="option" data-exp="${x}"><b>${x}</b></button>`).join('') + '<button type="button" class="doc-combo-it" role="option" data-exp="__more"><b>더보기 (...)</b></button>';
+  _expSel = -1; const f = list.querySelector('.doc-combo-it'); if (f && q) { f.classList.add('on'); _expSel = 0; }
+}
+function _cmpExpClose() { const pop = document.getElementById('cmp-exp-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-exp-combo-btn').setAttribute('aria-expanded', 'false'); } }
+function _cmpExpToggle(e) {
+  if (e) e.stopPropagation();
+  _cmpDocComboClose(); _cmpOrgClose();
+  const pop = document.getElementById('cmp-exp-combo-pop'), open = pop.hidden;
+  pop.hidden = !open; document.getElementById('cmp-exp-combo-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const q = document.getElementById('cmp-exp-q'); q.value = ''; _cmpExpFilter(); q.focus(); }
+}
+function _cmpExpKey(e) {
+  const its = [...document.querySelectorAll('#cmp-exp-list .doc-combo-it')];
+  if (e.key === 'Escape') { _cmpExpClose(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); if (!its.length) return;
+    _expSel = (Math.max(_expSel, -1) + (e.key === 'ArrowDown' ? 1 : -1) + its.length) % its.length;
+    its.forEach((b, i) => b.classList.toggle('on', i === _expSel)); its[_expSel].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') { e.preventDefault(); const b = its[Math.max(_expSel, 0)]; if (b) _cmpExpPick(b.getAttribute('data-exp')); }
+}
+function _cmpExpPick(k) {
+  _cmpExpClose();
+  if (k === '__more') { window.open(_EXP_URL, '_blank', 'noopener'); return; }
+  if (!_EXP_ITEMS.includes(k)) return;
+  const input = document.getElementById('cmp-input'); if (!input) return;
+  input.value = k + ' 전문가 AI와 상담하고 싶어요'; _kmailAutoResize(input); _cmpChatUpdateSendState(); try { input.focus(); } catch (x) {}
 }
 // 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};

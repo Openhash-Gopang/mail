@@ -123,3 +123,9 @@ test('각종 기관: 상단 중앙 문구와 제목이 고른 기관으로 바�
   assert.match(h, /_cmpMode === 'org' && _org\) \? _org\.label/);
   assert.match(h, /title: _ORG_DESC\[_org\.key\]/);
 });
+
+test('전문가 AI: 각종 기관 오른쪽 드롭다운(검색 + 대표 전문가 + 더보기로 전문가 페르소나 페이지)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  for (const k of ['id="cmp-exp-combo"', '전문가 AI', 'id="cmp-exp-q"', 'function _cmpExpPick(', 'https://hondi.net/pages/expert-personas.html', '더보기 (...)']) assert.ok(h.includes(k), k);
+  assert.ok(h.indexOf('id="cmp-org-combo"') < h.indexOf('id="cmp-exp-combo"'));
+});
