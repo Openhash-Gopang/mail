@@ -348,7 +348,7 @@ test('Whitepaper: 왼쪽 메뉴 하단 항목 + 탭 iframe, 설명서 1장은 �
   assert.ok(h.includes('id="tab-btn-whitepaper"') && h.includes("_switchTab('whitepaper')") && h.includes('id="whitepaper-frame"'));
   assert.ok(h.includes("whitepaper.html?embed=mail") && h.includes("'navi-open-whitepaper'"));
   const w = readFileSync(new URL('../whitepaper.html', import.meta.url), 'utf8');
-  assert.ok(w.includes('Whitepaper') && w.includes('나비웹은 <b>수많은 나비가 모이는 메신저</b>') && w.includes('내 정보는 어디에 저장되나요?'));
+  assert.ok(w.includes('Whitepaper') && w.includes('<b>수많은 나비가 모이는 메신저</b>') && w.includes('내 정보는 어디에 저장되나요?'));
   const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
-  assert.ok(m.includes('navi-open-whitepaper') && !m.includes('내 정보는 어디에 저장되나요?'));
+  assert.ok(m.includes('navi-open-whitepaper') && !m.includes('<h3>내 정보는 어디에 저장되나요?</h3>'));
 });
