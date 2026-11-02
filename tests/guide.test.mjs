@@ -255,3 +255,14 @@ test('상단 바 가운데: 홈 = "나만의 AI 비서, 나비"(나비 굵게)',
   assert.ok(h.includes('aria-live="polite">나만의 AI 비서, <b>나비</b></div>'));
   assert.ok(h.includes("el.innerHTML = '나만의 AI 비서, <b>나비</b>'")); assert.match(h, /\.topbar-page b\{font-weight:800\}/);
 });
+
+test('사용 설명서: 서류 작성이 앞부분(3~4장)에 있고 PDV·혼디 대화창의 역할을 설명한다', () => {
+  const h = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
+  const order = [...h.matchAll(/<h2><span class="n">(\d+)<\/span>([^<]*)/g)].map(m => [Number(m[1]), m[2]]);
+  order.forEach((o, i) => assert.equal(o[0], i + 1));   // 장 번호가 1부터 빠짐없이 이어진다
+  assert.equal(order[2][1], '서류 작성'); assert.equal(order[3][1], '작성한 서류를 대화로 고치기'); assert.equal(order[4][1].startsWith('나비웹으로 할 수 있는 일'), true);
+  const docs = h.slice(h.indexOf('<section id="docs">'), h.indexOf('<section id="docedit">'));
+  for (const k of ['PDV의 역할', '혼디 대화창의 역할', '비서가 채우고, 내가 검토합니다', '📎 버튼', 'dpaper', '예시: 서류 작성']) assert.ok(docs.includes(k), k);
+  assert.ok(h.indexOf('<section id="docs">') < h.indexOf('<section id="what">'));
+  assert.equal((h.match(/<section /g) || []).length, (h.match(/<\/section>/g) || []).length);
+});
