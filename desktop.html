@@ -449,6 +449,13 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .gl-pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:0 9px;margin-left:6px;vertical-align:1px;background:var(--pri-bg);color:var(--pri)}
 .gl-pill.ok{background:#e1f4e8;color:#116a3a}.gl-pill.part{background:#fdf1d6;color:#8a5a00}.gl-pill.fail{background:#fde8e8;color:#b42318}.gl-pill.off{background:var(--bg);color:var(--hint)}
 .gl-li-sub{font-size:12.5px;color:var(--hint);line-height:1.6;margin-top:2px}
+.gl-notify{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:var(--hint);line-height:1.5}
+.gl-alert{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;margin:6px 0;padding:9px 12px;border-radius:10px;border:1px solid #FDE68A;background:#FFFBEB;color:#92400E;font-size:13.5px;line-height:1.5;cursor:pointer;font-family:inherit}
+.gl-alert.s3{border-color:#FECACA;background:#FEF2F2;color:#B42318}
+#gl-toast{position:fixed;right:20px;bottom:24px;z-index:91;width:min(360px,calc(100vw - 32px));background:#fff;color:#111827;border:1px solid var(--bdr);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:12px 14px 10px}
+#gl-toast[hidden]{display:none}
+#gl-toast h6{margin:0 0 6px;font-size:13px;display:flex;align-items:center}
+#gl-toast h6 button{margin-left:auto;border:0;background:none;font-size:16px;line-height:1;cursor:pointer;color:var(--hint)}
 .gl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.gl-head h2{margin:0}.gl-head .gl-sp{flex:1}
 .nav-ask{align-self:flex-start;margin:6px 10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;max-width:min(92%,460px)}
 .nav-ask-q{font-size:14px;color:#111827;margin-bottom:8px}
@@ -868,7 +875,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideNavOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg>나비 길잡이</button>
         <button type="button" class="nav-toggle" id="nav-toggle-guide" aria-label="나비 길잡이 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-guide" onclick="_navToggleGuide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="nav-sub" id="nav-sub-guide" role="group" aria-label="나비 길잡이 하위 메뉴">
-          <button id="tab-btn-gprog" class="nav-subitem nav-gv" data-label="진행 중" onclick="_switchTab('gprog')">진행 중</button>
+          <button id="tab-btn-gprog" class="nav-subitem nav-gv" data-label="진행 중" onclick="_switchTab('gprog')">진행 중<span class="unread-badge" data-for="guide" hidden></span></button>
           <button id="tab-btn-gdone" class="nav-subitem nav-gv" data-label="완료한 과제" onclick="_switchTab('gdone')">완료한 과제</button>
         </div>
       </div>
@@ -1434,11 +1441,15 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   <div id="tab-gprog" class="tab-panel">
     <div class="card">
       <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
-      <div class="sub">나비 길잡이와 계획을 세운 과제 가운데 아직 끝내지 않은 것입니다. 과제를 누르면 대화창과 계획서가 열립니다. 계획서는 이 브라우저에 저장됩니다.</div>
+      <div class="sub">나비 길잡이와 계획을 세운 과제 가운데 아직 끝내지 않은 것입니다. 과제를 누르면 대화창과 계획서가 열립니다. <span id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</span></div>
+      <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-notify-btn" onclick="_guideNotifyToggle()">브라우저 알림 켜기</button><span id="gl-notify-st"></span></div>
+      <div id="gl-alerts"></div>
       <div id="gprog-empty" style="display:none;font-size:14px;color:var(--hint)">진행 중인 과제가 없습니다. "새 과제"를 눌러 시작해 보세요.</div>
       <div id="gprog-items"></div>
     </div>
   </div>
+
+  <div id="gl-toast" role="status" aria-live="polite" hidden></div>
 
   <div id="tab-gdone" class="tab-panel">
     <div class="card">
@@ -2154,7 +2165,7 @@ const _GUIDE_SP = `당신은 "나비 길잡이"다. 사용자가 정한 과제�
 ~~~`;
 let _guide = { cur: null, plans: {} };
 function _guideLoad() { try { const o = JSON.parse(localStorage.getItem(_GUIDE_KEY) || 'null'); if (o && o.plans) _guide = { cur: o.cur || null, plans: o.plans }; } catch (e) {} }
-function _guideStore() { try { localStorage.setItem(_GUIDE_KEY, JSON.stringify(_guide)); } catch (e) {} }
+function _guideStore(localOnly) { try { localStorage.setItem(_GUIDE_KEY, JSON.stringify(_guide)); } catch (e) {} if (!localOnly) { _guidePdvSoon(); _guideCheckSoon(); } }   // 이 브라우저(캐시)에 바로 쓰고, PDV 보관과 알림 점검은 잠시 뒤에
 function _guideToday() { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 function _guideField(t, k) { const m = new RegExp('^' + k + '\\s*[:：]\\s*(.*)$', 'm').exec(t || ''); return m ? m[1].trim() : ''; }
 function _guideTitleOf(t) { const m = /^#\s*과제\s*[:：]\s*(.+)$/m.exec(t || ''); return m ? m[1].trim() : '제목 없는 과제'; }
@@ -2242,6 +2253,159 @@ function _guideDelete() {
   const p = _guideCur(); if (!p || !confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return;
   delete _guide.plans[p.id]; _guide.cur = null; _guideStore(); _guideRender();
 }
+// ── 과제 계획서의 PDV 보관 (2026-11-03) ──
+// 계획서는 이 브라우저(localStorage)에 바로 쓰고, 이어서 hondi.net 의 PDV 중계(pdv-draft-bridge)에 'guide' 종류로 보관한다.
+// naviweb.kr 과 mail.hondi.net 은 localStorage 가 따로라 같은 계획서가 보이지 않았는데, PDV 는 hondi.net 한 곳이라 둘 다 같은 계획서를 본다.
+// 기기 간(폰↔PC) 동기화는 PDV 자체가 아직 없어서 되지 않는다. 옛 중계(guide 미지원)는 caps 명령에 BAD_OP 로 답하므로 그때는 예전처럼 이 브라우저에만 저장한다.
+// 지운 과제는 site='deleted' 인 빈 항목(묘비)으로 남겨, 다른 출처(naviweb.kr↔mail.hondi.net)에 남은 사본이 되살아나지 않게 한다.
+const _GP_SIG_KEY = 'navi_guide_pdvsig_v1';
+const _gp = { ok: null, sig: {}, t: null, busy: false, last: 0 };
+try { _gp.sig = JSON.parse(localStorage.getItem(_GP_SIG_KEY) || '{}') || {}; } catch (e) {}
+function _gpSigSave() { try { localStorage.setItem(_GP_SIG_KEY, JSON.stringify(_gp.sig)); } catch (e) {} }
+function _gpSigOf(p) { return (p.updated || 0) + ':' + (p.text || '').length; }
+function _gpStatus() {
+  const el = document.getElementById('gl-store-st'); if (!el) return;
+  el.textContent = _gp.ok === true ? '계획서는 이 기기의 PDV에 보관됩니다(다른 기기와의 동기화는 아직 없습니다).'
+    : _gp.ok === false ? '계획서는 이 브라우저에만 저장됩니다(PDV 연결이 아직 이 기능을 지원하지 않습니다).' : '계획서는 이 브라우저에 저장됩니다. PDV 연결을 확인하는 중입니다.';
+}
+function _guidePdvSoon() { if (_gp.ok !== true) return; clearTimeout(_gp.t); _gp.t = setTimeout(_guidePdvPush, 1500); }
+async function _guidePdvPush() {
+  if (_gp.ok !== true) return;
+  try {
+    for (const id of Object.keys(_guide.plans)) {
+      const p = _guide.plans[id]; if (!p || !p.text) continue;
+      const sg = _gpSigOf(p); if (_gp.sig[id] === sg) continue;
+      await _drCall('put', { item: { id: 'guide-' + id, kind: 'guide', status: 'draft', title: p.title || _guideTitleOf(p.text), body: p.text, subject: String(p.updated || Date.now()), site: '' } }, 10000);
+      _gp.sig[id] = sg;
+    }
+    for (const id of Object.keys(_gp.sig)) if (!_guide.plans[id]) {   // 지운 과제 → 묘비
+      await _drCall('put', { item: { id: 'guide-' + id, kind: 'guide', status: 'draft', title: '(삭제됨)', body: '', subject: String(Date.now()), site: 'deleted' } }, 10000);
+      delete _gp.sig[id];
+    }
+  } catch (e) { /* 다음 저장·동기화 때 다시 시도한다. 본문은 이 브라우저에 이미 있다 */ }
+  _gpSigSave();
+}
+/** PDV 와 맞춘다: 더 새로운 쪽이 이기고, PDV 에 없는 계획서는 올리고, 묘비가 더 새로우면 이 브라우저의 사본도 지운다. */
+async function _guidePdvSync(force) {
+  if (_gp.busy || (!force && Date.now() - _gp.last < 60000)) return;
+  _gp.busy = true;
+  try {
+    _drInit();
+    if (_gp.ok !== true) {
+      try { const c = await _drCall('caps', {}, 8000); _gp.ok = !!(c.kinds && c.kinds.indexOf('guide') >= 0); }
+      catch (e) { if (String(e && e.message) === 'BAD_OP') _gp.ok = false; else { _gpStatus(); return; } }   // 시간 초과 등은 다음에 다시
+    }
+    _gpStatus();
+    if (!_gp.ok) return;
+    const r = await _drCall('list', { kind: 'guide' }, 10000);
+    const remote = {}; (r.items || []).forEach(it => { if (it && /^guide-/.test(it.id)) remote[it.id.slice(6)] = it; });
+    let changed = false;
+    for (const id of Object.keys(remote)) {
+      const it = remote[id], loc = _guide.plans[id], ru = Number(it.subject) || it.updated || 0;
+      if (it.site === 'deleted') {
+        if (loc && (loc.updated || 0) > ru) { delete _gp.sig[id]; continue; }   // 지운 뒤에 여기서 다시 고쳤다 → 되살려 올린다
+        if (loc) { delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; changed = true; }
+        delete _gp.sig[id]; continue;
+      }
+      if (loc && loc.text && (loc.updated || 0) >= ru) { if ((loc.updated || 0) === ru) _gp.sig[id] = _gpSigOf(loc); else delete _gp.sig[id]; continue; }
+      const g = await _drCall('get', { id: it.id }, 10000), t = g.item && g.item.body; if (!t) continue;
+      _guide.plans[id] = { id, title: g.item.title || _guideTitleOf(t), text: t, updated: ru };
+      _gp.sig[id] = _gpSigOf(_guide.plans[id]); changed = true;
+    }
+    Object.keys(_guide.plans).forEach(id => { if (!remote[id]) delete _gp.sig[id]; });   // PDV 에 없으면(처음이거나 PDV 를 비웠다) 올린다
+    _gp.last = Date.now();
+    if (changed) { _guideStore(true); const d = document.getElementById('cmp-guide-doc'); if (d && !d.hidden) _guideRender(); ['prog', 'done'].forEach(k => { const t = document.getElementById('tab-g' + k); if (t && t.classList.contains('active')) _guideRenderList(k); }); }
+    await _guidePdvPush(); _guideNotifyCheck();
+  } catch (e) { /* PDV 중계가 안 열리면 이 브라우저 저장만 쓴다 */ }
+  finally { _gp.busy = false; }
+}
+
+// ── 길잡이 알림 (2026-11-03) ──
+// 계획서의 마감·할 일 기한·갱신 시각에서 코드가 사실만 계산해 알린다(AI 호출 없음). 같은 알림은 하루에(정체는 한 주에) 한 번만.
+// ① 앱 안: 메뉴 '진행 중' 배지, 진행 중 화면의 알림 줄, 화면 구석의 알림 카드  ② 브라우저 알림: 사용자가 켰고 탭이 가려져 있을 때(탭이 열려 있는 동안만 — 탭을 닫으면 가지 않는다).
+const _GN_KEY = 'navi_guide_notified_v1', _GN_ON = 'navi_guide_notify_on';
+function _guideAlerts() {
+  const out = [], today = _guideToday(), dd = s => Math.round((Date.parse(s) - Date.parse(today)) / 864e5), j = a => a.slice(0, 3).join(', ') + (a.length > 3 ? ' 외 ' + (a.length - 3) + '건' : '');
+  Object.values(_guide.plans).forEach(p => {
+    if (!p || !p.text || _guideIsDone(p) || _guideField(p.text, '상태') === '보류') return;
+    const title = p.title || '제목 없는 과제', add = (key, sev, msg) => out.push({ key: p.id + '|' + key, id: p.id, sev, msg: '「' + title + '」 ' + msg });
+    const dl = (/(\d{4}-\d{2}-\d{2})/.exec(_guideField(p.text, '마감')) || [])[1], n = dl ? dd(dl) : NaN;
+    if (!isNaN(n)) {
+      if (n < 0) add('dl-late|' + today, 3, '마감이 ' + (-n) + '일 지났습니다. 끝났다면 성공·실패와 원인을 기록하고, 계속한다면 마감을 조정하세요.');
+      else if (n === 0) add('dl0|' + today, 3, '오늘이 마감입니다.');
+      else if (n === 1 || n === 3 || n === 7 || n === 14) add('dl' + n + '|' + today, n <= 3 ? 3 : 2, '마감까지 ' + n + '일 남았습니다.');
+    }
+    const late = [], t0 = [], soon = [];
+    p.text.replace(/\r/g, '').split('\n').forEach(l => {
+      const m = /^\s*[-*]\s*\[ \]\s*(.*)$/.exec(l); if (!m) return;
+      const parts = m[1].split('|'), d = (/(\d{4}-\d{2}-\d{2})/.exec(parts.slice(1).join('|')) || [])[1]; if (!d) return;
+      const k = dd(d), nm = parts[0].trim(); if (isNaN(k)) return;
+      if (k < 0) late.push(nm + '(D+' + (-k) + ')'); else if (k === 0) t0.push(nm); else if (k === 1 || k === 3) soon.push(nm + '(D-' + k + ')');
+    });
+    if (late.length) add('tlate|' + today, 3, '기한이 지난 할 일 ' + late.length + '건: ' + j(late));
+    if (t0.length) add('t0|' + today, 3, '오늘 할 일 ' + t0.length + '건: ' + j(t0));
+    if (soon.length) add('tsoon|' + today, 2, '곧 기한인 할 일: ' + j(soon));
+    const idle = p.updated ? Math.floor((Date.now() - p.updated) / 864e5) : 0;
+    if (idle >= 7) add('stall|' + Math.floor(idle / 7), 1, idle + '일째 갱신이 없습니다. 진행 상황을 나비 길잡이에게 알려 주세요.');
+  });
+  return out.sort((a, b) => b.sev - a.sev);
+}
+function _guideNotifyOn() { try { return 'Notification' in window && Notification.permission === 'granted' && localStorage.getItem(_GN_ON) === '1'; } catch (e) { return false; } }
+function _guideNotifyStatus() {
+  const b = document.getElementById('gl-notify-btn'), st = document.getElementById('gl-notify-st'); if (!b || !st) return;
+  if (!('Notification' in window)) { b.style.display = 'none'; st.textContent = '이 브라우저는 시스템 알림을 지원하지 않아 앱 안 알림만 표시합니다.'; return; }
+  b.style.display = '';
+  if (Notification.permission === 'denied') { b.style.display = 'none'; st.textContent = '브라우저 설정에서 알림이 차단되어 있어 앱 안 알림만 표시합니다.'; return; }
+  const on = _guideNotifyOn();
+  b.textContent = on ? '브라우저 알림 끄기' : '브라우저 알림 켜기';
+  st.textContent = on ? '켜짐 — 나비웹 탭이 열려 있는 동안 다른 창을 보고 있어도 알려 드립니다. 탭을 닫으면 알림이 가지 않습니다.' : '꺼짐 — 켜면 다른 창을 보고 있어도 마감·기한을 알려 드립니다(탭이 열려 있을 때만).';
+}
+async function _guideNotifyToggle() {
+  if (!('Notification' in window)) return;
+  try {
+    if (_guideNotifyOn()) localStorage.setItem(_GN_ON, '0');
+    else {
+      let perm = Notification.permission; if (perm === 'default') perm = await Notification.requestPermission();
+      if (perm === 'granted') { localStorage.setItem(_GN_ON, '1'); try { new Notification('나비 길잡이', { body: '알림을 켰습니다. 마감과 기한이 다가오면 알려 드립니다.' }); } catch (e) {} }
+    }
+  } catch (e) {}
+  _guideNotifyStatus();
+}
+function _guideToastHide() { const t = document.getElementById('gl-toast'); if (t) t.hidden = true; }
+function _guideToast(list) {
+  const t = document.getElementById('gl-toast'); if (!t) return;
+  t.innerHTML = '<h6>나비 길잡이<button type="button" aria-label="닫기" onclick="_guideToastHide()">×</button></h6>' +
+    list.slice(0, 3).map(a => '<button type="button" class="gl-alert' + (a.sev >= 3 ? ' s3' : '') + '" onclick="_guideToastHide();_guideOpen(\'' + escHtml(a.id) + '\')"><span>' + escHtml(a.msg) + '</span></button>').join('') +
+    (list.length > 3 ? '<div class="gl-li-sub">그 밖에 ' + (list.length - 3) + '건 — 왼쪽 메뉴 "진행 중"에서 확인하세요.</div>' : '');
+  t.hidden = false;
+}
+function _guideNotifyCheck() {
+  try {
+    const al = _guideAlerts();
+    document.querySelectorAll('.unread-badge[data-for="guide"]').forEach(el => { el.textContent = al.length > 99 ? '99+' : String(al.length); el.hidden = !al.length; });
+    const box = document.getElementById('gl-alerts');
+    if (box) { box.innerHTML = al.map(a => '<button type="button" class="gl-alert' + (a.sev >= 3 ? ' s3' : '') + '" data-id="' + escHtml(a.id) + '">' + (a.sev >= 3 ? '⚠' : '•') + ' <span>' + escHtml(a.msg) + '</span></button>').join(''); box.onclick = (e) => { const b = e.target.closest && e.target.closest('.gl-alert'); if (b) _guideOpen(b.dataset.id); }; }
+    _guideNotifyStatus();
+    let seen = {}; try { seen = JSON.parse(localStorage.getItem(_GN_KEY) || '{}') || {}; } catch (e) {}
+    const fresh = al.filter(a => !seen[a.key] && a.sev >= 2);   // 정체(sev 1)는 배지·목록에만 — 끼어들지 않는다
+    if (!fresh.length) return;
+    const bg = document.hidden;
+    if (bg && !_guideNotifyOn()) return;   // 아무도 못 볼 때는 쌓아 두었다가 탭이 다시 보일 때 알린다
+    if (bg) fresh.slice(0, 3).forEach(a => { try { const n = new Notification('나비 길잡이', { body: a.msg, tag: a.key }); n.onclick = () => { try { window.focus(); n.close(); } catch (e) {} _guideOpen(a.id); }; } catch (e) {} });
+    else _guideToast(fresh);
+    fresh.forEach(a => { seen[a.key] = 1; });
+    const ks = Object.keys(seen); if (ks.length > 300) ks.slice(0, ks.length - 300).forEach(k => delete seen[k]);
+    try { localStorage.setItem(_GN_KEY, JSON.stringify(seen)); } catch (e) {}
+  } catch (e) {}
+}
+let _gcTimer = null;
+function _guideCheckSoon() { clearTimeout(_gcTimer); _gcTimer = setTimeout(_guideNotifyCheck, 800); }
+document.addEventListener('DOMContentLoaded', () => {
+  _guideLoad(); _gpStatus(); _guideNotifyStatus();
+  setTimeout(() => { _guideNotifyCheck(); _guidePdvSync(true); }, 2500);
+  setInterval(() => { _guideNotifyCheck(); _guidePdvSync(); }, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { _guidePdvSync(); _guideLoad(); _guideNotifyCheck(); } });
+});
 // ── 나비 길잡이 왼쪽 메뉴: 메일 아래 "나비 길잡이" + 하위 "진행 중"·"완료한 과제" (2026-11-03) ──
 const _NAV_GUIDE_KEY = 'kmail_nav_guide_open';
 function _navToggleGuide(force) {
@@ -2260,7 +2424,7 @@ function _guideOpen(id) { _guideLoad(); _guide.cur = id && _guide.plans[id] ? id
 function _guideIsDone(p) { return !!_guideField(p.text, '판정') || _guideField(p.text, '상태') === '종료'; }
 function _guideCounts(text) { let t = 0, d = 0; String(text || '').split('\n').forEach(l => { const m = /^\s*[-*]\s*\[( |x|X)\]/.exec(l); if (m) { t++; if (m[1] !== ' ') d++; } }); return [d, t]; }
 function _guideRenderList(kind) {
-  _guideLoad();
+  _guideLoad(); _guidePdvSync();
   const box = document.getElementById('g' + kind + '-items'), empty = document.getElementById('g' + kind + '-empty'); if (!box) return;
   const list = Object.values(_guide.plans).filter(p => p && p.text && (kind === 'done') === _guideIsDone(p)).sort((a, b) => (b.updated || 0) - (a.updated || 0));
   empty.style.display = list.length ? 'none' : '';
