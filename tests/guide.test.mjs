@@ -94,3 +94,12 @@ test('desktop.html: 서류 선택 드롭다운 맨 위가 실시간 서류 검�
   for (const k of ['id="cmp-doc-q"', 'oninput="_cmpDocComboFilter()"', 'function _docSearch(', 'function _cmpDocComboPick(', 'https://law.hondi.net/data/docs/law.json']) assert.ok(s.includes(k), k);
   assert.ok(!s.includes("new Option('서류 선택', '')") || true);
 });
+test('desktop.html: "서류 선택" 오른쪽에 "각종 기관" 드롭다운(검색 입력 + K-서비스 27개 인프라 항목)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  for (const k of ['id="cmp-org-combo"', '각종 기관', 'id="cmp-org-q"', 'function _cmpOrgPick(', 'k-services.html?embed=mail#']) assert.ok(s.includes(k), k);
+  const items = s.match(/const _ORG_ITEMS = (\[\[.*?\]\]);/s);
+  assert.ok(items); const arr = eval(items[1]); assert.equal(arr.length, 27);
+  assert.deepEqual(arr.map((x) => x[1]).slice(0, 4), ['메일', '응급', '법률', '치안 신고']); assert.equal(arr[26][1], '모임');
+  assert.ok(s.indexOf('id="cmp-doc-combo"') < s.indexOf('id="cmp-org-combo"'), '서류 선택 오른쪽');
+});
