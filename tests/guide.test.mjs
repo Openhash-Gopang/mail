@@ -177,7 +177,7 @@ test('왼쪽 메뉴 펼침·접힘: width(px)와 margin-right 를 같은 시간�
 test('GDC 는 설정의 탭(PDV 오른쪽)으로 옮겨 사용량(그래프) 화면을 끼워 보여 준다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(!h.includes('id="tab-btn-gdc"') && !h.includes('id="tab-gdc"'));
-  assert.match(h, /const _SET_SECTIONS = \['account', 'pdv', 'gdc', /);
+  assert.match(h, /const _SET_SECTIONS = \['account', 'profile', 'pdv', 'gdc', /);
   assert.ok(h.indexOf('id="set-tab-pdv"') < h.indexOf('id="set-tab-gdc"') && h.indexOf('id="set-tab-gdc"') < h.indexOf('id="set-tab-signature"'));
   assert.match(h, /id="set-sec-gdc"[^>]*>\s*<iframe id="gdc-frame"/);
   assert.ok(h.includes("_HONDI_BASE + '/usage.html?embed=mail'") && h.includes("'https://hondi.net'"));
@@ -286,7 +286,7 @@ test('가상 판결은 예시 줄(서류 작성 왼쪽)로, PDV 는 설정의 �
   assert.ok(!h.includes('id="tab-btn-verdict"') && !h.includes('id="tab-btn-pdv"'));
   const v = h.indexOf('id="cmp-verdict-btn"'), d = h.indexOf('id="cmp-doc-combo"');
   assert.ok(v > 0 && v < d && h.slice(v, d).includes('<svg') && h.slice(v, d).includes('가상 판결'));
-  assert.match(h, /const _SET_SECTIONS = \['account', 'pdv', /);
+  assert.match(h, /const _SET_SECTIONS = \['account', 'profile', 'pdv', /);
   assert.ok(h.indexOf('id="set-tab-account"') < h.indexOf('id="set-tab-pdv"') && h.indexOf('id="set-tab-pdv"') < h.indexOf('id="set-tab-signature"') && h.includes('id="set-sec-pdv"'));
   assert.ok(h.includes('id="pdv-frame"') && h.includes("_PDV_URL + '?embed=mail'") && !h.includes('PDV 열기 (새 탭)'));
   assert.match(h, /<button[^>]*id="set-tab-account" class="active"/);
