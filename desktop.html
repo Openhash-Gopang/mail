@@ -2481,7 +2481,7 @@ function _switchTab(name) {
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'settings') _settingsInit();
   if (name === 'whitepaper') _wpSwitch(document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi');
-  if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'https://hondi.net/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
+  if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
   _navSyncMailSub();
@@ -2843,7 +2843,7 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 const _SET_SECTIONS = ['account', 'pdv', 'gdc', 'signature', 'autoreply'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
-  if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'https://hondi.net/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프)
+  if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프)
   if (name === 'pdv') { const f = document.getElementById('pdv-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // PDV 데이터(대화 이력·서류 Draft)를 새 탭 없이 설정 안에서 보여 준다
   _SET_SECTIONS.forEach(n => {
     const sec = document.getElementById('set-sec-' + n), tab = document.getElementById('set-tab-' + n);
@@ -4129,7 +4129,9 @@ function _cmpNewConversation() {
   if (_cmpMode !== 'default') _cmpSetMode('default', { force: true }); else _cmpChatStartNew();
 }
 // 왼쪽 메뉴 'PDV' — hondi.net 의 PDV(Private Data Vault) 화면을 새 탭으로 연다. K-Mail 작업 화면은 그대로 둔다.
-const _PDV_URL = 'https://hondi.net/pdv.html';
+// naviweb.kr 에서는 hondi.net 페이지를 같은 출처(/_h/)로 받아 와 로그인 쿠키가 그대로 보이게 한다(ops/naviweb-proxy). 그 밖의 주소는 예전처럼 hondi.net.
+const _HONDI_BASE = /(^|\.)naviweb\.kr$/.test(location.hostname) ? '/_h' : 'https://hondi.net';
+const _PDV_URL = _HONDI_BASE + '/pdv.html';
 function _navOpenPdv() { window.open(_PDV_URL, '_blank', 'noopener'); }
 // 입력창 왼쪽 메일(✉) 아이콘 — 편지 작성(AI) / 캠페인 중 고르는 팝오버. 둘 다 AI SP 를 부르는 모드다(빠른 발송은 폼 화면이라 왼쪽 메뉴에 둔다).
 function _cmpMailMenu(ev) {

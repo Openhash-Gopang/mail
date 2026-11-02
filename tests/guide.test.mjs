@@ -180,7 +180,7 @@ test('GDC 는 설정의 탭(PDV 오른쪽)으로 옮겨 사용량(그래프) 화
   assert.match(h, /const _SET_SECTIONS = \['account', 'pdv', 'gdc', /);
   assert.ok(h.indexOf('id="set-tab-pdv"') < h.indexOf('id="set-tab-gdc"') && h.indexOf('id="set-tab-gdc"') < h.indexOf('id="set-tab-signature"'));
   assert.match(h, /id="set-sec-gdc"[^>]*>\s*<iframe id="gdc-frame"/);
-  assert.match(h, /https:\/\/hondi\.net\/usage\.html\?embed=mail/);
+  assert.ok(h.includes("_HONDI_BASE + '/usage.html?embed=mail'") && h.includes("'https://hondi.net'"));
 });
 
 test('좌측 메뉴: 접힌 상태도 펼친 상태와 세로 배치가 같고, 접을 때 글자를 먼저 지운 뒤 천천히 폭을 줄인다', () => {
@@ -249,7 +249,7 @@ test('예시: 라벨 + "소장 작성해 주세요" 같은 문장은 서류 이�
 test('우측 상단 "기능 개선 제안"은 새 탭이 아니라 현재 화면의 탭에 제안 게시판(hondi feedback.html?embed=mail)을 끼워 보여 준다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /id="suggest-btn" onclick="_switchTab\('feedback'\)"/);
-  assert.ok(h.includes('id="tab-feedback"') && h.includes('https://hondi.net/feedback.html?embed=mail'));
+  assert.ok(h.includes('id="tab-feedback"') && h.includes("_HONDI_BASE + '/feedback.html?embed=mail'"));
   assert.ok(!h.includes('href="https://hondi.net/feedback.html" target="_blank"'));
 });
 

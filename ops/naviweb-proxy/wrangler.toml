@@ -1,0 +1,9 @@
+name = "naviweb-proxy"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+# Cloudflare 대시보드 → naviweb.kr → Workers Routes 에 아래 두 줄을 등록해도 같다.
+routes = [
+  { pattern = "naviweb.kr/*", zone_name = "naviweb.kr" },
+  { pattern = "www.naviweb.kr/*", zone_name = "naviweb.kr" },
+]
