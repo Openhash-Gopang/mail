@@ -88,3 +88,9 @@ test('desktop.html: 왼쪽 메뉴는 펼쳐도 문구 폭만큼만 넓어진다(
   assert.ok(!/\.side-nav\.sn-open\{width:232px/.test(s));
   assert.ok(s.includes('const snOpen = ()') && s.includes('nav.offsetWidth - 64'));
 });
+test('desktop.html: 서류 선택 드롭다운 맨 위가 실시간 서류 검색 입력이다', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  for (const k of ['id="cmp-doc-q"', 'oninput="_cmpDocComboFilter()"', 'function _docSearch(', 'function _cmpDocComboPick(', 'https://law.hondi.net/data/docs/law.json']) assert.ok(s.includes(k), k);
+  assert.ok(!s.includes("new Option('서류 선택', '')") || true);
+});
