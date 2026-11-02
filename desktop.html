@@ -206,6 +206,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-bubble.org-md th,.chat-bubble.org-md td{border:1px solid var(--bdr);padding:5px 9px;text-align:left}
 .chat-bubble.org-md th{background:var(--pri-bg)}
 #tab-feedback iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
+#pdv-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:1px solid var(--bdr);border-radius:12px;background:#fff}
 #tab-gdc iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
@@ -1269,23 +1270,17 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="sub">메일 아이디, 받는 사람에게 보이는 이름, 보내는 메일 끝에 붙는 서명, 부재중 자동응답을 정합니다.</div>
     </div>
     <div class="set-tabs" role="tablist" aria-label="설정 항목">
-      <button type="button" role="tab" id="set-tab-pdv" aria-selected="false" onclick="_settingsSwitch('pdv')">PDV</button>
       <button type="button" role="tab" id="set-tab-account" class="active" aria-selected="true" onclick="_settingsSwitch('account')">계정</button>
+      <button type="button" role="tab" id="set-tab-pdv" aria-selected="false" onclick="_settingsSwitch('pdv')">PDV</button>
       <button type="button" role="tab" id="set-tab-signature" aria-selected="false" onclick="_settingsSwitch('signature')">서명</button>
       <button type="button" role="tab" id="set-tab-autoreply" aria-selected="false" onclick="_settingsSwitch('autoreply')">부재중 자동응답</button>
     </div>
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
-    <!-- PDV -->
+    <!-- PDV: hondi.net/pdv.html 을 그대로 끼워 보여 준다(한 곳만 고치면 되도록) -->
     <section id="set-sec-pdv" class="set-sec">
-      <div class="set-row">
-        <div class="set-lbl">PDV (내 정보 금고)</div>
-        <div>
-          <div class="set-hint">이름·주소 같은 <b>내 정보</b>와 쓰던 서류(Draft), 작성한 서류를 보관하는 <b>내 금고</b>입니다. 서류의 해당 칸을 자동으로 채우고, 정부 AI를 열 때 주소지로 알맞은 기관을 고르는 데 쓰입니다. 보통 <b>이 컴퓨터 안</b>에만 있습니다.</div>
-          <div style="margin-top:12px"><button type="button" class="btn" onclick="_navOpenPdv()">PDV 열기 (새 탭)</button></div>
-        </div>
-      </div>
+      <iframe id="pdv-frame" title="PDV" allow="clipboard-write"></iframe>
     </section>
 
     <!-- 계정 -->
@@ -3245,9 +3240,10 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 // 서버(GET·POST /kmail/settings)가 전화 인증 토큰만으로 받는 항목에 맞춘다.
 // 진입: 왼쪽 맨 아래 '설정' · 공용 배지의 ⋮(window.kmailOpenSettings) · 주소의 #settings
 // ══════════════════════════════════════════════════════════════
-const _SET_SECTIONS = ['pdv', 'account', 'signature', 'autoreply'];
+const _SET_SECTIONS = ['account', 'pdv', 'signature', 'autoreply'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
+  if (name === 'pdv') { const f = document.getElementById('pdv-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // PDV 데이터(대화 이력·서류 Draft)를 새 탭 없이 설정 안에서 보여 준다
   _SET_SECTIONS.forEach(n => {
     const sec = document.getElementById('set-sec-' + n), tab = document.getElementById('set-tab-' + n);
     if (sec) sec.classList.toggle('active', n === name);
