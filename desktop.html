@@ -444,6 +444,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .dr-sec{font-size:13px;font-weight:800;color:var(--hint);margin:18px 2px 8px;letter-spacing:.02em}
 #dr-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;background:#111827;color:#fff;font-size:13px;padding:9px 16px;border-radius:999px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-docs{background:var(--pri-bg);color:var(--pri)}
+.side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-guidenav{background:var(--pri-bg);color:var(--pri)}
+/* 나비 길잡이 과제 목록(진행 중·완료한 과제) */
+.gl-pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:0 9px;margin-left:6px;vertical-align:1px;background:var(--pri-bg);color:var(--pri)}
+.gl-pill.ok{background:#e1f4e8;color:#116a3a}.gl-pill.part{background:#fdf1d6;color:#8a5a00}.gl-pill.fail{background:#fde8e8;color:#b42318}.gl-pill.off{background:var(--bg);color:var(--hint)}
+.gl-li-sub{font-size:12.5px;color:var(--hint);line-height:1.6;margin-top:2px}
+.gl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.gl-head h2{margin:0}.gl-head .gl-sp{flex:1}
 .nav-ask{align-self:flex-start;margin:6px 10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;max-width:min(92%,460px)}
 .nav-ask-q{font-size:14px;color:#111827;margin-bottom:8px}
 .nav-ask-opts{display:flex;flex-wrap:wrap;gap:6px}
@@ -856,6 +862,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <button type="button" class="nav-subitem" data-sub="sent" onclick="_navMailSub('sent')">보낸메일함</button>
           <button type="button" class="nav-subitem" data-sub="inbox" onclick="_navMailSub('inbox')">받은메일함<span class="unread-badge" data-for="inbox" hidden></span></button>
           <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
+        </div>
+      </div>
+      <div class="nav-group collapsed" id="nav-group-guide">
+        <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideNavOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg>나비 길잡이</button>
+        <button type="button" class="nav-toggle" id="nav-toggle-guide" aria-label="나비 길잡이 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-guide" onclick="_navToggleGuide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="nav-sub" id="nav-sub-guide" role="group" aria-label="나비 길잡이 하위 메뉴">
+          <button id="tab-btn-gprog" class="nav-subitem nav-gv" data-label="진행 중" onclick="_switchTab('gprog')">진행 중</button>
+          <button id="tab-btn-gdone" class="nav-subitem nav-gv" data-label="완료한 과제" onclick="_switchTab('gdone')">완료한 과제</button>
         </div>
       </div>
     </div>
@@ -1414,6 +1428,24 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div id="docdone-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="docdone-empty" style="display:none;font-size:14px;color:var(--hint)">아직 작성한 서류가 없습니다.</div>
       <div id="docdone-items"></div>
+    </div>
+  </div>
+
+  <div id="tab-gprog" class="tab-panel">
+    <div class="card">
+      <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
+      <div class="sub">나비 길잡이와 계획을 세운 과제 가운데 아직 끝내지 않은 것입니다. 과제를 누르면 대화창과 계획서가 열립니다. 계획서는 이 브라우저에 저장됩니다.</div>
+      <div id="gprog-empty" style="display:none;font-size:14px;color:var(--hint)">진행 중인 과제가 없습니다. "새 과제"를 눌러 시작해 보세요.</div>
+      <div id="gprog-items"></div>
+    </div>
+  </div>
+
+  <div id="tab-gdone" class="tab-panel">
+    <div class="card">
+      <h2>완료한 과제</h2>
+      <div class="sub">성공 여부와, 성공하지 못했다면 그 원인·교훈을 기록해 둔 과제입니다. 새 과제를 세울 때 나비 길잡이가 이 기록을 참고합니다.</div>
+      <div id="gdone-empty" style="display:none;font-size:14px;color:var(--hint)">아직 완료한 과제가 없습니다. 과제를 끝내면 판정과 원인 분석이 여기에 쌓입니다.</div>
+      <div id="gdone-items"></div>
     </div>
   </div>
 
@@ -2032,6 +2064,7 @@ function _orgNotice1() {
 function _orgLeave() {
   _org = null; document.getElementById('tab-compose').classList.remove('org-open', 'foi-on', 'guide-on'); _foiDocReset(); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', 'false'); }
   _guideReset(); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', 'false'); }
+  { const gn = document.getElementById('tab-btn-guidenav'); if (gn && gn.classList.contains('active')) { gn.classList.remove('active'); const hb = document.getElementById('tab-btn-home'); if (hb) hb.classList.add('active'); } }
   const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
@@ -2181,6 +2214,7 @@ function _cmpGuidePick() {
     : '나비 길잡이입니다. 이루고 싶은 과제를 말씀해 주세요(예: GPU 지원사업 응모). 목적과 성공 기준부터 함께 정하고, 아래에 과제 계획서를 만들어 가겠습니다.';
   _orgActivate({ key: 'kguide', label: '나비 길잡이', sp: 'inline:guide:v1', spText: _GUIDE_SP, group: 'guide', guide: true }, greeting);
   _guideRender(); _guideShow(true);
+  document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-gv').forEach(x => x.classList.remove('active')); { const gn = document.getElementById('tab-btn-guidenav'); if (gn) gn.classList.add('active'); }   // 왼쪽 메뉴도 홈이 아니라 나비 길잡이가 켜진 것으로 표시
 }
 function _guideSelChange(sel) {
   _guide.cur = sel.value || null; _guideStore(); _guideRender();
@@ -2203,6 +2237,48 @@ function _guideSave() {
 function _guideDelete() {
   const p = _guideCur(); if (!p || !confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return;
   delete _guide.plans[p.id]; _guide.cur = null; _guideStore(); _guideRender();
+}
+// ── 나비 길잡이 왼쪽 메뉴: 메일 아래 "나비 길잡이" + 하위 "진행 중"·"완료한 과제" (2026-11-03) ──
+const _NAV_GUIDE_KEY = 'kmail_nav_guide_open';
+function _navToggleGuide(force) {
+  const g = document.getElementById('nav-group-guide'); if (!g) return;
+  const open = typeof force === 'boolean' ? force : g.classList.contains('collapsed');
+  g.classList.toggle('collapsed', !open);
+  const t = document.getElementById('nav-toggle-guide'); if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
+  try { localStorage.setItem(_NAV_GUIDE_KEY, open ? '1' : '0'); } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', () => { let open = false; try { open = localStorage.getItem(_NAV_GUIDE_KEY) === '1'; } catch (e) {} _navToggleGuide(open); });
+/** 왼쪽 메뉴의 "나비 길잡이"를 누르면 홈 화면에서 나비 길잡이 대화창을 연다. */
+function _guideNavOpen() { _switchTab('home'); _cmpGuidePick(); }
+/** 과제 목록에서 과제를 열거나(id), 새 과제를 시작한다(null). */
+function _guideOpen(id) { _guideLoad(); _guide.cur = id && _guide.plans[id] ? id : null; _guideStore(); _switchTab('home'); _cmpGuidePick(); }
+/** 종료한 과제인가: 판정이 있거나 상태가 종료. */
+function _guideIsDone(p) { return !!_guideField(p.text, '판정') || _guideField(p.text, '상태') === '종료'; }
+function _guideCounts(text) { let t = 0, d = 0; String(text || '').split('\n').forEach(l => { const m = /^\s*[-*]\s*\[( |x|X)\]/.exec(l); if (m) { t++; if (m[1] !== ' ') d++; } }); return [d, t]; }
+function _guideRenderList(kind) {
+  _guideLoad();
+  const box = document.getElementById('g' + kind + '-items'), empty = document.getElementById('g' + kind + '-empty'); if (!box) return;
+  const list = Object.values(_guide.plans).filter(p => p && p.text && (kind === 'done') === _guideIsDone(p)).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  empty.style.display = list.length ? 'none' : '';
+  box.innerHTML = list.map(p => {
+    const t = p.text, [d, n] = _guideCounts(t), v = _guideField(t, '판정'), st = _guideField(t, '상태'), goal = _guideField(t, '목적'), dl = (/(\d{4}-\d{2}-\d{2})/.exec(_guideField(t, '마감')) || [])[1];
+    const days = dl ? Math.round((Date.parse(dl) - Date.parse(_guideToday())) / 864e5) : NaN;
+    let pill = '', sub = '';
+    if (kind === 'done') {
+      const cls = v === '성공' ? 'ok' : v === '부분 성공' ? 'part' : v === '실패' ? 'fail' : 'off';
+      pill = '<span class="gl-pill ' + cls + '">' + escHtml(v || '종료') + '</span>';
+      const cause = _guideField(t, '원인'), les = _guideField(t, '교훈');
+      sub = (goal ? '목적: ' + escHtml(goal) + '<br>' : '') + (cause ? '원인: ' + escHtml(cause) + '<br>' : '') + (les ? '교훈: ' + escHtml(les) : (cause ? '' : '원인·교훈 미기록'));
+    } else {
+      pill = st ? '<span class="gl-pill">' + escHtml(st) + '</span>' : '';
+      sub = (goal ? '목적: ' + escHtml(goal) + '<br>' : '') + '할 일 ' + d + '/' + n + ' 완료' + (isNaN(days) ? '' : ' · ' + (days < 0 ? '마감 ' + (-days) + '일 지남' : days === 0 ? '오늘 마감' : '마감 D-' + days));
+    }
+    return '<div class="list-item" data-id="' + escHtml(p.id) + '"><div class="li-main"><div class="li-title">' + escHtml(p.title || '제목 없는 과제') + pill + '</div><div class="gl-li-sub">' + sub + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
+  }).join('');
+  _drBindRows(box, (id, act) => {
+    if (act === 'del') { const p = _guide.plans[id]; if (!p || !confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return; delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; _guideStore(); _guideRenderList(kind); return; }
+    _guideOpen(id);
+  });
 }
 /** 답변에서 ~~~plan 블록을 떼어 계획서에 쓰고, 말풍선에 남길 나머지 글을 돌려준다. */
 function _guideFromReply(t) {
@@ -2757,7 +2833,7 @@ function _switchTab(name) {
   const _wasComposeActive = document.getElementById('tab-compose').classList.contains('active');
   if (_wasComposeActive && _NAV_COMPOSE_NAMES.indexOf(name) < 0) _drAutoSave('leave');   // 편지·캠페인·서류 화면을 떠나면 Draft 로 저장해 둔다(화면 상태는 그대로 유지)
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-mv, .side-nav .nav-dv').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-mv, .side-nav .nav-dv, .side-nav .nav-gv').forEach(el => el.classList.remove('active'));
   const _isCompose = _NAV_COMPOSE_NAMES.indexOf(name) >= 0;
   const _panelName = _isCompose ? 'compose' : name;
   document.getElementById('tab-' + _panelName).classList.add('active');
@@ -2770,6 +2846,8 @@ function _switchTab(name) {
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
+  if (_navBtn.classList.contains('nav-gv')) _navToggleGuide(true);
+  if (name === 'gprog' || name === 'gdone') _guideRenderList(name === 'gdone' ? 'done' : 'prog');
   if (name === 'docdrafts') _drRenderDocList('draft');
   if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
@@ -3064,7 +3142,7 @@ function _navSyncMailSub() {
   if (onMail) { const g = document.getElementById('nav-group-mail'); if (g && g.classList.contains('collapsed')) _navToggleMail(true); }
   const act = document.querySelector('.mail-subnav button.active');
   const cur = act ? act.id.replace('mail-subnav-', '') : null;
-  document.querySelectorAll('.nav-subitem:not(.nav-mv):not(.nav-dv):not(.nav-link)').forEach(b => {
+  document.querySelectorAll('.nav-subitem:not(.nav-mv):not(.nav-dv):not(.nav-gv):not(.nav-link)').forEach(b => {
     const on = onMail && b.getAttribute('data-sub') === cur;
     b.classList.toggle('active', on);
     if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
@@ -4753,7 +4831,7 @@ function _topbarSyncPage() {
     if (fbp && fbp.classList.contains('active')) label = '기능 개선 제안';
     else if (sub) {
       const g = sub.closest('.nav-group');
-      const head = g && g.id === 'nav-group-mail' ? '메일 · ' : g && g.id === 'nav-group-docs' ? '서류 · ' : '';
+      const head = g && g.id === 'nav-group-mail' ? '메일 · ' : g && g.id === 'nav-group-docs' ? '서류 · ' : g && g.id === 'nav-group-guide' ? '나비 길잡이 · ' : '';
       label = head + (sub.getAttribute('data-label') || _topbarOwnText(sub));
     } else if (btn) {
       label = btn.getAttribute('data-label') || _topbarOwnText(btn);
