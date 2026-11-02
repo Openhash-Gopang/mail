@@ -81,3 +81,10 @@ test('desktop.html: 입력창은 서류 검색·선택만, 대화는 혼디 대�
   for (const k of ['edited = await _docEditTurn(text, true)', '_docConverse', '_DOC_CHAT_PH', '_docHost.chatting']) assert.ok(!s.includes(k), k + ' 없음');
   assert.ok(!/fr\.style\.height = Math\.min/.test(s));
 });
+test('desktop.html: 왼쪽 메뉴는 펼쳐도 문구 폭만큼만 넓어진다(232px 고정 아님)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(s, /\.side-nav\.sn-open\{width:max-content;max-width:232px/);
+  assert.ok(!/\.side-nav\.sn-open\{width:232px/.test(s));
+  assert.ok(s.includes('const snOpen = ()') && s.includes('nav.offsetWidth - 64'));
+});
