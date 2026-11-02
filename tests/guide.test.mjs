@@ -352,3 +352,8 @@ test('Whitepaper: 왼쪽 메뉴 하단 항목 + 탭 iframe, 설명서 1장은 �
   const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
   assert.ok(m.includes('navi-open-whitepaper') && !m.includes('<h3>내 정보는 어디에 저장되나요?</h3>'));
 });
+
+test('입력창 왼쪽 편지(✉) 아이콘 삭제', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(!h.includes('<button type="button" class="chat-icon-btn" id="cmp-mail-btn"'));
+});
