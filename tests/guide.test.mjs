@@ -68,3 +68,8 @@ test('진행 값 보정과 다음 페이지', () => {
   assert.equal(G.nextAfterPass(0, 10), 1);
   assert.equal(G.nextAfterPass(9, 10), -1);
 });
+test('desktop.html: 서류 화면의 혼디 대화 질문은 서류 사이트 SP 로 보낸다(navi-doc-ask)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  for (const k of ['navi-doc-ask', 'navi-doc-answer', '_embedLooksLikeQuestion', '_docAsk(text)']) assert.ok(s.includes(k), k);
+});
