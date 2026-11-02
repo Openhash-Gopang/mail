@@ -255,8 +255,9 @@ test('우측 상단 "기능 개선 제안"은 새 탭이 아니라 현재 화면
 
 test('상단 바 가운데: 홈 = "나만의 AI 비서, 나비"(나비 굵게)', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes('aria-live="polite">나만의 AI 비서, <b>나비</b></div>'));
-  assert.ok(h.includes("el.innerHTML = '나만의 AI 비서, <b>나비</b>'")); assert.match(h, /\.topbar-page b\{font-weight:800\}/);
+  assert.ok(h.includes('<span class="tp-txt">나만의 AI 비서, <b>나비</b></span>'));
+  assert.ok(h.includes("el.innerHTML = '<span class=\"tp-txt\">나만의 AI 비서, <b>나비</b></span>"));
+  assert.match(h, /\.topbar-page b\{font-weight:800\}/);
 });
 
 test('사용 설명서: 서류 작성이 앞부분(3~4장)에 있고 PDV·혼디 대화창의 역할을 설명한다', () => {
