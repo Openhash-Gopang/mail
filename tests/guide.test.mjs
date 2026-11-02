@@ -337,7 +337,7 @@ test('상단 바 "나만의 AI 비서, 나비": 글자 간격, 클릭하면 소�
 
 test('좌측 상단 NAVIWEB 로고: 누르면 사용 설명서가 상단 바 밑으로 슬라이드(▼ 표시), 설명서는 embed 모드로 심플하게', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes('id="logo-help"') && h.includes("onclick=\"_panelToggle('manual'); return false;\"") && h.includes("manual: 'manual.html?embed=mail'"));
+  assert.ok(h.includes('id="logo-help"') && h.includes("onclick=\"_panelToggle('manual'); return false;\"") && h.includes("manual: 'whitepaper.html?embed=mail'"));
   assert.match(h, /function _panelToggle\(/);
   const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
   assert.match(m, /body\.embed \.topnav,body\.embed \.hero/);
@@ -346,7 +346,7 @@ test('좌측 상단 NAVIWEB 로고: 누르면 사용 설명서가 상단 바 밑
 test('Whitepaper: 왼쪽 메뉴 하단 항목 + 탭 iframe, 설명서 1장은 짧은 소개와 백서 링크', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('id="tab-btn-whitepaper"') && h.includes("_switchTab('whitepaper')") && h.includes('id="whitepaper-frame"'));
-  assert.ok(h.includes("whitepaper.html?embed=mail") && h.includes("'navi-open-whitepaper'"));
+  assert.ok(h.includes("manual.html?embed=mail');") && h.includes("'navi-open-whitepaper'") && h.includes("'navi-open-manual'"));
   const w = readFileSync(new URL('../whitepaper.html', import.meta.url), 'utf8');
   assert.ok(w.includes('Whitepaper') && w.includes('<b>수많은 나비가 모이는 메신저</b>') && w.includes('내 정보는 어디에 저장되나요?'));
   const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');

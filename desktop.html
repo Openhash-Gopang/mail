@@ -734,7 +734,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <div id="intro-backdrop" onclick="_introClose()"></div>
 <div id="intro-panel" aria-hidden="true"><iframe id="intro-frame" title="나만의 AI 비서 소개"></iframe></div>
 <header class="topbar">
-  <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비웹 사용 설명서" onclick="_panelToggle('manual'); return false;"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
+  <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
   <div class="topbar-right">
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
@@ -2469,7 +2469,7 @@ function _switchTab(name) {
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'settings') _settingsInit();
-  if (name === 'whitepaper') { const f = document.getElementById('whitepaper-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'whitepaper.html?embed=mail'); }
+  if (name === 'whitepaper') { const f = document.getElementById('whitepaper-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'manual.html?embed=mail'); }
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'https://hondi.net/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
@@ -4022,7 +4022,7 @@ function _cmpSyncModeUi() {
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
 // ── '나만의 AI 비서, 나비' 문구 → 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(2026-11-03) ──
-const _PANEL_URL = { intro: 'navi-intro.html?v=20261103b', manual: 'manual.html?embed=mail' };
+const _PANEL_URL = { intro: 'navi-intro.html?v=20261103b', manual: 'whitepaper.html?embed=mail' };
 let _panelKind = '';
 function _introIsOpen() { const p = document.getElementById('intro-panel'); return !!(p && p.classList.contains('open')); }
 function _panelSync() {
@@ -4038,7 +4038,7 @@ function _panelOpen(kind) {
   if (f && f.getAttribute('data-kind') !== kind) { f.setAttribute('data-kind', kind); f.setAttribute('src', _PANEL_URL[kind]); f.title = kind === 'manual' ? '나비웹 사용 설명서' : '나만의 AI 비서 소개'; }
   p.classList.toggle('tall', kind === 'manual'); p.classList.add('open'); if (b) b.classList.add('open'); p.setAttribute('aria-hidden', 'false'); _panelSync();
 }
-window.addEventListener('message', e => { if (e.data && e.data.type === 'navi-open-whitepaper' && e.origin === location.origin) { _introClose(); _switchTab('whitepaper'); } });
+window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _introClose(); _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _introClose(); _switchTab('whitepaper'); } });
 function _introClose() {
   const p = document.getElementById('intro-panel'), b = document.getElementById('intro-backdrop');
   if (p) { p.classList.remove('open'); p.setAttribute('aria-hidden', 'true'); } if (b) b.classList.remove('open'); _panelSync();
