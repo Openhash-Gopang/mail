@@ -205,7 +205,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-bubble.org-md table{border-collapse:collapse;margin:6px 0 10px;font-size:13.5px;display:block;overflow-x:auto}
 .chat-bubble.org-md th,.chat-bubble.org-md td{border:1px solid var(--bdr);padding:5px 9px;text-align:left}
 .chat-bubble.org-md th{background:var(--pri-bg)}
-#tab-feedback iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
+#tab-whitepaper iframe,#tab-feedback iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #gdc-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:0;background:transparent}
 #pdv-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:1px solid var(--bdr);border-radius:12px;background:#fff}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
@@ -783,6 +783,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <div class="side-group">
       <div class="side-label">도움말</div>
       <button id="tab-btn-guide" class="nav-btn" data-label="사용법" onclick="_switchTab('guide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>사용법</button>
+      <button id="tab-btn-whitepaper" class="nav-btn" data-label="Whitepaper" onclick="_switchTab('whitepaper')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Whitepaper</button>
     </div>
     <div class="side-settings">
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
@@ -1269,6 +1270,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   </div>
 
   <div id="tab-guide" class="tab-panel gd-panel"></div>
+  <div id="tab-whitepaper" class="tab-panel"><iframe id="whitepaper-frame" title="Whitepaper" allow="clipboard-write"></iframe></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
@@ -2470,6 +2472,7 @@ function _switchTab(name) {
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'settings') _settingsInit();
+  if (name === 'whitepaper') { const f = document.getElementById('whitepaper-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'whitepaper.html?embed=mail'); }
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'https://hondi.net/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
@@ -4038,6 +4041,7 @@ function _panelOpen(kind) {
   if (f && f.getAttribute('data-kind') !== kind) { f.setAttribute('data-kind', kind); f.setAttribute('src', _PANEL_URL[kind]); f.title = kind === 'manual' ? '나비웹 사용 설명서' : '나만의 AI 비서 소개'; }
   p.classList.toggle('tall', kind === 'manual'); p.classList.add('open'); if (b) b.classList.add('open'); p.setAttribute('aria-hidden', 'false'); _panelSync();
 }
+window.addEventListener('message', e => { if (e.data && e.data.type === 'navi-open-whitepaper' && e.origin === location.origin) { _introClose(); _switchTab('whitepaper'); } });
 function _introClose() {
   const p = document.getElementById('intro-panel'), b = document.getElementById('intro-backdrop');
   if (p) { p.classList.remove('open'); p.setAttribute('aria-hidden', 'true'); } if (b) b.classList.remove('open'); _panelSync();
