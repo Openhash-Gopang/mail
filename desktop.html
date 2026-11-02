@@ -181,6 +181,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
+#org-host-frame{display:none;width:100%;border:0;background:transparent;margin-top:8px}
+#tab-compose.org-live{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:420px}
+#tab-compose.org-live .chat-landing,#tab-compose.org-live .chat-thread-header,#tab-compose.org-live .chat-thread{display:none!important}
+#tab-compose.org-live .chat-composer{order:1;flex:none;position:static;padding-bottom:10px;border-bottom:2px solid var(--bdr);box-shadow:0 8px 10px -9px rgba(0,0,0,.35);background:var(--bg,#fff);z-index:6}
+#tab-compose.org-live #org-host-frame{display:block;order:3;flex:1 1 0;min-height:0}
+#tab-compose.org-live #doc-host-frame{display:none!important}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
 .doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
 .doc-combo-pop[hidden]{display:none}
@@ -972,6 +978,13 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
             <input type="search" id="cmp-doc-q" class="doc-combo-q" placeholder="서류 검색 — 이름·별칭 (예: 소장, 진단서)" autocomplete="off" aria-label="서류 검색" oninput="_cmpDocComboFilter()" onkeydown="_cmpDocComboKey(event)">
             <div class="doc-combo-list" id="cmp-doc-list" role="listbox" aria-label="서류"></div>
+          </div>
+        </div>
+        <div class="doc-combo" id="cmp-org-combo">
+          <button type="button" class="doc-combo-btn" id="cmp-org-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpOrgToggle(event)"><span id="cmp-org-combo-label">각종 기관</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="doc-combo-pop" id="cmp-org-combo-pop" hidden>
+            <input type="search" id="cmp-org-q" class="doc-combo-q" placeholder="기관·서비스 검색 (예: 응급, 세무, 부동산)" autocomplete="off" aria-label="기관 검색" oninput="_cmpOrgFilter()" onkeydown="_cmpOrgKey(event)">
+            <div class="doc-combo-list" id="cmp-org-list" role="listbox" aria-label="기관"></div>
           </div>
         </div>
         <span id="cmp-doc-count" role="status"></span>
@@ -1955,6 +1968,7 @@ function _cmpDocComboToggle(e) {
   if (e) e.stopPropagation();
   const pop = document.getElementById('cmp-doc-combo-pop'), btn = document.getElementById('cmp-doc-combo-btn');
   const open = pop.hidden;
+  if (typeof _cmpOrgClose === 'function') _cmpOrgClose();
   pop.hidden = !open; btn.setAttribute('aria-expanded', String(open));
   if (open) { _cmpDocSelInit(); const q = document.getElementById('cmp-doc-q'); q.value = ''; _cmpDocComboFilter(); q.focus(); _docIndexLoad().then(() => { if (!pop.hidden) _cmpDocComboFilter(); }); }
 }
@@ -1986,6 +2000,7 @@ function _cmpDocComboKey(e) {
 }
 /** 고른 서류를 연다 — 서류 종류(사이트)를 맞추고, 서류 이름을 입력창에 넣어 곧바로 확정(Enter)한다. 종류만 고르면 그 종류를 연다. */
 function _cmpDocComboPick(b) {
+  const orgTab = document.getElementById('tab-compose'); orgTab.classList.remove('org-live'); const ol = document.getElementById('cmp-org-combo-label'); if (ol) ol.textContent = '각종 기관';
   const site = b.getAttribute('data-site'), title = b.getAttribute('data-title') || '';
   _cmpDocComboClose();
   const sel = _cmpDocSelInit();
@@ -1997,7 +2012,46 @@ function _cmpDocComboPick(b) {
   input.value = title; _kmailAutoResize(input); _cmpChatUpdateSendState();
   _docHostInput(); _docHostSubmit();   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
 }
-document.addEventListener('click', (e) => { const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
+document.addEventListener('click', (e) => { const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
+// ── 각종 기관(2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
+const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
+let _orgSel = -1;
+function _cmpOrgFilter() {
+  const q = _docNorm(document.getElementById('cmp-org-q').value), list = document.getElementById('cmp-org-list');
+  const hits = _ORG_ITEMS.filter(x => !q || _docNorm(x[1]).includes(q) || x[0].includes(q));
+  list.innerHTML = hits.length ? hits.map(x => `<button type="button" class="doc-combo-it" role="option" data-org="${x[0]}"><b>${x[1]}</b></button>`).join('') : '<div class="doc-combo-sec">맞는 기관이 없습니다.</div>';
+  _orgSel = -1; const f = list.querySelector('.doc-combo-it'); if (f && q) { f.classList.add('on'); _orgSel = 0; }
+}
+function _cmpOrgClose() { const pop = document.getElementById('cmp-org-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-org-combo-btn').setAttribute('aria-expanded', 'false'); } }
+function _cmpOrgToggle(e) {
+  if (e) e.stopPropagation();
+  _cmpDocComboClose();
+  const pop = document.getElementById('cmp-org-combo-pop'), open = pop.hidden;
+  pop.hidden = !open; document.getElementById('cmp-org-combo-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const q = document.getElementById('cmp-org-q'); q.value = ''; _cmpOrgFilter(); q.focus(); }
+}
+function _cmpOrgKey(e) {
+  const its = [...document.querySelectorAll('#cmp-org-list .doc-combo-it')];
+  if (e.key === 'Escape') { _cmpOrgClose(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); if (!its.length) return;
+    _orgSel = (Math.max(_orgSel, -1) + (e.key === 'ArrowDown' ? 1 : -1) + its.length) % its.length;
+    its.forEach((b, i) => b.classList.toggle('on', i === _orgSel)); its[_orgSel].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') { e.preventDefault(); const b = its[Math.max(_orgSel, 0)]; if (b) _cmpOrgPick(b.getAttribute('data-org')); }
+}
+function _cmpOrgPick(key) {
+  _cmpOrgClose();
+  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return;
+  const tab = document.getElementById('tab-compose'), lb = document.getElementById('cmp-org-combo-label');
+  if (key === 'kmail') {   // 메일은 이 화면이 곧 메일 비서다 — 기관 화면을 닫고 기본(대화) 모드로
+    tab.classList.remove('org-live'); lb.textContent = '각종 기관'; if (_cmpMode !== 'default') _cmpSetMode('default'); return;
+  }
+  let fr = document.getElementById('org-host-frame');
+  if (!fr) { fr = document.createElement('iframe'); fr.id = 'org-host-frame'; fr.title = '각종 기관'; fr.setAttribute('allow', 'microphone; camera; clipboard-write; clipboard-read'); document.querySelector('#tab-compose .chat-composer').after(fr); }
+  const url = 'https://hondi.net/pages/k-services.html?embed=mail#' + key;
+  if (fr.getAttribute('data-key') !== key) { fr.setAttribute('data-key', key); fr.src = url; }
+  tab.classList.add('org-live'); lb.textContent = item[1];
+}
 function _cmpDocSelChange(sel) {
   if (!sel.value) { if (_cmpMode === 'doc') { if (!_cmpSetMode('default')) _cmpSyncModeUi(); } return; }
   if (_cmpMode !== 'doc') { if (!_cmpSetMode('doc')) sel.value = ''; return; }   // 모드가 바뀌면 _docHostMode 가 고른 서류를 불러온다
