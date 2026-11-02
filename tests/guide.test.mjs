@@ -342,3 +342,13 @@ test('좌측 상단 NAVIWEB 로고: 누르면 사용 설명서가 상단 바 밑
   const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
   assert.match(m, /body\.embed \.topnav,body\.embed \.hero/);
 });
+
+test('Whitepaper: 왼쪽 메뉴 하단 항목 + 탭 iframe, 설명서 1장은 짧은 소개와 백서 링크', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="tab-btn-whitepaper"') && h.includes("_switchTab('whitepaper')") && h.includes('id="whitepaper-frame"'));
+  assert.ok(h.includes("whitepaper.html?embed=mail") && h.includes("'navi-open-whitepaper'"));
+  const w = readFileSync(new URL('../whitepaper.html', import.meta.url), 'utf8');
+  assert.ok(w.includes('Whitepaper') && w.includes('나비웹은 <b>수많은 나비가 모이는 메신저</b>') && w.includes('내 정보는 어디에 저장되나요?'));
+  const m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
+  assert.ok(m.includes('navi-open-whitepaper') && !m.includes('내 정보는 어디에 저장되나요?'));
+});
