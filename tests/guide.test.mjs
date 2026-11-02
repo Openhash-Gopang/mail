@@ -219,7 +219,19 @@ test('서류 제출: dpaper API 미발급 안내 대화(혼디 대화창, 인사
   assert.ok(h.includes('아직 한국 정부로부터 dpaper API를 발급받지 못했으므로, 사용자가 직접 제출해야 합니다. 절차를 안내하겠습니다. 먼저, 공동인증서를 준비해 주십시오.'));
   assert.match(h, /sp: 'inline:submit:'/);
   assert.ok(h.includes('아직 내용을 다 채우지 않으셨습니다. 제가 도와드릴까요?') && h.includes('내용이 적절한지 검토하겠습니다. 잠시 기다려주십시오.'));
-  assert.match(h, /autoAsk: blank > 0 \? ''/);
+  assert.match(h, /_submitFlow = \{ title, stage: 'offer' \}/);   // 빈 칸이 있으면 먼저 "도와드릴까요?"
+  assert.match(h, /HondiChat\.say\(/); assert.match(h, /navi-doc-request-submit/);
   assert.match(h, /HondiChat\.open\(\)/);
   assert.match(h, /if \(mode !== 'doc'\) _submitGuideEnd\(\)/);
+});
+
+test('서류 SP 가 대신 채우고 사용자가 검토·수정한다 + 대화창 첨부가 서류로 간다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /_docAsk\('서류의 비어 있는 칸을 가능한 만큼 모두 채워 주세요/);
+  assert.ok(h.includes('검토하고 고쳐 주세요') && h.includes('"제출 진행"'));
+  assert.match(h, /function _embedFiles\(/); assert.match(h, /function _embedSendFiles\(/);
+  assert.match(h, /type: 'navi-doc-template', name: f\.name/); assert.match(h, /type: 'navi-doc-attach', name: f\.name/);
+  assert.match(h, /_embedAttachPending && d\.status !== 'progress'/);
+  const c = readFileSync(new URL('../hondi-chat.js', import.meta.url), 'utf8');
+  assert.match(c, /function say\(/);
 });

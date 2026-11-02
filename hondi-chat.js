@@ -111,6 +111,12 @@
     post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' });
     post(S.spMsg || { type: 'hondi-embed-sp', sp: null });
   }
+  /** 대화창에 AI 말풍선 한 줄을 보여 준다(모델 호출 없음). 창이 아직 로드 중이면 로드된 뒤 보낸다. */
+  function say(text) {
+    if (!S.mounted) return; S.sayQ = S.sayQ || []; S.sayQ.push(String(text || '').slice(0, 600)); open();
+    setTimeout(flushSay, S.loadedOnce ? 50 : 900);
+  }
+  function flushSay() { var q = S.sayQ || []; while (q.length) { if (!post({ type: 'hondi-embed-say', text: q[0] })) break; q.shift(); } }
   function frameWindow() { return S.els && S.els.frame ? S.els.frame.contentWindow : null; }
   /** 처음 열 때 불러오고, K-Mail 로그인 아이디가 바뀌었으면(다른 아이디로 다시 로그인) 새 아이디로 다시 불러온다. */
   function ensureLoaded() {
@@ -119,7 +125,7 @@
     if (S.loaded && key === S.loadedId) return;
     S.loaded = true; S.loadedId = key;
     S.els.frame.setAttribute('src', panelUrl(S.url, id));
-    if (!S.loadHook) { S.loadHook = true; S.els.frame.addEventListener('load', announce); }
+    if (!S.loadHook) { S.loadHook = true; S.els.frame.addEventListener('load', function () { S.loadedOnce = true; announce(); setTimeout(flushSay, 500); }); }
     setNote(id, real);
   }
   function open() {
@@ -167,7 +173,7 @@
   }
 
   var API = {
-    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp,
+    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp, say: say,
     _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };
