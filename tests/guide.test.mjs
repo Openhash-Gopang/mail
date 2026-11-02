@@ -145,3 +145,11 @@ test('각종 기관·전문가 AI: 대화창이 입력창 위로 펼쳐지고 �
   assert.match(h, /hondi-embed-sp-reply/);
   assert.ok(!/전문가 AI입니다\. 무엇이든 물어보십시오' : _org/.test(h), '입력창 문구 변경은 취소');
 });
+
+test('기관·전문가 대화: 답변 준비 중 표시, 면책 문구는 시작 화면에 한 번(다시 보지 않기)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /답변 준비 중<span class="org-dots">/);
+  assert.match(h, /function _orgNotice1\(\)/);
+  assert.match(h, /다시 보지 않기<b>×<\/b>/);
+  assert.match(h, /orgDisclaimerOff/);
+});
