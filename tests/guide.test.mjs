@@ -173,3 +173,11 @@ test('왼쪽 메뉴 펼침·접힘: width(px)와 margin-right 를 같은 시간�
   assert.ok(w && w[1] === w[2], line);
   assert.match(h, /nav\.style\.marginRight = \(-\(w - 64\)\) \+ 'px'/);
 });
+
+test('좌측 메뉴 하단 GDC 항목: 사용량(그래프) 화면을 연다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /id="tab-btn-gdc"[^>]*_switchTab\('gdc'\)/);
+  assert.match(h, /id="tab-gdc"[^>]*><iframe id="gdc-frame"/);
+  assert.match(h, /https:\/\/hondi\.net\/usage\.html\?embed=mail/);
+  assert.ok(h.indexOf('id="tab-btn-gdc"') < h.indexOf('id="tab-btn-settings"'));
+});
