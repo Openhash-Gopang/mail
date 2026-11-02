@@ -86,12 +86,13 @@ footer{max-width:1200px;margin:0 auto;padding:0 20px 50px;color:var(--hint);font
 @media print{.part{break-after:avoid}}
 /* 나비웹 화면의 설명 패널(?embed=mail): 상단 바·첫 화면 배너를 없애고 목차+본문만 심플하게 보인다. */
 body.embed .topnav,body.embed .hero,body.embed #hondi-user-badge{display:none!important}
-body.embed{font-size:17px;line-height:1.75;background:var(--surface)}
+body.embed{font-size:16px;line-height:1.75;background:var(--surface)}
 body.embed html,html:has(body.embed){scroll-padding-top:12px}
 body.embed .wrap{max-width:1040px;padding:18px 24px 40px;gap:24px;grid-template-columns:210px minmax(0,1fr)}
 body.embed .toc{top:12px;max-height:calc(100vh - 24px);border:none;background:transparent;padding:0}
 body.embed .toc b{display:none}
-body.embed .toc a{font-size:14.5px;padding:5px 8px}
+body.embed .toc a{font-size:16px;padding:5px 8px}
+body.embed .toc .part{font-size:14px}
 body.embed main>.part{display:none}
 body.embed section{background:transparent;border:none;border-radius:0;padding:0 0 30px;margin:0 0 30px;border-bottom:1px solid var(--border)}
 body.embed section:last-of-type{border-bottom:none}
