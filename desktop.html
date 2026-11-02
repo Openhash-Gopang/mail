@@ -4022,7 +4022,7 @@ function _cmpSyncModeUi() {
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
 // ── '나만의 AI 비서, 나비' 문구 → 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(2026-11-03) ──
-const _PANEL_URL = { intro: 'navi-intro.html', manual: 'manual.html?embed=mail' };
+const _PANEL_URL = { intro: 'navi-intro.html?v=20261103b', manual: 'manual.html?embed=mail' };
 let _panelKind = '';
 function _introIsOpen() { const p = document.getElementById('intro-panel'); return !!(p && p.classList.contains('open')); }
 function _panelSync() {
