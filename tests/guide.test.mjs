@@ -323,3 +323,13 @@ test('정보 공개 청구: 예시 줄(정부 AI 오른쪽) 버튼 → 입력창
   assert.equal(rest, '청구서를 만들었습니다.'); assert.ok(doc.value.includes('수신: 제주시청')); assert.equal(els['cmp-foi-title'].textContent, '정보공개 청구서');
   assert.equal(run('그냥 대화'), '그냥 대화');
 });
+
+test('상단 바 "나만의 AI 비서, 나비": 글자 간격, 클릭하면 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(▼ 표시)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /\.topbar-page\{letter-spacing:\.06em/);
+  assert.ok(h.includes('id="topbar-page" role="button"') && h.includes('class="tp-chev"') && h.includes('onclick="_introToggle()"'));
+  assert.match(h, /#intro-panel\{[^}]*height:0;overflow:hidden[^}]*transition:height \.5s/);
+  assert.ok(h.includes("index.html?embed=mail") && !/\}\.topbar-page\{font-weight:500\}/.test(h));
+  const i = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(i, /body\.embed \.topnav/);
+});
