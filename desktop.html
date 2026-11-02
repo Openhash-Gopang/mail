@@ -188,6 +188,15 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="org"] .chat-composer{position:static;flex:none;padding-bottom:6px}
 #tab-compose[data-mode="org"] #cmp-loading,#tab-compose[data-mode="org"] #cmp-err{flex:none}
 @media (prefers-reduced-motion:reduce){#tab-compose[data-mode="org"] .chat-landing,#tab-compose[data-mode="org"] .chat-thread{transition:none}}
+.org-notice{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;color:var(--hint);background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px}
+.org-notice span{flex:1}
+.org-notice button{flex:none;border:0;background:none;color:var(--hint);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;padding:2px 4px;text-decoration:underline}
+.org-notice button b{font-size:15px;text-decoration:none;margin-left:3px}
+.org-wait{display:inline-flex;align-items:center;gap:9px;color:var(--hint)}
+.org-wait i{display:inline-block;animation:org-sand 1.4s ease-in-out infinite;font-style:normal}
+.org-wait .org-dots::after{content:'';animation:org-dots 1.4s steps(4,end) infinite}
+@keyframes org-sand{0%,45%{transform:rotate(0)}55%,100%{transform:rotate(180deg)}}
+@keyframes org-dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%,100%{content:'...'}}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
@@ -2107,8 +2116,18 @@ function _orgActivate(o, greeting) {
   if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text });
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (input) input.disabled = !_org.sp;
-  const go = () => { tab.classList.add('org-open'); setTimeout(() => { _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
+  const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
   if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
+}
+/** 면책 문구는 대화를 시작할 때 한 번만 게시한다(개별 답변에는 넣지 않는다). × 다시 보지 않기 를 누르면 이후로 보이지 않는다. */
+const _ORG_NOTICE_KEY = 'orgDisclaimerOff';
+function _orgNotice1() {
+  try { if (localStorage.getItem(_ORG_NOTICE_KEY) === '1') return; } catch (x) {}
+  const th = document.getElementById('cmp-thread'); if (!th) return;
+  const d = document.createElement('div'); d.className = 'org-notice'; d.setAttribute('role', 'note');
+  d.innerHTML = '<span>AI 답변은 일반적인 정보일 뿐 개별 사안에 대한 판단이 아닙니다. 참고만 하시고, 중요한 결정은 반드시 인간 전문가와 상의하십시오.</span><button type="button" aria-label="다시 보지 않기">다시 보지 않기<b>×</b></button>';
+  d.querySelector('button').onclick = () => { try { localStorage.setItem(_ORG_NOTICE_KEY, '1'); } catch (x) {} d.remove(); };
+  th.appendChild(d);
 }
 function _orgLeave() {
   _org = null; document.getElementById('tab-compose').classList.remove('org-open');
@@ -2122,9 +2141,10 @@ async function _orgSend() {
   if (!text || !_org || !_org.sp) return;
   input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
   _cmpAppendBubble('user', { text });
-  _cmpAppendBubble('assistant', { md: '…' });
+  _cmpAppendBubble('assistant', { md: '' });
   const rows = document.querySelectorAll('#cmp-thread .chat-bubble-row.assistant'), id = 'o' + Date.now();
-  (_org.pending = _org.pending || {})[id] = rows[rows.length - 1].querySelector('.chat-bubble');
+  const wb = rows[rows.length - 1].querySelector('.chat-bubble'); wb.innerHTML = '<span class="org-wait" role="status" aria-live="polite"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>';
+  (_org.pending = _org.pending || {})[id] = wb; { const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight; }
   const m = { type: 'hondi-embed-sp-ask', id, text };
   if (_org.ready) HondiChat.post(m); else _org.queue.push(m);
 }
