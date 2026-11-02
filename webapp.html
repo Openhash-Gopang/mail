@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
 <script>
+/* 주소 이전(2026-11-03): 나비웹의 주소는 https://naviweb.kr 이다. mail.hondi.net 은 naviweb.kr 이
+   내용을 가져오는 원본 서버로만 남으므로, 브라우저가 직접 mail.hondi.net 으로 열면 naviweb.kr 로 보낸다.
+   (naviweb.kr 쪽 Worker 는 서버에서 가져오므로 이 코드가 실행되지 않아 순환하지 않는다.) */
+if (location.hostname === 'mail.hondi.net') {
+  location.replace('https://naviweb.kr' + (location.pathname === '/desktop.html' ? '/' : location.pathname) + location.search + location.hash);
+}
+</script>
+<script>
 /* 기기별 진입 분기 — webapp.html은 폰용 UI다. PC에서 열렸으면 desktop.html(PC 레이아웃)로 보낸다
    (2026-09-20). 판별식은 hondi.net/index.html과 같다. ?view=mobile 이면 PC에서도 이 화면을 유지하고,
    ?view=desktop 이면 폰에서도 desktop.html로 간다. 쿼리·해시는 그대로 넘긴다. */
@@ -330,7 +338,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
 <header>
   <div class="logo"><span class="logo-icon">M</span>K-Mail</div>
-  <a class="back" href="https://mail.hondi.net">← 소개 페이지</a>
+  <a class="back" href="https://naviweb.kr/index.html">← 소개 페이지</a>
   <a class="back" href="manual.html">사용 설명서</a>
   <a class="back" href="https://hondi.net" target="_blank">hondi.net ↗</a>
   <span class="hondi-user-slot" data-hondi-user-slot="dark" style="margin-left:auto;flex:none;display:flex;align-items:center;padding-left:10px"></span>

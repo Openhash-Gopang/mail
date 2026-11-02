@@ -9,3 +9,12 @@ test('naviweb-proxy 라우팅', () => {
   assert.equal(r('/src/gopang/services/push.js').target, 'https://hondi.net/src/gopang/services/push.js');
   assert.equal(r('/icons/a.png').target, 'https://mail.hondi.net/icons/a.png');
 });
+
+import { readFileSync as _rf } from 'node:fs';
+test('mail.hondi.net 직접 접속은 naviweb.kr 로 보낸다(desktop·webapp)', () => {
+  for (const f of ['desktop.html', 'webapp.html']) {
+    const s = _rf(new URL('../' + f, import.meta.url), 'utf8');
+    assert.ok(s.includes("location.hostname === 'mail.hondi.net'"), f);
+    assert.ok(s.includes("location.replace('https://naviweb.kr'"), f);
+  }
+});
