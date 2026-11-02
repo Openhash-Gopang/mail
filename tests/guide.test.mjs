@@ -250,3 +250,9 @@ test('우측 상단 "기능 개선 제안" 버튼과 입력 대화상자', () =>
   assert.match(h, /<div class="topbar-right">\s*<button[^>]*id="suggest-btn"[^>]*>기능 개선 제안<\/button>/);
   assert.match(h, /id="suggest-dlg"/); assert.match(h, /function _suggestSend\(/);
 });
+
+test('상단 바 가운데: 홈 = "나만의 AI 비서, 나비"(나비 굵게)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('aria-live="polite">나만의 AI 비서, <b>나비</b></div>'));
+  assert.ok(h.includes("el.innerHTML = '나만의 AI 비서, <b>나비</b>'")); assert.match(h, /\.topbar-page b\{font-weight:800\}/);
+});

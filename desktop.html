@@ -474,7 +474,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .vd-btn:hover{border-color:var(--pri-lt)}
 .vd-caution{background:var(--obg);padding:11px 20px;font-size:13px;color:var(--sub);line-height:1.6}
 @media (max-width:560px){.vd-conf{grid-template-columns:repeat(2,1fr)}}
-@media (prefers-reduced-motion:reduce){#cmp-attach-btn,#cmp-mail-btn,.chat-inputbar,.chat-textarea,.vd-notice,.vd-mark,.topbar-page{transition-duration:.01ms!important}.topbar-page.vd-swap{animation:none!important}.chat-landing-title.vd-swap,.vd-dot{animation:none!important}}
+@media (prefers-reduced-motion:reduce){#cmp-attach-btn,#cmp-mail-btn,.chat-inputbar,.chat-textarea,.vd-notice,.vd-mark,.topbar-page{transition-duration:.01ms!important}.topbar-page{font-weight:500}.topbar-page b{font-weight:800}
+.topbar-page.vd-swap{animation:none!important}.chat-landing-title.vd-swap,.vd-dot{animation:none!important}}
 /* 상단 바 가운데: 지금 보고 있는 페이지(메일 · 서류 작성 · 가상 판결 …). 좁은 화면에서는 아래 탭 줄이 그 역할을 하므로 숨긴다. */
 .topbar-page{position:absolute;left:50%;top:0;height:54px;transform:translateX(-50%);display:flex;align-items:center;max-width:34vw;padding:0 8px;font-size:16px;font-weight:700;letter-spacing:-.01em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .topbar-page.vd-swap{animation:vd-title .3s cubic-bezier(.2,.8,.2,1)}
@@ -903,7 +904,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <dialog id="suggest-dlg" aria-label="기능 개선 제안"><form method="dialog" onsubmit="return false"><h3>기능 개선 제안</h3><p>불편한 점이나 바라는 기능을 적어 주세요. 보내기를 누르면 메일 앱이 열립니다.</p><textarea id="suggest-text" maxlength="2000" placeholder="예: 서류 제출 단계에서 …" oninput="document.getElementById('suggest-go').disabled=!this.value.trim()"></textarea><div class="row"><button type="button" onclick="document.getElementById('suggest-dlg').close()">닫기</button><button type="button" class="go" id="suggest-go" disabled onclick="_suggestSend()">보내기</button></div></form></dialog>
 <header class="topbar">
   <a class="logo" href="https://naviweb.kr" aria-label="NAVI" onclick="if (typeof _switchTab === 'function') { _switchTab('home'); return false; }"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"></a>
-  <div class="topbar-page" id="topbar-page" role="status" aria-live="polite">홈</div>
+  <div class="topbar-page" id="topbar-page" role="status" aria-live="polite">나만의 AI 비서, <b>나비</b></div>
   <div class="topbar-right">
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_suggestOpen()">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">hondi.net ↗</a>
@@ -4431,7 +4432,8 @@ function _cmpSyncModeUi() {
   _topbarSyncPage();   // 상단 바 가운데의 현재 페이지 표시도 모드에 맞춘다
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
-const _TOPBAR_MODE_LABEL = { default: '홈', letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
+const _TOPBAR_HOME = '나만의 AI 비서, 나비';
+const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
 function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => n.textContent).join('').trim(); }   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
 function _topbarSyncPage() {
   const el = document.getElementById('topbar-page');
@@ -4439,7 +4441,7 @@ function _topbarSyncPage() {
   let label = '';
   const compose = document.getElementById('tab-compose');
   if (compose && compose.classList.contains('active')) {
-    label = (_cmpMode === 'org' && _org) ? _org.label : (_TOPBAR_MODE_LABEL[_cmpMode] || '홈');
+    label = (_cmpMode === 'org' && _org) ? _org.label : (_TOPBAR_MODE_LABEL[_cmpMode] || _TOPBAR_HOME);
   } else {
     const sub = document.querySelector('.side-nav .nav-subitem.active');
     const btn = document.querySelector('.side-nav .nav-btn.active');
@@ -4451,7 +4453,7 @@ function _topbarSyncPage() {
       label = btn.getAttribute('data-label') || _topbarOwnText(btn);
     }
   }
-  if (el.textContent !== label) { el.textContent = label; el.classList.remove('vd-swap'); void el.offsetWidth; el.classList.add('vd-swap'); }
+  if (el.textContent !== label) { if (label === _TOPBAR_HOME) el.innerHTML = '나만의 AI 비서, <b>나비</b>'; else el.textContent = label; el.classList.remove('vd-swap'); void el.offsetWidth; el.classList.add('vd-swap'); }
 }
 // opts.keep  : 지금 대화(말풍선)를 그대로 둔 채 모드만 바꾼다(기본 모드가 K-Mail 로 연결할 때)
 // opts.force : 확인창 없이 바꾼다(다른 화면에서 이 입력창으로 넘어오는 내부 이동 — 캠페인 상세, 주소록 등)
