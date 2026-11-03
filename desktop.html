@@ -285,6 +285,20 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-it b{font-size:14px;font-weight:600}
 .doc-combo-it small{display:block;font-size:12px;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-combo-sec{font-size:12px;color:var(--hint);padding:6px 9px 2px}
+/* 예시 패널(2026-11-04): 입력 칸 왼쪽 "예시" 버튼을 누르면 입력창 아래로 예시 항목(한 행의 칸들)이 미끄러져 나오고, 하나를 고르면 다시 들어간다. */
+.cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:4px;height:28px;margin:0 2px 0 0;padding:0 9px 0 11px;border:1px solid var(--bdr);border-radius:999px;background:var(--sur);color:var(--txt);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.cmp-ex-btn:hover{background:var(--pri-bg);color:var(--pri)}
+.cmp-ex-btn svg{transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+.cmp-ex-btn[aria-expanded=true]{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
+.cmp-ex-btn[aria-expanded=true] svg{transform:rotate(180deg)}
+#tab-compose[data-mode="doc"] .cmp-ex-btn,#tab-compose[data-mode="default"] .cmp-ex-btn,#tab-compose[data-mode="org"] .cmp-ex-btn,#tab-compose[data-mode="verdict"] .cmp-ex-btn{display:inline-flex}
+.ex-panel{flex:1 0 100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:0;opacity:0;transform:translateY(-12px);overflow:hidden;visibility:hidden;pointer-events:none;transition:max-height .34s cubic-bezier(.2,.8,.2,1),opacity .22s ease,transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s linear .34s}
+.ex-panel.open{max-height:240px;opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}
+.ex-panel.open.settled{overflow:visible}   /* 다 열린 뒤에는 서류·기관 목록 팝업이 잘리지 않게 */
+.ex-panel>*{opacity:0;transform:translateY(-8px);transition:opacity .2s ease,transform .26s cubic-bezier(.2,.8,.2,1)}
+.ex-panel.open>*{opacity:1;transform:none;transition-delay:calc(var(--i,0)*28ms)}
+@media (min-width:900px){.ex-panel{flex-wrap:nowrap}.ex-panel>*{flex:none}}   /* 넓은 화면: 한 행에 칸들 */
+@media (prefers-reduced-motion:reduce){.ex-panel,.ex-panel>*,.cmp-ex-btn svg{transition-duration:.01ms!important;transition-delay:0s!important}}
 .doc-host-ex{font-size:14px;font-weight:800;color:var(--txt);margin-right:-2px;user-select:none}
 .doc-host-row select{min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
 /* unified-input — 입력창 하나로 통합(2026-10-31): 모드 칩(현재 SP 표시 · × 로 해제) + 메일 아이콘(편지 작성·캠페인 팝오버) */
@@ -943,6 +957,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
+        <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpSetMode('default')">×</button></span>
         <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다"></textarea>
         <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
@@ -953,6 +968,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         </button>
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
+        <div class="ex-panel" id="cmp-ex-panel" role="group" aria-label="예시" aria-hidden="true">
         <span class="doc-host-ex" id="cmp-ex-label" title="이 버튼들은 입력창에 쓸 수 있는 말의 줄임입니다. 예: &quot;소장 작성해 주세요&quot;">예시:</span>
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
         <button type="button" class="doc-combo-btn ex-verdict" id="cmp-verdict-btn" data-label="가상 판결" title="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg><span>가상 판결</span></button>
@@ -987,6 +1003,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         </div>
         <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
         <button type="button" class="doc-combo-btn ex-nabicode" id="cmp-nabi-btn" aria-pressed="false" onclick="_cmpNabiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/></svg><span>나비 숫자 코드</span></button>
+        </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -1862,6 +1879,35 @@ function _cmpDocSelInit() {
   }
   return sel;
 }
+// ── 예시 패널(2026-11-04): "예시" 버튼 → 입력창 아래로 slide out, 항목을 고르면 slide in ──
+function _cmpExPanel() { return document.getElementById('cmp-ex-panel'); }
+function _cmpExIsOpen() { const p = _cmpExPanel(); return !!(p && p.classList.contains('open')); }
+function _cmpExOpen() {
+  const p = _cmpExPanel(), b = document.getElementById('cmp-ex-btn'); if (!p || _cmpExIsOpen()) return;
+  clearTimeout(p._t);
+  [...p.children].forEach((c, i) => c.style.setProperty('--i', i));
+  p.classList.remove('settled'); p.setAttribute('aria-hidden', 'false'); b && b.setAttribute('aria-expanded', 'true');
+  requestAnimationFrame(() => p.classList.add('open'));
+  p._t = setTimeout(() => { if (p.classList.contains('open')) p.classList.add('settled'); }, 380);
+}
+function _cmpExClose() {
+  const p = _cmpExPanel(), b = document.getElementById('cmp-ex-btn'); if (!p) return;
+  clearTimeout(p._t);
+  p.querySelectorAll('.doc-combo-pop').forEach(x => { x.hidden = true; });
+  p.querySelectorAll('[aria-haspopup]').forEach(x => x.setAttribute('aria-expanded', 'false'));
+  p.classList.remove('settled', 'open'); p.setAttribute('aria-hidden', 'true'); b && b.setAttribute('aria-expanded', 'false');
+}
+function _cmpExToggle(e) { if (e) e.stopPropagation(); _cmpExIsOpen() ? _cmpExClose() : _cmpExOpen(); }
+(function () {
+  const p = _cmpExPanel(); if (!p) return;
+  // 항목을 고르면(단추형 예시·목록의 항목·양식 업로드) 패널이 다시 들어간다. 항목 처리가 끝난 다음에 접는다.
+  p.addEventListener('click', e => { if (e.target.closest('.ex-verdict,.ex-guide,.ex-nabicode,.doc-combo-it,.doc-combo-up')) setTimeout(_cmpExClose, 0); }, true);
+  p.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('doc-combo-q') && e.target.closest('.doc-combo-pop').querySelector('.doc-combo-it.on')) setTimeout(_cmpExClose, 0);
+    if (e.key === 'Escape' && !p.querySelector('.doc-combo-pop:not([hidden])')) { _cmpExClose(); const b = document.getElementById('cmp-ex-btn'); b && b.focus(); }
+  });
+})();
+
 // ── 서류 검색 드롭다운(2026-11-02): 맨 위 '서류 선택' 항목을 실시간 검색 입력으로 바꿨다. 서류 목록은 각 서류 사이트의 공개 목록(data/docs/<id>.json)을 처음 열 때 불러온다.
 const _DOC_INDEX_SRC = [{ site: 'law', url: 'https://law.hondi.net/data/docs/law.json' }, { site: 'tax', url: 'https://tax.hondi.net/data/docs/tax.json' }, { site: 'doctor', url: 'https://doctor.hondi.net/data/docs/doctor.json' }, { site: 'jeju', url: 'https://jeju.naviweb.kr/data/docs/jeju.json' }];
 let _docIndex = null, _docIndexP = null, _docComboSel = -1;
