@@ -13,18 +13,19 @@
   function describe(el) {
     return { tag: el.tagName.toLowerCase(), type: el.type || '', name: el.name || el.id || '', label: nameOf(el), text: nameOf(el), autocomplete: el.autocomplete || '' };
   }
-  function candidates() {
-    const set = new Set(document.querySelectorAll(SEL));
-    for (const el of document.querySelectorAll(PTR)) {
+  function candidates(root) {
+    const base = root || document;
+    const set = new Set(base.querySelectorAll(SEL));
+    for (const el of base.querySelectorAll(PTR)) {
       if (set.has(el) || el.closest('a,button,[onclick]')) continue;
       if ((el.innerText || '').length > 30 && el.tagName !== 'IMG') continue;
       try { if (getComputedStyle(el).cursor === 'pointer') set.add(el); } catch (e) { /* skip */ }
     }
     return [...set];
   }
-  function list(filter) {
+  function list(filter, root) {
     const vh = window.innerHeight; const inView = []; const rest = [];
-    for (const el of candidates()) {
+    for (const el of candidates(root)) {
       if (!visible(el)) continue;
       const n = nameOf(el);
       if (filter && !(n.toLowerCase().includes(filter) || (el.name || '').toLowerCase().includes(filter) || (el.id || '').toLowerCase().includes(filter))) continue;
@@ -53,6 +54,9 @@
   }
   const run = {
     read_page: () => `URL: ${location.href}\n제목: ${document.title}\n${list()}`,
+    form_controls: ({ ref }) => { const el = need(ref); let box = el.closest('form') || el.parentElement;
+      for (let i = 0; i < 8 && box && box.querySelectorAll(SEL).length < 6; i++) box = box.parentElement;
+      return `입력칸 ${nameOf(el)} 주변 요소(화면 위쪽 메뉴·통합검색은 제외):\n` + list('', box || document); },
     find: ({ query }) => list(clean(query).toLowerCase().replace(/(버튼|입력칸|링크)$/, '').trim()),
     click: ({ ref }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); el.click(); return `클릭: ${nameOf(el)}`; },
     type: ({ ref, text, submit }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); el.focus(); setValue(el, String(text));
