@@ -4,7 +4,7 @@ $('pb').innerHTML = '<option value="">(절차 없음)</option>' + Object.entries
 chrome.storage.local.get(['gateway', 'token', 'provider']).then((o) => { $('gw').value = o.gateway || ''; $('tk').value = o.token || ''; $('pv').value = o.provider || ''; });
 $('save').onclick = () => chrome.storage.local.set({ gateway: $('gw').value.trim(), token: $('tk').value.trim(), provider: $('pv').value });
 const add = (cls, t) => { const d = document.createElement('div'); d.className = 'row ' + cls; d.textContent = t; $('log').appendChild(d); d.scrollIntoView(); };
-$('go').onclick = () => { $('log').innerHTML = ''; chrome.runtime.sendMessage({ type: 'start', goal: $('goal').value.trim(), playbook: $('pb').value }); };
+$('go').onclick = async () => { $('log').innerHTML = ''; const w = await chrome.windows.getCurrent(); chrome.runtime.sendMessage({ type: 'start', goal: $('goal').value.trim(), playbook: $('pb').value, windowId: w.id }); };
 $('stop').onclick = () => chrome.runtime.sendMessage({ type: 'stop' });
 const reply = (ok) => { $('ask').hidden = true; chrome.runtime.sendMessage({ type: 'reply', ok }); };
 $('yes').onclick = () => reply(true); $('no').onclick = () => reply(false);
