@@ -11,3 +11,6 @@
 6. 전환이 확인되면 mail.hondi.net 쪽에서 naviweb.kr 로 보내는 코드를 켠다(별도 PR).
 
 원본은 `mail.hondi.net` 으로 남겨 둔다(Worker 가 거기서 받아 온다). 이를 리다이렉트로 바꾸면 순환한다.
+
+## 배포
+Cloudflare Workers Builds 로 연결되어 있다(루트 `ops/naviweb-proxy`, 배포 명령 `npx wrangler deploy`). main 에 병합되면 자동 배포된다.
