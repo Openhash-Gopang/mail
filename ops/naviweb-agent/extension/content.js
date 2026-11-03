@@ -58,7 +58,10 @@
       for (let i = 0; i < 8 && box && box.querySelectorAll(SEL).length < 6; i++) box = box.parentElement;
       return `입력칸 ${nameOf(el)} 주변 요소(화면 위쪽 메뉴·통합검색은 제외):\n` + list('', box || document); },
     find: ({ query }) => list(clean(query).toLowerCase().replace(/(버튼|입력칸|링크)$/, '').trim()),
-    click: ({ ref }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); el.click(); return `클릭: ${nameOf(el)}`; },
+    click: ({ ref }) => { const el = need(ref); el.scrollIntoView({ block: 'center' });
+      const a = el.closest && el.closest('a[href]');
+      if (a && /^\s*javascript:/i.test(a.getAttribute('href') || '')) { a.setAttribute('data-navi-click', '1'); return `@@MAIN@@클릭: ${nameOf(el)}`; }
+      el.click(); return `클릭: ${nameOf(el)}`; },
     type: ({ ref, text, submit }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); el.focus(); setValue(el, String(text));
       if (submit) { el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true })); el.form && el.form.requestSubmit && el.form.requestSubmit(); }
       return `입력 완료: ${nameOf(el)}`; },
