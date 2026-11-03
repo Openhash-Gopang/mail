@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import gw, { toOpenAI, fromOpenAI } from '../ops/naviweb-agent/gateway/worker.js';
+import gw, { toOpenAI, fromOpenAI, withCache } from '../ops/naviweb-agent/gateway/worker.js';
 import { classify, hostAllowed } from '../ops/naviweb-agent/extension/policy.js';
 import { runAgent, buildSystem } from '../ops/naviweb-agent/extension/agent-core.js';
 import { PLAYBOOKS } from '../ops/naviweb-agent/extension/playbooks.js';
@@ -196,4 +196,38 @@ test('detect/queue: 확장이 응답하면 연결·맡기기 성공, 응답이 �
   assert.equal(await b.api.queue({ playbook: 'nope', goal: 'x' }), false);
   const quiet = loadBridge(); quiet.win.postMessage = () => {};
   assert.equal(await quiet.api.detect(), null);
+});
+
+// ── Haiku 프롬프트 캐시 ─────────────────────────────────────────────────────
+test('withCache: 도구 끝·시스템·마지막 두 사용자 메시지에만 경계를 두고 원본은 그대로 둔다', () => {
+  const req = { system: '지시문', tools: [{ name: 'a' }, { name: 'b' }], messages: [
+    { role: 'user', content: '목표' },
+    { role: 'assistant', content: [{ type: 'tool_use', id: '1', name: 'a', input: {} }] },
+    { role: 'user', content: [{ type: 'tool_result', tool_use_id: '1', content: [{ type: 'text', text: '결과1' }] }] },
+    { role: 'assistant', content: [{ type: 'tool_use', id: '2', name: 'a', input: {} }] },
+    { role: 'user', content: [{ type: 'tool_result', tool_use_id: '2', content: [{ type: 'text', text: '결과2' }] }] },
+  ] };
+  const snapshot = JSON.stringify(req);
+  const c = withCache(req);
+  assert.equal(JSON.stringify(req), snapshot);
+  assert.equal(c.tools[0].cache_control, undefined);
+  assert.deepEqual(c.tools[1].cache_control, { type: 'ephemeral' });
+  assert.equal(c.system[0].text, '지시문'); assert.deepEqual(c.system[0].cache_control, { type: 'ephemeral' });
+  const marks = c.messages.flatMap((m, i) => (Array.isArray(m.content) ? m.content.filter((b) => b.cache_control).map(() => i) : []));
+  assert.deepEqual(marks, [2, 4]);
+  const total = (JSON.stringify(c).match(/cache_control/g) || []).length;
+  assert.ok(total <= 4);
+});
+test('callClaude: 캐시 경계를 붙여 보내고 적중·기록 토큰을 응답에 싣는다. PROMPT_CACHE=off 이면 붙이지 않는다', async () => {
+  const seen = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { seen.push(JSON.parse(init.body)); return new Response(JSON.stringify({ content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn', usage: { input_tokens: 10, cache_read_input_tokens: 900, cache_creation_input_tokens: 50, output_tokens: 5 } }), { status: 200 }); };
+  try {
+    const call = (env) => gw.fetch(new Request('https://g/v1/step', { method: 'POST', headers: { authorization: 'Bearer tok', 'content-type': 'application/json' }, body: JSON.stringify({ system: 's', messages: [{ role: 'user', content: 'hi' }], tools: [] }) }), { AGENT_TOKEN: 'tok', ANTHROPIC_API_KEY: 'k', ...env });
+    const r1 = await call({}); const j1 = await r1.json();
+    assert.deepEqual(j1.cache, { read: 900, write: 50, fresh: 10 });
+    assert.ok(JSON.stringify(seen[seen.length - 1]).includes('cache_control'));
+    await call({ PROMPT_CACHE: 'off' });
+    assert.ok(!JSON.stringify(seen[seen.length - 1]).includes('cache_control'));
+  } finally { globalThis.fetch = realFetch; }
 });
