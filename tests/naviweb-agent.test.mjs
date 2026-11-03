@@ -166,3 +166,34 @@ test('크기 강제: Claude 는 정확한 토큰 수로 재확인해 더 줄이�
   const gemma = await enforceLimit(mk(2, 10, false), env, 'gemma', async () => { throw new Error('호출 안 됨'); });
   assert.ok(!gemma.error);
 });
+
+// ── 나비웹 ↔ 확장 프로그램 다리(agent-bridge.js, bridge.js) ─────────────────────
+import { createRequire } from 'node:module';
+const require_ = createRequire(import.meta.url);
+function loadBridge() {
+  const listeners = [];
+  const win = { addEventListener: (t, f) => listeners.push(f), postMessage: null };
+  globalThis.window = win; globalThis.location = { origin: 'https://naviweb.kr' };
+  delete require_.cache[require_.resolve('../agent-bridge.js')];
+  const api = require_('../agent-bridge.js');
+  return { api, win, deliver: (data) => listeners.forEach((f) => f({ source: win, data })) };
+}
+test('suggest: 압류·추심 서류는 법인등기 절차를 제안하고 그 외는 null', () => {
+  const { api } = loadBridge();
+  assert.equal(api.suggest('채권압류 및 추심명령 신청서').playbook, 'iros-corp-ecourt');
+  assert.equal(api.suggest('주민등록 등본 신청서'), null);
+});
+test('detect/queue: 확장이 응답하면 연결·맡기기 성공, 응답이 없으면 null/false', async () => {
+  const b = loadBridge();
+  b.win.postMessage = (m) => {
+    if (m.source !== 'navi-web') return;
+    if (m.type === 'agent-ping') b.deliver({ source: 'navi-agent', type: 'agent-pong', id: m.id, ok: true, version: '0.3.0', playbooks: [{ id: 'iros-corp-ecourt', title: 't' }] });
+    if (m.type === 'agent-queue') b.deliver({ source: 'navi-agent', type: 'agent-queued', id: m.id, ok: m.job.playbook === 'iros-corp-ecourt' });
+  };
+  const info = await b.api.detect();
+  assert.equal(info.version, '0.3.0');
+  assert.equal(await b.api.queue({ playbook: 'iros-corp-ecourt', goal: 'x' }), true);
+  assert.equal(await b.api.queue({ playbook: 'nope', goal: 'x' }), false);
+  const quiet = loadBridge(); quiet.win.postMessage = () => {};
+  assert.equal(await quiet.api.detect(), null);
+});
