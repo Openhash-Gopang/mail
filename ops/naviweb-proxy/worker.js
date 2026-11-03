@@ -38,6 +38,8 @@ export function phoneRedirect(url) {
   });
 }
 
+export function edgeTtl(pathname) { return /\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf)$/i.test(pathname) ? 86400 : 120; }
+
 export function route(url) {
   const p = url.pathname;
   if (p.startsWith('/_h/')) return { target: HONDI_ORIGIN + p.slice(3) + url.search, hondi: true };
@@ -55,10 +57,13 @@ export default {
     const { target, hondi } = route(url);
     const headers = new Headers(request.headers);
     headers.delete('cookie'); headers.delete('host');
-    const res = await fetch(target, { method: request.method, headers, redirect: 'manual' });
+    // 원본(GitHub Pages)까지 매번 다녀오면 파일마다 0.4~2초가 걸린다. Cloudflare 엣지에 잠깐 캐시한다(사진·글꼴은 길게, 나머지는 2분).
+    headers.delete('if-none-match'); headers.delete('if-modified-since'); headers.delete('range');
+    const res = await fetch(target, { method: request.method, headers, redirect: 'manual', cf: { cacheEverything: true, cacheTtl: edgeTtl(url.pathname), cacheTtlByStatus: { '200-299': edgeTtl(url.pathname), '300-399': 0, '400-599': 0 } } });
     const out = new Headers(res.headers);
     out.delete('set-cookie');
-    if (url.pathname === '/') { out.set('Vary', 'User-Agent, Sec-CH-UA-Mobile'); out.set('Cache-Control', 'private, no-cache'); }
+    // 폰은 위에서 이동시키므로 여기까지 온 '/' 는 모두 PC 화면이다. 짧게만 브라우저에 둔다.
+    if (url.pathname === '/') { out.set('Vary', 'User-Agent, Sec-CH-UA-Mobile'); out.set('Cache-Control', 'public, max-age=60'); }
     const loc = out.get('location');
     if (loc) out.set('location', loc.replace(APP_ORIGIN, '').replace(HONDI_ORIGIN, '/_h'));
     const ct = out.get('content-type') || '';

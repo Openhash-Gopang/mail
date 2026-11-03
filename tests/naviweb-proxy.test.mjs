@@ -68,3 +68,11 @@ test('desktop.html 에 나비 숫자 코드 칩이 있고 전화번호 변환이
   assert.ok(f('abc').err);
   assert.equal(f('').empty, true);
 });
+
+import { edgeTtl as _edgeTtl } from '../ops/naviweb-proxy/worker.js';
+test('엣지 캐시 시간: 이미지·글꼴은 길게, 나머지는 짧게', () => {
+  assert.equal(_edgeTtl('/icons/naviweb-logo.png'), 86400);
+  assert.equal(_edgeTtl('/favicon.ico'), 86400);
+  assert.equal(_edgeTtl('/guide.js'), 120);
+  assert.equal(_edgeTtl('/'), 120);
+});
