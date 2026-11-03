@@ -8,14 +8,69 @@
 //   ALLOWED_ORIGINS    쉼표 구분. 예: chrome-extension://<확장ID>  (비우면 Origin 검사 생략)
 //   DEFAULT_PROVIDER   claude | gemma  (기본 claude)
 //   ANTHROPIC_API_KEY, CLAUDE_MODEL(기본 claude-haiku-5-5)
+//   MAX_INPUT_TOKENS   요청 1건의 입력 상한(기본 90000, 최대 95000). Haiku 5.5 는 10만 토큰을 넘으면 모든 요율이 5배라 반드시 아래로 유지한다.
 //   GEMMA_BASE_URL (예: https://<호스트>/v1), GEMMA_API_KEY, GEMMA_MODEL(기본 google/gemma-4-31B-it)
 
 const MAX_BODY = 6 * 1024 * 1024;
 const MAX_MESSAGES = 120;
 const MAX_TOKENS_CAP = 4096;
+export const HARD_LIMIT = 95000;      // 어떤 설정에서도 이 값을 넘기지 않는다(10만 토큰 경계 아래 여유)
+export const DEFAULT_LIMIT = 90000;
+const IMG_TOKENS = 1600;
+const TOOL_TEXT_CAP = 3000, LAST_TOOL_TEXT_CAP = 6000;
 
 const json = (o, status = 200, h = {}) =>
   new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...h } });
+
+// ---- 입력 크기 강제 ----------------------------------------------------------
+const tok = (str) => { let a = 0, n = 0; for (const ch of String(str)) (ch.charCodeAt(0) < 128 ? a++ : n++); return a * 0.4 + n; };
+export function estimateTokens(req) {
+  let t = tok(req.system || '') + tok(JSON.stringify(req.tools || []));
+  for (const m of req.messages || []) {
+    if (typeof m.content === 'string') { t += tok(m.content) + 4; continue; }
+    for (const b of m.content) {
+      if (b.type === 'text') t += tok(b.text);
+      else if (b.type === 'image') t += IMG_TOKENS;
+      else if (b.type === 'tool_use') t += tok(JSON.stringify(b.input || {})) + tok(b.name) + 8;
+      else if (b.type === 'tool_result') {
+        const c = Array.isArray(b.content) ? b.content : [{ type: 'text', text: String(b.content ?? '') }];
+        for (const x of c) t += x.type === 'image' ? IMG_TOKENS : tok(x.text || '');
+        t += 8;
+      }
+    }
+    t += 4;
+  }
+  return Math.ceil(t);
+}
+const limitOf = (env) => Math.min(Number(env && env.MAX_INPUT_TOKENS) || DEFAULT_LIMIT, HARD_LIMIT);
+const clone = (o) => JSON.parse(JSON.stringify(o));
+function shrinkResults(messages, capLast, capOld) {
+  messages.forEach((m, mi) => {
+    if (!Array.isArray(m.content)) return;
+    const last = mi === messages.length - 1;
+    for (const b of m.content) {
+      if (b.type !== 'tool_result' || !Array.isArray(b.content)) continue;
+      b.content = b.content.map((x) => {
+        if (x.type === 'image') return last ? x : { type: 'text', text: '[이전 스크린샷 생략]' };
+        const cap = last ? capLast : capOld;
+        return x.text && x.text.length > cap ? { ...x, text: x.text.slice(0, cap) + '\n…(잘림)' } : x;
+      });
+    }
+  });
+}
+// 한도 안으로 줄인다: 오래된 결과 자르기 → 오래된 스크린샷 제거 → 가장 오래된 (assistant,user) 쌍부터 삭제 → 마지막 결과 더 자르기.
+// 줄일 수 없으면 { error } 를 돌려준다.
+export function fitToLimit(req, limit = DEFAULT_LIMIT) {
+  limit = Math.min(limit, HARD_LIMIT);
+  const r = clone(req); let dropped = 0;
+  shrinkResults(r.messages, LAST_TOOL_TEXT_CAP, TOOL_TEXT_CAP);
+  while (estimateTokens(r) > limit && r.messages.length > 3) { r.messages.splice(1, 2); dropped += 2; }
+  if (dropped && Array.isArray(r.messages[0].content)) r.messages[0].content.push({ type: 'text', text: `[이전 단계 ${dropped / 2}개는 크기 제한으로 생략됨. 필요하면 read_page 로 다시 확인하세요.]` });
+  if (estimateTokens(r) > limit) shrinkResults(r.messages, 2000, 800);
+  const est = estimateTokens(r);
+  if (est > limit) return { error: 'context_too_large', est, limit };
+  return { req: r, est, dropped, limit };
+}
 
 export function toOpenAI(req, model) {
   const msgs = [];
@@ -75,6 +130,36 @@ function cors(req, env) {
   return { ok, headers: ok && origin ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {} };
 }
 
+async function countClaude(req, env) {
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages/count_tokens', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: env.CLAUDE_MODEL || 'claude-haiku-5-5', system: req.system, messages: req.messages, tools: req.tools }),
+    });
+    const j = await r.json();
+    return r.ok && Number.isFinite(j.input_tokens) ? j.input_tokens : null;
+  } catch { return null; }
+}
+
+// 추정치로 줄인 뒤, 한도에 가까우면 정확한 토큰 수로 다시 확인하고 부족하면 더 줄인다(Claude 만 해당).
+export async function enforceLimit(req, env, provider, count = countClaude) {
+  const limit = limitOf(env);
+  let fit = fitToLimit(req, limit);
+  if (fit.error) return fit;
+  if (provider !== 'claude' || fit.est < limit * 0.6) return fit;
+  for (let i = 0; i < 3; i++) {
+    const exact = await count(fit.req, env);
+    if (exact === null) return fit.est < limit * 0.85 ? fit : { error: 'count_unavailable', est: fit.est, limit };
+    fit.exact = exact;
+    if (exact <= limit) return fit;
+    const next = fitToLimit(fit.req, Math.floor(fit.est * (limit / exact) * 0.95));
+    if (next.error) return { error: 'context_too_large', est: exact, limit };
+    next.dropped += fit.dropped; fit = next;
+  }
+  return { error: 'context_too_large', est: fit.exact, limit };
+}
+
 async function callClaude(req, env) {
   const body = {
     model: env.CLAUDE_MODEL || 'claude-haiku-5-5',
@@ -122,8 +207,11 @@ export default {
     if (!Array.isArray(req.messages) || !req.messages.length || req.messages.length > MAX_MESSAGES) return json({ error: 'bad_messages' }, 400, c.headers);
     const provider = req.provider || env.DEFAULT_PROVIDER || 'claude';
     if (provider !== 'claude' && provider !== 'gemma') return json({ error: 'bad_provider' }, 400, c.headers);
+    const fit = await enforceLimit(req, env, provider);
+    if (fit.error) return json({ error: fit.error, estimate: fit.est, limit: fit.limit }, 413, c.headers);
+    req = fit.req;
     const res = provider === 'gemma' ? await callGemma(req, env) : await callClaude(req, env);
     if (res.error) return json({ error: 'upstream', status: res.status, detail: res.error }, 502, c.headers);
-    return json({ ...res.out, provider }, 200, c.headers);
+    return json({ ...res.out, provider, input_estimate: fit.exact ?? fit.est, trimmed: fit.dropped }, 200, c.headers);
   },
 };

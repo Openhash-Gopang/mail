@@ -21,6 +21,14 @@ Claude in Chrome 과 같은 구성(도구 호출 모델 + 페이지 읽기/조�
 - 주민등록번호 입력 → 거부. 허용 목록(iros, ecfs, gov.kr, hondi.net, naviweb.kr) 밖 이동 → 거부
 - 키는 게이트웨이 비밀값에만 둔다(확장에는 토큰만).
 
+## 요청 크기 상한(강제)
+Haiku 5.5 는 한 요청이 10만 토큰을 넘으면 모든 요율이 5배다. 그래서 게이트웨이가 **모든 요청**(Claude·Gemma 공통)에서 입력을 `MAX_INPUT_TOKENS`(기본 90,000, **어떤 값을 넣어도 95,000 초과 불가**) 이하로 강제한다.
+1. 오래된 도구 결과는 3,000자, 최신은 6,000자로 자르고 오래된 스크린샷은 제거
+2. 그래도 넘으면 가장 오래된 (assistant, user) 단계 쌍부터 삭제(첫 목표·마지막 단계·도구 짝은 유지)
+3. Claude 는 추정치가 한도의 60%를 넘으면 `count_tokens` 로 정확히 재확인해 더 줄이고, 확인 불가에 여유도 없으면 거절
+4. 끝까지 못 줄이면 413 `context_too_large` — 모델을 호출하지 않는다(비용 0). 응답에 `input_estimate`, `trimmed` 를 넣는다.
+확장도 도구 결과를 6,000자로 자르고 스크린샷을 1장만 남긴다.
+
 ## 배포
 1. 게이트웨이: `cd ops/naviweb-agent/gateway && npx wrangler deploy` 후 비밀값 설정
    `npx wrangler secret put AGENT_TOKEN` / `ANTHROPIC_API_KEY` (Gemma 사용 시 `GEMMA_BASE_URL`, `GEMMA_API_KEY`).

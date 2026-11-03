@@ -114,3 +114,55 @@ test('절차·도구·시스템 프롬프트', () => {
   assert.ok(TOOLS.find((t) => t.name === 'handoff_to_user'));
   assert.ok(TOOLS.every((t) => t.input_schema.type === 'object'));
 });
+
+import { estimateTokens, fitToLimit, enforceLimit, HARD_LIMIT } from '../ops/naviweb-agent/gateway/worker.js';
+const big = (n) => '가'.repeat(n);
+const turn = (i, textLen, img) => [
+  { role: 'assistant', content: [{ type: 'tool_use', id: 'u' + i, name: 'read_page', input: {} }] },
+  { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'u' + i, content: [{ type: 'text', text: big(textLen) }, ...(img ? [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'A' } }] : [])] }] },
+];
+const mk = (turns, textLen, img) => ({ system: 's', tools: TOOLS, messages: [{ role: 'user', content: [{ type: 'text', text: '목표' }] }, ...Array.from({ length: turns }, (_, i) => turn(i, textLen, img)).flat()] });
+
+test('크기 강제: 추정치는 한글을 글자당 1토큰, 이미지는 1600으로 본다', () => {
+  assert.ok(estimateTokens({ messages: [{ role: 'user', content: [{ type: 'text', text: big(1000) }] }] }) >= 1000);
+  const a = estimateTokens(mk(1, 10, false)), b = estimateTokens(mk(1, 10, true));
+  assert.ok(b - a >= 1600);
+});
+
+test('크기 강제: 한도를 넘으면 오래된 단계부터 줄이고, 첫 목표와 도구 짝은 유지', () => {
+  const req = mk(40, 3000, true);                 // 약 12만 토큰 이상
+  assert.ok(estimateTokens(req) > 100000);
+  const fit = fitToLimit(req, 90000);
+  assert.ok(!fit.error); assert.ok(fit.est <= 90000); assert.ok(fit.dropped > 0);
+  assert.equal(fit.req.messages[0].content[0].text, '목표');
+  assert.match(JSON.stringify(fit.req.messages[0]), /크기 제한으로 생략/);
+  // 도구 짝: 모든 tool_result 의 id 가 바로 앞 assistant 의 tool_use 와 일치
+  fit.req.messages.forEach((m, i) => { if (m.role === 'user' && i > 0 && m.content[0].type === 'tool_result') assert.equal(fit.req.messages[i - 1].content[0].id, m.content[0].tool_use_id); });
+  // 마지막 메시지는 보존
+  assert.equal(fit.req.messages.at(-1).content[0].tool_use_id, 'u39');
+  assert.ok(estimateTokens(req) > 100000, '원본은 변경되지 않는다');
+});
+
+test('크기 강제: 어떤 설정에서도 95000 을 넘지 않고, 줄일 수 없으면 413', async () => {
+  assert.equal(HARD_LIMIT, 95000);
+  const f = fitToLimit(mk(2, 10, false), 500000); assert.equal(f.limit, 95000);
+  const huge = { system: big(120000), tools: [], messages: [{ role: 'user', content: [{ type: 'text', text: 'x' }] }] };
+  assert.equal(fitToLimit(huge, 90000).error, 'context_too_large');
+  const env = { AGENT_TOKEN: 't' };
+  const res = await gw.fetch(new Request('https://g/v1/step', { method: 'POST', headers: { authorization: 'Bearer t', 'content-type': 'application/json' }, body: JSON.stringify(huge) }), env);
+  assert.equal(res.status, 413); assert.equal((await res.json()).error, 'context_too_large');
+});
+
+test('크기 강제: Claude 는 정확한 토큰 수로 재확인해 더 줄이고, 확인 불가면 여유가 없을 때 거절', async () => {
+  const env = { MAX_INPUT_TOKENS: '90000' };
+  const req = mk(20, 3000, false);                 // 추정 약 60K+ → 정확 계산 대상
+  let calls = 0;
+  const fit = await enforceLimit(req, env, 'claude', async (r) => { calls++; return calls === 1 ? 99000 : 70000; });
+  assert.equal(calls, 2); assert.ok(!fit.error); assert.equal(fit.exact, 70000);
+  const over = await enforceLimit(req, env, 'claude', async () => 120000);
+  assert.equal(over.error, 'context_too_large');
+  const un = await enforceLimit(mk(25, 3200, false), env, 'claude', async () => null);
+  assert.ok(un.error === 'count_unavailable' || un.est < 76500);
+  const gemma = await enforceLimit(mk(2, 10, false), env, 'gemma', async () => { throw new Error('호출 안 됨'); });
+  assert.ok(!gemma.error);
+});

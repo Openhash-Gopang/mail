@@ -55,7 +55,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 40 }) {
         else if (verdict.act === 'confirm' && !(await host.ask(verdict.reason))) say('사용자가 거절했습니다. 진행하지 마세요.');
         else {
           const r = await host.execTool(u.name, u.input);
-          say(r.text || '(ok)');
+          say(String(r.text || '(ok)').slice(0, 6000));
           if (r.image) out.content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: r.image } });
         }
       } catch (e) { say('오류: ' + (e && e.message ? e.message : e)); out.is_error = true; }
