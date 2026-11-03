@@ -54,7 +54,7 @@ test('desktop.html 의 안전망 분기는 hondi.net/webapp.html 로 보낸다',
 // 나비 숫자 코드 칩: desktop.html 의 변환 함수가 hondi-digit-code.js 규칙과 같은 결과를 낸다.
 test('desktop.html 에 나비 숫자 코드 칩이 있고 전화번호 변환이 맞다', () => {
   const s = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(s.includes('id="cmp-nabi-combo-btn"'));
+  assert.ok(s.includes('id="cmp-nabi-btn"') && s.includes("key: 'nabicode'") && !s.includes('id="nc-phone"'));
   const a = s.indexOf("const _NC_AREA"), b = s.indexOf('let _ncCur');
   assert.ok(a > 0 && b > a);
   const f = new Function(s.slice(a, b) + '; return _ncPhoneToDigits;')();
