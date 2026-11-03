@@ -1594,6 +1594,7 @@ function _kmailAutoResize(el) {
 // 보낸 창이 이 화면의 iframe 이고 출처가 아래 목록에 있을 때만 받는다.
 const _DOC_SITES = [
   { id: 'all', label: '전체', url: 'https://pro.hondi.net/' },
+  { id: 'jeju', label: '제주 행정', url: 'https://jeju.naviweb.kr/' },   // 읍면동·행정시·도청 민원·공문서 (2026-11-03)
   { id: 'law', label: '법률 서류', url: 'https://law.hondi.net/' },
   { id: 'tax', label: '세무·회계 서류', url: 'https://tax.hondi.net/' },
   { id: 'doctor', label: '병원·의원 서류', url: 'https://doctor.hondi.net/' },
@@ -1764,13 +1765,18 @@ function _cmpDocSelInit() {
   return sel;
 }
 // ── 서류 검색 드롭다운(2026-11-02): 맨 위 '서류 선택' 항목을 실시간 검색 입력으로 바꿨다. 서류 목록은 각 서류 사이트의 공개 목록(data/docs/<id>.json)을 처음 열 때 불러온다.
-const _DOC_INDEX_SRC = [{ site: 'law', url: 'https://law.hondi.net/data/docs/law.json' }, { site: 'tax', url: 'https://tax.hondi.net/data/docs/tax.json' }, { site: 'doctor', url: 'https://doctor.hondi.net/data/docs/doctor.json' }];
+const _DOC_INDEX_SRC = [{ site: 'law', url: 'https://law.hondi.net/data/docs/law.json' }, { site: 'tax', url: 'https://tax.hondi.net/data/docs/tax.json' }, { site: 'doctor', url: 'https://doctor.hondi.net/data/docs/doctor.json' }, { site: 'jeju', url: 'https://jeju.naviweb.kr/data/docs/jeju.json' }];
 let _docIndex = null, _docIndexP = null, _docComboSel = -1;
 function _docNorm(t) { return String(t || '').toLowerCase().replace(/[\s·()\[\]\-_/]/g, ''); }
 function _docIndexLoad() {
   if (_docIndexP) return _docIndexP;
   _docIndexP = Promise.all(_DOC_INDEX_SRC.map(x => fetch(x.url).then(r => r.ok ? r.json() : []).then(j => Array.isArray(j) ? j : (j && j.docs) || []).catch(() => []).then(arr => arr.filter(d => d && d.t && d.p !== 'issued').map(d => ({ site: x.site, t: String(d.t), c: String(d.c || ''), n: _docNorm(d.t), a: _docNorm((d.a || []).join(' ')), cn: _docNorm(d.c) })))))
-    .then(parts => { _docIndex = [].concat(...parts); return _docIndex; });
+    .then(parts => {
+      // 제주 행정 목록에 같이 들어 있는 공용 서류(법률·세무와 이름이 같은 것)는 먼저 나온 사이트 것만 남겨 중복을 막는다
+      const seen = new Set(); const all = [].concat(...parts);
+      _docIndex = all.filter(d => { if (d.site === 'jeju') return !seen.has(d.n); seen.add(d.n); return true; });
+      return _docIndex;
+    });
   return _docIndexP;
 }
 /** 점수: 이름 정확 > 이름 앞부분 > 이름 포함 > 별칭 포함 > 분류 포함. 공백으로 나눈 낱말은 모두 맞아야 한다. */

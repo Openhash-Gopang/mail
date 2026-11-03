@@ -366,3 +366,11 @@ test('Whitepaper 탭: 나비와 나비웹 / Openhash, Openhash 백서 페이지'
   for (const k of ['PDV', 'PLSM', 'BIVM', 'ILMV', 'LPBFT', 'Ed25519', 'AES-256-GCM']) assert.ok(o.includes(k), k);
   assert.equal((o.match(/<section /g) || []).length, (o.match(/<\/section>/g) || []).length);
 });
+
+test('서류 작성 드롭다운: "전체" 아래에 "제주 행정"(jeju.naviweb.kr)이 있고 서류 검색 목록에 제주 행정 서류가 들어간다', async () => {
+  const { readFileSync } = await import('node:fs');
+  const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const all = s.indexOf("{ id: 'all', label: '전체'"), jeju = s.indexOf("{ id: 'jeju', label: '제주 행정', url: 'https://jeju.naviweb.kr/' }"), law = s.indexOf("{ id: 'law', label: '법률 서류'");
+  assert.ok(all > 0 && all < jeju && jeju < law, '전체 → 제주 행정 → 법률 서류 순서');
+  assert.ok(s.includes("{ site: 'jeju', url: 'https://jeju.naviweb.kr/data/docs/jeju.json' }"));
+});
