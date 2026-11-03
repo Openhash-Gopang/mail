@@ -1,0 +1,24 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>나비웹 서류 도우미</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1a1a1a;--mu:#666;--bd:#ddd;--ac:#2f5bd8}
+@media(prefers-color-scheme:dark){:root{--bg:#16181c;--fg:#eee;--mu:#9aa;--bd:#333;--ac:#7aa2ff}}
+body{margin:0;padding:12px;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,sans-serif}
+select,textarea,input,button{font:inherit;width:100%;box-sizing:border-box;margin:4px 0;padding:8px;border:1px solid var(--bd);border-radius:8px;background:transparent;color:inherit}
+button{background:var(--ac);color:#fff;border:0;cursor:pointer}button.sec{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+#log{margin-top:8px;display:flex;flex-direction:column;gap:6px}.row{padding:6px 8px;border-radius:8px;border:1px solid var(--bd);font-size:13px;white-space:pre-wrap}
+.say{border-color:var(--ac)}.tool{color:var(--mu)}.warn{border-color:#d9822b}
+details{margin-top:8px}.hint{color:var(--mu);font-size:12px}
+</style>
+<h3 style="margin:0 0 6px">나비웹 서류 도우미</h3>
+<p class="hint">로그인·인증서·결제·보안문자는 직접 해 주세요. 제출·발급 버튼은 누르기 전에 확인을 받습니다.</p>
+<select id="pb"></select>
+<textarea id="goal" rows="4" placeholder="예) 한림농업협동조합, 제주서부신용협동조합, 제주은행의 법인등기를 전자소송용으로 담아 주세요."></textarea>
+<button id="go">시작</button><button id="stop" class="sec">중지</button>
+<div id="log"></div>
+<div id="ask" hidden class="row warn"><div id="asktext"></div><button id="yes">예 / 직접 했어요</button><button id="no" class="sec">아니요 / 중지</button></div>
+<details><summary>설정</summary>
+<input id="gw" placeholder="게이트웨이 주소 https://…workers.dev"><input id="tk" type="password" placeholder="접근 토큰">
+<select id="pv"><option value="">기본(게이트웨이 설정)</option><option value="claude">Claude</option><option value="gemma">Gemma 4 31B</option></select>
+<button id="save" class="sec">저장</button></details>
+<script src="sidepanel.js" type="module"></script>

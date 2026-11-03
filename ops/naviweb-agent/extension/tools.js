@@ -1,0 +1,26 @@
+// 에이전트가 쓰는 도구 정의(Anthropic tools 형식). Claude 와 Gemma 가 같은 정의를 쓴다.
+export const TOOLS = [
+  { name: 'read_page', description: '현재 화면의 보이는 상호작용 요소 목록(ref, 종류, 이름, 값)을 읽는다. 화면이 바뀌면 다시 호출한다.',
+    input_schema: { type: 'object', properties: {}, required: [] } },
+  { name: 'find', description: '이름/글자로 요소를 찾는다. 예: "다음 버튼", "상호 입력칸".',
+    input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'click', description: 'ref 요소를 클릭한다.',
+    input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } },
+  { name: 'type', description: 'ref 입력칸에 글자를 넣는다. 비밀번호·카드·주민등록번호는 넣을 수 없다.',
+    input_schema: { type: 'object', properties: { ref: { type: 'string' }, text: { type: 'string' }, submit: { type: 'boolean' } }, required: ['ref', 'text'] } },
+  { name: 'select_option', description: 'select 요소에서 보이는 글자로 옵션을 고른다.',
+    input_schema: { type: 'object', properties: { ref: { type: 'string' }, option: { type: 'string' } }, required: ['ref', 'option'] } },
+  { name: 'scroll', description: '화면을 스크롤한다.',
+    input_schema: { type: 'object', properties: { direction: { type: 'string', enum: ['up', 'down'] }, amount: { type: 'number' } }, required: ['direction'] } },
+  { name: 'get_text', description: '화면의 본문 글자를 읽는다(최대 6000자).',
+    input_schema: { type: 'object', properties: {}, required: [] } },
+  { name: 'screenshot', description: '현재 화면을 이미지로 본다. 요소 목록으로 부족할 때만 쓴다.',
+    input_schema: { type: 'object', properties: {}, required: [] } },
+  { name: 'navigate', description: '허용된 사이트 주소로 이동한다.',
+    input_schema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
+  { name: 'wait', description: '잠시 기다린다(초, 최대 10).',
+    input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },
+  { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
+    input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
+];
+export const DOM_TOOLS = new Set(['read_page', 'find', 'click', 'type', 'select_option', 'scroll', 'get_text']);

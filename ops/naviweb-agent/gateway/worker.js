@@ -1,0 +1,129 @@
+// naviweb-agent-gateway — 에이전트(브라우저 확장)와 LLM 사이의 얇은 중계.
+// 확장은 항상 Anthropic Messages 형식(content 블록: text / tool_use / tool_result / image)으로 말하고,
+// 여기서 provider 에 따라 Claude(그대로) 또는 Gemma 4 31B(OpenAI 호환 /chat/completions)로 바꿔 보낸다.
+// 키는 Worker 비밀값에만 둔다. 확장에는 절대 넣지 않는다.
+//
+// 환경변수(wrangler secret / vars)
+//   AGENT_TOKEN        확장이 보내는 Bearer 토큰(필수)
+//   ALLOWED_ORIGINS    쉼표 구분. 예: chrome-extension://<확장ID>  (비우면 Origin 검사 생략)
+//   DEFAULT_PROVIDER   claude | gemma  (기본 claude)
+//   ANTHROPIC_API_KEY, CLAUDE_MODEL(기본 claude-haiku-5-5)
+//   GEMMA_BASE_URL (예: https://<호스트>/v1), GEMMA_API_KEY, GEMMA_MODEL(기본 google/gemma-4-31B-it)
+
+const MAX_BODY = 6 * 1024 * 1024;
+const MAX_MESSAGES = 120;
+const MAX_TOKENS_CAP = 4096;
+
+const json = (o, status = 200, h = {}) =>
+  new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...h } });
+
+export function toOpenAI(req, model) {
+  const msgs = [];
+  if (req.system) msgs.push({ role: 'system', content: req.system });
+  for (const m of req.messages || []) {
+    if (typeof m.content === 'string') { msgs.push({ role: m.role, content: m.content }); continue; }
+    if (m.role === 'assistant') {
+      const text = m.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+      const calls = m.content.filter((b) => b.type === 'tool_use').map((b) => ({
+        id: b.id, type: 'function', function: { name: b.name, arguments: JSON.stringify(b.input || {}) },
+      }));
+      const o = { role: 'assistant', content: text || null };
+      if (calls.length) o.tool_calls = calls;
+      msgs.push(o);
+      continue;
+    }
+    const parts = [];
+    const img = (im) => ({ type: 'image_url', image_url: { url: `data:${im.source.media_type};base64,${im.source.data}` } });
+    for (const b of m.content) {
+      if (b.type === 'tool_result') {
+        const c = Array.isArray(b.content) ? b.content : [{ type: 'text', text: String(b.content ?? '') }];
+        const text = c.filter((x) => x.type === 'text').map((x) => x.text).join('\n');
+        msgs.push({ role: 'tool', tool_call_id: b.tool_use_id, content: text || '(ok)' });
+        for (const im of c.filter((x) => x.type === 'image')) parts.push(img(im));
+      } else if (b.type === 'text') parts.push({ type: 'text', text: b.text });
+      else if (b.type === 'image') parts.push(img(b));
+    }
+    if (parts.length) msgs.push({ role: 'user', content: parts });
+  }
+  const body = { model, messages: msgs, max_tokens: Math.min(req.max_tokens || 2048, MAX_TOKENS_CAP) };
+  if (req.tools && req.tools.length) {
+    body.tools = req.tools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.input_schema } }));
+    body.tool_choice = 'auto';
+  }
+  return body;
+}
+
+export function fromOpenAI(resp) {
+  const ch = resp && resp.choices && resp.choices[0];
+  if (!ch) return { content: [{ type: 'text', text: '' }], stop_reason: 'end_turn' };
+  const msg = ch.message || {};
+  const content = [];
+  if (msg.content) content.push({ type: 'text', text: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content) });
+  for (const c of msg.tool_calls || []) {
+    let input = {};
+    try { input = JSON.parse(c.function.arguments || '{}'); } catch { input = { _raw: c.function.arguments }; }
+    content.push({ type: 'tool_use', id: c.id, name: c.function.name, input });
+  }
+  if (!content.length) content.push({ type: 'text', text: '' });
+  return { content, stop_reason: (msg.tool_calls || []).length ? 'tool_use' : 'end_turn', usage: resp.usage };
+}
+
+function cors(req, env) {
+  const origin = req.headers.get('Origin') || '';
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const ok = !allowed.length || allowed.includes(origin);
+  return { ok, headers: ok && origin ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {} };
+}
+
+async function callClaude(req, env) {
+  const body = {
+    model: env.CLAUDE_MODEL || 'claude-haiku-5-5',
+    max_tokens: Math.min(req.max_tokens || 2048, MAX_TOKENS_CAP),
+    system: req.system, messages: req.messages, tools: req.tools,
+  };
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!r.ok) return { error: j, status: r.status };
+  return { out: { content: j.content, stop_reason: j.stop_reason, usage: j.usage } };
+}
+
+async function callGemma(req, env) {
+  const base = (env.GEMMA_BASE_URL || '').replace(/\/$/, '');
+  if (!base) return { error: { message: 'GEMMA_BASE_URL 미설정' }, status: 500 };
+  const r = await fetch(base + '/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (env.GEMMA_API_KEY || '') },
+    body: JSON.stringify(toOpenAI(req, env.GEMMA_MODEL || 'google/gemma-4-31B-it')),
+  });
+  const j = await r.json();
+  if (!r.ok) return { error: j, status: r.status };
+  return { out: fromOpenAI(j) };
+}
+
+export default {
+  async fetch(request, env) {
+    const c = cors(request, env);
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
+    }
+    const url = new URL(request.url);
+    if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude' }, 200, c.headers);
+    if (url.pathname !== '/v1/step' || request.method !== 'POST') return json({ error: 'not_found' }, 404, c.headers);
+    if (!c.ok) return json({ error: 'origin_not_allowed' }, 403);
+    if (!env.AGENT_TOKEN || request.headers.get('authorization') !== 'Bearer ' + env.AGENT_TOKEN) return json({ error: 'unauthorized' }, 401, c.headers);
+    const len = Number(request.headers.get('content-length') || 0);
+    if (len > MAX_BODY) return json({ error: 'too_large' }, 413, c.headers);
+    let req;
+    try { req = await request.json(); } catch { return json({ error: 'bad_json' }, 400, c.headers); }
+    if (!Array.isArray(req.messages) || !req.messages.length || req.messages.length > MAX_MESSAGES) return json({ error: 'bad_messages' }, 400, c.headers);
+    const provider = req.provider || env.DEFAULT_PROVIDER || 'claude';
+    if (provider !== 'claude' && provider !== 'gemma') return json({ error: 'bad_provider' }, 400, c.headers);
+    const res = provider === 'gemma' ? await callGemma(req, env) : await callClaude(req, env);
+    if (res.error) return json({ error: 'upstream', status: res.status, detail: res.error }, 502, c.headers);
+    return json({ ...res.out, provider }, 200, c.headers);
+  },
+};
