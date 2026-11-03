@@ -6,10 +6,28 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => 
 let state = { running: false, abort: false, tabId: null, waiter: null };
 const say = (m) => chrome.runtime.sendMessage(m).catch(() => {});
 
-async function cfg() { const o = await chrome.storage.local.get(['gateway', 'token', 'provider']); return { gateway: (o.gateway || '').replace(/\/$/, ''), token: o.token || '', provider: o.provider || '' }; }
+// 스토어 설치본은 설정 없이 동작한다: 게이트웨이 주소는 기본값을 쓰고, 인증은 나비웹 로그인 토큰(나비웹 화면에서 작업을 맡길 때 받음, 브라우저를 닫으면 사라짐)을 쓴다.
+// 설정에 운영자 토큰을 직접 넣으면 그것을 우선한다(개발·시험용).
+const DEFAULT_GATEWAY = 'https://naviweb-agent-gateway.tensor-city.workers.dev';
+async function cfg() {
+  const o = await chrome.storage.local.get(['gateway', 'token', 'provider']);
+  const s = (chrome.storage.session && await chrome.storage.session.get('userToken')) || {};
+  return { gateway: (o.gateway || DEFAULT_GATEWAY).replace(/\/$/, ''), token: o.token || s.userToken || '', provider: o.provider || '' };
+}
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 사이트별 접근 허용: 처음 가는 사이트는 브라우저의 허용 창(사용자 승인)을 거쳐야 읽고 조작할 수 있다.
+async function ensureHost(tabId) {
+  const tab = await chrome.tabs.get(tabId);
+  let u; try { u = new URL(tab.url); } catch { throw new Error('이 화면은 조작할 수 없습니다.'); }
+  if (u.protocol !== 'https:') throw new Error('https 사이트만 조작할 수 있습니다.');
+  const origins = [`https://${u.hostname}/*`];
+  if (await chrome.permissions.contains({ origins })) return;
+  if (!(await ask('permit', u.hostname))) { state.abort = true; throw new Error(`${u.hostname} 접근을 허용하지 않아 중단합니다.`); }
+  if (!(await chrome.permissions.contains({ origins }))) { state.abort = true; throw new Error(`${u.hostname} 접근 권한을 받지 못해 중단합니다.`); }
+}
 async function ensureContent(tabId) {
+  await ensureHost(tabId);
   // 주 화면(frame 0)의 연결을 확인한다. 확장 프로그램을 새로 불러온 뒤에는 열려 있던 탭에 연결이 없으므로 모든 프레임에 다시 붙인다.
   try { const r = await chrome.tabs.sendMessage(tabId, { __navi: 'ping' }, { frameId: 0 }); if (r && r.ok) return; } catch { /* 아래에서 주입 */ }
   await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
@@ -56,12 +74,15 @@ async function host(playbook) {
     log: (e) => say({ type: 'log', e }),
     async callModel(body) {
       const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + c.token }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
-      const j = await r.json(); if (!r.ok) throw new Error('모델 호출 실패: ' + (j.error || r.status)); return j;
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) throw new Error('나비웹 로그인이 확인되지 않았습니다. 나비웹에 로그인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.');
+      if (r.status === 429) throw new Error('오늘 사용할 수 있는 도우미 단계 수를 모두 썼습니다. 내일 다시 이용해 주세요.');
+      if (!r.ok) throw new Error('모델 호출 실패: ' + (j.error || r.status)); return j;
     },
     async describe(name, input) { return DOM_TOOLS.has(name) && input && input.ref ? (await toTab(name, input, true)).info : {}; },
     async execTool(name, input) {
       if (DOM_TOOLS.has(name)) return toTab(name, input, false);
-      if (name === 'screenshot') { await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
+      if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
       if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); await wait(2500); return { text: '이동: ' + input.url }; }
       if (name === 'wait') { await wait(Math.min(10, Number(input.seconds) || 1) * 1000); return { text: '대기 완료' }; }
       throw new Error('알 수 없는 도구: ' + name);
@@ -71,11 +92,14 @@ async function host(playbook) {
   };
 }
 
-chrome.runtime.onMessage.addListener((m, _s, send) => {
+chrome.runtime.onMessage.addListener((m, sender, send) => {
   if (m && m.type === 'info') { send({ version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) }); return; }
   if (m && m.type === 'queue') {
     const j = m.job || {};
     if (j.playbook && !PLAYBOOKS[j.playbook]) { send({ ok: false, error: '알 수 없는 절차' }); return; }
+    // 나비웹 로그인 토큰은 나비웹 화면(다리 스크립트)에서 온 것만 받는다.
+    let fromNavi = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; fromNavi = h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { /* 아님 */ }
+    if (fromNavi && typeof j.token === 'string' && j.token && chrome.storage.session) chrome.storage.session.set({ userToken: j.token.slice(0, 4000) });
     chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', at: Date.now() } })
       .then(() => { chrome.action.setBadgeText({ text: '1' }); chrome.action.setBadgeBackgroundColor({ color: '#2f5bd8' }); send({ ok: true }); });
     return true;
@@ -86,7 +110,7 @@ chrome.runtime.onMessage.addListener((m, _s, send) => {
     state = { running: true, abort: false, tabId: null, waiter: null };
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
-      const okHost = (u) => !pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } });
+      const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
       if (!tab || !okHost(tab.url)) { const all = (await chrome.tabs.query({})).filter((t) => okHost(t.url)).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
       if (!tab) throw new Error('대상 탭을 찾지 못했습니다.');

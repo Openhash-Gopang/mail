@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import gw, { toOpenAI, fromOpenAI, withCache } from '../ops/naviweb-agent/gateway/worker.js';
+import gw, { toOpenAI, fromOpenAI, withCache, whoIs } from '../ops/naviweb-agent/gateway/worker.js';
 import { classify, hostAllowed } from '../ops/naviweb-agent/extension/policy.js';
 import { runAgent, buildSystem } from '../ops/naviweb-agent/extension/agent-core.js';
 import { PLAYBOOKS } from '../ops/naviweb-agent/extension/playbooks.js';
@@ -59,7 +59,14 @@ test('정책: 로그인·결제·비밀정보는 넘기고, 제출은 확인, �
   assert.equal(classify('click', {}, { text: '취소' }).act, 'auto');
   assert.equal(classify('navigate', { url: 'https://www.iros.go.kr/a' }).act, 'auto');
   assert.equal(classify('navigate', { url: 'http://www.iros.go.kr/a' }).act, 'deny');
-  assert.equal(classify('navigate', { url: 'https://iros.go.kr.evil.com/' }).act, 'deny');
+  // 기본 사이트 밖은 어디든 갈 수 있지만 이동·입력·클릭마다 승인을 받는다
+  assert.equal(classify('navigate', { url: 'https://example.com/' }).act, 'confirm');
+  assert.equal(classify('click', { ref: 'ref_1' }, { text: '다음', host: 'example.com' }).act, 'confirm');
+  assert.equal(classify('type', { ref: 'ref_1', text: '가나다' }, { name: 'q', host: 'example.com' }).act, 'confirm');
+  assert.equal(classify('click', { ref: 'ref_1' }, { text: '다음', host: 'www.iros.go.kr' }).act, 'auto');
+  assert.equal(classify('click', { ref: 'ref_1' }, { text: '로그인', host: 'example.com' }).act, 'handoff', '로그인은 승인이 아니라 직접 진행');
+  assert.equal(classify('type', { ref: 'ref_1', text: '900101-1234567' }, { name: 'q', host: 'example.com' }).act, 'deny');
+  assert.equal(classify('navigate', { url: 'https://iros.go.kr.evil.com/' }).act, 'confirm', '비슷한 이름의 다른 사이트는 기본 사이트가 아니다');
   assert.equal(hostAllowed('https://ecfs.scourt.go.kr/psp/index.on'), true);
   assert.equal(classify('handoff_to_user', { reason: '로그인' }).act, 'handoff');
 });
@@ -230,4 +237,23 @@ test('callClaude: 캐시 경계를 붙여 보내고 적중·기록 토큰을 응
     await call({ PROMPT_CACHE: 'off' });
     assert.ok(!JSON.stringify(seen[seen.length - 1]).includes('cache_control'));
   } finally { globalThis.fetch = realFetch; }
+});
+
+test('게이트웨이: 나비웹 로그인 사용자도 쓸 수 있고(AUTH_VERIFY_URL), 미설정·거절·한도 초과는 막는다', async () => {
+  const real = globalThis.fetch; const calls = [];
+  globalThis.fetch = async (u, o) => {
+    if (String(u).startsWith('https://auth.example/')) { calls.push(o.headers.authorization); return o.headers.authorization === 'Bearer user-ok' ? new Response(JSON.stringify({ mail_id: 'peter' }), { status: 200 }) : new Response('{}', { status: 401 }); }
+    return new Response(JSON.stringify({ content: [{ type: 'text', text: 'ok' }], usage: { input_tokens: 1, output_tokens: 1 } }), { status: 200 });
+  };
+  try {
+    const env = { AGENT_TOKEN: 'tok', ANTHROPIC_API_KEY: 'k', AUTH_VERIFY_URL: 'https://auth.example/me', USER_DAILY_STEPS: '2' };
+    const req = (t) => new Request('https://g/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', authorization: t }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }) });
+    assert.equal((await whoIs(req('Bearer tok'), env)).operator, true);
+    assert.equal((await whoIs(req('Bearer user-ok'), { AGENT_TOKEN: 'tok' })), null, 'AUTH_VERIFY_URL 이 없으면 사용자 토큰은 거부');
+    assert.equal((await gw.fetch(req('Bearer nope'), env)).status, 401);
+    assert.equal((await gw.fetch(req('Bearer user-ok'), env)).status, 200);
+    assert.equal((await gw.fetch(req('Bearer user-ok'), env)).status, 200);
+    assert.equal((await gw.fetch(req('Bearer user-ok'), env)).status, 429, '하루 한도');
+    assert.equal((await gw.fetch(req('Bearer tok'), env)).status, 200, '운영자는 한도 없음');
+  } finally { globalThis.fetch = real; }
 });

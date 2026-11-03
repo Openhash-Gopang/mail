@@ -31,8 +31,10 @@
     });
   }
   function detect() { return call('agent-ping', {}, 1200).then(function (m) { return m && m.ok ? { version: m.version, playbooks: m.playbooks || [] } : null; }); }
-  function queue(job) { return call('agent-queue', { job: job }, 3000).then(function (m) { return !!(m && m.ok); }); }
-  var api = { suggest: suggest, detect: detect, queue: queue };
+  function queue(job) { try { if (!job.token && window.KAuth && KAuth.getToken) job = Object.assign({}, job, { token: KAuth.getToken() || '' }); } catch (e) { /* 로그인 전 */ } return call('agent-queue', { job: job }, 3000).then(function (m) { return !!(m && m.ok); }); }
+  // Chrome 웹 스토어에 등록한 뒤 이 주소를 채운다(비어 있으면 설치 안내를 보이지 않는다).
+  var STORE_URL = '';
+  var api = { suggest: suggest, detect: detect, queue: queue, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);

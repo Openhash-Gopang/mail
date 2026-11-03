@@ -215,6 +215,29 @@ async function callGemma(req, env) {
   return { out: fromOpenAI(j) };
 }
 
+// 누가 요청했는지 확인한다. 운영자 토큰이면 운영자, 아니면 AUTH_VERIFY_URL(나비웹 로그인 확인 주소)에 같은 Authorization 을 보내
+// 200 이면 로그인한 사용자. AUTH_VERIFY_URL 이 없으면 운영자 토큰만 통과한다(기본 거부). 응답 JSON 의 id/guid/user_id/sub/mail_id 중 첫 값이 사용자 식별자.
+export async function whoIs(request, env) {
+  const auth = request.headers.get('authorization') || '';
+  if (env.AGENT_TOKEN && auth === 'Bearer ' + env.AGENT_TOKEN) return { sub: 'operator', operator: true };
+  if (!env.AUTH_VERIFY_URL || !auth) return null;
+  try {
+    const r = await fetch(env.AUTH_VERIFY_URL, { headers: { authorization: auth } });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => ({}));
+    const sub = j.id || j.guid || j.user_id || j.sub || j.mail_id || j.kmail_address || (j.user && (j.user.id || j.user.guid));
+    return sub ? { sub: String(sub).slice(0, 80) } : null;
+  } catch { return null; }
+}
+// 사용자별 하루 단계 수 제한(이 실행 환경 안에서의 최선 노력. 전체 상한은 Cloudflare 속도 제한 규칙과 Anthropic 지출 한도로 둔다).
+const usage = new Map();
+function overQuota(sub, env) {
+  const day = new Date().toISOString().slice(0, 10), max = Number(env.USER_DAILY_STEPS || 400);
+  const u = usage.get(sub);
+  if (!u || u.day !== day) { if (usage.size > 5000) usage.clear(); usage.set(sub, { day, n: 1 }); return false; }
+  return ++u.n > max;
+}
+
 export default {
   async fetch(request, env) {
     const c = cors(request, env);
@@ -225,7 +248,9 @@ export default {
     if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude' }, 200, c.headers);
     if (url.pathname !== '/v1/step' || request.method !== 'POST') return json({ error: 'not_found' }, 404, c.headers);
     if (!c.ok) return json({ error: 'origin_not_allowed' }, 403);
-    if (!env.AGENT_TOKEN || request.headers.get('authorization') !== 'Bearer ' + env.AGENT_TOKEN) return json({ error: 'unauthorized' }, 401, c.headers);
+    const who = await whoIs(request, env);
+    if (!who) return json({ error: 'unauthorized' }, 401, c.headers);
+    if (!who.operator && overQuota(who.sub, env)) return json({ error: 'daily_limit' }, 429, c.headers);
     const len = Number(request.headers.get('content-length') || 0);
     if (len > MAX_BODY) return json({ error: 'too_large' }, 413, c.headers);
     let req;

@@ -1,0 +1,30 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>Chrome 웹 스토어 제출 자료 — 나비웹 서류 도우미</title>
+<style>body{font:15px/1.7 system-ui,sans-serif;max-width:820px;margin:0 auto;padding:24px 16px}h2{margin-top:28px}code{background:#f1f3f5;padding:1px 4px;border-radius:4px}pre{background:#f1f3f5;padding:12px;white-space:pre-wrap;border-radius:6px}</style></head><body>
+<h1>Chrome 웹 스토어 제출 자료</h1>
+<h2>순서</h2>
+<ol>
+<li><a href="https://chrome.google.com/webstore/devconsole">개발자 대시보드</a>에서 개발자 등록(1회 5달러, 본인 인증).</li>
+<li><code>bash ops/naviweb-agent/pack-extension.sh</code> 로 만든 zip 업로드.</li>
+<li>아래 문구를 붙여 넣고, 개인정보 처리방침 주소에 <code>https://naviweb.kr/agent-privacy.html</code> 입력.</li>
+<li>공개 범위는 처음에는 <b>비공개(테스트 사용자)</b> 또는 <b>링크로만 공개</b>로 시험한 뒤 공개로 전환.</li>
+<li>승인 후 발급되는 확장 ID 를 게이트웨이 <code>ALLOWED_ORIGINS</code>(wrangler.toml 과 Cloudflare 대시보드 둘 다)에 <code>chrome-extension://&lt;ID&gt;</code> 로 추가하고, <code>agent-bridge.js</code> 의 <code>STORE_URL</code> 에 스토어 주소를 넣는다.</li>
+</ol>
+<h2>상품 설명(요약 132자 이내)</h2>
+<pre>나비웹에서 맡긴 등기·법원 서류 절차를 단계별로 돕습니다. 사이트마다 승인을 받고, 로그인·결제는 직접 합니다.</pre>
+<h2>상품 설명(본문)</h2>
+<pre>나비웹 서류 도우미는 naviweb.kr 에서 서류를 작성한 뒤 이어지는 절차(예: 인터넷등기소에서 법인등기사항증명서를 전자소송용으로 신청)를 사용자의 브라우저에서 AI가 단계별로 돕는 확장 프로그램입니다.
+
+• 사용자 승인이 먼저입니다: 작업은 사용자가 시작 버튼을 눌러야 하고, 처음 가는 사이트는 사용자가 허용해야 하며, 제출·발급·전송은 그때마다 확인을 받습니다.
+• 로그인, 공동인증서·간편인증, 결제, 보안문자는 사용자가 직접 합니다. 비밀번호·카드번호·주민등록번호는 입력하지 않습니다.
+• 사용자의 브라우저와 로그인 상태를 그대로 사용하므로 공동인증서도 쓸 수 있습니다.
+• 나비웹에 로그인한 사용자만 쓸 수 있습니다.</pre>
+<h2>권한 사용 이유(심사 질문용)</h2>
+<pre>activeTab/scripting/tabs/webNavigation: 사용자가 맡긴 작업의 대상 탭과 그 안의 프레임 화면 구성을 읽고 사용자 승인 후 클릭·입력하기 위해.
+storage: 나비웹에서 맡긴 작업(절차 이름·지시문)과 설정을 임시 저장하기 위해. 세션 저장소에는 나비웹 로그인 토큰을 브라우저를 닫을 때까지만 둔다.
+sidePanel: 진행 상황과 사용자 승인(허용/확인/직접 진행) 창을 표시하기 위해.
+optional_host_permissions(https://*/*): 서류 절차가 여러 기관 사이트에 걸치므로, 사용자가 사이트별로 직접 허용한 경우에만 그 사이트에서 동작하기 위해. 설치 시에는 부여되지 않는다.
+host_permissions(naviweb.kr, hondi.net): 나비웹 화면에서 확장 프로그램 설치 여부 확인과 작업 맡기기 신호를 받기 위해.
+원격 코드 없음: 모든 코드는 패키지에 포함되어 있다. AI 모델 응답은 데이터(도구 호출 정보)로만 쓰이고 코드로 실행되지 않는다.</pre>
+<h2>단일 목적 설명</h2>
+<pre>나비웹 서류 작성 후속 절차를 사용자 승인 아래 단계별로 돕는다.</pre>
+</body></html>
