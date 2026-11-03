@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "나비웹 서류 도우미",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "서류 절차(등기 발급 등)를 단계별로 돕는 에이전트. 로그인·인증서·결제는 사용자가 직접 합니다.",
   "permissions": ["activeTab", "scripting", "storage", "sidePanel", "tabs", "webNavigation"],
   "host_permissions": ["https://*.iros.go.kr/*", "https://ecfs.scourt.go.kr/*", "https://*.gov.kr/*", "https://*.hondi.net/*", "https://*.naviweb.kr/*"],
