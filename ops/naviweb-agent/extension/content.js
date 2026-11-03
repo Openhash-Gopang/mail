@@ -2,29 +2,46 @@
 (() => {
   if (window.__naviAgent) return;
   const refs = new Map(); let seq = 0;
-  const SEL = 'a[href],button,input,select,textarea,label,[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[onclick]';
+  const SEL = 'a,button,input,select,textarea,label,area,img[alt],[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[tabindex],[onclick]';
+  const PTR = 'span,div,li,td,img,i';
   const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
   const visible = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
   const nameOf = (el) => clean(el.getAttribute('aria-label') || (el.labels && el.labels[0] && el.labels[0].innerText) || el.placeholder || el.title || el.alt
-    || (el.tagName === 'INPUT' && /button|submit/.test(el.type) ? el.value : '') || el.innerText || el.textContent).slice(0, 80);
+    || (el.tagName === 'INPUT' && /button|submit/.test(el.type) ? el.value : '') || el.innerText || el.textContent || (el.querySelector && el.querySelector('img') && (el.querySelector('img').alt || el.querySelector('img').title)) || el.getAttribute('value') || el.name || el.id).slice(0, 80);
   const kind = (el) => el.tagName === 'INPUT' ? `input[${el.type}]` : el.tagName === 'SELECT' ? 'select' : (el.getAttribute('role') || el.tagName.toLowerCase());
   function refOf(el) { for (const [k, v] of refs) if (v === el) return k; const k = 'ref_' + (++seq); refs.set(k, el); return k; }
   function describe(el) {
     return { tag: el.tagName.toLowerCase(), type: el.type || '', name: el.name || el.id || '', label: nameOf(el), text: nameOf(el), autocomplete: el.autocomplete || '' };
   }
+  function candidates() {
+    const set = new Set(document.querySelectorAll(SEL));
+    for (const el of document.querySelectorAll(PTR)) {
+      if (set.has(el) || el.closest('a,button,[onclick]')) continue;
+      if ((el.innerText || '').length > 30 && el.tagName !== 'IMG') continue;
+      try { if (getComputedStyle(el).cursor === 'pointer') set.add(el); } catch (e) { /* skip */ }
+    }
+    return [...set];
+  }
   function list(filter) {
-    const out = [];
-    for (const el of document.querySelectorAll(SEL)) {
+    const vh = window.innerHeight; const inView = []; const rest = [];
+    for (const el of candidates()) {
       if (!visible(el)) continue;
       const n = nameOf(el);
-      if (filter && !(n.toLowerCase().includes(filter) || (el.name || '').toLowerCase().includes(filter))) continue;
+      if (filter && !(n.toLowerCase().includes(filter) || (el.name || '').toLowerCase().includes(filter) || (el.id || '').toLowerCase().includes(filter))) continue;
+      const r = el.getBoundingClientRect();
+      (r.bottom > 0 && r.top < vh ? inView : rest).push([el, n]);
+    }
+    const out = []; let chars = 0; let skipped = 0;
+    for (const [el, n] of [...inView, ...rest]) {
       let line = `${refOf(el)} ${kind(el)} "${n}"`;
       if (el.tagName === 'INPUT' && /checkbox|radio/.test(el.type)) line += el.checked ? ' [선택됨]' : ' [해제]';
       else if (el.tagName === 'SELECT') line += ` 값="${clean(el.options[el.selectedIndex] && el.options[el.selectedIndex].text)}" 옵션=[${[...el.options].slice(0, 40).map((o) => clean(o.text)).join(' | ')}]`;
       else if (el.tagName === 'INPUT' && el.type !== 'password' && el.value && !/button|submit|radio|checkbox/.test(el.type)) line += ` 값="${clean(el.value).slice(0, 60)}"`;
-      out.push(line);
-      if (out.length >= 220) break;
+      if (el.id) line += ` #${el.id}`;
+      if (chars + line.length > 9000) { skipped++; continue; }
+      out.push(line); chars += line.length + 1;
     }
+    if (skipped) out.push(`… 화면 아래쪽 ${skipped}개 생략. scroll 하거나 find 로 좁혀 찾으세요.`);
     return out.join('\n') || '(보이는 요소 없음)';
   }
   const need = (ref) => { const el = refs.get(ref); if (!el || !el.isConnected) throw new Error('ref 가 만료되었습니다. read_page 를 다시 호출하세요.'); return el; };
