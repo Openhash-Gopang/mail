@@ -118,7 +118,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : 'about:blank', active: true }); await wait(2500); }
       state.tabId = tab.id;
-      say({ type: 'log', e: { kind: 'say', text: `대상 탭: ${tab.title} (${tab.url})` } });
+      say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
       const res = await runAgent({ goal, playbook: pb, host: await host(pb) });
       say({ type: 'done', res });
