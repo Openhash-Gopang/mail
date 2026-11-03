@@ -10,8 +10,11 @@ async function cfg() { const o = await chrome.storage.local.get(['gateway', 'tok
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function ensureContent(tabId) {
-  try { await chrome.tabs.sendMessage(tabId, { __navi: 'ping' }); }
-  catch { await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] }); }
+  // 주 화면(frame 0)의 연결을 확인한다. 확장 프로그램을 새로 불러온 뒤에는 열려 있던 탭에 연결이 없으므로 모든 프레임에 다시 붙인다.
+  try { const r = await chrome.tabs.sendMessage(tabId, { __navi: 'ping' }, { frameId: 0 }); if (r && r.ok) return; } catch { /* 아래에서 주입 */ }
+  await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
+  try { await chrome.tabs.sendMessage(tabId, { __navi: 'ping' }, { frameId: 0 }); }
+  catch { throw new Error('이 화면에 연결하지 못했습니다. 인터넷등기소 탭을 새로고침(F5)한 뒤 다시 시작하세요.'); }
 }
 // 프레임이 여럿이면 각 프레임에 보내고, 하위 프레임의 ref 는 "f<번호>.ref_N" 로 구분한다.
 async function frames(tabId) {
@@ -31,7 +34,8 @@ async function toTab(name, input, describe) {
       try { const r = await send1(state.tabId, id, { __navi: 'tool', name, input, describe });
         if (r && r.ok && r.text && !/^\(보이는 요소 없음\)$/.test(r.text)) parts.push(id === 0 ? r.text : `[프레임 ${id}]\n` + r.text.replace(/\bref_(\d+)/g, `f${id}.ref_$1`)); } catch { /* 응답 없는 프레임 */ }
     }
-    return { ok: true, text: parts.join('\n') || '(보이는 요소 없음)' };
+    if (!parts.length) throw new Error('화면에서 읽을 요소가 없습니다. 탭을 새로고침(F5)하거나 로딩이 끝난 뒤 다시 시도하세요.');
+    return { ok: true, text: parts.join('\n') };
   }
   const r = await send1(state.tabId, 0, { __navi: 'tool', name, input, describe });
   if (!r || !r.ok) throw new Error((r && r.error) || '페이지 응답 없음'); return r;
