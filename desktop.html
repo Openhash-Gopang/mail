@@ -262,6 +262,15 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
 .doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
 .doc-combo-pop[hidden]{display:none}
+/* 나비 숫자 코드(2026-11-03): 전화번호 → 10칸 숫자 코드, 프로필 → 웹 페이지 → 일련번호 */
+.nc-pop{width:min(440px,90vw);left:auto;right:0}
+.nc-sec{padding:6px 2px 8px}.nc-sec+.nc-sec{border-top:1px solid var(--bdr);margin-top:6px;padding-top:10px}
+.nc-sec b{display:block;font-size:14px;margin-bottom:2px}.nc-sec small{display:block;color:var(--txt2,#6b7280);font-size:12.5px;line-height:1.5;margin:2px 0 6px}
+.nc-cells{display:flex;gap:4px;margin:8px 0 4px;flex-wrap:wrap}
+.nc-cells span{width:30px;height:40px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bdr);border-radius:6px;font:700 20px/1 ui-monospace,Menlo,monospace;background:var(--bg)}
+.nc-cells span.z{color:var(--txt2,#9aa0a6)}
+.nc-msg{min-height:18px;font-size:13px;margin:2px 0}.nc-msg.bad{color:#b42318}.nc-msg.ok{color:#0a7d33}
+.nc-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .doc-combo-q{width:100%;box-sizing:border-box;min-height:36px;border:1px solid var(--bdr);border-radius:8px;padding:0 10px;font:inherit;font-size:14px;background:var(--bg);color:var(--txt)}
 .doc-combo-list{max-height:min(340px,50vh);overflow-y:auto;margin-top:6px}
 .doc-combo-it{display:block;width:100%;text-align:left;border:0;background:none;border-radius:6px;padding:7px 9px;cursor:pointer;font:inherit;color:var(--txt)}
@@ -970,6 +979,27 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           </div>
         </div>
         <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
+        <div class="doc-combo" id="cmp-nabi-combo">
+          <button type="button" class="doc-combo-btn" id="cmp-nabi-combo-btn" aria-haspopup="dialog" aria-expanded="false" onclick="_cmpNabiToggle(event)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/></svg><span>나비 숫자 코드</span></button>
+          <div class="doc-combo-pop nc-pop" id="cmp-nabi-combo-pop" hidden role="dialog" aria-label="나비 숫자 코드">
+            <div class="nc-sec">
+              <b>전화번호 → 숫자 코드</b>
+              <small>전화번호가 곧 나비 숫자 코드가 됩니다. 휴대폰은 앞에 00, 유선은 0을 채워 10칸으로 만듭니다.</small>
+              <input type="tel" id="nc-phone" class="doc-combo-q" inputmode="tel" placeholder="예: 064-980-1234 또는 010-1234-5678" autocomplete="off" aria-label="전화번호" oninput="_ncPhoneUpdate()" onkeydown="if(event.key==='Escape')_cmpNabiClose()">
+              <div class="nc-cells" id="nc-cells" aria-live="polite"></div>
+              <div class="nc-msg" id="nc-msg" role="status"></div>
+              <div class="nc-row"><button type="button" class="btn btn-outline btn-sm" id="nc-copy" onclick="_ncCopy()" disabled>코드 복사</button></div>
+            </div>
+            <div class="nc-sec">
+              <b>프로필 → 웹 페이지 → 일련번호</b>
+              <small>내 프로필(기관·사업장 소개)을 웹 페이지로 만들고, 전화번호 인증 뒤 일련번호를 받아 간판·명함에 붙입니다. 코드를 스캔하면 그 곳의 AI 비서가 열립니다.</small>
+              <div class="nc-row">
+                <a class="btn btn-outline btn-sm" href="https://hondi.net/pages/digit-code.html" target="_blank" rel="noopener">번호 받기·등록 ↗</a>
+                <a class="btn btn-outline btn-sm" href="https://hondi.net/profile.html" target="_blank" rel="noopener">프로필 만들기 ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -2230,6 +2260,56 @@ document.addEventListener('change', (e) => {
 });
 function _guideShow(on) { const d = document.getElementById('cmp-guide-doc'); if (d) d.hidden = !on; }
 function _guideReset() { _guideShow(false); const ta = document.getElementById('cmp-guide-text'), v = document.getElementById('cmp-guide-view'), eb = document.getElementById('cmp-guide-edit'); if (ta) ta.hidden = true; if (v) v.hidden = false; if (eb) eb.setAttribute('aria-pressed', 'false'); }
+// ── 나비 숫자 코드(2026-11-03): 전화번호 → 10칸 코드. hondi-digit-code.js phoneToDigits 와 같은 규칙 ──
+// 휴대폰 010-XXXX-XXXX → '00'+8자리 / 유선 → 앞의 0을 뺀 지역번호+가입자번호(9~10자리), 9자리면 앞에 '0'을 채운다.
+const _NC_AREA = ['2','31','32','33','41','42','43','44','51','52','53','54','55','61','62','63','64'];
+function _ncPhoneToDigits(raw) {
+  let t = String(raw || '').replace(/[\s\-().]/g, '');
+  if (!t) return { empty: true };
+  if (t.startsWith('+82')) t = '0' + t.slice(3);
+  if (!/^\d+$/.test(t)) return { err: '숫자와 하이픈만 입력해 주세요.' };
+  if (/^010/.test(t)) {
+    if (t.length < 11) return { err: '휴대폰 번호가 짧습니다(010 + 8자리).' };
+    if (t.length > 11) return { err: '휴대폰 번호가 깁니다(010 + 8자리).' };
+    return { digits: '00' + t.slice(3), kind: '휴대폰' };
+  }
+  if (t[0] !== '0') return { err: '지역번호(예: 064)부터 입력해 주세요.' };
+  const r = t.slice(1);
+  const area = r[0] === '2' ? '2' : r.slice(0, 2);
+  if (!_NC_AREA.includes(area)) return { err: '지원하지 않는 지역번호입니다: 0' + area };
+  if (r.length < 9) return { err: '번호가 짧습니다.' };
+  if (r.length > 10) return { err: '번호가 깁니다.' };
+  return { digits: r.length === 9 ? '0' + r : r, kind: '유선(' + '0' + area + ')' };
+}
+let _ncCur = '';
+function _ncPhoneUpdate() {
+  const v = document.getElementById('nc-phone').value, r = _ncPhoneToDigits(v);
+  const cells = document.getElementById('nc-cells'), msg = document.getElementById('nc-msg'), cp = document.getElementById('nc-copy');
+  cells.replaceChildren(); _ncCur = '';
+  if (r.empty) { msg.textContent = ''; msg.className = 'nc-msg'; cp.disabled = true; return; }
+  if (r.err) { msg.textContent = r.err; msg.className = 'nc-msg bad'; cp.disabled = true; return; }
+  let lead = true;
+  for (const ch of r.digits) { const sp = document.createElement('span'); sp.textContent = ch; if (lead && ch === '0') sp.className = 'z'; else lead = false; cells.appendChild(sp); }
+  _ncCur = r.digits; cp.disabled = false;
+  msg.textContent = r.kind + ' 번호 → 숫자 코드 ' + r.digits; msg.className = 'nc-msg ok';
+}
+function _ncCopy() {
+  if (!_ncCur) return;
+  const m = document.getElementById('nc-msg');
+  const done = () => { m.textContent = '복사했습니다: ' + _ncCur; m.className = 'nc-msg ok'; };
+  try { navigator.clipboard.writeText(_ncCur).then(done, () => {}); } catch (e) {}
+}
+function _cmpNabiClose() { const pop = document.getElementById('cmp-nabi-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-nabi-combo-btn').setAttribute('aria-expanded', 'false'); } }
+function _cmpNabiToggle(e) {
+  if (e) e.stopPropagation();
+  _cmpDocComboClose(); _cmpOrgClose(); _cmpExpClose(); _cmpGovClose();
+  const pop = document.getElementById('cmp-nabi-combo-pop'), open = pop.hidden;
+  pop.hidden = !open; document.getElementById('cmp-nabi-combo-btn').setAttribute('aria-expanded', String(open));
+  if (open) document.getElementById('nc-phone').focus();
+}
+document.addEventListener('click', (e) => { if (!e.target.closest || !e.target.closest('#cmp-nabi-combo')) _cmpNabiClose(); });
+// 다른 드롭다운 단추는 클릭을 멈추므로(stopPropagation), 열릴 때 이 창도 닫도록 감싼다.
+['_cmpDocComboToggle','_cmpOrgToggle','_cmpExpToggle','_cmpGovToggle'].forEach(n => { const f = window[n]; if (typeof f === 'function') window[n] = function () { _cmpNabiClose(); return f.apply(this, arguments); }; });
 function _cmpGuidePick() {
   _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
   _guideLoad();
