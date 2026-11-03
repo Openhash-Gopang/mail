@@ -239,21 +239,24 @@ test('callClaude: 캐시 경계를 붙여 보내고 적중·기록 토큰을 응
   } finally { globalThis.fetch = realFetch; }
 });
 
-test('게이트웨이: 나비웹 로그인 사용자도 쓸 수 있고(AUTH_VERIFY_URL), 미설정·거절·한도 초과는 막는다', async () => {
-  const real = globalThis.fetch; const calls = [];
-  globalThis.fetch = async (u, o) => {
-    if (String(u).startsWith('https://auth.example/')) { calls.push(o.headers.authorization); return o.headers.authorization === 'Bearer user-ok' ? new Response(JSON.stringify({ mail_id: 'peter' }), { status: 200 }) : new Response('{}', { status: 401 }); }
+test('게이트웨이: 나비웹 로그인 사용자(X-Navi-Token, 한글 포함)도 쓸 수 있고, 미설정·거절·한도 초과는 막는다', async () => {
+  const real = globalThis.fetch; const seenTokens = [];
+  globalThis.fetch = async (u) => {
+    if (String(u).startsWith('https://auth.example/')) { const tok = new URL(String(u)).searchParams.get('phone_verify_token'); seenTokens.push(tok); return tok === 'user-ok-한글' ? new Response(JSON.stringify({ mail_id: 'peter' }), { status: 200 }) : new Response('{}', { status: 400 }); }
     return new Response(JSON.stringify({ content: [{ type: 'text', text: 'ok' }], usage: { input_tokens: 1, output_tokens: 1 } }), { status: 200 });
   };
   try {
     const env = { AGENT_TOKEN: 'tok', ANTHROPIC_API_KEY: 'k', AUTH_VERIFY_URL: 'https://auth.example/me', USER_DAILY_STEPS: '2' };
-    const req = (t) => new Request('https://g/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', authorization: t }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }) });
-    assert.equal((await whoIs(req('Bearer tok'), env)).operator, true);
-    assert.equal((await whoIs(req('Bearer user-ok'), { AGENT_TOKEN: 'tok' })), null, 'AUTH_VERIFY_URL 이 없으면 사용자 토큰은 거부');
-    assert.equal((await gw.fetch(req('Bearer nope'), env)).status, 401);
-    assert.equal((await gw.fetch(req('Bearer user-ok'), env)).status, 200);
-    assert.equal((await gw.fetch(req('Bearer user-ok'), env)).status, 200);
-    assert.equal((await gw.fetch(req('Bearer user-ok'), env)).status, 429, '하루 한도');
-    assert.equal((await gw.fetch(req('Bearer tok'), env)).status, 200, '운영자는 한도 없음');
+    const req = (h) => new Request('https://g/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...h }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }) });
+    const user = { 'x-navi-token': encodeURIComponent('user-ok-한글') };
+    assert.equal((await whoIs(req({ authorization: 'Bearer tok' }), env)).operator, true);
+    assert.equal(await whoIs(req(user), { AGENT_TOKEN: 'tok' }), null, 'AUTH_VERIFY_URL 이 없으면 사용자 토큰은 거부');
+    assert.equal((await gw.fetch(req({ 'x-navi-token': encodeURIComponent('nope') }), env)).status, 401);
+    assert.equal((await gw.fetch(req({ 'x-navi-token': '%E0%A4%A' }), env)).status, 401, '깨진 인코딩');
+    assert.equal((await gw.fetch(req(user), env)).status, 200);
+    assert.ok(seenTokens.includes('user-ok-한글'), '풀어서 인증 서버에 전달');
+    assert.equal((await gw.fetch(req(user), env)).status, 200);
+    assert.equal((await gw.fetch(req(user), env)).status, 429, '하루 한도');
+    assert.equal((await gw.fetch(req({ authorization: 'Bearer tok' }), env)).status, 200, '운영자는 한도 없음');
   } finally { globalThis.fetch = real; }
 });

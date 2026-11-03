@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "나비웹 서류 도우미",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "서류 절차(등기 발급 등)를 단계별로 돕는 에이전트. 사이트마다, 그리고 중요한 동작마다 사용자 승인을 받습니다. 로그인·인증서·결제는 사용자가 직접 합니다.",
   "permissions": [
     "activeTab",

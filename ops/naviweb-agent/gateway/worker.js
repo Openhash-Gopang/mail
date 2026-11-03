@@ -220,9 +220,14 @@ async function callGemma(req, env) {
 export async function whoIs(request, env) {
   const auth = request.headers.get('authorization') || '';
   if (env.AGENT_TOKEN && auth === 'Bearer ' + env.AGENT_TOKEN) return { sub: 'operator', operator: true };
-  if (!env.AUTH_VERIFY_URL || !auth) return null;
+  // 나비웹 로그인 토큰은 한글이 섞여 있어 HTTP 헤더에 그대로 못 싣는다. 확장이 encodeURIComponent 한 값을 X-Navi-Token 으로 보내고,
+  // 여기서 풀어 나비웹 인증 서버에 쿼리(phone_verify_token)로 전달한다(나비웹 KAuth 와 같은 방식).
+  const enc = request.headers.get('x-navi-token') || '';
+  if (!env.AUTH_VERIFY_URL || !enc || enc.length > 6000) return null;
+  let tok; try { tok = decodeURIComponent(enc); } catch { return null; }
   try {
-    const r = await fetch(env.AUTH_VERIFY_URL, { headers: { authorization: auth } });
+    const u = new URL(env.AUTH_VERIFY_URL); u.searchParams.set(env.AUTH_VERIFY_PARAM || 'phone_verify_token', tok);
+    const r = await fetch(u.toString());
     if (!r.ok) return null;
     const j = await r.json().catch(() => ({}));
     const sub = j.id || j.guid || j.user_id || j.sub || j.mail_id || j.kmail_address || (j.user && (j.user.id || j.user.guid));
@@ -242,7 +247,7 @@ export default {
   async fetch(request, env) {
     const c = cors(request, env);
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
+      return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type, x-navi-token', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
     }
     const url = new URL(request.url);
     if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude' }, 200, c.headers);
