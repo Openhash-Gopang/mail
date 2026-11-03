@@ -39,6 +39,7 @@
       else if (el.tagName === 'SELECT') line += ` 값="${clean(el.options[el.selectedIndex] && el.options[el.selectedIndex].text)}" 옵션=[${[...el.options].slice(0, 40).map((o) => clean(o.text)).join(' | ')}]`;
       else if (el.tagName === 'INPUT' && el.type !== 'password' && el.value && !/button|submit|radio|checkbox/.test(el.type)) line += ` 값="${clean(el.value).slice(0, 60)}"`;
       if (el.id) line += ` #${el.id}`;
+      const tr = el.closest && el.closest('tr'); if (tr && /checkbox|radio|button|submit/.test(el.type || el.tagName.toLowerCase() === 'a' && 'button')) line += ` 행="${clean(tr.innerText).slice(0, 140)}"`;
       if (chars + line.length > 9000) { skipped++; continue; }
       out.push(line); chars += line.length + 1;
     }
