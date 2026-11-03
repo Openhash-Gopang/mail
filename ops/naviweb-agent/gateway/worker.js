@@ -126,7 +126,8 @@ export function fromOpenAI(resp) {
 function cors(req, env) {
   const origin = req.headers.get('Origin') || '';
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const ok = !allowed.length || allowed.includes(origin);
+  // Origin 이 없는 요청은 브라우저가 아닌 서버(원격 러너)이다. 어차피 토큰 검사를 통과해야 한다.
+  const ok = !origin || !allowed.length || allowed.includes(origin);
   return { ok, headers: ok && origin ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {} };
 }
 
@@ -215,8 +216,58 @@ async function callGemma(req, env) {
   return { out: fromOpenAI(j) };
 }
 
+// ── 원격 브라우저 세션 티켓 ──────────────────────────────────────────────────
+// 방문자 브라우저 → /v1/ticket(여기) → 서명된 티켓 → 원격 브라우저 러너(WebSocket)에 제시.
+// 티켓은 "<payload b64url>.<HMAC-SHA256 b64url>" 이고 payload = { sub, exp(초), jti }. 러너가 같은 TICKET_SECRET 으로 검증한다.
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const enc = new TextEncoder();
+export async function signTicket(payload, secret) {
+  const body = b64u(enc.encode(JSON.stringify(payload)));
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body));
+  return body + '.' + b64u(sig);
+}
+// 누가 요청했는지 확인한다. 운영자 토큰이면 운영자, 아니면 AUTH_VERIFY_URL(나비웹 로그인 확인 주소)에 같은 Authorization 을 보내 200 이면 로그인한 사용자.
+// AUTH_VERIFY_URL 이 없으면 운영자 토큰만 통과한다(기본 거부). 응답 JSON 의 id/guid/user_id/sub 중 첫 값을 사용자 식별자로 쓴다.
+export async function whoIs(request, env) {
+  const auth = request.headers.get('authorization') || '';
+  if (env.AGENT_TOKEN && auth === 'Bearer ' + env.AGENT_TOKEN) return { sub: 'operator' };
+  if (!env.AUTH_VERIFY_URL || !auth) return null;
+  try {
+    const r = await fetch(env.AUTH_VERIFY_URL, { headers: { authorization: auth } });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => ({}));
+    const sub = j.id || j.guid || j.user_id || j.sub || j.mail_id || j.kmail_address || (j.user && (j.user.id || j.user.guid));
+    return sub ? { sub: String(sub).slice(0, 80) } : null;
+  } catch { return null; }
+}
+function ticketCors(req, env) {
+  const origin = req.headers.get('Origin') || '';
+  const allowed = (env.TICKET_ORIGINS || 'https://naviweb.kr').split(',').map((x) => x.trim()).filter(Boolean);
+  const ok = !!origin && allowed.includes(origin);
+  return { ok, headers: ok ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {} };
+}
+
 export default {
   async fetch(request, env) {
+    const pathname = new URL(request.url).pathname;
+    if (pathname === '/v1/ticket') {
+      const tc = ticketCors(request, env);
+      if (request.method === 'OPTIONS') return new Response(null, { status: tc.ok ? 204 : 403, headers: { ...tc.headers, 'access-control-allow-headers': 'authorization, content-type', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '600' } });
+      if (request.method !== 'POST') return json({ error: 'not_found' }, 404, tc.headers);
+      if (!tc.ok && request.headers.get('Origin')) return json({ error: 'origin_not_allowed' }, 403);
+      if (!env.TICKET_SECRET || !env.RUNNER_WS_URL) return json({ error: 'remote_not_configured' }, 503, tc.headers);
+      const who = await whoIs(request, env);
+      if (!who) return json({ error: 'unauthorized' }, 401, tc.headers);
+      const exp = Math.floor(Date.now() / 1000) + 120;
+      const jti = crypto.randomUUID();
+      return json({ ticket: await signTicket({ sub: who.sub, exp, jti }, env.TICKET_SECRET), ws: env.RUNNER_WS_URL, exp }, 200, tc.headers);
+    }
+    return handle(request, env);
+  },
+};
+
+async function handle(request, env) {
     const c = cors(request, env);
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
@@ -239,5 +290,4 @@ export default {
     const res = provider === 'gemma' ? await callGemma(req, env) : await callClaude(req, env);
     if (res.error) return json({ error: 'upstream', status: res.status, detail: res.error }, 502, c.headers);
     return json({ ...res.out, provider, input_estimate: fit.exact ?? fit.est, trimmed: fit.dropped }, 200, c.headers);
-  },
-};
+}

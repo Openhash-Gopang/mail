@@ -1,0 +1,10 @@
+{
+  "name": "naviweb-agent-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "나비웹 서류 작성 후속 절차용 원격 브라우저 러너(세션별 격리 Chromium + 에이전트 루프 + 화면 스트림)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "playwright-core": "1.58.2", "ws": "8.18.3" }
+}
