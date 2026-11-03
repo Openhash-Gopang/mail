@@ -234,6 +234,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ex-foi svg{flex:none}.ex-foi[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 /* 나비 길잡이(2026-11-03): 입력창이 과제 대화창이 되고, 그 아래에 과제 계획서가 대화에 따라 실시간으로 갱신된다. */
 .ex-guide svg{flex:none}.ex-guide[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
+.ex-nabicode svg{flex:none}.ex-nabicode[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 #tab-compose[data-mode="org"].guide-on #cmp-guide-doc{display:flex;flex-direction:column;flex:1.4 1 0;min-height:0;margin-top:8px;border:1px solid var(--bdr);border-radius:12px;background:var(--sur);padding:10px 12px;gap:8px}
 #cmp-guide-doc[hidden]{display:none!important}
 .gl-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none}
@@ -263,14 +264,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
 .doc-combo-pop[hidden]{display:none}
 /* 나비 숫자 코드(2026-11-03): 전화번호 → 10칸 숫자 코드, 프로필 → 웹 페이지 → 일련번호 */
-.nc-pop{width:min(440px,90vw);left:auto;right:0}
-.nc-sec{padding:6px 2px 8px}.nc-sec+.nc-sec{border-top:1px solid var(--bdr);margin-top:6px;padding-top:10px}
-.nc-sec b{display:block;font-size:14px;margin-bottom:2px}.nc-sec small{display:block;color:var(--txt2,#6b7280);font-size:12.5px;line-height:1.5;margin:2px 0 6px}
 .nc-cells{display:flex;gap:4px;margin:8px 0 4px;flex-wrap:wrap}
-.nc-cells span{width:30px;height:40px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bdr);border-radius:6px;font:700 20px/1 ui-monospace,Menlo,monospace;background:var(--bg)}
+.nc-cells span{width:28px;height:38px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bdr);border-radius:6px;font:700 19px/1 ui-monospace,Menlo,monospace;background:var(--bg)}
 .nc-cells span.z{color:var(--txt2,#9aa0a6)}
-.nc-msg{min-height:18px;font-size:13px;margin:2px 0}.nc-msg.bad{color:#b42318}.nc-msg.ok{color:#0a7d33}
-.nc-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.nc-steps{margin:6px 0 0;padding-left:20px}.nc-steps li{margin:4px 0}.nc-steps code{font:600 14px ui-monospace,Menlo,monospace;background:var(--bg);padding:1px 5px;border-radius:4px}
+.nc-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.nc-row .btn{text-decoration:none}
+.nc-err{color:#b42318}
 .doc-combo-q{width:100%;box-sizing:border-box;min-height:36px;border:1px solid var(--bdr);border-radius:8px;padding:0 10px;font:inherit;font-size:14px;background:var(--bg);color:var(--txt)}
 .doc-combo-list{max-height:min(340px,50vh);overflow-y:auto;margin-top:6px}
 .doc-combo-it{display:block;width:100%;text-align:left;border:0;background:none;border-radius:6px;padding:7px 9px;cursor:pointer;font:inherit;color:var(--txt)}
@@ -979,27 +978,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
           </div>
         </div>
         <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
-        <div class="doc-combo" id="cmp-nabi-combo">
-          <button type="button" class="doc-combo-btn" id="cmp-nabi-combo-btn" aria-haspopup="dialog" aria-expanded="false" onclick="_cmpNabiToggle(event)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/></svg><span>나비 숫자 코드</span></button>
-          <div class="doc-combo-pop nc-pop" id="cmp-nabi-combo-pop" hidden role="dialog" aria-label="나비 숫자 코드">
-            <div class="nc-sec">
-              <b>전화번호 → 숫자 코드</b>
-              <small>전화번호가 곧 나비 숫자 코드가 됩니다. 휴대폰은 앞에 00, 유선은 0을 채워 10칸으로 만듭니다.</small>
-              <input type="tel" id="nc-phone" class="doc-combo-q" inputmode="tel" placeholder="예: 064-980-1234 또는 010-1234-5678" autocomplete="off" aria-label="전화번호" oninput="_ncPhoneUpdate()" onkeydown="if(event.key==='Escape')_cmpNabiClose()">
-              <div class="nc-cells" id="nc-cells" aria-live="polite"></div>
-              <div class="nc-msg" id="nc-msg" role="status"></div>
-              <div class="nc-row"><button type="button" class="btn btn-outline btn-sm" id="nc-copy" onclick="_ncCopy()" disabled>코드 복사</button></div>
-            </div>
-            <div class="nc-sec">
-              <b>프로필 → 웹 페이지 → 일련번호</b>
-              <small>내 프로필(기관·사업장 소개)을 웹 페이지로 만들고, 전화번호 인증 뒤 일련번호를 받아 간판·명함에 붙입니다. 코드를 스캔하면 그 곳의 AI 비서가 열립니다.</small>
-              <div class="nc-row">
-                <a class="btn btn-outline btn-sm" href="https://hondi.net/pages/digit-code.html" target="_blank" rel="noopener">번호 받기·등록 ↗</a>
-                <a class="btn btn-outline btn-sm" href="https://hondi.net/profile.html" target="_blank" rel="noopener">프로필 만들기 ↗</a>
-              </div>
-            </div>
-          </div>
-        </div>
+        <button type="button" class="doc-combo-btn ex-nabicode" id="cmp-nabi-btn" aria-pressed="false" onclick="_cmpNabiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/></svg><span>나비 숫자 코드</span></button>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
         <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
@@ -2071,10 +2050,11 @@ function _orgActivate(o, greeting) {
   { const dl = document.getElementById('cmp-doc-combo-label'); if (dl && o.foi) dl.textContent = o.label; }   // 정보 공개 청구는 '서류 작성' 메뉴 안에 있으니, 고르면 그 버튼에 이름이 뜬다
   if (ol) ol.textContent = grp === 'org' ? o.label : '각종 기관'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
-  if (window.HondiChat) HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined });
+  if (window.HondiChat) { if (o.local) HondiChat.setSp(null); else HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined }); }
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (input) input.disabled = !_org.sp;
   tab.classList.toggle('foi-on', !!o.foi); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', o.foi ? 'true' : 'false'); } if (!o.foi) _foiDocReset();
+  { const nb = document.getElementById('cmp-nabi-btn'); if (nb) nb.setAttribute('aria-pressed', o.key === 'nabicode' ? 'true' : 'false'); }
   tab.classList.toggle('guide-on', !!o.guide); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', o.guide ? 'true' : 'false'); } if (!o.guide) _guideReset();
   const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
   if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
@@ -2113,6 +2093,7 @@ function _orgNotice1() {
 function _orgLeave() {
   _org = null; document.getElementById('tab-compose').classList.remove('org-open', 'foi-on', 'guide-on'); _foiDocReset(); { const fb = document.getElementById('cmp-foi-btn'); if (fb) fb.setAttribute('aria-pressed', 'false'); }
   _guideReset(); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', 'false'); }
+  { const nb = document.getElementById('cmp-nabi-btn'); if (nb) nb.setAttribute('aria-pressed', 'false'); }
   { const gn = document.getElementById('tab-btn-guidenav'); if (gn && gn.classList.contains('active')) { gn.classList.remove('active'); const hb = document.getElementById('tab-btn-home'); if (hb) hb.classList.add('active'); } }
   const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
@@ -2282,34 +2263,61 @@ function _ncPhoneToDigits(raw) {
   return { digits: r.length === 9 ? '0' + r : r, kind: '유선(' + '0' + area + ')' };
 }
 let _ncCur = '';
-function _ncPhoneUpdate() {
-  const v = document.getElementById('nc-phone').value, r = _ncPhoneToDigits(v);
-  const cells = document.getElementById('nc-cells'), msg = document.getElementById('nc-msg'), cp = document.getElementById('nc-copy');
-  cells.replaceChildren(); _ncCur = '';
-  if (r.empty) { msg.textContent = ''; msg.className = 'nc-msg'; cp.disabled = true; return; }
-  if (r.err) { msg.textContent = r.err; msg.className = 'nc-msg bad'; cp.disabled = true; return; }
-  let lead = true;
-  for (const ch of r.digits) { const sp = document.createElement('span'); sp.textContent = ch; if (lead && ch === '0') sp.className = 'z'; else lead = false; cells.appendChild(sp); }
-  _ncCur = r.digits; cp.disabled = false;
-  msg.textContent = r.kind + ' 번호 → 숫자 코드 ' + r.digits; msg.className = 'nc-msg ok';
+// 나비 숫자 코드 대화: 서버 AI 없이 이 화면에서 처리한다. 과정은 입력창 위 대화창에 한 단계씩 보여 준다.
+function _cmpNabiPick() {
+  if (_org && _org.key === 'nabicode') return;
+  _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
+  _orgActivate({ key: 'nabicode', label: '나비 숫자 코드', sp: 'local:nabicode', local: true, group: 'nabicode' },
+    '나비 숫자 코드입니다. **전화번호**를 입력하면 숫자 코드로 바꿔 드립니다(예: 064-980-1234). 프로필을 웹 페이지로 만들고 **일련번호**를 받으려면 "프로필"이라고 입력해 주세요.');
+}
+function _ncBubble() {
+  _cmpAppendBubble('assistant', { md: '' });
+  const rows = document.querySelectorAll('#cmp-thread .chat-bubble-row.assistant');
+  const el = rows[rows.length - 1].querySelector('.chat-bubble'); el.classList.add('org-md'); return el;
+}
+function _ncCellsHtml(d) { let lead = true; return '<div class="nc-cells" aria-label="숫자 코드 ' + d + '">' + [...d].map(ch => { const z = lead && ch === '0'; if (ch !== '0') lead = false; return '<span' + (z ? ' class="z"' : '') + '>' + ch + '</span>'; }).join('') + '</div>'; }
+async function _ncReveal(el, lines, tail) {
+  const th = document.getElementById('cmp-thread'); let h = '<ol class="nc-steps">';
+  for (const ln of lines) { h += '<li>' + ln + '</li>'; el.innerHTML = h + '</ol>'; th.scrollTop = th.scrollHeight; await new Promise(r => setTimeout(r, 350)); }
+  el.innerHTML = h + '</ol>' + (tail || ''); th.scrollTop = th.scrollHeight;
+}
+function _ncFlow(text) {
+  const t = String(text || '').trim();
+  const m = t.match(/\+?\d[\d\s\-().]{6,}\d/);   // 글 속에서 전화번호 모양을 찾는다
+  const prof = /프로필|일련\s*번호|웹\s*페이지|번호\s*받|발급/.test(t);
+  const el = _ncBubble();
+  if (m && !prof) {
+    const raw = m[0], r = _ncPhoneToDigits(raw);
+    if (r.err) { el.innerHTML = '<span class="nc-err">' + escHtml(r.err) + '</span> 다시 입력해 주세요. (예: 064-980-1234, 010-1234-5678)'; return; }
+    const stripped = raw.replace(/[\s\-().]/g, '').replace(/^\+82/, '0');
+    const body = stripped.slice(1), mob = /^010/.test(stripped);
+    const lines = mob
+      ? ['번호 확인: <b>' + escHtml(raw.trim()) + '</b> — 휴대폰(010)',
+         '010을 떼고 가입자번호 8자리만 남깁니다: <code>' + escHtml(stripped.slice(3)) + '</code>',
+         '앞에 00을 붙여 10칸을 맞춥니다: <code>' + r.digits + '</code>']
+      : ['번호 확인: <b>' + escHtml(raw.trim()) + '</b> — ' + escHtml(r.kind) + ' 번호',
+         '앞의 0을 뺍니다: <code>' + escHtml(body) + '</code> (' + body.length + '자리)',
+         body.length === 9 ? '10칸에 모자라 앞에 0을 채웁니다: <code>' + r.digits + '</code>' : '이미 10자리라 그대로 씁니다: <code>' + r.digits + '</code>'];
+    lines.push('완성: <b>' + r.digits + '</b>');
+    _ncCur = r.digits;
+    _ncReveal(el, lines, _ncCellsHtml(r.digits) + '<div class="nc-row"><button type="button" class="btn btn-outline btn-sm" onclick="_ncCopy()">코드 복사</button><a class="btn btn-outline btn-sm" href="https://hondi.net/pages/digit-code.html" target="_blank" rel="noopener">이 번호로 등록하기 ↗</a></div><p style="margin:8px 0 0;font-size:13px">등록하려면 이 번호의 전화 인증이 필요합니다. 인증한 사람만 이 코드의 주인이 됩니다.</p>');
+    return;
+  }
+  if (prof) {
+    _ncReveal(el, [
+      '<b>프로필 작성</b> — 기관·사업장·내 소개를 적습니다. <a href="https://hondi.net/profile.html" target="_blank" rel="noopener">프로필 만들기 ↗</a>',
+      '<b>웹 페이지로 전환</b> — 적은 프로필이 누구나 볼 수 있는 웹 페이지가 됩니다.',
+      '<b>일련번호 부여</b> — 전화번호 인증 뒤 번호를 받습니다(5자리부터, 외우기 쉬운 번호는 제외). 전화번호를 그대로 코드로 쓰려면 번호를 입력해 주세요.',
+      '<b>간판·명함에 붙이기</b> — 코드를 스캔하면 그 곳의 AI 비서가 열립니다.'
+    ], '<div class="nc-row"><a class="btn btn-outline btn-sm" href="https://hondi.net/pages/digit-code.html" target="_blank" rel="noopener">번호 받기·등록 ↗</a></div>');
+    return;
+  }
+  el.innerHTML = '전화번호(예: 064-980-1234)를 입력하면 숫자 코드로 바꿔 드립니다. 프로필을 웹 페이지로 만들고 일련번호를 받으려면 "프로필"이라고 입력해 주세요.';
 }
 function _ncCopy() {
   if (!_ncCur) return;
-  const m = document.getElementById('nc-msg');
-  const done = () => { m.textContent = '복사했습니다: ' + _ncCur; m.className = 'nc-msg ok'; };
-  try { navigator.clipboard.writeText(_ncCur).then(done, () => {}); } catch (e) {}
+  try { navigator.clipboard.writeText(_ncCur).then(() => { const th = document.getElementById('cmp-thread'); const el = _ncBubble(); el.textContent = '복사했습니다: ' + _ncCur; th.scrollTop = th.scrollHeight; }, () => {}); } catch (e) {}
 }
-function _cmpNabiClose() { const pop = document.getElementById('cmp-nabi-combo-pop'); if (pop && !pop.hidden) { pop.hidden = true; document.getElementById('cmp-nabi-combo-btn').setAttribute('aria-expanded', 'false'); } }
-function _cmpNabiToggle(e) {
-  if (e) e.stopPropagation();
-  _cmpDocComboClose(); _cmpOrgClose(); _cmpExpClose(); _cmpGovClose();
-  const pop = document.getElementById('cmp-nabi-combo-pop'), open = pop.hidden;
-  pop.hidden = !open; document.getElementById('cmp-nabi-combo-btn').setAttribute('aria-expanded', String(open));
-  if (open) document.getElementById('nc-phone').focus();
-}
-document.addEventListener('click', (e) => { if (!e.target.closest || !e.target.closest('#cmp-nabi-combo')) _cmpNabiClose(); });
-// 다른 드롭다운 단추는 클릭을 멈추므로(stopPropagation), 열릴 때 이 창도 닫도록 감싼다.
-['_cmpDocComboToggle','_cmpOrgToggle','_cmpExpToggle','_cmpGovToggle'].forEach(n => { const f = window[n]; if (typeof f === 'function') window[n] = function () { _cmpNabiClose(); return f.apply(this, arguments); }; });
 function _cmpGuidePick() {
   _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
   _guideLoad();
@@ -2647,6 +2655,7 @@ async function _orgSend() {
     _org.gt = (_org.gt || 0) + 1; force = !_guideCur() && _org.gt >= 3;   // 계획서가 아직 없는데 대화가 3번째면 이번 답변에서 초안을 내게 한다
   }
   input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
+  if (_org.local) { _cmpAppendBubble('user', { text }); _ncFlow(text); return; }
   _cmpAppendBubble('user', { text: text + (atts.length ? '\n📎 ' + atts.map(a => a.filename).join(', ') : '') });
   _cmpAppendBubble('assistant', { md: '' });
   const rows = document.querySelectorAll('#cmp-thread .chat-bubble-row.assistant'), id = 'o' + Date.now();
