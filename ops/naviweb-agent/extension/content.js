@@ -23,6 +23,17 @@
     }
     return [...set];
   }
+  // 화면 가운데를 덮은 팝업(고정 위치 + 큰 크기)이 있으면 그 문구 앞부분을 돌려준다. 없으면 ''.
+  function overlayText() {
+    try {
+      let el = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+      for (let i = 0; el && el !== document.body && el !== document.documentElement && i < 30; i++, el = el.parentElement) {
+        const cs = getComputedStyle(el);
+        if ((cs.position === 'fixed' || el.getAttribute('role') === 'dialog' || el.getAttribute('aria-modal') === 'true') && el.offsetWidth >= innerWidth * 0.3 && el.offsetHeight >= innerHeight * 0.2) return clean(el.innerText).slice(0, 80);
+      }
+    } catch (e) { /* skip */ }
+    return '';
+  }
   function list(filter, root) {
     const vh = window.innerHeight; const inView = []; const rest = [];
     for (const el of candidates(root)) {
@@ -54,7 +65,7 @@
     el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
   }
   const run = {
-    read_page: () => `URL: ${location.href}\n제목: ${document.title}\n${list()}`,
+    read_page: () => { const ov = overlayText(); return `URL: ${location.href}\n제목: ${document.title}\n` + (ov ? `⚠ 화면 위에 팝업이 떠 있어 뒤쪽 화면이 가려져 있을 수 있습니다: "${ov}"\n` : '') + list(); },
     form_controls: ({ ref }) => { const el = need(ref); let box = el.closest('form') || el.parentElement;
       for (let i = 0; i < 8 && box && !(box.querySelectorAll(SEL).length >= 6 && box.querySelector('a.btn,button,input[type=button],input[type=submit],input[type=image],[id*=search],[id*=btn]')); i++) box = box.parentElement;
       return `입력칸 ${nameOf(el)} 주변 요소(화면 위쪽 메뉴·통합검색은 제외):\n` + list('', box || document); },

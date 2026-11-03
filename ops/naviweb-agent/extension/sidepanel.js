@@ -3,8 +3,12 @@ const $ = (id) => document.getElementById(id);
 $('pb').innerHTML = '<option value="">자유 작업 — 어느 사이트든</option>' + Object.entries(PLAYBOOKS).map(([k, v]) => `<option value="${k}">${v.title}</option>`).join('');
 chrome.storage.local.get(['gateway', 'token', 'provider']).then((o) => { $('gw').value = o.gateway || ''; $('tk').value = o.token || ''; $('pv').value = o.provider || ''; });
 $('save').onclick = () => chrome.storage.local.set({ gateway: $('gw').value.trim(), token: $('tk').value.trim(), provider: $('pv').value });
-const add = (cls, t) => { const d = document.createElement('div'); d.className = 'row ' + cls; d.textContent = t; $('log').appendChild(d); d.scrollIntoView(); };
-$('go').onclick = async () => { $('log').innerHTML = ''; const w = await chrome.windows.getCurrent(); chrome.runtime.sendMessage({ type: 'start', goal: $('goal').value.trim(), playbook: $('pb').value, windowId: w.id }); };
+// 마크다운 기호가 그대로 보이지 않게: **굵게** 만 굵은 글씨로, 나머지 #·` 는 지운다(텍스트 노드만 만들어 HTML 삽입 없음).
+const plain = (t) => String(t).replace(/^#{1,6}\s+/gm, '').replace(/`/g, '');
+const fill = (el, t) => { plain(t).split(/(\*\*[^*]+\*\*)/).forEach((p) => { if (/^\*\*[^*]+\*\*$/.test(p)) { const b = document.createElement('b'); b.textContent = p.slice(2, -2); el.appendChild(b); } else el.appendChild(document.createTextNode(p.replace(/\*\*/g, ''))); }); };
+let lastSay = null;
+const add = (cls, t) => { const d = document.createElement('div'); d.className = 'row ' + cls; fill(d, t); $('log').appendChild(d); d.scrollIntoView(); if (cls === 'say') lastSay = d; return d; };
+$('go').onclick = async () => { $('log').innerHTML = ''; lastSay = null; const w = await chrome.windows.getCurrent(); chrome.runtime.sendMessage({ type: 'start', goal: $('goal').value.trim(), playbook: $('pb').value, windowId: w.id }); };
 $('stop').onclick = () => chrome.runtime.sendMessage({ type: 'stop' });
 let permitHost = '';
 const reply = (ok) => { $('ask').hidden = true; permitHost = ''; chrome.runtime.sendMessage({ type: 'reply', ok }); };
@@ -23,7 +27,10 @@ chrome.runtime.onMessage.addListener((m) => {
     $('yes').textContent = m.kind === 'permit' ? '이 사이트 허용' : m.kind === 'handoff' ? '직접 했어요' : '진행';
     $('ask').hidden = false;
   }
-  if (m.type === 'done') add('say', m.res.done ? '완료' : '중단됨(' + m.res.reason + ')');
+  if (m.type === 'done') {
+    if (m.res.done && lastSay && m.res.text) { lastSay.classList.add('final'); const h = document.createElement('div'); h.className = 'fh'; h.textContent = '결과'; lastSay.prepend(h); lastSay.scrollIntoView(); }
+    add('tool', m.res.done ? '— 완료 —' : '중단됨(' + m.res.reason + ')');
+  }
   if (m.type === 'error') add('warn', '오류: ' + m.text);
 });
 
