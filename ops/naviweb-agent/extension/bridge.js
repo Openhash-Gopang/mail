@@ -5,6 +5,7 @@
   window.__naviBridge = true;
   // 확장(서비스 워커)이 받아 온 파일을 나비웹 화면으로 넘긴다. 같은 출처로만 보내고, 넣을지는 화면이 사용자에게 묻는다.
   chrome.runtime.onMessage.addListener((m) => {
+    if (m && m.type === 'status' && ['sent', 'pending', 'failed'].includes(m.state)) window.postMessage({ source: 'navi-agent', type: 'agent-status', label: String(m.label || '').slice(0, 120), state: m.state, note: String(m.note || '').slice(0, 200) }, location.origin);
     if (!m || m.type !== 'deliver' || typeof m.b64 !== 'string' || m.b64.length > 14 * 1024 * 1024) return;
     try {
       const bin = atob(m.b64), u8 = new Uint8Array(bin.length);

@@ -1654,7 +1654,7 @@ async function _agentInit() {
     bar.querySelector('.da-state').textContent = '확장 프로그램 ' + _agentInfo.version + ' 연결됨 · 어느 사이트든 맡길 수 있습니다';
     bar.hidden = false;
   });
-  if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); }
+  if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); }
   _agentTellDoc();
 }
 // 서류 화면에 "도우미가 가져오기" 버튼을 붙일 항목(정규식)을 알려 준다. 확장이 연결된 때만.
@@ -1674,6 +1674,13 @@ function _agentFetchSlot(label) {
     bar.querySelector('.da-state').textContent = '“' + label + '” 항목을 가져옵니다. 입력칸 끝에 필요한 내용(예: 법인 이름)을 적고 “도우미에 맡기기”를 누르세요.';
   });
   const g = bars[0].querySelector('input'); g.focus(); g.setSelectionRange(g.value.length, g.value.length);
+}
+// 도우미가 알린 항목 진행 결과(예: 법원으로 전송됨)를 도우미 줄과 서류 화면의 그 항목에 표시한다.
+function _agentOnStatus(s) {
+  if (!['sent', 'pending', 'failed'].includes(s.state)) return;
+  const txt = ({ sent: '전송 완료', pending: '진행 중', failed: '실패' })[s.state] + (s.note ? ' — ' + s.note : '');
+  _agentBars().forEach(b => { const st = b.querySelector('.da-state'); if (st && b.offsetParent !== null) st.textContent = '“' + s.label.slice(0, 60) + '” 항목: ' + txt; });
+  _docHostPost({ type: 'navi-doc-slot-status', label: s.label, state: s.state, note: s.note });
 }
 // 확장이 받아 온 파일: 사용자가 확인하면 서류 화면의 그 항목에 넣는다(파일은 이 PC 안에서만 오간다).
 function _agentOnFile(f) {
