@@ -4,6 +4,8 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: {}, required: [] } },
   { name: 'find', description: '이름/글자로 요소를 찾는다. 예: "다음 버튼", "상호 입력칸".',
     input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+  { name: 'form_controls', description: '입력칸(ref) 이 속한 폼 주변의 요소만 나열한다. 같은 이름의 버튼이 화면 위쪽 메뉴에도 있을 때(예: 검색) 이 폼의 버튼을 찾는 데 쓴다.',
+    input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } },
   { name: 'click', description: 'ref 요소를 클릭한다.',
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } },
   { name: 'type', description: 'ref 입력칸에 글자를 넣는다. 비밀번호·카드·주민등록번호는 넣을 수 없다.',
@@ -23,4 +25,4 @@ export const TOOLS = [
   { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
     input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
 ];
-export const DOM_TOOLS = new Set(['read_page', 'find', 'click', 'type', 'select_option', 'scroll', 'get_text']);
+export const DOM_TOOLS = new Set(['read_page', 'find', 'form_controls', 'click', 'type', 'select_option', 'scroll', 'get_text']);
