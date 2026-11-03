@@ -1,0 +1,4 @@
+# runner.naviweb.kr 의 A 레코드를 이 VM 의 공인 IP 로 연결한 뒤 사용한다(자동 HTTPS).
+runner.naviweb.kr {
+	reverse_proxy runner:8787
+}
