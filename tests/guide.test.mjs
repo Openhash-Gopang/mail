@@ -374,3 +374,15 @@ test('서류 작성 드롭다운: "전체" 아래에 "제주 행정"(jeju.naviwe
   assert.ok(all > 0 && all < jeju && jeju < law, '전체 → 제주 행정 → 법률 서류 순서');
   assert.ok(s.includes("{ site: 'jeju', url: 'https://jeju.naviweb.kr/data/docs/jeju.json' }"));
 });
+
+test('예시 패널: 입력 칸 왼쪽 "예시" 버튼이 예시 항목 패널을 slide out/in 하고, 항목을 고르면 다시 들어간다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.indexOf('id="cmp-attach-btn"') < h.indexOf('id="cmp-ex-btn"') && h.indexOf('id="cmp-ex-btn"') < h.indexOf('id="cmp-input"'), '예시 버튼은 입력 칸 왼쪽');
+  const panel = h.slice(h.indexOf('id="cmp-ex-panel"'), h.indexOf('id="cmp-doc-count"'));
+  for (const id of ['cmp-verdict-btn', 'cmp-doc-combo', 'cmp-org-combo', 'cmp-exp-combo', 'cmp-gov-combo', 'cmp-guide-btn', 'cmp-nabi-btn']) assert.ok(panel.includes('id="' + id + '"'), id + ' 는 패널 안');
+  assert.ok(!panel.includes('id="cmp-doc-save"') && !panel.includes('id="cmp-doc-bar"'), '진행률·저장 버튼은 패널 밖(접어도 보인다)');
+  assert.match(h, /\.ex-panel\{[^}]*transition:max-height[^}]*transform \.34s/);
+  assert.match(h, /prefers-reduced-motion:reduce\)\{\.ex-panel/);
+  for (const f of ['function _cmpExOpen(', 'function _cmpExClose(', 'function _cmpExToggle(']) assert.ok(h.includes(f), f);
+  assert.ok(h.includes(".ex-verdict,.ex-guide,.ex-nabicode,.doc-combo-it,.doc-combo-up"), '항목을 고르면 접힘');
+});
