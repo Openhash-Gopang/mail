@@ -239,7 +239,7 @@ test('서류 SP 가 대신 채우고 사용자가 검토·수정한다 + 대화�
 
 test('예시: 라벨 + "소장 작성해 주세요" 같은 문장은 서류 이름이 맞으면 바로 서류 작성', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(h, /<span class="doc-host-ex"[^>]*>예시:<\/span>/);
+  assert.ok(!h.includes('id="cmp-ex-label"'), '패널 안 "예시:" 라벨은 없앴다(예시 버튼과 중복)');
   assert.match(h, /_navQuickDoc\(text\)/);
   const re = /^\s*(.{1,30}?)\s*(?:을|를)?\s*(?:좀\s*)?(?:작성|써|만들|초안)/;
   assert.ok(h.includes(String(re).slice(1, String(re).lastIndexOf('/')).replace(/\\/g, '\\')) || h.includes('(?:작성|써|만들|초안)'));
@@ -377,11 +377,14 @@ test('서류 작성 드롭다운: "전체" 아래에 "제주 행정"(jeju.naviwe
 
 test('예시 패널: 입력 칸 왼쪽 "예시" 버튼이 예시 항목 패널을 slide out/in 하고, 항목을 고르면 다시 들어간다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.indexOf('id="cmp-attach-btn"') < h.indexOf('id="cmp-ex-btn"') && h.indexOf('id="cmp-ex-btn"') < h.indexOf('id="cmp-input"'), '예시 버튼은 입력 칸 왼쪽');
+  assert.ok(h.indexOf('id="cmp-input"') < h.indexOf('id="cmp-ex-btn"') && h.indexOf('class="cmp-inrow"') < h.indexOf('id="cmp-ex-btn"'), '예시 버튼은 입력 필드 바깥 오른쪽');
+  assert.ok(!h.includes('id="cmp-doc-save"'), '작성 완료로 저장 버튼 삭제');
   const panel = h.slice(h.indexOf('id="cmp-ex-panel"'), h.indexOf('id="cmp-doc-count"'));
   for (const id of ['cmp-verdict-btn', 'cmp-doc-combo', 'cmp-org-combo', 'cmp-exp-combo', 'cmp-gov-combo', 'cmp-guide-btn', 'cmp-nabi-btn']) assert.ok(panel.includes('id="' + id + '"'), id + ' 는 패널 안');
-  assert.ok(!panel.includes('id="cmp-doc-save"') && !panel.includes('id="cmp-doc-bar"'), '진행률·저장 버튼은 패널 밖(접어도 보인다)');
+  assert.ok(!panel.includes('id="cmp-doc-bar"'), '진행률은 패널 밖(접어도 보인다)');
   assert.match(h, /\.ex-panel\{[^}]*transition:max-height[^}]*transform \.34s/);
+  assert.match(h, /<table class="ex-table">[\s\S]*<tr>[\s\S]*<\/tr>[\s\S]*<\/table>/); assert.equal((panel.match(/<td>/g) || []).length, 7, '한 행 7칸 Table');
+  assert.match(h, /\.ex-table \.doc-combo-btn\{[^}]*font-size:14px/);
   assert.match(h, /prefers-reduced-motion:reduce\)\{\.ex-panel/);
   for (const f of ['function _cmpExOpen(', 'function _cmpExClose(', 'function _cmpExToggle(']) assert.ok(h.includes(f), f);
   assert.ok(h.includes(".ex-verdict,.ex-guide,.ex-nabicode,.doc-combo-it,.doc-combo-up"), '항목을 고르면 접힘');

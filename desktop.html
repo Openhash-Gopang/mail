@@ -286,7 +286,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-it small{display:block;font-size:12px;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-combo-sec{font-size:12px;color:var(--hint);padding:6px 9px 2px}
 /* 예시 패널(2026-11-04): 입력 칸 왼쪽 "예시" 버튼을 누르면 입력창 아래로 예시 항목(한 행의 칸들)이 미끄러져 나오고, 하나를 고르면 다시 들어간다. */
-.cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:4px;height:28px;margin:0 2px 0 0;padding:0 9px 0 11px;border:1px solid var(--bdr);border-radius:999px;background:var(--sur);color:var(--txt);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.cmp-inrow{display:flex;align-items:center;gap:8px}.cmp-inrow>.chat-inputbar{flex:1 1 auto;min-width:0}
+.cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:4px;height:34px;margin:0;padding:0 9px 0 11px;border:1px solid var(--bdr);border-radius:999px;background:var(--sur);color:var(--txt);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
 .cmp-ex-btn:hover{background:var(--pri-bg);color:var(--pri)}
 .cmp-ex-btn svg{transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .cmp-ex-btn[aria-expanded=true]{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
@@ -295,10 +296,18 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ex-panel{flex:1 0 100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:0;opacity:0;transform:translateY(-12px);overflow:hidden;visibility:hidden;pointer-events:none;transition:max-height .34s cubic-bezier(.2,.8,.2,1),opacity .22s ease,transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s linear .34s}
 .ex-panel.open{max-height:240px;opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}
 .ex-panel.open.settled{overflow:visible}   /* 다 열린 뒤에는 서류·기관 목록 팝업이 잘리지 않게 */
-.ex-panel>*{opacity:0;transform:translateY(-8px);transition:opacity .2s ease,transform .26s cubic-bezier(.2,.8,.2,1)}
-.ex-panel.open>*{opacity:1;transform:none;transition-delay:calc(var(--i,0)*28ms)}
-@media (min-width:900px){.ex-panel{flex-wrap:nowrap}.ex-panel>*{flex:none}}   /* 넓은 화면: 한 행에 칸들 */
-@media (prefers-reduced-motion:reduce){.ex-panel,.ex-panel>*,.cmp-ex-btn svg{transition-duration:.01ms!important;transition-delay:0s!important}}
+.ex-panel>.ex-table{width:100%}
+.ex-table{table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid var(--bdr);border-radius:12px;background:var(--sur);margin:0}
+.ex-table td{padding:8px 6px;text-align:center;vertical-align:middle;border-left:1px solid var(--bdr);opacity:0;transform:translateY(-8px);transition:opacity .2s ease,transform .26s cubic-bezier(.2,.8,.2,1)}
+.ex-table td:first-child{border-left:0}
+.ex-panel.open .ex-table td{opacity:1;transform:none;transition-delay:calc(var(--i,0)*28ms)}
+.ex-table .doc-combo-btn{width:100%;justify-content:center;border-color:transparent;background:transparent;padding:0 6px;white-space:nowrap;font-size:14px}
+.ex-table .doc-combo-btn:hover{background:var(--pri-bg);color:var(--pri)}
+.ex-table .doc-combo{position:relative}
+.ex-table td:nth-child(n+5) .doc-combo-pop{left:auto;right:0}   /* 오른쪽 칸의 목록은 왼쪽으로 펼쳐 화면 밖으로 나가지 않게 */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:700px){.ex-table,.ex-table tbody{display:block}.ex-table tr{display:flex;flex-wrap:wrap}.ex-table td{flex:1 1 auto;border-left:0}}   /* 좁은 화면: 칸이 줄을 바꿈 */
+@media (prefers-reduced-motion:reduce){.ex-panel,.ex-table td,.cmp-ex-btn svg{transition-duration:.01ms!important;transition-delay:0s!important}}
 .doc-host-ex{font-size:14px;font-weight:800;color:var(--txt);margin-right:-2px;user-select:none}
 .doc-host-row select{min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt)}
 /* unified-input — 입력창 하나로 통합(2026-10-31): 모드 칩(현재 SP 표시 · × 로 해제) + 메일 아이콘(편지 작성·캠페인 팝오버) */
@@ -468,8 +477,6 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .nav-expert-frame{width:100%;height:min(62vh,560px);border:0;display:block}
 .nav-expert-doc{align-self:flex-end;margin:8px 10px;padding:6px 14px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;cursor:pointer}
 .nav-expert-doc:hover{background:#f3f4f6}
-#cmp-doc-save{display:none}
-#tab-compose[data-mode="doc"] #cmp-doc-save{display:inline-block}
 .dr-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .dr-sec{font-size:13px;font-weight:800;color:var(--hint);margin:18px 2px 8px;letter-spacing:.02em}
 #dr-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;background:#111827;color:#fff;font-size:13px;padding:9px 16px;border-radius:999px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
@@ -951,62 +958,78 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
     <div class="chat-composer">
       <div class="chat-attach-list" id="cmp-attach-list"></div>
-      <div class="chat-inputbar">
-        <input type="file" id="cmp-file" style="display:none">
-        <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
-        <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-        </button>
+      <div class="cmp-inrow">
+        <div class="chat-inputbar">
+          <input type="file" id="cmp-file" style="display:none">
+          <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
+          <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpSetMode('default')">×</button></span>
+          <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다"></textarea>
+          <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+          <button type="button" class="chat-send-btn" id="cmp-send-btn" data-requires-login="메일 대화" title="전송" disabled onclick="_cmpChatSend()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
         <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpSetMode('default')">×</button></span>
-        <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다"></textarea>
-        <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-        </button>
-        <button type="button" class="chat-send-btn" id="cmp-send-btn" data-requires-login="메일 대화" title="전송" disabled onclick="_cmpChatSend()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-        </button>
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
         <div class="ex-panel" id="cmp-ex-panel" role="group" aria-label="예시" aria-hidden="true">
-        <span class="doc-host-ex" id="cmp-ex-label" title="이 버튼들은 입력창에 쓸 수 있는 말의 줄임입니다. 예: &quot;소장 작성해 주세요&quot;">예시:</span>
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
-        <button type="button" class="doc-combo-btn ex-verdict" id="cmp-verdict-btn" data-label="가상 판결" title="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg><span>가상 판결</span></button>
-        <div class="doc-combo" id="cmp-doc-combo">
-          <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
-            <input type="search" id="cmp-doc-q" class="doc-combo-q" placeholder="서류 검색 — 이름·별칭 (예: 소장, 진단서)" autocomplete="off" aria-label="서류 검색" oninput="_cmpDocComboFilter()" onkeydown="_cmpDocComboKey(event)">
-            <button type="button" class="doc-combo-up" id="cmp-doc-upload" onclick="_docUploadForm()"><b>양식 업로드</b><small>가지고 있는 서류 양식(이미지·PDF)을 올려 그 양식으로 작성합니다</small></button>
-            <div class="doc-combo-list" id="cmp-doc-list" role="listbox" aria-label="서류"></div>
-          </div>
-        </div>
-        <div class="doc-combo" id="cmp-org-combo">
-          <button type="button" class="doc-combo-btn" id="cmp-org-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpOrgToggle(event)"><span id="cmp-org-combo-label">각종 기관</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="doc-combo-pop" id="cmp-org-combo-pop" hidden>
-            <input type="search" id="cmp-org-q" class="doc-combo-q" placeholder="기관·서비스 검색 (예: 응급, 세무, 부동산)" autocomplete="off" aria-label="기관 검색" oninput="_cmpOrgFilter()" onkeydown="_cmpOrgKey(event)">
-            <div class="doc-combo-list" id="cmp-org-list" role="listbox" aria-label="기관"></div>
-          </div>
-        </div>
-        <div class="doc-combo" id="cmp-exp-combo">
-          <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">전문가 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="doc-combo-pop" id="cmp-exp-combo-pop" hidden>
-            <input type="search" id="cmp-exp-q" class="doc-combo-q" placeholder="전문가 검색 (예: 변호사, 세무사)" autocomplete="off" aria-label="전문가 검색" oninput="_cmpExpFilter()" onkeydown="_cmpExpKey(event)">
-            <div class="doc-combo-list" id="cmp-exp-list" role="listbox" aria-label="전문가"></div>
-          </div>
-        </div>
-        <div class="doc-combo" id="cmp-gov-combo">
-          <button type="button" class="doc-combo-btn" id="cmp-gov-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpGovToggle(event)"><span id="cmp-gov-combo-label">정부 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="doc-combo-pop" id="cmp-gov-combo-pop" hidden>
-            <input type="search" id="cmp-gov-q" class="doc-combo-q" placeholder="기관 검색 (예: 법원, 국세청)" autocomplete="off" aria-label="정부 기관 검색" oninput="_cmpGovFilter()" onkeydown="_cmpGovKey(event)">
-            <div class="doc-combo-list" id="cmp-gov-list" role="listbox" aria-label="정부 기관"></div>
-          </div>
-        </div>
-        <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
-        <button type="button" class="doc-combo-btn ex-nabicode" id="cmp-nabi-btn" aria-pressed="false" onclick="_cmpNabiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/></svg><span>나비 숫자 코드</span></button>
+        <table class="ex-table"><caption class="sr-only">예시</caption><tbody><tr>
+            <td>
+            <button type="button" class="doc-combo-btn ex-verdict" id="cmp-verdict-btn" data-label="가상 판결" title="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg><span>가상 판결</span></button>
+            </td>
+            <td>
+            <div class="doc-combo" id="cmp-doc-combo">
+              <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
+                <input type="search" id="cmp-doc-q" class="doc-combo-q" placeholder="서류 검색 — 이름·별칭 (예: 소장, 진단서)" autocomplete="off" aria-label="서류 검색" oninput="_cmpDocComboFilter()" onkeydown="_cmpDocComboKey(event)">
+                <button type="button" class="doc-combo-up" id="cmp-doc-upload" onclick="_docUploadForm()"><b>양식 업로드</b><small>가지고 있는 서류 양식(이미지·PDF)을 올려 그 양식으로 작성합니다</small></button>
+                <div class="doc-combo-list" id="cmp-doc-list" role="listbox" aria-label="서류"></div>
+              </div>
+            </div>
+            </td>
+            <td>
+            <div class="doc-combo" id="cmp-org-combo">
+              <button type="button" class="doc-combo-btn" id="cmp-org-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpOrgToggle(event)"><span id="cmp-org-combo-label">각종 기관</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <div class="doc-combo-pop" id="cmp-org-combo-pop" hidden>
+                <input type="search" id="cmp-org-q" class="doc-combo-q" placeholder="기관·서비스 검색 (예: 응급, 세무, 부동산)" autocomplete="off" aria-label="기관 검색" oninput="_cmpOrgFilter()" onkeydown="_cmpOrgKey(event)">
+                <div class="doc-combo-list" id="cmp-org-list" role="listbox" aria-label="기관"></div>
+              </div>
+            </div>
+            </td>
+            <td>
+            <div class="doc-combo" id="cmp-exp-combo">
+              <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">전문가 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <div class="doc-combo-pop" id="cmp-exp-combo-pop" hidden>
+                <input type="search" id="cmp-exp-q" class="doc-combo-q" placeholder="전문가 검색 (예: 변호사, 세무사)" autocomplete="off" aria-label="전문가 검색" oninput="_cmpExpFilter()" onkeydown="_cmpExpKey(event)">
+                <div class="doc-combo-list" id="cmp-exp-list" role="listbox" aria-label="전문가"></div>
+              </div>
+            </div>
+            </td>
+            <td>
+            <div class="doc-combo" id="cmp-gov-combo">
+              <button type="button" class="doc-combo-btn" id="cmp-gov-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpGovToggle(event)"><span id="cmp-gov-combo-label">정부 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <div class="doc-combo-pop" id="cmp-gov-combo-pop" hidden>
+                <input type="search" id="cmp-gov-q" class="doc-combo-q" placeholder="기관 검색 (예: 법원, 국세청)" autocomplete="off" aria-label="정부 기관 검색" oninput="_cmpGovFilter()" onkeydown="_cmpGovKey(event)">
+                <div class="doc-combo-list" id="cmp-gov-list" role="listbox" aria-label="정부 기관"></div>
+              </div>
+            </div>
+            </td>
+            <td>
+            <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
+            </td>
+            <td>
+            <button type="button" class="doc-combo-btn ex-nabicode" id="cmp-nabi-btn" aria-pressed="false" onclick="_cmpNabiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/></svg><span>나비 숫자 코드</span></button>
+            </td>
+        </tr></tbody></table>
         </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
-        <button type="button" class="btn btn-outline btn-sm" id="cmp-doc-save" onclick="_drDocComplete()" title="지금 작성한 서류를 Word 파일로 받아 '작성한 서류'에 보관합니다">작성 완료로 저장</button>
         <input type="file" id="doc-host-file" multiple accept=".txt,.md,.html,.htm,.csv,.json,text/*,image/*,.pdf" style="display:none">
         <input type="file" id="doc-host-form" accept="image/*,.pdf,application/pdf" style="display:none">
       </div>
@@ -1867,7 +1890,7 @@ function _docHostApplyMeta() {
   const input = document.getElementById('cmp-input');
   delete input.dataset.ph;
   input.placeholder = _docHost.meta.placeholder || _DOC_PH_DEFAULT;
-  document.getElementById('cmp-doc-count').textContent = _docHost.meta.count || '';
+  document.getElementById('cmp-doc-count').textContent = '';   // "N건의 … 서류를 작성합니다" 안내 문구는 쓰지 않는다(2026-11-04). 이 칸은 진행 상태 알림에만 쓴다
   if (typeof _cmpSyncModeUi === 'function') _cmpSyncModeUi();   // 서류 종류가 바뀌었을 수 있으니 모드 칩도 맞춘다
 }
 // 서류 드롭다운: 맨 앞 "서류 선택"(값 없음)은 기본 모드(나만의 AI 비서)의 표시이고, 종류를 고르면 서류 모드로 들어간다
@@ -1885,7 +1908,7 @@ function _cmpExIsOpen() { const p = _cmpExPanel(); return !!(p && p.classList.co
 function _cmpExOpen() {
   const p = _cmpExPanel(), b = document.getElementById('cmp-ex-btn'); if (!p || _cmpExIsOpen()) return;
   clearTimeout(p._t);
-  [...p.children].forEach((c, i) => c.style.setProperty('--i', i));
+  p.querySelectorAll('td').forEach((c, i) => c.style.setProperty('--i', i));
   p.classList.remove('settled'); p.setAttribute('aria-hidden', 'false'); b && b.setAttribute('aria-expanded', 'true');
   requestAnimationFrame(() => p.classList.add('open'));
   p._t = setTimeout(() => { if (p.classList.contains('open')) p.classList.add('settled'); }, 380);
