@@ -55,7 +55,7 @@
   const run = {
     read_page: () => `URL: ${location.href}\n제목: ${document.title}\n${list()}`,
     form_controls: ({ ref }) => { const el = need(ref); let box = el.closest('form') || el.parentElement;
-      for (let i = 0; i < 8 && box && box.querySelectorAll(SEL).length < 6; i++) box = box.parentElement;
+      for (let i = 0; i < 8 && box && !(box.querySelectorAll(SEL).length >= 6 && box.querySelector('a.btn,button,input[type=button],input[type=submit],input[type=image],[id*=search],[id*=btn]')); i++) box = box.parentElement;
       return `입력칸 ${nameOf(el)} 주변 요소(화면 위쪽 메뉴·통합검색은 제외):\n` + list('', box || document); },
     find: ({ query }) => list(clean(query).toLowerCase().replace(/(버튼|입력칸|링크)$/, '').trim()),
     click: ({ ref }) => { const el = need(ref); el.scrollIntoView({ block: 'center' });
