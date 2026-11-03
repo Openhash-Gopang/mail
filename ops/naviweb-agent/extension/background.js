@@ -111,9 +111,12 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
       const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
+      // 나비웹 화면 자체를 조작하지 않는다. 자유 작업은 사용자가 보고 있는 외부 사이트 탭만 쓰고, 없으면 새 탭을 연다.
+      const isNavi = (u) => { try { const h = new URL(u).hostname; return h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { return false; } };
+      const usable = (t) => t && /^https:/.test(t.url || '') && !isNavi(t.url) && okHost(t.url);
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
-      if (!tab || !okHost(tab.url)) { const all = (await chrome.tabs.query({})).filter((t) => okHost(t.url)).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
-      if (!tab) throw new Error('대상 탭을 찾지 못했습니다.');
+      if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
+      if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : 'about:blank', active: true }); await wait(2500); }
       state.tabId = tab.id;
       say({ type: 'log', e: { kind: 'say', text: `대상 탭: ${tab.title} (${tab.url})` } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;

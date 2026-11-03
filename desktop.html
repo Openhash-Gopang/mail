@@ -1642,10 +1642,13 @@ async function _agentInit() {
   if (!window.NaviAgent) return;
   _agentInfo = await NaviAgent.detect();
   _agentBars().forEach(bar => {
-    if (!_agentInfo || !(_agentInfo.playbooks || []).length) { bar.hidden = true; return; }
+    if (!_agentInfo) { bar.hidden = true; return; }
     const sel = bar.querySelector('select'); sel.innerHTML = '';
-    _agentInfo.playbooks.forEach(p => sel.add(new Option(p.title, p.id)));
-    bar.querySelector('.da-state').textContent = '확장 프로그램 ' + _agentInfo.version + ' 연결됨';
+    sel.add(new Option('자유 작업 — 어느 사이트든', ''));   // 기본: 특정 절차 없이 어느 사이트든 맡긴다(절차는 선택 사항)
+    _agentInfo.playbooks.forEach(p => sel.add(new Option(p.title + ' (안내 절차)', p.id)));
+    sel.value = '';
+    bar.querySelector('input').placeholder = '예) 정부24에서 주민등록등본 발급 화면을 열어 주세요';
+    bar.querySelector('.da-state').textContent = '확장 프로그램 ' + _agentInfo.version + ' 연결됨 · 어느 사이트든 맡길 수 있습니다';
     bar.hidden = false;
   });
 }
@@ -1671,8 +1674,8 @@ function _agentSuggestFor(title) {
 }
 async function _agentHandOff(btn) {
   const bar = btn.closest('.doc-agent'), sel = bar.querySelector('select'), g = bar.querySelector('input'), st = bar.querySelector('.da-state');
-  if (!sel.value) return;
-  const ok = await NaviAgent.queue({ playbook: sel.value, goal: g.value.trim(), title: sel.options[sel.selectedIndex].text });
+  if (!sel.value && !g.value.trim()) { st.textContent = '맡길 일을 적어 주세요. 예) 정부24에서 주민등록등본 발급 화면을 열어 주세요'; return; }
+  const ok = await NaviAgent.queue({ playbook: sel.value, goal: g.value.trim(), title: sel.value ? sel.options[sel.selectedIndex].text : '자유 작업' });
   st.textContent = ok ? '맡겼습니다. 브라우저 도구 모음의 나비웹 서류 도우미 아이콘을 눌러 내용을 확인하고 시작하세요. 로그인·결제는 직접 하셔야 합니다.' : '맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.';
 }
 document.addEventListener('DOMContentLoaded', () => { setTimeout(_agentInit, 600); });
