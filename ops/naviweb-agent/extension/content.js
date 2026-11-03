@@ -1,6 +1,6 @@
 // 페이지 안에서 도구를 실행한다. 요소는 ref_N 으로만 가리킨다(좌표 클릭을 쓰지 않는다).
 (() => {
-  if (window.__naviAgent) return;
+  if (window.__naviAgentV === 3) return;
   const refs = new Map(); let seq = 0;
   const SEL = 'a,button,input,select,textarea,label,area,img[alt],[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[tabindex],[onclick]';
   const PTR = 'span,div,li,td,img,i';
@@ -75,5 +75,5 @@
       else send({ ok: true, text: String(run[msg.name](msg.input || {})) });
     } catch (e) { send({ ok: false, error: e.message }); }
   });
-  window.__naviAgent = true;
+  window.__naviAgentV = 3;
 })();
