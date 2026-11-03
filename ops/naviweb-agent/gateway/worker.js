@@ -160,11 +160,35 @@ export async function enforceLimit(req, env, provider, count = countClaude) {
   return { error: 'context_too_large', est: fit.exact, limit };
 }
 
+// Anthropic 프롬프트 캐시: 도구 목록, 시스템 지시문, 그리고 대화의 마지막 두 사용자 메시지 끝에 경계(cache_control)를 둔다.
+// 에이전트는 매 단계 같은 앞부분에 새 내용만 덧붙이므로, 이전 단계의 경계까지 캐시가 적중한다(읽기 요금은 입력의 1/10).
+// 경계는 최대 4개: tools 1 + system 1 + messages 2. 원본은 바꾸지 않고 복사해서 돌려준다.
+export function withCache(req) {
+  const mark = { type: 'ephemeral' };
+  const out = { system: req.system, tools: req.tools, messages: req.messages };
+  if (Array.isArray(req.tools) && req.tools.length) out.tools = req.tools.map((t, i, a) => (i === a.length - 1 ? { ...t, cache_control: mark } : t));
+  if (typeof req.system === 'string' && req.system) out.system = [{ type: 'text', text: req.system, cache_control: mark }];
+  const msgs = (req.messages || []).map((m) => ({ ...m }));
+  const users = msgs.map((m, i) => (m.role === 'user' ? i : -1)).filter((i) => i >= 0);
+  for (const i of users.slice(-2)) {
+    const m = msgs[i];
+    const blocks = typeof m.content === 'string' ? [{ type: 'text', text: m.content }] : (m.content || []).map((b) => ({ ...b }));
+    let k = blocks.length - 1;
+    while (k >= 0 && blocks[k].type === 'text' && !blocks[k].text) k--;
+    if (k < 0) continue;
+    blocks[k] = { ...blocks[k], cache_control: mark };
+    m.content = blocks;
+  }
+  out.messages = msgs;
+  return out;
+}
+
 async function callClaude(req, env) {
+  const cached = env.PROMPT_CACHE === 'off' ? { system: req.system, tools: req.tools, messages: req.messages } : withCache(req);
   const body = {
     model: env.CLAUDE_MODEL || 'claude-haiku-5-5',
     max_tokens: Math.min(req.max_tokens || 2048, MAX_TOKENS_CAP),
-    system: req.system, messages: req.messages, tools: req.tools,
+    system: cached.system, messages: cached.messages, tools: cached.tools,
   };
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -173,7 +197,9 @@ async function callClaude(req, env) {
   });
   const j = await r.json();
   if (!r.ok) return { error: j, status: r.status };
-  return { out: { content: j.content, stop_reason: j.stop_reason, usage: j.usage } };
+  const u = j.usage || {};
+  const cache = { read: u.cache_read_input_tokens || 0, write: u.cache_creation_input_tokens || 0, fresh: u.input_tokens || 0 };
+  return { out: { content: j.content, stop_reason: j.stop_reason, usage: j.usage, cache } };
 }
 
 async function callGemma(req, env) {
