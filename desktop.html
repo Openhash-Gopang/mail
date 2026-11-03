@@ -185,6 +185,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose:not(.cmp-started) .chat-composer>.hint,#tab-compose[data-mode="default"] .chat-composer>.hint{display:none}
 .doc-agent{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);background:var(--sur)}
 .doc-agent[hidden],.doc-agent [hidden]{display:none!important}
+/* 메인(대화) 화면에는 나타나지 않고, 서류 작성 화면(서류 양식이 열렸을 때)과 서류 작성 탭에서만 보인다 */
+#tab-compose .doc-agent{display:none}
+#tab-compose[data-mode="doc"].doc-live .doc-agent{display:flex;order:2;flex:none}
 .doc-agent select,.doc-agent input{min-height:34px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;background:var(--sur);color:inherit}
 .doc-agent input{flex:1 1 200px}
 /* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
