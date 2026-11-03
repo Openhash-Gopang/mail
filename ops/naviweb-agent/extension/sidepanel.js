@@ -8,9 +8,10 @@ const plain = (t) => String(t).replace(/^#{1,6}\s+/gm, '').replace(/`/g, '');
 const fill = (el, t) => { plain(t).split(/(\*\*[^*]+\*\*)/).forEach((p) => { if (/^\*\*[^*]+\*\*$/.test(p)) { const b = document.createElement('b'); b.textContent = p.slice(2, -2); el.appendChild(b); } else el.appendChild(document.createTextNode(p.replace(/\*\*/g, ''))); }); };
 let lastSay = null;
 const add = (cls, t) => { const d = document.createElement('div'); d.className = 'row ' + cls; fill(d, t); $('log').appendChild(d); d.scrollIntoView(); if (cls === 'say') lastSay = d; return d; };
-$('go').onclick = async () => { $('log').innerHTML = ''; lastSay = null; const w = await chrome.windows.getCurrent(); chrome.runtime.sendMessage({ type: 'start', goal: $('goal').value.trim(), playbook: $('pb').value, windowId: w.id }); };
+$('go').onclick = async () => { $('log').innerHTML = ''; lastSay = null; const w = await chrome.windows.getCurrent(); chrome.runtime.sendMessage({ type: 'start', goal: $('goal').value.trim(), playbook: $('pb').value, windowId: w.id, slot: curSlot }); };
 $('stop').onclick = () => chrome.runtime.sendMessage({ type: 'stop' });
 let permitHost = '';
+let curSlot = '';   // 나비웹에서 맡긴 첨부서류 항목(결과를 그 항목에 표시한다)
 const reply = (ok) => { $('ask').hidden = true; permitHost = ''; chrome.runtime.sendMessage({ type: 'reply', ok }); };
 // 사이트 접근 허용은 사용자가 이 버튼을 직접 눌러야 브라우저의 허용 창이 뜬다.
 $('yes').onclick = async () => {
@@ -37,13 +38,14 @@ chrome.runtime.onMessage.addListener((m) => {
 // 나비웹에서 맡긴 작업: 절차와 지시문을 미리 채워 두고, 시작은 사용자가 누른다.
 async function showPending() {
   const { pending } = await chrome.storage.local.get('pending');
-  if (!pending) { $('pending').hidden = true; return; }
+  if (!pending) { $('pending').hidden = true; curSlot = ''; return; }
+  curSlot = pending.slot || '';
   if (pending.playbook) $('pb').value = pending.playbook;
   if (pending.goal) $('goal').value = pending.goal;
   $('pendtitle').textContent = pending.title || '맡긴 작업';
   $('pending').hidden = false;
   chrome.action.setBadgeText({ text: '' });
 }
-$('pendclear').onclick = async () => { await chrome.storage.local.remove('pending'); $('pending').hidden = true; };
+$('pendclear').onclick = async () => { await chrome.storage.local.remove('pending'); $('pending').hidden = true; curSlot = ''; };
 chrome.storage.onChanged.addListener((c) => { if (c.pending) showPending(); });
 showPending();

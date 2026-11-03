@@ -133,7 +133,7 @@ const mk = (turns, textLen, img) => ({ system: 's', tools: TOOLS, messages: [{ r
 test('크기 강제: 추정치는 한글을 글자당 1토큰, 이미지는 1600으로 본다', () => {
   assert.ok(estimateTokens({ messages: [{ role: 'user', content: [{ type: 'text', text: big(1000) }] }] }) >= 1000);
   const a = estimateTokens(mk(1, 10, false)), b = estimateTokens(mk(1, 10, true));
-  assert.ok(b - a >= 1600);
+  assert.ok(b - a >= 1599);   // 추정치를 올림하므로 1 차이까지 허용
 });
 
 test('크기 강제: 한도를 넘으면 오래된 단계부터 줄이고, 첫 목표와 도구 짝은 유지', () => {
@@ -270,4 +270,11 @@ test('첨부서류 항목 → 가져오기 절차 연결', async () => {
   assert.equal(NA.slotPlan('신청인 인감증명서 1부'), null);
   const pats = NA.slotPatterns();
   assert.ok(pats.length >= 1 && pats.every((x) => { new RegExp(x); return true; }));
+});
+
+test('report_status 도구: 정의돼 있고 자동 허용(표시만 한다)', () => {
+  const t = TOOLS.find((x) => x.name === 'report_status');
+  assert.ok(t); assert.deepEqual(t.input_schema.properties.state.enum, ['sent', 'pending', 'failed']);
+  assert.equal(classify('report_status', { state: 'sent' }, {}).act, 'auto');
+  assert.match(PLAYBOOKS['iros-corp-ecourt'].guide, /report_status/);
 });

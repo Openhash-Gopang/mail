@@ -22,6 +22,8 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
   { name: 'wait', description: '잠시 기다린다(초, 최대 10).',
     input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },
+  { name: 'report_status', description: '나비웹에서 맡긴 첨부서류 항목의 진행 결과를 나비웹 화면에 알린다. state: sent(법원 등으로 전송 완료), pending(아직 진행 중), failed(실패). note 는 한 줄(법인 이름·건수 등).',
+    input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
   { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
     input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
 ];

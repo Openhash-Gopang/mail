@@ -53,7 +53,16 @@
       cb({ label: String(m.label || ''), name: String(m.name || ''), mime: String(m.mime || ''), data: m.data });
     });
   }
-  var api = { suggest: suggest, detect: detect, queue: queue, slotPlan: slotPlan, slotPatterns: slotPatterns, onFile: onFile, STORE_URL: STORE_URL };
+  // 확장이 알려 준 항목 진행 결과: { label, state: sent|pending|failed, note }
+  function onStatus(cb) {
+    if (typeof window === 'undefined' || !window.addEventListener) return;
+    window.addEventListener('message', function (e) {
+      var m = e.data;
+      if (e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-agent' || m.type !== 'agent-status') return;
+      cb({ label: String(m.label || ''), state: String(m.state || ''), note: String(m.note || '') });
+    });
+  }
+  var api = { onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, slotPlan: slotPlan, slotPatterns: slotPatterns, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);

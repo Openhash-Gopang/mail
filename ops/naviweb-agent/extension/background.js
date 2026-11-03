@@ -84,6 +84,12 @@ async function host(playbook) {
       if (DOM_TOOLS.has(name)) return toTab(name, input, false);
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
       if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); await wait(2500); return { text: '이동: ' + input.url }; }
+      if (name === 'report_status') {
+        if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 나비웹 화면에는 표시하지 않았습니다.' };
+        const st = ['sent', 'pending', 'failed'].includes(input.state) ? input.state : 'pending';
+        await deliverToNavi({ kind: 'status', label: state.slot, state: st, note: String(input.note || '').slice(0, 200) });
+        return { text: '나비웹 화면에 알렸습니다: ' + st };
+      }
       if (name === 'wait') { await wait(Math.min(10, Number(input.seconds) || 1) * 1000); return { text: '대기 완료' }; }
       throw new Error('알 수 없는 도구: ' + name);
     },
@@ -93,10 +99,10 @@ async function host(playbook) {
 }
 
 // 받아 온 파일을 나비웹 탭으로 돌려준다(확장 자신의 화면에서 온 요청만). 3단계에서 인터넷등기소 작업이 이 함수를 부른다.
-async function deliverToNavi({ label, name, mime, b64 }) {
+async function deliverToNavi(msg) {
   const { naviTabId } = (chrome.storage.session && await chrome.storage.session.get('naviTabId')) || {};
   if (naviTabId == null) throw new Error('나비웹 화면을 찾지 못했습니다. 나비웹에서 다시 맡겨 주세요.');
-  await chrome.tabs.sendMessage(naviTabId, { type: 'deliver', label, name, mime, b64 });
+  await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : 'deliver', label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
 }
 chrome.runtime.onMessage.addListener((m, sender, send) => {
   if (m && m.type === 'deliver-file' && sender.id === chrome.runtime.id && !sender.tab) { deliverToNavi(m).then(() => send({ ok: true }), (e) => send({ ok: false, error: e.message })); return true; }
@@ -115,7 +121,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
   if (m.type === 'reply' && state.waiter) { const w = state.waiter; state.waiter = null; w(m.ok !== false); }
   if (m.type === 'stop') { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
   if (m.type === 'start' && !state.running) (async () => {
-    state = { running: true, abort: false, tabId: null, waiter: null };
+    state = { running: true, abort: false, tabId: null, waiter: null, slot: String(m.slot || '').slice(0, 120) };
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
       const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
