@@ -6,6 +6,6 @@ compatibility_date = "2026-11-01"
 DEFAULT_PROVIDER = "claude"        # Gemma 4 31B 가 준비되면 "gemma" 로 바꾼다
 CLAUDE_MODEL = "claude-haiku-5-5"
 GEMMA_MODEL = "google/gemma-4-31B-it"
-ALLOWED_ORIGINS = "chrome-extension://pjjkoadnineipaejocnflkkdojlkhaad"
+ALLOWED_ORIGINS = "chrome-extension://akbbefbhbkkhnfonbmidpoclienkahjj"
 
 # 비밀값(대시보드 또는 wrangler secret put): AGENT_TOKEN, ANTHROPIC_API_KEY, GEMMA_BASE_URL, GEMMA_API_KEY
