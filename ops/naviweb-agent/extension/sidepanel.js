@@ -14,3 +14,17 @@ chrome.runtime.onMessage.addListener((m) => {
   if (m.type === 'done') add('say', m.res.done ? '완료' : '중단됨(' + m.res.reason + ')');
   if (m.type === 'error') add('warn', '오류: ' + m.text);
 });
+
+// 나비웹에서 맡긴 작업: 절차와 지시문을 미리 채워 두고, 시작은 사용자가 누른다.
+async function showPending() {
+  const { pending } = await chrome.storage.local.get('pending');
+  if (!pending) { $('pending').hidden = true; return; }
+  if (pending.playbook) $('pb').value = pending.playbook;
+  if (pending.goal) $('goal').value = pending.goal;
+  $('pendtitle').textContent = pending.title || '맡긴 작업';
+  $('pending').hidden = false;
+  chrome.action.setBadgeText({ text: '' });
+}
+$('pendclear').onclick = async () => { await chrome.storage.local.remove('pending'); $('pending').hidden = true; };
+chrome.storage.onChanged.addListener((c) => { if (c.pending) showPending(); });
+showPending();
