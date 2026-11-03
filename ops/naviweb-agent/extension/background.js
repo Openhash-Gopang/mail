@@ -21,13 +21,21 @@ async function frames(tabId) {
   try { return (await chrome.webNavigation.getAllFrames({ tabId })).filter((f) => /^https?:/.test(f.url)).map((f) => f.frameId); } catch { return [0]; }
 }
 const send1 = (tabId, frameId, msg) => chrome.tabs.sendMessage(tabId, msg, { frameId });
+async function mainClick(frameId) {
+  // javascript: 링크는 확장 프로그램 환경에서 막히므로 페이지 자체 환경(MAIN)에서 누른다.
+  await chrome.scripting.executeScript({ target: { tabId: state.tabId, frameIds: [frameId] }, world: 'MAIN', func: () => { const e = document.querySelector('[data-navi-click]'); if (e) { e.removeAttribute('data-navi-click'); e.click(); } } });
+}
 async function toTab(name, input, describe) {
   await ensureContent(state.tabId);
   const m = input && input.ref && /^f(\d+)\.(ref_\d+)$/.exec(input.ref);
-  if (m) { const r = await send1(state.tabId, Number(m[1]), { __navi: 'tool', name, input: { ...input, ref: m[2] }, describe });
-    if (!r || !r.ok) throw new Error((r && r.error) || '페이지 응답 없음'); return r; }
-  if (input && input.ref) { const r = await send1(state.tabId, 0, { __navi: 'tool', name, input, describe });
-    if (!r || !r.ok) throw new Error((r && r.error) || '페이지 응답 없음'); return r; }
+  const one = async (frameId, inp) => {
+    const r = await send1(state.tabId, frameId, { __navi: 'tool', name, input: inp, describe });
+    if (!r || !r.ok) throw new Error((r && r.error) || '페이지 응답 없음');
+    if (!describe && name === 'click' && String(r.text).startsWith('@@MAIN@@')) { await mainClick(frameId); r.text = String(r.text).slice(8) + ' (페이지 환경에서 실행)'; }
+    return r;
+  };
+  if (m) return one(Number(m[1]), { ...input, ref: m[2] });
+  if (input && input.ref) return one(0, input);
   if (name === 'read_page' || name === 'find' || name === 'get_text') {
     const ids = await frames(state.tabId); const parts = [];
     for (const id of ids) {
@@ -37,8 +45,7 @@ async function toTab(name, input, describe) {
     if (!parts.length) throw new Error('화면에서 읽을 요소가 없습니다. 탭을 새로고침(F5)하거나 로딩이 끝난 뒤 다시 시도하세요.');
     return { ok: true, text: parts.join('\n') };
   }
-  const r = await send1(state.tabId, 0, { __navi: 'tool', name, input, describe });
-  if (!r || !r.ok) throw new Error((r && r.error) || '페이지 응답 없음'); return r;
+  return one(0, input);
 }
 function ask(kind, text) { say({ type: 'prompt', kind, text }); return new Promise((res) => { state.waiter = res; }); }
 
