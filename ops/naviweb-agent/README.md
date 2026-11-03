@@ -18,7 +18,8 @@ Claude in Chrome 과 같은 구성(도구 호출 모델 + 페이지 읽기/조�
 ## 안전 규칙(`extension/policy.js`, 모델보다 우선)
 - 로그인·인증서·결제·보안문자, 비밀번호·카드 입력 → 사용자에게 넘김(handoff)
 - 제출·발급·삭제·전송 클릭 → 사용자 확인
-- 주민등록번호 입력 → 거부. 허용 목록(iros, ecfs, gov.kr, hondi.net, naviweb.kr) 밖 이동 → 거부
+- 주민등록번호 입력 → 거부
+- **모든 https 사이트에서 동작하되 사용자 승인이 먼저**: 사이트마다 사용자가 "이 사이트 허용"을 눌러 브라우저 허용 창(선택적 호스트 권한)을 통과해야 하고, 기본 사이트(iros, ecfs, gov.kr, hondi.net, naviweb.kr) 밖에서는 이동·입력·클릭마다 확인을 받는다.
 - 키는 게이트웨이 비밀값에만 둔다(확장에는 토큰만).
 
 ## 요청 크기 상한(강제)
@@ -33,7 +34,9 @@ Haiku 5.5 는 한 요청이 10만 토큰을 넘으면 모든 요율이 5배다. 
 1. 게이트웨이: `cd ops/naviweb-agent/gateway && npx wrangler deploy` 후 비밀값 설정
    `npx wrangler secret put AGENT_TOKEN` / `ANTHROPIC_API_KEY` (Gemma 사용 시 `GEMMA_BASE_URL`, `GEMMA_API_KEY`).
    `ALLOWED_ORIGINS` 에 `chrome-extension://<확장ID>` 를 넣는다.
-2. 확장: `chrome://extensions` → 개발자 모드 → `ops/naviweb-agent/extension` 폴더 로드 → 설정에 게이트웨이 주소·토큰 입력.
+2. 확장(방문자용): Chrome 웹 스토어에 등록한다 — `STORE.html` 의 순서와 문구, `bash ops/naviweb-agent/pack-extension.sh`(제출용 zip), 개인정보 처리방침 `agent-privacy.html`. 방문자는 "Chrome에 추가" 한 번이면 되고 설정이 필요 없다(나비웹 로그인 토큰으로 인증).
+   확장(개발·시험용): `chrome://extensions` → 개발자 모드 → `ops/naviweb-agent/extension` 폴더 로드 → 설정에 게이트웨이 주소·운영자 토큰 입력.
+   게이트웨이 변수 `AUTH_VERIFY_URL`(로그인 확인 주소), `USER_DAILY_STEPS`(사용자별 일일 한도)를 확인한다.
 3. 사이드패널에서 절차(예: 법인등기 전자소송용 발급)를 고르고 목표를 적어 시작.
 
 ## 한계(현재 0.1)

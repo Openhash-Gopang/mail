@@ -18,11 +18,23 @@ export function hostAllowed(url, extra = []) {
 }
 
 // info: 대상 요소 설명 {tag,type,name,autocomplete,text}
+// 어느 사이트든 다룰 수 있지만, 기본 사이트(DEFAULT_HOSTS) 밖에서는 이동·입력·클릭마다 사용자 승인을 받는다.
+// 그 위에 브라우저가 사이트별 접근 허용(권한 창)을 따로 요구한다.
+function httpsHost(url) { try { const u = new URL(url); return u.protocol === 'https:' ? u.hostname : ''; } catch { return ''; } }
 export function classify(tool, input = {}, info = {}, extraHosts = []) {
   if (tool === 'navigate') {
-    return hostAllowed(input.url, extraHosts)
-      ? { act: 'auto' } : { act: 'deny', reason: '허용되지 않은 사이트입니다.' };
+    const h = httpsHost(input.url);
+    if (!h) return { act: 'deny', reason: 'https 주소만 열 수 있습니다.' };
+    return hostAllowed(input.url, extraHosts) ? { act: 'auto' } : { act: 'confirm', reason: `"${h}" 사이트로 이동할까요?` };
   }
+  if ((tool === 'click' || tool === 'type' || tool === 'select_option') && info.host && !hostAllowed('https://' + info.host + '/', extraHosts)) {
+    const verdict = classifyKnown(tool, input, info);
+    if (verdict.act === 'auto') return { act: 'confirm', reason: `"${info.host}" 에서 ${tool === 'click' ? '"' + String(info.text || info.name || '요소').trim().slice(0, 30) + '" 을(를) 누를까요?' : tool === 'type' ? '글자를 입력할까요?' : '선택을 바꿀까요?'}` };
+    return verdict;
+  }
+  return classifyKnown(tool, input, info);
+}
+function classifyKnown(tool, input = {}, info = {}) {
   if (tool === 'handoff_to_user') return { act: 'handoff', reason: input.reason || '직접 진행이 필요합니다.' };
   if (tool === 'type') {
     const t = String(input.text ?? '');
