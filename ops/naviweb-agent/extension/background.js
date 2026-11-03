@@ -92,7 +92,14 @@ async function host(playbook) {
   };
 }
 
+// 받아 온 파일을 나비웹 탭으로 돌려준다(확장 자신의 화면에서 온 요청만). 3단계에서 인터넷등기소 작업이 이 함수를 부른다.
+async function deliverToNavi({ label, name, mime, b64 }) {
+  const { naviTabId } = (chrome.storage.session && await chrome.storage.session.get('naviTabId')) || {};
+  if (naviTabId == null) throw new Error('나비웹 화면을 찾지 못했습니다. 나비웹에서 다시 맡겨 주세요.');
+  await chrome.tabs.sendMessage(naviTabId, { type: 'deliver', label, name, mime, b64 });
+}
 chrome.runtime.onMessage.addListener((m, sender, send) => {
+  if (m && m.type === 'deliver-file' && sender.id === chrome.runtime.id && !sender.tab) { deliverToNavi(m).then(() => send({ ok: true }), (e) => send({ ok: false, error: e.message })); return true; }
   if (m && m.type === 'info') { send({ version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) }); return; }
   if (m && m.type === 'queue') {
     const j = m.job || {};
@@ -100,7 +107,8 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     // 나비웹 로그인 토큰은 나비웹 화면(다리 스크립트)에서 온 것만 받는다.
     let fromNavi = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; fromNavi = h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { /* 아님 */ }
     if (fromNavi && typeof j.token === 'string' && j.token && chrome.storage.session) chrome.storage.session.set({ userToken: j.token.slice(0, 4000) });
-    chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', at: Date.now() } })
+    if (fromNavi && sender.tab && sender.tab.id != null && chrome.storage.session) chrome.storage.session.set({ naviTabId: sender.tab.id });   // 받아 온 파일을 돌려줄 나비웹 탭
+    chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', slot: String(j.slot || '').slice(0, 120), at: Date.now() } })
       .then(() => { chrome.action.setBadgeText({ text: '1' }); chrome.action.setBadgeBackgroundColor({ color: '#2f5bd8' }); send({ ok: true }); });
     return true;
   }

@@ -1654,6 +1654,35 @@ async function _agentInit() {
     bar.querySelector('.da-state').textContent = '확장 프로그램 ' + _agentInfo.version + ' 연결됨 · 어느 사이트든 맡길 수 있습니다';
     bar.hidden = false;
   });
+  if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); }
+  _agentTellDoc();
+}
+// 서류 화면에 "도우미가 가져오기" 버튼을 붙일 항목(정규식)을 알려 준다. 확장이 연결된 때만.
+function _agentTellDoc() {
+  if (!_agentInfo || !window.NaviAgent || !NaviAgent.slotPatterns) return;
+  _docHostPost({ type: 'navi-doc-agent', on: true, slots: NaviAgent.slotPatterns() });
+}
+// 서류 화면에서 항목의 "도우미가 가져오기"를 눌렀을 때: 도우미 줄을 그 항목의 절차로 채워 두고, 시작은 사용자가 누른다.
+function _agentFetchSlot(label) {
+  const plan = window.NaviAgent && NaviAgent.slotPlan(label);
+  const bars = _agentBars().filter(b => !b.hidden && b.offsetParent !== null);
+  if (!plan || !bars.length) return;
+  bars.forEach(bar => {
+    const sel = bar.querySelector('select'), g = bar.querySelector('input');
+    if ([...sel.options].some(o => o.value === plan.playbook)) sel.value = plan.playbook;
+    g.value = plan.goal; bar.dataset.slot = label;
+    bar.querySelector('.da-state').textContent = '“' + label + '” 항목을 가져옵니다. 입력칸 끝에 필요한 내용(예: 법인 이름)을 적고 “도우미에 맡기기”를 누르세요.';
+  });
+  const g = bars[0].querySelector('input'); g.focus(); g.setSelectionRange(g.value.length, g.value.length);
+}
+// 확장이 받아 온 파일: 사용자가 확인하면 서류 화면의 그 항목에 넣는다(파일은 이 PC 안에서만 오간다).
+function _agentOnFile(f) {
+  const kb = f.data && f.data.byteLength ? Math.max(1, Math.round(f.data.byteLength / 1024)) : 0;
+  const bar = _agentBars().find(b => b.offsetParent !== null), st = bar && bar.querySelector('.da-state');
+  if (!kb) { if (st) st.textContent = '도우미가 보낸 파일이 비어 있어 넣지 않았습니다.'; return; }
+  if (!confirm('나비웹 도우미가 받아 온 파일을 “' + f.label + '” 항목에 넣을까요?\n\n' + f.name + ' (' + kb + 'KB)')) { if (st) st.textContent = '파일을 넣지 않았습니다.'; return; }
+  _docHostPost({ type: 'navi-doc-fill-slot', label: f.label, name: f.name, mime: f.mime, data: f.data });
+  if (st) st.textContent = '“' + f.label + '” 항목에 파일을 넣는 중입니다.';
 }
 function _agentSuggestFor(title) {
   if (!window.NaviAgent) return;
@@ -1678,7 +1707,7 @@ function _agentSuggestFor(title) {
 async function _agentHandOff(btn) {
   const bar = btn.closest('.doc-agent'), sel = bar.querySelector('select'), g = bar.querySelector('input'), st = bar.querySelector('.da-state');
   if (!sel.value && !g.value.trim()) { st.textContent = '맡길 일을 적어 주세요. 예) 정부24에서 주민등록등본 발급 화면을 열어 주세요'; return; }
-  const ok = await NaviAgent.queue({ playbook: sel.value, goal: g.value.trim(), title: sel.value ? sel.options[sel.selectedIndex].text : '자유 작업' });
+  const ok = await NaviAgent.queue({ playbook: sel.value, goal: g.value.trim(), title: sel.value ? sel.options[sel.selectedIndex].text : '자유 작업', slot: bar.dataset.slot || '' }); delete bar.dataset.slot;
   st.textContent = ok ? '맡겼습니다. 브라우저 도구 모음의 나비웹 도우미 아이콘을 눌러 내용을 확인하고 시작하세요. 로그인·결제는 직접 하셔야 합니다.' : '맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.';
 }
 document.addEventListener('DOMContentLoaded', () => { setTimeout(_agentInit, 600); });
@@ -2889,10 +2918,15 @@ function _docHostMessage(d, e) {
   if (d.type === 'navi-doc-ready') {
     _docHost.ready = true; _docHost.cap = (d.v | 0) >= 2;
     _docHost.v3 = (d.v | 0) >= 3;
+    setTimeout(_agentTellDoc, 300);   // 서류 화면에 도우미 가져오기 버튼을 붙이도록 알린다
     if (_docHost.cap) { try { e.source.postMessage({ type: 'navi-doc-host', hostInput: true }, e.origin); } catch (x) {} }
     else document.getElementById('tab-compose').classList.add('doc-live');   // 옛 서류 페이지: 그 페이지의 입력창을 그대로 쓴다
     const q = _docHost.queue; _docHost.queue = [];
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
+  } else if (d.type === 'navi-doc-fetch-slot') {
+    _agentFetchSlot(String(d.label || '').slice(0, 120));
+  } else if (d.type === 'navi-doc-slot-result') {
+    _agentBars().forEach(b => { const st = b.querySelector('.da-state'); if (st && b.offsetParent !== null) st.textContent = d.ok ? '“' + String(d.label || '').slice(0, 60) + '” 항목에 ' + String(d.name || '파일').slice(0, 60) + ' 파일을 넣었습니다. 내용을 확인하세요.' : '파일을 넣지 못했습니다: ' + String(d.msg || '').slice(0, 80); });
   } else if (d.type === 'navi-doc-snapshot') {
     const w = _docHost.snapWait; if (w) { _docHost.snapWait = null; clearTimeout(w.t); w.resolve(d); }
   } else if (d.type === 'navi-doc-revise-result') {

@@ -260,3 +260,14 @@ test('게이트웨이: 나비웹 로그인 사용자(X-Navi-Token, 한글 포함
     assert.equal((await gw.fetch(req({ authorization: 'Bearer tok' }), env)).status, 200, '운영자는 한도 없음');
   } finally { globalThis.fetch = real; }
 });
+
+test('첨부서류 항목 → 가져오기 절차 연결', async () => {
+  const { createRequire } = await import('node:module');
+  const NA = createRequire(import.meta.url)('../agent-bridge.js');
+  assert.equal(NA.slotPlan('제3채무자 법인등기사항증명서 1부').playbook, 'iros-corp-ecourt');
+  assert.match(NA.slotPlan('법인 등기부등본').goal, /법인 이름: $/);
+  assert.equal(NA.slotPlan('위임장 1부'), null);
+  assert.equal(NA.slotPlan('신청인 인감증명서 1부'), null);
+  const pats = NA.slotPatterns();
+  assert.ok(pats.length >= 1 && pats.every((x) => { new RegExp(x); return true; }));
+});
