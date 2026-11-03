@@ -12,7 +12,7 @@ const DEFAULT_GATEWAY = 'https://naviweb-agent-gateway.tensor-city.workers.dev';
 async function cfg() {
   const o = await chrome.storage.local.get(['gateway', 'token', 'provider']);
   const s = (chrome.storage.session && await chrome.storage.session.get('userToken')) || {};
-  return { gateway: (o.gateway || DEFAULT_GATEWAY).replace(/\/$/, ''), token: o.token || s.userToken || '', provider: o.provider || '' };
+  return { gateway: (o.gateway || DEFAULT_GATEWAY).replace(/\/$/, ''), token: o.token || '', userToken: s.userToken || '', provider: o.provider || '' };
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -73,7 +73,7 @@ async function host(playbook) {
     aborted: () => state.abort,
     log: (e) => say({ type: 'log', e }),
     async callModel(body) {
-      const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + c.token }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
+      const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : { 'x-navi-token': encodeURIComponent(c.userToken) }) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
       const j = await r.json().catch(() => ({}));
       if (r.status === 401) throw new Error('나비웹 로그인이 확인되지 않았습니다. 나비웹에 로그인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.');
       if (r.status === 429) throw new Error('오늘 사용할 수 있는 도우미 단계 수를 모두 썼습니다. 내일 다시 이용해 주세요.');
