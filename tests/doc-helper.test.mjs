@@ -207,3 +207,7 @@ test('desktop.html: 도우미 SP — 입력창 잠금을 알고, 다른 요청�
   // 반납(cancel)을 받으면 Draft 저장 → 잠금 해제 경로로 간다
   assert.match(html, /if \(String\(d\.reason\) === 'cancel' && _docLocked\(\)\) \{[\s\S]{0,200}_docNewAfterSave\(null, 'cancel'\)/);
 });
+
+test('desktop.html: 서류 쪽이 후보가 여럿이라 고르지 않았다고(navi-doc-pending) 알리면 방금 건 잠금을 푼다', () => {
+  assert.match(html, /d\.type === 'navi-doc-pending'\) \{[^\n]*\n    _docHost\.confirmed = false; _docHost\.writing = false; _docHelperSync\(\); _docLockSync\(\);/);
+});

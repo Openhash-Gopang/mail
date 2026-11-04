@@ -3232,6 +3232,8 @@ function _docHostMessage(d, e) {
     else document.getElementById('tab-compose').classList.add('doc-live');   // 옛 서류 페이지: 그 페이지의 입력창을 그대로 쓴다
     const q = _docHost.queue; _docHost.queue = [];
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
+  } else if (d.type === 'navi-doc-pending') {   // 후보가 여럿이라 서류 쪽이 아직 고르지 않았다 — 방금 건 잠금을 풀고, 서류 쪽이 안내한 대로 고르게 한다
+    _docHost.confirmed = false; _docHost.writing = false; _docHelperSync(); _docLockSync();
   } else if (d.type === 'navi-doc-fetch-slot') {
     _agentFetchSlot(String(d.label || '').slice(0, 120));
   } else if (d.type === 'navi-doc-slot-result') {
