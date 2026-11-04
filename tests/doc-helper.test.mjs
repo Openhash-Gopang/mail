@@ -244,3 +244,12 @@ test('desktop.html: 내 서류함 — 메뉴·화면·PDV(kind=form) 보관·양
   assert.deepEqual(form.sections[0].f[2].o, ['신규', '갱신']);
   assert.equal(f._mfParse('', 'x'), null);
 });
+
+test('desktop.html: 서류 양식이 보이면 입력창이 맨 위 바 아래로 접히고 단추로 다시 펼친다 · 맨 위 메뉴는 겹치지 않는다', () => {
+  const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(html, /id="doc-fold-btn"[^>]*onclick="_docFoldToggle\(\)"/);
+  assert.match(html, /doc-live\.doc-fold \.chat-composer\{position:static;margin-top:calc\(-1 \* var\(--cf-h,120px\) - 26px\)/);
+  assert.match(html, /_docFold\.auto !== full && tab\.classList\.contains\('doc-live'\)\) \{ _docFold\.auto = full; _docFoldSet\(true\)/);
+  assert.match(html, /_docFold\.auto = ''; if \(tab\.classList\.contains\('doc-fold'\)\) _docFoldSet\(false\)/);
+  assert.match(html, /header\.topbar:has\(#agent-draft:not\(\[hidden\]\)\) \.topbar-page/);
+});
