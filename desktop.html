@@ -372,13 +372,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"].doc-live .chat-thread{display:none}   /* 대화는 혼디 대화창이 맡는다 */
 #tab-compose[data-mode="doc"].doc-live #cmp-loading,#tab-compose[data-mode="doc"].doc-live #cmp-err{order:2;flex:none}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{order:3;flex:1 1 0;min-height:0;height:auto!important;margin-top:0}
-/* 입력창 접기(2026-11-05): 서류 양식이 표시되면 입력 줄과 양식 위 공간이 맨 위 바 아래로 밀려 들어가 서류 칸이 넓어진다. 오른쪽 위 단추로 다시 끌어내린다. */
-#tab-compose[data-mode="doc"].doc-live .chat-composer{transition:margin-top .35s cubic-bezier(.22,1,.36,1),visibility 0s}
-#tab-compose[data-mode="doc"].doc-live.doc-fold .chat-composer{position:static;margin-top:calc(-1 * var(--cf-h,120px) - 26px);visibility:hidden;transition:margin-top .35s cubic-bezier(.22,1,.36,1),visibility 0s .35s}
-#doc-fold-btn{display:none;position:fixed;top:60px;right:30px;z-index:90;font:inherit;font-size:12px;font-weight:700;line-height:1;padding:6px 12px;border-radius:999px;border:1px solid var(--bdr);background:var(--bg,#fff);color:var(--hint,#555);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer}
-#doc-fold-btn:hover{color:var(--pri,#0b57d0)}
-body:has(#tab-compose.active[data-docwrite="1"].doc-live) #doc-fold-btn{display:block}
-@media (prefers-reduced-motion:reduce){#tab-compose[data-mode="doc"].doc-live .chat-composer{transition:none!important}}
+/* 서류를 고르면(2026-11-05) 입력 필드를 화면에서 아예 없앤다. 새 서류는 작성 완료·Draft 저장 뒤 왼쪽 메뉴의 홈(또는 로고)으로 새 입력 필드를 불러와 시작한다. */
+#tab-compose[data-docopen="1"].doc-live .chat-composer{display:none!important}
 /* nav-mail-group — 메일 하위 메뉴가 길어졌으므로 묶음 사이에 가는 선, 링크 모양을 버튼과 같게 */
 .side-nav .nav-sub .nav-sep{height:1px;background:var(--bdr);margin:6px 8px}
 .side-nav .nav-sub a.nav-subitem{text-decoration:none;box-sizing:border-box}
@@ -926,7 +921,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 <div id="intro-backdrop" onclick="_introClose()"></div>
 <div id="intro-panel" aria-hidden="true"><iframe id="intro-frame" title="나만의 AI 비서 소개"></iframe></div>
-<button type="button" id="doc-fold-btn" aria-pressed="false" onclick="_docFoldToggle()" title="입력창과 양식 위 공간을 맨 위 바 아래로 접거나 다시 펼칩니다">▾ 입력창 펼치기</button>
 <header class="topbar">
   <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -2328,13 +2322,13 @@ function _docLocked() { return _cmpMode === 'doc' && _docHost.loaded && _docHost
 function _docLockSync() {
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (!tab || !input) return;
+  if (_cmpMode === 'doc' && _docHost.loaded && _docHost.confirmed && tab.classList.contains('doc-live')) tab.setAttribute('data-docopen', '1'); else tab.removeAttribute('data-docopen');
   if (_docLocked()) {
     tab.setAttribute('data-docwrite', '1');
     const dr = document.getElementById('agent-draft'); if (dr) dr.hidden = false;
     const fv = document.getElementById('agent-fav'); if (fv) fv.hidden = !String(_docHost.title || '').trim();
     input.readOnly = true;
     const full = String(_docHost.title || '').replace(/\s+/g, ' ').trim();
-    if (full && _docFold.auto !== full && tab.classList.contains('doc-live')) { _docFold.auto = full; _docFoldSet(true); }
     if (full) input.value = full;   // 입력한 일부("채권")가 아니라 작성 중인 서류의 전체 이름
     input.title = '서류를 작성하는 동안에는 서류 이름을 바꿀 수 없습니다. 새 서류는 "Draft 저장 후 새 서류"로 시작하세요.';
     try { if (typeof _cmpExClose === 'function') _cmpExClose(); } catch (e) {}
@@ -2342,22 +2336,9 @@ function _docLockSync() {
     tab.removeAttribute('data-docwrite');
     const dr = document.getElementById('agent-draft'); if (dr) dr.hidden = true;
     const fv = document.getElementById('agent-fav'); if (fv) fv.hidden = true;
-    _docFold.auto = ''; if (tab.classList.contains('doc-fold')) _docFoldSet(false);
     if (input.readOnly) { input.readOnly = false; input.removeAttribute('title'); }
   }
 }
-/* 입력창 접기 — 서류 양식이 보이면(제목이 도착하면) 한 번 자동으로 접고, 그 뒤는 단추로 접고 펼친다 */
-const _docFold = { auto: '' };
-function _docFoldSet(on) {
-  const tab = document.getElementById('tab-compose'), btn = document.getElementById('doc-fold-btn');
-  if (!tab) return;
-  const comp = tab.querySelector('.chat-composer');
-  if (on && comp && !tab.classList.contains('doc-fold')) tab.style.setProperty('--cf-h', comp.offsetHeight + 'px');
-  tab.classList.toggle('doc-fold', !!on);
-  if (comp) { if (on) comp.setAttribute('inert', ''); else comp.removeAttribute('inert'); }
-  if (btn) { btn.textContent = on ? '▾ 입력창 펼치기' : '▴ 입력창 접기'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
-}
-function _docFoldToggle() { const tab = document.getElementById('tab-compose'); _docFoldSet(!(tab && tab.classList.contains('doc-fold'))); }
 function _docLockOn() { _docHost.writing = true; _docLockSync(); }
 function _docLockOff() { if (!_docHost.writing) return; _docHost.writing = false; _docLockSync(); }
 const _DOC_LOCK_MSG = '서류를 작성하는 동안에는 서류 이름을 바꿀 수 없습니다. 다른 서류는 “Draft 저장 후 새 서류”로 시작해 주세요.';
@@ -3186,7 +3167,7 @@ function _docHostLoad(id) {
   _docHostAutoHeight(0);
   _docHost.confirmed = false; _docHost.loaded = true; _docHost.id = id; _docHost.ready = false; _docHost.cap = false; _docHost.queue = []; _docHost.title = ''; _docHost.v3 = false; _docHost.cards = {}; _docHost.msgs = []; _docHost.snapWait = null;
   try { _docHost.meta = JSON.parse(localStorage.getItem(_docHostMetaKey(id)) || '{}') || {}; } catch (e) { _docHost.meta = {}; }
-  _docHostApplyMeta();
+  _docHostApplyMeta(); _docLockSync();
   _docLoadInto(id, { frame: 'doc-host-frame', sel: 'cmp-doc-site', note: 'cmp-doc-count' });
 }
 function _docHostSite(id) {
@@ -3817,6 +3798,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // home: 다른 화면에서 돌아오면 하던 그대로 보여 주고, 이미 이 화면이면 기본 모드(나만의 AI 비서)로 돌아간다.
 const _NAV_COMPOSE_NAMES = ['home', 'compose', 'letter', 'doc', 'verdict'];
 function _switchTab(name) {
+  // 서류를 작성하는 중에 홈(로고)을 누르면 작성 중인 서류를 Draft 로 저장하고 새 입력 필드를 불러온다
+  if (name === 'home' && _docLocked() && document.getElementById('tab-compose').classList.contains('active')) {
+    _docNewAfterSave(null).then(ok => { if (ok) _cmpSetMode('default', { force: true }); });
+    return;
+  }
   _sentCardHide('mail'); _sentCardHide('qs');
   const _wasComposeActive = document.getElementById('tab-compose').classList.contains('active');
   if (_wasComposeActive && _NAV_COMPOSE_NAMES.indexOf(name) < 0) _drAutoSave('leave');   // 편지·캠페인·서류 화면을 떠나면 Draft 로 저장해 둔다(화면 상태는 그대로 유지)
@@ -5863,6 +5849,7 @@ function _cmpSetMode(mode, opts) {
   document.getElementById('tab-compose').setAttribute('data-mode', mode);
   if (!opts.keep) _cmpChatStartNew();
   _docHostMode(mode === 'doc');
+  if (mode !== 'doc' && _docHost.loaded) { _docHost.confirmed = false; _docHost.writing = false; _docHost.title = ''; _docHostPost({ type: 'navi-doc-input', text: '' }); _docLockSync(); }   // 서류 화면을 떠나면(홈) 다음에 새 서류를 처음부터 고르게 한다
   if (mode !== 'org' && _org) _orgLeave();
   if (mode !== 'doc') _submitGuideEnd();
   if (mode !== 'doc') _docChatLeave();
