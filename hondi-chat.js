@@ -169,7 +169,12 @@
     });
     root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.open && S.els.panel.contains(doc.activeElement)) close(); });
     S.mounted = true; layout(); paint();
-    if (storeGet() && opts.restore !== false) open();   // 지난번에 열어 둔 채였다면 다시 연다(통화 신호를 받기 위해)
+    if (storeGet() && opts.restore !== false) {   // 지난번에 열어 둔 채였다면 다시 연다(통화 신호를 받기 위해)
+      // 2026-11-04 속도 개선 — hondi.net/webapp.html(2.7초)을 첫 화면과 함께 받으면 새로고침 표시가 5.8초까지 이어진다. 화면이 뜬 뒤(load + 1.5초)에 연다.
+      var restore = function () { if (!S.open) open(); };
+      if (doc.readyState === 'complete') setTimeout(restore, 1500);
+      else root.addEventListener('load', function () { setTimeout(restore, 1500); });
+    }
   }
 
   var API = {
