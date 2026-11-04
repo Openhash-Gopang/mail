@@ -217,6 +217,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-agent select,.doc-agent input{min-height:34px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;background:var(--sur);color:inherit}
 .doc-agent input{flex:1 1 200px}
 /* 도우미 지시창 모드: 메인 입력창이 도우미에게 시키는 칸이 되므로 이 줄은 연결 상태만 보인다 */
+/* 서류를 작성하는 동안(2026-11-04): 입력창은 서류 이름만 보여 주고 잠근다 — 글자를 바꾸면 작성 중인 서류가 바뀌어 버리기 때문. 다른 말은 혼디 대화창이, 새 서류는 "Draft 저장 후 새 서류"가 맡는다. */
+#tab-compose[data-docwrite="1"] #cmp-input{cursor:not-allowed;font-weight:600}
+#tab-compose[data-docwrite="1"] #cmp-ex-btn,#tab-compose[data-docwrite="1"] #cmp-mic-btn{opacity:.4;pointer-events:none}
+.doc-agent .da-new{display:none}
+#tab-compose[data-docwrite="1"] .doc-agent .da-new{display:inline-flex}
 #tab-compose[data-helper="1"] .doc-agent select,#tab-compose[data-helper="1"] .doc-agent input,#tab-compose[data-helper="1"] .doc-agent .da-ext{display:none!important}
 /* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
 #tab-compose[data-mode="doc"] .chat-landing-sub{display:none}
@@ -1508,6 +1513,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <select aria-label="후속 절차"></select>
       <input type="text" aria-label="도우미에게 맡길 일" placeholder="예) 한림농업협동조합, 제주은행">
       <button type="button" class="btn btn-sm da-ext" onclick="_agentHandOff(this)">도우미에 맡기기</button>
+      <button type="button" class="btn btn-sm da-new" onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
       <a class="btn btn-sm da-install" hidden target="_blank" rel="noopener">Chrome에 추가</a>
     </div>
     <iframe id="doc-frame" title="서류 작성" allow="clipboard-write"></iframe>
@@ -1955,7 +1961,7 @@ function _cmpExClose() {
   p.querySelectorAll('[aria-haspopup]').forEach(x => x.setAttribute('aria-expanded', 'false'));
   p.classList.remove('settled', 'open'); p.setAttribute('aria-hidden', 'true'); b && b.setAttribute('aria-expanded', 'false');
 }
-function _cmpExToggle(e) { if (e) e.stopPropagation(); _cmpExIsOpen() ? _cmpExClose() : _cmpExOpen(); }
+function _cmpExToggle(e) { if (e) e.stopPropagation(); if (_docLocked()) { _drToast(_DOC_LOCK_MSG); return; } _cmpExIsOpen() ? _cmpExClose() : _cmpExOpen(); }
 (function () {
   const p = _cmpExPanel(); if (!p) return;
   // 항목을 고르면(단추형 예시·목록의 항목·양식 업로드) 패널이 다시 들어간다. 항목 처리가 끝난 다음에 접는다.
@@ -2254,6 +2260,46 @@ function _docHelperSync() {
   if (!tab || !window.DocHelper) return;
   if (_docHelperOn()) tab.setAttribute('data-helper', '1'); else tab.removeAttribute('data-helper');
 }
+/* 서류를 작성하는 동안 입력창 잠금(2026-11-04) — 서류를 확정(Enter·양식 올리기)하면 잠그고, 작성 완료·새 서류·모드 해제에서 푼다. */
+function _docLocked() { return _cmpMode === 'doc' && _docHost.loaded && _docHost.confirmed && !!_docHost.writing; }
+function _docLockSync() {
+  const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
+  if (!tab || !input) return;
+  if (_docLocked()) {
+    tab.setAttribute('data-docwrite', '1');
+    input.readOnly = true;
+    const full = String(_docHost.title || '').replace(/\s+/g, ' ').trim();
+    if (full) input.value = full;   // 입력한 일부("채권")가 아니라 작성 중인 서류의 전체 이름
+    input.title = '서류를 작성하는 동안에는 서류 이름을 바꿀 수 없습니다. 새 서류는 "Draft 저장 후 새 서류"로 시작하세요.';
+    try { if (typeof _cmpExClose === 'function') _cmpExClose(); } catch (e) {}
+  } else {
+    tab.removeAttribute('data-docwrite');
+    if (input.readOnly) { input.readOnly = false; input.removeAttribute('title'); }
+  }
+}
+function _docLockOn() { _docHost.writing = true; _docLockSync(); }
+function _docLockOff() { if (!_docHost.writing) return; _docHost.writing = false; _docLockSync(); }
+const _DOC_LOCK_MSG = '서류를 작성하는 동안에는 서류 이름을 바꿀 수 없습니다. 다른 서류는 “Draft 저장 후 새 서류”로 시작해 주세요.';
+/** 작성 중인 서류를 Draft 로 저장하고(작성본 Word 파일 포함) 잠금을 풀어 새 서류를 시작한다. 저장하지 못하면 서류를 그대로 둔다. */
+async function _docNewAfterSave(btn, reason) {
+  if (!_docLocked()) return false;
+  if (btn) btn.disabled = true;
+  try {
+    if (!_drAutoSave('new-doc')) { _drToast('Draft 를 저장하지 못해 서류를 그대로 두었습니다. (PDV 연결 확인)'); return false; }
+    for (let i = 0; i < 40 && _dr.capture; i++) await new Promise(r => setTimeout(r, 100));   // 서류 페이지가 작성본을 보내 줄 때까지(최대 4초) 기다린 뒤 비운다
+    _docChatHandBack(reason || 'cancel');
+    _docHost.confirmed = false; _docHost.writing = false; _docHost.title = '';
+    const input = document.getElementById('cmp-input');
+    document.getElementById('tab-compose').classList.remove('doc-live');
+    input.readOnly = false; input.removeAttribute('title'); input.value = '';
+    _docHostPost({ type: 'navi-doc-input', text: '' });
+    _docHelperSync(); _docLockSync();
+    _cmpChat.draftId = null;   // 다음 서류는 새 Draft 로
+    _drToast('작성 중이던 서류를 Draft 로 저장했습니다. 새 서류를 입력하세요.');
+    try { input.focus(); } catch (e) {}
+    return true;
+  } finally { if (btn) btn.disabled = false; }
+}
 function _docHelperSend(text) {   // 대화창의 도우미 SP 에게 사용자 말을 대신 전한다(서류 화면의 "도우미가 가져오기" 버튼)
   text = String(text || '').trim().slice(0, 2000);
   if (!text || !window.HondiChat) return false;
@@ -2284,9 +2330,10 @@ function _docChatSp() {
     '7. 블록이 "나비웹 도우미: 연결 안 됨"이면 맡길 수 없다고 한 줄로 알리고, 항목마다 받을 기관과 서류 이름을 짧게 알려 준다. 이때만 사용자가 직접 발급받도록 안내하고, 나비웹 도우미(Chrome 확장)를 켜면 대신 진행할 수 있다고 한 줄 덧붙인다.\n' +
     '[서류 작성] 서류 이름과 비어 있는 항목을 짚어 한 번에 한두 가지씩 짧게 묻고 안내한다. 제목을 알 수 없으면 어떤 서류인지 먼저 묻는다. 항목 칸에는 이 대화에서 직접 쓰지 못한다 — 어느 칸에 무엇을 넣을지 짚어 주면 사용자가 화면에서 입력·확인한다. 공동인증서 비밀번호·주민등록번호·계좌번호·카드번호는 이 대화에 입력하라고 하지 않는다.\n' +
     '[주도권 반납] 다음일 때만 답변 맨 끝에 [DOC_HANDBACK: reason=cancel] 또는 [DOC_HANDBACK: reason=complete] 를 쓴다.\n' +
-    '- 사용자가 이 서류 작성을 그만두겠다고 하면 reason=cancel.\n' +
+    '- 사용자가 이 서류 작성을 그만두겠다고 하거나, 아래 [다른 요청]에서 Draft 로 저장하고 넘어가겠다고 동의하면 reason=cancel. 시스템이 작성 중인 서류를 Draft 로 저장하고 입력창을 풀어 준다.\n' +
     '- 블록이 "작성 완료 저장: 함"이고 남은 첨부서류가 없거나, 남은 것이 있어도 사용자가 기다리지 않고 마무리하겠다고 하면 reason=complete. "작성 완료 저장: 안 함"이면 complete 를 쓰지 않고 화면의 "작성 완료로 저장"을 눌러 달라고 한다.\n' +
-    '- 서류와 무관한 요청이면 서류 작성을 마칠지 한 번 묻는다.\n' +
+    '[입력창 잠금] 서류를 작성하는 동안 화면 맨 위 입력창은 서류 이름만 보여 주고 잠겨 있다. 사용자의 다른 서류·다른 일(메일 보내기, 전문가 상담, 다른 사이트 등)에 대한 말은 모두 이 대화창으로 온다.\n' +
+    '[다른 요청] 서류와 무관한 요청이나 다른 서류를 쓰겠다는 말이 오면 바로 처리하지 말고 한 번만 묻는다 — "지금 작성 중인 「서류 이름」을 Draft 로 저장하고 넘어갈까요?" 동의하면 답변 맨 끝에 [DOC_HANDBACK: reason=cancel] 만 쓴다(그 요청은 기본 비서가 이어 받는다). 동의하지 않으면 서류 작성을 이어 간다. 서류에 대한 질문이나 지시는 묻지 말고 바로 처리한다.\n' +
     '[한계] 법률 판단이나 접수·처리 결과를 보장하지 않는다. 서류의 제출·접수는 사용자가 한다. 확실하지 않은 법령·서식 번호는 확인이 필요하다고 표시한다.';
 }
 function _docChatEnsure(force) {
@@ -2371,6 +2418,10 @@ window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 �
   if (d.type === 'hondi-embed-agent-task') { _docChatAgentTask(d); return; }
   const r = window.DocHelper ? DocHelper.handBackDecision(String(d.reason || ''), { saved: _docChat.saved }) : { ok: false, msg: '' };
   if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
+  if (String(d.reason) === 'cancel' && _docLocked()) {   // 작성 중인 서류는 Draft 로 저장하고 입력창을 푼 뒤 돌려준다(저장하지 못하면 서류를 그대로 둔다)
+    _docNewAfterSave(null, 'cancel').then(function (ok) { if (!ok) _embedNote(true, 'Draft 를 저장하지 못해 서류를 그대로 두었습니다. 저장 연결을 확인한 뒤 다시 말씀해 주세요.'); });
+    return;
+  }
   _docChatHandBack(String(d.reason));
 });
 window.addEventListener('message', function (e) {   // 대화창이 전송 직전에 "지금 화면"을 새로 요청한다
@@ -3075,6 +3126,7 @@ function _docHostPost(msg) {
 }
 function _docHostInput() {
   if (_cmpMode !== 'doc') return;
+  if (_docLocked()) { _docLockSync(); return; }
   const t = document.getElementById('cmp-input').value;
   // 입력창은 서류 검색·선택만 맡는다. 서류를 확정한(Enter) 뒤 글자를 지워도 작성 중인 서류는 사라지지 않는다(대화는 혼디 대화창이 맡는다).
   if (!t.trim() && _docHost.confirmed && document.getElementById('tab-compose').classList.contains('doc-live')) return;
@@ -3082,10 +3134,11 @@ function _docHostInput() {
   _docHostPost({ type: 'navi-doc-input', text: t });
 }
 async function _docHostSubmit() {
+  if (_docLocked()) { _drToast(_DOC_LOCK_MSG); return; }
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
-  _docHost.confirmed = true; _docHelperSync();
+  _docHost.confirmed = true; _docHelperSync(); _docLockOn();
   _docHostPost({ type: 'navi-doc-submit', text: t });   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
 }
 // ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
@@ -3167,7 +3220,7 @@ function _docEditResult(d) {
   _cmpScrollToBottom();
 }
 function _docHostReset() {
-  _docHost.confirmed = false; _docHelperSync();
+  _docHost.confirmed = false; _docHost.writing = false; _docHelperSync(); _docLockSync();
   if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
 }
 function _docHostMessage(d, e) {
@@ -3195,7 +3248,7 @@ function _docHostMessage(d, e) {
   } else if (d.type === 'navi-doc-size') {
     _docHostAutoHeight(d.height);
   } else if (d.type === 'navi-doc-title') {   // 서류 쪽에서 고른(또는 미리보기 중인) 서류의 정확한 이름
-    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80); _docHelperSync();
+    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80); _docHelperSync(); _docLockSync();
     if (!_docChat.on && _docChat.doneKey && _docHost.title && _docHost.title !== _docChat.doneTitle) setTimeout(function () { _docChatEnsure(true); }, 0);   // 방금 마친 서류와 다른 서류를 열었다 — 도우미가 주도권을 다시 맡는다
     setTimeout(_docChatPush, 0);
   } else if (d.type === 'navi-doc-meta') {
@@ -3231,7 +3284,7 @@ function _docHostMessage(d, e) {
     const cap = _dr.capture;
     if (cap && Date.now() - cap.t < 9000) { _dr.capture = null; _drStoreCaptured(cap, d); return; }   // Draft·완료 저장을 위해 우리가 요청한 작성본 — 메일에 첨부하지 않는다
     _agentSuggestFor(d.title);   // 서류에 맞는 후속 절차를 제안한다(확장 프로그램이 있을 때만)
-    _drRecordDone(d);          // 서류 페이지에서 직접 "첨부/완료"를 누른 경우도 '작성한 서류'에 보관한다
+    _drRecordDone(d); _docLockOff();          // 서류 페이지에서 직접 "첨부/완료"를 누른 경우도 '작성한 서류'에 보관한다
     _docAttach(d, e.source, e.origin);
   }
 }
@@ -3250,7 +3303,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ok) { _drToast('양식은 이미지나 PDF 로 올려 주세요.'); return; }
     if (f.size > 8 * 1024 * 1024) { _drToast('양식은 8MB 이하만 올릴 수 있습니다.'); return; }
     if (_cmpMode !== 'doc' && !_cmpSetMode('doc')) return;
-    _docHost.confirmed = true; document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync();   // 입력창이 비어 있어도 서류 화면이 접히지 않게 확정 상태로 둔다(_docHostInput 참고)
+    _docHost.confirmed = true; document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();   // 입력창이 비어 있어도 서류 화면이 접히지 않게 확정 상태로 둔다(_docHostInput 참고)
     const c = document.getElementById('cmp-doc-count'); c.textContent = '양식을 읽는 중…'; _docBar(3);
     f.arrayBuffer().then(buf => _docHostPost({ type: 'navi-doc-template', asTemplate: true, name: f.name.slice(0, 120), mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/png'), data: buf }))
       .catch(() => { c.textContent = '파일을 읽지 못했습니다.'; _docBar(-1); });
@@ -3405,7 +3458,7 @@ async function _drStoreCaptured(cap, d) {
     const ex = _docExtras(d); if (ex.length) item.extras = ex;
     if (d.title) item.title = String(d.title).slice(0, 120);
     await _drCall('put', { item });
-    if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _cmpChat.draftId = null; _dr.lastSig = ''; _drToast('작성한 서류에 저장했습니다 — 왼쪽 메뉴 서류 ▸ 작성한 서류'); try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }
+    if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _docLockOff(); _cmpChat.draftId = null; _dr.lastSig = ''; _drToast('작성한 서류에 저장했습니다 — 왼쪽 메뉴 서류 ▸ 작성한 서류'); try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }
   } catch (e) { if (cap.mode === 'done') _drToast('서류를 저장하지 못했습니다. 서류 작성이 끝났는지 확인해 주세요.'); }
 }
 // 서류 화면의 "작성 완료로 저장" 버튼

@@ -177,3 +177,33 @@ test('desktop.html: 메인 입력창·예시 버튼은 서류 검색 그대로, 
   assert.match(html, /function _agentFetchSlot\(label\) \{\n  if \(_docHelperOn\(\)\) \{ _docHelperSend\(DocHelper\.slotAsk\(label\)\)/, '항목의 "도우미가 가져오기"는 도우미 SP 로');
   assert.match(html, /input\.value\.trim\(\) \|\| \(_docHost\.loaded && _docHost\.confirmed \? String\(_docHost\.title/, '입력창이 비어도 작성 중인 서류는 Draft 로 저장');
 });
+
+test('desktop.html: 서류를 작성하는 동안 입력창 잠금 — 서류 이름만 보이고, 예시·새 서류는 막고, Draft 저장 후 새 서류로 푼다', () => {
+  assert.match(html, /function _docLocked\(\) \{ return _cmpMode === 'doc' && _docHost\.loaded && _docHost\.confirmed && !!_docHost\.writing; \}/);
+  assert.match(html, /input\.readOnly = true;[\s\S]{0,260}if \(full\) input\.value = full;/, '잠그면 작성 중인 서류의 전체 이름을 보인다');
+  assert.match(html, /async function _docHostSubmit\(\) \{\n  if \(_docLocked\(\)\) \{ _drToast\(_DOC_LOCK_MSG\); return; \}/, '잠긴 동안 Enter 로 서류를 바꿀 수 없다');
+  assert.match(html, /_docHost\.confirmed = true; _docHelperSync\(\); _docLockOn\(\);/, '서류를 확정하면 잠근다');
+  assert.match(html, /function _docHostInput\(\) \{\n  if \(_cmpMode !== 'doc'\) return;\n  if \(_docLocked\(\)\)/, '잠긴 동안 입력 변화는 서류에 보내지 않는다');
+  assert.match(html, /function _cmpExToggle\(e\) \{ if \(e\) e\.stopPropagation\(\); if \(_docLocked\(\)\)/, '잠긴 동안 예시 단추도 막는다');
+  assert.match(html, /#tab-compose\[data-docwrite="1"\] #cmp-ex-btn,#tab-compose\[data-docwrite="1"\] #cmp-mic-btn\{opacity:\.4;pointer-events:none\}/);
+  assert.match(html, /class="btn btn-sm da-new" onclick="_docNewAfterSave\(this\)"[^>]*>Draft 저장 후 새 서류</);
+  assert.match(html, /\.doc-agent \.da-new\{display:none\}\n#tab-compose\[data-docwrite="1"\] \.doc-agent \.da-new\{display:inline-flex\}/, '이 단추는 잠긴 동안에만 보인다');
+  // 풀리는 곳: 작성 완료 저장 · 서류 페이지에서 직접 완료 · 모드 해제/새 서류
+  assert.match(html, /await _drCall\('done', \{ id: cap\.id \}\); _docLockOff\(\);/);
+  assert.match(html, /_drRecordDone\(d\); _docLockOff\(\);/);
+  assert.match(html, /function _docHostReset\(\) \{\n  _docHost\.confirmed = false; _docHost\.writing = false;/);
+  // 새 서류: 저장에 실패하면 서류를 지우지 않는다
+  const fn = html.slice(html.indexOf('async function _docNewAfterSave'), html.indexOf('function _docHelperSend'));
+  assert.ok(fn.indexOf("if (!_drAutoSave('new-doc'))") < fn.indexOf("_docHostPost({ type: 'navi-doc-input', text: '' })"), '저장이 먼저, 비우기는 그 뒤');
+  assert.match(fn, /return false; \}/, '저장 실패 시 그대로 둔다');
+});
+
+test('desktop.html: 도우미 SP — 입력창 잠금을 알고, 다른 요청은 Draft 저장 동의를 한 번 받은 뒤 반납한다', () => {
+  const sp = html.slice(html.indexOf('function _docChatSp()'), html.indexOf('function _docChatEnsure'));
+  assert.match(sp, /\[입력창 잠금\]/);
+  assert.match(sp, /\[다른 요청\][\s\S]{0,300}Draft 로 저장하고 넘어갈까요/);
+  assert.match(sp, /\[DOC_HANDBACK: reason=cancel\] 만 쓴다/);
+  assert.match(sp, /서류에 대한 질문이나 지시는 묻지 말고 바로 처리/);
+  // 반납(cancel)을 받으면 Draft 저장 → 잠금 해제 경로로 간다
+  assert.match(html, /if \(String\(d\.reason\) === 'cancel' && _docLocked\(\)\) \{[\s\S]{0,200}_docNewAfterSave\(null, 'cancel'\)/);
+});
