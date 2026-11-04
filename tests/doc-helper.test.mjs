@@ -252,6 +252,7 @@ test('desktop.html: 서류 양식이 보이면 입력창이 맨 위 바 아래�
   assert.match(html, /_docFold\.auto !== full && tab\.classList\.contains\('doc-live'\)\) \{ _docFold\.auto = full; _docFoldSet\(true\)/);
   assert.match(html, /_docFold\.auto = ''; if \(tab\.classList\.contains\('doc-fold'\)\) _docFoldSet\(false\)/);
   assert.match(html, /header\.topbar:has\(#agent-draft:not\(\[hidden\]\)\) \.topbar-page/);
+});
 
 test('desktop.html: 후보를 눌러 고른 서류도 잠그고 접으며, 작성 중 입력창을 건드려도 서류가 사라지지 않는다', () => {
   const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
