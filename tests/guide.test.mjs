@@ -377,7 +377,7 @@ test('서류 작성 드롭다운: "전체" 아래에 "제주 행정"(jeju.naviwe
 
 test('예시 패널: 입력 칸 왼쪽 "예시" 버튼이 예시 항목 패널을 slide out/in 하고, 항목을 고르면 다시 들어간다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.indexOf('id="cmp-input"') < h.indexOf('id="cmp-ex-btn"') && h.indexOf('class="cmp-inrow"') < h.indexOf('id="cmp-ex-btn"'), '예시 버튼은 입력 필드 바깥 오른쪽');
+  assert.ok(h.indexOf('class="cmp-inrow"') < h.indexOf('id="cmp-ex-btn"') && h.indexOf('id="cmp-ex-btn"') < h.indexOf('class="chat-inputbar"', h.indexOf('class="cmp-inrow"')) && h.indexOf('id="cmp-ex-btn"') < h.indexOf('id="cmp-input"'), '예시 버튼은 입력 필드 바깥 왼쪽');
   assert.ok(!h.includes('id="cmp-doc-save"'), '작성 완료로 저장 버튼 삭제');
   const panel = h.slice(h.indexOf('id="cmp-ex-panel"'), h.indexOf('id="cmp-doc-count"'));
   for (const id of ['cmp-verdict-btn', 'cmp-doc-combo', 'cmp-org-combo', 'cmp-exp-combo', 'cmp-gov-combo', 'cmp-guide-btn', 'cmp-nabi-btn']) assert.ok(panel.includes('id="' + id + '"'), id + ' 는 패널 안');
