@@ -3211,6 +3211,7 @@ function _docHostInput() {
   const t = document.getElementById('cmp-input').value;
   // 입력창은 서류 검색·선택만 맡는다. 서류를 확정한(Enter) 뒤 글자를 지워도 작성 중인 서류는 사라지지 않는다(대화는 혼디 대화창이 맡는다).
   if (!t.trim() && _docHost.confirmed && document.getElementById('tab-compose').classList.contains('doc-live')) return;
+  if (_docHost.confirmed && _docHost.title && document.getElementById('tab-compose').classList.contains('doc-live')) return;   // 작성 중인 서류는 입력창을 건드려도 서류 선택 화면으로 돌아가지 않는다
   document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
   _docHostPost({ type: 'navi-doc-input', text: t });
 }
@@ -3315,6 +3316,9 @@ function _docHostMessage(d, e) {
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
   } else if (d.type === 'navi-doc-pending') {   // 후보가 여럿이라 서류 쪽이 아직 고르지 않았다 — 방금 건 잠금을 풀고, 서류 쪽이 안내한 대로 고르게 한다
     _docHost.confirmed = false; _docHost.writing = false; _docHelperSync(); _docLockSync();
+  } else if (d.type === 'navi-doc-confirmed') {   // 후보를 눌러 고른 경우 — Enter 로 확정한 것과 똑같이 잠그고(입력창 수정 불가) 접는다
+    _docHost.confirmed = true; _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80) || _docHost.title;
+    document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();
   } else if (d.type === 'navi-doc-fetch-slot') {
     _agentFetchSlot(String(d.label || '').slice(0, 120));
   } else if (d.type === 'navi-doc-slot-result') {
