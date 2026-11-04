@@ -182,3 +182,12 @@ test('desktop.html: 도우미 지시창 모드의 연결 — 전송·검색 입�
   for (const hook of ['_docChatLeave', '_docHostReset', '_docHostApplyMeta']) assert.ok(html.includes('function ' + hook), hook);
   assert.ok((html.match(/_docHelperSync\(\)/g) || []).length >= 7, '모드가 바뀌는 곳마다 동기화');
 });
+
+test('stripText: 고른 서류의 전체 이름을 접힌 입력창 자리에 보인다', () => {
+  assert.match(D.stripText('채권압류 및 추심(전부)명령 신청서'), /^「채권압류 및 추심\(전부\)명령 신청서」 작성 중 —/);
+  assert.match(D.stripText(''), /^서류 작성 도우미가 이끌고 있습니다/);
+  assert.ok(D.stripText('가'.repeat(200)).length < 200, '이름은 80자까지');
+  assert.match(html, /id="cmp-helper-strip-text"/);
+  assert.match(html, /stx\.textContent = DocHelper\.stripText\(_docHost\.title\)/, '이름이 바뀔 때마다 안내줄을 갱신');
+  assert.match(html, /input\.value = _docHelper\.search \? \(_docHost\.title \|\| ''\) : ''/, '서류 찾기는 현재 이름을 채워 전체 선택');
+});

@@ -995,7 +995,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
     <div class="chat-composer">
       <div class="chat-attach-list" id="cmp-attach-list"></div>
-      <div class="cmp-helper-strip" id="cmp-helper-strip" role="status"><span>서류 작성 도우미가 이끌고 있습니다 — 오른쪽 대화창에서 말씀해 주세요. 서류를 바꾸려면 “서류 찾기”를 누르세요.</span><button type="button" class="cmp-helper-find" id="cmp-helper-find" onclick="_docHelperSearch()">서류 찾기</button></div>
+      <div class="cmp-helper-strip" id="cmp-helper-strip" role="status"><span id="cmp-helper-strip-text">서류 작성 도우미가 이끌고 있습니다 — 오른쪽 대화창에서 말씀해 주세요. 서류를 바꾸려면 “서류 찾기”를 누르세요.</span><button type="button" class="cmp-helper-find" id="cmp-helper-find" onclick="_docHelperSearch()">서류 찾기</button></div>
       <div class="cmp-inrow">
         <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="chat-inputbar">
@@ -2264,6 +2264,7 @@ function _docHelperSync() {
   if (!tab || !input || !window.DocHelper) return;
   const on = _docHelperOn();
   if (on) tab.setAttribute('data-helper', '1'); else tab.removeAttribute('data-helper');
+  const stx = document.getElementById('cmp-helper-strip-text'); if (stx) stx.textContent = DocHelper.stripText(_docHost.title);   // 고른 서류의 전체 이름
   if (_cmpMode === 'doc' && _docChat.on && _docHost.confirmed && _docHelper.search) tab.setAttribute('data-helper-search', '1'); else tab.removeAttribute('data-helper-search');
   if (on) {
     if (!_docHelper.was) { input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); try { if (window.HondiChat && !HondiChat.isOpen()) HondiChat.open(); } catch (x) {} }   // 서류를 찾던 글자는 비우고, 말하는 곳(대화창)을 연다
@@ -2274,8 +2275,9 @@ function _docHelperSync() {
 }
 function _docHelperSearch() {   // "서류 찾기" — 다른 서류를 고를 수 있게 메인 입력창을 잠시 서류 검색으로 돌린다
   _docHelper.search = !_docHelper.search;
-  const input = document.getElementById('cmp-input'); input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
-  _docHelperSync(); input.focus();
+  const input = document.getElementById('cmp-input');
+  input.value = _docHelper.search ? (_docHost.title || '') : ''; _kmailAutoResize(input); _cmpChatUpdateSendState();   // 서류 찾기: 지금 서류 이름을 채워 전체 선택 — 바로 타이핑하면 덮어쓴다
+  _docHelperSync(); input.focus(); if (_docHelper.search && input.value) input.select();
 }
 function _docHelperSend(textArg) {
   const input = document.getElementById('cmp-input');
@@ -3222,7 +3224,7 @@ function _docHostMessage(d, e) {
   } else if (d.type === 'navi-doc-size') {
     _docHostAutoHeight(d.height);
   } else if (d.type === 'navi-doc-title') {   // 서류 쪽에서 고른(또는 미리보기 중인) 서류의 정확한 이름
-    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80); _docHelperSync();
     if (!_docChat.on && _docChat.doneKey && _docHost.title && _docHost.title !== _docChat.doneTitle) setTimeout(function () { _docChatEnsure(true); }, 0);   // 방금 마친 서류와 다른 서류를 열었다 — 도우미가 주도권을 다시 맡는다
     setTimeout(_docChatPush, 0);
   } else if (d.type === 'navi-doc-meta') {
