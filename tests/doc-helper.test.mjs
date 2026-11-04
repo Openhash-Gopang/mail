@@ -151,12 +151,11 @@ test('desktop.html: 확장에는 항상 사용자가 시작·승인해야 하는
   assert.doesNotMatch(f, /agent-start|autostart|run\(/);
 });
 
-// ── 메인 입력창 → 도우미 지시창 전환 (2026-11-04) ─────────────────────
-test('helperMode: 서류 모드 + 도우미 SP 주도권 + 서류 확정 + 서류 다시 찾기 꺼짐일 때만', () => {
-  const ok = { cmpMode: 'doc', chatOn: true, confirmed: true, search: false };
+// ── 도우미가 이끄는 동안의 화면 (2026-11-04) ─────────────────────────
+test('helperMode: 서류 모드 + 도우미 SP 주도권 + 서류 확정일 때만', () => {
+  const ok = { cmpMode: 'doc', chatOn: true, confirmed: true };
   assert.equal(D.helperMode(ok), true);
   for (const k of ['chatOn', 'confirmed']) assert.equal(D.helperMode({ ...ok, [k]: false }), false, k);
-  assert.equal(D.helperMode({ ...ok, search: true }), false, '서류 찾기를 켜면 검색 입력창');
   assert.equal(D.helperMode({ ...ok, cmpMode: 'default' }), false);
   assert.equal(D.helperMode(null), false);
 });
@@ -169,25 +168,12 @@ test('slotAsk · isSendFailure', () => {
   assert.equal(D.isSendFailure('집행문은 법원에서 발급합니다.'), false);
 });
 
-test('desktop.html: 도우미 지시창 모드의 연결 — 전송·검색 입력 차단·도우미 줄 정리·서류 찾기 복귀', () => {
-  assert.match(html, /if \(_docHelperOn\(\)\) \{ _docHelperSend\(\); return; \} await _docHostSubmit\(\)/, '서류 모드 전송은 도우미 지시창일 때 대화창 SP 로');
-  assert.match(html, /function _docHostInput\(\) \{\n  if \(_cmpMode !== 'doc'\) return;\n  if \(_docHelperOn\(\)\) return;/, '검색 입력 신호를 서류 페이지에 보내지 않는다');
-  assert.match(html, /type: 'hondi-embed-sp-ask', id, text/, '대화창 SP 에게 사용자 말을 전달');
+test('desktop.html: 메인 입력창·예시 버튼은 서류 검색 그대로, 도우미 줄은 연결 상태만, 가져오기 버튼은 도우미 SP 로', () => {
+  assert.match(html, /if \(_cmpMode === 'doc'\) \{ await _docHostSubmit\(\); return; \}/, '서류 모드의 메인 입력은 서류 검색·선택');
+  assert.doesNotMatch(html, /cmp-helper-strip|cmp-helper-search|_docHelperSearch|data-helper="1"\] \.cmp-inrow/, '입력창을 접거나 안내줄을 두지 않는다');
   assert.match(html, /#tab-compose\[data-helper="1"\] \.doc-agent select[^{]*\.da-ext\{display:none!important\}/, '도우미 줄의 입력·선택·버튼은 숨김(연결 상태만)');
-  assert.match(html, /id="cmp-helper-find"[^>]*onclick="_docHelperSearch\(\)"/, '접힌 입력창의 "서류 찾기" 버튼');
-  assert.match(html, /id="cmp-helper-search"[^>]*onclick="_docHelperSearch\(\)"/, '검색 입력창 쪽의 "도우미 대화로" 복귀 버튼');
-  assert.match(html, /#tab-compose\[data-helper="1"\] \.cmp-inrow\{display:none\}/, '도우미가 이끄는 동안 메인 입력창은 접힌다(입력창은 하나만)');
-  assert.match(html, /HondiChat\.isOpen\(\)\) HondiChat\.open\(\)/, '접으면서 말하는 곳(대화창)을 연다');
+  assert.match(html, /연결됨';/, '연결 상태 문구');
+  assert.doesNotMatch(html, /어느 사이트든 맡길 수 있습니다/);
   assert.match(html, /function _agentFetchSlot\(label\) \{\n  if \(_docHelperOn\(\)\) \{ _docHelperSend\(DocHelper\.slotAsk\(label\)\)/, '항목의 "도우미가 가져오기"는 도우미 SP 로');
-  for (const hook of ['_docChatLeave', '_docHostReset', '_docHostApplyMeta']) assert.ok(html.includes('function ' + hook), hook);
-  assert.ok((html.match(/_docHelperSync\(\)/g) || []).length >= 7, '모드가 바뀌는 곳마다 동기화');
-});
-
-test('stripText: 고른 서류의 전체 이름을 접힌 입력창 자리에 보인다', () => {
-  assert.match(D.stripText('채권압류 및 추심(전부)명령 신청서'), /^「채권압류 및 추심\(전부\)명령 신청서」 작성 중 —/);
-  assert.match(D.stripText(''), /^서류 작성 도우미가 이끌고 있습니다/);
-  assert.ok(D.stripText('가'.repeat(200)).length < 200, '이름은 80자까지');
-  assert.match(html, /id="cmp-helper-strip-text"/);
-  assert.match(html, /stx\.textContent = DocHelper\.stripText\(_docHost\.title\)/, '이름이 바뀔 때마다 안내줄을 갱신');
-  assert.match(html, /input\.value = _docHelper\.search \? \(_docHost\.title \|\| ''\) : ''/, '서류 찾기는 현재 이름을 채워 전체 선택');
+  assert.match(html, /input\.value\.trim\(\) \|\| \(_docHost\.loaded && _docHost\.confirmed \? String\(_docHost\.title/, '입력창이 비어도 작성 중인 서류는 Draft 로 저장');
 });
