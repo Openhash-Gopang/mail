@@ -960,6 +960,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <div class="chat-composer">
       <div class="chat-attach-list" id="cmp-attach-list"></div>
       <div class="cmp-inrow">
+        <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="chat-inputbar">
           <input type="file" id="cmp-file" style="display:none">
           <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
@@ -975,7 +976,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
           </button>
         </div>
-        <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
       </div>
       <div class="doc-host-row" id="cmp-doc-row">
         <div class="ex-panel" id="cmp-ex-panel" role="group" aria-label="예시" aria-hidden="true">
