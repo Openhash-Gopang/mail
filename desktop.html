@@ -52,16 +52,41 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
      대화 메시지에 텍스트로 넣어주는 것 외엔 방법이 없다. 세 파일
      형식 모두 순수 브라우저 라이브러리로 처리(백엔드 Worker 쪽엔
      번들링 부담 없음). -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.12.2/mammoth.browser.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+/* 2026-11-04 속도 개선 — pdf.js·mammoth·SheetJS(엑셀)·Quill 은 <head> 에서 동기로 받으면 첫 화면이 이 파일들(특히 SheetJS 1.5초)을
+   기다린다(첫 화면 4.2초). 모두 사용자가 파일을 붙이거나 메일 탭을 열 때만 쓰므로, 처음엔 받지 않고 화면이 뜬 뒤(load + 3초, 한가할 때)
+   미리 받아 두며, 그 전에 쓰게 되면 그 자리에서 받는다. 사용처는 await _ensureLib('이름') 로 기다린다. */
+const _LIBS = {
+  pdf:     { src: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', ok: () => typeof pdfjsLib !== 'undefined' },
+  mammoth: { src: 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.12.2/mammoth.browser.min.js', ok: () => typeof mammoth !== 'undefined' },
+  xlsx:    { src: 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js', ok: () => typeof XLSX !== 'undefined' },
+  quill:   { src: 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js', css: 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css', ok: () => typeof Quill !== 'undefined' },
+};
+const _libP = {};
+function _ensureLib(name) {
+  const L = _LIBS[name];
+  if (!L) return Promise.reject(new Error('NO_LIB:' + name));
+  if (L.ok()) return Promise.resolve();
+  if (_libP[name]) return _libP[name];
+  if (L.css) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = L.css; document.head.appendChild(l); }
+  _libP[name] = new Promise((resolve, reject) => {
+    const sc = document.createElement('script'); sc.src = L.src; sc.async = true;
+    sc.onload = () => resolve();
+    sc.onerror = () => { delete _libP[name]; sc.remove(); reject(new Error('LIB_LOAD_FAILED:' + name)); };   // 실패하면 다음 사용 때 다시 시도
+    document.head.appendChild(sc);
+  });
+  return _libP[name];
+}
+window.addEventListener('load', () => {
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 1));
+  setTimeout(() => idle(() => { Object.keys(_LIBS).forEach(k => { _ensureLib(k).catch(() => {}); }); }, { timeout: 8000 }), 3000);
+});
+</script>
 <!-- 2026-09-11 신설 — "메일" 탭 편지쓰기용 리치 텍스트 편집기. Quill은
      오픈소스(BSD-3-Clause) 중 가장 널리 쓰이는 편집기 중 하나(4만+
      GitHub star)이자 가볍고 빠르다(주피터 지시: "가장 널리 쓰이고
      성능이 우수한 오픈소스로 적용"). 공식 CDN(jsdelivr) 안내를 그대로
      따름. -->
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="orgtree.js"></script>
 <script src="case-core.js?v=20261101b"></script>
 <script src="case-invite.js?v=20261101d"></script>
@@ -3745,6 +3770,7 @@ let _mailQuill = null; // Quill 편집기 인스턴스 — "메일" 탭 첫 방�
 // 용도로만 쓰고 저장/발송 시엔 일반 텍스트로 변환한다.
 function _mailInitQuill() {
   if (_mailQuill) return;
+  if (typeof Quill === 'undefined') { _ensureLib('quill').then(() => { _mailInitQuill(); }).catch(() => {}); return; }   // 지연 로드 — 받는 동안은 편집기 없이 대기(아래 getter 는 빈 값)
   _mailQuill = new Quill('#mail-body-editor', {
     theme: 'snow',
     placeholder: '내용을 입력하세요',
@@ -3760,11 +3786,12 @@ function _mailInitQuill() {
 }
 function _mailGetBodyText() {
   _mailInitQuill();
-  return _mailQuill.getText().trim();
+  return _mailQuill ? _mailQuill.getText().trim() : '';
 }
 function _mailSetBodyText(text) {
   _mailInitQuill();
-  _mailQuill.setText(text || '');
+  if (_mailQuill) _mailQuill.setText(text || '');
+  else _ensureLib('quill').then(() => { _mailInitQuill(); if (_mailQuill) _mailQuill.setText(text || ''); }).catch(() => {});
 }
 
 function _mailSwitchSub(name) {
@@ -5127,8 +5154,10 @@ let _cmpPendingAttachments = []; // { id, filename, uploading }
 // K-Mail에게 "읽히려면" 여기서 미리 텍스트로 뽑아 대화 메시지에 텍스트
 // 그대로 넣어주는 수밖에 없다. 업로드(실제 메일 첨부용, R2 저장)와는
 // 완전히 별개 경로 — 이건 오직 K-Mail이 내용을 이해하게 하기 위함.
-if (typeof pdfjsLib !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+function _pdfWorkerInit() {
+  if (typeof pdfjsLib !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
 }
 // 파일 하나당 추출 텍스트 상한 — 여러 파일을 동시에 붙여도 대화
 // 전체가 서버 쪽 한도(1.5M자, worker.js KMAIL_MAX_APPROX_CHARS)를
@@ -5136,6 +5165,7 @@ if (typeof pdfjsLib !== 'undefined') {
 const _CMP_ATTACH_TEXT_MAX_CHARS = 150000;
 
 async function _extractPdfText(file) {
+  await _ensureLib('pdf'); _pdfWorkerInit();
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
   let text = '';
@@ -5149,12 +5179,14 @@ async function _extractPdfText(file) {
 }
 
 async function _extractDocxText(file) {
+  await _ensureLib('mammoth');
   const buf = await file.arrayBuffer();
   const result = await mammoth.extractRawText({ arrayBuffer: buf });
   return (result.value || '').trim();
 }
 
 async function _extractXlsxText(file) {
+  await _ensureLib('xlsx');
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array' });
   let text = '';
@@ -6073,6 +6105,7 @@ async function _ctCsvFileSelected(event) {
   _ctCsvParsed = [];
   if (!file) return;
   try {
+    await _ensureLib('xlsx');
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
