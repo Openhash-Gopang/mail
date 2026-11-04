@@ -225,6 +225,14 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-helper="1"] .doc-agent select,#tab-compose[data-helper="1"] .doc-agent input,#tab-compose[data-helper="1"] .doc-agent .da-ext{display:none!important}
 /* 입력창은 하나만: 도우미 줄에는 입력칸·절차 선택·"맡기기" 버튼을 두지 않는다(연결 상태와 Draft 버튼만). 도우미에게 시킬 말은 대화창으로 한다. */
 .doc-agent select,.doc-agent input,.doc-agent .da-ext{display:none!important}
+/* 도우미 줄은 화면에 두지 않는다 — "나비웹 도우미 0.4.5" 는 맨 위 오른쪽에 작게, Draft 버튼도 맨 위로 옮겼다(서류 작성 공간 확보) */
+.doc-agent{display:none!important}
+.agent-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.85);white-space:nowrap}
+.agent-badge[hidden]{display:none}
+.agent-badge .ab-install{color:#fff;font-weight:700;text-decoration:underline}
+.agent-badge .ab-msg{max-width:240px;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.agent-badge .ab-msg:empty{display:none}
+@media(max-width:900px){.agent-badge .ab-msg{display:none}}
 /* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
 #tab-compose[data-mode="doc"] .chat-landing-sub{display:none}
 #tab-compose[data-mode="doc"] .chat-composer{position:static}
@@ -910,6 +918,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
   <div class="topbar-right">
+    <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
+    <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
@@ -1720,6 +1730,17 @@ function _docLoad(id) { _docCurrent = id; _docLoadInto(id, { frame: 'doc-frame',
 // 확장 프로그램이 있으면 줄이 나타나고, 서류에 맞는 절차를 골라 "맡기기"를 누르면 확장 쪽 사이드 패널에 채워진다.
 // 시작·로그인·결제는 사용자가 직접 한다. 확장 프로그램이 없으면 줄을 보이지 않는다.
 let _agentInfo = null;
+const _agentBadge = (text, o) => {   // 맨 위 오른쪽 "나비웹 도우미 0.4.5" — o.install: Chrome 에 추가 링크
+  const b = document.getElementById('agent-badge'); if (!b) return;
+  b.querySelector('.ab-t').textContent = text || ''; b.hidden = !text;
+  const a = b.querySelector('.ab-install'); a.hidden = !(o && o.install); if (o && o.install) a.href = o.install;
+};
+let _agentMsgTm = 0;
+const _agentSay = (t) => {   // 도우미 진행 상황은 배지 옆에 잠깐 보이고, 전체 문구는 마우스를 올리면 보인다
+  const b = document.getElementById('agent-badge'); if (!b || !t) return;
+  b.title = t; const m = b.querySelector('.ab-msg'); m.textContent = t;
+  clearTimeout(_agentMsgTm); _agentMsgTm = setTimeout(() => { m.textContent = ''; }, 9000);
+};
 const _agentBars = () => [...document.querySelectorAll('.doc-agent')];
 async function _agentInit() {
   if (!window.NaviAgent) return;
@@ -1734,6 +1755,8 @@ async function _agentInit() {
     bar.querySelector('.da-state').textContent = '확장 프로그램 ' + _agentInfo.version + ' 연결됨';
     bar.hidden = false;
   });
+  if (_agentInfo) _agentBadge('나비웹 도우미 ' + _agentInfo.version);
+  if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
   if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); }
   _agentTellDoc();
 }
@@ -1787,6 +1810,7 @@ function _agentSuggestFor(title) {
       bar.querySelector('.da-state').textContent = s.title + ' — 나비웹 도우미(Chrome 확장 프로그램)를 추가하면 대신 진행해 드립니다. 사이트마다, 중요한 동작마다 승인을 받습니다.';
       bar.hidden = false;
     });
+    _agentBadge('나비웹 도우미 없음', { install: NaviAgent.STORE_URL }); _agentSay(s.title + ' — 도우미를 추가하면 대신 진행합니다.');
     return;
   }
   _agentBars().forEach(bar => {
@@ -2272,6 +2296,7 @@ function _docLockSync() {
   if (!tab || !input) return;
   if (_docLocked()) {
     tab.setAttribute('data-docwrite', '1');
+    const dr = document.getElementById('agent-draft'); if (dr) dr.hidden = false;
     input.readOnly = true;
     const full = String(_docHost.title || '').replace(/\s+/g, ' ').trim();
     if (full) input.value = full;   // 입력한 일부("채권")가 아니라 작성 중인 서류의 전체 이름
@@ -2279,6 +2304,7 @@ function _docLockSync() {
     try { if (typeof _cmpExClose === 'function') _cmpExClose(); } catch (e) {}
   } else {
     tab.removeAttribute('data-docwrite');
+    const dr = document.getElementById('agent-draft'); if (dr) dr.hidden = true;
     if (input.readOnly) { input.readOnly = false; input.removeAttribute('title'); }
   }
 }

@@ -216,3 +216,11 @@ test('도우미 줄에는 입력칸·절차 선택·맡기기 버튼이 항상 �
   assert.match(html, /\.doc-agent select,\.doc-agent input,\.doc-agent \.da-ext\{display:none!important\}/);
   assert.doesNotMatch(html, /data-helperbar/);
 });
+
+test('도우미 줄은 화면에 두지 않고, 버전은 맨 위 오른쪽 배지·Draft 버튼은 맨 위로', () => {
+  assert.match(html, /\.doc-agent\{display:none!important\}/);
+  assert.match(html, /<span class="agent-badge" id="agent-badge" hidden/);
+  assert.match(html, /_agentBadge\('나비웹 도우미 ' \+ _agentInfo\.version\)/);
+  assert.match(html, /id="agent-draft" hidden onclick="_docNewAfterSave\(this\)"/);
+  assert.match(html, /const dr = document\.getElementById\('agent-draft'\); if \(dr\) dr\.hidden = false;/);
+});
