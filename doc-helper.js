@@ -8,9 +8,9 @@
  *
  * 첨부서류 상태: none(없음) · queued(도우미에 맡김, 시작 대기) · pending(진행 중) · sent(법원 등으로 전송 완료) · received(서류에 넣음) · failed(실패)
  *
- * 메인 입력창 전환(2026-11-04): 서류를 확정하고 도우미 SP 가 주도권을 가진 동안 메인 입력창은 서류 검색이 아니라 도우미 지시창이다(helperMode).
+ * 도우미가 이끄는 동안(2026-11-04): 메인 입력창·예시 버튼은 그대로 서류 검색·선택에 쓰고, 아래 도우미 줄은 연결 상태만 보인다(helperMode).
  *
- * 전역: window.DocHelper = { stripText, helperMode, slotAsk, isSendFailure, HELPER_PH, matchLabel, applySlot, pendingLabels, attachCtx, planTask, handBackDecision, handBackSummary, SUFFIX }
+ * 전역: window.DocHelper = { helperMode, slotAsk, isSendFailure, matchLabel, applySlot, pendingLabels, attachCtx, planTask, handBackDecision, handBackSummary, SUFFIX }
  */
 (function (root) {
   'use strict';
@@ -30,14 +30,8 @@
   function key(t) { return String(t == null ? '' : t).replace(/^[\d.)\s]+/, '').replace(/[\s_\-().\[\]·,]/g, '').toLowerCase(); }
 
 
-  var HELPER_PH = '도우미에게 시키세요 — 예) 집행문 발급해 줘 (로그인·결제만 직접 하시면 됩니다)';
-  /** 메인 입력창이 도우미 지시창인지. st: { cmpMode, chatOn(도우미 SP 가 주도권을 가짐), confirmed(서류 확정), search(사용자가 서류 다시 찾기를 켬) } */
-  function helperMode(st) { st = st || {}; return st.cmpMode === 'doc' && !!st.chatOn && !!st.confirmed && !st.search; }
-  /** 접힌 입력창 자리의 안내줄 — 고른 서류의 전체 이름을 보여 준다(이름이 아직 없으면 일반 문구). */
-  function stripText(title) {
-    var t = oneLine(title, 80), tail = ' 오른쪽 대화창에서 말씀해 주세요. 서류를 바꾸려면 “서류 찾기”를 누르세요.';
-    return t ? '「' + t + '」 작성 중 —' + tail : '서류 작성 도우미가 이끌고 있습니다 —' + tail;
-  }
+  /** 도우미 SP 가 서류 작성을 이끄는 중인지(도우미 줄은 연결 상태만 보인다). st: { cmpMode, chatOn(도우미 SP 가 주도권을 가짐), confirmed(서류 확정) } */
+  function helperMode(st) { st = st || {}; return st.cmpMode === 'doc' && !!st.chatOn && !!st.confirmed; }
   /** 서류 화면의 "도우미가 가져오기" 버튼을 눌렀을 때 도우미 SP 에게 대신 전할 사용자 말. */
   function slotAsk(label) { var l = oneLine(label, LABEL_MAX); return l ? '“' + l + '” 항목을 도우미가 가져와 주세요.' : ''; }
   /** 대화창이 사용자 말을 받지 못했다는 답(처리 중·준비 중)인지 — 이때 말은 입력창에 되돌려 놓는다. */
@@ -141,7 +135,7 @@
     return parts.join(' ').slice(0, 600);
   }
 
-  var API = { stripText: stripText, helperMode: helperMode, slotAsk: slotAsk, isSendFailure: isSendFailure, HELPER_PH: HELPER_PH, matchLabel: matchLabel, applySlot: applySlot, pendingLabels: pendingLabels, attachCtx: attachCtx, planTask: planTask, handBackDecision: handBackDecision, handBackSummary: handBackSummary, SUFFIX: SUFFIX };
+  var API = { helperMode: helperMode, slotAsk: slotAsk, isSendFailure: isSendFailure, matchLabel: matchLabel, applySlot: applySlot, pendingLabels: pendingLabels, attachCtx: attachCtx, planTask: planTask, handBackDecision: handBackDecision, handBackSummary: handBackSummary, SUFFIX: SUFFIX };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.DocHelper = API;
 })(typeof window !== 'undefined' ? window : globalThis);
