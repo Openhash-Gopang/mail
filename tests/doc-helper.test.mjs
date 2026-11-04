@@ -212,9 +212,7 @@ test('desktop.html: 서류 쪽이 후보가 여럿이라 고르지 않았다고(
   assert.match(html, /d\.type === 'navi-doc-pending'\) \{[^\n]*\n    _docHost\.confirmed = false; _docHost\.writing = false; _docHelperSync\(\); _docLockSync\(\);/);
 });
 
-test('도우미 SP 대화가 켜져 있으면 서류 확정 전에도 도우미 줄에 입력칸이 없다', async () => {
-  const { readFileSync } = await import('node:fs');
-  const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(html, /#tab-compose\[data-helperbar="1"\] \.doc-agent select[^{]*\.da-ext\{display:none!important\}/);
-  assert.match(html, /_cmpMode === 'doc' && _docChat\.on\) tab\.setAttribute\('data-helperbar', '1'\)/);
+test('도우미 줄에는 입력칸·절차 선택·맡기기 버튼이 항상 숨겨진다(입력창 하나)', () => {
+  assert.match(html, /\.doc-agent select,\.doc-agent input,\.doc-agent \.da-ext\{display:none!important\}/);
+  assert.doesNotMatch(html, /data-helperbar/);
 });
