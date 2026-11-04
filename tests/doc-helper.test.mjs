@@ -150,3 +150,32 @@ test('desktop.html: 확장에는 항상 사용자가 시작·승인해야 하는
   assert.match(f, /NaviAgent\.queue\(r\.job\)/); assert.match(f, /도구 모음의 나비웹 도우미 아이콘을 눌러 내용을 확인하고 시작하세요/);
   assert.doesNotMatch(f, /agent-start|autostart|run\(/);
 });
+
+// ── 메인 입력창 → 도우미 지시창 전환 (2026-11-04) ─────────────────────
+test('helperMode: 서류 모드 + 도우미 SP 주도권 + 서류 확정 + 서류 다시 찾기 꺼짐일 때만', () => {
+  const ok = { cmpMode: 'doc', chatOn: true, confirmed: true, search: false };
+  assert.equal(D.helperMode(ok), true);
+  for (const k of ['chatOn', 'confirmed']) assert.equal(D.helperMode({ ...ok, [k]: false }), false, k);
+  assert.equal(D.helperMode({ ...ok, search: true }), false, '서류 찾기를 켜면 검색 입력창');
+  assert.equal(D.helperMode({ ...ok, cmpMode: 'default' }), false);
+  assert.equal(D.helperMode(null), false);
+});
+
+test('slotAsk · isSendFailure', () => {
+  assert.equal(D.slotAsk('송달증명원 1부'), '“송달증명원 1부” 항목을 도우미가 가져와 주세요.');
+  assert.equal(D.slotAsk(''), '');
+  assert.equal(D.isSendFailure('앞의 요청을 처리하는 중입니다. 잠시 뒤 다시 보내 주세요.'), true);
+  assert.equal(D.isSendFailure('이 기관의 상담은 준비 중입니다.'), true);
+  assert.equal(D.isSendFailure('집행문은 법원에서 발급합니다.'), false);
+});
+
+test('desktop.html: 도우미 지시창 모드의 연결 — 전송·검색 입력 차단·도우미 줄 정리·서류 찾기 복귀', () => {
+  assert.match(html, /if \(_docHelperOn\(\)\) \{ _docHelperSend\(\); return; \} await _docHostSubmit\(\)/, '서류 모드 전송은 도우미 지시창일 때 대화창 SP 로');
+  assert.match(html, /function _docHostInput\(\) \{\n  if \(_cmpMode !== 'doc'\) return;\n  if \(_docHelperOn\(\)\) return;/, '검색 입력 신호를 서류 페이지에 보내지 않는다');
+  assert.match(html, /type: 'hondi-embed-sp-ask', id, text/, '대화창 SP 에게 사용자 말을 전달');
+  assert.match(html, /#tab-compose\[data-helper="1"\] \.doc-agent select[^{]*\.da-ext\{display:none!important\}/, '도우미 줄의 입력·선택·버튼은 숨김(연결 상태만)');
+  assert.match(html, /id="cmp-helper-search"[^>]*onclick="_docHelperSearch\(\)"/, '서류 다시 찾기 버튼');
+  assert.match(html, /function _agentFetchSlot\(label\) \{\n  if \(_docHelperOn\(\)\) \{ _docHelperSend\(DocHelper\.slotAsk\(label\)\)/, '항목의 "도우미가 가져오기"는 도우미 SP 로');
+  for (const hook of ['_docChatLeave', '_docHostReset', '_docHostApplyMeta']) assert.ok(html.includes('function ' + hook), hook);
+  assert.ok((html.match(/_docHelperSync\(\)/g) || []).length >= 7, '모드가 바뀌는 곳마다 동기화');
+});

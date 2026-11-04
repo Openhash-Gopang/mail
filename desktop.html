@@ -191,6 +191,10 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"].doc-live .doc-agent{display:flex;order:2;flex:none}
 .doc-agent select,.doc-agent input{min-height:34px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;background:var(--sur);color:inherit}
 .doc-agent input{flex:1 1 200px}
+/* 도우미 지시창 모드: 메인 입력창이 도우미에게 시키는 칸이 되므로 이 줄은 연결 상태만 보인다 */
+#tab-compose[data-helper="1"] .doc-agent select,#tab-compose[data-helper="1"] .doc-agent input,#tab-compose[data-helper="1"] .doc-agent .da-ext{display:none!important}
+.cmp-helper-search{display:none;flex:none;border:1px solid var(--bdr);background:var(--sur);color:inherit;border-radius:999px;font:inherit;font-size:12px;padding:3px 10px;cursor:pointer;white-space:nowrap}
+#tab-compose[data-helper="1"] .cmp-helper-search,#tab-compose[data-helper-search="1"] .cmp-helper-search{display:inline-block}
 /* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
 #tab-compose[data-mode="doc"] .chat-landing-sub{display:none}
 #tab-compose[data-mode="doc"] .chat-composer{position:static}
@@ -969,6 +973,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
           <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpSetMode('default')">×</button></span>
+          <button type="button" class="cmp-helper-search" id="cmp-helper-search" onclick="_docHelperSearch()" title="서류를 바꾸려면 눌러 서류를 다시 찾습니다">서류 찾기</button>
           <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다"></textarea>
           <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -1706,6 +1711,7 @@ function _agentTellDoc() {
 }
 // 서류 화면에서 항목의 "도우미가 가져오기"를 눌렀을 때: 도우미 줄을 그 항목의 절차로 채워 두고, 시작은 사용자가 누른다.
 function _agentFetchSlot(label) {
+  if (_docHelperOn()) { _docHelperSend(DocHelper.slotAsk(label)); return; }   // 도우미 지시창 모드 — 도우미 SP 에게 맡긴다(상태·중복 방지는 SP 와 호스트가 함께 본다)
   const plan = window.NaviAgent && NaviAgent.slotPlan(label);
   const bars = _agentBars().filter(b => !b.hidden && b.offsetParent !== null);
   if (!plan || !bars.length) return;
@@ -1898,6 +1904,7 @@ function _docHostApplyMeta() {
   input.placeholder = _docHost.meta.placeholder || _DOC_PH_DEFAULT;
   document.getElementById('cmp-doc-count').textContent = '';   // "N건의 … 서류를 작성합니다" 안내 문구는 쓰지 않는다(2026-11-04). 이 칸은 진행 상태 알림에만 쓴다
   if (typeof _cmpSyncModeUi === 'function') _cmpSyncModeUi();   // 서류 종류가 바뀌었을 수 있으니 모드 칩도 맞춘다
+  _docHelperSync();
 }
 // 서류 드롭다운: 맨 앞 "서류 선택"(값 없음)은 기본 모드(나만의 AI 비서)의 표시이고, 종류를 고르면 서류 모드로 들어간다
 function _cmpDocSelInit() {
@@ -2212,6 +2219,52 @@ async function _submitFlowTurn(text) {
  * 판정·문장 생성은 doc-helper.js(DocHelper). slots = 첨부서류 상태표 { 항목: { state, note } } — 호스트가 들고 있다(서버·SP 에 저장하지 않는다). attach = 서류 화면이 알려 준 첨부서류 [{l, up}].
  * doneKey/doneTitle = 방금 마친 서류 — 같은 서류에서 주도권을 다시 가져가지 않는다(다른 서류를 열면 풀린다). */
 const _docChat = { on: false, key: '', hash: '', rev: 0, tm: 0, busy: false, slots: {}, saved: false, attach: null, title: '', doneKey: '', doneTitle: '' };
+// ── 메인 입력창 전환(2026-11-04) ──────────────────────────────────
+// 서류를 확정하고 도우미 SP 가 대화 주도권을 가진 동안, 메인 입력창은 서류 검색이 아니라 "도우미에게 시키는 칸"이다.
+// 입력은 대화창의 도우미 SP 로 간다(hondi-embed-sp-ask) — SP 가 서류·첨부서류 상태를 보고 [AGENT_TASK] 로 확장에 맡기고, 진행은 대화창에서 본다.
+// 도우미 SP 가 없을 때(조직 모드 등)는 예전처럼 서류 검색 입력창과 아래 도우미 줄을 그대로 쓴다.
+const _docHelper = { search: false, was: false, sent: {} };
+function _docHelperOn() {
+  return !!window.DocHelper && DocHelper.helperMode({ cmpMode: _cmpMode, chatOn: _docChat.on, confirmed: _docHost.confirmed, search: _docHelper.search });
+}
+function _docHelperSync() {
+  const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
+  if (!tab || !input || !window.DocHelper) return;
+  const on = _docHelperOn();
+  if (on) tab.setAttribute('data-helper', '1'); else tab.removeAttribute('data-helper');
+  if (_cmpMode === 'doc' && _docChat.on && _docHost.confirmed && _docHelper.search) tab.setAttribute('data-helper-search', '1'); else tab.removeAttribute('data-helper-search');
+  if (on) {
+    if (!_docHelper.was) { input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); }   // 서류를 찾던 글자("채권")를 도우미 지시로 보내지 않는다
+    delete input.dataset.ph; input.placeholder = DocHelper.HELPER_PH;
+  } else if (_docHelper.was && _cmpMode === 'doc') {
+    input.placeholder = _docHost.meta.placeholder || _DOC_PH_DEFAULT;
+  }
+  const sb = document.getElementById('cmp-helper-search'); if (sb) sb.textContent = _docHelper.search ? '도우미에게 시키기' : '서류 찾기';
+  _docHelper.was = on;
+}
+function _docHelperSearch() {   // "서류 찾기" — 다른 서류를 고를 수 있게 메인 입력창을 잠시 서류 검색으로 돌린다
+  _docHelper.search = !_docHelper.search;
+  const input = document.getElementById('cmp-input'); input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState();
+  _docHelperSync(); input.focus();
+}
+function _docHelperSend(textArg) {
+  const input = document.getElementById('cmp-input');
+  const text = String(textArg != null ? textArg : input.value).trim().slice(0, 2000);
+  if (!text || !window.HondiChat) return false;
+  const id = 'dh' + Date.now().toString(36) + Math.floor(Math.random() * 1e3).toString(36);
+  try { HondiChat.open(); } catch (x) {}
+  _docHelper.sent[id] = text;
+  if (!HondiChat.post({ type: 'hondi-embed-sp-ask', id, text })) { delete _docHelper.sent[id]; return false; }
+  if (textArg == null) { input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); }
+  return true;
+}
+window.addEventListener('message', (e) => {   // 대화창이 말을 못 받았다는 답(처리 중·준비 중)이면 입력창에 되돌려 놓는다
+  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || e.origin !== 'https://hondi.net' || !_docHelper.sent[d.id]) return;
+  const t = _docHelper.sent[d.id]; delete _docHelper.sent[d.id];
+  if (!window.DocHelper || !DocHelper.isSendFailure(d.text)) return;
+  const input = document.getElementById('cmp-input'); if (input && !input.value.trim()) { input.value = t; _kmailAutoResize(input); _cmpChatUpdateSendState(); }
+  if (window.HondiChat) HondiChat.say(String(d.text).slice(0, 120));
+});
 function _docChatSp() {
   return '너는 나비웹 "서류 작성" 화면의 서류 작성 도우미 AI다. 사용자는 지금 화면에서 서류를 작성하고 있고, 서류가 끝날 때까지 이 대화의 주도권은 너에게 있다. 너는 안내만 하는 AI가 아니라 일을 해 주는 AI다.\n' +
     '[화면 정보] 사용자 말 앞에 붙는 "[현재 화면 …]" 블록이 서류 제목, 항목별 입력 상태, 첨부서류 목록과 상태, 나비웹 도우미(Chrome 확장) 연결 여부, 작성 완료 저장 여부다. 대화 기록보다 이 블록을 기준으로 답한다. 블록이 "연결 확인 중"이면 서류 내용을 추측하거나 지어내지 말고 확인 중이라고만 답한다.\n' +
@@ -2242,10 +2295,11 @@ function _docChatEnsure(force) {
   HondiChat.setSp({ type: 'hondi-embed-sp', sp: key, spText: _docChatSp(), label: '서류 작성', greeting: '서류 작성 도우미입니다. 서류와 첨부서류는 제가 이끌겠습니다 — 로그인과 결제만 직접 해 주시면 됩니다.' });
   clearInterval(_docChat.tm); _docChat.tm = setInterval(_docChatPush, 3000);
   setTimeout(_docChatPush, 400);
+  _docHelperSync();
 }
 function _docChatLeave() {
   if (!_docChat.on) return;
-  _docChat.on = false; _docChat.key = ''; clearInterval(_docChat.tm);
+  _docChat.on = false; _docChat.key = ''; clearInterval(_docChat.tm); _docHelperSync();
   if (window.HondiChat && !_submitGuideOn && !(typeof _org !== 'undefined' && _org)) HondiChat.setSp(null);
 }
 async function _docChatPush() {
@@ -3017,6 +3071,7 @@ function _docHostPost(msg) {
 }
 function _docHostInput() {
   if (_cmpMode !== 'doc') return;
+  if (_docHelperOn()) return;   // 도우미 지시창일 때 입력은 서류 검색이 아니다
   const t = document.getElementById('cmp-input').value;
   // 입력창은 서류 검색·선택만 맡는다. 서류를 확정한(Enter) 뒤 글자를 지워도 작성 중인 서류는 사라지지 않는다(대화는 혼디 대화창이 맡는다).
   if (!t.trim() && _docHost.confirmed && document.getElementById('tab-compose').classList.contains('doc-live')) return;
@@ -3027,7 +3082,7 @@ async function _docHostSubmit() {
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
-  _docHost.confirmed = true;
+  _docHost.confirmed = true; _docHelper.search = false; _docHelperSync();
   _docHostPost({ type: 'navi-doc-submit', text: t });   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
 }
 // ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
@@ -3109,7 +3164,7 @@ function _docEditResult(d) {
   _cmpScrollToBottom();
 }
 function _docHostReset() {
-  _docHost.confirmed = false;
+  _docHost.confirmed = false; _docHelper.search = false; _docHelperSync();
   if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
 }
 function _docHostMessage(d, e) {
@@ -3192,7 +3247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ok) { _drToast('양식은 이미지나 PDF 로 올려 주세요.'); return; }
     if (f.size > 8 * 1024 * 1024) { _drToast('양식은 8MB 이하만 올릴 수 있습니다.'); return; }
     if (_cmpMode !== 'doc' && !_cmpSetMode('doc')) return;
-    _docHost.confirmed = true; document.getElementById('tab-compose').classList.add('doc-live');   // 입력창이 비어 있어도 서류 화면이 접히지 않게 확정 상태로 둔다(_docHostInput 참고)
+    _docHost.confirmed = true; document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync();   // 입력창이 비어 있어도 서류 화면이 접히지 않게 확정 상태로 둔다(_docHostInput 참고)
     const c = document.getElementById('cmp-doc-count'); c.textContent = '양식을 읽는 중…'; _docBar(3);
     f.arrayBuffer().then(buf => _docHostPost({ type: 'navi-doc-template', asTemplate: true, name: f.name.slice(0, 120), mime: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/png'), data: buf }))
       .catch(() => { c.textContent = '파일을 읽지 못했습니다.'; _docBar(-1); });
@@ -5878,7 +5933,7 @@ async function _navQuickDoc(text) {
 
 async function _cmpChatSend() {
   if (_cmpMode === 'org') { await _orgSend(); return; }
-  if (_cmpMode === 'doc') { await _docHostSubmit(); return; }
+  if (_cmpMode === 'doc') { if (_docHelperOn()) { _docHelperSend(); return; } await _docHostSubmit(); return; }
   if (_cmpMode === 'verdict') { if (window.VerdictHost) await VerdictHost.submit(); return; }
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();
