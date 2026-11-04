@@ -40,6 +40,26 @@ export function phoneRedirect(url) {
 
 export function edgeTtl(pathname) { return /\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf)$/i.test(pathname) ? 86400 : 120; }
 
+/**
+ * 순수 함수 — 정적 파일(스크립트·이미지)을 원본(mail.hondi.net, GitHub Pages)에서 직접 받게 하는 주소 변환.
+ * 2026-11-04 측정: 이 PC 의 naviweb.kr 요청은 Cloudflare 서울(ICN)이 아니라 LA(LAX)에서 처리되어(RTT 약 0.4초, 파일마다 2.5~8초),
+ * 같은 파일을 mail.hondi.net 에서 받으면 13ms 였다. 그래서 HTML 안의 상대 경로 정적 파일만 원본 주소로 바꿔 LA 를 거치지 않게 한다.
+ * 절대 주소(https:, //, data:, blob:)·#·빈 값은 그대로 둔다. 상대 경로는 해당 페이지 경로를 기준으로 푼다.
+ */
+export function directAsset(value, pagePath, origin) {
+  const v = String(value == null ? '' : value).trim();
+  if (!v || v[0] === '#' || /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(v)) return null;
+  try { const u = new URL(v, origin + (pagePath || '/')); return u.origin === origin ? u.href : null; } catch (e) { return null; }
+}
+
+/** 순수 함수 — If-None-Match 가 원본 ETag 와 같은지(약한 표시 W/ 는 무시). 같으면 본문 없이 304 로 답한다(새로고침 때 550KB 를 다시 받지 않는다). */
+export function etagMatches(ifNoneMatch, etag) {
+  if (!ifNoneMatch || !etag) return false;
+  const norm = (x) => String(x).trim().replace(/^W\//, '');
+  const e = norm(etag);
+  return ifNoneMatch.split(',').some((t) => { const n = norm(t); return n === '*' || n === e; });
+}
+
 export function route(url) {
   const p = url.pathname;
   if (p.startsWith('/_h/')) return { target: HONDI_ORIGIN + p.slice(3) + url.search, hondi: true };
@@ -60,6 +80,11 @@ export default {
     // 원본(GitHub Pages)까지 매번 다녀오면 파일마다 0.4~2초가 걸린다. Cloudflare 엣지에 잠깐 캐시한다(사진·글꼴은 길게, 나머지는 2분).
     headers.delete('if-none-match'); headers.delete('if-modified-since'); headers.delete('range');
     const res = await fetch(target, { method: request.method, headers, redirect: 'manual', cf: { cacheEverything: true, cacheTtl: edgeTtl(url.pathname), cacheTtlByStatus: { '200-299': edgeTtl(url.pathname), '300-399': 0, '400-599': 0 } } });
+    // 새로고침(F5)은 If-None-Match 를 보낸다. 원본과 같으면 본문 없이 304 — LA 경유 550KB 전송을 건너뛴다.
+    const etag = res.headers.get('etag');
+    if (res.status === 200 && etagMatches(request.headers.get('if-none-match'), etag)) {
+      return new Response(null, { status: 304, headers: { ETag: etag, 'Cache-Control': url.pathname === '/' ? 'public, max-age=60' : (res.headers.get('cache-control') || 'public, max-age=120') } });
+    }
     const out = new Headers(res.headers);
     out.delete('set-cookie');
     // 폰은 위에서 이동시키므로 여기까지 온 '/' 는 모두 PC 화면이다. 짧게만 브라우저에 둔다.
@@ -71,6 +96,12 @@ export default {
       // hondi.net 페이지 안의 루트 상대 경로(/pdv-store.js 등)를 /_h/ 아래로 돌린다.
       const fix = (attr) => ({ element(el) { const v = el.getAttribute(attr); if (v && v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_h/') && !HONDI_PREFIXES.some(x => v.startsWith(x))) el.setAttribute(attr, '/_h' + v); } });
       return new HTMLRewriter().on('script[src]', fix('src')).on('link[href]', fix('href')).on('a[href]', fix('href')).on('img[src]', fix('src')).transform(new Response(res.body, { status: res.status, headers: out }));
+    }
+    if (!hondi && ct.includes('text/html') && res.status === 200) {
+      // 앱 페이지 안의 상대 경로 스크립트·이미지·아이콘은 mail.hondi.net 에서 직접 받게 한다(위 directAsset 설명 참조).
+      const pagePath = target.slice(APP_ORIGIN.length).split('?')[0] || '/';
+      const fix = (attr) => ({ element(el) { const d = directAsset(el.getAttribute(attr), pagePath, APP_ORIGIN); if (d) el.setAttribute(attr, d); } });
+      return new HTMLRewriter().on('script[src]', fix('src')).on('img[src]', fix('src')).on('link[rel~="icon"]', fix('href')).on('link[rel="apple-touch-icon"]', fix('href')).on('link[rel="stylesheet"]', fix('href')).transform(new Response(res.body, { status: res.status, headers: out }));
     }
     return new Response(res.body, { status: res.status, headers: out });
   },
