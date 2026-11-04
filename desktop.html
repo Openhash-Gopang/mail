@@ -106,6 +106,7 @@ window.addEventListener('load', () => {
 <script src="agent-bridge.js"></script>
 <script src="doc-helper.js?v=20261104"></script>
 <script src="guide.js?v=20261102b"></script>
+<script src="myforms.js?v=20261105"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -1562,20 +1563,14 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
   <div id="tab-myforms" class="tab-panel">
     <div class="card">
-      <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
-      <div class="sub">자주 쓰는 양식, 내가 만든 양식, 올려 둔 양식을 이 기기의 PDV에 보관합니다. 항목을 누르면 서류 작성 화면에서 바로 열립니다. 서류 작성 중 위쪽의 "★ 내 서류함에 담기"로 자주 쓰는 양식을 추가하고, 양식 파일을 올리면 자동으로 이곳에 보관됩니다.</div>
-      <div id="mf-new" hidden style="border:1px solid var(--border,#ccc);border-radius:12px;padding:14px;margin:10px 0">
-        <label style="display:block;font-size:13px;margin-bottom:4px">양식 이름</label>
-        <input id="mf-new-title" type="text" maxlength="80" placeholder="예: 사무실 임대차 점검표" style="width:100%;box-sizing:border-box;margin-bottom:10px">
-        <label style="display:block;font-size:13px;margin-bottom:4px">항목 (한 줄에 하나)</label>
-        <textarea id="mf-new-body" rows="9" style="width:100%;box-sizing:border-box;font:13px/1.5 monospace" placeholder="# 기본 사항&#10;성명* | 짧은글 | 신청인 이름&#10;신청일 | 날짜&#10;보증금 | 금액:원&#10;구분 | 선택:신규/갱신/해지&#10;# 상세 내용&#10;요청 사유 | 긴글"></textarea>
-        <div style="font-size:12px;color:var(--hint);margin:6px 0 10px"># 로 시작하면 묶음(섹션) 이름입니다. 항목은 <b>이름 | 종류 | 안내</b> 순서이고, 이름 뒤에 *를 붙이면 필수입니다. 종류: 짧은글 · 긴글 · 날짜 · 금액(:단위) · 선택:가/나/다</div>
-        <button type="button" class="btn btn-sm btn-primary" onclick="_mfNewSave()">저장</button>
-        <button type="button" class="btn btn-sm btn-outline" onclick="_mfNewClose()">취소</button>
+      <div id="mf-list">
+        <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="MyForms.open()">＋ 새 양식 만들기</button></div>
+        <div class="sub">자주 쓰는 양식, 내가 만든 양식, 올려 둔 양식을 이 기기의 PDV에 보관합니다. 항목을 누르면 서류 작성 화면에서 바로 열립니다. 서류 작성 중 위쪽의 "★ 내 서류함에 담기"로 자주 쓰는 양식을 추가하고, 새 양식은 처음부터·양식 파일을 올려·AI와 대화로 만들 수 있습니다.</div>
+        <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
+        <div id="mf-empty" style="display:none;font-size:14px;color:var(--hint)">아직 보관한 양식이 없습니다.</div>
+        <div id="mf-items"></div>
       </div>
-      <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="mf-empty" style="display:none;font-size:14px;color:var(--hint)">아직 보관한 양식이 없습니다.</div>
-      <div id="mf-items"></div>
+      <div id="mf-editor" hidden></div>
     </div>
   </div>
 
@@ -3564,35 +3559,6 @@ window.addEventListener('pagehide', () => { _drAutoSave('hide'); });
 // ── 내 서류함: 자주 쓰는 양식 · 내가 만든 양식 · 올려 둔 양식 (PDV kind='form', box=fav|mine|upload) ──
 const _MF_BOX = [['fav', '자주 쓰는 양식', '서류 작성 중 "★ 내 서류함에 담기"로 담은 양식입니다.'], ['mine', '내가 만든 양식', '"새 양식 만들기"로 직접 만든 양식입니다.'], ['upload', '올려 둔 양식', '서류 화면에서 올린 양식 파일(이미지·PDF)입니다.']];
 function _mfHash(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-function _mfKinds(w) { w = String(w || '').trim(); if (/^(긴글|long|l)$/i.test(w)) return { t: 'long' }; if (/^(날짜|date|d)$/i.test(w)) return { t: 'date' }; let m = w.match(/^(?:금액|amount|n)(?:\s*[:：]\s*(\S{1,6}))?$/i); if (m) return m[1] ? { t: 'amount', u: m[1] } : { t: 'amount' }; m = w.match(/^(?:선택|select|sel)\s*[:：]\s*(.+)$/i); if (m) return { t: 'select', o: m[1].split(/[\/,]/).map(x => x.trim()).filter(Boolean) }; return { t: 'short' }; }
-// 한 줄에 하나 쓴 항목 → 나비 서식 JSON ({title, sections:[{h,f:[{l,t,h,o?,u?,req?}]}], attach:[]})
-function _mfParse(title, body) {
-  const secs = []; let cur = null;
-  String(body || '').split(/\r?\n/).forEach(line => {
-    line = line.trim(); if (!line) return;
-    if (line[0] === '#') { cur = { h: line.replace(/^#+\s*/, '').slice(0, 40) || '내용', f: [] }; secs.push(cur); return; }
-    const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l) return;
-    const req = /[*＊]$/.test(l); if (req) l = l.replace(/[*＊]+$/, '').trim();
-    const k = _mfKinds(p[1]); const f = Object.assign({ l: l, t: k.t, h: (p[2] || '').slice(0, 80) }, k.o ? { o: k.o } : {}, k.u ? { u: k.u } : {});
-    if (req) f.req = 1;
-    if (!cur) { cur = { h: '내용', f: [] }; secs.push(cur); }
-    cur.f.push(f);
-  });
-  const form = { title: String(title || '').replace(/\s+/g, ' ').trim().slice(0, 80), sections: secs.filter(x => x.f.length), attach: [] };
-  return form.title && form.sections.length ? form : null;
-}
-function _mfNewOpen() { const b = document.getElementById('mf-new'); if (b) { b.hidden = false; document.getElementById('mf-new-title').focus(); } }
-function _mfNewClose() { const b = document.getElementById('mf-new'); if (b) b.hidden = true; }
-async function _mfNewSave() {
-  const form = _mfParse(document.getElementById('mf-new-title').value, document.getElementById('mf-new-body').value);
-  if (!form) { _drToast('양식 이름과 항목을 한 개 이상 적어 주세요.'); return; }
-  if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
-  try {
-    await _drCall('put', { item: { id: 'form-mine-' + _mfHash(form.title), kind: 'form', box: 'mine', site: _docHost.id || 'all', title: form.title, body: JSON.stringify(form) } });
-    document.getElementById('mf-new-title').value = ''; document.getElementById('mf-new-body').value = ''; _mfNewClose();
-    _drToast('내 서류함에 저장했습니다'); _mfRender();
-  } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
-}
 // 서류 작성 중인 서류를 자주 쓰는 양식으로 담는다
 async function _mfAddFav(btn) {
   const title = String(_docHost.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
@@ -3659,7 +3625,7 @@ async function _mfRender() {
       if (!rows.length) return;
       html += '<div class="dr-sec">' + b[1] + '</div>' + rows.map(it => {
         const sub = (b[0] === 'upload' ? '파일 ' + (it.fileName || '') : _drSiteLabel(it.site)) + ' · ' + (it.uses ? '사용 ' + it.uses + '회 · ' : '') + fmtDt(it.lastUsed || it.updated);
-        return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
+        return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button>' + (b[0] === 'mine' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit">수정</button>' : b[0] === 'upload' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit">양식으로 고치기</button>' : '') + '<button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
       }).join('');
     });
     if (freq.length) html += '<div class="dr-sec">자주 쓴 서류 (작성한 서류 기준)</div>' + freq.map((x, i) => '<div class="list-item" data-freq="' + i + '"><div class="li-main"><div class="li-title">' + escHtml(x.title) + '</div><div class="li-sub">' + escHtml(_drSiteLabel(x.site) + ' · ' + x.n + '회 작성') + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="fav">★ 담기</button></div></div>').join('');
@@ -3673,7 +3639,11 @@ async function _mfRender() {
           return;
         }
         const id = row.getAttribute('data-id');
-        if (act === 'del') { if (!confirm('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
+        if (act === 'del') { if (!confirm('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); }
+        else if (act === 'edit') {
+          const it = (await _drCall('get', { id })).item; if (!it) return;
+          if (it.box === 'upload') { if (it.fileData) MyForms.open({ upload: { name: it.fileName, mime: it.fileMime, data: it.fileData } }); } else MyForms.open({ id });
+        } else await _mfOpen(id);
       } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
     }));
   } catch (e) {

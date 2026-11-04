@@ -235,14 +235,10 @@ test('desktop.html: 내 서류함 — 메뉴·화면·PDV(kind=form) 보관·양
   assert.match(html, /kind: 'form', box: 'upload'/);
   assert.match(html, /type: 'navi-doc-userform'/);
   assert.match(html, /_mfSaveUpload\(f, buf\)/);
-  const src = html.slice(html.indexOf('function _mfHash'), html.indexOf('function _mfNewOpen'));
-  const f = new Function(src + '; return { _mfParse };')();
-  const form = f._mfParse('점검표', '# 기본\n성명* | 짧은글 | 이름\n보증금 | 금액:원\n구분 | 선택:신규/갱신\n사유 | 긴글');
-  assert.equal(form.sections[0].f.length, 4);
-  assert.equal(form.sections[0].f[0].req, 1);
-  assert.equal(form.sections[0].f[1].u, '원');
-  assert.deepEqual(form.sections[0].f[2].o, ['신규', '갱신']);
-  assert.equal(f._mfParse('', 'x'), null);
+  assert.match(html, /<script src="myforms\.js/);
+  assert.match(html, /id="mf-editor" hidden/);
+  assert.match(html, /onclick="MyForms\.open\(\)">＋ 새 양식 만들기/);
+  assert.match(html, /MyForms\.open\(\{ id \}\)/);
 });
 
 test('desktop.html: 서류를 고르면 입력 필드를 화면에서 없애고, 홈으로 새 입력 필드를 부른다 · 맨 위 메뉴는 겹치지 않는다', () => {
