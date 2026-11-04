@@ -174,7 +174,7 @@ test('desktop.html: 메인 입력창·예시 버튼은 서류 검색 그대로, 
   assert.match(html, /#tab-compose\[data-helper="1"\] \.doc-agent select[^{]*\.da-ext\{display:none!important\}/, '도우미 줄의 입력·선택·버튼은 숨김(연결 상태만)');
   assert.match(html, /연결됨';/, '연결 상태 문구');
   assert.doesNotMatch(html, /어느 사이트든 맡길 수 있습니다/);
-  assert.match(html, /function _agentFetchSlot\(label\) \{\n  if \(_docHelperOn\(\)\) \{ _docHelperSend\(DocHelper\.slotAsk\(label\)\)/, '항목의 "도우미가 가져오기"는 도우미 SP 로');
+  assert.match(html, /function _agentFetchSlot\(label\) \{\n  if \(window\.DocHelper && _cmpMode === 'doc' && _docChat\.on\) \{ _docHelperSend\(DocHelper\.slotAsk\(label\)\)/, '항목의 "도우미가 가져오기"는 도우미 SP 로');
   assert.match(html, /input\.value\.trim\(\) \|\| \(_docHost\.loaded && _docHost\.confirmed \? String\(_docHost\.title/, '입력창이 비어도 작성 중인 서류는 Draft 로 저장');
 });
 
@@ -210,4 +210,9 @@ test('desktop.html: 도우미 SP — 입력창 잠금을 알고, 다른 요청�
 
 test('desktop.html: 서류 쪽이 후보가 여럿이라 고르지 않았다고(navi-doc-pending) 알리면 방금 건 잠금을 푼다', () => {
   assert.match(html, /d\.type === 'navi-doc-pending'\) \{[^\n]*\n    _docHost\.confirmed = false; _docHost\.writing = false; _docHelperSync\(\); _docLockSync\(\);/);
+});
+
+test('도우미 줄에는 입력칸·절차 선택·맡기기 버튼이 항상 숨겨진다(입력창 하나)', () => {
+  assert.match(html, /\.doc-agent select,\.doc-agent input,\.doc-agent \.da-ext\{display:none!important\}/);
+  assert.doesNotMatch(html, /data-helperbar/);
 });

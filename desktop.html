@@ -223,6 +223,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-agent .da-new{display:none}
 #tab-compose[data-docwrite="1"] .doc-agent .da-new{display:inline-flex}
 #tab-compose[data-helper="1"] .doc-agent select,#tab-compose[data-helper="1"] .doc-agent input,#tab-compose[data-helper="1"] .doc-agent .da-ext{display:none!important}
+/* 입력창은 하나만: 도우미 줄에는 입력칸·절차 선택·"맡기기" 버튼을 두지 않는다(연결 상태와 Draft 버튼만). 도우미에게 시킬 말은 대화창으로 한다. */
+.doc-agent select,.doc-agent input,.doc-agent .da-ext{display:none!important}
 /* doc-host — 문서 작성: 홈 화면의 입력창을 그대로 쓰고 서류 작성 페이지를 그 아래에 잇는다 */
 #tab-compose[data-mode="doc"] .chat-landing-sub{display:none}
 #tab-compose[data-mode="doc"] .chat-composer{position:static}
@@ -1742,7 +1744,7 @@ function _agentTellDoc() {
 }
 // 서류 화면에서 항목의 "도우미가 가져오기"를 눌렀을 때: 도우미 줄을 그 항목의 절차로 채워 두고, 시작은 사용자가 누른다.
 function _agentFetchSlot(label) {
-  if (_docHelperOn()) { _docHelperSend(DocHelper.slotAsk(label)); return; }   // 도우미 지시창 모드 — 도우미 SP 에게 맡긴다(상태·중복 방지는 SP 와 호스트가 함께 본다)
+  if (window.DocHelper && _cmpMode === 'doc' && _docChat.on) { _docHelperSend(DocHelper.slotAsk(label)); return; }   // 도우미 지시창 모드(도우미 줄에는 입력칸이 없다) — 도우미 SP 에게 맡긴다(상태·중복 방지는 SP 와 호스트가 함께 본다)
   const plan = window.NaviAgent && NaviAgent.slotPlan(label);
   const bars = _agentBars().filter(b => !b.hidden && b.offsetParent !== null);
   if (!plan || !bars.length) return;
