@@ -79,6 +79,7 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
 <script src="agent-bridge.js"></script>
+<script src="doc-helper.js?v=20261104"></script>
 <script src="guide.js?v=20261102b"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -1719,6 +1720,10 @@ function _agentFetchSlot(label) {
 // 도우미가 알린 항목 진행 결과(예: 법원으로 전송됨)를 도우미 줄과 서류 화면의 그 항목에 표시한다.
 function _agentOnStatus(s) {
   if (!['sent', 'pending', 'failed'].includes(s.state)) return;
+  if (_docChat.on && window.DocHelper) {   // 서류 작성 도우미 세션 — 도우미 SP 가 다음 말에서 이 상태를 "지금 화면"으로 읽는다
+    _docChat.slots = DocHelper.applySlot(_docChat.slots, DocHelper.matchLabel(String(s.label || ''), (_docChat.attach || []).map(function (a) { return a.l; })) || String(s.label || ''), s.state, s.note);
+    setTimeout(_docChatPush, 0);
+  }
   const txt = ({ sent: '전송 완료', pending: '진행 중', failed: '실패' })[s.state] + (s.note ? ' — ' + s.note : '');
   _agentBars().forEach(b => { const st = b.querySelector('.da-state'); if (st && b.offsetParent !== null) st.textContent = '“' + s.label.slice(0, 60) + '” 항목: ' + txt; });
   _docHostPost({ type: 'navi-doc-slot-status', label: s.label, state: s.state, note: s.note });
@@ -2203,23 +2208,38 @@ async function _submitFlowTurn(text) {
 /* 2026-11-04 — 화면 동기화: '서류 작성' 화면(서류 사이트 iframe)과 혼디 대화창을 항상 같은 서류에 묶는다.
  * 서류 화면이 열리면 대화창 SP 를 "서류 작성 안내"(inline:doc:<사이트>)로 바꾸고, 화면 상태(서류 제목·항목)는 SP 본문에 박지 않고
  * hondi-embed-ctx 로 수시로 알린다(3초마다 + 대화창이 전송 직전에 hondi-embed-ctx-request 로 새로 요청). 화면이 바뀌면 SP 는 원래대로 돌아간다. */
-const _docChat = { on: false, key: '', hash: '', rev: 0, tm: 0, busy: false };
+/* 2026-11-04 — 서류 작성 도우미 인계: 서류 화면이 열리는 순간 대화창 주도권을 AC-PRO-CORE 에서 이 SP 로 넘기고, 작성이 끝나면(작성 완료 저장 · 사용자 취소 · [DOC_HANDBACK]) 되찾는다.
+ * 판정·문장 생성은 doc-helper.js(DocHelper). slots = 첨부서류 상태표 { 항목: { state, note } } — 호스트가 들고 있다(서버·SP 에 저장하지 않는다). attach = 서류 화면이 알려 준 첨부서류 [{l, up}].
+ * doneKey/doneTitle = 방금 마친 서류 — 같은 서류에서 주도권을 다시 가져가지 않는다(다른 서류를 열면 풀린다). */
+const _docChat = { on: false, key: '', hash: '', rev: 0, tm: 0, busy: false, slots: {}, saved: false, attach: null, title: '', doneKey: '', doneTitle: '' };
 function _docChatSp() {
-  return '너는 나비웹 "서류 작성" 화면의 안내 AI다. 사용자는 지금 화면에서 서류를 작성하고 있다.\n' +
-    '[규칙]\n' +
-    '- 사용자 말 앞에 붙는 "[현재 화면 …]" 블록이 사용자 화면의 서류 제목과 항목별 입력 상태다. 대화 기록보다 이 블록을 기준으로 답한다.\n' +
-    '- 블록이 "연결 확인 중"이면 서류 내용을 추측하거나 지어내지 말고 확인 중이라고만 답한다.\n' +
-    '- 서류 이름과 비어 있는 항목을 짚어, 한 번에 한두 가지씩 짧게 안내한다. 제목을 알 수 없으면 어떤 서류인지 먼저 묻는다.\n' +
-    '- 항목 값은 사용자가 화면에서 직접 입력·확인한다. 공동인증서 비밀번호·주민등록번호·계좌번호·카드번호는 대화에 입력하라고 하지 않는다.\n' +
-    '- 법률 판단이나 접수·처리 결과를 보장하지 않는다. 확실하지 않은 법령·서식 번호는 확인이 필요하다고 표시한다.';
+  return '너는 나비웹 "서류 작성" 화면의 서류 작성 도우미 AI다. 사용자는 지금 화면에서 서류를 작성하고 있고, 서류가 끝날 때까지 이 대화의 주도권은 너에게 있다. 너는 안내만 하는 AI가 아니라 일을 해 주는 AI다.\n' +
+    '[화면 정보] 사용자 말 앞에 붙는 "[현재 화면 …]" 블록이 서류 제목, 항목별 입력 상태, 첨부서류 목록과 상태, 나비웹 도우미(Chrome 확장) 연결 여부, 작성 완료 저장 여부다. 대화 기록보다 이 블록을 기준으로 답한다. 블록이 "연결 확인 중"이면 서류 내용을 추측하거나 지어내지 말고 확인 중이라고만 답한다.\n' +
+    '[역할 분담] 사용자의 일은 로그인(공동인증서 포함)·본인인증·결제뿐이다. 나머지는 네가 이끈다. 첨부서류를 기관에서 받아 오라고 사용자에게 시키지 않는다 — "발급받아 오세요", "직접 신청하세요", "받아 주세요"라고 쓰지 않는다. 나비웹 도우미에게 맡긴다.\n' +
+    '[첨부서류 맡기기]\n' +
+    '1. 블록이 "나비웹 도우미: 연결됨"이고 기관이 발급하는 첨부서류(판결 정본·집행문·송달증명원·각종 증명서 등)의 상태가 "없음"이면, 사용자가 시키지 않아도 이번 답변 맨 끝에 한 줄로 쓴다(한 답변에 최대 2건. 맡김·진행 중·전송 완료·받음·파일 올림인 항목은 다시 맡기지 않는다):\n' +
+    '[AGENT_TASK: slot=<블록의 항목 이름 그대로>; goal=<도우미가 할 일 한 문장 — 어느 기관 사이트에서 무슨 서류를 어떤 식별 정보로 발급 화면까지 진행할지>]\n' +
+    '2. 항목 옆에 "[전용 절차]"가 있으면 goal 에는 법인 이름만 쓴다(절차는 도우미에 이미 있다).\n' +
+    '3. goal 에는 화면에서 확인된 사실(법인 이름·사건번호·당사자)만 쓴다. 모르는 것은 지어내지 말고 먼저 하나만 묻는다. 주민등록번호·계좌번호·비밀번호·인증서 정보는 쓰지 않는다. 태그 안에는 대괄호와 추가 세미콜론을 쓰지 않는다(첫 ";" 가 slot 과 goal 을 가른다).\n' +
+    '4. 태그를 쓴 답변의 본문은 한두 문장 — 무엇을 어느 기관에서 도우미에 맡겼는지만. 도우미 시작·로그인·결제 안내는 시스템이 따로 알리므로 쓰지 않는다.\n' +
+    '5. 사용자가 직접 작성·서명하는 서류(재산목록·별지 목록·위임장 등)는 맡기지 않는다. 작성 도움이 필요한지 묻고, 기관에서 받을 수 없는 사용자 소유 자료(사진·계약서 등)는 어떤 파일이 필요한지 말해 대화창 클립 버튼이나 화면의 올리기 버튼으로 올려 달라고 한다. 이 경우만 사용자에게 준비를 부탁한다.\n' +
+    '6. 상태가 "실패"면 이유를 한 줄로 말하고 다시 맡길지 묻는다. "맡김"·"진행 중"이면 기다리는 동안 다른 항목을 이어서 진행한다.\n' +
+    '7. 블록이 "나비웹 도우미: 연결 안 됨"이면 맡길 수 없다고 한 줄로 알리고, 항목마다 받을 기관과 서류 이름을 짧게 알려 준다. 이때만 사용자가 직접 발급받도록 안내하고, 나비웹 도우미(Chrome 확장)를 켜면 대신 진행할 수 있다고 한 줄 덧붙인다.\n' +
+    '[서류 작성] 서류 이름과 비어 있는 항목을 짚어 한 번에 한두 가지씩 짧게 묻고 안내한다. 제목을 알 수 없으면 어떤 서류인지 먼저 묻는다. 항목 칸에는 이 대화에서 직접 쓰지 못한다 — 어느 칸에 무엇을 넣을지 짚어 주면 사용자가 화면에서 입력·확인한다. 공동인증서 비밀번호·주민등록번호·계좌번호·카드번호는 이 대화에 입력하라고 하지 않는다.\n' +
+    '[주도권 반납] 다음일 때만 답변 맨 끝에 [DOC_HANDBACK: reason=cancel] 또는 [DOC_HANDBACK: reason=complete] 를 쓴다.\n' +
+    '- 사용자가 이 서류 작성을 그만두겠다고 하면 reason=cancel.\n' +
+    '- 블록이 "작성 완료 저장: 함"이고 남은 첨부서류가 없거나, 남은 것이 있어도 사용자가 기다리지 않고 마무리하겠다고 하면 reason=complete. "작성 완료 저장: 안 함"이면 complete 를 쓰지 않고 화면의 "작성 완료로 저장"을 눌러 달라고 한다.\n' +
+    '- 서류와 무관한 요청이면 서류 작성을 마칠지 한 번 묻는다.\n' +
+    '[한계] 법률 판단이나 접수·처리 결과를 보장하지 않는다. 서류의 제출·접수는 사용자가 한다. 확실하지 않은 법령·서식 번호는 확인이 필요하다고 표시한다.';
 }
 function _docChatEnsure(force) {
   if (!window.HondiChat || _cmpMode !== 'doc' || !_docHost.loaded || !_docHost.id) return;
   if (_submitGuideOn || (typeof _org !== 'undefined' && _org)) return;
   const key = 'inline:doc:' + _docHost.id;
+  if (_docChat.doneKey === key && (_docHost.title || '') === _docChat.doneTitle) return;   // 방금 마친 서류 — 주도권을 다시 가져가지 않는다(다른 서류를 열면 navi-doc-title 이 풀어 준다)
   if (!force && _docChat.on && _docChat.key === key) return;
-  _docChat.on = true; _docChat.key = key; _docChat.hash = '';
-  HondiChat.setSp({ type: 'hondi-embed-sp', sp: key, spText: _docChatSp(), label: '서류 작성', greeting: '서류 작성 화면과 연결되었습니다. 지금 화면에 보이는 서류를 기준으로 도와드립니다. 어느 항목이 막히시나요?' });
+  _docChat.on = true; _docChat.key = key; _docChat.hash = ''; _docChat.doneKey = ''; _docChat.doneTitle = '';
+  HondiChat.setSp({ type: 'hondi-embed-sp', sp: key, spText: _docChatSp(), label: '서류 작성', greeting: '서류 작성 도우미입니다. 서류와 첨부서류는 제가 이끌겠습니다 — 로그인과 결제만 직접 해 주시면 됩니다.' });
   clearInterval(_docChat.tm); _docChat.tm = setInterval(_docChatPush, 3000);
   setTimeout(_docChatPush, 400);
 }
@@ -2236,10 +2256,17 @@ async function _docChatPush() {
     const live = !!(snap && (snap.ok || snap.draft));
     const title = (live && snap.title) || _docHost.title || '';
     const fields = live && Array.isArray(snap.fields) ? snap.fields : [];
+    if (snap) _docChat.attach = Array.isArray(snap.attach) ? snap.attach.slice(0, 20).map(function (a) { return { l: String(a && a.l || '').slice(0, 80), up: !!(a && a.up) }; }).filter(function (a) { return a.l; }) : null;   // 서류 화면(navi-pro)이 알려 주는 첨부서류 [{l, up}] — 옛 서류 페이지는 안 알려 준다
+    if (live && snap.title) {   // 같은 출처(서류 화면 스냅샷)의 제목끼리만 비교한다 — 호스트가 아는 제목과 표기가 달라 잘못 초기화되지 않게
+      if (_docChat.title && _docChat.title !== snap.title) { _docChat.slots = {}; _docChat.saved = false; }   // 도우미 세션 중 다른 서류를 열었다 — 첨부 상태·저장 여부를 새로 시작
+      _docChat.title = snap.title;
+    }
     let text = '';
     if (title) {
       const filled = fields.filter(function (f) { return f.state && f.state !== 'empty'; }).length;
       text = '서류: ' + title + '\n상태: ' + (snap && snap.ok ? '작성 완료' : '작성 중');
+      /* 첨부서류·도우미·저장 상태를 항목보다 먼저 둔다 — 항목이 많아 5800자에서 잘려도 이 블록은 남는다 */
+      if (window.DocHelper) text += '\n' + DocHelper.attachCtx({ attach: _docChat.attach, slots: _docChat.slots, agentOn: !!_agentInfo, saved: _docChat.saved, planFor: function (l) { return !!(window.NaviAgent && NaviAgent.slotPlan && NaviAgent.slotPlan(l)); } });
       if (fields.length) text += '\n항목 ' + fields.length + '개 중 ' + filled + '개 입력\n' + fields.slice(0, 60).map(function (f) {
         return '- ' + f.l + ': ' + (f.state === 'empty' ? '(비어 있음)' : (typeof f.value === 'string' && f.value ? f.value.slice(0, 300) : '(입력됨 — 내용은 가려져 있음)'));
       }).join('\n');
@@ -2249,6 +2276,45 @@ async function _docChatPush() {
     HondiChat.post({ type: 'hondi-embed-ctx', ok: !!text, rev: _docChat.rev, text: text.slice(0, 5800) });
   } finally { _docChat.busy = false; }
 }
+/** 서류 작성 도우미 → AC 로 주도권을 돌려준다. reason: 'complete'(작성 완료 저장 뒤) | 'cancel'(사용자가 그만둠). 이 서류에서는 다시 가져가지 않는다. */
+function _docChatHandBack(reason) {
+  if (!_docChat.on) return;
+  const summary = window.DocHelper ? DocHelper.handBackSummary({ title: _docChat.title || _docHost.title || '', reason: reason, attach: _docChat.attach, slots: _docChat.slots }) : '';
+  _docChat.doneKey = _docChat.key; _docChat.doneTitle = _docHost.title || '';
+  _docChatLeave();   // 타이머를 멈추고, 기관·제출 안내가 대화창을 쓰고 있지 않으면 setSp(null) 로 AC 에게 돌려준다
+  _docChat.slots = {}; _docChat.saved = false; _docChat.hash = '';
+  if (summary && window.HondiChat) HondiChat.say(summary);
+}
+/** 작성 완료로 저장이 끝났다(_drStoreCaptured · _drRecordDone). 도우미가 진행 중인 첨부가 없으면 바로 돌려주고, 있으면 기다릴지 사용자에게 한 번 묻는다. */
+function _docChatOnSaved() {
+  if (!_docChat.on || !window.DocHelper) return;
+  _docChat.saved = true;
+  const open = DocHelper.pendingLabels(_docChat.slots);
+  if (!open.length) { _docChatHandBack('complete'); return; }
+  if (window.HondiChat) HondiChat.say('작성 완료로 저장했습니다. 도우미가 아직 진행 중인 첨부서류가 ' + open.length + '건 있습니다(' + open.map(function (l) { return l.slice(0, 20); }).join(', ').slice(0, 100) + '). 기다릴까요, 이대로 마무리할까요?');
+  _docChatPush();
+}
+/** 도우미 SP 의 [AGENT_TASK] 한 건 — 확장이 연결돼 있으면 나비웹 도우미에 맡기고(시작·승인은 확장에서 사용자가), 아니면 이유를 대화창에 알린다. */
+async function _docChatAgentTask(d) {
+  if (!window.DocHelper || !window.NaviAgent) return;
+  const r = DocHelper.planTask({ slot: d.slot, goal: d.goal }, { agentOn: !!_agentInfo, labels: (_docChat.attach || []).map(function (a) { return a.l; }), slots: _docChat.slots, slotPlan: NaviAgent.slotPlan });
+  if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
+  let ok = false; try { ok = await NaviAgent.queue(r.job); } catch (x) { ok = false; }
+  _docChat.slots = DocHelper.applySlot(_docChat.slots, r.label, ok ? 'queued' : 'failed', ok ? '' : '맡기지 못함');
+  _embedNote(true, ok ? '“' + r.label.slice(0, 40) + '” 항목을 나비웹 도우미에 맡겼습니다. 브라우저 도구 모음의 나비웹 도우미 아이콘을 눌러 내용을 확인하고 시작하세요. 로그인·결제는 직접 하셔야 합니다.'
+                      : '“' + r.label.slice(0, 40) + '” 항목을 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
+  _docChatPush();
+}
+window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 낸 태그 — 혼디 대화창(hondi.net)에서만, 도우미 세션 중일 때만 받는다
+  const d = e.data; if (!d || typeof d !== 'object' || (d.type !== 'hondi-embed-agent-task' && d.type !== 'hondi-embed-doc-handback')) return;
+  const f = document.getElementById('hchat-frame');
+  if (!f || e.source !== f.contentWindow || e.origin !== 'https://hondi.net') return;
+  if (!_docChat.on) return;
+  if (d.type === 'hondi-embed-agent-task') { _docChatAgentTask(d); return; }
+  const r = window.DocHelper ? DocHelper.handBackDecision(String(d.reason || ''), { saved: _docChat.saved }) : { ok: false, msg: '' };
+  if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
+  _docChatHandBack(String(d.reason));
+});
 window.addEventListener('message', function (e) {   // 대화창이 전송 직전에 "지금 화면"을 새로 요청한다
   const d = e.data; if (!d || d.type !== 'hondi-embed-ctx-request') return;
   const f = document.getElementById('hchat-frame');
@@ -3058,6 +3124,11 @@ function _docHostMessage(d, e) {
   } else if (d.type === 'navi-doc-fetch-slot') {
     _agentFetchSlot(String(d.label || '').slice(0, 120));
   } else if (d.type === 'navi-doc-slot-result') {
+    if (_docChat.on && window.DocHelper) {   // 도우미가 받아 온 파일이 서류 항목에 들어갔다(또는 못 들어갔다)
+      const lb = DocHelper.matchLabel(String(d.label || ''), (_docChat.attach || []).map(function (a) { return a.l; })) || String(d.label || '');
+      _docChat.slots = DocHelper.applySlot(_docChat.slots, lb, d.ok ? 'received' : 'failed', d.ok ? '' : String(d.msg || ''));
+      setTimeout(_docChatPush, 0);
+    }
     _agentBars().forEach(b => { const st = b.querySelector('.da-state'); if (st && b.offsetParent !== null) st.textContent = d.ok ? '“' + String(d.label || '').slice(0, 60) + '” 항목에 ' + String(d.name || '파일').slice(0, 60) + ' 파일을 넣었습니다. 내용을 확인하세요.' : '파일을 넣지 못했습니다: ' + String(d.msg || '').slice(0, 80); });
   } else if (d.type === 'navi-doc-snapshot') {
     const w = _docHost.snapWait; if (w) { _docHost.snapWait = null; clearTimeout(w.t); w.resolve(d); }
@@ -3066,7 +3137,9 @@ function _docHostMessage(d, e) {
   } else if (d.type === 'navi-doc-size') {
     _docHostAutoHeight(d.height);
   } else if (d.type === 'navi-doc-title') {   // 서류 쪽에서 고른(또는 미리보기 중인) 서류의 정확한 이름
-    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80); setTimeout(_docChatPush, 0);
+    _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (!_docChat.on && _docChat.doneKey && _docHost.title && _docHost.title !== _docChat.doneTitle) setTimeout(function () { _docChatEnsure(true); }, 0);   // 방금 마친 서류와 다른 서류를 열었다 — 도우미가 주도권을 다시 맡는다
+    setTimeout(_docChatPush, 0);
   } else if (d.type === 'navi-doc-meta') {
     _docHost.meta = { count: String(d.count || '').slice(0, 200), placeholder: String(d.placeholder || '').slice(0, 200) };
     try { const id = document.getElementById('cmp-doc-site').value; localStorage.setItem(_docHostMetaKey(id), JSON.stringify(_docHost.meta)); } catch (x) {}
@@ -3274,7 +3347,7 @@ async function _drStoreCaptured(cap, d) {
     const ex = _docExtras(d); if (ex.length) item.extras = ex;
     if (d.title) item.title = String(d.title).slice(0, 120);
     await _drCall('put', { item });
-    if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _cmpChat.draftId = null; _dr.lastSig = ''; _drToast('작성한 서류에 저장했습니다 — 왼쪽 메뉴 서류 ▸ 작성한 서류'); }
+    if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _cmpChat.draftId = null; _dr.lastSig = ''; _drToast('작성한 서류에 저장했습니다 — 왼쪽 메뉴 서류 ▸ 작성한 서류'); try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }
   } catch (e) { if (cap.mode === 'done') _drToast('서류를 저장하지 못했습니다. 서류 작성이 끝났는지 확인해 주세요.'); }
 }
 // 서류 화면의 "작성 완료로 저장" 버튼
@@ -3294,7 +3367,7 @@ function _drRecordDone(d) {
   const t = document.getElementById('cmp-input').value.trim();
   _drCall('put', { item: { id, kind: 'doc', site: _docHost.id || '', title: String(d.title || t || '서류').slice(0, 120), text: t,
     fileName: String(d.filename || '서류.docx').slice(0, 160), fileMime: String(d.mime || ''), fileData: d.data, extras: _docExtras(d) } })
-    .then(() => _drCall('done', { id })).catch(() => {});
+    .then(() => _drCall('done', { id })).then(() => { try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }).catch(() => {});
 }
 // 발송·접수가 끝난 편지·캠페인은 Draft 에서 지운다
 function _drDiscardCurrent() {
