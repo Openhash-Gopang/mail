@@ -92,7 +92,7 @@ test('desktop.html: 왼쪽 메뉴는 펼쳐도 문구 폭만큼만 넓어진다(
 test('desktop.html: 서류 선택 드롭다운 맨 위가 실시간 서류 검색 입력이다', async () => {
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  for (const k of ['id="cmp-doc-q"', 'oninput="_cmpDocComboFilter()"', 'function _docSearch(', 'function _cmpDocComboPick(', 'https://law.hondi.net/data/docs/law.json']) assert.ok(s.includes(k), k);
+  for (const k of ['id="cmp-doc-q"', 'oninput="_cmpDocComboFilter()"', 'function _docSearch(', 'function _cmpDocComboPick(', "'https://' + id + '.naviweb.kr/data/docs/'"]) assert.ok(s.includes(k), k);
   assert.ok(!s.includes("new Option('서류 선택', '')") || true);
 });
 test('desktop.html: "서류 선택" 오른쪽에 "각종 기관" 드롭다운(검색 입력 + K-서비스 27개 인프라 항목)', async () => {
@@ -372,7 +372,7 @@ test('서류 작성 드롭다운: "전체" 아래에 "제주 행정"(jeju.naviwe
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   const all = s.indexOf("{ id: 'all', label: '전체'"), jeju = s.indexOf("{ id: 'jeju', label: '제주 행정', url: 'https://jeju.naviweb.kr/' }"), law = s.indexOf("{ id: 'law', label: '법률 서류'");
   assert.ok(all > 0 && all < jeju && jeju < law, '전체 → 제주 행정 → 법률 서류 순서');
-  assert.ok(s.includes("{ site: 'jeju', url: 'https://jeju.naviweb.kr/data/docs/jeju.json' }"));
+  assert.ok(s.includes("'jeju'].map(id => ({ site: id, url: 'https://' + id + '.naviweb.kr/data/docs/' + id + '.json' }))"));
 });
 
 test('예시 패널: 입력 칸 왼쪽 "예시" 버튼이 예시 항목 패널을 slide out/in 하고, 항목을 고르면 다시 들어간다', () => {
