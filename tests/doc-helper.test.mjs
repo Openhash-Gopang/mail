@@ -224,3 +224,23 @@ test('도우미 줄은 화면에 두지 않고, 버전은 맨 위 오른쪽 배�
   assert.match(html, /id="agent-draft" hidden onclick="_docNewAfterSave\(this\)"/);
   assert.match(html, /const dr = document\.getElementById\('agent-draft'\); if \(dr\) dr\.hidden = false;/);
 });
+
+test('desktop.html: 내 서류함 — 메뉴·화면·PDV(kind=form) 보관·양식 파일 보관·★ 담기', () => {
+  const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(html, /id="tab-btn-myforms"[^>]*onclick="_switchTab\('myforms'\)">내 서류함</);
+  assert.match(html, /id="tab-myforms" class="tab-panel"/);
+  assert.match(html, /if \(name === 'myforms'\) _mfRender\(\)/);
+  assert.match(html, /id="agent-fav"[^>]*onclick="_mfAddFav\(this\)"/);
+  assert.match(html, /kind: 'form', box: 'fav'/);
+  assert.match(html, /kind: 'form', box: 'upload'/);
+  assert.match(html, /type: 'navi-doc-userform'/);
+  assert.match(html, /_mfSaveUpload\(f, buf\)/);
+  const src = html.slice(html.indexOf('function _mfHash'), html.indexOf('function _mfNewOpen'));
+  const f = new Function(src + '; return { _mfParse };')();
+  const form = f._mfParse('점검표', '# 기본\n성명* | 짧은글 | 이름\n보증금 | 금액:원\n구분 | 선택:신규/갱신\n사유 | 긴글');
+  assert.equal(form.sections[0].f.length, 4);
+  assert.equal(form.sections[0].f[0].req, 1);
+  assert.equal(form.sections[0].f[1].u, '원');
+  assert.deepEqual(form.sections[0].f[2].o, ['신규', '갱신']);
+  assert.equal(f._mfParse('', 'x'), null);
+});
