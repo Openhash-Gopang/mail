@@ -390,8 +390,8 @@ test('예시 패널: 입력 칸 왼쪽 "예시" 버튼이 예시 항목 패널�
   assert.ok(h.includes(".ex-verdict,.ex-guide,.ex-nabicode,.doc-combo-it,.doc-combo-up"), '항목을 고르면 접힘');
 });
 
-test('예시 버튼: 크기 1.5배(높이 51px·글자 19.5px), 배경은 전송 버튼과 같은 var(--pri)', () => {
+test('예시 버튼: 축소(높이 38px·글자 15px), 배경은 전송 버튼과 같은 var(--pri)', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(h, /\.cmp-ex-btn\{[^}]*height:51px[^}]*background:var\(--pri\);color:#fff;[^}]*font-size:19\.5px/);
+  assert.match(h, /\.cmp-ex-btn\{[^}]*height:38px[^}]*background:var\(--pri\);color:#fff;[^}]*font-size:15px/);
   assert.match(h, /\.chat-send-btn\{[^}]*background:var\(--pri\)/);
 });
