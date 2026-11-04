@@ -1027,9 +1027,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
         <table class="ex-table"><caption class="sr-only">예시</caption><tbody><tr>
             <td>
-            <button type="button" class="doc-combo-btn ex-verdict" id="cmp-verdict-btn" data-label="가상 판결" title="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg><span>가상 판결</span></button>
-            </td>
-            <td>
             <div class="doc-combo" id="cmp-doc-combo">
               <button type="button" class="doc-combo-btn" id="cmp-doc-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpDocComboToggle(event)"><span id="cmp-doc-combo-label">서류 작성</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
               <div class="doc-combo-pop" id="cmp-doc-combo-pop" hidden>
@@ -1065,6 +1062,9 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
                 <div class="doc-combo-list" id="cmp-gov-list" role="listbox" aria-label="정부 기관"></div>
               </div>
             </div>
+            </td>
+            <td>
+            <button type="button" class="doc-combo-btn ex-verdict" id="cmp-verdict-btn" data-label="가상 판결" title="가상 판결" onclick="_switchTab('verdict')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="#0B5394" stroke="none"><polygon points="1.8,1 1.48,22.84 6.3,23 6.3,16.09 3.57,12.88 6.46,10.15 6.62,1"/><polygon points="10.47,7.26 8.23,9.35 20.11,22.84 22.52,20.75"/><polygon points="14.49,4.05 11.6,6.62 15.45,10.64 18.18,7.91"/><polygon points="7.26,10.47 4.53,13.04 8.39,17.06 10.96,14.49"/></g></svg><span>가상 판결</span></button>
             </td>
             <td>
             <button type="button" class="doc-combo-btn ex-guide" id="cmp-guide-btn" aria-pressed="false" onclick="_cmpGuidePick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg><span>나비 길잡이</span></button>
