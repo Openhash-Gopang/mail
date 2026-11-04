@@ -245,12 +245,13 @@ test('desktop.html: 내 서류함 — 메뉴·화면·PDV(kind=form) 보관·양
   assert.equal(f._mfParse('', 'x'), null);
 });
 
-test('desktop.html: 서류 양식이 보이면 입력창이 맨 위 바 아래로 접히고 단추로 다시 펼친다 · 맨 위 메뉴는 겹치지 않는다', () => {
+test('desktop.html: 서류를 고르면 입력 필드를 화면에서 없애고, 홈으로 새 입력 필드를 부른다 · 맨 위 메뉴는 겹치지 않는다', () => {
   const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(html, /id="doc-fold-btn"[^>]*onclick="_docFoldToggle\(\)"/);
-  assert.match(html, /doc-live\.doc-fold \.chat-composer\{position:static;margin-top:calc\(-1 \* var\(--cf-h,120px\) - 26px\)/);
-  assert.match(html, /_docFold\.auto !== full && tab\.classList\.contains\('doc-live'\)\) \{ _docFold\.auto = full; _docFoldSet\(true\)/);
-  assert.match(html, /_docFold\.auto = ''; if \(tab\.classList\.contains\('doc-fold'\)\) _docFoldSet\(false\)/);
+  assert.match(html, /#tab-compose\[data-docopen="1"\]\.doc-live \.chat-composer\{display:none!important\}/);
+  assert.match(html, /tab\.setAttribute\('data-docopen', '1'\)/);
+  assert.doesNotMatch(html, /doc-fold|_docFold/);
+  assert.match(html, /name === 'home' && _docLocked\(\)[^\n]*\n\s*_docNewAfterSave\(null\)\.then\(ok => \{ if \(ok\) _cmpSetMode\('default', \{ force: true \}\); \}\);/);
+  assert.match(html, /if \(mode !== 'doc' && _docHost\.loaded\) \{ _docHost\.confirmed = false;/);
   assert.match(html, /header\.topbar:has\(#agent-draft:not\(\[hidden\]\)\) \.topbar-page/);
 });
 
