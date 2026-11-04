@@ -76,3 +76,26 @@ test('엣지 캐시 시간: 이미지·글꼴은 길게, 나머지는 짧게', (
   assert.equal(_edgeTtl('/guide.js'), 120);
   assert.equal(_edgeTtl('/'), 120);
 });
+
+import { directAsset as _direct, etagMatches as _etm } from '../ops/naviweb-proxy/worker.js';
+test('정적 파일 직접 주소: 상대 경로만 원본으로, 절대 주소·#·data 는 그대로', () => {
+  const O = 'https://mail.hondi.net';
+  assert.equal(_direct('guide.js?v=1', '/desktop.html', O), 'https://mail.hondi.net/guide.js?v=1');
+  assert.equal(_direct('/icons/a.png', '/desktop.html', O), 'https://mail.hondi.net/icons/a.png');
+  assert.equal(_direct('icons/a.png', '/x/y.html', O), 'https://mail.hondi.net/x/icons/a.png');
+  assert.equal(_direct('https://hondi.net/lib/a.js', '/', O), null);
+  assert.equal(_direct('//cdn.example.com/a.js', '/', O), null);
+  assert.equal(_direct('data:image/png;base64,AAA', '/', O), null);
+  assert.equal(_direct('#top', '/', O), null);
+  assert.equal(_direct('', '/', O), null);
+  assert.equal(_direct(null, '/', O), null);
+});
+test('ETag 비교: 약한 표시 무시, 목록·* 허용, 없으면 false', () => {
+  assert.equal(_etm('"abc"', '"abc"'), true);
+  assert.equal(_etm('W/"abc"', '"abc"'), true);
+  assert.equal(_etm('"x", "abc"', 'W/"abc"'), true);
+  assert.equal(_etm('*', '"abc"'), true);
+  assert.equal(_etm('"x"', '"abc"'), false);
+  assert.equal(_etm('', '"abc"'), false);
+  assert.equal(_etm('"abc"', null), false);
+});
