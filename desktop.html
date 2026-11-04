@@ -287,10 +287,10 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-sec{font-size:12px;color:var(--hint);padding:6px 9px 2px}
 /* 예시 패널(2026-11-04): 입력 칸 왼쪽 "예시" 버튼을 누르면 입력창 아래로 예시 항목(한 행의 칸들)이 미끄러져 나오고, 하나를 고르면 다시 들어간다. */
 .cmp-inrow{display:flex;align-items:center;gap:8px}.cmp-inrow>.chat-inputbar{flex:1 1 auto;min-width:0}
-.cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:6px;height:51px;margin:0;padding:0 14px 0 17px;border:0;border-radius:999px;background:var(--pri);color:#fff;font:inherit;font-size:19.5px;font-weight:700;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .08s}   /* 2026-11-04: 크기 1.5배, 배경은 입력(전송) 버튼과 같은 --pri 초록 */
+.cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:5px;height:38px;margin:0;padding:0 12px 0 15px;border:0;border-radius:999px;background:var(--pri);color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .08s}   /* 2026-11-04: 1.5배에서 축소(높이 38px·글자 15px), 배경은 입력(전송) 버튼과 같은 --pri 초록 */
 .cmp-ex-btn:hover{filter:brightness(.93);transform:scale(1.03)}
 .cmp-ex-btn:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
-.cmp-ex-btn svg{width:18px;height:18px;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+.cmp-ex-btn svg{width:14px;height:14px;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .cmp-ex-btn[aria-expanded=true]{box-shadow:0 0 0 3px var(--pri-bg)}
 .cmp-ex-btn[aria-expanded=true] svg{transform:rotate(180deg)}
 #tab-compose[data-mode="doc"] .cmp-ex-btn,#tab-compose[data-mode="default"] .cmp-ex-btn,#tab-compose[data-mode="org"] .cmp-ex-btn,#tab-compose[data-mode="verdict"] .cmp-ex-btn{display:inline-flex}
