@@ -277,6 +277,19 @@ test('사용 설명서(2026-11-05 개편): 1부 구성 항목 10장 → 2부 실
   assert.equal((h.match(/<section /g) || []).length - 2, (h.match(/<\/section>/g) || []).length);   // 주석·스크립트 속 예시 2건 제외
 });
 
+test('설명서·사용법의 화면 캡처: 참조한 이미지 파일이 모두 있고 alt 가 있다', () => {
+  const files = ['manual.html', 'guide.js'];
+  let n = 0;
+  for (const f of files) {
+    const s = readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+    for (const m of s.matchAll(/<img src=\\?"(manual-img\/[^"\\]+)\\?"[^>]*>/g)) {
+      n++; assert.ok(existsSync(new URL('../' + m[1], import.meta.url)), f + ' → ' + m[1]);
+      assert.match(m[0], /alt=/, m[1]);
+    }
+  }
+  assert.ok(n >= 8, 'img ' + n);
+});
+
 test('사용법 코스(guide.js): 기본 1~10 구성 항목 · 활용 11~20 실습 · 고급 21~(업무 Case는 항상 마지막)', () => {
   const P = G.PAGES;
   assert.ok(P.length >= 21);
