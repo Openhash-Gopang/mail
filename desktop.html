@@ -525,6 +525,147 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .nav-expert-doc:hover{background:#f3f4f6}
 .dr-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .dr-sec{font-size:13px;font-weight:800;color:var(--hint);margin:18px 2px 8px;letter-spacing:.02em}
+/* ── 새 양식 만들기: Material 3 (m3.material.io) 양식 빌더 ── */
+.mfb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 24px;border:0;border-radius:20px;font:inherit;font-size:14px;font-weight:600;letter-spacing:.01em;cursor:pointer;white-space:nowrap;transition:box-shadow .15s,background-color .15s}
+.mfb-btn:focus-visible,.mfb-ib:focus-visible,.mfb-chip:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.mfb-btn svg{margin-left:-8px}
+.mfb-filled{background:var(--pri);color:#fff}
+.mfb-filled:hover{background-image:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1));box-shadow:0 1px 3px 1px rgba(0,0,0,.15),0 1px 2px rgba(0,0,0,.3)}
+.mfb-filled.is-off{background:rgba(26,32,44,.12);color:rgba(26,32,44,.38);box-shadow:none;background-image:none}
+.mfb-tonal{background:var(--pri-bg);color:var(--gov)}
+.mfb-tonal:hover{background-image:linear-gradient(rgba(15,143,126,.1),rgba(15,143,126,.1));box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.mfb-text{background:transparent;color:var(--pri);padding:0 12px}
+.mfb-text:hover{background:rgba(15,143,126,.08)}
+.mfb-ib{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--sub);cursor:pointer;transition:background-color .15s}
+.mfb-ib:hover{background:rgba(26,32,44,.08)}
+.mfb-ib:disabled{opacity:.38;cursor:default;background:transparent}
+.mfb-ib.on{color:var(--pri);background:var(--pri-bg)}
+.mfb-root{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.mfb-root[hidden]{display:none}
+.mfb-scrim{position:absolute;inset:0;background:rgba(10,20,19,.4);animation:mfb-fade .2s}
+@keyframes mfb-fade{from{opacity:0}}
+@keyframes mfb-up{from{opacity:0;transform:translateY(24px) scale(.98)}}
+.mfb-sheet{--m-out:#79747E;--m-out-v:#CAC4D0;--m-text:#1D1B20;--m-sub:#49454F;--acc:var(--pri);--m-sc:#F0F6F5;--m-sch:#E3EEEC;--m-bg:#fff;position:relative;display:flex;flex-direction:column;width:min(1080px,calc(100% - 32px));height:min(860px,calc(100% - 40px));background:#fff;color:var(--txt);border-radius:28px;box-shadow:0 4px 8px 3px rgba(0,0,0,.15),0 1px 3px rgba(0,0,0,.3);overflow:hidden;animation:mfb-up .24s cubic-bezier(.2,0,0,1)}
+.mfb-top{flex:none;display:flex;align-items:center;gap:8px;height:64px;padding:0 24px 0 12px;border-bottom:1px solid var(--bdr)}
+.mfb-top h2{margin:0 0 0 4px;font-size:22px;font-weight:600;color:var(--txt)}
+.mfb-sp{flex:1}
+.mfb-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mfb-cl{font-size:13px;color:var(--hint);margin-right:4px}
+.mfb-chip{height:32px;padding:0 12px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--txt);font:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background-color .15s}
+.mfb-chip:hover{background:var(--pri-bg);border-color:var(--pri-bd)}
+.mfb-tf{position:relative;min-width:0}
+.mfb-tf input,.mfb-tf select{width:100%;height:52px;padding:0 16px;border:1px solid var(--m-out);border-radius:4px;background:transparent;color:var(--txt);font:inherit;font-size:16px;outline:none;transition:border-color .15s,box-shadow .15s}
+.mfb-tf select{appearance:none;-webkit-appearance:none;padding-right:36px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2349454F' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center/24px}
+.mfb-tf input:hover,.mfb-tf select:hover{border-color:var(--txt)}
+.mfb-tf input:focus,.mfb-tf select:focus{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.mfb-tf label{position:absolute;left:12px;top:50%;transform:translateY(-50%);padding:0 4px;background:var(--m-bg);color:var(--sub);font-size:16px;line-height:1.2;pointer-events:none;transition:top .15s,font-size .15s,color .15s;max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mfb-tf input:focus+label,.mfb-tf input:not(:placeholder-shown)+label,.mfb-tf select+label{top:0;font-size:12px}
+.mfb-tf input:focus+label,.mfb-tf select:focus+label{color:var(--pri)}
+.mfb-grow{flex:1 1 180px}
+.mfb-sel{flex:none;width:132px}
+.mfb-unit{flex:none;width:96px}
+.mfb-acts{display:flex;align-items:center;margin-left:auto}
+.mfb-sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;flex:none;font-size:14px;color:var(--sub);position:relative}
+.mfb-sw input{position:absolute;opacity:0;width:1px;height:1px}
+.mfb-track{position:relative;width:52px;height:32px;border-radius:16px;border:2px solid var(--m-out);background:var(--m-sch);transition:background-color .2s,border-color .2s}
+.mfb-track::after{content:"";position:absolute;top:50%;left:6px;width:16px;height:16px;border-radius:50%;background:var(--m-out);transform:translateY(-50%);transition:left .2s,width .2s,height .2s,background-color .2s}
+.mfb-sw input:checked+.mfb-track{background:var(--pri);border-color:var(--pri)}
+.mfb-sw input:checked+.mfb-track::after{left:20px;width:24px;height:24px;background:#fff}
+.mfb-sw input:focus-visible+.mfb-track{outline:2px solid var(--pri);outline-offset:2px}
+
+.mfb-top h2{flex:none}
+.mfb-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px}
+.mfb-left{display:flex;flex-direction:column;min-height:0;min-width:0}
+.mfb-titlew{--m-bg:#fff}
+.mfb-start{background:var(--m-sc);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.mfb-startt{font-size:14px;line-height:1.6;color:var(--sub)}
+.mfb-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mfb-rz{position:absolute;opacity:0;transition:opacity .15s}
+.mfb-f:hover .mfb-rz,.mfb-f.sel .mfb-rz{opacity:1}
+.mfb-tip{position:absolute;right:8px;top:-12px;background:#111827;color:#fff;font-size:12px;padding:2px 8px;border-radius:999px;pointer-events:none}
+.mfb-insp{flex:none;border-top:1px solid var(--bdr);background:var(--m-sc);padding:10px 24px;min-height:64px}
+.mfb-ihint{font-size:12.5px;line-height:1.7;color:var(--sub)}
+.mfb-ihint kbd{font:600 11px ui-monospace,Menlo,monospace;background:#fff;border:1px solid var(--bdr);border-radius:4px;padding:0 5px}
+.mfb-irow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mfb-irow .mfb-tf{--m-bg:var(--m-sc)}
+.mfb-irow .mfb-tf input,.mfb-irow .mfb-tf select{height:44px;font-size:14px;background:transparent}
+.mfb-irow .mfb-tf label{font-size:14px}.mfb-irow .mfb-tf input:focus+label,.mfb-irow .mfb-tf input:not(:placeholder-shown)+label,.mfb-irow .mfb-tf select+label{font-size:12px}
+.mfb-step{display:inline-flex;align-items:center;gap:2px;flex:none;background:#fff;border:1px solid var(--bdr);border-radius:20px;padding:2px}
+.mfb-sl{font-size:12px;color:var(--hint);padding:0 6px 0 10px}
+.mfb-step button{width:30px;height:30px;border:0;border-radius:50%;background:transparent;font-size:18px;line-height:1;color:var(--txt);cursor:pointer}
+.mfb-step button:hover{background:var(--pri-bg)}
+.mfb-step output{min-width:36px;text-align:center;font-size:13px;font-weight:700}
+.mfb-right{display:flex;flex-direction:column;min-height:0;background:var(--m-sc);border-left:1px solid var(--bdr)}
+.mfb-chath{flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;font-size:14px}
+.mfb-link{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--m-sch);color:var(--sub)}
+.mfb-link.ok{background:var(--pri-bg);color:var(--pri)}.mfb-link.err{background:#FDE8E8;color:var(--red)}
+.mfb-msgs{flex:1;min-height:0;overflow-y:auto;padding:4px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.mfb-msg{display:flex}.mfb-msg.me{justify-content:flex-end}
+.mfb-bub{max-width:92%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.55;word-break:break-word;background:#fff;color:var(--txt);border-bottom-left-radius:6px}
+.mfb-msg.me .mfb-bub{background:var(--pri);color:#fff;border-bottom-left-radius:18px;border-bottom-right-radius:6px}
+.mfb-bub.err{background:#FDE8E8;color:#8A1C1C}
+.mfb-sum{margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr);font-size:12px;font-weight:700;color:var(--pri)}
+.mfb-sum button{border:0;background:transparent;color:var(--pri);font:inherit;font-weight:800;text-decoration:underline;cursor:pointer;margin-left:6px}
+.mfb-sugg{padding-left:2px}
+.mfb-typing{display:flex;gap:5px;padding:14px}
+.mfb-typing i{width:7px;height:7px;border-radius:50%;background:var(--hint);animation:mfb-b 1.1s infinite}
+.mfb-typing i:nth-child(2){animation-delay:.15s}.mfb-typing i:nth-child(3){animation-delay:.3s}
+@keyframes mfb-b{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+.mfb-comp{flex:none;display:flex;align-items:flex-end;gap:8px;padding:10px 12px 14px}
+.mfb-comp textarea{flex:1;min-height:44px;max-height:120px;resize:none;border:1px solid var(--m-out);border-radius:22px;background:#fff;padding:11px 16px;font:inherit;font-size:14px;line-height:1.4;color:var(--txt);outline:none}
+.mfb-comp textarea:focus{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.mfb-send{flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--pri);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.mfb-send:disabled{background:rgba(26,32,44,.12);color:rgba(26,32,44,.38);cursor:default}
+.mfb-tabs{display:none}
+body.mfb-open #hchat-fab,body.mfb-open #hchat-panel{display:none!important}
+body.mfb-open #dr-toast{z-index:3100}
+@media (prefers-reduced-motion:reduce){.mfb-sheet,.mfb-scrim{animation:none}.mfb-track,.mfb-track::after,.mfb-tf label{transition:none}.mfb-typing i{animation:none}}
+
+/* ── 나비 서식 표준 v1.1(navi-pro/docs/form-standard.html §2) 그대로: outlined text field 48px·4px 모서리·라벨은 테두리 위에 걸림·2열(12칸) 격자·필수 * #B3261E ── */
+.mfb-canvas{flex:1;min-height:0;overflow-y:auto;padding:24px 28px 28px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.mfb-title{width:100%;border:0;border-bottom:1px solid transparent;background:transparent;font:inherit;font-size:1.5rem;font-weight:400;color:var(--m-text);padding:4px 2px;outline:none;border-radius:0;transition:border-color .15s}
+.mfb-title:hover{border-color:var(--m-out-v)}.mfb-title:focus{border-color:var(--acc)}
+.mfb-sec{display:flex;flex-direction:column;gap:0}
+.mfb-sech{display:flex;align-items:center;gap:6px;margin:22px 0 14px}
+.mfb-secname{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:1rem;font-weight:500;letter-spacing:.01em;color:var(--acc);padding:4px 4px;margin:0 -4px;border-radius:4px;outline:none}
+.mfb-secname:hover{background:rgba(29,27,32,.06)}.mfb-secname:focus{box-shadow:inset 0 0 0 1px var(--acc)}
+.mfb-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:22px 16px;padding-top:6px;margin-bottom:12px}
+.mfb-none{grid-column:1/-1;font-size:13px;color:var(--m-sub);padding:8px 4px}
+.mfb-sec>.mfb-btn{align-self:flex-start}
+.mfb-f{position:relative;min-width:0;border-radius:4px;outline:none;cursor:pointer}
+.mfb-lb{position:absolute;z-index:1;left:12px;top:-9px;max-width:calc(100% - 24px);padding:0 4px;background:#fff;color:var(--m-sub);font-size:.75rem;line-height:18px;display:flex;align-items:center;white-space:nowrap}
+.mfb-f.sel .mfb-lb,.mfb-f:focus-within .mfb-lb{color:var(--acc)}
+.mfb-lab{min-width:3ch;max-width:100%;border:0;background:transparent;font:inherit;font-size:.75rem;line-height:18px;color:inherit;padding:0;outline:none;text-overflow:ellipsis}
+.mfb-lab::placeholder{color:var(--m-sub);opacity:.7}
+.mfb-rq{color:#B3261E;font-style:normal}
+.mfb-fld{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:48px;padding:0 16px;border:1px solid var(--m-out);border-radius:4px;background:transparent;color:var(--m-sub);font-size:.9375rem;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.mfb-f:hover .mfb-fld{border-color:var(--m-text)}
+.mfb-f.sel .mfb-fld{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.mfb-fld.long{height:auto;align-items:flex-start;padding-top:12px}
+.mfb-fld.amount span{margin-left:auto}
+.mfb-fld.amount em{font-style:normal;color:var(--m-sub);font-size:.8125rem}
+.mfb-fld.select{padding-right:36px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2349454F' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center/24px}
+.mfb-fld svg{flex:none;color:var(--m-sub)}
+.mfb-fld .mfb-ph{color:var(--m-sub);opacity:.6}
+.mfb-fld .mfb-opt1{color:var(--m-text)}
+.mfb-f small{display:block;margin:4px 16px 0;font-size:.75rem;line-height:1.4;color:var(--m-sub)}
+.mfb-f.flash .mfb-fld{background:#FFF6D6}
+.mfb-rz.r{top:50%;right:-9px;width:6px;height:28px;margin-top:-14px;border-radius:3px;background:var(--acc);cursor:ew-resize;touch-action:none}
+.mfb-rz.b{left:50%;bottom:-9px;width:28px;height:6px;margin-left:-14px;border-radius:3px;background:var(--acc);cursor:ns-resize;touch-action:none}
+@media (max-width:760px){
+  .mfb-sheet{width:100%;height:100%;border-radius:0}
+  .mfb-top{padding-right:12px}
+  .mfb-tabs{display:flex;flex:none;border-bottom:1px solid var(--bdr)}
+  .mfb-tabs button{flex:1;height:44px;border:0;background:transparent;font:inherit;font-size:14px;font-weight:700;color:var(--sub);border-bottom:3px solid transparent;cursor:pointer}
+  .mfb-tabs button.on{color:var(--pri);border-color:var(--pri)}
+  .mfb-body{display:block}
+  .mfb-left,.mfb-right{height:100%}
+  .mfb-sheet[data-pane=form] .mfb-right,.mfb-sheet[data-pane=chat] .mfb-left{display:none}
+  .mfb-right{border-left:0}
+  .mfb-insp{padding:10px 16px}
+}
+@media (max-width:560px){ .mfb-canvas{padding:20px 16px} .mfb-grid{grid-template-columns:1fr;gap:20px} .mfb-grid .mfb-f{grid-column:1/-1!important} .mfb-rz.r{display:none} }
+
 #dr-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;background:#111827;color:#fff;font-size:13px;padding:9px 16px;border-radius:999px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-docs{background:var(--pri-bg);color:var(--pri)}
 .side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-guidenav{background:var(--pri-bg);color:var(--pri)}
@@ -1562,17 +1703,9 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
   <div id="tab-myforms" class="tab-panel">
     <div class="card">
-      <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
+      <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
       <div class="sub">자주 쓰는 양식, 내가 만든 양식, 올려 둔 양식을 이 기기의 PDV에 보관합니다. 항목을 누르면 서류 작성 화면에서 바로 열립니다. 서류 작성 중 위쪽의 "★ 내 서류함에 담기"로 자주 쓰는 양식을 추가하고, 양식 파일을 올리면 자동으로 이곳에 보관됩니다.</div>
-      <div id="mf-new" hidden style="border:1px solid var(--border,#ccc);border-radius:12px;padding:14px;margin:10px 0">
-        <label style="display:block;font-size:13px;margin-bottom:4px">양식 이름</label>
-        <input id="mf-new-title" type="text" maxlength="80" placeholder="예: 사무실 임대차 점검표" style="width:100%;box-sizing:border-box;margin-bottom:10px">
-        <label style="display:block;font-size:13px;margin-bottom:4px">항목 (한 줄에 하나)</label>
-        <textarea id="mf-new-body" rows="9" style="width:100%;box-sizing:border-box;font:13px/1.5 monospace" placeholder="# 기본 사항&#10;성명* | 짧은글 | 신청인 이름&#10;신청일 | 날짜&#10;보증금 | 금액:원&#10;구분 | 선택:신규/갱신/해지&#10;# 상세 내용&#10;요청 사유 | 긴글"></textarea>
-        <div style="font-size:12px;color:var(--hint);margin:6px 0 10px"># 로 시작하면 묶음(섹션) 이름입니다. 항목은 <b>이름 | 종류 | 안내</b> 순서이고, 이름 뒤에 *를 붙이면 필수입니다. 종류: 짧은글 · 긴글 · 날짜 · 금액(:단위) · 선택:가/나/다</div>
-        <button type="button" class="btn btn-sm btn-primary" onclick="_mfNewSave()">저장</button>
-        <button type="button" class="btn btn-sm btn-outline" onclick="_mfNewClose()">취소</button>
-      </div>
+      <div id="mf-new" hidden></div>
       <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="mf-empty" style="display:none;font-size:14px;color:var(--hint)">아직 보관한 양식이 없습니다.</div>
       <div id="mf-items"></div>
@@ -3581,17 +3714,422 @@ function _mfParse(title, body) {
   const form = { title: String(title || '').replace(/\s+/g, ' ').trim().slice(0, 80), sections: secs.filter(x => x.f.length), attach: [] };
   return form.title && form.sections.length ? form : null;
 }
-function _mfNewOpen() { const b = document.getElementById('mf-new'); if (b) { b.hidden = false; document.getElementById('mf-new-title').focus(); } }
-function _mfNewClose() { const b = document.getElementById('mf-new'); if (b) b.hidden = true; }
-async function _mfNewSave() {
-  const form = _mfParse(document.getElementById('mf-new-title').value, document.getElementById('mf-new-body').value);
-  if (!form) { _drToast('양식 이름과 항목을 한 개 이상 적어 주세요.'); return; }
-  if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+function _mfNewOpen() { _mfbOpen(null); }
+// ── 새 양식 만들기 (2026-11-05): 왼쪽 양식 캔버스 + 오른쪽 양식 작성 SP 대화창 ──
+// · 사용자가 원하는 양식을 말로 설명하면 양식 작성 SP(hondi persona=form-builder)가 초안을 먼저 내고,
+//   이어서 항목 추가·삭제·이동·이름·종류·크기 변경 지시를 이행한다. SP 는 바뀐 뒤의 양식 전체(```form 블록)를 돌려주고 화면이 그대로 바꾼다.
+// · 사용자는 같은 캔버스에서 항목 이름을 눌러 바로 고치고, 모서리를 끌거나 키보드로 입력칸의 폭(12칸 격자)·줄 수를 정한다.
+// · 저장 형식(kind=form, box=mine, body=서식 JSON)은 그대로이고 칸마다 선택 값 w(폭 3~12)·r(긴글 줄 수 2~12)만 더해진다.
+const _MFB = { id: '', site: '', dirty: false, uid: 0, title: '', secs: [], sel: 0, hist: [], busy: false, pane: 'form', opener: null, frame: null, link: '', pend: null, msgs: [], flash: {} };
+const _MFB_TYPES = [['short', '짧은글'], ['long', '긴글'], ['date', '날짜'], ['amount', '금액'], ['select', '선택']];
+const _MFB_DEFW = { short: 6, long: 12, date: 6, amount: 6, select: 6 };   // 나비 서식 표준: 2열 격자(긴글만 전체 폭)
+const _MFB_HONDI = 'https://hondi.net';
+const _MFB_START = [
+  ['신청서', '# 신청인\n성명* | 짧은글\n연락처 | 짧은글\n신청일 | 날짜\n# 내용\n요청 사유* | 긴글'],
+  ['점검표', '# 기본 사항\n점검일* | 날짜\n점검 장소* | 짧은글\n# 점검 결과\n이상 여부 | 선택:이상 없음/이상 있음\n특이사항 | 긴글'],
+  ['금액 확인서', '# 당사자\n성명* | 짧은글\n# 금액\n금액* | 금액:원\n지급일 | 날짜\n구분 | 선택:입금/출금\n비고 | 긴글']
+];
+const _MFB_SUGG = ['사무실 임대차 점검표', '연차 휴가 신청서', '물품 구매 요청서', '고객 상담 기록지'];
+// 선택지 문자열 → 배열 (쉼표·슬래시·줄바꿈으로 구분, 중복 제거, 최대 12개)
+function _mfbOpts(s) { const seen = {}; return String(s || '').split(/[\/,，、\n]/).map(x => x.trim().slice(0, 30)).filter(x => x && !seen[x] && (seen[x] = 1)).slice(0, 12); }
+function _mfbW(x) { return x.w || _MFB_DEFW[x.t] || 6; }
+function _mfbR(x) { return x.r || 4; }
+function _mfbSig(x) { return [x.t, x.req ? 1 : 0, x.w || 0, x.r || 0, x.h || '', x.o || '', x.un || ''].join('\u0001'); }
+// 화면 상태 → 나비 서식 JSON. 저장할 수 없으면 form=null 과 이유(why)를 돌려준다
+function _mfbBuild() {
+  const title = String(_MFB.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  let n = 0, selErr = ''; const secs = [];
+  _MFB.secs.forEach(s => {
+    const f = [];
+    s.f.forEach(x => {
+      const l = String(x.l || '').replace(/\s+/g, ' ').trim().slice(0, 40); if (!l) return;
+      const o = { l: l, t: x.t, h: String(x.h || '').trim().slice(0, 80) };
+      if (x.t === 'select') { o.o = _mfbOpts(x.o); if (o.o.length < 2 && !selErr) selErr = '「' + l + '」의 선택지를 2개 이상 적어 주세요.'; }
+      if (x.t === 'amount' && String(x.un || '').trim()) o.u = String(x.un).trim().slice(0, 6);
+      if (x.req) o.req = 1;
+      if (x.w >= 3 && x.w <= 12) o.w = x.w;
+      if (x.t === 'long' && x.r >= 2 && x.r <= 12) o.r = x.r;
+      f.push(o); n++;
+    });
+    if (f.length) secs.push({ h: String(s.h || '').trim().slice(0, 40) || '내용', f: f });
+  });
+  const why = !title ? '양식 이름을 적어 주세요.' : !n ? '항목을 한 개 이상 적어 주세요.' : selErr;
+  return { form: why ? null : { title: title, sections: secs, attach: [] }, why: why };
+}
+// 화면 상태 → 양식 작성 SP 와 주고받는 표기(제목: · # 묶음 · 이름* | 종류 | 안내 | 크기). compact 면 안내 문구를 뺀다(요청 4000자 제한)
+function _mfbDsl(compact) {
+  const cl = (s) => String(s || '').replace(/[|\r\n]/g, ' ').replace(/\s+/g, ' ').trim();
+  const out = ['제목: ' + cl(_MFB.title)];
+  _MFB.secs.forEach(s => {
+    const f = s.f.filter(x => cl(x.l)); if (!f.length) return;
+    out.push('# ' + (cl(s.h) || '내용'));
+    f.forEach(x => {
+      const kind = x.t === 'long' ? '긴글' : x.t === 'date' ? '날짜' : x.t === 'amount' ? '금액' + (cl(x.un) ? ':' + cl(x.un) : '') : x.t === 'select' ? '선택:' + _mfbOpts(x.o).join('/') : '짧은글';
+      const size = [x.w ? '폭' + x.w : '', x.t === 'long' && x.r ? '줄' + x.r : ''].filter(Boolean).join(' ');
+      out.push(cl(x.l).replace(/[*＊]+$/, '') + (x.req ? '*' : '') + ' | ' + kind + ' | ' + (compact ? '' : cl(x.h)) + (size ? ' | ' + size : ''));
+    });
+  });
+  return out.join('\n');
+}
+// SP 가 돌려준 ```form 블록 → {title, secs}. 항목이 하나도 없으면 null (한도: 묶음 8개·항목 60개)
+function _mfbParseDsl(text) {
+  let title = '', cur = null, n = 0; const secs = [];
+  String(text || '').split(/\r?\n/).forEach(line => {
+    line = line.trim(); if (!line) return;
+    let m = line.match(/^(?:제목|title)\s*[:：]\s*(.*)$/i); if (m) { title = m[1].trim().slice(0, 80); return; }
+    if (line[0] === '#') { if (secs.length >= 8) return; cur = { h: line.replace(/^#+\s*/, '').slice(0, 40), f: [] }; secs.push(cur); return; }
+    const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l || n >= 60) return;
+    const req = /[*＊]$/.test(l); if (req) l = l.replace(/[*＊]+$/, '').trim(); if (!l) return;
+    const k = _mfKinds(p[1]), sz = String(p[3] || ''), w = parseInt((sz.match(/폭\s*(\d+)/) || [])[1], 10), r = parseInt((sz.match(/줄\s*(\d+)/) || [])[1], 10);
+    if (!cur) { cur = { h: '', f: [] }; secs.push(cur); }
+    cur.f.push({ id: ++_MFB.uid, l: l.slice(0, 40), t: k.t, o: (k.o || []).join(', '), un: k.u || '', h: (p[2] || '').slice(0, 80), req: req, hs: !!p[2],
+      w: w >= 3 && w <= 12 && w !== _MFB_DEFW[k.t] ? w : 0, r: k.t === 'long' && r >= 2 && r <= 12 && r !== 4 ? r : 0 });
+    n++;
+  });
+  const ok = secs.filter(s => s.f.length);
+  return ok.length ? { title: title, secs: ok.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f })) } : null;
+}
+// 바뀐 내용 요약: 추가·삭제·이동(최소 이동 수)·수정
+function _mfbDiff(oldSecs, newSecs) {
+  const flat = (secs) => secs.reduce((a, s) => a.concat(s.f.filter(x => String(x.l).trim())), []);
+  const a = flat(oldSecs), b = flat(newSecs), la = a.map(x => x.l.trim()), lb = b.map(x => x.l.trim());
+  const add = lb.filter(l => la.indexOf(l) < 0).length, del = la.filter(l => lb.indexOf(l) < 0).length;
+  const ca = la.filter(l => lb.indexOf(l) >= 0), cb = lb.filter(l => la.indexOf(l) >= 0), pos = cb.map(l => ca.indexOf(l));
+  const lis = []; pos.forEach((v, i) => { lis[i] = 1; for (let j = 0; j < i; j++) if (pos[j] < v && lis[j] + 1 > lis[i]) lis[i] = lis[j] + 1; });
+  const move = cb.length - (lis.length ? Math.max.apply(null, lis) : 0);
+  let mod = 0; b.forEach(x => { const o = a.find(y => y.l.trim() === x.l.trim()); if (o && _mfbSig(o) !== _mfbSig(x)) mod++; });
+  return { add: add, del: del, move: move, mod: mod };
+}
+function _mfbDiffText(d) { const t = [d.add && '추가 ' + d.add, d.del && '삭제 ' + d.del, d.move && '이동 ' + d.move, d.mod && '수정 ' + d.mod].filter(Boolean); return t.length ? t.join(' · ') : '변경 없음'; }
+// SP 응답에서 ```form 블록과 안내 문장을 나눈다 (응답 끝 [NEXT_STEP: …] 태그는 지운다)
+function _mfbExtract(reply) {
+  const t = String(reply || '').replace(/\[NEXT_STEP:[^\]]*\]/g, '').trim(), re = /```[a-z]*[ \t]*\r?\n([\s\S]*?)(?:```|$)/g; let m;
+  while ((m = re.exec(t))) {
+    if (/^\s*(?:제목\s*[:：]|#)/m.test(m[1])) return { form: _mfbParseDsl(m[1]), text: (t.slice(0, m.index) + t.slice(m.index + m[0].length)).replace(/\n{3,}/g, '\n\n').trim() };
+  }
+  return { form: null, text: t };
+}
+// 현재 양식(화면의 최신 상태)을 요청마다 함께 보낸다 — SP 는 이 블록을 가장 최신으로 본다. 대화 입력은 4000자까지라 넘치면 안내 문구를 뺀다
+function _mfbSpText(userText) {
+  const mk = (compact) => '[현재 양식]\n```form\n' + _mfbDsl(compact) + '\n```\n[요청]\n' + userText;
+  let t = mk(false); if (t.length > 3990) t = mk(true); return t.length > 3990 ? '' : t;
+}
+// mfb:model-end
+const _MFB_P = {
+  add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+  close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  up: 'M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z',
+  down: 'M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z',
+  del: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+  cal: 'M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z',
+  undo: 'M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z',
+  send: 'M2.01 21L23 12 2.01 3 2 10l15 2-15 2z',
+  arr: 'M7 10l5 5 5-5z'
+};
+function _mfbIc(k, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 20) + '" height="' + (s || 20) + '" aria-hidden="true"><path fill="currentColor" d="' + _MFB_P[k] + '"/></svg>'; }
+function _mfbRoot() { return document.getElementById('mf-new'); }
+function _mfbQ(sel) { const r = _mfbRoot(); return r ? r.querySelector(sel) : null; }
+function _mfbField(l, t) { return { id: ++_MFB.uid, l: l || '', t: t || 'short', o: '', un: '원', h: '', req: false, hs: false, w: 0, r: 0 }; }
+function _mfbFind(id) { for (const s of _MFB.secs) for (const x of s.f) if (x.id === id) return { x: x, s: s }; return null; }
+function _mfbCount() { return _MFB.secs.reduce((n, s) => n + s.f.length, 0); }
+function _mfbHasContent() { return !!(String(_MFB.title).trim() || _MFB.secs.some(s => s.f.some(x => String(x.l).trim()))); }
+function _mfbSnap() { return JSON.stringify({ t: _MFB.title, s: _MFB.secs }); }
+function _mfbLoad(form, id, site) {
+  _MFB.id = id || ''; _MFB.site = site || ''; _MFB.dirty = false; _MFB.hist = []; _MFB.msgs = []; _MFB.sel = 0; _MFB.title = form ? form.title : '';
+  _MFB.secs = form
+    ? form.sections.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f.map(f => ({ id: ++_MFB.uid, l: f.l, t: f.t, o: (f.o || []).join(', '), un: f.u || '', h: f.h || '', req: !!f.req, hs: !!f.h, w: f.w || 0, r: f.r || 0 })) }))
+    : [{ h: '', f: [] }];
+}
+function _mfbTf(cls, key, label, val, attrs) {
+  return '<div class="mfb-tf ' + cls + '"><input type="text" data-k="' + key + '" value="' + escHtml(val) + '" placeholder=" " autocomplete="off" ' + (attrs || '') + '><label>' + label + '</label></div>';
+}
+function _mfbIb(act, attrs, label, icon, off) { return '<button type="button" class="mfb-ib" data-a="' + act + '" ' + (attrs || '') + ' aria-label="' + label + '" title="' + label + '"' + (off ? ' disabled' : '') + '>' + _mfbIc(icon) + '</button>'; }
+// 칸 모양: 나비 서식 표준의 outlined text field (안에는 실제 서류에서 보일 모양만)
+function _mfbCtl(x) {
+  if (x.t === 'long') return '<div class="mfb-fld long" style="min-height:' + (_mfbR(x) * 24 + 24) + 'px"></div>';
+  if (x.t === 'date') return '<div class="mfb-fld date"><span class="mfb-ph">연도-월-일</span>' + _mfbIc('cal', 18) + '</div>';
+  if (x.t === 'amount') return '<div class="mfb-fld amount"><span class="mfb-ph">0</span><em>' + escHtml(x.un || '') + '</em></div>';
+  if (x.t === 'select') { const o = _mfbOpts(x.o); return '<div class="mfb-fld select">' + (o.length ? '<span class="mfb-opt1">' + escHtml(o[0]) + '</span>' : '<span class="mfb-ph">선택지</span>') + '</div>'; }
+  return '<div class="mfb-fld"></div>';
+}
+function _mfbCardHtml(x) {
+  return '<div class="mfb-f' + (x.id === _MFB.sel ? ' sel' : '') + (_MFB.flash[x.id] ? ' flash' : '') + '" data-f="' + x.id + '" tabindex="0" role="group" aria-label="항목 ' + escHtml(x.l || '새 항목') + '" style="grid-column:span ' + _mfbW(x) + '">' +
+    '<div class="mfb-lb"><input class="mfb-lab" data-k="l" value="' + escHtml(x.l) + '" placeholder="항목 이름" maxlength="40" autocomplete="off" aria-label="항목 이름" style="width:' + Math.max(4, String(x.l || '항목 이름').length * 1.9 + 1) + 'ch">' + (x.req ? '<i class="mfb-rq" title="필수"> *</i>' : '') + '</div>' +
+    _mfbCtl(x) + (x.h ? '<small>' + escHtml(x.h) + '</small>' : '') +
+    '<i class="mfb-rz r" data-rz="w" title="끌어서 폭 조절"></i>' + (x.t === 'long' ? '<i class="mfb-rz b" data-rz="r" title="끌어서 줄 수 조절"></i>' : '') + '</div>';
+}
+function _mfbCanvasHtml() {
+  let h = '';
+  const empty = !_MFB.id && !_mfbHasContent();
+  h += '<div class="mfb-titlew"><input class="mfb-title" data-k="title" value="' + escHtml(_MFB.title) + '" placeholder="양식 이름" maxlength="80" autocomplete="off" aria-label="양식 이름"></div>';
+  if (empty) h += '<div class="mfb-start"><div class="mfb-startt">오른쪽 대화창에 만들고 싶은 양식을 설명하면 초안을 만들어 드립니다. 직접 만들려면 항목을 추가하거나 예시로 시작하세요.</div><div class="mfb-chips"><span class="mfb-cl">예시로 시작</span>' +
+    _MFB_START.map((s, i) => '<button type="button" class="mfb-chip" data-a="start" data-i="' + i + '">' + s[0] + '</button>').join('') + '</div></div>';
+  _MFB.secs.forEach((s, si) => {
+    h += '<section class="mfb-sec" data-s="' + si + '"><div class="mfb-sech"><input class="mfb-secname" data-k="sh" value="' + escHtml(s.h) + '" placeholder="묶음 이름 (선택)" maxlength="40" aria-label="묶음 이름">' +
+      (_MFB.secs.length > 1 ? _mfbIb('delsec', 'data-s="' + si + '"', '묶음 지우기', 'del') : '') + '</div>' +
+      '<div class="mfb-grid">' + (s.f.length ? s.f.map(_mfbCardHtml).join('') : '<div class="mfb-none">아직 항목이 없습니다.</div>') + '</div>' +
+      '<button type="button" class="mfb-btn mfb-tonal" data-a="addf" data-s="' + si + '">' + _mfbIc('add') + '항목 추가</button></section>';
+  });
+  if (_MFB.secs.length < 8) h += '<button type="button" class="mfb-btn mfb-text" data-a="adds" style="align-self:flex-start">' + _mfbIc('add') + '묶음 추가</button>';
+  return h;
+}
+function _mfbInspHtml() {
+  const f = _mfbFind(_MFB.sel);
+  if (!f) return '<div class="mfb-ihint">항목을 누르면 종류·크기·필수를 바꿀 수 있습니다. 이름은 글자를 눌러 바로 고치고, 오른쪽·아래 모서리를 끌어 크기를 정합니다.<br>키보드: 항목에 포커스를 두고 <kbd>Shift</kbd>+방향키 크기 · <kbd>Alt</kbd>+↑↓ 이동 · <kbd>Delete</kbd> 삭제 · <kbd>Enter</kbd> 이름 고치기</div>';
+  const x = f.x, i = f.s.f.indexOf(x);
+  const step = (lab, key, val, d) => '<div class="mfb-step" role="group" aria-label="' + lab + '"><span class="mfb-sl">' + lab + '</span><button type="button" data-a="step" data-k="' + key + '" data-d="-1" aria-label="' + lab + ' 줄이기">−</button><output>' + val + '</output><button type="button" data-a="step" data-k="' + key + '" data-d="1" aria-label="' + lab + ' 늘리기">+</button></div>';
+  return '<div class="mfb-irow">' +
+    '<div class="mfb-tf mfb-sel"><select data-k="t" aria-label="종류">' + _MFB_TYPES.map(t => '<option value="' + t[0] + '"' + (t[0] === x.t ? ' selected' : '') + '>' + t[1] + '</option>').join('') + '</select><label>종류</label></div>' +
+    '<label class="mfb-sw"><input type="checkbox" data-k="req"' + (x.req ? ' checked' : '') + '><span class="mfb-track"></span><span>필수</span></label>' +
+    step('폭', 'w', _mfbW(x) + '/12') + (x.t === 'long' ? step('줄', 'r', _mfbR(x)) : '') +
+    (x.t === 'amount' ? _mfbTf('mfb-unit', 'un', '단위', x.un, 'maxlength="6"') : '') +
+    (x.t === 'select' ? _mfbTf('mfb-grow', 'o', '선택지 (쉼표로 구분)', x.o, 'maxlength="200"') : '') +
+    _mfbTf('mfb-grow', 'h', '안내 문구 (선택)', x.h, 'maxlength="80"') +
+    '<div class="mfb-acts">' + _mfbIb('mv', 'data-d="-1"', '위로 (Alt+↑)', 'up', i === 0) + _mfbIb('mv', 'data-d="1"', '아래로 (Alt+↓)', 'down', i === f.s.f.length - 1) + _mfbIb('delsel', '', '항목 지우기 (Delete)', 'del') + '</div></div>';
+}
+function _mfbMdLite(t) { return escHtml(t).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
+function _mfbMsgsHtml() {
+  let h = '<div class="mfb-msg sp"><div class="mfb-bub">어떤 양식을 만들까요? 용도를 말씀해 주시면 초안을 바로 만들어 드립니다. 만든 뒤에는 “연락처 칸을 성명 뒤에 추가해 줘”, “특이사항을 맨 위로”, “비고 칸을 크게”처럼 말씀해 주세요.</div></div>';
+  if (!_MFB.msgs.length) h += '<div class="mfb-chips mfb-sugg">' + _MFB_SUGG.map(s => '<button type="button" class="mfb-chip" data-a="sugg" data-t="' + escHtml(s + ' 양식을 만들어 줘') + '">' + escHtml(s) + '</button>').join('') + '</div>';
+  let lastSp = -1; _MFB.msgs.forEach((m, i) => { if (m.r === 'sp') lastSp = i; });
+  _MFB.msgs.forEach((m, i) => {
+    if (m.r === 'me') h += '<div class="mfb-msg me"><div class="mfb-bub">' + escHtml(m.t) + '</div></div>';
+    else h += '<div class="mfb-msg sp"><div class="mfb-bub' + (m.err ? ' err' : '') + '">' + _mfbMdLite(m.t || '') +
+      (m.sum ? '<div class="mfb-sum">' + escHtml(m.sum) + (m.undo && i === lastSp && _MFB.hist.length ? ' <button type="button" data-a="undo">되돌리기</button>' : '') + '</div>' : '') + '</div></div>';
+  });
+  if (_MFB.busy) h += '<div class="mfb-msg sp"><div class="mfb-bub mfb-typing" role="status" aria-label="양식을 만드는 중"><i></i><i></i><i></i></div></div>';
+  return h;
+}
+function _mfbRenderChat() {
+  const box = _mfbQ('.mfb-msgs'); if (!box) return;
+  box.innerHTML = _mfbMsgsHtml(); box.scrollTop = box.scrollHeight;
+  const st = _mfbQ('.mfb-link'); if (st) { st.className = 'mfb-link ' + (_MFB.link || 'wait'); st.textContent = _MFB.link === 'ok' ? '연결됨' : _MFB.link === 'err' ? '연결 실패' : '연결 중…'; }
+  const sb = _mfbQ('[data-a="send"]'); if (sb) sb.disabled = _MFB.busy;
+  _mfbSyncTop();
+}
+function _mfbSyncTop() {
+  const root = _mfbRoot(); if (!root || root.hidden) return;
+  const r = _mfbBuild(), sv = root.querySelector('[data-a="save"]');
+  if (sv) { sv.classList.toggle('is-off', !r.form); sv.setAttribute('aria-disabled', r.form ? 'false' : 'true'); sv.title = r.why; }
+  const un = root.querySelector('[data-a="undo"].mfb-ib'); if (un) un.disabled = !_MFB.hist.length || _MFB.busy;
+}
+function _mfbRenderInsp() { const el = _mfbQ('.mfb-insp'); if (el) el.innerHTML = _mfbInspHtml(); }
+function _mfbRenderCanvas(focusSel) {
+  const cv = _mfbQ('.mfb-canvas'); if (!cv) return; const st = cv.scrollTop;
+  cv.innerHTML = _mfbCanvasHtml(); cv.scrollTop = st;
+  if (focusSel) { const e = cv.querySelector(focusSel); if (e) { e.focus(); if (e.scrollIntoView) e.scrollIntoView({ block: 'nearest' }); } }
+  _mfbRenderInsp(); _mfbSyncTop();
+}
+function _mfbSelect(id) {
+  if (_MFB.sel === id) return; _MFB.sel = id;
+  const cv = _mfbQ('.mfb-canvas'); if (cv) cv.querySelectorAll('.mfb-f').forEach(c => c.classList.toggle('sel', +c.getAttribute('data-f') === id));
+  _mfbRenderInsp();
+}
+function _mfbDirty() { _MFB.dirty = true; }
+function _mfbSetW(x, n) { n = Math.max(3, Math.min(12, n)); x.w = n === _MFB_DEFW[x.t] ? 0 : n; _mfbDirty(); _mfbRenderCanvas(); const c = _mfbQ('[data-f="' + x.id + '"]'); if (c && document.activeElement === document.body) c.focus(); }
+function _mfbSetR(x, n) { n = Math.max(2, Math.min(12, n)); x.r = n === 4 ? 0 : n; _mfbDirty(); _mfbRenderCanvas(); }
+function _mfbAddField(si, afterId) {
+  if (_mfbCount() >= 60) { _drToast('항목은 모두 합해 60개까지 만들 수 있습니다.'); return; }
+  const s = _MFB.secs[si]; if (!s) return; const x = _mfbField(), i = afterId ? s.f.findIndex(y => y.id === afterId) : -1;
+  s.f.splice(i >= 0 ? i + 1 : s.f.length, 0, x); _MFB.sel = x.id; _mfbDirty(); _mfbRenderCanvas('[data-f="' + x.id + '"] [data-k="l"]');
+}
+function _mfbDel(id) {
+  const f = _mfbFind(id); if (!f) return; const k = f.s.f.indexOf(f.x);
+  f.s.f.splice(k, 1); const nx = f.s.f[Math.min(k, f.s.f.length - 1)]; _MFB.sel = nx ? nx.id : 0; _mfbDirty();
+  _mfbRenderCanvas(nx ? '[data-f="' + nx.id + '"]' : '');
+}
+function _mfbMove(id, d) {
+  const f = _mfbFind(id); if (!f) return; const k = f.s.f.indexOf(f.x), j = k + d; if (j < 0 || j >= f.s.f.length) return;
+  f.s.f.splice(j, 0, f.s.f.splice(k, 1)[0]); _mfbDirty(); _mfbRenderCanvas('[data-f="' + id + '"]');
+}
+function _mfbStart(i) {
+  const st = _MFB_START[i]; if (!st) return; const form = _mfParse(st[0], st[1]); if (!form) return;
+  const keep = String(_MFB.title).trim(); _mfbLoad(form, '', _MFB.site); if (keep) _MFB.title = keep; _mfbDirty(); _mfbRenderCanvas('[data-k="title"]'); _mfbRenderChat();
+}
+// ── 양식 작성 SP 연결: 보이지 않는 전문가 대화 틀(hondi.net expert-chat?persona=form-builder&embed=1)과 postMessage 로 주고받는다 ──
+function _mfbSpOpen() {
+  if (_MFB.frame) return _MFB.readyP;
+  const f = document.createElement('iframe'); f.title = '양식 작성 SP'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+  f.src = _MFB_HONDI + '/pages/expert-chat.html?persona=form-builder&embed=1&quiet=1&label=' + encodeURIComponent('양식 작성');
+  _MFB.frame = f; _MFB.link = 'wait';
+  _MFB.readyP = new Promise((res, rej) => { _MFB.rdy = res; _MFB.rdyT = setTimeout(() => { if (_MFB.link !== 'ok') { _MFB.link = 'err'; _mfbRenderChat(); rej(new Error('connect')); } }, 25000); });
+  _MFB.readyP.catch(() => {}); document.body.appendChild(f); return _MFB.readyP;
+}
+function _mfbSpClose() {
+  clearTimeout(_MFB.rdyT); if (_MFB.pend) { clearTimeout(_MFB.pend.timer); _MFB.pend = null; }
+  if (_MFB.frame && _MFB.frame.parentNode) _MFB.frame.parentNode.removeChild(_MFB.frame);
+  _MFB.frame = null; _MFB.link = ''; _MFB.readyP = null; _MFB.busy = false;
+}
+function _mfbOnMessage(e) {
+  if (!_MFB.frame || e.origin !== _MFB_HONDI || e.source !== _MFB.frame.contentWindow) return;
+  const d = e.data || {};
+  if (d.type === 'expert-embed-ready') { _MFB.link = 'ok'; clearTimeout(_MFB.rdyT); if (_MFB.rdy) _MFB.rdy(); _mfbRenderChat(); }
+  else if (d.type === 'expert-embed-reply' && _MFB.pend) { const p = _MFB.pend; _MFB.pend = null; clearTimeout(p.timer); p.res(String(d.text || '')); }
+  else if (d.type === 'expert-embed-error' && _MFB.pend) { const p = _MFB.pend; _MFB.pend = null; clearTimeout(p.timer); p.rej(new Error(String(d.msg || 'error'))); }
+}
+window.addEventListener('message', _mfbOnMessage);
+async function _mfbAsk(text) {
+  if (window._mfbAskHook) return window._mfbAskHook(text);
+  await _mfbSpOpen();
+  return new Promise((res, rej) => {
+    const p = { res: res, rej: rej, timer: setTimeout(() => { if (_MFB.pend === p) { _MFB.pend = null; rej(new Error('timeout')); } }, 90000) };
+    _MFB.pend = p;
+    try { _MFB.frame.contentWindow.postMessage({ type: 'expert-embed-send', text: text }, _MFB_HONDI); } catch (e) { _MFB.pend = null; clearTimeout(p.timer); rej(e); }
+  });
+}
+function _mfbApply(parsed) {
+  const pool = []; _MFB.secs.forEach(s => s.f.forEach(x => pool.push(x))); const used = {}, before = _mfbSnap(), oldSecs = _MFB.secs;
+  const secs = parsed.secs.map(s => ({ h: s.h, f: s.f.map(n => {
+    const o = pool.find(y => !used[y.id] && String(y.l).trim() === n.l);
+    if (o) { used[o.id] = 1; n.id = o.id; n.hs = o.hs || !!n.h; if (_mfbSig(o) !== _mfbSig(n)) _MFB.flash[n.id] = 1; } else _MFB.flash[n.id] = 1;
+    return n; }) }));
+  const d = _mfbDiff(oldSecs, secs);
+  _MFB.hist.push(before); if (_MFB.hist.length > 20) _MFB.hist.shift();
+  _MFB.secs = secs; if (parsed.title) _MFB.title = parsed.title; if (!_mfbFind(_MFB.sel)) _MFB.sel = 0; _mfbDirty();
+  return d;
+}
+function _mfbUndo() {
+  const s = _MFB.hist.pop(); if (!s || _MFB.busy) return; const o = JSON.parse(s); _MFB.title = o.t; _MFB.secs = o.s; _MFB.flash = {}; if (!_mfbFind(_MFB.sel)) _MFB.sel = 0;
+  _MFB.msgs.push({ r: 'sp', t: '직전 변경을 되돌렸습니다.' }); _mfbRenderCanvas(); _mfbRenderChat();
+}
+async function _mfbSend(text) {
+  text = String(text || '').trim().slice(0, 800); if (!text || _MFB.busy) return;
+  const body = _mfbSpText(text);
+  _MFB.msgs.push({ r: 'me', t: text });
+  if (!body) { _MFB.msgs.push({ r: 'sp', t: '양식이 너무 커서 대화로 고칠 수 없습니다. 항목을 줄이거나 직접 고쳐 주세요.', err: 1 }); _mfbRenderChat(); return; }
+  _MFB.busy = true; _mfbRenderChat();
   try {
-    await _drCall('put', { item: { id: 'form-mine-' + _mfHash(form.title), kind: 'form', box: 'mine', site: _docHost.id || 'all', title: form.title, body: JSON.stringify(form) } });
-    document.getElementById('mf-new-title').value = ''; document.getElementById('mf-new-body').value = ''; _mfNewClose();
-    _drToast('내 서류함에 저장했습니다'); _mfRender();
+    const rep = _mfbExtract(await _mfbAsk(body));
+    if (rep.form) {
+      const d = _mfbApply(rep.form); _mfbRenderCanvas();
+      _MFB.msgs.push({ r: 'sp', t: rep.text || '양식을 바꿨습니다.', sum: _mfbDiffText(d), undo: 1 });
+      setTimeout(() => { _MFB.flash = {}; const cv = _mfbQ('.mfb-canvas'); if (cv) cv.querySelectorAll('.mfb-f.flash').forEach(c => c.classList.remove('flash')); }, 2200);
+    } else _MFB.msgs.push({ r: 'sp', t: rep.text || '답변을 받지 못했습니다. 다시 말씀해 주세요.' });
+  } catch (e) {
+    _MFB.msgs.push({ r: 'sp', err: 1, t: e && e.message === 'timeout' ? '응답이 늦어지고 있습니다. 잠시 뒤 다시 보내 주세요. 직접 편집은 계속할 수 있습니다.' : '양식 작성 SP에 연결하지 못했습니다. 로그인 상태를 확인한 뒤 다시 시도해 주세요. 직접 편집은 계속할 수 있습니다.' });
+  }
+  _MFB.busy = false; _mfbRenderChat();
+}
+function _mfbOpen(form, id, site) {
+  const root = _mfbRoot(); if (!root) return;
+  if (root.parentNode !== document.body) document.body.appendChild(root);
+  _mfbLoad(form, id, site); _MFB.opener = document.activeElement; _MFB.pane = 'form'; _MFB.busy = false; _MFB.flash = {};
+  root.className = 'mfb-root';
+  root.innerHTML = '<div class="mfb-scrim" data-a="scrim"></div><div class="mfb-sheet" role="dialog" aria-modal="true" aria-labelledby="mfb-h" data-pane="form">' +
+    '<div class="mfb-top">' + _mfbIb('close', '', '닫기', 'close') + '<h2 id="mfb-h">' + (id ? '양식 수정' : '새 양식 만들기') + '</h2><span class="mfb-sp"></span>' + _mfbIb('undo', '', '직전 변경 되돌리기', 'undo', true) +
+    '<button type="button" class="mfb-btn mfb-filled is-off" data-a="save" aria-disabled="true">저장</button></div>' +
+    '<div class="mfb-tabs" role="tablist"><button type="button" role="tab" class="on" data-a="pane" data-p="form">양식</button><button type="button" role="tab" data-a="pane" data-p="chat">대화</button></div>' +
+    '<div class="mfb-body"><div class="mfb-left"><div class="mfb-canvas"></div><div class="mfb-insp"></div></div>' +
+    '<aside class="mfb-right" aria-label="양식 작성 SP"><div class="mfb-chath"><b>양식 작성 SP</b><span class="mfb-link wait">연결 중…</span></div><div class="mfb-msgs" aria-live="polite"></div>' +
+    '<div class="mfb-comp"><textarea id="mfb-in" rows="1" maxlength="800" placeholder="예: 사무실 임대차 점검표를 만들어 줘" aria-label="양식 작성 SP에게 말하기"></textarea><button type="button" class="mfb-send" data-a="send" aria-label="보내기">' + _mfbIc('send') + '</button></div></aside></div></div>';
+  root.hidden = false; document.body.style.overflow = 'hidden'; document.body.classList.add('mfb-open');
+  _mfbBind(root); _mfbRenderCanvas(id ? '' : '[data-k="title"]'); _mfbRenderChat();
+  if (!window._mfbAskHook) _mfbSpOpen();
+}
+function _mfbClose(force) {
+  const root = _mfbRoot(); if (!root || root.hidden) return;
+  if (!force && _MFB.dirty && _mfbHasContent() && !confirm('작성 중인 내용이 사라집니다. 닫을까요?')) return;
+  _mfbSpClose(); root.hidden = true; root.innerHTML = ''; document.body.style.overflow = ''; document.body.classList.remove('mfb-open'); _MFB.dirty = false;
+  const o = _MFB.opener; _MFB.opener = null; if (o && o.focus) try { o.focus(); } catch (e) {}
+}
+async function _mfbSave() {
+  const r = _mfbBuild(); if (!r.form) { _drToast(r.why); return; }
+  if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+  const id = _MFB.id || 'form-mine-' + _mfHash(r.form.title);
+  try {
+    if (!_MFB.id) { let ex = null; try { ex = (await _drCall('get', { id })).item; } catch (e) {} if (ex && !confirm('같은 이름의 양식이 이미 있습니다. 덮어쓸까요?')) return; }
+    await _drCall('put', { item: { id: id, kind: 'form', box: 'mine', site: _MFB.site || _docHost.id || 'all', title: r.form.title, body: JSON.stringify(r.form) } });
+    _mfbClose(true); _drToast('내 서류함에 저장했습니다'); _mfRender();
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
+}
+async function _mfEdit(id) {
+  const it = (await _drCall('get', { id })).item; if (!it) return;
+  let form = null; try { form = JSON.parse(it.body || ''); } catch (e) {}
+  if (!form || !form.sections) { _drToast('양식을 읽지 못했습니다.'); return; }
+  _mfbOpen(form, id, it.site);
+}
+function _mfbBind(root) {
+  if (root._mfb) return; root._mfb = 1;
+  const selField = () => { const f = _mfbFind(_MFB.sel); return f && f.x; };
+  root.addEventListener('focusin', ev => { const c = ev.target.closest && ev.target.closest('[data-f]'); if (c) _mfbSelect(+c.getAttribute('data-f')); });
+  root.addEventListener('input', ev => {
+    const el = ev.target, k = el.getAttribute && el.getAttribute('data-k');
+    if (el.id === 'mfb-in') { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; return; }
+    if (!k || el.tagName === 'SELECT') return;
+    _mfbDirty();
+    if (k === 'title') { _MFB.title = el.value; _mfbSyncTop(); return; }
+    if (k === 'sh') { const sec = el.closest('[data-s]'), s = sec && _MFB.secs[+sec.getAttribute('data-s')]; if (s) s.h = el.value; return; }
+    if (k === 'l') { const c = el.closest('[data-f]'), f = c && _mfbFind(+c.getAttribute('data-f')); if (f) { f.x.l = el.value; el.style.width = Math.max(4, String(el.value || '항목 이름').length * 1.9 + 1) + 'ch'; c.setAttribute('aria-label', '항목 ' + (el.value || '새 항목')); } _mfbSyncTop(); return; }
+    const x = selField(); if (!x) return;
+    if (k === 'req') x[k] = el.checked; else x[k] = el.value;
+    _mfbRenderCanvas(); _mfbSyncTop();
+  });
+  root.addEventListener('change', ev => {
+    const el = ev.target; if (!el.getAttribute || el.getAttribute('data-k') !== 't') return;
+    const x = selField(); if (!x) return; x.t = el.value; x.w = 0; x.r = 0; if (x.t === 'amount' && !x.un) x.un = '원'; _mfbDirty();
+    _mfbRenderCanvas(); const sel = _mfbQ('.mfb-insp [data-k="t"]'); if (sel) sel.focus();
+  });
+  root.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-a]');
+    if (!b) { const c = ev.target.closest('[data-f]'); if (c && ev.target === c) c.focus(); return; }
+    if (!root.contains(b)) return;
+    const a = b.getAttribute('data-a'), si = +b.getAttribute('data-s'), x = selField();
+    if (a === 'scrim' || a === 'close') return _mfbClose(false);
+    if (a === 'save') return _mfbSave();
+    if (a === 'undo') return _mfbUndo();
+    if (a === 'send') { const t = root.querySelector('#mfb-in'); const v = t.value; t.value = ''; t.style.height = 'auto'; return _mfbSend(v); }
+    if (a === 'sugg') return _mfbSend(b.getAttribute('data-t'));
+    if (a === 'pane') { _MFB.pane = b.getAttribute('data-p'); root.querySelector('.mfb-sheet').setAttribute('data-pane', _MFB.pane); root.querySelectorAll('.mfb-tabs button').forEach(t => t.classList.toggle('on', t === b)); return; }
+    if (a === 'addf') return _mfbAddField(si, 0);
+    if (a === 'adds') { if (_MFB.secs.length >= 8) return; const n = _mfbField(); _MFB.secs.push({ h: '', f: [n] }); _MFB.sel = n.id; _mfbDirty(); return _mfbRenderCanvas('[data-f="' + n.id + '"] [data-k="l"]'); }
+    if (a === 'delsec') {
+      const s = _MFB.secs[si]; if (!s) return; if (s.f.some(y => String(y.l).trim()) && !confirm('이 묶음과 안의 항목을 모두 지울까요?')) return;
+      _MFB.secs.splice(si, 1); if (!_mfbFind(_MFB.sel)) _MFB.sel = 0; _mfbDirty(); return _mfbRenderCanvas();
+    }
+    if (a === 'start') return _mfbStart(+b.getAttribute('data-i'));
+    if (!x) return;
+    if (a === 'step') { const d = +b.getAttribute('data-d'); return b.getAttribute('data-k') === 'w' ? _mfbSetW(x, _mfbW(x) + d) : _mfbSetR(x, _mfbR(x) + d); }
+    if (a === 'mv') return _mfbMove(x.id, +b.getAttribute('data-d'));
+    if (a === 'delsel') return _mfbDel(x.id);
+  });
+  // 입력칸 크기를 마우스로 끌어 정한다: 오른쪽 모서리 = 폭(12칸 격자에 맞춤), 아래 모서리(긴글) = 줄 수
+  root.addEventListener('pointerdown', ev => {
+    const h = ev.target.closest && ev.target.closest('[data-rz]'); if (!h) return;
+    const card = h.closest('[data-f]'), f = card && _mfbFind(+card.getAttribute('data-f')); if (!f) return;
+    ev.preventDefault(); const kind = h.getAttribute('data-rz'), grid = card.parentNode, cw = (grid.clientWidth - 11 * 12) / 12 + 12, sx = ev.clientX, sy = ev.clientY, w0 = _mfbW(f.x), r0 = _mfbR(f.x), ctl = card.querySelector('.mfb-fld');
+    const tip = document.createElement('div'); tip.className = 'mfb-tip'; card.appendChild(tip); let nw = w0, nr = r0;
+    const mv = (e) => {
+      if (kind === 'w') { nw = Math.max(3, Math.min(12, w0 + Math.round((e.clientX - sx) / cw))); card.style.gridColumn = 'span ' + nw; tip.textContent = '폭 ' + nw + '/12'; }
+      else { nr = Math.max(2, Math.min(12, r0 + Math.round((e.clientY - sy) / 24))); if (ctl) ctl.style.minHeight = (nr * 24 + 24) + 'px'; tip.textContent = '줄 ' + nr; }
+    };
+    const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); tip.remove(); if (kind === 'w') _mfbSetW(f.x, nw); else _mfbSetR(f.x, nr); };
+    document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  });
+  root.addEventListener('keydown', ev => {
+    const el = ev.target, k = el.getAttribute && el.getAttribute('data-k');
+    if (el.id === 'mfb-in') { if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); const v = el.value; el.value = ''; el.style.height = 'auto'; _mfbSend(v); } else if (ev.key === 'Escape') { ev.preventDefault(); _mfbClose(false); } return; }
+    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); return _mfbSave(); }
+    const card = el.closest && el.closest('[data-f]'), f = card && _mfbFind(+card.getAttribute('data-f'));
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      if (card && el !== card) { card.focus(); return; }
+      return _mfbClose(false);
+    }
+    if (k === 'title' && ev.key === 'Enter') { ev.preventDefault(); const n = root.querySelector('.mfb-lab'); if (n) n.focus(); else _mfbAddField(0); return; }
+    if (!f) return;
+    const si = _MFB.secs.indexOf(f.s);
+    if (k === 'l') {
+      if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); _mfbAddField(si, f.x.id); }
+      else if (ev.key === 'Backspace' && !el.value && !ev.isComposing) { ev.preventDefault(); _mfbDel(f.x.id); }
+      return;
+    }
+    if (el !== card) return;
+    if (ev.key === 'Enter' || ev.key === 'F2') { ev.preventDefault(); const n = card.querySelector('.mfb-lab'); if (n) { n.focus(); n.select(); } }
+    else if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); _mfbDel(f.x.id); }
+    else if (ev.altKey && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) { ev.preventDefault(); _mfbMove(f.x.id, ev.key === 'ArrowUp' ? -1 : 1); }
+    else if (ev.shiftKey && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) { ev.preventDefault(); _mfbSetW(f.x, _mfbW(f.x) + (ev.key === 'ArrowRight' ? 1 : -1)); const c2 = _mfbQ('[data-f="' + f.x.id + '"]'); if (c2) c2.focus(); }
+    else if (ev.shiftKey && f.x.t === 'long' && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) { ev.preventDefault(); _mfbSetR(f.x, _mfbR(f.x) + (ev.key === 'ArrowDown' ? 1 : -1)); const c2 = _mfbQ('[data-f="' + f.x.id + '"]'); if (c2) c2.focus(); }
+  });
 }
 // 서류 작성 중인 서류를 자주 쓰는 양식으로 담는다
 async function _mfAddFav(btn) {
@@ -3659,7 +4197,7 @@ async function _mfRender() {
       if (!rows.length) return;
       html += '<div class="dr-sec">' + b[1] + '</div>' + rows.map(it => {
         const sub = (b[0] === 'upload' ? '파일 ' + (it.fileName || '') : _drSiteLabel(it.site)) + ' · ' + (it.uses ? '사용 ' + it.uses + '회 · ' : '') + fmtDt(it.lastUsed || it.updated);
-        return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
+        return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button>' + (b[0] === 'mine' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit">수정</button>' : '') + '<button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
       }).join('');
     });
     if (freq.length) html += '<div class="dr-sec">자주 쓴 서류 (작성한 서류 기준)</div>' + freq.map((x, i) => '<div class="list-item" data-freq="' + i + '"><div class="li-main"><div class="li-title">' + escHtml(x.title) + '</div><div class="li-sub">' + escHtml(_drSiteLabel(x.site) + ' · ' + x.n + '회 작성') + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="fav">★ 담기</button></div></div>').join('');
@@ -3673,7 +4211,7 @@ async function _mfRender() {
           return;
         }
         const id = row.getAttribute('data-id');
-        if (act === 'del') { if (!confirm('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
+        if (act === 'edit') await _mfEdit(id); else if (act === 'del') { if (!confirm('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
       } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
     }));
   } catch (e) {
