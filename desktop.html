@@ -7,6 +7,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
+/* 스킨(2026-11-06): 설정 > 화면(스킨)에서 고른 값을 본문이 그려지기 전에 <html data-*> 로 걸어 깜박임을 막는다. 저장: 이 브라우저(localStorage) */
+(function(){try{var s=JSON.parse(localStorage.getItem('naviweb_skin')||'{}');var h=document.documentElement;['color','menu','dens','btn','field','card'].forEach(function(k){if(s[k])h.setAttribute('data-'+k,String(s[k]).replace(/[^a-z]/g,''));});}catch(e){}})();
+</script>
+<script>
 /* 주소 이전(2026-11-03): 나비웹의 주소는 https://naviweb.kr 이다. mail.hondi.net 은 naviweb.kr 이
    내용을 가져오는 원본 서버로만 남으므로, 브라우저가 직접 mail.hondi.net 으로 열면 naviweb.kr 로 보낸다.
    (naviweb.kr 쪽 Worker 는 서버에서 가져오므로 이 코드가 실행되지 않아 순환하지 않는다.) */
@@ -1113,6 +1117,63 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .errbox,.okbox,.org-notice{border-radius:4px}
 #doc-frame,#pdv-frame{border:0;border-radius:4px;box-shadow:var(--sh)}
 </style>
+<style id="skin-style">
+/* ══ 스킨 — 설정 > 화면(스킨). <html data-color|menu|dens|btn|field|card> 값에 따라 색·메뉴·밀도·단추·입력칸·카드 모양이 바뀐다. 기본값(파랑·레일·보통·네모·윤곽·그림자)은 data 속성이 없을 때의 모양과 같다. ══ */
+:root{--pri-d:#2F6BC4;--act-bg:#EEF1F6;--hov-bg:#F4F6FA;--ring:rgba(59,125,221,.18)}
+html[data-color=green]{--gov:#0B3B33;--nav:#12564A;--pri:#0F8F7E;--pri-lt:#14B39B;--pri-bg:#E4F5F2;--pri-bd:#B7E4DC;--teal:#0F8F7E;--teal-bg:#E4F5F2;--bg:#F4F8F7;--pri-d:#0B6F62;--act-bg:#E6F2EF;--hov-bg:#F0F7F5;--ring:rgba(15,143,126,.2)}
+html[data-color=indigo]{--gov:#001845;--nav:#1B2A6B;--pri:#3D4FC4;--pri-lt:#5E6FD8;--pri-bg:#EEF0FB;--pri-bd:#C9CEF2;--teal:#3D4FC4;--teal-bg:#EEF0FB;--bg:#F5F6FA;--pri-d:#2F3EA0;--act-bg:#ECEEF8;--hov-bg:#F4F5FA;--ring:rgba(61,79,196,.2)}
+html[data-color=purple]{--gov:#3A2370;--nav:#5B3FA8;--pri:#7C4DDB;--pri-lt:#9770E6;--pri-bg:#EFE9FB;--pri-bd:#D5C6F3;--teal:#7C4DDB;--teal-bg:#EFE9FB;--bg:#F8F7FC;--pri-d:#6338BF;--act-bg:#F0ECF9;--hov-bg:#F7F5FB;--ring:rgba(124,77,219,.2)}
+html[data-color=orange]{--gov:#8A3B05;--nav:#C2570C;--pri:#E8710A;--pri-lt:#F08A30;--pri-bg:#FDEBDD;--pri-bd:#F6CDAA;--teal:#E8710A;--teal-bg:#FDEBDD;--bg:#FBF8F5;--pri-d:#C45C00;--act-bg:#FAEFE6;--hov-bg:#FCF6F1;--ring:rgba(232,113,10,.22)}
+html[data-color=graphite]{--gov:#212529;--nav:#343A40;--pri:#4B5563;--pri-lt:#6B7280;--pri-bg:#E9ECEF;--pri-bd:#CBD2D9;--teal:#4B5563;--teal-bg:#E9ECEF;--bg:#F6F7F8;--pri-d:#374151;--act-bg:#EEF0F2;--hov-bg:#F5F6F7;--ring:rgba(75,85,99,.22)}
+/* 위 색을 쓰는 곳(활성 줄·마우스 올림·단추 올림·입력칸 강조) */
+.side-nav .nav-btn:hover,.side-nav .nav-subitem:hover{background:var(--hov-bg)}
+.side-nav .nav-btn.active,.side-nav .nav-subitem.active,.side-nav .nav-group.collapsed:has(.nav-subitem.active) > .nav-btn,.side-nav .nav-group.collapsed:has(.nav-subitem.active:not(#tab-btn-compose)) > #tab-btn-mail{background:var(--act-bg)}
+.btn-primary:hover{background:var(--pri-d)}
+.field input:focus,.set-row input:focus,.set-row textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px var(--ring)}
+/* 메뉴: 항상 펼침 */
+@media (min-width:961px){
+  html[data-menu=open] .side-nav,html[data-menu=open] .side-nav.sn-open{width:260px!important;max-width:260px!important;margin-right:0!important;box-shadow:none!important;transition:none!important}
+  html[data-menu=open] .side-nav .nl,html[data-menu=open] .side-nav .nav-sub,html[data-menu=open] .side-nav .side-foot,html[data-menu=open] .side-nav .nav-toggle{opacity:1!important;pointer-events:auto!important;transition:none!important}
+  html[data-menu=open] .side-nav .side-group:not(:first-child) .side-label{border-top-color:transparent!important}
+  html[data-menu=open] .side-nav .nav-group.collapsed .nav-sub{display:none}
+}
+/* 밀도 */
+html[data-dens=compact] body{font-size:14px}
+html[data-dens=compact] .side-nav .nav-btn{padding-top:8px;padding-bottom:8px}
+html[data-dens=compact] .side-nav .nav-subitem{padding-top:6px;padding-bottom:6px}
+html[data-dens=compact] .card{padding:14px 16px}
+html[data-dens=roomy] body{font-size:16px}
+html[data-dens=roomy] .side-nav .nav-btn{padding-top:14px;padding-bottom:14px}
+html[data-dens=roomy] .side-nav .nav-subitem{padding-top:11px;padding-bottom:11px}
+html[data-dens=roomy] .card{padding:26px 28px}
+/* 단추 */
+html[data-btn=round] .btn,html[data-btn=round] .mail-subnav button{border-radius:10px}
+html[data-btn=pill] .btn,html[data-btn=pill] .mail-subnav button{border-radius:999px}
+html[data-btn=pill] .btn{padding-left:24px;padding-right:24px}
+/* 입력칸 */
+html[data-field=filled] .field input,html[data-field=filled] .set-row input:not([type=checkbox]):not([type=radio]),html[data-field=filled] .set-row textarea,html[data-field=filled] .set-row select,html[data-field=filled] .doc-bar select,html[data-field=filled] .doc-agent select,html[data-field=filled] .doc-agent input,html[data-field=filled] .filter-row input{background:#EEF1F5;border-color:transparent;border-bottom:2px solid var(--bdr);border-radius:4px 4px 0 0}
+html[data-field=filled] .field input:focus,html[data-field=filled] .set-row input:focus,html[data-field=filled] .set-row textarea:focus{border-bottom-color:var(--pri);box-shadow:none;background:#E8ECF2}
+html[data-field=underline] .field input,html[data-field=underline] .set-row input:not([type=checkbox]):not([type=radio]),html[data-field=underline] .set-row textarea,html[data-field=underline] .set-row select,html[data-field=underline] .doc-bar select,html[data-field=underline] .doc-agent select,html[data-field=underline] .doc-agent input,html[data-field=underline] .filter-row input{background:transparent;border-color:transparent;border-bottom:1px solid #ADB5BD;border-radius:0;padding-left:2px}
+html[data-field=underline] .field input:focus,html[data-field=underline] .set-row input:focus,html[data-field=underline] .set-row textarea:focus{border-bottom:2px solid var(--pri);box-shadow:none}
+/* 카드 */
+html[data-card=outline] .card{box-shadow:none;border:1px solid var(--bdr)}
+html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41,.10),0 8px 24px rgba(33,37,41,.08)}
+/* 설정 > 화면(스킨) 화면 */
+#tab-settings[data-sec=skin] #mail-id-loading{display:none!important}
+.skin-grp{padding:18px 0;border-bottom:1px solid var(--bdr)}
+.skin-grp h3{font-size:15px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.skin-grp p{font-size:13.5px;color:var(--hint);margin-bottom:10px}
+.skin-opts{display:flex;flex-wrap:wrap;gap:10px}
+.skin-opt{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:var(--sur);border:1px solid var(--bdr);border-radius:4px;font-size:14px;color:var(--txt);cursor:pointer}
+.skin-opt:hover{background:var(--hov-bg)}
+.skin-opt[aria-pressed=true]{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri);color:var(--pri);font-weight:600}
+.skin-dot{width:18px;height:18px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.skin-shape{width:30px;height:16px;flex:none;border:2px solid currentColor;opacity:.75}
+.skin-sample{margin-top:18px;padding:18px;border:1px dashed var(--bdr);border-radius:4px;background:var(--bg)}
+.skin-sample .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}
+.skin-sample .field{margin:0;flex:1;min-width:200px}
+.skin-sample .card{margin:0;flex:1;min-width:200px}
+</style>
 <header class="topbar">
   <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -1542,6 +1603,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
       <button type="button" role="tab" id="set-tab-gdc" aria-selected="false" onclick="_settingsSwitch('gdc')">GDC</button>
       <button type="button" role="tab" id="set-tab-signature" aria-selected="false" onclick="_settingsSwitch('signature')">서명</button>
       <button type="button" role="tab" id="set-tab-autoreply" aria-selected="false" onclick="_settingsSwitch('autoreply')">부재중 자동응답</button>
+      <button type="button" role="tab" id="set-tab-skin" aria-selected="false" onclick="_settingsSwitch('skin')">화면(스킨)</button>
     </div>
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
@@ -1653,6 +1715,22 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- 화면(스킨): 색·메뉴·밀도·단추·입력칸·카드 모양을 고른다. 로그인과 무관하게 이 브라우저에 저장된다. -->
+    <section id="set-sec-skin" class="set-sec">
+      <div class="skin-grp"><h3>색상</h3><p>상단 막대·강조색·활성 메뉴의 색입니다. 서류 작성 화면의 강조색도 함께 바뀝니다(파랑은 직역별 색 유지).</p><div class="skin-opts" data-skin="color"></div></div>
+      <div class="skin-grp"><h3>왼쪽 메뉴</h3><p>레일은 평소에 아이콘만 보이다가 마우스를 올리면 펼쳐집니다.</p><div class="skin-opts" data-skin="menu"></div></div>
+      <div class="skin-grp"><h3>밀도</h3><p>글자 크기와 줄 간격입니다.</p><div class="skin-opts" data-skin="dens"></div></div>
+      <div class="skin-grp"><h3>단추 모양</h3><div class="skin-opts" data-skin="btn"></div></div>
+      <div class="skin-grp"><h3>입력칸 모양</h3><div class="skin-opts" data-skin="field"></div></div>
+      <div class="skin-grp"><h3>카드 모양</h3><div class="skin-opts" data-skin="card"></div></div>
+      <div class="skin-sample" aria-label="미리보기">
+        <strong>미리보기</strong>
+        <div class="row"><button type="button" class="btn btn-primary">주요 단추</button><button type="button" class="btn btn-outline">보조 단추</button></div>
+        <div class="row"><div class="field"><label for="skin-sample-in">입력칸</label><input type="text" id="skin-sample-in" placeholder="예: 도 영민"></div><div class="card"><strong>카드</strong><div style="font-size:13.5px;color:var(--sub);margin-top:4px">카드의 테두리와 그림자 모양입니다.</div></div></div>
+      </div>
+      <div style="margin-top:18px"><button type="button" class="btn btn-outline" onclick="_skinReset()">기본값(파랑·레일)으로 되돌리기</button></div>
     </section>
 
     <div id="set-extra" style="display:none">
@@ -4859,18 +4937,68 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 // 서버(GET·POST /kmail/settings)가 전화 인증 토큰만으로 받는 항목에 맞춘다.
 // 진입: 왼쪽 맨 아래 '설정' · 공용 배지의 ⋮(window.kmailOpenSettings) · 주소의 #settings
 // ══════════════════════════════════════════════════════════════
-const _SET_SECTIONS = ['account', 'profile', 'pdv', 'gdc', 'signature', 'autoreply'];
+const _SET_SECTIONS = ['account', 'profile', 'pdv', 'gdc', 'signature', 'autoreply', 'skin'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
   if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프)
   if (name === 'pdv') { const f = document.getElementById('pdv-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // PDV 데이터(대화 이력·서류 Draft)를 새 탭 없이 설정 안에서 보여 준다
   if (name === 'profile') _profEnter(); else _profLeave();   // 프로필 탭에 있는 동안만 대화창이 프로필 작성 SP 로 바뀐다
+  { const ts = document.getElementById('tab-settings'); if (ts) ts.setAttribute('data-sec', name); }
   _SET_SECTIONS.forEach(n => {
     const sec = document.getElementById('set-sec-' + n), tab = document.getElementById('set-tab-' + n);
     if (sec) sec.classList.toggle('active', n === name);
     if (tab) { tab.classList.toggle('active', n === name); tab.setAttribute('aria-selected', n === name ? 'true' : 'false'); }
   });
 }
+
+// ── 스킨(설정 > 화면) ──
+const _SKIN = {
+  color: { def: 'blue', opts: [['blue', '파랑', '#3B7DDD'], ['green', '초록', '#0F8F7E'], ['indigo', '남색', '#3D4FC4'], ['purple', '보라', '#7C4DDB'], ['orange', '주황', '#E8710A'], ['graphite', '회색', '#4B5563']] },
+  menu: { def: 'rail', opts: [['rail', '아이콘 레일(마우스 올리면 펼침)'], ['open', '항상 펼침']] },
+  dens: { def: 'normal', opts: [['compact', '촘촘'], ['normal', '보통'], ['roomy', '여유']] },
+  btn: { def: 'square', opts: [['square', '네모', '2px'], ['round', '둥근 모서리', '8px'], ['pill', '알약', '999px']] },
+  field: { def: 'outlined', opts: [['outlined', '윤곽선'], ['filled', '바탕 채움'], ['underline', '밑줄']] },
+  card: { def: 'shadow', opts: [['shadow', '옅은 그림자'], ['outline', '테두리'], ['lift', '떠 있는 카드']] },
+};
+const _SKIN_R = { btn: { square: 4, round: 10, pill: 999 }, field: { outlined: 4, filled: 4, underline: 0 } };
+function _skinLoad() { try { return JSON.parse(localStorage.getItem('naviweb_skin') || '{}') || {}; } catch (e) { return {}; } }
+function _skinSave(o) { try { localStorage.setItem('naviweb_skin', JSON.stringify(o)); } catch (e) {} }
+function _skinApply(o) {
+  const h = document.documentElement;
+  Object.keys(_SKIN).forEach(k => { const v = o[k]; if (v && v !== _SKIN[k].def) h.setAttribute('data-' + k, v); else h.removeAttribute('data-' + k); });
+  document.querySelectorAll('[data-skin]').forEach(box => box.querySelectorAll('.skin-opt').forEach(b => b.setAttribute('aria-pressed', String((o[box.dataset.skin] || _SKIN[box.dataset.skin].def) === b.dataset.v))));
+  _skinBroadcast();
+}
+function _skinMsg() {
+  const o = _skinLoad(), cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
+  return { type: 'navi-skin', v: 1, color: o.color || 'blue', pri: g('--pri'), priD: g('--pri-d'), tint: g('--pri-bg'), tint2: g('--pri-bd'), navy: g('--gov'),
+    btnR: (_SKIN_R.btn[o.btn] != null ? _SKIN_R.btn[o.btn] : 4), fieldR: (_SKIN_R.field[o.field] != null ? _SKIN_R.field[o.field] : 4) };
+}
+function _skinBroadcast() { const m = _skinMsg(); document.querySelectorAll('iframe').forEach(f => { try { f.contentWindow.postMessage(m, '*'); } catch (e) {} }); }
+function _skinSet(k, v) { const o = _skinLoad(); if (v === _SKIN[k].def) delete o[k]; else o[k] = v; _skinSave(o); _skinApply(o); }
+function _skinReset() { _skinSave({}); _skinApply({}); }
+function _skinBuild() {
+  document.querySelectorAll('[data-skin]').forEach(box => {
+    const k = box.dataset.skin; if (!_SKIN[k] || box.children.length) return;
+    _SKIN[k].opts.forEach(op => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'skin-opt'; b.dataset.v = op[0];
+      if (k === 'color') { const d = document.createElement('span'); d.className = 'skin-dot'; d.style.background = op[2]; b.appendChild(d); }
+      if (k === 'btn') { const d = document.createElement('span'); d.className = 'skin-shape'; d.style.borderRadius = op[2]; b.appendChild(d); }
+      b.appendChild(document.createTextNode(op[1]));
+      b.addEventListener('click', () => _skinSet(k, op[0]));
+      box.appendChild(b);
+    });
+  });
+  _skinApply(_skinLoad());
+}
+// 서류 작성 화면 등 안쪽 화면(iframe)이 시작할 때 요청하면 지금 스킨 값을 돌려준다(스타일 값만, 개인정보 없음)
+window.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.type !== 'navi-skin-request' || !e.source) return;
+  if (!/^https:\/\/([a-z0-9-]+\.)*(naviweb\.kr|hondi\.net)$/.test(e.origin) && !/^http:\/\/localhost(:\d+)?$/.test(e.origin)) return;
+  try { e.source.postMessage(_skinMsg(), e.origin); } catch (x) {}
+});
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _skinBuild); else _skinBuild();
 function _settingsInit() { _mailIdLoad(); }
 // 설정 화면에서 아이디·이름을 바꾸면 오른쪽 위 배지(공용 user-badge.js)도 새로 맞춘다.
 function _settingsNotifyBadge() {
