@@ -1,243 +1,73 @@
 <!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>나비웹 요금제</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-:root{
-  --pri:#3B7DDD;--pri-d:#2F64B1;--pri-bg:#DEE6F6;--pri-t:#2D5FB4;
-  --bg:#F7F9FC;--sur:#fff;--line:#E9ECEF;--txt:#212529;--sub:#6C757D;--hint:#98A1AB;
-  --ok:#1CBB8C;--ok-bg:#DDF5EE;--ok-t:#128A66;--bad:#DC3545;--bad-bg:#FBE4E7;--warn-bg:#FFF4DE;--warn-t:#9A5B00;
-  --sh:0 0 .875rem 0 rgba(33,37,41,.05);
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --pri:#6A9FEA;--pri-d:#8DB3F0;--pri-bg:#22324F;--pri-t:#9DBDF2;
-  --bg:#151A22;--sur:#1D232D;--line:#2B3340;--txt:#E6E9EE;--sub:#A2ABB8;--hint:#7C8693;
-  --ok-bg:#15332B;--ok-t:#5BD3AE;--bad-bg:#3A1F24;--warn-bg:#33270F;--warn-t:#F0B35A;--sh:none}}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--txt);font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:14px;line-height:1.6;letter-spacing:-.01em;font-feature-settings:"tnum"}
-button,input,table{font-family:inherit}
-.page{max-width:1120px;margin:0 auto;padding:24px 24px 56px}
-.row{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;align-items:start;margin-bottom:24px}
-.c12{grid-column:span 12}.c7{grid-column:span 7}.c5{grid-column:span 5}.c4{grid-column:span 4}
-@media (max-width:860px){.c7,.c5,.c4{grid-column:span 12}.page{padding:16px 16px 40px}.row{gap:16px;margin-bottom:16px}}
+:root{--fs-xs:12px;--fs-sm:13px;--fs-md:14px;--fs-lg:16px;--fs-xl:20px;--fs-hero:32px}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:var(--fs-sm);line-height:1.55;letter-spacing:-.01em;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+button{font:inherit}[hidden]{display:none!important}
+.copy{font-size:var(--fs-xs);border:1px solid currentColor;background:transparent;color:inherit;border-radius:4px;padding:1px 8px;margin-left:8px;cursor:pointer;opacity:.8}
+.warn{font-size:var(--fs-xs);padding:8px 10px;border-radius:4px;background:#FFF4DE;color:#8A5200;margin-top:10px}
 
-.card{background:var(--sur);border-radius:6px;box-shadow:var(--sh);border:1px solid var(--line)}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .card{border-color:var(--line)}}
-.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px 0}
-.card-t{margin:0;font-size:16px;font-weight:600}
-.card-b{padding:20px 24px 24px}
-.badge{display:inline-block;font-size:11px;font-weight:600;line-height:1;padding:5px 8px;border-radius:4px;color:#fff;background:var(--pri);white-space:nowrap}
-.badge.soft{background:var(--pri-bg);color:var(--pri-t)}
-.delta{display:inline-block;font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;margin-right:6px}
-.delta.up{background:var(--ok-bg);color:var(--ok-t)}
-.delta.dn{background:var(--bad-bg);color:var(--bad)}
-.muted{color:var(--sub)}
-.small{font-size:12px}
+:root{--pri:#3B7DDD;--pri-bg:#DEE6F6;--pri-t:#2D5FB4;--bg:#F7F9FC;--line:#E9ECEF;--ink:#212529;--sub:#6C757D;--ok-bg:#DDF5EE;--ok-t:#128A66}
+body{background:var(--bg);color:var(--ink)}
+.w{max-width:1000px;margin:0 auto;padding:16px}
+.k{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05)}
+.kp{padding:12px 16px}.kp .l{font-size:var(--fs-sm);color:var(--sub);display:flex;justify-content:space-between;gap:8px}
+.kp .v{font-size:var(--fs-xl);font-weight:600;margin:2px 0;letter-spacing:-.02em}
+.kp .m{font-size:var(--fs-xs);color:var(--sub)}.kp.hl{background:var(--pri-bg)}.kp.hl .l,.kp.hl .v{color:var(--pri-t)}
+.bd{font-size:var(--fs-xs);font-weight:600;background:var(--pri);color:#fff;border-radius:4px;padding:0 7px;line-height:18px}.bd.s{background:var(--pri-bg);color:var(--pri-t)}
+.d{font-size:var(--fs-xs);font-weight:600;background:var(--ok-bg);color:var(--ok-t);border-radius:4px;padding:0 6px;margin-right:4px}
+.r{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.cb{padding:14px 16px}.ct{font-size:var(--fs-md);font-weight:600;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.ar{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line)}.ar span{color:var(--sub)}
+ol{margin:0;padding-left:18px}li{padding:2px 0}
+details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;font-weight:600}details p{margin:6px 0 0;color:var(--sub)}
+.n{color:var(--sub);font-size:var(--fs-xs);margin:8px 0 0}
+@media (max-width:760px){.k{grid-template-columns:1fr 1fr}.r{grid-template-columns:1fr}}
 
-/* 플랜 카드 — 파란 틴트(대시보드의 강조 카드) */
-.plan{background:var(--pri-bg);border-color:transparent}
-.plan .card-t{color:var(--pri-t)}
-.price{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:4px 0 6px}
-.price .now{font-size:48px;font-weight:700;letter-spacing:-.03em;line-height:1.1;color:var(--pri-t)}
-.price .per{color:var(--sub);font-size:15px}
-.price .was{color:var(--hint);text-decoration:line-through;font-size:18px}
-.feat{list-style:none;margin:18px 0 0;padding:0}
-.feat li{position:relative;padding:8px 0 8px 26px;border-top:1px solid rgba(59,125,221,.18)}
-.feat li::before{content:"";position:absolute;left:3px;top:14px;width:12px;height:7px;border-left:2px solid var(--pri);border-bottom:2px solid var(--pri);transform:rotate(-45deg)}
-
-/* 환율 */
-.rate-v{display:flex;align-items:baseline;gap:8px;margin:2px 0 4px}
-.rate-v b{font-size:36px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
-.stale{font-size:13px;background:var(--warn-bg);color:var(--warn-t);border-radius:4px;padding:8px 12px;margin-top:12px}
-
-/* KPI 카드 */
-.kpi .card-b{padding:20px 24px}
-.kpi .lbl{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600}
-.kpi .val{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:14px 0 12px;line-height:1.2}
-.kpi.hl{background:var(--pri-bg);border-color:transparent}
-.kpi.hl .lbl,.kpi.hl .val{color:var(--pri-t)}
-
-/* 표 */
-table.t{width:100%;border-collapse:collapse}
-table.t th,table.t td{padding:12px 8px;text-align:left;border-top:1px solid var(--line);vertical-align:middle}
-table.t thead th{border-top:0;font-weight:600;color:var(--txt);padding-top:0}
-table.t td.r,table.t th.r{text-align:right}
-table.t tr:first-child td{border-top:0;padding-top:0}
-table.t td:first-child,table.t th:first-child{padding-left:0}
-table.t td:last-child,table.t th:last-child{padding-right:0}
-.copy{font-size:12px;border:1px solid var(--line);background:transparent;color:var(--pri);border-radius:4px;padding:3px 8px;margin-left:8px;cursor:pointer}
-.copy:hover{background:var(--pri-bg)}
-.pending{padding:12px 0;color:var(--sub)}
-
-/* 단계 */
-ol.steps{list-style:none;counter-reset:s;margin:0;padding:0}
-ol.steps li{counter-increment:s;display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
-ol.steps li:first-child{border-top:0;padding-top:0}
-ol.steps li::before{content:counter(s);flex:none;width:24px;height:24px;border-radius:50%;background:var(--pri-bg);color:var(--pri-t);font-size:12px;font-weight:700;display:grid;place-items:center}
-
-/* FAQ */
-details{border-top:1px solid var(--line);padding:12px 0}
-details:first-of-type{border-top:0;padding-top:0}
-summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
-summary::-webkit-details-marker{display:none}
-summary::after{content:"";flex:none;width:8px;height:8px;margin-top:7px;border-right:2px solid var(--hint);border-bottom:2px solid var(--hint);transform:rotate(45deg);transition:transform .15s}
-details[open] summary::after{transform:rotate(-135deg);margin-top:10px}
-details p{margin:8px 0 0;color:var(--sub)}
-</style>
-</head>
-<body>
-<main class="page">
-
-  <div class="row">
-    <section class="card plan c7" aria-labelledby="plan-h">
-      <div class="card-h"><h2 class="card-t" id="plan-h">나비웹 · 단일 요금제</h2><span class="badge" id="beta-tag">베타 테스트 · 2026년 12월 말까지</span></div>
-      <div class="card-b">
-        <div class="price">
-          <span class="now" id="price-now">$10</span><span class="per">/ 월</span>
-          <span class="was" id="price-was">$100</span><span class="delta up" id="price-off">90% 할인</span>
-        </div>
-        <div class="muted small" id="price-note">정가는 월 $100이며, 베타 테스트 기간 동안 90% 할인한 월 기본료가 적용됩니다.</div>
-        <ul class="feat">
-          <li>나비 전체 기능 — 메일, 서류 작성, 가상 판결, 정보 공개 청구</li>
-          <li>내 양식 만들기, 개인 데이터 보관소(PDV), 자동화</li>
-          <li>사용법, 사용 설명서, 기능 개선 제안 게시판</li>
-          <li>등급 구분 없는 단일 가격</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="card c5" aria-labelledby="rate-h">
-      <div class="card-h"><h2 class="card-t" id="rate-h">오늘의 환율</h2><span class="badge soft" id="rate-date">—</span></div>
-      <div class="card-b">
-        <div class="rate-v"><b id="rate-val">불러오는 중…</b><span class="muted">원 / 1 USD</span></div>
-        <div class="muted small" id="rate-meta">&nbsp;</div>
-        <div class="stale" id="rate-warn" hidden></div>
-      </div>
-    </section>
-  </div>
-
-  <div class="row">
-    <section class="card kpi c4"><div class="card-b">
-      <div class="lbl"><span>월 기본료</span><span class="badge soft" id="kpi-tag">베타</span></div>
-      <div class="val" id="k-usd">$10</div>
-      <div class="small"><span class="delta up" id="k-off">−90%</span><span class="muted" id="k-was">정가 $100 대비</span></div>
-    </div></section>
-    <section class="card kpi hl c4"><div class="card-b">
-      <div class="lbl"><span>입금액</span><span class="badge">원화</span></div>
-      <div class="val" id="k-krw">—</div>
-      <div class="small muted">오늘 환율 기준, 원 미만 올림</div>
-    </div></section>
-    <section class="card kpi c4"><div class="card-b">
-      <div class="lbl"><span>충전되는 GDC</span><span class="badge soft">1 GDC = 1원</span></div>
-      <div class="val" id="k-gdc">—</div>
-      <div class="small muted">입금 확인 즉시 충전</div>
-    </div></section>
-  </div>
-
-  <div class="row">
-    <section class="card c7" aria-labelledby="pay-h">
-      <div class="card-h"><h2 class="card-t" id="pay-h">입금 안내</h2><span class="badge soft">계좌 입금만 가능</span></div>
-      <div class="card-b">
-        <div id="acct"></div>
-        <p class="muted small" style="margin:14px 0 0">베타 테스트 기간에는 지정 계좌로 입금하는 방식만 가능합니다. 입금이 확인되면 그날의 환율로 원화로 환산된 금액이 GDC로 충전됩니다.</p>
-      </div>
-    </section>
-    <section class="card c5" aria-labelledby="how-h">
-      <div class="card-h"><h2 class="card-t" id="how-h">입금 순서</h2></div>
-      <div class="card-b">
-        <ol class="steps">
-          <li><span>오늘의 환율로 입금액을 확인합니다. 환율이 1,300원이면 $10는 13,000원입니다.</span></li>
-          <li><span>지정 계좌로 해당 금액을 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 합니다.</span></li>
-          <li><span>입금이 확인되면 입금액이 GDC로 충전됩니다.</span></li>
-        </ol>
-      </div>
-    </section>
-  </div>
-
-  <div class="row">
-    <section class="card c12" aria-labelledby="faq-h">
-      <div class="card-h"><h2 class="card-t" id="faq-h">자주 묻는 질문</h2></div>
-      <div class="card-b">
-        <details><summary>환율은 언제 적용되나요?</summary><p>입금이 확인된 그날의 환율로 원화 금액을 달러로 환산합니다. 이 페이지는 그날그날의 환율을 표시하며, 기준 날짜는 환율 아래에 함께 적습니다.</p></details>
-        <details><summary>베타 테스트가 끝나면 요금은 어떻게 되나요?</summary><p>베타 테스트 이후에는 정가 월 $100이 적용됩니다.</p></details>
-        <details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details>
-      </div>
-    </section>
-  </div>
-
+</style></head><body>
+<main class="w">
+<div class="k">
+<section class="card kp hl"><div class="l"><span>월 기본료</span><span class="bd" data-beta>베타</span></div><div class="v" data-b="usd">$10</div><div class="m"><span class="d" data-beta>−90%</span><span data-beta>정가 <span data-b="list">$100</span> · 2026년 12월 말까지</span></div></section>
+<section class="card kp"><div class="l"><span>오늘의 환율</span><span class="bd s" data-b="rdate">—</span></div><div class="v"><span data-b="rate">—</span></div><div class="m">원/USD · <span data-b="rsrc"></span></div></section>
+<section class="card kp"><div class="l"><span>입금액</span><span class="bd">원화</span></div><div class="v" data-b="krw">—</div><div class="m">원 미만 올림</div></section>
+<section class="card kp"><div class="l"><span>충전되는 GDC</span><span class="bd s">1 GDC = 1원</span></div><div class="v" data-b="gdc">—</div><div class="m">입금 확인 즉시</div></section>
+</div>
+<div class="warn" id="rate-warn" hidden></div>
+<div class="r">
+<section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 그날의 환율로 환산한 원화가 GDC로 충전됩니다(1 GDC = 1원).</p></section>
+<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>오늘의 환율로 입금액을 확인합니다. 환율이 1,300원이면 $10는 13,000원입니다.</li><li>지정 계좌로 해당 금액을 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 합니다.</li><li>입금이 확인되면 입금액이 GDC로 충전됩니다.</li></ol></section>
+</div>
+<section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2><details><summary>환율은 언제 적용되나요?</summary><p>입금이 확인된 그날의 환율로 환산합니다. 기준 날짜는 환율 옆에 표시됩니다.</p></details><details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 정가 월 $100이 적용됩니다.</p></details><details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details></section>
 </main>
-
 <script>
-/* ── 설정(운영자가 채우는 값) ───────────────────────────── */
-var PRICE_LIST_USD = 100, DISCOUNT = 0.9;
-var PRICE_BETA_USD = Math.round(PRICE_LIST_USD * (1 - DISCOUNT));
-var BETA_END = '2026-12-31';
-var PAY_ACCOUNT = { bank: '중소기업은행', number: '415-092028-04-011', holder: '에이아이시티주식회사' };
-var RATE_SOURCES = [
-  { name: 'open.er-api.com', url: 'https://open.er-api.com/v6/latest/USD',
-    parse: function (j) { if (j.result !== 'success' || !j.rates || !j.rates.KRW) throw 0; return { rate: j.rates.KRW, at: j.time_last_update_utc }; } },
-  { name: 'frankfurter.app (ECB)', url: 'https://api.frankfurter.app/latest?from=USD&to=KRW',
-    parse: function (j) { if (!j.rates || !j.rates.KRW) throw 0; return { rate: j.rates.KRW, at: j.date }; } }
-];
-var $ = function (id) { return document.getElementById(id); };
-var nf = new Intl.NumberFormat('ko-KR');
-function kstDate(d) { return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric' }).format(d); }
-
-function renderPrice() {
-  var today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
-  var beta = today <= BETA_END;
-  window._usd = beta ? PRICE_BETA_USD : PRICE_LIST_USD;
-  $('price-now').textContent = '$' + window._usd;
-  $('k-usd').textContent = '$' + window._usd;
-  $('price-was').hidden = $('price-off').hidden = $('beta-tag').hidden = $('k-off').hidden = !beta;
-  $('kpi-tag').textContent = beta ? '베타' : '정가';
-  $('k-was').textContent = beta ? '정가 $' + PRICE_LIST_USD + ' 대비' : '단일 가격';
-  if (!beta) $('price-note').textContent = '월 $' + PRICE_LIST_USD + ' 단일 가격입니다.';
-}
-function renderAccount() {
-  var a = PAY_ACCOUNT, el = $('acct');
-  if (!(a.bank && a.number)) { el.innerHTML = '<div class="pending">입금 계좌 안내를 준비 중입니다.</div>'; return; }
-  el.innerHTML = '<table class="t"><tbody>' +
-    '<tr><td>은행</td><td class="r"></td></tr>' +
-    '<tr><td>계좌번호</td><td class="r"><b></b><button type="button" class="copy">복사</button></td></tr>' +
-    (a.holder ? '<tr><td>예금주</td><td class="r"></td></tr>' : '') + '</tbody></table>';
-  var td = el.querySelectorAll('tbody td.r');
-  td[0].textContent = a.bank; td[1].querySelector('b').textContent = a.number; if (a.holder) td[2].textContent = a.holder;
-  el.querySelector('.copy').onclick = function () { var b = this; try { navigator.clipboard.writeText(a.number); b.textContent = '복사됨'; setTimeout(function () { b.textContent = '복사'; }, 1500); } catch (e) {} };
-}
-function renderRate(r, src) {
-  var krw = Math.ceil(window._usd * r.rate), d = new Date(r.at);
-  $('rate-val').textContent = nf.format(Math.round(r.rate * 100) / 100);
-  $('rate-date').textContent = isNaN(d) ? String(r.at) : kstDate(d) + ' 기준';
-  $('rate-meta').textContent = '출처 ' + src;
-  $('k-krw').textContent = nf.format(krw) + '원';
-  $('k-gdc').textContent = nf.format(krw) + ' GDC';
-  $('rate-warn').hidden = true;
-}
-function renderFail() {
-  $('rate-val').textContent = '—'; $('rate-date').textContent = '—'; $('rate-meta').textContent = '';
-  $('k-krw').textContent = $('k-gdc').textContent = '—';
-  var w = $('rate-warn'); w.hidden = false;
-  w.textContent = '환율을 불러오지 못했습니다. 잠시 뒤 다시 열어 주세요. 환율이 표시되지 않을 때는 입금액을 확인한 뒤에 입금해 주세요.';
-}
-async function loadRate() {
-  for (var i = 0; i < RATE_SOURCES.length; i++) {
-    try {
-      var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 8000);
-      var res = await fetch(RATE_SOURCES[i].url, { signal: c.signal, cache: 'no-store' });
-      clearTimeout(t);
-      if (!res.ok) throw 0;
-      renderRate(RATE_SOURCES[i].parse(await res.json()), RATE_SOURCES[i].name); return;
-    } catch (e) {}
-  }
-  renderFail();
-}
-renderPrice(); renderAccount(); loadRate();
-if (new URLSearchParams(location.search).get('embed')) document.body.style.background = 'transparent';
-</script>
-</body>
-</html>
+var PRICE_LIST_USD=100,DISCOUNT=.9,PRICE_BETA_USD=Math.round(PRICE_LIST_USD*(1-DISCOUNT)),BETA_END='2026-12-31';
+var PAY_ACCOUNT={bank:'중소기업은행',number:'415-092028-04-011',holder:'에이아이시티주식회사'};
+var RATE_SOURCES=[
+ {name:'open.er-api.com',url:'https://open.er-api.com/v6/latest/USD',parse:function(j){if(j.result!=='success'||!j.rates||!j.rates.KRW)throw 0;return{rate:j.rates.KRW,at:j.time_last_update_utc}}},
+ {name:'frankfurter.app (ECB)',url:'https://api.frankfurter.app/latest?from=USD&to=KRW',parse:function(j){if(!j.rates||!j.rates.KRW)throw 0;return{rate:j.rates.KRW,at:j.date}}}];
+var $=function(i){return document.getElementById(i)},nf=new Intl.NumberFormat('ko-KR');
+function bind(k,t){document.querySelectorAll('[data-b="'+k+'"]').forEach(function(e){e.textContent=t})}
+function kst(d){return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'}).format(d)}
+function renderPrice(){var today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),beta=today<=BETA_END;
+ window._usd=beta?PRICE_BETA_USD:PRICE_LIST_USD;bind('usd','$'+window._usd);bind('list','$'+PRICE_LIST_USD);
+ document.querySelectorAll('[data-beta]').forEach(function(e){e.hidden=!beta});}
+function renderAccount(){var a=PAY_ACCOUNT,el=$('acct');if(!el)return;
+ el.innerHTML='<div class="ar"><span>은행</span><b></b></div><div class="ar"><span>계좌번호</span><b class="an"></b></div><div class="ar"><span>예금주</span><b></b></div>';
+ var b=el.querySelectorAll('b');b[0].textContent=a.bank;b[1].textContent=a.number;b[2].textContent=a.holder;
+ var c=document.createElement('button');c.type='button';c.className='copy';c.textContent='복사';b[1].appendChild(c);
+ c.onclick=function(){try{navigator.clipboard.writeText(a.number);c.textContent='복사됨';setTimeout(function(){c.textContent='복사'},1500)}catch(e){}}}
+function renderRate(r,src){var krw=Math.ceil(window._usd*r.rate),d=new Date(r.at);
+ bind('rate',nf.format(Math.round(r.rate*100)/100));bind('rdate',isNaN(d)?String(r.at):kst(d)+' 기준');bind('rsrc',src);
+ bind('krw',nf.format(krw)+'원');bind('gdc',nf.format(krw)+' GDC');var w=$('rate-warn');if(w)w.hidden=true}
+function renderFail(){bind('rate','—');bind('rdate','—');bind('rsrc','');bind('krw','—');bind('gdc','—');
+ var w=$('rate-warn');if(w){w.hidden=false;w.textContent='환율을 불러오지 못했습니다. 잠시 뒤 다시 열어 주세요. 환율이 표시되지 않을 때는 입금액을 확인한 뒤에 입금해 주세요.'}}
+async function loadRate(){for(var i=0;i<RATE_SOURCES.length;i++){try{var c=new AbortController(),t=setTimeout(function(){c.abort()},8000);
+ var res=await fetch(RATE_SOURCES[i].url,{signal:c.signal,cache:'no-store'});clearTimeout(t);if(!res.ok)throw 0;
+ renderRate(RATE_SOURCES[i].parse(await res.json()),RATE_SOURCES[i].name);return}catch(e){}}renderFail()}
+renderPrice();renderAccount();loadRate();
+if(new URLSearchParams(location.search).get('embed'))document.body.style.background='transparent';
+</script></body></html>

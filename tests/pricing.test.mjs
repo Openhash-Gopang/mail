@@ -9,9 +9,15 @@ test('요금제 — 좌측 메뉴와 상단 바에 동시에 있다', () => {
   assert.match(d, /id="tab-pricing" class="tab-panel"/);
   assert.match(d, /pricing\.html\?embed=mail/);
 });
-test('요금제 — 정가 100달러, 베타 90% 할인, 환율 표시', () => {
-  assert.match(p, /PRICE_LIST_USD = 100, DISCOUNT = 0\.9/);
-  assert.match(p, /BETA_END = '2026-12-31'/);
-  assert.match(p, /id="rate-val"/);
-  assert.match(p, /Math\.ceil\(window\._usd \* r\.rate\)/);
+test('요금제 — 정가 100달러, 베타 90% 할인(12월 말), 환율·입금액 표시', () => {
+  assert.match(p, /PRICE_LIST_USD=100,DISCOUNT=\.9/);
+  assert.match(p, /BETA_END='2026-12-31'/);
+  assert.match(p, /data-b="rate"/);
+  assert.match(p, /data-b="krw"/);
+  assert.match(p, /Math\.ceil\(window\._usd\*r\.rate\)/);
+});
+test('요금제 — 제목 없음, Pretendard, 지정 계좌', () => {
+  assert.doesNotMatch(p, /<h1/);
+  assert.match(p, /Pretendard/);
+  assert.match(p, /415-092028-04-011/);
 });
