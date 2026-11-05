@@ -3443,6 +3443,10 @@ function _docHostMessage(d, e) {
     document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();
   } else if (d.type === 'navi-doc-fetch-slot') {
     _agentFetchSlot(String(d.label || '').slice(0, 120));
+  } else if (d.type === 'navi-doc-keep-list') { _keepList(e, d);   // 첨부서류 보관·재활용(2026-11-06): 서류 화면 ↔ PDV 중계
+  } else if (d.type === 'navi-doc-keep-put') { _keepPut(e, d);
+  } else if (d.type === 'navi-doc-keep-get') { _keepGet(e, d);
+  } else if (d.type === 'navi-doc-keep-del') { _keepDel(e, d);
   } else if (d.type === 'navi-doc-slot-result') {
     if (_docChat.on && window.DocHelper) {   // 도우미가 받아 온 파일이 서류 항목에 들어갔다(또는 못 들어갔다)
       const lb = DocHelper.matchLabel(String(d.label || ''), (_docChat.attach || []).map(function (a) { return a.l; })) || String(d.label || '');
@@ -3617,6 +3621,53 @@ function _drCall(op, payload, ms) {
     const send = () => { try { _dr.frame.contentWindow.postMessage(Object.assign({ type: 'pdv-draft', reqId, op }, payload || {}), _DR_ORIGIN); } catch (x) { clearTimeout(t); reject(x); } };
     if (_dr.ready) send(); else _dr.waiters.push(send);
   });
+}
+// ── 첨부서류 보관·재활용 (2026-11-06) ──
+// 서류 화면(navi-pro)에서 항목에 들어간 첨부서류를 이 기기의 PDV(kind='attach')에 보관했다가, 같은 종류의 서류를 쓸 때 다시 꺼내 쓴다.
+// 서류 종류와 유효 기간은 서류 화면이 정하고, 이 화면은 PDV 중계(pdv-draft-bridge)로 전달만 한다. 유효 기간이 지난 보관본은 목록을 물을 때마다 PDV 에서 지운다(purge).
+// 옛 PDV 중계(attach·purge 미지원)이면 보관 기능은 조용히 꺼진다.
+const _keep = { caps: null };
+async function _keepCaps() {
+  if (_keep.caps !== null) return _keep.caps;
+  try { const r = await _drCall('caps', {}, 4000); _keep.caps = Array.isArray(r.kinds) && r.kinds.indexOf('attach') >= 0 && Array.isArray(r.ops) && r.ops.indexOf('purge') >= 0; }
+  catch (x) { return false; }   // 중계가 아직 안 열렸으면 다음에 다시 묻는다
+  return _keep.caps;
+}
+function _keepReply(e, msg) { try { e.source.postMessage(msg, e.origin); } catch (x) {} }
+const _KEEP_WHY = { EXPIRED: '이미 유효 기간이 지났습니다', NO_FILE: '파일이 비었거나 8MB를 넘습니다', NO_KEY: '서류 종류를 알 수 없습니다', NOT_FOUND: '보관본을 찾지 못했습니다' };
+async function _keepList(e, d) {
+  const keys = Array.isArray(d.keys) ? d.keys.slice(0, 20).map(k => String(k).slice(0, 40)) : [];
+  if (!(await _keepCaps())) { _keepReply(e, { type: 'navi-doc-keep-items', ok: false, items: [] }); return; }
+  try {
+    await _drCall('purge', {}, 6000);
+    const r = await _drCall('list', { kind: 'attach' }, 6000), now = Date.now();
+    const items = (r.items || []).filter(i => keys.indexOf(i.key) >= 0 && i.hasFile && i.expires > now)
+      .map(i => ({ id: i.id, key: i.key, title: i.title, fileName: i.fileName, issued: i.issued, expires: i.expires }));
+    _keepReply(e, { type: 'navi-doc-keep-items', ok: true, items });
+  } catch (x) { _keepReply(e, { type: 'navi-doc-keep-items', ok: false, items: [] }); }
+}
+async function _keepPut(e, d) {
+  const label = String(d.label || '').slice(0, 120), out = { type: 'navi-doc-keep-result', op: 'put', label };
+  try {
+    if (!(await _keepCaps())) throw new Error('이 기기의 PDV가 아직 첨부서류 보관을 지원하지 않습니다');
+    if (!(d.data instanceof ArrayBuffer) || !d.data.byteLength) throw new Error('NO_FILE');
+    const name = String(d.name || '').slice(0, 160), r = await _drCall('put', { item: { kind: 'attach', title: label, key: String(d.key || '').slice(0, 40), fileName: name, fileMime: String(d.mime || '').slice(0, 120), fileData: d.data, issued: +d.issued || 0, expires: +d.expires || 0, basis: String(d.basis || '') } }, 15000);
+    _keepReply(e, Object.assign(out, { ok: true, id: r.id, key: r.key, issued: r.issued, expires: r.expires, name }));
+  } catch (x) { const m = String((x && x.message) || x); _keepReply(e, Object.assign(out, { ok: false, msg: _KEEP_WHY[m] || m.slice(0, 80) })); }
+}
+async function _keepGet(e, d) {
+  const label = String(d.label || '').slice(0, 120), out = { type: 'navi-doc-keep-file', label };
+  try {
+    const r = await _drCall('get', { id: String(d.id || '').slice(0, 60) }, 15000), it = r.item;
+    if (!it || it.kind !== 'attach' || !it.fileData) throw new Error('NOT_FOUND');
+    if (it.expires > 0 && it.expires <= Date.now()) { _drCall('purge', {}, 6000).catch(() => {}); throw new Error('EXPIRED'); }
+    _keepReply(e, Object.assign(out, { ok: true, id: it.id, name: it.fileName, mime: it.fileMime, data: it.fileData, expires: it.expires }));
+  } catch (x) { const m = String((x && x.message) || x); _keepReply(e, Object.assign(out, { ok: false, msg: _KEEP_WHY[m] || m.slice(0, 80) })); }
+}
+async function _keepDel(e, d) {
+  const out = { type: 'navi-doc-keep-result', op: 'del', id: String(d.id || '').slice(0, 60), label: String(d.label || '').slice(0, 120) };
+  try { await _drCall('delete', { id: out.id }, 6000); _keepReply(e, Object.assign(out, { ok: true })); }
+  catch (x) { _keepReply(e, Object.assign(out, { ok: false })); }
 }
 function _drToast(msg) {
   let t = document.getElementById('dr-toast');
