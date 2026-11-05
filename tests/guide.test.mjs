@@ -260,15 +260,33 @@ test('상단 바 가운데: 홈 = "나만의 AI 비서, 나비"(나비 굵게)',
   assert.match(h, /\.topbar-page b\{font-weight:800\}/);
 });
 
-test('사용 설명서: 서류 작성이 앞부분(3~4장)에 있고 PDV·혼디 대화창의 역할을 설명한다', () => {
+test('사용 설명서(2026-11-05 개편): 1부 구성 항목 10장 → 2부 실습 10장 → 3부 고급 → 부록, 장 번호는 스크립트가 매긴다', () => {
   const h = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
-  const order = [...h.matchAll(/<h2><span class="n">(\d+)<\/span>([^<]*)/g)].map(m => [Number(m[1]), m[2]]);
-  order.forEach((o, i) => assert.equal(o[0], i + 1));   // 장 번호가 1부터 빠짐없이 이어진다
-  assert.equal(order[2][1], '서류 작성'); assert.equal(order[3][1], '작성한 서류를 대화로 고치기'); assert.equal(order[4][1].startsWith('나비웹으로 할 수 있는 일'), true);
-  const docs = h.slice(h.indexOf('<section id="docs">'), h.indexOf('<section id="docedit">'));
-  for (const k of ['PDV의 역할', '혼디 대화창의 역할', '비서가 채우고, 내가 검토합니다', '📎 버튼', 'dpaper', '예시: 서류 작성']) assert.ok(docs.includes(k), k);
-  assert.ok(h.indexOf('<section id="docs">') < h.indexOf('<section id="what">'));
-  assert.equal((h.match(/<section /g) || []).length, (h.match(/<\/section>/g) || []).length);
+  const ids = [...h.matchAll(/<section id="([^"]+)"( class="appx")?/g)].filter(m => !m[1].includes('...')).map(m => [m[1], !!m[2]]);
+  const chapters = ids.filter(x => !x[1]).map(x => x[0]);
+  assert.deepEqual(chapters.slice(0, 10), ['c-overview', 'c-topbar', 'c-sidemenu', 'c-input', 'c-docmenu', 'c-mailmenu', 'c-guide-case', 'c-settings', 'c-help', 'c-helper']);
+  assert.equal(chapters[10], 'c-start'); assert.equal(chapters[19], 'c-final');   // 11~20장 = 실습, 20장 = 종합 실습
+  assert.ok(chapters.length > 20 && chapters.indexOf('c-form-builder') === 20 && chapters.includes('c-pdv'), '21장부터 고급(내 양식 만들기·PDV 구성 …)');
+  assert.deepEqual(ids.filter(x => x[1]).map(x => x[0]), ['safe', 'faq', 'words']);   // 부록은 항상 맨 뒤
+  assert.ok(ids.findIndex(x => x[1]) > ids.findIndex(x => x[0] === 'c-delegate'));
+  const docs = h.slice(h.indexOf('<section id="c-doc-write">'), h.indexOf('<section id="c-doc-edit">'));
+  for (const k of ['PDV', '혼디 대화', '빈 칸을 채워 줘', '📎', 'SP', '작성 완료로 저장']) assert.ok(docs.includes(k), k);
+  const refs = [...h.matchAll(/data-ref="([^"]+)"/g)].map(m => m[1]);
+  for (const r of refs) assert.ok(chapters.includes(r) || ids.some(x => x[0] === r), '참조 대상 없음: ' + r);
+  assert.ok(h.includes('document.querySelectorAll(\'a.ref[data-ref]\')'));
+  assert.equal((h.match(/<section /g) || []).length - 2, (h.match(/<\/section>/g) || []).length);   // 주석·스크립트 속 예시 2건 제외
+});
+
+test('사용법 코스(guide.js): 기본 1~10 구성 항목 · 활용 11~20 실습 · 고급 21~(업무 Case는 항상 마지막)', () => {
+  const P = G.PAGES;
+  assert.ok(P.length >= 21);
+  P.slice(0, 10).forEach(p => assert.equal(p.level, '기본', p.title));
+  P.slice(10, 20).forEach(p => assert.equal(p.level, '활용', p.title));
+  P.slice(20).forEach(p => assert.equal(p.level, '고급', p.title));
+  P.slice(10, 19).forEach(p => assert.ok(p.title.startsWith('실습'), p.title));
+  assert.ok(P[19].title.startsWith('종합 실습'));
+  assert.equal(P[20].title, '내 양식 만들기'); assert.equal(P[21].title, 'PDV 구성하기');
+  assert.equal(P.filter(p => p.flag).length, 1); assert.equal(P[P.length - 1].flag, 'case');
 });
 
 test('사용법 코스: 임시로 모든 페이지로 이동할 수 있다(OPEN_ALL)', () => {
