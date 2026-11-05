@@ -5,7 +5,7 @@ export const DEFAULT_HOSTS = ['iros.go.kr', 'ecfs.scourt.go.kr', 'gov.kr', 'hond
 const RRN = /\d{6}\s*-?\s*[1-8]\d{6}/;
 const SECRET_NAME = /passw|passwd|pwd|비밀번호|card|카드번호|cvc|cvv|otp|보안카드|계좌번호|주민|rrn|ssn/i;
 const HANDOFF_TEXT = /로그인|login|sign.?in|인증서|공동인증|간편인증|본인인증|캡차|captcha|자동입력\s*방지|결제|payment|pay\b|이체|송금|계좌이체|카드\s*결제|전자서명/i;
-const CONFIRM_TEXT = /제출|접수|신청서|발급|전송|삭제|확정|동의|보내기|send|submit|delete/i;
+const CONFIRM_TEXT = /제출|접수|신청서|발급|전송|삭제|확정|동의|보내기|다운로드|내려받기|send|submit|delete|download/i;
 // 메뉴 이동처럼 되돌릴 수 있는 항목은 묻지 않는다.
 const NAV_OK = /^(열람[·\s]*발급|등기상호검색|신청결과|법인\s*열람|결제대상목록|처음으로|이전|다음)/;
 

@@ -1,6 +1,6 @@
 // 페이지 안에서 도구를 실행한다. 요소는 ref_N 으로만 가리킨다(좌표 클릭을 쓰지 않는다).
 (() => {
-  if (window.__naviAgentV === 3) return;
+  if (window.__naviAgentV === 4) return;
   const refs = new Map(); let seq = 0;
   const SEL = 'a,button,input,select,textarea,label,area,img[alt],[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[tabindex],[onclick]';
   const PTR = 'span,div,li,td,img,i';
@@ -81,6 +81,8 @@
       if (!o) throw new Error('옵션을 찾지 못했습니다: ' + option); el.value = o.value; el.dispatchEvent(new Event('change', { bubbles: true })); return `선택: ${clean(o.text)}`; },
     scroll: ({ direction, amount }) => { window.scrollBy(0, (direction === 'up' ? -1 : 1) * (Number(amount) || 3) * 200); return '스크롤'; },
     get_text: () => clean(document.body.innerText).slice(0, 6000),
+    // 내려받기 링크의 주소는 확장(배경)만 받는다. AI 에게는 돌려주지 않는다(주소에 세션 값이 들어 있을 수 있다).
+    link_href: ({ ref }) => { const el = need(ref); const a = el.closest && el.closest('a[href]'); if (!a) throw new Error('링크 요소가 아닙니다.'); return a.href; },
   };
   chrome.runtime.onMessage.addListener((msg, _s, send) => {
     if (msg && msg.__navi === 'ping') { send({ ok: true }); return; }
@@ -90,5 +92,5 @@
       else send({ ok: true, text: String(run[msg.name](msg.input || {})) });
     } catch (e) { send({ ok: false, error: e.message }); }
   });
-  window.__naviAgentV = 3;
+  window.__naviAgentV = 4;
 })();

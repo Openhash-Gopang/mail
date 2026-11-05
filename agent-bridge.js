@@ -18,7 +18,11 @@
     for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].re.test(t)) return { playbook: SLOTS[i].playbook, goal: SLOTS[i].goal };
     return null;
   }
-  function slotPatterns() { return SLOTS.map(function (s) { return s.re.source; }); }
+  // 사용자가 직접 만들거나 가진 자료(사진·계약서·위임장 등)는 기관에서 받을 수 없으므로 "도우미가 가져오기"를 붙이지 않는다. 그 밖의 모든 첨부서류 항목은 어느 기관 사이트든 도우미가 가져올 수 있다(전용 절차가 없으면 SP 가 기관과 서류를 정해 맡긴다).
+  var USER_OWNED = /사진|계약서|위임장|재산목록|별지|직접\s*작성|서명/;
+  var ANY_FETCHABLE = '^(?!.*(?:' + USER_OWNED.source + ')).+';
+  function slotFetchable(label) { var t = String(label || '').trim(); return !!t && !USER_OWNED.test(t); }
+  function slotPatterns() { return SLOTS.map(function (s) { return s.re.source; }).concat([ANY_FETCHABLE]); }
   function suggest(title) {
     var t = String(title || '');
     for (var i = 0; i < RULES.length; i++) if (RULES[i].re.test(t)) return { playbook: RULES[i].playbook, title: RULES[i].title, goal: RULES[i].goal };
@@ -62,7 +66,7 @@
       cb({ label: String(m.label || ''), state: String(m.state || ''), note: String(m.note || '') });
     });
   }
-  var api = { onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, slotPlan: slotPlan, slotPatterns: slotPatterns, onFile: onFile, STORE_URL: STORE_URL };
+  var api = { onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);

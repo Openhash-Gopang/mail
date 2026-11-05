@@ -22,8 +22,10 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
   { name: 'wait', description: '잠시 기다린다(초, 최대 10).',
     input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },
-  { name: 'report_status', description: '나비웹에서 맡긴 첨부서류 항목의 진행 결과를 나비웹 화면에 알린다. state: sent(법원 등으로 전송 완료), pending(아직 진행 중), failed(실패). note 는 한 줄(법인 이름·건수 등).',
+  { name: 'report_status', description: '나비웹에서 맡긴 첨부서류 항목의 진행 결과를 나비웹 화면에 알린다. 파일이 아닌 결과(법원·기관으로 바로 전송 등)와 진행 상황·실패를 알릴 때 쓴다. state: sent(기관으로 전송 완료), pending(아직 진행 중), failed(실패). note 는 한 줄(법인 이름·건수 등).',
     input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
+  { name: 'send_file_to_navi', description: '발급·내려받은 서류 파일을 나비웹의 맡긴 첨부서류 항목으로 보낸다(파일 내용은 AI 에게 보이지 않는다). 내려받기 링크 요소의 ref 를 주면 그 링크의 파일을, ref 없이 부르면 방금 내려받은 파일을 보낸다. 나비웹 화면이 사용자에게 서류에 넣을지 한 번 더 묻는다.',
+    input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
   { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
     input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
 ];
