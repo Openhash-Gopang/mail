@@ -110,14 +110,15 @@ window.addEventListener('load', () => {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root {
-  --gov:    #0B3B33; --nav: #12564A; --pri: #0F8F7E; --pri-lt: #14B39B;
-  --pri-bg: #E4F5F2; --pri-bd: #B7E4DC; --teal: #3D4FC4; --teal-bg: #EEF2FF;
-  --sur: #FFFFFF; --bg: #F5F6FA; --bdr: #DFE2ED; --txt: #1A202C;
-  --sub: #4A5568; --hint: #718096;
-  --grn: #1B6B3A; --gbg: #E6F4EC; --red: #C01C28; --rbg: #FEE2E2;
-  --org: #C05621; --obg: #FEF3E2;
+  /* Material(Mira) 팔레트 — 2026-11-06: 파란 상단 막대·흰 사이드바·연한 회청색 바탕·그림자만 있는 흰 카드 */
+  --gov:    #1E3F85; --nav: #2F64C8; --pri: #3B7DDD; --pri-lt: #5C93E6;
+  --pri-bg: #E3ECF9; --pri-bd: #BFD3F0; --teal: #3B7DDD; --teal-bg: #E3ECF9;
+  --sur: #FFFFFF; --bg: #F7F9FC; --bdr: #E4E8EE; --txt: #212529;
+  --sub: #495057; --hint: #6C757D;
+  --grn: #1E7B46; --gbg: #E2F4EA; --red: #C9302C; --rbg: #FDE9E8;
+  --org: #B86E00; --obg: #FFF1D6;
   --font: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
-  --r: 8px; --sh: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --r: 4px; --sh: 0 0 .875rem 0 rgba(33,37,41,.06);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);font-size:15px;color:var(--txt);background:var(--bg);line-height:1.65;-webkit-font-smoothing:antialiased}
@@ -128,7 +129,7 @@ button{font-family:var(--font);cursor:pointer}
 
 header{background:var(--nav);color:#fff;padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.22)}
 header .logo{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
-header .logo-icon{width:28px;height:28px;background:var(--pri-lt);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#0B3B33}
+header .logo-icon{width:28px;height:28px;background:var(--pri-lt);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#1E3F85}
 header a.back{margin-left:auto;font-size:13px;color:rgba(255,255,255,.7);text-decoration:none}
 header a.back:hover{color:#fff}
 
@@ -146,7 +147,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 
 .btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:var(--r);font-size:14px;font-weight:700;border:none}
 .btn-primary{background:var(--pri);color:#fff}
-.btn-primary:hover{background:#0b6f62}
+.btn-primary:hover{background:#2F6BC4}
 .btn-primary:disabled{background:var(--hint);cursor:not-allowed}
 .btn-outline{background:var(--sur);border:1px solid var(--bdr);color:var(--sub)}
 .btn-outline:hover{border-color:var(--pri-lt);color:var(--pri)}
@@ -425,11 +426,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .rcpt-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:6px 8px;background:var(--card,#fff);cursor:text}
 .rcpt-box:focus-within{border-color:var(--teal,#0d9488)}
 .rcpt-box input{flex:1;min-width:180px;width:auto!important;border:none!important;outline:none!important;box-shadow:none!important;padding:5px 4px!important;background:transparent!important;font-size:15px}
-.rcpt-chip{display:inline-flex;align-items:center;gap:4px;background:#e6f4f1;color:#0f5f58;border-radius:14px;padding:3px 6px 3px 10px;font-size:14px;max-width:100%}
+.rcpt-chip{display:inline-flex;align-items:center;gap:4px;background:#E3ECF9;color:#0f5f58;border-radius:14px;padding:3px 6px 3px 10px;font-size:14px;max-width:100%}
 .rcpt-chip button{border:none;background:transparent;cursor:pointer;font-size:16px;line-height:1;color:inherit;padding:0 2px}
 .rcpt-sug{position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--card,#fff);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.14);max-height:260px;overflow-y:auto;margin-top:2px}
 .rcpt-sug div{padding:8px 12px;cursor:pointer;font-size:14px}
-.rcpt-sug div:hover,.rcpt-sug div.on{background:#e6f4f1}
+.rcpt-sug div:hover,.rcpt-sug div.on{background:#E3ECF9}
 .rcpt-sug small{color:var(--hint);margin-left:6px}
 .rcpt-toggles{margin:-4px 0 10px;font-size:13px;display:flex;gap:12px}
 .rcpt-toggles button{border:none;background:transparent;color:var(--teal,#0d9488);cursor:pointer;padding:2px 0;font-size:13px}
@@ -533,9 +534,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .mfb-filled:hover{background-image:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1));box-shadow:0 1px 3px 1px rgba(0,0,0,.15),0 1px 2px rgba(0,0,0,.3)}
 .mfb-filled.is-off{background:rgba(26,32,44,.12);color:rgba(26,32,44,.38);box-shadow:none;background-image:none}
 .mfb-tonal{background:var(--pri-bg);color:var(--gov)}
-.mfb-tonal:hover{background-image:linear-gradient(rgba(15,143,126,.1),rgba(15,143,126,.1));box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.mfb-tonal:hover{background-image:linear-gradient(rgba(59,125,221,.1),rgba(59,125,221,.1));box-shadow:0 1px 2px rgba(0,0,0,.3)}
 .mfb-text{background:transparent;color:var(--pri);padding:0 12px}
-.mfb-text:hover{background:rgba(15,143,126,.08)}
+.mfb-text:hover{background:rgba(59,125,221,.08)}
 .mfb-ib{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--sub);cursor:pointer;transition:background-color .15s}
 .mfb-ib:hover{background:rgba(26,32,44,.08)}
 .mfb-ib:disabled{opacity:.38;cursor:default;background:transparent}
@@ -1066,6 +1067,54 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 <div id="intro-backdrop" onclick="_introClose()"></div>
 <div id="intro-panel" aria-hidden="true"><iframe id="intro-frame" title="나만의 AI 비서 소개"></iframe></div>
+<style id="mira-style">
+/* ══ Material(Mira) 화면 갱신 — 2026-11-06 ══
+   첨부 화면(Mira Analytics)의 색과 구성: 파란 상단 막대, 흰 사이드바(아이콘+글자, 현재 항목은 연한 회색 줄), 대문자 작은 구역 제목,
+   회청색 바탕 위의 흰 카드(테두리 없이 옅은 그림자, 모서리 4px), 작은 직사각 배지, 4px 단추. 토큰은 :root 에서 바꾸고 여기서는 모양만 덮는다. */
+body{background:var(--bg);color:var(--sub)}
+/* 넓은 화면에서는 사이드바를 접지 않고 항상 펼쳐 둔다(Mira). 아래 접힘 규칙(side-collapse)과 마우스 올림 스크립트가 걸어 둔 폭·여백·투명도를 !important 로 되돌린다. */
+@media (min-width:961px){
+  .side-nav,.side-nav.sn-open{width:260px!important;max-width:260px!important;margin-right:0!important;box-shadow:none!important;transition:none!important}
+  .side-nav .nl,.side-nav .nav-sub,.side-nav .side-foot,.side-nav .nav-toggle{opacity:1!important;pointer-events:auto!important;transition:none!important}
+  .side-nav .side-group:not(:first-child) .side-label{border-top-color:transparent!important}
+  .side-nav .nav-group.collapsed .nav-sub{display:none}
+}
+header.topbar{background:var(--nav);box-shadow:0 0 .875rem rgba(33,37,41,.14)}
+header.topbar .logo-img{border-radius:6px}
+header.topbar .suggest-btn,header.topbar a{border-radius:4px}
+.side-nav{width:260px;background:#fff;border-right:1px solid var(--bdr);padding:10px 0 24px}
+.side-group{margin-bottom:8px}
+.side-label{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:14px 22px 6px}
+.side-nav .nav-btn{border-radius:0;padding:11px 22px;font-size:15px;font-weight:400;color:var(--txt);margin-bottom:0;gap:14px}
+.side-nav .nav-btn svg{width:20px;height:20px;color:var(--hint)}
+.side-nav .nav-btn:hover{background:#F4F6FA}
+.side-nav .nav-btn.active{background:#EEF1F6;color:var(--txt);font-weight:500;box-shadow:inset 3px 0 0 var(--pri)}
+.side-nav .nav-btn.active svg{color:var(--pri)}
+.side-nav .nav-group>.nav-btn{padding-right:48px}
+.side-nav .nav-toggle{top:6px;right:14px}
+.side-nav .nav-sub{margin:0 0 4px;padding:0;border-left:0}
+.side-nav .nav-subitem{border-radius:0;padding:9px 22px 9px 56px;font-size:14.5px;font-weight:400;color:var(--sub);margin-bottom:0}
+.side-nav .nav-subitem:hover{background:#F4F6FA}
+.side-nav .nav-subitem.active{background:#EEF1F6;color:var(--txt);font-weight:500}
+.side-nav .nav-group.collapsed:has(.nav-subitem.active) > .nav-btn,.side-nav .nav-group.collapsed:has(.nav-subitem.active:not(#tab-btn-compose)) > #tab-btn-mail{background:#EEF1F6;color:var(--txt)}
+.side-foot{padding:14px 22px 0}
+.card{border:0;border-radius:4px;box-shadow:var(--sh)}
+.card h2{font-weight:600}
+.btn{border-radius:4px;font-weight:500}
+.btn-primary{background:var(--pri)}
+.btn-primary:hover{background:#2F6BC4}
+.btn-outline{border-color:var(--bdr);color:var(--txt)}
+.badge{border-radius:3px;font-weight:500;font-size:12px;padding:2px 8px}
+.tabbar{border-bottom-color:var(--bdr)}
+.tabbar button{font-weight:500}
+.tabbar button.active{color:var(--pri);border-bottom-color:var(--pri)}
+.mail-subnav button{border-radius:4px;background:#fff;border:1px solid var(--bdr);font-weight:500}
+.mail-subnav button.active{background:var(--pri);border-color:var(--pri);color:#fff}
+.field input[type=text],.field input[type=email],.doc-bar select,.doc-agent select,.doc-agent input{border-radius:4px}
+.field input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(59,125,221,.18)}
+.errbox,.okbox,.org-notice{border-radius:4px}
+#doc-frame,#pdv-frame{border:0;border-radius:4px;box-shadow:var(--sh)}
+</style>
 <header class="topbar">
   <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><img class="logo-wide" src="icons/naviweb-logo.png" alt="NAVIWEB" width="139" height="40"><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -5081,8 +5130,8 @@ function _profPageHtml(fields, offers, now) {
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">' +
     '<title>' + e(nm ? nm.v : '프로필') + '</title><style>' +
-    ':root{--bg:#f4f7f9;--card:#fff;--txt:#1b2733;--sub:#5b6676;--pri:#0F8F7E;--onpri:#fff;--pri-bg:#e6f4f1;--bdr:#d8dee6;--ok:#0a7a3c;--ok-bg:#e3f6ea;--warn:#8a5a00;--warn-bg:#fff2cf;--bad:#b42318;--bad-bg:#fde8e6}' +
-    '@media (prefers-color-scheme:dark){:root{--bg:#10171c;--card:#18222a;--txt:#e8eef2;--sub:#a3b0bc;--pri:#4cc9b6;--onpri:#06231f;--pri-bg:#173733;--bdr:#2a3843;--ok:#6fdc9f;--ok-bg:#16352a;--warn:#f0c869;--warn-bg:#3a3014;--bad:#ff9a8f;--bad-bg:#3d1d1a}}' +
+    ':root{--bg:#f4f7f9;--card:#fff;--txt:#1b2733;--sub:#5b6676;--pri:#3B7DDD;--onpri:#fff;--pri-bg:#E3ECF9;--bdr:#d8dee6;--ok:#0a7a3c;--ok-bg:#e3f6ea;--warn:#8a5a00;--warn-bg:#fff2cf;--bad:#b42318;--bad-bg:#fde8e6}' +
+    '@media (prefers-color-scheme:dark){:root{--bg:#10171c;--card:#18222a;--txt:#e8eef2;--sub:#a3b0bc;--pri:#7FB0F0;--onpri:#0c1f3d;--pri-bg:#1B2C4A;--bdr:#2a3843;--ok:#6fdc9f;--ok-bg:#16352a;--warn:#f0c869;--warn-bg:#3a3014;--bad:#ff9a8f;--bad-bg:#3d1d1a}}' +
     '*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px/1.8 Pretendard,"Noto Sans KR","Malgun Gothic",system-ui,sans-serif}' +
     'main{max-width:720px;margin:0 auto;padding:32px 18px 56px}' +
     '.hero{display:flex;gap:18px;align-items:center;background:var(--card);border:1px solid var(--bdr);border-radius:20px;padding:24px}' +
