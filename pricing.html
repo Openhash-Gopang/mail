@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>나비웹 요금제</title>
+<style>
+:root{--bg:#F5F6FA;--sur:#fff;--bdr:#DFE2ED;--txt:#1A202C;--sub:#5B6478;--hint:#8A93A6;--acc:#3B4CCA;--acc-bg:#EEF0FD;--ok:#0E7A4B;--ok-bg:#E6F6EE;--warn:#9A5B00;--warn-bg:#FFF4DE}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14161C;--sur:#1C1F28;--bdr:#2E3340;--txt:#E8EAF0;--sub:#A3ABBD;--hint:#7B8499;--acc:#8E9BFF;--acc-bg:#232843;--ok:#5FD39B;--ok-bg:#16301F;--warn:#F0B35A;--warn-bg:#33270F}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 system-ui,-apple-system,"Noto Sans KR","Malgun Gothic",sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:32px 16px 56px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}
+.lead{color:var(--sub);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:14px;padding:24px}
+.card.plan{border:2px solid var(--acc)}
+.tag{display:inline-block;font-size:12px;font-weight:700;color:var(--acc);background:var(--acc-bg);border-radius:999px;padding:2px 10px;margin-bottom:10px}
+.plan h2,.card h2{font-size:18px;margin:0 0 4px}
+.price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:10px 0 2px}
+.price .now{font-size:44px;font-weight:800;letter-spacing:-.02em}
+.price .per{color:var(--sub)}
+.price .was{color:var(--hint);text-decoration:line-through;font-size:18px}
+.off{display:inline-block;font-size:12px;font-weight:700;color:var(--ok);background:var(--ok-bg);border-radius:6px;padding:2px 8px;margin-left:2px}
+.note{font-size:13px;color:var(--sub);margin:4px 0 0}
+ul.feat{list-style:none;padding:0;margin:18px 0 0}
+ul.feat li{padding:6px 0 6px 24px;position:relative;border-top:1px solid var(--bdr)}
+ul.feat li:first-child{border-top:0}
+ul.feat li::before{content:"✓";position:absolute;left:2px;color:var(--ok);font-weight:800}
+.rate{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
+.rate b{font-size:30px;letter-spacing:-.01em}
+.rate small{color:var(--sub)}
+.meta{font-size:12px;color:var(--hint)}
+.stale{font-size:13px;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;margin-top:10px}
+table.kv{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+table.kv th,table.kv td{text-align:left;padding:9px 6px;border-top:1px solid var(--bdr);vertical-align:top}
+table.kv th{width:34%;color:var(--sub);font-weight:600}
+table.kv td.num{font-variant-numeric:tabular-nums;font-weight:700}
+.acct{margin-top:14px;border:1px dashed var(--bdr);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.acct b{font-variant-numeric:tabular-nums}
+.copy{font:inherit;font-size:12px;border:1px solid var(--bdr);background:var(--sur);color:var(--txt);border-radius:6px;padding:2px 8px;cursor:pointer;margin-left:6px}
+ol.steps{margin:14px 0 0;padding-left:20px}
+ol.steps li{margin:4px 0}
+.full{grid-column:1/-1}
+details{border-top:1px solid var(--bdr);padding:10px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0;color:var(--sub)}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>나비웹 요금제</h1>
+  <p class="lead">기능 제한 없는 단일 요금제입니다. 사용량은 GDC 잔액에서 차감됩니다.</p>
+
+  <div class="grid">
+    <section class="card plan" aria-labelledby="plan-h">
+      <span class="tag" id="beta-tag">베타 테스트 특가 · 2026년 12월 말까지</span>
+      <h2 id="plan-h">나비웹</h2>
+      <div class="price">
+        <span class="now" id="price-now">$10</span><span class="per">/ 월</span>
+        <span class="was" id="price-was">$100</span><span class="off" id="price-off">90% 할인</span>
+      </div>
+      <p class="note" id="price-note">정가는 월 $100입니다. 베타 테스트 기간 동안 90% 할인한 월 기본료가 적용됩니다.</p>
+      <ul class="feat">
+        <li>나비 전체 기능 — 메일, 서류 작성, 가상 판결, 정보 공개 청구</li>
+        <li>내 양식 만들기, 개인 데이터 보관소(PDV), 자동화</li>
+        <li>사용법·사용 설명서·기능 개선 제안 게시판</li>
+        <li>단일 가격 — 등급을 고를 필요가 없습니다</li>
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="rate-h">
+      <h2 id="rate-h">오늘의 환율</h2>
+      <div class="rate"><b id="rate-val">불러오는 중…</b><small>원 / 1 USD</small></div>
+      <div class="meta" id="rate-meta">&nbsp;</div>
+      <div class="stale" id="rate-warn" hidden></div>
+      <table class="kv" aria-label="월 기본료 입금액">
+        <tr><th>월 기본료 (베타)</th><td class="num" id="k-usd">$10</td></tr>
+        <tr><th>입금액</th><td class="num" id="k-krw">—</td></tr>
+        <tr><th>충전되는 GDC</th><td class="num" id="k-gdc">—</td></tr>
+      </table>
+      <p class="note">입금액은 오늘 환율로 환산한 참고 금액이며 원 미만은 올립니다. 1 GDC = 1원입니다.</p>
+    </section>
+
+    <section class="card full" aria-labelledby="pay-h">
+      <h2 id="pay-h">입금 안내</h2>
+      <p class="note" style="margin-top:0">베타 테스트 기간에는 지정 계좌로 입금하는 방식만 가능합니다. 입금이 확인되는 즉시, 그날의 환율로 원화로 환산된 금액이 GDC로 충전됩니다.</p>
+      <div class="acct" id="acct"></div>
+      <ol class="steps">
+        <li>위의 “오늘의 환율”로 입금액을 확인합니다. (예: 환율이 1,300원이면 $10 = 13,000원)</li>
+        <li>지정 계좌로 해당 금액을 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 합니다.</li>
+        <li>입금이 확인되면 입금액이 GDC로 충전됩니다.</li>
+      </ol>
+    </section>
+
+    <section class="card full" aria-labelledby="faq-h">
+      <h2 id="faq-h">자주 묻는 질문</h2>
+      <details><summary>환율은 언제 적용되나요?</summary><p>입금이 확인된 그날의 환율로 원화 금액을 달러로 환산합니다. 이 페이지는 그날그날의 환율을 표시하며, 기준 시각은 환율 아래에 함께 적습니다.</p></details>
+      <details><summary>베타 테스트가 끝나면 요금은 어떻게 되나요?</summary><p>베타 테스트 이후에는 정가 월 $100이 적용됩니다.</p></details>
+      <details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ── 설정(운영자가 채우는 값) ─────────────────────────────
+   PAY_ACCOUNT 가 비어 있으면 "계좌 안내 준비 중" 으로 표시합니다. 임의의 값을 넣지 마십시오. */
+var PRICE_LIST_USD = 100, DISCOUNT = 0.9;
+var PRICE_BETA_USD = Math.round(PRICE_LIST_USD * (1 - DISCOUNT));
+var BETA_END = '2026-12-31';
+var PAY_ACCOUNT = { bank: '중소기업은행', number: '415-092028-04-011', holder: '에이아이시티주식회사' };
+var RATE_SOURCES = [
+  { name: 'open.er-api.com', url: 'https://open.er-api.com/v6/latest/USD',
+    parse: function (j) { if (j.result !== 'success' || !j.rates || !j.rates.KRW) throw 0; return { rate: j.rates.KRW, at: j.time_last_update_utc }; } },
+  { name: 'frankfurter.app (ECB)', url: 'https://api.frankfurter.app/latest?from=USD&to=KRW',
+    parse: function (j) { if (!j.rates || !j.rates.KRW) throw 0; return { rate: j.rates.KRW, at: j.date }; } }
+];
+var $ = function (id) { return document.getElementById(id); };
+var nf = new Intl.NumberFormat('ko-KR');
+function kstDate(d) { return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric' }).format(d); }
+
+function renderPrice() {
+  var today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+  var beta = today <= BETA_END;
+  $('price-now').textContent = '$' + (beta ? PRICE_BETA_USD : PRICE_LIST_USD);
+  $('price-was').hidden = $('price-off').hidden = $('beta-tag').hidden = !beta;
+  if (!beta) $('price-note').textContent = '월 $' + PRICE_LIST_USD + ' 단일 가격입니다.';
+  window._usd = beta ? PRICE_BETA_USD : PRICE_LIST_USD;
+  $('k-usd').textContent = '$' + window._usd;
+}
+function renderAccount() {
+  var a = PAY_ACCOUNT, el = $('acct');
+  if (a.bank && a.number) {
+    el.innerHTML = '<div>은행 <b></b></div><div>계좌번호 <b></b><button class="copy" type="button">복사</button></div>' + (a.holder ? '<div>예금주 <b></b></div>' : '');
+    var b = el.querySelectorAll('b'); b[0].textContent = a.bank; b[1].textContent = a.number; if (a.holder) b[2].textContent = a.holder;
+    el.querySelector('.copy').onclick = function () { try { navigator.clipboard.writeText(a.number); this.textContent = '복사됨'; } catch (e) {} };
+  } else el.textContent = '입금 계좌 안내를 준비 중입니다. 계좌가 공개되면 이 자리에 표시됩니다.';
+}
+function renderRate(r, src) {
+  var krw = Math.ceil(window._usd * r.rate);
+  $('rate-val').textContent = nf.format(Math.round(r.rate * 100) / 100);
+  var d = new Date(r.at);
+  $('rate-meta').textContent = (isNaN(d) ? r.at : kstDate(d)) + ' 기준 · 출처 ' + src;
+  $('k-krw').textContent = nf.format(krw) + '원';
+  $('k-gdc').textContent = nf.format(krw) + ' GDC';
+  $('rate-warn').hidden = true;
+}
+function renderFail() {
+  $('rate-val').textContent = '—';
+  $('rate-meta').textContent = '';
+  $('k-krw').textContent = $('k-gdc').textContent = '—';
+  var w = $('rate-warn'); w.hidden = false;
+  w.textContent = '환율을 불러오지 못했습니다. 잠시 뒤 다시 열어 주세요. 환율이 표시되지 않을 때는 입금액을 확인한 뒤에 입금해 주세요.';
+}
+async function loadRate() {
+  for (var i = 0; i < RATE_SOURCES.length; i++) {
+    try {
+      var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 8000);
+      var res = await fetch(RATE_SOURCES[i].url, { signal: c.signal, cache: 'no-store' });
+      clearTimeout(t);
+      if (!res.ok) throw 0;
+      renderRate(RATE_SOURCES[i].parse(await res.json()), RATE_SOURCES[i].name); return;
+    } catch (e) {}
+  }
+  renderFail();
+}
+renderPrice(); renderAccount(); loadRate();
+if (new URLSearchParams(location.search).get('embed')) document.body.style.background = 'transparent';
+</script>
+</body>
+</html>
