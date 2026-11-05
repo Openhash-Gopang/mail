@@ -3775,7 +3775,7 @@ function _mfbDsl(compact) {
 function _mfbParseDsl(text) {
   let title = '', cur = null, n = 0; const secs = [];
   String(text || '').split(/\r?\n/).forEach(line => {
-    line = line.trim(); if (!line) return;
+    line = line.trim().replace(/^(?:[-•·]|\d+[.)])\s+(?=\S)/, ''); if (!line) return;
     let m = line.match(/^(?:제목|title)\s*[:：]\s*(.*)$/i); if (m) { title = m[1].trim().slice(0, 80); return; }
     if (line[0] === '#') { if (secs.length >= 8) return; cur = { h: line.replace(/^#+\s*/, '').slice(0, 40), f: [] }; secs.push(cur); return; }
     const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l || n >= 60) return;
@@ -3983,13 +3983,15 @@ function _mfbApply(parsed) {
     const o = pool.find(y => !used[y.id] && String(y.l).trim() === n.l);
     if (o) { used[o.id] = 1; n.id = o.id; n.hs = o.hs || !!n.h; if (_mfbSig(o) !== _mfbSig(n)) _MFB.flash[n.id] = 1; } else _MFB.flash[n.id] = 1;
     return n; }) }));
+  const norm = (t, ss) => JSON.stringify([String(t).trim(), ss.map(s => [String(s.h).trim(), s.f.map(x => [String(x.l).trim(), _mfbSig(x)])])]);
+  if (norm(parsed.title || _MFB.title, secs) === norm(_MFB.title, oldSecs)) return null;
   const d = _mfbDiff(oldSecs, secs);
   _MFB.hist.push(before); if (_MFB.hist.length > 20) _MFB.hist.shift();
   _MFB.secs = secs; if (parsed.title) _MFB.title = parsed.title; if (!_mfbFind(_MFB.sel)) _MFB.sel = 0; _mfbDirty();
   return d;
 }
 function _mfbUndo() {
-  const s = _MFB.hist.pop(); if (!s || _MFB.busy) return; const o = JSON.parse(s); _MFB.title = o.t; _MFB.secs = o.s; _MFB.flash = {}; if (!_mfbFind(_MFB.sel)) _MFB.sel = 0;
+  if (_MFB.busy) return; const s = _MFB.hist.pop(); if (!s) return; const o = JSON.parse(s); _MFB.title = o.t; _MFB.secs = o.s; _MFB.flash = {}; if (!_mfbFind(_MFB.sel)) _MFB.sel = 0;
   _MFB.msgs.push({ r: 'sp', t: '직전 변경을 되돌렸습니다.' }); _mfbRenderCanvas(); _mfbRenderChat();
 }
 async function _mfbSend(text) {
@@ -3997,15 +3999,20 @@ async function _mfbSend(text) {
   const body = _mfbSpText(text);
   _MFB.msgs.push({ r: 'me', t: text });
   if (!body) { _MFB.msgs.push({ r: 'sp', t: '양식이 너무 커서 대화로 고칠 수 없습니다. 항목을 줄이거나 직접 고쳐 주세요.', err: 1 }); _mfbRenderChat(); return; }
-  _MFB.busy = true; _mfbRenderChat();
+  const snap = _mfbSnap(); _MFB.busy = true; _mfbRenderChat();
   try {
     const rep = _mfbExtract(await _mfbAsk(body));
-    if (rep.form) {
-      const d = _mfbApply(rep.form); _mfbRenderCanvas();
+    if (rep.form && _mfbSnap() !== snap) {
+      _MFB.msgs.push({ r: 'sp', err: 1, t: '답을 기다리는 사이 양식을 직접 고치셔서 이번 답은 반영하지 않았습니다. 같은 요청을 한 번 더 보내 주세요.' });
+    } else if (rep.form) {
+      const d = _mfbApply(rep.form);
+      if (!d) { _MFB.msgs.push({ r: 'sp', t: (rep.text || '') + ' (바뀐 내용이 없습니다)' }); _MFB.busy = false; _mfbRenderChat(); return; }
+      _mfbRenderCanvas();
       _MFB.msgs.push({ r: 'sp', t: rep.text || '양식을 바꿨습니다.', sum: _mfbDiffText(d), undo: 1 });
       setTimeout(() => { _MFB.flash = {}; const cv = _mfbQ('.mfb-canvas'); if (cv) cv.querySelectorAll('.mfb-f.flash').forEach(c => c.classList.remove('flash')); }, 2200);
     } else _MFB.msgs.push({ r: 'sp', t: rep.text || '답변을 받지 못했습니다. 다시 말씀해 주세요.' });
   } catch (e) {
+    if (e && (e.message === 'connect' || e.message === 'timeout')) { _mfbSpClose(); _MFB.link = 'err'; }   // 늦게 오는 옛 답이 다음 요청의 답으로 섞이지 않게 연결을 새로 만든다
     _MFB.msgs.push({ r: 'sp', err: 1, t: e && e.message === 'timeout' ? '응답이 늦어지고 있습니다. 잠시 뒤 다시 보내 주세요. 직접 편집은 계속할 수 있습니다.' : '양식 작성 SP에 연결하지 못했습니다. 로그인 상태를 확인한 뒤 다시 시도해 주세요. 직접 편집은 계속할 수 있습니다.' });
   }
   _MFB.busy = false; _mfbRenderChat();

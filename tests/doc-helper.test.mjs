@@ -300,6 +300,8 @@ test('desktop.html: 새 양식 만들기 — 왼쪽 캔버스 + 오른쪽 양식
   assert.ok(m._mfbSpText('요청').startsWith('[현재 양식]\n```form\n제목: 점검표'));
   m._MFB.secs[0].f[0].h = '가'.repeat(80); for (let i = 0; i < 40; i++) m._MFB.secs[0].f.push({ id: 900 + i, l: '항목' + i, t: 'short', o: '', un: '', h: '나'.repeat(80), req: false, w: 0, r: 0 });
   assert.ok(m._mfbSpText('요청').length <= 4000);
+  // SP 가 목록 기호·## 를 붙여도 읽는다
+  assert.equal(m._mfbParseDsl('제목: x\n## 묶음\n- 성명* | 짧은글\n1. 소속').secs[0].f.map(x => x.l).join(), '성명,소속');
   // 변경 요약
   const old = [{ f: [{ l: 'A', t: 'short' }, { l: 'B', t: 'short' }, { l: 'C', t: 'short' }] }];
   const nw = [{ f: [{ l: 'C', t: 'short' }, { l: 'A', t: 'short', w: 4 }, { l: 'D', t: 'short' }] }];
