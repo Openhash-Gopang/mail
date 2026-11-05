@@ -269,7 +269,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .wp-tab:hover{color:var(--pri)}
 .wp-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
 #tab-whitepaper iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
-#tab-feedback iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
+#tab-pricing iframe,#tab-feedback iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #gdc-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:0;background:transparent}
 #pdv-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:1px solid var(--bdr);border-radius:12px;background:#fff}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
@@ -1073,6 +1073,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
+    <button type="button" class="suggest-btn" id="pricing-btn" onclick="_switchTab('pricing')">요금제</button>
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
@@ -1129,6 +1130,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
       <div class="side-label">도움말</div>
       <button id="tab-btn-guide" class="nav-btn" data-label="사용법" onclick="_switchTab('guide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>사용법</button>
       <button id="tab-btn-whitepaper" class="nav-btn" data-label="Whitepaper" onclick="_switchTab('whitepaper')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Whitepaper</button>
+      <button id="tab-btn-pricing" class="nav-btn" data-label="요금제" onclick="_switchTab('pricing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>요금제</button>
     </div>
     <div class="side-settings">
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
@@ -1747,6 +1749,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
     </div>
     <iframe id="whitepaper-frame" title="Whitepaper" allow="clipboard-write"></iframe>
   </div>
+  <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
@@ -4396,6 +4399,7 @@ function _switchTab(name) {
   if (name === 'settings') _settingsInit();
   if (name !== 'settings') _profLeave();
   if (name === 'whitepaper') _wpSwitch(document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi');
+  if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
