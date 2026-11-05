@@ -260,3 +260,48 @@ test('desktop.html: 후보를 눌러 고른 서류도 잠그고 접으며, 작�
   assert.match(html, /d\.type === 'navi-doc-confirmed'\) \{[^}]*_docHost\.confirmed = true;[^}]*_docLockOn\(\);/s);
   assert.match(html, /_docHost\.confirmed && _docHost\.title && document\.getElementById\('tab-compose'\)\.classList\.contains\('doc-live'\)\) return;/);
 });
+
+test('desktop.html: 새 양식 만들기 — 왼쪽 캔버스 + 오른쪽 양식 작성 SP 대화창, 직접 크기 편집', () => {
+  const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(html, /function _mfNewOpen\(\) \{ _mfbOpen\(null\); \}/);
+  assert.match(html, /persona=form-builder&embed=1/);
+  assert.match(html, /type: 'expert-embed-send'/);
+  assert.match(html, /e\.origin !== _MFB_HONDI \|\| e\.source !== _MFB\.frame\.contentWindow/);
+  assert.match(html, /data-act="edit">수정/);
+  const a = html.indexOf('function _mfHash'), b = html.indexOf('function _mfNewOpen');
+  const c = html.indexOf('const _MFB = '), d = html.indexOf('// mfb:model-end');
+  assert.ok(c > b && d > c);
+  const esc = 'const escHtml = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[ch]));';
+  const m = new Function(html.slice(a, b) + '\n' + esc + '\n' + html.slice(c, d) + '; return { _MFB, _mfbParseDsl, _mfbDsl, _mfbBuild, _mfbExtract, _mfbDiff, _mfbSpText, _mfbOpts };')();
+  // SP 응답 → 양식 (크기 표기 폭N 줄N, 기본값과 같으면 저장하지 않음)
+  const reply = '‘연락처’를 추가했습니다.\n```form\n제목: 점검표\n# 기본\n성명* | 짧은글 | 이름 | 폭4\n비고 | 긴글 | | 폭12 줄6\n일자 | 날짜 | | 폭6\n구분 | 선택:가/나\n금액 | 금액:원 | | 폭99\n```\n[NEXT_STEP: 더 추가]';
+  const ex = m._mfbExtract(reply);
+  assert.equal(ex.text, '‘연락처’를 추가했습니다.');
+  assert.equal(ex.form.title, '점검표');
+  const f = ex.form.secs[0].f;
+  assert.deepEqual([f[0].w, f[1].w, f[1].r, f[2].w, f[4].w], [4, 0, 6, 0, 0]);   // 폭12(긴글 기본)·폭4(날짜 기본)·범위 밖은 0
+  assert.equal(m._mfbExtract('블록 없는 답변').form, null);
+  // 화면 상태 → 저장 JSON
+  m._MFB.title = '점검표'; m._MFB.secs = ex.form.secs;
+  const r = m._mfbBuild();
+  assert.equal(r.form.sections[0].f[0].w, 4);
+  assert.equal(r.form.sections[0].f[1].r, 6);
+  assert.equal(r.form.sections[0].f[1].w, undefined);
+  assert.equal(r.form.sections[0].f[3].o.length, 2);
+  m._MFB.secs[0].f[3].o = '가';
+  assert.match(m._mfbBuild().why, /선택지/);
+  m._MFB.secs[0].f[3].o = '가/나'; m._MFB.title = '';
+  assert.match(m._mfbBuild().why, /이름/);
+  // 표기 왕복과 4000자 제한
+  m._MFB.title = '점검표';
+  const dsl = m._mfbDsl(false);
+  assert.match(dsl, /^제목: 점검표\n# 기본\n성명\* \| 짧은글 \| 이름 \| 폭4\n비고 \| 긴글 \|  \| 줄6/);
+  assert.equal(m._mfbParseDsl(dsl).secs[0].f[1].r, 6);
+  assert.ok(m._mfbSpText('요청').startsWith('[현재 양식]\n```form\n제목: 점검표'));
+  m._MFB.secs[0].f[0].h = '가'.repeat(80); for (let i = 0; i < 40; i++) m._MFB.secs[0].f.push({ id: 900 + i, l: '항목' + i, t: 'short', o: '', un: '', h: '나'.repeat(80), req: false, w: 0, r: 0 });
+  assert.ok(m._mfbSpText('요청').length <= 4000);
+  // 변경 요약
+  const old = [{ f: [{ l: 'A', t: 'short' }, { l: 'B', t: 'short' }, { l: 'C', t: 'short' }] }];
+  const nw = [{ f: [{ l: 'C', t: 'short' }, { l: 'A', t: 'short', w: 4 }, { l: 'D', t: 'short' }] }];
+  assert.deepEqual(m._mfbDiff(old, nw), { add: 1, del: 1, move: 1, mod: 1 });
+});
