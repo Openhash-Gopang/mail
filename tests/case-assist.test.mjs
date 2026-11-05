@@ -16,8 +16,16 @@ async function fresh() {
   return G.CaseUI._store();
 }
 
+test('업무 메뉴: 주소에 아무것도 없어도 기본으로 켜지고, ?case=0 일 때만 꺼진다', () => {
+  G.location = { search: '' }; assert.equal(G.CaseUI.enabled(), true);
+  G.location = { search: '?x=1' }; assert.equal(G.CaseUI.enabled(), true);
+  G.location = { search: '?case=0' }; assert.equal(G.CaseUI.enabled(), false);
+  G.location = { search: '?case=1', origin: 'https://mail.hondi.net' };
+});
+
 test('신호 줄: 기능 플래그가 꺼져 있으면 항상 빈 배열(대화에 아무것도 붙지 않는다)', async () => {
-  await fresh(); G.location = { search: '' }; try { sessionStorage; } catch (_) {}
+  await fresh(); G.location = { search: '?case=0' }; try { sessionStorage; } catch (_) {}
+  assert.equal(G.CaseUI.enabled(), false);
   assert.deepEqual(await G.CaseAssist.lines(), []);
   G.location = { search: '?case=1', origin: 'https://mail.hondi.net' };
 });

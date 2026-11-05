@@ -1,7 +1,7 @@
 /* ═════════════════════════════════════════════════
    case-ui.js — 업무(Case) 화면: 맡은 일 · 맡긴 일 · 나 홀로  (M4 첫 조각)
    2026-11-01. desktop.html 의 사이드바 "업무" 묶음과 3개 패널(tab-caseprov/casecons/casesolo)을 그린다.
-   - 기능 플래그: URL ?case=1 또는 localStorage kmail_case_ui=1 일 때만 메뉴가 보인다(기본 숨김).
+   - 업무 메뉴는 기본으로 보인다(2026-11-05). 끄려면 주소에 ?case=0 (localStorage kmail_case_ui=0 로 기억), 다시 켜려면 ?case=1.
    - 모든 기록은 이 기기의 PDV(IndexedDB hondi_case_store)에만 저장한다. 서버로는 해시만(큐에 쌓임).
    - 의존: case-core.js, case-invite.js, case-store.js (hondi 저장소가 원본 — 복사본).
    - 2026-11-01(S5 후반): case-host.js 와 연결 — 키 지문, 합의 확인·성립, 종료 요청·응답, 우편함 새로 고침(60초 자동), 공유 항목 전송.
@@ -48,8 +48,11 @@
   }
   function enabled() {
     if (invToken()) return true;   // 초대 링크로 들어온 사람은 업무 메뉴가 보여야 한다
-    try { if (/[?&]case=1\b/.test(location.search)) { localStorage.setItem('kmail_case_ui', '1'); return true; } return localStorage.getItem('kmail_case_ui') === '1'; }
-    catch (_) { return /[?&]case=1\b/.test(location.search); }
+    try {
+      if (/[?&]case=0\b/.test(location.search)) { localStorage.setItem('kmail_case_ui', '0'); return false; }
+      if (/[?&]case=1\b/.test(location.search)) { localStorage.setItem('kmail_case_ui', '1'); return true; }
+      return localStorage.getItem('kmail_case_ui') !== '0';   // 기본은 보임, 직접 껐을 때만 숨김
+    } catch (_) { return !/[?&]case=0\b/.test(location.search); }
   }
   function fmt(iso) { try { return new Date(iso).toLocaleString('ko-KR', { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (_) { return iso; } }
   function host() { return root.CaseHost || null; }
