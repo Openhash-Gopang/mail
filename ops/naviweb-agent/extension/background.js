@@ -1,6 +1,7 @@
 import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
+import { fetchForNavi, pickDownload } from './files.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 let state = { running: false, abort: false, tabId: null, waiter: null };
@@ -89,6 +90,24 @@ async function host(playbook) {
         const st = ['sent', 'pending', 'failed'].includes(input.state) ? input.state : 'pending';
         await deliverToNavi({ kind: 'status', label: state.slot, state: st, note: String(input.note || '').slice(0, 200) });
         return { text: '나비웹 화면에 알렸습니다: ' + st };
+      }
+      if (name === 'send_file_to_navi') {   // 받은 서류 파일을 나비웹 탭으로 보낸다(파일·주소는 AI 에게 보내지 않는다)
+        if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 파일을 보낼 곳이 없습니다.' };
+        const tabUrl = (await chrome.tabs.get(state.tabId)).url || '';
+        let fileUrl = '';
+        if (input && input.ref) fileUrl = String((await toTab('link_href', { ref: input.ref }, false)).text || '');
+        else { const p = pickDownload(await chrome.downloads.search({ orderBy: ['-startTime'], limit: 10 })); if (!p.ok) return { text: p.msg }; fileUrl = p.url; }
+        let fhost = ''; try { fhost = new URL(fileUrl).hostname; } catch { return { text: '파일 주소를 읽지 못했습니다.' }; }
+        const origins = [`https://${fhost}/*`];
+        if (!(await chrome.permissions.contains({ origins }))) {
+          if (!(await ask('permit', fhost))) return { text: `${fhost} 접근을 허용하지 않아 파일을 가져오지 못했습니다.` };
+          if (!(await chrome.permissions.contains({ origins }))) return { text: `${fhost} 접근 권한을 받지 못했습니다.` };
+        }
+        const f = await fetchForNavi(fileUrl, tabUrl);
+        if (!f.ok) { await deliverToNavi({ kind: 'status', label: state.slot, state: 'failed', note: f.msg.slice(0, 120) }).catch(() => {}); return { text: '파일을 보내지 못했습니다: ' + f.msg }; }
+        await deliverToNavi({ kind: 'file', label: state.slot, name: f.name, mime: f.mime, b64: f.b64 });
+        await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다. 서류에 넣을지 확인해 주세요.' }).catch(() => {});
+        return { text: `나비웹으로 보냈습니다: ${f.name} (${Math.round(f.size / 1024)}KB). 사용자가 나비웹 화면에서 서류에 넣을지 확인합니다.` };
       }
       if (name === 'wait') { await wait(Math.min(10, Number(input.seconds) || 1) * 1000); return { text: '대기 완료' }; }
       throw new Error('알 수 없는 도구: ' + name);

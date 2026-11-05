@@ -5,6 +5,7 @@ import { classify, hostAllowed } from '../ops/naviweb-agent/extension/policy.js'
 import { runAgent, buildSystem } from '../ops/naviweb-agent/extension/agent-core.js';
 import { PLAYBOOKS } from '../ops/naviweb-agent/extension/playbooks.js';
 import { TOOLS } from '../ops/naviweb-agent/extension/tools.js';
+import { baseDomain, checkFileUrl, fetchForNavi, pickDownload, parseDisposition, safeName } from '../ops/naviweb-agent/extension/files.js';
 
 test('게이트웨이: Anthropic 형식 → OpenAI(Gemma) 변환', () => {
   const req = {
@@ -277,4 +278,77 @@ test('report_status 도구: 정의돼 있고 자동 허용(표시만 한다)', (
   assert.ok(t); assert.deepEqual(t.input_schema.properties.state.enum, ['sent', 'pending', 'failed']);
   assert.equal(classify('report_status', { state: 'sent' }, {}).act, 'auto');
   assert.match(PLAYBOOKS['iros-corp-ecourt'].guide, /report_status/);
+});
+
+// ── 0.5: 범용 첨부서류 가져오기(파일 받기) ───────────────────────────────────
+test('send_file_to_navi: 도구·권한·안내가 갖춰져 있다', async () => {
+  const fs = await import('node:fs');
+  const t = TOOLS.find((x) => x.name === 'send_file_to_navi');
+  assert.ok(t); assert.deepEqual(t.input_schema.required, []); assert.ok(t.input_schema.properties.ref);
+  assert.equal(classify('send_file_to_navi', {}, {}).act, 'auto');
+  assert.match(buildSystem(null), /send_file_to_navi/);
+  const mf = JSON.parse(fs.readFileSync(new URL('../ops/naviweb-agent/extension/manifest.json', import.meta.url), 'utf8'));
+  assert.ok(mf.permissions.includes('downloads')); assert.match(mf.version, /^0\.5\./);
+  const bg = fs.readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /name === 'send_file_to_navi'/); assert.match(bg, /kind: 'file'/);
+  assert.match(fs.readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8'), /link_href/);
+});
+
+test('내려받기·발급 단추는 사용자 확인을 거친다', () => {
+  assert.equal(classify('click', { ref: 'r' }, { text: '다운로드', host: 'www.gov.kr' }).act, 'confirm');
+  assert.equal(classify('click', { ref: 'r' }, { text: 'PDF 내려받기', host: 'www.gov.kr' }).act, 'confirm');
+  assert.equal(classify('click', { ref: 'r' }, { text: '다음', host: 'www.gov.kr' }).act, 'auto');
+});
+
+test('files: 같은 기관 사이트만, https 만, blob 은 안내', () => {
+  assert.equal(baseDomain('www.gov.kr'), 'gov.kr'); assert.equal(baseDomain('edi.nhis.or.kr'), 'nhis.or.kr'); assert.equal(baseDomain('a.b.iros.go.kr'), 'iros.go.kr');
+  assert.equal(checkFileUrl('https://file.gov.kr/a.pdf', 'https://www.gov.kr/portal').ok, true);
+  assert.equal(checkFileUrl('https://edi.nhis.or.kr/x', 'https://www.nhis.or.kr/').ok, true);
+  assert.equal(checkFileUrl('https://evil.example.com/a.pdf', 'https://www.gov.kr/').ok, false);
+  assert.equal(checkFileUrl('http://www.gov.kr/a.pdf', 'https://www.gov.kr/').ok, false);
+  assert.match(checkFileUrl('blob:https://www.gov.kr/1-2', 'https://www.gov.kr/').msg, /blob/);
+  assert.equal(checkFileUrl('not a url', 'https://www.gov.kr/').ok, false);
+});
+
+test('files: 파일 이름·헤더 해석', () => {
+  assert.equal(parseDisposition("attachment; filename*=UTF-8''%EB%93%B1%EB%B3%B8.pdf"), '등본.pdf');
+  assert.equal(parseDisposition('attachment; filename="a b.pdf"'), 'a b.pdf');
+  assert.equal(safeName('../../x:y.pdf', 'application/pdf', 'https://h/p'), '.._.._x_y.pdf');
+  assert.equal(safeName('', 'application/pdf', 'https://h/path/file'), 'file.pdf');
+  assert.equal(safeName('', 'application/pdf', 'https://h/'), '서류.pdf');
+});
+
+test('files: fetchForNavi — 정상 PDF 는 받고, HTML·오류·거대·가짜 PDF·다른 사이트는 거부', async () => {
+  const pdf = new TextEncoder().encode('%PDF-1.4 test');
+  const mk = (o = {}) => async () => ({ ok: o.ok !== false, status: o.status || 200, url: o.url || '', headers: new Headers(o.headers || { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="a.pdf"' }), arrayBuffer: async () => (o.body || pdf).buffer.slice((o.body || pdf).byteOffset, (o.body || pdf).byteOffset + (o.body || pdf).byteLength) });
+  const tab = 'https://www.gov.kr/portal';
+  const ok = await fetchForNavi('https://file.gov.kr/a', tab, mk());
+  assert.equal(ok.ok, true); assert.equal(ok.name, 'a.pdf'); assert.equal(Buffer.from(ok.b64, 'base64').toString(), '%PDF-1.4 test');
+  assert.equal((await fetchForNavi('https://file.gov.kr/a', tab, mk({ headers: { 'content-type': 'text/html; charset=utf-8' } }))).ok, false);
+  assert.match((await fetchForNavi('https://file.gov.kr/a', tab, mk({ ok: false, status: 404 }))).msg, /404/);
+  assert.match((await fetchForNavi('https://file.gov.kr/a', tab, mk({ headers: { 'content-type': 'application/pdf', 'content-length': String(11 * 1024 * 1024) } }))).msg, /너무 큽니다/);
+  assert.match((await fetchForNavi('https://file.gov.kr/a', tab, mk({ body: new TextEncoder().encode('<html>로그인</html>') }))).msg, /PDF 파일이 아닙니다/);
+  assert.equal((await fetchForNavi('https://file.gov.kr/a', tab, mk({ url: 'https://evil.example.com/a.pdf' }))).ok, false, '다른 사이트로 넘어가면 거부');
+  assert.equal((await fetchForNavi('https://file.gov.kr/a', tab, mk({ body: new Uint8Array(0) }))).ok, false);
+  assert.equal((await fetchForNavi('https://file.gov.kr/a', tab, async () => { throw new Error('net'); })).ok, false);
+});
+
+test('files: pickDownload — 최근 완료분의 https 주소만', () => {
+  const now = Date.parse('2026-11-06T06:00:00Z');
+  const d = (o) => ({ state: 'complete', endTime: '2026-11-06T05:58:00Z', url: 'https://file.gov.kr/a', filename: 'C:\\Users\\u\\Downloads\\등본.pdf', ...o });
+  assert.deepEqual(pickDownload([d({}), d({ endTime: '2026-11-06T05:50:00Z', url: 'https://file.gov.kr/old' })], now), { ok: true, url: 'https://file.gov.kr/a', name: '등본.pdf' });
+  assert.equal(pickDownload([d({ state: 'in_progress' })], now).ok, false);
+  assert.equal(pickDownload([d({ endTime: '2026-11-06T05:00:00Z' })], now).ok, false, '10분 넘은 기록');
+  assert.match(pickDownload([d({ url: 'blob:https://www.gov.kr/x' })], now).msg, /blob/);
+  assert.equal(pickDownload([], now).ok, false);
+});
+
+test('첨부서류 가져오기 버튼: 직접 만든 자료만 빼고 모든 항목, 전용 절차 표시는 그대로', async () => {
+  const { createRequire } = await import('node:module');
+  const NA = createRequire(import.meta.url)('../agent-bridge.js');
+  const generic = new RegExp(NA.slotPatterns().at(-1));
+  for (const l of ['주민등록등본 1부', '건강보험 자격득실확인서', '송달증명원', '법인등기사항증명서']) assert.ok(generic.test(l) && NA.slotFetchable(l), l);
+  for (const l of ['위임장 1부', '사진 2매', '임대차계약서 사본', '재산목록', '']) assert.ok(!generic.test(l) && !NA.slotFetchable(l), l);
+  assert.equal(NA.slotPlan('주민등록등본 1부'), null, '전용 절차 표시는 법인등기에만');
+  assert.equal(NA.slotPlan('법인등기사항증명서').playbook, 'iros-corp-ecourt');
 });
