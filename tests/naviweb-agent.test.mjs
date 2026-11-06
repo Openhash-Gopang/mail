@@ -268,7 +268,8 @@ test('첨부서류 항목 → 가져오기 절차 연결', async () => {
   assert.equal(NA.slotPlan('제3채무자 법인등기사항증명서 1부').playbook, 'iros-corp-ecourt');
   assert.match(NA.slotPlan('법인 등기부등본').goal, /법인 이름: $/);
   assert.equal(NA.slotPlan('위임장 1부'), null);
-  assert.equal(NA.slotPlan('신청인 인감증명서 1부'), null);
+  assert.equal(NA.slotPlan('신청인 인감증명서 1부').playbook, 'gov24-doc');
+  assert.equal(NA.slotPlan('재직증명서'), null, '회사가 발급하는 서류는 도우미가 가져올 수 없다');
   const pats = NA.slotPatterns();
   assert.ok(pats.length >= 1 && pats.every((x) => { new RegExp(x); return true; }));
 });
@@ -346,11 +347,11 @@ test('files: pickDownload — 최근 완료분의 https 주소만', () => {
 test('첨부서류 가져오기 버튼: 직접 만든 자료만 빼고 모든 항목, 전용 절차 표시는 그대로', async () => {
   const { createRequire } = await import('node:module');
   const NA = createRequire(import.meta.url)('../agent-bridge.js');
-  const generic = new RegExp(NA.slotPatterns().at(-1));
-  for (const l of ['주민등록등본 1부', '건강보험 자격득실확인서', '송달증명원', '법인등기사항증명서']) assert.ok(generic.test(l) && NA.slotFetchable(l), l);
-  for (const l of ['위임장 1부', '사진 2매', '임대차계약서 사본', '재산목록', '']) assert.ok(!generic.test(l) && !NA.slotFetchable(l), l);
+  const anyPat = (l) => NA.slotPatterns().some((p) => new RegExp(p).test(l));
+  for (const l of ['주민등록등본 1부', '건강보험 자격득실확인서', '송달증명원', '법인등기사항증명서']) assert.ok(anyPat(l) && NA.slotFetchable(l), l);
+  for (const l of ['위임장 1부', '사진 2매', '임대차계약서 사본', '재산목록', '재직증명서', '']) assert.ok(!anyPat(l) && !NA.slotFetchable(l), l);
   assert.equal(NA.slotPlan('주민등록등본 1부').playbook, 'gov24-doc', '정부24 민원서류');
-  assert.equal(NA.slotPlan('송달증명원'), null);
+  assert.equal(NA.slotPlan('송달증명원').early, true, '대상을 물어야 하는 기관 서류는 사이트를 먼저 연다');
   assert.equal(NA.slotPlan('법인등기사항증명서').playbook, 'iros-corp-ecourt');
 });
 
@@ -394,7 +395,7 @@ test('가져오기: 법인 이름이 필요한 항목은 사이트를 먼저 열
   const NA = (await import('node:module')).createRequire(import.meta.url)('../agent-bridge.js');
   assert.equal(NA.slotPlan('법인등기사항증명서').early, true);
   assert.equal(typeof NA.update, 'function');
-  assert.match(rd('ops/naviweb-agent/extension/bridge.js'), /autostart: job\.autostart === true, update: job\.update === true/, '다리가 autostart·update 를 확장에 넘긴다');
+  assert.match(rd('ops/naviweb-agent/extension/bridge.js'), /autostart: job\.autostart === true, url: [^\n]*update: job\.update === true/, '다리가 autostart·update 를 확장에 넘긴다');
   assert.match(rd('ops/naviweb-agent/extension/background.js'), /state\.inbox\.push\(j\.text/);
   assert.match(rd('ops/naviweb-agent/extension/agent-core.js'), /\[추가 정보\]/);
   assert.match(rd('desktop.html'), /NaviAgent\.update\(_lbl, d\.goal\)/);
@@ -405,4 +406,24 @@ test('가져오기: 법인 이름이 필요한 항목은 사이트를 먼저 열
     callModel: async (b) => { sent.push(JSON.stringify(b.messages)); return sent.length < 3 ? { content: [{ type: 'tool_use', id: 't' + sent.length, name: 'wait', input: { seconds: 1 } }] } : { content: [{ type: 'text', text: '끝' }] }; } };
   await runAgent({ goal: 'x', playbook: null, host });
   assert.ok(sent.some((x) => x.includes('[추가 정보] 법인 이름: 가나다')));
+});
+
+// ── 첨부서류 카탈로그 ────────────────────────────────────────────────
+test('카탈로그: 기관 발급·개별 기관 발급·사용자 자료를 AI 없이 가른다', async () => {
+  const C = (await import('node:module')).createRequire(import.meta.url)('../attach-catalog.js');
+  const k = (l) => C.classify(l).kind;
+  for (const l of ['법인등기부등본', '가족관계증명서 1부', '주민등록표등본', '건축물대장등본', '토지등기사항증명서', '국세완납증명서', '건강보험자격득실확인서', '송달증명원']) assert.equal(k(l), 'agency', l);
+  for (const l of ['재직증명서', '진단서', '졸업증명서', '시험성적서']) assert.equal(k(l), 'thirdparty', l);
+  for (const l of ['사업자등록증사본', '신분증사본', '주민등록증사본', '위임장', '사업계획서', '시설배치도', '통장사본']) assert.equal(k(l), 'user', l);
+  assert.equal(k('아주특이한서류이름'), 'unknown');
+  assert.equal(C.classify('가족관계증명서').instant, true);
+  assert.equal(C.classify('법인등기부등본').playbook, 'iros-corp-ecourt');
+  assert.equal(C.classify('국세완납증명서').url, 'https://www.hometax.go.kr');
+  assert.ok(C.patterns().every((x) => { new RegExp(x); return true; }));
+  for (const a of Object.values(C.AGENCIES)) assert.match(a.url, /^https:\/\//);
+  for (const r of C.RULES) if (r.kind === 'agency') assert.ok(C.AGENCIES[r.agency], r.id + ' 기관 정의');
+});
+test('카탈로그: 기관 사이트는 도우미 기본 허용 사이트에 들어 있다(이동마다 묻지 않는다)', async () => {
+  const C = (await import('node:module')).createRequire(import.meta.url)('../attach-catalog.js');
+  for (const a of Object.values(C.AGENCIES)) assert.equal(hostAllowed(a.url), true, a.url);
 });
