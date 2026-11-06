@@ -382,12 +382,21 @@
       '<div class="gd-sub gd-nav">' + (S.idx > 0 ? '<button class="gd-link" data-act="go" data-i="' + (S.idx - 1) + '">← 이전 페이지</button>' : '') + '</div>';
   }
 
-  function go(i) { var total = pages(caseOn()).length; if (OPEN_ALL ? !(i >= 0 && i < total) : !canOpen(S.done, i, total)) return; clearTimeout(S.timer); S.open = false; S.idx = i; S.answers = {}; S.result = null; render(); window.scrollTo && $('tab-guide') && $('tab-guide').scrollIntoView && $('tab-guide').scrollIntoView({ block: 'start' }); }
+  /** 페이지(장)가 바뀌면 새 페이지의 맨 위를 보여 준다 — 퀴즈가 있던 아래쪽 스크롤 위치가 그대로 남지 않게(2026-11-06). 본문 스크롤 상자(main.content)와 창 모두 올린다. */
+  function toTop() {
+    function up() {
+      try { window.scrollTo(0, 0); } catch (e) {}
+      var mc = typeof document !== 'undefined' && document.querySelector && document.querySelector('main.content'); if (mc) mc.scrollTop = 0;
+      var g = $('tab-guide'); if (g) g.scrollTop = 0;
+    }
+    up(); if (typeof requestAnimationFrame === 'function') requestAnimationFrame(up);   // 그린 뒤 높이가 바뀌어도 맨 위로
+  }
+  function go(i) { var total = pages(caseOn()).length; if (OPEN_ALL ? !(i >= 0 && i < total) : !canOpen(S.done, i, total)) return; clearTimeout(S.timer); S.open = false; S.idx = i; S.answers = {}; S.result = null; render(); toTop(); }
   function passAndAdvance() {
     var total = pages(caseOn()).length;
     if (S.idx >= S.done) { S.done = Math.min(S.idx + 1, total); save(S.done); }
     var n = nextAfterPass(S.idx, total);
-    clearTimeout(S.timer); S.answers = {}; S.result = null; S.idx = n; render();
+    clearTimeout(S.timer); S.answers = {}; S.result = null; S.idx = n; render(); toTop();
   }
   function el0() { return $('tab-guide'); }
   function onClick(ev) {
@@ -409,7 +418,7 @@
     else if (act === 'mode') { S.mode = t.getAttribute('data-m') === 'qna' ? 'qna' : 'course'; S.open = false; render(); }
     else if (act === 'toggle-list') { S.open = !S.open; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); }
     else if (act === 'go') go(+t.getAttribute('data-i'));
-    else if (act === 'restart') { S.idx = 0; S.answers = {}; S.result = null; render(); }
+    else if (act === 'restart') { S.idx = 0; S.answers = {}; S.result = null; render(); toTop(); }
   }
   function show() {
     var el = $('tab-guide'); if (!el) return;
