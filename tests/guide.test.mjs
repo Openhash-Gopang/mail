@@ -256,7 +256,7 @@ test('우측 상단 "기능 개선 제안"은 새 탭이 아니라 현재 화면
 test('상단 바 가운데: 홈 = "나만의 AI 비서, 나비"(나비 굵게)', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('<span class="tp-txt">나만의 AI 비서, <b>나비</b></span>'));
-  assert.ok(h.includes("el.innerHTML = '<span class=\"tp-txt\">나만의 AI 비서, <b>나비</b></span>"));
+  assert.ok(h.includes("el.innerHTML = '<span class=\"tp-txt\">' + (_i18nKo() ? '나만의 AI 비서, <b>나비</b>'"));   // 한국어일 때 나비 굵게(다른 언어는 사전 문구)
   assert.match(h, /\.topbar-page b\{font-weight:800\}/);
 });
 

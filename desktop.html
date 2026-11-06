@@ -6,6 +6,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="assets/i18n.js"></script>
 <script>
 /* 스킨(2026-11-06): 설정 > 화면(스킨)에서 고른 값을 본문이 그려지기 전에 <html data-*> 로 걸어 깜박임을 막는다. 저장: 이 브라우저(localStorage) */
 (function(){try{var s=JSON.parse(localStorage.getItem('naviweb_skin')||'{}');var h=document.documentElement;['color','menu','dens','btn','field','card'].forEach(function(k){if(s[k])h.setAttribute('data-'+k,String(s[k]).replace(/[^a-z]/g,''));});}catch(e){}})();
@@ -807,7 +808,33 @@ header.topbar .logo{color:#fff;text-decoration:none}
 /* topbar-navi */
 header.topbar .logo{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.04em}
 header.topbar .logo-wide{display:block;height:40px;width:auto}
-header.topbar .logo-txt{font-size:24px;font-weight:800;letter-spacing:-.01em;line-height:1;color:#fff;white-space:nowrap}
+/* 언어·국가 선택(2026-11-06): 상단 바 오른쪽. 기본은 태극기 + 한국어 */
+.lp-host{flex:none;display:flex;align-items:center}
+.lp{position:relative}
+.lp-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 12px 0 10px;border:1px solid rgba(255,255,255,.55);border-radius:19px;background:transparent;color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.lp-btn:hover,.lp-btn[aria-expanded=true]{background:rgba(255,255,255,.16)}
+.lp-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lp-fl{display:inline-flex;align-items:center;line-height:1}
+.lp-flag{display:block;width:30px;height:20px}
+.lp-pop{position:absolute;z-index:60;top:calc(100% + 8px);right:0;display:flex;flex-direction:column;gap:8px;width:min(340px,calc(100vw - 24px));max-height:min(72vh,540px);padding:10px;background:#fff;color:#1b2433;border:1px solid #d5dbe6;border-radius:14px;box-shadow:0 12px 32px rgba(15,30,60,.22)}
+.lp-pop[hidden]{display:none}
+.lp-search{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:2px solid #d5dbe6;border-radius:22px;color:#5b6678}
+.lp-search:focus-within{border-color:#2f66c8;outline:3px solid #2f66c8;outline-offset:2px}
+.lp-q{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;color:#1b2433;outline:none}
+.lp-langs{display:flex;flex-wrap:wrap;gap:6px}
+.lp-chip{min-height:36px;padding:0 12px;border:1px solid #cfdcf3;border-radius:18px;background:#eef3fc;color:#1d3f86;font:inherit;font-size:13px;cursor:pointer}
+.lp-chip:hover{background:#dde8fa}
+.lp-chip[aria-pressed=true]{background:#2f66c8;border-color:#2f66c8;color:#fff;font-weight:700}
+.lp-list{flex:1;min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid #e3e8f0}
+.lp-list li{display:flex;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;cursor:pointer}
+.lp-list li.on{background:#eef3fc}
+.lp-list li[aria-selected=true]{font-weight:700;color:#1d3f86;box-shadow:inset 3px 0 0 #2f66c8}
+.lp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-empty{margin:0;padding:12px 10px;color:#5b6678;font-size:14px}
+.lp-empty[hidden]{display:none}
+@media (max-width:1100px){.lp-cur{display:none}.lp-btn{padding:0 9px}}
+@media (max-width:560px){.lp{position:static}.lp-pop{position:fixed;top:64px;left:12px;right:12px;width:auto}}
+header.topbar .logo-txt{font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1;color:#fff;white-space:nowrap}
 header.topbar .logo-help .tp-chev{width:28px;height:28px}   /* 열림 화살표: 이전(14px)의 두 배 */
 header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-sizing:border-box;background:#fff;border-radius:9px;object-fit:contain}
 .crumb{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,.7)}
@@ -1189,6 +1216,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
+    <div class="lp-host" id="lp-host"></div>
     <button type="button" class="suggest-btn" id="pricing-btn" onclick="_switchTab('pricing')">요금제</button>
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
@@ -2022,7 +2050,7 @@ function _docLoadInto(id, where) {
   const site = _DOC_SITES.find(s => s.id === id);
   if (!site) return;
   const frame = document.getElementById(where.frame), note = document.getElementById(where.note), sel = document.getElementById(where.sel);
-  const go = (u) => { frame.src = u + '?embed=mail'; };
+  const go = (u) => { frame.src = u + '?embed=mail' + _i18nQuery(); };
   note.textContent = '불러오는 중…';
   if (id !== 'all') { go(site.url); return; }
   // "전체" 주소(pro.naviweb.kr)가 아직 준비되지 않았으면 법률 서류로 연다
@@ -5047,6 +5075,71 @@ window.addEventListener('message', (e) => {
   try { e.source.postMessage(_skinMsg(), e.origin); } catch (x) {}
 });
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _skinBuild); else _skinBuild();
+// ── 다국어(2026-11-06): 상단 바의 언어·국가 선택 ──────────────────────────────────────────────
+// 기본은 한국(태극기)·한국어. 고르면 이 틀(왼쪽 메뉴·상단 바)의 문구가 바뀌고, 안에 끼운 서류 화면(navi-pro)에도 같은 언어를 알려 준다.
+// 한국어 원문이 키다(assets/i18n.js, i18n/<언어>.js). 사전에 없는 문구는 영어 → 한국어 원문 순으로 대신한다.
+// 아직 번역하지 않은 것: 메일·캠페인·주소록 같은 화면 안쪽 문구, AI 답변(한국어), 법규·기관 현지화.
+function _T(s, v) { return window.NaviI18n ? window.NaviI18n.t(s, v) : s; }
+function _Tlabel(s) { return String(s).split(' · ').map(x => _T(x)).join(' · '); }
+function _i18nLang() { return window.NaviI18n ? window.NaviI18n.lang() : 'ko'; }
+function _i18nKo() { return _i18nLang() === 'ko'; }
+function _i18nEsc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function _i18nQuery() { if (!window.NaviI18n) return ''; const g = window.NaviI18n.get(); return '&lang=' + encodeURIComponent(g.lang) + '&country=' + encodeURIComponent(g.country); }
+const _i18nMap = new WeakMap();   // 글자 노드 → { o: 한국어 원문, w: 우리가 써 넣은 값 } (JS 가 나중에 바꾼 글자는 새 원문으로 본다)
+function _i18nOrig(n) {
+  if (n.nodeType === 3) { const m = _i18nMap.get(n); return m && m.w === n.nodeValue ? m.o : n.nodeValue; }
+  let o = ''; n.childNodes.forEach(c => { if (c.nodeType === 3) o += _i18nOrig(c); }); return o;
+}
+function _i18nShell() {
+  if (!window.NaviI18n) return;
+  document.querySelectorAll('.side-nav, .topbar-right, #logo-help, #topbar-page').forEach(root => {
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.parentElement && n.parentElement.closest('.lp-host,script,style')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const nodes = []; while (w.nextNode()) nodes.push(w.currentNode);
+    nodes.forEach(n => {
+      const cur = n.nodeValue, m = _i18nMap.get(n), o = (m && m.w === cur) ? m.o : cur, core = o.trim();
+      if (!core) return;
+      const t = _T(core), out = t === core ? o : o.replace(core, () => t);
+      if (out !== cur) n.nodeValue = out;
+      _i18nMap.set(n, { o: o, w: out });
+    });
+    const els = [root].concat(Array.from(root.querySelectorAll('[title],[aria-label]')));
+    els.forEach(el => {
+      if (el.closest && el.closest('.lp-host')) return;
+      ['title', 'aria-label'].forEach(a => {
+        if (!el.hasAttribute || !el.hasAttribute(a)) return;
+        const rec = el.__i18n || (el.__i18n = {}), cur = el.getAttribute(a), m = rec[a], o = (m && m.w === cur) ? m.o : cur;
+        const t = o ? _T(o) : o; if (t !== cur) el.setAttribute(a, t);
+        rec[a] = { o: o, w: t };
+      });
+    });
+  });
+}
+function _i18nBroadcast() {
+  if (!window.NaviI18n) return;
+  const g = window.NaviI18n.get(), m = { type: 'navi-locale', lang: g.lang, country: g.country };
+  document.querySelectorAll('iframe').forEach(f => { try { f.contentWindow.postMessage(m, '*'); } catch (e) {} });
+}
+function _i18nMount() {
+  const host = document.getElementById('lp-host');
+  if (host && window.NaviI18n) window.NaviI18n.mountPicker(host);
+}
+// 안쪽 화면(서류 작성 등)이 시작할 때 요청하면 지금 언어·국가를 돌려준다
+window.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.type !== 'navi-locale-request' || !e.source || !window.NaviI18n) return;
+  if (!/^https:\/\/([a-z0-9-]+\.)*(naviweb\.kr|hondi\.net)$/.test(e.origin) && !/^http:\/\/localhost(:\d+)?$/.test(e.origin)) return;
+  const g = window.NaviI18n.get();
+  try { e.source.postMessage({ type: 'navi-locale', lang: g.lang, country: g.country }, e.origin); } catch (x) {}
+});
+document.addEventListener('navi:locale', () => {
+  _i18nMount();
+  if (window.NaviI18n && window.NaviI18n._refocus) { window.NaviI18n._refocus = false; const b = document.querySelector('#lp-host .lp-btn'); if (b) b.focus(); }
+  _i18nShell();
+  try { _topbarSyncPage(); } catch (e) {}
+  _i18nBroadcast();
+});
+function _i18nInit() { _i18nMount(); _i18nShell(); try { _topbarSyncPage(); } catch (e) {} }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _i18nInit); else _i18nInit();
 function _settingsInit() { _mailIdLoad(); }
 // 설정 화면에서 아이디·이름을 바꾸면 오른쪽 위 배지(공용 user-badge.js)도 새로 맞춘다.
 function _settingsNotifyBadge() {
@@ -6641,7 +6734,7 @@ function _panelToggle(kind) { if (_introIsOpen() && _panelKind === kind) _introC
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIsOpen()) _introClose(); });
 const _TOPBAR_HOME = '나만의 AI 비서, 나비';
 const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
-function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => n.textContent).join('').trim(); }   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
+function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => _i18nOrig(n)).join('').trim(); }   // 언어를 바꿔도 판단은 한국어 원문으로   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
 function _topbarSyncPage() {
   const el = document.getElementById('topbar-page');
   if (!el) return;
@@ -6663,8 +6756,9 @@ function _topbarSyncPage() {
     }
   }
   const _home = label === _TOPBAR_HOME;
-  el.classList.toggle('can-intro', _home); if (_home) { el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-haspopup', 'true'); el.title = '나만의 AI 비서 소개'; } else { el.setAttribute('role', 'status'); el.removeAttribute('tabindex'); el.removeAttribute('aria-haspopup'); el.removeAttribute('aria-expanded'); el.title = ''; if (_introIsOpen() && _panelKind === 'intro') _introClose(); }
-  if (el.textContent !== label) { if (_home) el.innerHTML = '<span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>'; else el.textContent = label; el.classList.remove('vd-swap'); void el.offsetWidth; el.classList.add('vd-swap'); }
+  el.classList.toggle('can-intro', _home); if (_home) { el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-haspopup', 'true'); el.title = _T('나만의 AI 비서 소개'); } else { el.setAttribute('role', 'status'); el.removeAttribute('tabindex'); el.removeAttribute('aria-haspopup'); el.removeAttribute('aria-expanded'); el.title = ''; if (_introIsOpen() && _panelKind === 'intro') _introClose(); }
+  const _ikey = label + '\u0001' + _i18nLang();
+  if (el.dataset.i18nKey !== _ikey || (!_home && el.textContent !== _Tlabel(label))) { el.dataset.i18nKey = _ikey; if (_home) el.innerHTML = '<span class="tp-txt">' + (_i18nKo() ? '나만의 AI 비서, <b>나비</b>' : _i18nEsc(_T('나만의 AI 비서, 나비'))) + '</span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>'; else el.textContent = _Tlabel(label); el.classList.remove('vd-swap'); void el.offsetWidth; el.classList.add('vd-swap'); }
 }
 // opts.keep  : 지금 대화(말풍선)를 그대로 둔 채 모드만 바꾼다(기본 모드가 K-Mail 로 연결할 때)
 // opts.force : 확인창 없이 바꾼다(다른 화면에서 이 입력창으로 넘어오는 내부 이동 — 캠페인 상세, 주소록 등)
