@@ -21,7 +21,7 @@
       if (m.type === 'agent-ping') { const info = await chrome.runtime.sendMessage({ type: 'info' }); reply(m.id, 'agent-pong', { ok: true, ...info }); }
       else if (m.type === 'agent-queue') {
         const job = m.job || {};
-        const r = await chrome.runtime.sendMessage({ type: 'queue', job: { playbook: String(job.playbook || '').slice(0, 60), goal: String(job.goal || '').slice(0, 2000), title: String(job.title || '').slice(0, 120), slot: String(job.slot || '').slice(0, 120), token: String(job.token || '').slice(0, 4000), autostart: job.autostart === true, update: job.update === true, text: String(job.text || '').slice(0, 2000) } });
+        const r = await chrome.runtime.sendMessage({ type: 'queue', job: { playbook: String(job.playbook || '').slice(0, 60), goal: String(job.goal || '').slice(0, 2000), title: String(job.title || '').slice(0, 120), slot: String(job.slot || '').slice(0, 120), token: String(job.token || '').slice(0, 4000), autostart: job.autostart === true, url: String(job.url || '').slice(0, 300), update: job.update === true, text: String(job.text || '').slice(0, 2000) } });
         reply(m.id, 'agent-queued', r || { ok: false });
       }
     } catch (err) { reply(m.id, 'agent-error', { ok: false, error: String(err && err.message || err) }); }
