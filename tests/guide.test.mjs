@@ -430,4 +430,10 @@ test('예시 버튼: 축소(높이 38px·글자 15px), 배경은 전송 버튼�
 test('사용법 3장(왼쪽 메뉴): 옛 방식의 화면 이미지를 싣지 않는다', () => {
   const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
   assert.ok(!g.includes('ui-sidemenu'));
+test('사용법: 퀴즈를 통과해 다음 장으로 넘어가면 새 장의 맨 위를 보여 준다(스크롤 위치를 남기지 않음)', () => {
+  const js = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
+  assert.match(js, /function toTop\(\)/);
+  assert.match(js, /S\.idx = n; render\(\); toTop\(\);/, '통과 후 자동 이동');
+  assert.match(js, /S\.result = null; render\(\); toTop\(\); \}/, '번호·이전·다음 이동');
+  assert.match(js, /act === 'restart'\) \{ S\.idx = 0; S\.answers = \{\}; S\.result = null; render\(\); toTop\(\); \}/, '처음부터 다시');
 });
