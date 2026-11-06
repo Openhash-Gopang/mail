@@ -2184,7 +2184,7 @@ async function _agentInit() {
   else {
     _agentBadge('나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
     const _bt = document.querySelector('#agent-badge .ab-t'); if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
-    try { if (!sessionStorage.getItem('agent_guide_shown')) { sessionStorage.setItem('agent_guide_shown', '1'); setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800); } } catch (e) { /* 안내는 이 세션에 한 번만 */ }
+    setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800);   // 확장이 없으면 화면을 열 때마다 설치 안내를 보여 준다(2026-11-07)
   }
   if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
   if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
@@ -8424,10 +8424,19 @@ function _agentGuideOpen() {
       '<li>Chrome 주소창에 <code>chrome://extensions</code> 를 입력하고, 오른쪽 위 <b>개발자 모드</b>를 켭니다.</li>' +
       '<li><b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 풀어 둔 폴더를 고릅니다.</li>' +
       '<li>이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</li></ol>';
-  o.innerHTML = '<div style="background:#fff;color:#1b2733;max-width:480px;width:100%;border-radius:14px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:14.5px;line-height:1.65">' +
-    '<h2 style="margin:0 0 8px;font-size:18px">나비웹 도우미를 설치해 주세요</h2>' +
-    '<p style="margin:0 0 8px">나비웹 도우미(Chrome 확장 프로그램)는 첨부서류를 기관 사이트에서 대신 가져오는 데 꼭 필요합니다. 이 PC의 Chrome에는 아직 설치되어 있지 않아 첨부 파일을 올릴 수 없습니다.</p>' + steps +
-    '<div style="text-align:right;margin-top:10px"><button type="button" id="agent-guide-x" style="border:0;background:#2f66c9;color:#fff;border-radius:8px;padding:8px 18px;font:inherit;cursor:pointer">닫기</button></div></div>';
+  var inst = store ? '<a id="agent-guide-go" href="' + store + '" target="_blank" rel="noopener"' : '<a id="agent-guide-go" href="agent/naviweb-agent-extension.zip" download';
+  inst += ' style="display:inline-block;background:#2f66c9;color:#fff;text-decoration:none;border-radius:10px;padding:11px 26px;font-weight:700;font-size:15.5px">설치하기</a>';
+  o.innerHTML = '<div style="background:#fff;color:#1b2733;max-width:520px;width:100%;max-height:92vh;overflow:auto;border-radius:14px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:14.5px;line-height:1.65">' +
+    '<h2 style="margin:0 0 8px;font-size:19px">나비웹 도우미를 설치해 주세요</h2>' +
+    '<p style="margin:0 0 8px"><b>왜 필요한가요?</b> 나비웹 도우미는 이 PC의 Chrome에서 동작하는 확장 프로그램으로, 서류에 필요한 <b>첨부서류(등본·대장·확인서 등)를 사용자 대신 정부·기관 사이트에서 가져와 서류에 자동으로 붙여 주는</b> 역할을 합니다. 웹 페이지만으로는 다른 기관 사이트에 접속해 파일을 받을 수 없어서, 확장 프로그램이 설치되어 있어야 첨부 기능이 켜집니다.</p>' +
+    '<ul style="margin:0 0 8px;padding-left:20px"><li>“일괄 올리기”와 항목별 업로드(↑) 버튼이 켜집니다.</li><li>내 컴퓨터에서 고른 파일만 사용하며, 비밀번호·인증서·주민등록번호는 수집하거나 저장하지 않습니다.</li><li>설치는 1분이면 끝나고, 한 번만 하면 됩니다.</li></ul>' +
+    '<div style="text-align:center;margin:12px 0">' + inst + '</div>' +
+    (store ? '<ol style="margin:0 0 6px"><li>“Chrome에 추가”를 눌러 설치합니다.</li><li>이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</li></ol>'
+      : '<ol style="margin:0 0 6px"><li>위 <b>설치하기</b>로 받은 zip 파일의 압축을 풉니다.</li>' +
+        '<li>Chrome 주소창에 <code>chrome://extensions</code> 를 입력하고, 오른쪽 위 <b>개발자 모드</b>를 켭니다.</li>' +
+        '<li><b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 풀어 둔 폴더를 고릅니다.</li>' +
+        '<li>이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</li></ol>') +
+    '<div style="text-align:right;margin-top:6px"><button type="button" id="agent-guide-x" style="border:1px solid #c5d3ee;background:#fff;color:#2f66c9;border-radius:8px;padding:7px 16px;font:inherit;cursor:pointer">나중에</button></div></div>';
   o.addEventListener('click', function (e) { if (e.target === o || e.target.id === 'agent-guide-x') _agentGuideClose(); });
   document.body.appendChild(o);
 }
