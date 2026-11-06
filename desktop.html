@@ -375,10 +375,10 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #doc-host-frame{display:none;width:100%;height:max(640px,calc(100vh - 230px));border:0;background:transparent;margin-top:8px}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{display:block}
 /* 서류 페이지가 navi-doc-size 로 문서 높이를 알려 주면 iframe 이 그 높이로 늘어나 이중 스크롤이 없어진다(높이는 스크립트가 style 로 지정). 길어진 서류를 내려도 입력창은 위에 붙어 있다 */
-#tab-compose[data-mode="doc"].doc-live.doc-auto .chat-composer{position:sticky;top:54px;z-index:6;background:var(--bg,#fff)}
+#tab-compose[data-mode="doc"].doc-live.doc-auto .chat-composer{position:sticky;top:var(--hd,54px);z-index:6;background:var(--bg,#fff)}
 /* 서류 양식이 보이면(2026-11-02): 입력창을 화면 맨 위로 올리고, 구분선 아래 서류 칸만 따로 스크롤한다. 입력 칸의 높이는 서류를 내려도 그대로다.
    대화(질문·지시와 답)는 입력창과 구분선 사이에 쌓인다. */
-#tab-compose.active[data-mode="doc"].doc-live{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:420px}
+#tab-compose.active[data-mode="doc"].doc-live{display:flex;flex-direction:column;height:calc(100vh - 46px - var(--hd,54px));min-height:420px}
 #tab-compose[data-mode="doc"].doc-live .chat-landing,#tab-compose[data-mode="doc"].doc-live .chat-thread-header{display:none!important}
 #tab-compose[data-mode="doc"].doc-live .chat-composer{order:1;flex:none;position:static;padding-bottom:10px;border-bottom:2px solid var(--bdr);box-shadow:0 8px 10px -9px rgba(0,0,0,.35);background:var(--bg,#fff);z-index:6}
 #tab-compose[data-mode="doc"].doc-live .chat-thread{display:none}   /* 대화는 혼디 대화창이 맡는다 */
@@ -786,9 +786,9 @@ body:has(#tab-myforms.active .mfb-root:not([hidden])) #hchat-fab,body:has(#tab-m
 .logo-help{display:inline-flex;align-items:center;gap:6px;color:#fff;cursor:pointer}.logo-help .tp-chev{flex:none;opacity:.85;transition:transform .35s cubic-bezier(.22,1,.36,1)}.logo-help[aria-expanded=true] .tp-chev{transform:rotate(180deg)}
 .topbar-page .tp-chev{flex:none;opacity:.85;transition:transform .35s cubic-bezier(.22,1,.36,1)}
 .topbar-page[aria-expanded=true] .tp-chev{transform:rotate(180deg)}
-#intro-backdrop{position:fixed;inset:54px 0 0 0;z-index:90;background:rgba(15,23,42,.35);opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+#intro-backdrop{position:fixed;inset:var(--hd,54px) 0 0 0;z-index:90;background:rgba(15,23,42,.35);opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
 #intro-backdrop.open{opacity:1;visibility:visible}
-#intro-panel{position:fixed;left:0;right:0;top:54px;z-index:95;height:0;overflow:hidden;background:var(--bg,#fff);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:0 0 18px 18px;transition:height .5s cubic-bezier(.22,1,.36,1)}
+#intro-panel{position:fixed;left:0;right:0;top:var(--hd,54px);z-index:95;height:0;overflow:hidden;background:var(--bg,#fff);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:0 0 18px 18px;transition:height .5s cubic-bezier(.22,1,.36,1)}
 #intro-panel.open{height:min(72vh,620px)}
 #intro-panel.tall.open{height:min(86vh,820px)}
 #intro-panel iframe{display:block;width:100%;height:min(86vh,820px);border:0;background:#fff}
@@ -807,6 +807,18 @@ body:has(#tab-myforms.active .mfb-root:not([hidden])) #hchat-fab,body:has(#tab-m
    기준을 그대로 유지한다(채팅 자동 스크롤 코드가 window.scrollTo를
    쓰기 때문) — 사이드바만 sticky로 고정.
    ══════════════════════════════════════════════════════════════ */
+/* 2026-11-07 — 서류 작성처럼 작업을 진행하는 동안 상단 파란 막대를 위로 밀어 숨기고(화면 공간 확보), 위쪽 가장자리의 손잡이를 아래로 끌어 내리면 잠시 보인다 */
+:root{--hd:54px}
+body.hd-hidden{--hd:0px}
+body.hd-hidden header.topbar{position:fixed;top:0;left:0;right:0;transform:translateY(-100%);transition:transform .25s ease,visibility 0s .25s;visibility:hidden}
+body.hd-hidden.hd-peek header.topbar{transform:translateY(0);visibility:visible;transition:transform .25s ease}
+#hd-pull{display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:101;width:104px;height:16px;padding:0;border:0;border-radius:0 0 10px 10px;background:var(--nav,#2f66c9);cursor:ns-resize;touch-action:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+#hd-pull::after{content:"";display:block;width:36px;height:4px;margin:6px auto 0;border-radius:2px;background:rgba(255,255,255,.8)}
+body.hd-hidden:not(.hd-peek) #hd-pull{display:block}
+body.hd-hidden main.content{padding-top:8px}
+body.hd-hidden .pg-bar{display:none}
+body.hd-hidden.hd-peek .tab-panel.active .pg-bar,body.hd-hidden.hd-peek #tab-compose[data-mode=doc] > .pg-bar{display:block;position:fixed;top:54px;left:0;right:0;z-index:99;margin:0;padding:8px 36px 0;background:var(--bg,#fff);box-shadow:0 6px 14px -8px rgba(0,0,0,.3)}
+@media (prefers-reduced-motion:reduce){body.hd-hidden header.topbar{transition:none}}
 header.topbar{padding:0 22px;gap:18px}
 header.topbar .logo{color:#fff;text-decoration:none}
 /* topbar-navi */
@@ -856,8 +868,8 @@ header.topbar:has(#agent-draft:not([hidden])) .topbar-page,header.topbar:has(#ag
 .suggest-btn{font:inherit;font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 14px;cursor:pointer;white-space:nowrap}
 .suggest-btn:hover{background:rgba(255,255,255,.22)}
 
-.app-body{display:flex;align-items:flex-start;min-height:calc(100vh - 54px)}
-.side-nav{width:232px;flex-shrink:0;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;background:var(--sur);border-right:1px solid var(--bdr);padding:16px 12px 24px;display:flex;flex-direction:column}
+.app-body{display:flex;align-items:flex-start;min-height:calc(100vh - var(--hd,54px))}
+.side-nav{width:232px;flex-shrink:0;position:sticky;top:var(--hd,54px);height:calc(100vh - var(--hd,54px));overflow-y:auto;background:var(--sur);border-right:1px solid var(--bdr);padding:16px 12px 24px;display:flex;flex-direction:column}
 .side-group{margin-bottom:16px}
 .side-label{font-size:13px;font-weight:800;letter-spacing:.07em;color:var(--hint);padding:4px 12px 6px}
 .side-nav .nav-btn{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:700;color:var(--sub);margin-bottom:2px}
@@ -1086,7 +1098,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <style>
 /* 사용법(단계별 퀴즈) — guide.js */
 .gd-panel{padding:20px 24px;max-width:860px}
-.gd-top{position:sticky;top:54px;z-index:5;background:var(--bg,#f5f6f8);padding:10px 0 12px;margin-bottom:6px}
+.gd-top{position:sticky;top:var(--hd,54px);z-index:5;background:var(--bg,#f5f6f8);padding:10px 0 12px;margin-bottom:6px}
 .gd-row{display:flex;align-items:center;gap:8px}
 .gd-pn{width:40px;height:40px;border-radius:50%;border:1px solid var(--bdr);background:transparent;color:var(--sub);font-size:22px;font-weight:800;line-height:1;cursor:pointer;flex:none;padding:0 0 3px}
 .gd-pn:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}.gd-pn:disabled{opacity:.35;cursor:not-allowed}
@@ -1164,6 +1176,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 </style>
 </head>
 <body>
+<button type="button" id="hd-pull" aria-label="상단 메뉴 막대 보이기 — 아래로 끌어 내리세요" title="아래로 끌어 내리면 상단 막대가 보입니다"></button>
 
 <div id="intro-backdrop" onclick="_introClose()"></div>
 <div id="intro-panel" aria-hidden="true"><iframe id="intro-frame" title="나만의 AI 비서 소개"></iframe></div>
@@ -2168,7 +2181,12 @@ async function _agentInit() {
     bar.hidden = false;
   });
   if (_agentInfo) _agentBadge('나비웹 도우미 ' + _agentInfo.version);
-  else _agentBadge('나비웹 도우미 연결 안 됨 — 확장 프로그램을 켜 주세요', { install: NaviAgent.STORE_URL });
+  else {
+    _agentBadge('나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
+    const _bt = document.querySelector('#agent-badge .ab-t'); if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
+    try { if (!sessionStorage.getItem('agent_guide_shown')) { sessionStorage.setItem('agent_guide_shown', '1'); setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800); } } catch (e) { /* 안내는 이 세션에 한 번만 */ }
+  }
+  if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
   if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
   if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); }
   _agentTellDoc();
@@ -3721,6 +3739,7 @@ function _docHostReset() {
   if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
 }
 function _docHostMessage(d, e) {
+  if (d.type === 'navi-doc-need-agent') { if (window._agentGuideOpen) window._agentGuideOpen(); return; }   // 서류 화면에서 연결 안 된 채 첨부를 누르면 설치 안내를 연다
   if (d.type === 'navi-doc-ready') {
     _docHost.ready = true; _docHost.cap = (d.v | 0) >= 2; setTimeout(function () { _docChatEnsure(); }, 0);
     _docHost.v3 = (d.v | 0) >= 3;
@@ -8325,6 +8344,56 @@ window.addEventListener('message', async (e) => {
   } catch (err) { reply('처리하지 못했습니다: ' + (err && err.message || err)); }
   finally { _embedCap = null; _embedBusy = false; try { if (!(typeof _docHelper !== 'undefined' && _docHelper.sent && Object.keys(_docHelper.sent).length)) HondiChat.idle(); } catch (x) {} }
 });
+</script>
+<script>
+/* ── 상단 막대 숨김: 작업(서류가 열린 상태) 중에는 위로 밀어 올려 숨기고, 손잡이를 아래로 끌면 잠시 보인다 ── */
+(function () {
+  var body = document.body, pull = document.getElementById('hd-pull'), hdr = document.querySelector('header.topbar'), tab = document.getElementById('tab-compose');
+  if (!pull || !hdr || !tab) return;
+  var peek = false, tm = 0;
+  function working() { return (tab.classList.contains('active') && tab.getAttribute('data-docopen') === '1') || body.classList.contains('work-mode'); }
+  function setPeek(v) { peek = !!v; body.classList.toggle('hd-peek', peek); clearTimeout(tm); }
+  function sync() { var w = !!working(); body.classList.toggle('hd-hidden', w); if (!w) setPeek(false); }
+  new MutationObserver(sync).observe(tab, { attributes: true, attributeFilter: ['class', 'data-docopen'] });
+  new MutationObserver(sync).observe(body, { attributes: true, attributeFilter: ['class'] });
+  sync();
+  pull.addEventListener('pointerdown', function (e) {
+    if (e.button != null && e.button !== 0) return; e.preventDefault();
+    var y0 = e.clientY, moved = false;
+    try { pull.setPointerCapture(e.pointerId); } catch (x) {}
+    function mv(ev) { if (!moved && ev.clientY - y0 >= 16) { moved = true; setPeek(true); } }
+    function up() { pull.removeEventListener('pointermove', mv); pull.removeEventListener('pointerup', up); pull.removeEventListener('pointercancel', up); if (!moved) setPeek(true); /* 그냥 눌러도 보인다 */ }
+    pull.addEventListener('pointermove', mv); pull.addEventListener('pointerup', up); pull.addEventListener('pointercancel', up);
+  });
+  pull.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); setPeek(true); } });
+  hdr.addEventListener('mouseleave', function () { if (peek) { clearTimeout(tm); tm = setTimeout(function () { setPeek(false); }, 1200); } });
+  hdr.addEventListener('mouseenter', function () { clearTimeout(tm); });
+  document.addEventListener('pointerdown', function (e) { if (peek && !hdr.contains(e.target) && e.target !== pull) setPeek(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && peek) setPeek(false); });
+  window.__hdPeek = setPeek;
+})();
+
+/* ── 나비웹 도우미(확장 프로그램) 설치 안내: 이 PC 의 Chrome 에 확장이 없을 때 보인다 ── */
+function _agentGuideClose() { var g = document.getElementById('agent-guide'); if (g) g.remove(); }
+function _agentGuideOpen() {
+  if (_agentInfo || document.getElementById('agent-guide')) return;
+  var store = (window.NaviAgent && NaviAgent.STORE_URL) || '';
+  var o = document.createElement('div'); o.id = 'agent-guide'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', '나비웹 도우미 설치 안내');
+  o.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+  var steps = store
+    ? '<ol><li><a href="' + store + '" target="_blank" rel="noopener"><b>Chrome 웹 스토어에서 “나비웹 도우미” 추가</b></a>를 누릅니다.</li><li>“Chrome에 추가”를 눌러 설치합니다.</li><li>이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</li></ol>'
+    : '<ol><li><a href="agent/naviweb-agent-extension.zip" download><b>나비웹 도우미 파일(zip) 내려받기</b></a> 후 압축을 풉니다.</li>' +
+      '<li>Chrome 주소창에 <code>chrome://extensions</code> 를 입력하고, 오른쪽 위 <b>개발자 모드</b>를 켭니다.</li>' +
+      '<li><b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 풀어 둔 폴더를 고릅니다.</li>' +
+      '<li>이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</li></ol>';
+  o.innerHTML = '<div style="background:#fff;color:#1b2733;max-width:480px;width:100%;border-radius:14px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:14.5px;line-height:1.65">' +
+    '<h2 style="margin:0 0 8px;font-size:18px">나비웹 도우미를 설치해 주세요</h2>' +
+    '<p style="margin:0 0 8px">나비웹 도우미(Chrome 확장 프로그램)는 첨부서류를 기관 사이트에서 대신 가져오는 데 꼭 필요합니다. 이 PC의 Chrome에는 아직 설치되어 있지 않아 첨부 파일을 올릴 수 없습니다.</p>' + steps +
+    '<div style="text-align:right;margin-top:10px"><button type="button" id="agent-guide-x" style="border:0;background:#2f66c9;color:#fff;border-radius:8px;padding:8px 18px;font:inherit;cursor:pointer">닫기</button></div></div>';
+  o.addEventListener('click', function (e) { if (e.target === o || e.target.id === 'agent-guide-x') _agentGuideClose(); });
+  document.body.appendChild(o);
+}
+window._agentGuideOpen = _agentGuideOpen;
 </script>
 <script src="hondi-chat.js?v=20261107b"></script>
 </body>

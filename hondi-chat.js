@@ -258,6 +258,11 @@
       if (!isIncomingMessage(ev, originOf(S.url))) return;
       S.badge = true; if (!S.open) open(); else paint();   // 상대의 대화 요청 — 패널을 열어 수락 창이 보이게 한다
     });
+    root.addEventListener('message', function (ev) {   // 혼디 페이지가 직접 답하는 동안(서류 SP 등 ai:self)에도 진행 막대를 켜고 끈다
+      var d = ev && ev.data;
+      if (!d || typeof d !== 'object' || d.type !== 'hondi-embed-busy' || ev.origin !== originOf(S.url) || ev.source !== frameWindow()) return;
+      if (d.on) busy('잠시 기다려 주십시오…', 120000); else idle();
+    });
     root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.open && S.els.panel.contains(doc.activeElement)) close(); });
     S.mounted = true; layout(); paint();
     if (storeGet() && opts.restore !== false) {   // 지난번에 열어 둔 채였다면 다시 연다(통화 신호를 받기 위해)
