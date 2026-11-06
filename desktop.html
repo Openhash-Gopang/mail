@@ -103,7 +103,7 @@ window.addEventListener('load', () => {
 <script src="assistant-runtime.js?v=20261101e"></script>
 <script src="assistant-host.js?v=20261101e"></script>
 <script src="case-host.js?v=20261101d"></script>
-<script src="case-ui.js?v=20261101f"></script>
+<script src="case-ui.js?v=20261106a"></script>
 <script src="case-assist.js?v=20261101f"></script>
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
@@ -1018,6 +1018,9 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <style>
 /* 업무(Case) 화면 — case-ui.js */
 .cs-panel{padding:20px 24px;max-width:980px}
+.cs-modes{display:flex;gap:4px;border-bottom:1px solid var(--bdr);margin:-6px 0 16px}
+.cs-mode{border:0;background:transparent;padding:9px 16px;font-size:15px;font-weight:700;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;font-family:inherit}
+.cs-mode:hover{color:var(--txt,#1a1d24)}.cs-mode.on{color:var(--pri);border-bottom-color:var(--pri)}
 .cs-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .cs-h{margin:2px 0 4px;font-size:22px;color:var(--txt,#1a1d24)}.cs-sub{font-size:13.5px;color:var(--sub)}
 .cs-btn{white-space:nowrap;border:1px solid var(--bdr);background:transparent;border-radius:8px;padding:7px 13px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;margin-right:6px}
@@ -1234,14 +1237,9 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="nav-sub" id="nav-sub-guide" role="group" aria-label="나비 길잡이 하위 메뉴">
           <button id="tab-btn-gprog" class="nav-subitem nav-gv" data-label="진행 중" onclick="_switchTab('gprog')">진행 중<span class="unread-badge" data-for="guide" hidden></span></button>
           <button id="tab-btn-gdone" class="nav-subitem nav-gv" data-label="완료한 과제" onclick="_switchTab('gdone')">완료한 과제</button>
+          <button id="tab-btn-case" class="nav-subitem nav-gv" data-label="업무" onclick="_switchTab(_caseLast())">업무</button>
         </div>
       </div>
-    </div>
-    <div class="side-group" id="side-group-case" hidden>
-      <div class="side-label">업무</div>
-      <button id="tab-btn-caseprov" class="nav-btn" data-label="맡은 일" onclick="_switchTab('caseprov')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>맡은 일</button>
-      <button id="tab-btn-casecons" class="nav-btn" data-label="맡긴 일" onclick="_switchTab('casecons')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v13"/><polyline points="7 10 12 15 17 10"/><path d="M4 20h16"/></svg>맡긴 일</button>
-      <button id="tab-btn-casesolo" class="nav-btn" data-label="나 홀로" onclick="_switchTab('casesolo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>나 홀로</button>
     </div>
     <div class="side-group">
       <div class="side-label">도움말</div>
@@ -3370,6 +3368,9 @@ function _navToggleGuide(force) {
 }
 document.addEventListener('DOMContentLoaded', () => { let open = false; try { open = localStorage.getItem(_NAV_GUIDE_KEY) === '1'; } catch (e) {} _navToggleGuide(open); });
 /** 왼쪽 메뉴의 "나비 길잡이"를 누르면 홈 화면에서 나비 길잡이 대화창을 연다. */
+// 업무(맡은 일·맡긴 일·나 홀로)는 나비 길잡이의 하위 메뉴 "업무" 하나이고, 화면 위쪽의 세 탭으로 오간다(2026-11-06). 마지막에 본 탭을 기억한다.
+const _CASE_TAB_KEY = 'kmail_case_tab';
+function _caseLast() { let t = ''; try { t = localStorage.getItem(_CASE_TAB_KEY) || ''; } catch (e) {} return ['caseprov', 'casecons', 'casesolo'].includes(t) ? t : 'caseprov'; }
 function _guideNavOpen() { _switchTab('home'); _cmpGuidePick(); }
 /** 과제 목록에서 과제를 열거나(id), 새 과제를 시작한다(null). */
 function _guideOpen(id) { _guideLoad(); _guide.cur = id && _guide.plans[id] ? id : null; _guideStore(); _switchTab('home'); _cmpGuidePick(); }
@@ -4605,7 +4606,7 @@ function _switchTab(name) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'doc' ? 'docwrite' : name === 'verdict' || name === 'feedback' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  const _navBtn = document.getElementById('tab-btn-' + (name.indexOf('case') === 0 ? 'case' : name === 'doc' ? 'docwrite' : name === 'verdict' || name === 'feedback' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
   if (name !== 'verdict' && name !== 'feedback') _navBtn.classList.add('active');
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
@@ -4625,7 +4626,7 @@ function _switchTab(name) {
   if (name === 'whitepaper') _wpSwitch(document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi');
   if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
-  if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
+  if (name.indexOf('case') === 0) { try { localStorage.setItem(_CASE_TAB_KEY, name); } catch (e) {} if (window.CaseUI) CaseUI.show(name); }
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
   _navSyncMailSub();
 }
