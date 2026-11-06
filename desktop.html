@@ -1047,6 +1047,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 <style>
 /* 업무(Case) 화면 — case-ui.js */
 .cs-panel{padding:20px 24px;max-width:980px}
+.pg-bar{margin:0 0 14px;overflow-x:auto}.pg-bar .cs-modes{margin:0;min-width:max-content}
+.pg-bar .unread-badge{margin-left:6px}
+/* 서류·메일 하위 메뉴는 위쪽 탭으로 옮겼다(2026-11-06): 왼쪽 메뉴의 펼침 단추와 하위 항목, 메일 화면 안의 옛 탭 줄은 숨긴다 */
+#nav-group-docs .nav-toggle,#nav-group-mail .nav-toggle,#nav-group-docs .nav-sub,#nav-group-mail .nav-sub,#tab-mail .mail-subnav{display:none!important}
+#tab-compose:not([data-mode=doc]) > .pg-bar{display:none}
 .cs-modes{display:flex;gap:4px;border-bottom:1px solid var(--bdr);margin:-6px 0 16px}
 .cs-mode{border:0;background:transparent;padding:9px 16px;font-size:15px;font-weight:700;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;font-family:inherit}
 .cs-mode:hover{color:var(--txt,#1a1d24)}.cs-mode.on{color:var(--pri);border-bottom-color:var(--pri)}
@@ -1280,7 +1285,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
     <div class="lp-host" id="lp-host"></div>
-    <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
   </div>
@@ -1328,6 +1332,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button id="tab-btn-pricing" class="nav-btn" data-label="플랜 업그레이드" onclick="_switchTab('pricing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 16.5V8M8 11.8L12 7.8l4 4"/></svg>플랜 업그레이드</button>
     </div>
     <div class="side-settings">
+      <button id="tab-btn-feedback" class="nav-btn" data-label="기능 개선 제안" onclick="_switchTab('feedback')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 8v4M12 15h.01"/></svg>
+        기능 개선 제안</button>
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
     </div>
   </nav>
@@ -1340,6 +1346,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        (주피터 지시) — 이 화면 하나가 그 설계·확정 과정 전체를 담당.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-compose" class="tab-panel active" data-mode="default">
+    <div class="pg-bar" data-pgbar="doc"></div>
     <div class="chat-landing" id="cmp-landing">
       <div class="chat-landing-title">무엇을 도와드릴까요?</div>
       <div class="chat-landing-sub">누구에게, 왜, 무엇을 보내고 싶은지 편하게 말씀해 주세요. 대상을 못 찾으면 검색해서 후보를 찾아드리고, 제목·본문·발송 시각까지 정리해 확인받은 뒤에만 실제로 보냅니다.</div>
@@ -1466,6 +1473,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        유일한 조작이라 이 화면이 필요함), 수동 등록, 태그 확인.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-contacts" class="tab-panel">
+    <div class="pg-bar" data-pgbar="mail"></div>
     <div class="card">
       <h2>AI로 일괄 관리 (K-Address)</h2>
       <div class="sub">이름·이메일 명단을 통째로 붙여넣고 "등록해줘"처럼 말하면 한 번에 처리합니다. 수정·보완·승인/거부·병합·태그·삭제도 대화로 가능합니다 — 아래 수동 등록·목록과는 별개의 대화형 도구입니다.</div>
@@ -1537,6 +1545,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        테이블을 직접 그리면 스키마 변경마다 이 화면도 깨진다).
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-campaigns" class="tab-panel">
+    <div class="pg-bar" data-pgbar="mail"></div>
     <div class="card" id="camp-list-card">
       <h2>내 캠페인</h2>
       <div class="sub">이 화면 하나로 모든 캠페인을 검색·인출할 수 있습니다. 제목으로 찾아보고, 자세히 보려면 항목을 눌러 K-Mail에게 직접 물어보세요.</div>
@@ -1568,6 +1577,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        입력한 그대로 즉시 발송한다 — 받은 메일함 열람 기능은 없음.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-quicksend" class="tab-panel">
+    <div class="pg-bar" data-pgbar="mail"></div>
   <div id="qs-sent-card" class="sent-card" role="status" aria-live="polite" tabindex="-1" style="display:none"></div>
     <div class="card">
       <h2>빠른 발송</h2>
@@ -1600,6 +1610,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        PR feat/kmail-tab-backend 참고).
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-mail" class="tab-panel">
+    <div class="pg-bar" data-pgbar="mail"></div>
     <div class="card">
       <div class="mail-subnav">
         <button type="button" id="mail-subnav-compose" class="active" onclick="_mailSwitchSub('compose')">편지쓰기</button>
@@ -1905,6 +1916,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   </div>
 
   <div id="tab-docdrafts" class="tab-panel">
+    <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
       <h2>서류 Draft</h2>
       <div class="sub">작성하다 나간 서류가 이 기기의 PDV에 자동으로 저장됩니다. 서류 페이지의 입력칸까지는 복원되지 않고, 요청문과(받아 둔 경우) 작성본 Word 파일이 보관됩니다. 다른 기기와의 동기화는 아직 없습니다.</div>
@@ -1914,6 +1926,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
   </div>
   <div id="tab-docdone" class="tab-panel">
+    <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
       <h2>작성한 서류</h2>
       <div class="sub">서류 화면에서 "작성 완료로 저장"을 누르거나 서류를 메일에 첨부하면 이곳에 보관됩니다(이 기기의 PDV).</div>
@@ -1924,6 +1937,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   </div>
 
   <div id="tab-myforms" class="tab-panel">
+    <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
       <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
       <div class="sub">자주 쓰는 양식, 내가 만든 양식, 올려 둔 양식을 이 기기의 PDV에 보관합니다. 항목을 누르면 서류 작성 화면에서 바로 열립니다. 서류 작성 중 위쪽의 "★ 내 서류함에 담기"로 자주 쓰는 양식을 추가하고, 양식 파일을 올리면 자동으로 이곳에 보관됩니다.</div>
@@ -4665,7 +4679,7 @@ const _NAV_DOCS_KEY = 'kmail_nav_docs_open';
 function _navToggleDocs(force) {
   const g = document.getElementById('nav-group-docs');
   if (!g) return;
-  const open = typeof force === 'boolean' ? force : g.classList.contains('collapsed');
+  const open = false;   // 하위 메뉴는 없앴다 — 서류 화면 위쪽 탭으로 옮김(2026-11-06). 항상 접힌 채로 둔다
   g.classList.toggle('collapsed', !open);
   const t = document.getElementById('nav-toggle-docs');
   if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -4698,8 +4712,8 @@ function _switchTab(name) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' || name === 'feedback' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
-  if (name !== 'verdict' && name !== 'feedback') _navBtn.classList.add('active');
+  const _navBtn = document.getElementById('tab-btn-' + (name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  if (name !== 'verdict') _navBtn.classList.add('active');   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
@@ -4985,7 +4999,7 @@ const _NAV_MAIL_KEY = 'kmail_nav_mail_open';
 function _navToggleMail(force) {
   const g = document.getElementById('nav-group-mail');
   if (!g) return;
-  const open = typeof force === 'boolean' ? force : g.classList.contains('collapsed');
+  const open = false;   // 하위 메뉴는 없앴다 — 메일 화면 위쪽 탭으로 옮김(2026-11-06). 항상 접힌 채로 둔다
   g.classList.toggle('collapsed', !open);
   const t = document.getElementById('nav-toggle-mail');
   if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -6800,7 +6814,35 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIs
 const _TOPBAR_HOME = '나만의 AI 비서, 나비';
 const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
 function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => _i18nOrig(n)).join('').trim(); }   // 언어를 바꿔도 판단은 한국어 원문으로   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
+// ── 서류·메일 화면 위쪽 탭(2026-11-06) — 왼쪽 메뉴의 하위 메뉴를 옮겨 왔다 ──
+const _PG_TABS = {
+  doc: [['doc', '서류 작성'], ['docdrafts', 'Draft'], ['docdone', '작성한 서류'], ['myforms', '내 서류함']],
+  mail: [['quicksend', '빠른 발송'], ['campaigns', '내 캠페인'], ['contacts', '주소록'], ['m:compose', '편지쓰기'], ['m:drafts', 'Draft'], ['m:sent', '보낸메일함'], ['m:inbox', '받은메일함'], ['m:tags', '태그별 보관함']],
+};
+function _pgActive(kind) {
+  const on = document.querySelector('.tab-panel.active'); if (!on) return '';
+  if (on.id === 'tab-compose') return kind === 'doc' && _cmpMode === 'doc' ? 'doc' : '';
+  if (on.id === 'tab-mail') { const a = document.querySelector('.mail-subnav button.active'); return kind === 'mail' ? 'm:' + (a ? a.id.replace('mail-subnav-', '') : 'compose') : ''; }
+  return on.id.replace('tab-', '');
+}
+function _pgGo(key) {
+  if (key.indexOf('m:') === 0) return _navMailSub(key.slice(2));
+  if (key === 'campaigns') return _campNavClick();
+  if (key === 'contacts') return _ctNavClick();
+  _switchTab(key);
+}
+function _pgTabsFill() {
+  const srcBadge = document.querySelector('#nav-sub-mail .unread-badge[data-for="inbox"]');
+  const bn = srcBadge && !srcBadge.hidden ? srcBadge.textContent : '';
+  document.querySelectorAll('[data-pgbar]').forEach(box => {
+    const kind = box.getAttribute('data-pgbar'), act = _pgActive(kind);
+    box.innerHTML = '<div class="cs-modes" role="tablist" aria-label="' + _i18nEsc(_T(kind === 'doc' ? '서류' : '메일')) + '">' + _PG_TABS[kind].map(x =>
+      '<button type="button" role="tab" class="cs-mode' + (x[0] === act ? ' on' : '') + '" aria-selected="' + (x[0] === act) + '" onclick="_pgGo(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) +
+      (x[0] === 'm:inbox' && bn ? '<span class="unread-badge" data-for="inbox">' + _i18nEsc(bn) + '</span>' : '') + '</button>').join('') + '</div>';
+  });
+}
 function _topbarSyncPage() {
+  _pgTabsFill();
   const el = document.getElementById('topbar-page');
   if (!el) return;
   let label = '';
