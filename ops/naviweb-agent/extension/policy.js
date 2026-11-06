@@ -43,6 +43,8 @@ function classifyKnown(tool, input = {}, info = {}) {
       return { act: 'handoff', reason: '비밀번호·카드·인증 정보 입력칸입니다. 직접 입력해 주세요.' };
     return { act: 'auto' };
   }
+  // 화면의 "로그인" 링크는 로그인 창(팝업)을 여는 일일 뿐이라 도우미가 직접 눌러 연다. 아이디·인증서 입력과 인증은 계속 사용자가 한다.
+  if (tool === 'click' && info.tag === 'a' && /^(로그인|login)$/i.test(String(info.text || '').trim())) return { act: 'auto' };
   if (tool === 'click' || tool === 'select_option') {
     const label = `${info.text || ''} ${info.name || ''}`;
     if (HANDOFF_TEXT.test(label)) return { act: 'handoff', reason: `"${(info.text || info.name || '').trim().slice(0, 30)}" 단계는 직접 진행해 주세요.` };

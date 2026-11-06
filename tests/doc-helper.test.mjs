@@ -145,10 +145,10 @@ test('desktop.html: 저장 성공(두 경로)과 도우미 진행 상태가 _doc
   assert.match(html, /navi-doc-slot-result'\) \{\s*\n\s*if \(_docChat\.on && window\.DocHelper\)[\s\S]{0,300}'received'/);
   assert.match(html, /<script src="doc-helper\.js\?v=\d+"><\/script>/);
 });
-test('desktop.html: 확장에는 항상 사용자가 시작·승인해야 하는 큐로만 맡긴다(자동 실행 없음)', () => {
+test('desktop.html: 확장에 맡기면 도우미가 바로 시작하고 사용자에게 아이콘 클릭을 시키지 않는다', () => {
   const f = html.slice(html.indexOf('async function _docChatAgentTask('), html.indexOf("window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 낸 태그"));
-  assert.match(f, /NaviAgent\.queue\(r\.job\)/); assert.match(f, /도구 모음의 나비웹 도우미 아이콘을 눌러 내용을 확인하고 시작하세요/);
-  assert.doesNotMatch(f, /agent-start|autostart|run\(/);
+  assert.match(f, /NaviAgent\.queue\(r\.job\)/); assert.match(f, /화면의 안내에 따라 로그인해 주세요/);
+  assert.doesNotMatch(f, /아이콘을 눌러/);
 });
 
 // ── 도우미가 이끄는 동안의 화면 (2026-11-04) ─────────────────────────

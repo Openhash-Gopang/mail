@@ -288,7 +288,7 @@ test('send_file_to_navi: 도구·권한·안내가 갖춰져 있다', async () =
   assert.equal(classify('send_file_to_navi', {}, {}).act, 'auto');
   assert.match(buildSystem(null), /send_file_to_navi/);
   const mf = JSON.parse(fs.readFileSync(new URL('../ops/naviweb-agent/extension/manifest.json', import.meta.url), 'utf8'));
-  assert.ok(mf.permissions.includes('downloads')); assert.match(mf.version, /^0\.5\./);
+  assert.ok(mf.permissions.includes('downloads')); assert.match(mf.version, /^0\.6\./);
   const bg = fs.readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
   assert.match(bg, /name === 'send_file_to_navi'/); assert.match(bg, /kind: 'file'/);
   assert.match(fs.readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8'), /link_href/);
@@ -349,6 +349,31 @@ test('첨부서류 가져오기 버튼: 직접 만든 자료만 빼고 모든 �
   const generic = new RegExp(NA.slotPatterns().at(-1));
   for (const l of ['주민등록등본 1부', '건강보험 자격득실확인서', '송달증명원', '법인등기사항증명서']) assert.ok(generic.test(l) && NA.slotFetchable(l), l);
   for (const l of ['위임장 1부', '사진 2매', '임대차계약서 사본', '재산목록', '']) assert.ok(!generic.test(l) && !NA.slotFetchable(l), l);
-  assert.equal(NA.slotPlan('주민등록등본 1부'), null, '전용 절차 표시는 법인등기에만');
+  assert.equal(NA.slotPlan('주민등록등본 1부').playbook, 'gov24-doc', '정부24 민원서류');
+  assert.equal(NA.slotPlan('송달증명원'), null);
   assert.equal(NA.slotPlan('법인등기사항증명서').playbook, 'iros-corp-ecourt');
+});
+
+// ── 0.6: 맡기면 바로 시작(Claude in Chrome 방식) ─────────────────────────────
+test('0.6: 모든 https 사이트 권한, 맡기면 바로 시작, 작업 탭 안내 띠', async () => {
+  const fs = await import('node:fs');
+  const rd = (f) => fs.readFileSync(new URL('../ops/naviweb-agent/extension/' + f, import.meta.url), 'utf8');
+  const mf = JSON.parse(rd('manifest.json'));
+  assert.ok(mf.host_permissions.includes('https://*/*'), '설치 때 모든 사이트 허용');
+  const bg = rd('background.js');
+  assert.match(bg, /j\.autostart && fromNavi && sender\.tab/); assert.match(bg, /async function runJob\(/);
+  assert.match(bg, /if \(m\.type === 'start' && !state\.running\) runJob\(m\)/);
+  assert.match(bg, /mine/, '답/중단은 작업 탭 또는 확장 화면에서 온 것만');
+  const ct = rd('content.js');
+  assert.match(ct, /__navi === 'overlay'/); assert.match(ct, /직접 했어요/); assert.match(ct, /mode: 'closed'/);
+  const NA = (await import('node:module')).createRequire(import.meta.url)('../agent-bridge.js');
+  assert.ok(NA.slotPlan('주민등록표 등본(초본) 1부'));
+  assert.match(buildSystem(null), /로그인 창을 직접 연 뒤/);
+  assert.ok(PLAYBOOKS['gov24-doc'] && PLAYBOOKS['gov24-doc'].allowedHosts.includes('gov.kr'));
+});
+test('0.6: 로그인 링크는 직접 열고, 입력·인증·제출 단추는 그대로 사용자에게 넘긴다', () => {
+  assert.equal(classify('click', { ref: 'r' }, { tag: 'a', text: '로그인', host: 'www.gov.kr' }).act, 'auto');
+  assert.equal(classify('click', { ref: 'r' }, { tag: 'a', text: '공동인증서 로그인', host: 'www.gov.kr' }).act, 'handoff');
+  assert.equal(classify('click', { ref: 'r' }, { tag: 'button', text: '로그인', host: 'www.gov.kr' }).act, 'handoff');
+  assert.equal(classify('type', { text: 'x' }, { type: 'password', host: 'www.gov.kr' }).act, 'handoff');
 });
