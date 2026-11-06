@@ -49,17 +49,17 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <ul><li>둘러보기: 로그인 없이 화면·사용법을 살펴봅니다.</li><li>전화번호 본인 인증 후 24시간 동안 넉넉히 무료로 사용합니다.</li><li>그 뒤에도 가볍게 이어서 쓸 수 있고, 많이 쓰면 잠시 쉬었다가 다시 쓸 수 있습니다.</li></ul>
 <div class="st" id="free-st"></div>
 <button type="button" class="go2" id="pick-free">무료 플랜으로 사용하기</button></section>
-<section class="card pc" id="plan-p10"><h2>기본</h2>
+<section class="card pc" id="plan-p10" data-tier="p10"><h2>기본</h2>
 <div class="pv">$10<small> / 월</small></div>
 <ul><li>간단한 질문과 답변</li><li>메시징</li><li>메일 서비스</li></ul>
 <div class="st"><span data-beta>베타 기간에는 $200 플랜을 $20에 이용</span></div>
 <button type="button" class="go2 pay-go">입금 안내 보기</button></section>
-<section class="card pc" id="plan-p100"><h2>서류</h2>
+<section class="card pc" id="plan-p100" data-tier="p100"><h2>서류</h2>
 <div class="pv">$100<small> / 월</small></div>
 <ul><li>기본 플랜의 모든 기능</li><li>서류 작성을 주로 쓰는 분께 맞는 사용량</li></ul>
 <div class="st"><span data-beta>베타 기간에는 $200 플랜을 $20에 이용</span></div>
 <button type="button" class="go2 pay-go">입금 안내 보기</button></section>
-<section class="card pc" id="plan-p200" style="background:var(--pri-bg)"><h2>프로 <span class="bd" data-beta>베타 −90%</span></h2>
+<section class="card pc" id="plan-p200" data-tier="p200" style="background:var(--pri-bg)"><h2>프로 <span class="bd" data-beta>베타 −90%</span></h2>
 <div class="pv"><span data-b="usd">$20</span><small> / 월</small></div>
 <div class="st"><span data-beta>정가 <s data-b="list">$200</s> · 2026년 12월 말까지</span></div>
 <ul><li>서류 플랜의 모든 기능</li><li>가상 판결 기능을 자주 쓰는 분께 맞는 사용량</li></ul>
@@ -78,17 +78,18 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <section class="card kp hl"><div class="l"><span>월 이용료</span><span class="bd" data-beta>베타</span></div><div class="v" data-b="usd">$20</div><div class="m"><span class="d" data-beta>−90%</span><span data-beta>$200 플랜 정가 <span data-b="list">$200</span> · 2026년 12월 말까지</span></div></section>
 <section class="card kp"><div class="l"><span>오늘의 환율</span><span class="bd s" data-b="rdate">—</span></div><div class="v"><span data-b="rate">—</span></div><div class="m">원/USD · <span data-b="rsrc"></span></div></section>
 <section class="card kp"><div class="l"><span>입금액</span><span class="bd">원화</span></div><div class="v" data-b="krw">—</div><div class="m">원 미만 올림</div></section>
-<section class="card kp"><div class="l"><span>충전되는 GDC</span><span class="bd s">1 GDC = 1원</span></div><div class="v" data-b="gdc">—</div><div class="m">입금 확인 즉시</div></section>
+<section class="card kp"><div class="l"><span>입금자명 뒤에 붙일 번호</span><span class="bd s">내 전화번호 끝 8자리</span></div><div class="v" id="pay-code">—</div><div class="m">플랜을 고르면 표시됩니다</div></section>
 </div>
 <div class="warn" id="rate-warn" hidden></div>
+<div class="warn" id="pay-msg" hidden></div><div class="warn" id="pay-ok" hidden style="background:var(--ok-bg);color:var(--ok-t)"></div>
 <div class="r">
-<section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 그날의 환율로 환산한 원화가 GDC로 충전됩니다(1 GDC = 1원).</p></section>
-<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>오늘의 환율로 입금액을 확인합니다. 환율이 1,300원이면 $20는 26,000원입니다.</li><li>지정 계좌로 해당 금액을 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 합니다.</li><li>입금이 확인되면 입금액이 GDC로 충전됩니다.</li></ol></section>
+<section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 선택한 플랜이 바로 적용되고 30일간 이용할 수 있습니다. 플랜 이용료는 GDC로 충전되지 않습니다.</p></section>
+<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>위에서 플랜의 「입금 안내 보기」를 누르면 입금액이 정해집니다. 환율이 1,300원이면 $20는 26,000원입니다.</li><li>지정 계좌로 <b>그 금액 그대로</b> 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 하고, 가능하면 뒤에 안내된 번호를 붙입니다.</li><li>입금이 확인되면 플랜이 자동으로 적용됩니다. 보통 몇 분 안에 끝납니다. 금액이 다르면 자동으로 처리되지 않으니 운영자가 확인합니다.</li></ol></section>
 </div>
 <section class="card cb bt"><h2 class="ct">베타 테스트 안내 <span class="bd s">GDC 보상</span></h2>
 <p class="bp">베타 테스트 기간에는 언제든지 다양한 시스템 오류가 발생할 수 있습니다. 기능 개선을 제안하거나 오류(버그)를 신고해 주시면 중요도에 따라 GDC로 보상합니다. 예를 들어 현저한 개선 아이디어에는 100,000 GDC를 지급합니다.</p>
 <button type="button" class="go" id="go-fb">기능 개선 제안·오류 신고하기</button></section>
-<section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2><details><summary>환율은 언제 적용되나요?</summary><p>입금이 확인된 그날의 환율로 환산합니다. 기준 날짜는 환율 옆에 표시됩니다.</p></details><details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 선택한 플랜의 정가(월 $10 · $100 · $200)가 적용됩니다.</p></details><details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details></section>
+<section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2><details><summary>환율은 언제 적용되나요?</summary><p>「입금 안내 보기」를 누른 때의 환율로 입금액이 정해집니다. 그 금액은 48시간 동안 유효합니다.</p></details><details><summary>입금했는데 적용이 안 돼요</summary><p>입금액이 안내 금액과 1원이라도 다르면 자동 적용되지 않습니다. 기능 개선 제안·오류 신고로 입금 사실을 알려 주시면 확인해 드립니다.</p></details><details><summary>추가 사용량은 어떻게 충전하나요?</summary><p>플랜 이용료와 별개입니다. 추가 사용량을 켜 두면 GDC 잔액에서 사용한 만큼 차감되므로, 충전하기에서 GDC를 충전해 두세요.</p></details><details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 선택한 플랜의 정가(월 $10 · $100 · $200)가 적용됩니다.</p></details><details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details></section>
 </main>
 <script>
 var PRICE_LIST_USD=200,DISCOUNT=.9,PRICE_BETA_USD=Math.round(PRICE_LIST_USD*(1-DISCOUNT)),BETA_END='2026-12-31';
@@ -109,8 +110,8 @@ function renderAccount(){var a=PAY_ACCOUNT,el=$('acct');if(!el)return;
  c.onclick=function(){try{navigator.clipboard.writeText(a.number);c.textContent='복사됨';setTimeout(function(){c.textContent='복사'},1500)}catch(e){}}}
 function renderRate(r,src){var krw=Math.ceil(window._usd*r.rate),d=new Date(r.at);
  bind('rate',nf.format(Math.round(r.rate*100)/100));bind('rdate',isNaN(d)?String(r.at):kst(d)+' 기준');bind('rsrc',src);
- bind('krw',nf.format(krw)+'원');bind('gdc',nf.format(krw)+' GDC');var w=$('rate-warn');if(w)w.hidden=true}
-function renderFail(){bind('rate','—');bind('rdate','—');bind('rsrc','');bind('krw','—');bind('gdc','—');
+ bind('krw',nf.format(krw)+'원');var w=$('rate-warn');if(w)w.hidden=true}
+function renderFail(){bind('rate','—');bind('rdate','—');bind('rsrc','');bind('krw','—');
  var w=$('rate-warn');if(w){w.hidden=false;w.textContent='환율을 불러오지 못했습니다. 잠시 뒤 다시 열어 주세요. 환율이 표시되지 않을 때는 입금액을 확인한 뒤에 입금해 주세요.'}}
 async function loadRate(){for(var i=0;i<RATE_SOURCES.length;i++){try{var c=new AbortController(),t=setTimeout(function(){c.abort()},8000);
  var res=await fetch(RATE_SOURCES[i].url,{signal:c.signal,cache:'no-store'});clearTimeout(t);if(!res.ok)throw 0;
@@ -141,7 +142,19 @@ $('pick-free').onclick=function(){var t=ck('hondi_pvt');
  if(!t){$('free-st').textContent='먼저 로그인(전화번호 본인 인증)해 주세요.';try{if(parent!==window&&parent.KAuth&&parent.KAuth.login)parent.KAuth.login()}catch(e){}return}
  $('pick-free').disabled=true;
  post('/auth/free-plan',{phone_verify_token:t,plan:'free'}).then(function(x){if(x.d&&x.d.ok)loadPlan();else{$('pick-free').disabled=false;$('free-st').textContent=(x.d&&x.d.message)||'선택하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'}},function(){$('pick-free').disabled=false;$('free-st').textContent='네트워크 오류입니다. 잠시 뒤 다시 시도해 주세요.'})};
-document.querySelectorAll('.pay-go').forEach(function(b){b.onclick=function(){var e=$('pay-sec');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth'})}});
+var _poll=null;
+function stopPoll(){if(_poll){clearInterval(_poll);_poll=null}}
+function startPoll(tier){stopPoll();var t=ck('hondi_pvt'),n=0,base=null;if(!t)return;post('/auth/test-quota',{phone_verify_token:t}).then(function(x){base=(x.d&&x.d.paid_until)||''});_poll=setInterval(function(){n++;if(n>60){stopPoll();return}
+ post('/auth/test-quota',{phone_verify_token:t}).then(function(x){var d=x.d;if(d&&d.ok&&d.tier&&d.tier===tier&&d.status==='active'&&base!==null&&d.paid_until!==base){stopPoll();$('pay-ok').hidden=false;$('pay-ok').textContent='입금이 확인되어 플랜이 적용되었습니다.';showPlan(d)}})},10000)}
+document.querySelectorAll('.pay-go').forEach(function(b){b.onclick=function(){var card=b.closest('[data-tier]'),tier=card&&card.getAttribute('data-tier'),t=ck('hondi_pvt'),e=$('pay-sec');
+ if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth'});
+ if(!t){$('pay-msg').hidden=false;$('pay-msg').textContent='전화번호 인증 후 이용할 수 있습니다.';return}
+ $('pay-msg').hidden=false;$('pay-msg').textContent='입금액을 정하는 중입니다…';$('pay-ok').hidden=true;
+ post('/biz/plan-request',{phone_verify_token:t,tier:tier}).then(function(x){var d=x.d;
+  if(!d||!d.ok){$('pay-msg').textContent=(d&&d.message)||'입금 안내를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.';return}
+  bind('krw',nf.format(d.krw)+'원');bind('usd','$'+d.usd);bind('rate',nf.format(Math.round(d.rate*100)/100));$('pay-code').textContent=d.match_code;
+  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명: 가입한 이름 + '+d.match_code;
+  startPoll(d.grant)},function(){$('pay-msg').textContent='연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'})}});
 $('x-save').onclick=function(){var t=ck('hondi_pvt');if(!t)return;var lim=Number($('x-lim').value||0),on=$('x-on').checked;
  if(on&&!(lim>0)){$('x-msg').textContent='추가 사용량을 켜려면 월 한도를 정해 주세요.';return}
  $('x-save').disabled=true;$('x-msg').textContent='저장 중…';
