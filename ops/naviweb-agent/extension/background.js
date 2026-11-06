@@ -66,7 +66,16 @@ async function toTab(name, input, describe) {
   }
   return one(0, input);
 }
-function ask(kind, text) { say({ type: 'prompt', kind, text }); return new Promise((res) => { state.waiter = res; }); }
+// 작업 탭 위의 안내 띠(content.js). 탭이 바뀌거나 새로 불러와도 다시 붙인다.
+async function overlay(mode, text) {
+  state.ov = mode === 'off' ? null : { mode, text };
+  if (state.tabId == null) return;
+  const msg = { __navi: 'overlay', mode, text };
+  try { await chrome.tabs.sendMessage(state.tabId, msg, { frameId: 0 }); }
+  catch { try { await chrome.scripting.executeScript({ target: { tabId: state.tabId, allFrames: true }, files: ['content.js'] }); await chrome.tabs.sendMessage(state.tabId, msg, { frameId: 0 }); } catch { /* 주입할 수 없는 화면 */ } }
+}
+chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text); });
+function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
 
 async function host(playbook) {
   const c = await cfg();
@@ -123,24 +132,8 @@ async function deliverToNavi(msg) {
   if (naviTabId == null) throw new Error('나비웹 화면을 찾지 못했습니다. 나비웹에서 다시 맡겨 주세요.');
   await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : 'deliver', label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
 }
-chrome.runtime.onMessage.addListener((m, sender, send) => {
-  if (m && m.type === 'deliver-file' && sender.id === chrome.runtime.id && !sender.tab) { deliverToNavi(m).then(() => send({ ok: true }), (e) => send({ ok: false, error: e.message })); return true; }
-  if (m && m.type === 'info') { send({ version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) }); return; }
-  if (m && m.type === 'queue') {
-    const j = m.job || {};
-    if (j.playbook && !PLAYBOOKS[j.playbook]) { send({ ok: false, error: '알 수 없는 절차' }); return; }
-    // 나비웹 로그인 토큰은 나비웹 화면(다리 스크립트)에서 온 것만 받는다.
-    let fromNavi = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; fromNavi = h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { /* 아님 */ }
-    if (fromNavi && typeof j.token === 'string' && j.token && chrome.storage.session) chrome.storage.session.set({ userToken: j.token.slice(0, 4000) });
-    if (fromNavi && sender.tab && sender.tab.id != null && chrome.storage.session) chrome.storage.session.set({ naviTabId: sender.tab.id });   // 받아 온 파일을 돌려줄 나비웹 탭
-    chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', slot: String(j.slot || '').slice(0, 120), at: Date.now() } })
-      .then(() => { chrome.action.setBadgeText({ text: '1' }); chrome.action.setBadgeBackgroundColor({ color: '#2f5bd8' }); send({ ok: true }); });
-    return true;
-  }
-  if (m.type === 'reply' && state.waiter) { const w = state.waiter; state.waiter = null; w(m.ok !== false); }
-  if (m.type === 'stop') { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
-  if (m.type === 'start' && !state.running) (async () => {
-    state = { running: true, abort: false, tabId: null, waiter: null, slot: String(m.slot || '').slice(0, 120) };
+async function runJob(m) {
+    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, slot: String(m.slot || '').slice(0, 120) };
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
       const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
@@ -151,12 +144,40 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : 'about:blank', active: true }); await wait(2500); }
       state.tabId = tab.id;
+      await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
       const res = await runAgent({ goal, playbook: pb, host: await host(pb) });
       say({ type: 'done', res });
-    } catch (e) { say({ type: 'error', text: e.message }); }
+      if (res && res.done) await overlay('done', String(res.text || '작업을 마쳤습니다.').replace(/[#*`]/g, '').slice(0, 300));
+      else await overlay(res && res.reason === 'aborted' ? 'off' : 'error', '작업을 끝내지 못했습니다. 나비웹 화면에서 다시 맡겨 주세요.');
+    } catch (e) { say({ type: 'error', text: e.message }); await overlay('error', e.message); }
     state.running = false;
-  })();
+  }
+chrome.runtime.onMessage.addListener((m, sender, send) => {
+  if (m && m.type === 'deliver-file' && sender.id === chrome.runtime.id && !sender.tab) { deliverToNavi(m).then(() => send({ ok: true }), (e) => send({ ok: false, error: e.message })); return true; }
+  if (m && m.type === 'info') { send({ version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) }); return; }
+  if (m && m.type === 'queue') {
+    const j = m.job || {};
+    if (j.playbook && !PLAYBOOKS[j.playbook]) { send({ ok: false, error: '알 수 없는 절차' }); return; }
+    // 나비웹 로그인 토큰은 나비웹 화면(다리 스크립트)에서 온 것만 받는다.
+    let fromNavi = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; fromNavi = h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { /* 아님 */ }
+    if (fromNavi && typeof j.token === 'string' && j.token && chrome.storage.session) chrome.storage.session.set({ userToken: j.token.slice(0, 4000) });
+    if (fromNavi && sender.tab && sender.tab.id != null && chrome.storage.session) chrome.storage.session.set({ naviTabId: sender.tab.id });   // 받아 온 파일을 돌려줄 나비웹 탭
+    // 나비웹에서 맡기면 바로 시작한다(도구 모음 아이콘·옆 창을 열 필요 없음). 로그인·인증서·결제는 작업 탭의 안내에 따라 사용자가 직접 한다.
+    if (j.autostart && fromNavi && sender.tab && (j.goal || j.playbook)) {
+      if (state.running) { send({ ok: false, busy: true }); return; }
+      const pb = j.playbook ? PLAYBOOKS[j.playbook] : null;
+      runJob({ playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: sender.tab.windowId });
+      send({ ok: true }); return;
+    }
+    chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', slot: String(j.slot || '').slice(0, 120), at: Date.now() } })
+      .then(() => { chrome.action.setBadgeText({ text: '1' }); chrome.action.setBadgeBackgroundColor({ color: '#2f5bd8' }); send({ ok: true }); });
+    return true;
+  }
+  const mine = sender.id === chrome.runtime.id && (!sender.tab || sender.tab.id === state.tabId);
+  if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false); }
+  if (m.type === 'stop' && mine) { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
+  if (m.type === 'start' && !state.running) runJob(m);
   send && send({ ok: true });
 });
