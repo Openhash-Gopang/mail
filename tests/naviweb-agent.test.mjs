@@ -387,3 +387,22 @@ test('가져오기 버튼: 정부24 민원서류는 AI 답을 기다리지 않�
   const html = fs.readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(html, /ip\.instant && _agentInfo\) \{ _docChatAgentTask\(\{ slot: label, goal: label \}\); return; \}/);
 });
+
+test('가져오기: 법인 이름이 필요한 항목은 사이트를 먼저 열고 이름은 나중에 전한다(early/update)', async () => {
+  const fs = await import('node:fs');
+  const rd = (f) => fs.readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+  const NA = (await import('node:module')).createRequire(import.meta.url)('../agent-bridge.js');
+  assert.equal(NA.slotPlan('법인등기사항증명서').early, true);
+  assert.equal(typeof NA.update, 'function');
+  assert.match(rd('ops/naviweb-agent/extension/bridge.js'), /autostart: job\.autostart === true, update: job\.update === true/, '다리가 autostart·update 를 확장에 넘긴다');
+  assert.match(rd('ops/naviweb-agent/extension/background.js'), /state\.inbox\.push\(j\.text/);
+  assert.match(rd('ops/naviweb-agent/extension/agent-core.js'), /\[추가 정보\]/);
+  assert.match(rd('desktop.html'), /NaviAgent\.update\(_lbl, d\.goal\)/);
+  assert.match(JSON.parse(rd('ops/naviweb-agent/extension/manifest.json')).version, /^0\.6\.[1-9]/);
+  // 에이전트 루프: inbox 의 정보가 다음 단계 입력에 덧붙는다
+  const sent = []; let n = 0;
+  const host = { aborted: () => false, log() {}, describe: async () => ({}), execTool: async () => ({ text: 'ok' }), ask: async () => true, handoff: async () => {}, inbox: () => (n++ === 1 ? '법인 이름: 가나다' : null),
+    callModel: async (b) => { sent.push(JSON.stringify(b.messages)); return sent.length < 3 ? { content: [{ type: 'tool_use', id: 't' + sent.length, name: 'wait', input: { seconds: 1 } }] } : { content: [{ type: 'text', text: '끝' }] }; } };
+  await runAgent({ goal: 'x', playbook: null, host });
+  assert.ok(sent.some((x) => x.includes('[추가 정보] 법인 이름: 가나다')));
+});

@@ -4,7 +4,7 @@ import { DOM_TOOLS } from './tools.js';
 import { fetchForNavi, pickDownload } from './files.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
-let state = { running: false, abort: false, tabId: null, waiter: null };
+let state = { running: false, abort: false, tabId: null, waiter: null, inbox: [] };
 const say = (m) => chrome.runtime.sendMessage(m).catch(() => {});
 
 // 스토어 설치본은 설정 없이 동작한다: 게이트웨이 주소는 기본값을 쓰고, 인증은 나비웹 로그인 토큰(나비웹 화면에서 작업을 맡길 때 받음, 브라우저를 닫으면 사라짐)을 쓴다.
@@ -81,6 +81,7 @@ async function host(playbook) {
   const c = await cfg();
   return {
     aborted: () => state.abort,
+    inbox: () => state.inbox.shift() || null,
     log: (e) => say({ type: 'log', e }),
     async callModel(body) {
       const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : { 'x-navi-token': encodeURIComponent(c.userToken) }) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
@@ -133,7 +134,7 @@ async function deliverToNavi(msg) {
   await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : 'deliver', label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
 }
 async function runJob(m) {
-    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, slot: String(m.slot || '').slice(0, 120) };
+    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120) };
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
       const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
@@ -164,6 +165,12 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     let fromNavi = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; fromNavi = h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { /* 아님 */ }
     if (fromNavi && typeof j.token === 'string' && j.token && chrome.storage.session) chrome.storage.session.set({ userToken: j.token.slice(0, 4000) });
     if (fromNavi && sender.tab && sender.tab.id != null && chrome.storage.session) chrome.storage.session.set({ naviTabId: sender.tab.id });   // 받아 온 파일을 돌려줄 나비웹 탭
+    // 이미 시작한 작업에 나중에 알려 주는 정보(예: 로그인하는 동안 사용자에게 물어 얻은 법인 이름)
+    if (j.update) {
+      if (fromNavi && state.running && state.slot && state.slot === String(j.slot || '').slice(0, 120) && typeof j.text === 'string' && j.text.trim()) { state.inbox.push(j.text.trim().slice(0, 1000)); send({ ok: true }); }
+      else send({ ok: false });
+      return;
+    }
     // 나비웹에서 맡기면 바로 시작한다(도구 모음 아이콘·옆 창을 열 필요 없음). 로그인·인증서·결제는 작업 탭의 안내에 따라 사용자가 직접 한다.
     if (j.autostart && fromNavi && sender.tab && (j.goal || j.playbook)) {
       if (state.running) { send({ ok: false, busy: true }); return; }
