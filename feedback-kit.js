@@ -41,9 +41,13 @@
     if (kind === 'bug' && !text) return null;
     if (kind === 'attach' && !label) return null;
     var cs = [];
-    ['doc', 'rule', 'ext', 'screen'].forEach(function (n) { var v = clean(ctx[n], 80); if (v) cs.push(n + '=' + v); });
+    ['doc', 'rule', 'ext', 'screen', 'dev'].forEach(function (n) { var v = clean(ctx[n], 80); if (v) cs.push(n + '=' + v); });
     var cat = kind === 'attach' && f.problem === 'missing' ? 'feature_request' : k.cat;
     return { raw_text: '[naviweb:' + k.tag + '] ' + parts.join(' | '), context_sp: 'naviweb-feedback', context_summary: cs.join('; ').slice(0, 480), category: cat, guid: null };
+  }
+  /** 기기마다 무작위로 만든 제보자 표식(개인정보 아님) — 한 사람이 같은 제보를 여러 번 보내도 집계에서 1명으로 센다. */
+  function devId(store) {
+    try { var v = store.getItem('navi_fb_dev'); if (!v) { v = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); store.setItem('navi_fb_dev', v); } return v; } catch (e) { return ''; }
   }
   function today() { return new Date().toISOString().slice(0, 10); }
   function quotaOk(store) {
@@ -59,6 +63,8 @@
     var store = opts.store || (typeof localStorage !== 'undefined' ? localStorage : { getItem: function () { return null; }, setItem: function () {} });
     if (!quotaOk(store)) return Promise.resolve({ ok: false, code: 'limit' });
     var f = opts.fetch || (typeof fetch !== 'undefined' ? fetch : null); if (!f) return Promise.resolve({ ok: false, code: 'fail' });
+    ctx = Object.assign({}, ctx || {}); ctx.dev = devId(store);
+    body = build(kind, fields, ctx);
     return f((opts.endpoint || ENDPOINT) + '/user-feedback/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { if (r && r.ok) { quotaUse(store); return { ok: true, code: 'sent' }; } return { ok: false, code: 'fail' }; })
       .catch(function () { return { ok: false, code: 'fail' }; });
@@ -86,8 +92,8 @@
     card.appendChild(el('p', { text: kind === 'attach' ? '“' + clean(opts.label, LABEL_MAX) + '” 항목에 대해 알려 주세요. 개인정보는 적지 마세요.' : kind === 'newdoc' ? '작성하고 싶은 서류 이름과 쓰임새를 알려 주세요. 많이 요청된 서류부터 추가합니다.' : '무슨 일이 있었는지 적어 주세요. 주민번호·전화번호 등 개인정보는 적지 마세요.' }));
     var inputs = {};
     if (kind === 'attach') {
-      PROBLEMS.forEach(function (p, i) { var rb = el('input', { type: 'radio', name: 'nfb-problem', value: p[0] }); if (i === 0) rb.checked = true; inputs['p_' + p[0]] = rb; card.appendChild(el('label', { class: 'r' }, [rb, el('span', { text: p[1] })])); });
-      card.appendChild(el('label', { text: '올바른 발급 기관 (아시면)' })); inputs.right = el('input', { type: 'text', maxlength: '80', placeholder: '예) 정부24, 대법원 전자가족관계등록시스템' }); card.appendChild(inputs.right);
+      PROBLEMS.forEach(function (p, i) { var rb = el('input', { type: 'radio', name: 'nfb-problem', value: p[0] }); if (opts.problem ? opts.problem === p[0] : i === 0) rb.checked = true; inputs['p_' + p[0]] = rb; card.appendChild(el('label', { class: 'r' }, [rb, el('span', { text: p[1] })])); });
+      card.appendChild(el('label', { text: '올바른 발급 기관 (아시면)' })); inputs.right = el('input', { type: 'text', maxlength: '80', placeholder: '예) 정부24, 대법원 전자가족관계등록시스템' }); inputs.right.value = clean(opts.right, LABEL_MAX); card.appendChild(inputs.right);
     }
     if (kind === 'newdoc') {
       card.appendChild(el('label', { text: '서류 이름' })); inputs.label = el('input', { type: 'text', maxlength: '80', placeholder: '예) 지급명령 신청서' }); inputs.label.value = clean(opts.label, LABEL_MAX); card.appendChild(inputs.label);

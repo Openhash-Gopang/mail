@@ -9,6 +9,7 @@
 | 서류 요청 | 문서 작성 화면 위쪽 | newdoc — 찾는 서류가 없어요 |
 | 문제 알리기 | 문서 작성 화면 위쪽 | bug — 오류·불편 |
 | 대화창 명령 | 도우미 대화창에 `신고: …` · `서류 요청: …` · `제안: …` | AI 를 거치지 않고 제보 창을 연다(제안은 기능 개선 게시판) |
+| 도우미 AI 에게 말하기 | 도우미 대화창에서 "그건 정부24가 아니에요", "이 서류가 없어요" 처럼 말하면 | 도우미가 사과하고 미리 채운 제보 창을 띄운다. 보내기는 사용자가 확인해야 전송 |
 | 가져오기 실패 안내 | 도우미가 항목을 가져오지 못했을 때 대화창에 자동 안내 | 위 ⚑ 로 연결 |
 | 기능 개선 제안 게시판 | 위쪽 "기능 개선 제안", 요금제의 "기능 개선 제안·오류 신고하기" | 아이디어(투표) |
 
@@ -16,6 +17,12 @@
 
 ## 보내는 내용(개인정보 보호)
 사용자가 쓴 글·서류 이름·카탈로그 규칙 ID·확장 버전·서류 제목만 보낸다. 이메일·전화·주민번호 모양·긴 숫자는 보내기 전에 지운다. 기기당 하루 10건까지.
+
+## 자동 수집 (주 1회)
+- 혼디 제보 창구에 운영자 전용 `GET /user-feedback/export?since=&limit=` (Bearer 토큰)가 있다. 읽기 전용, 토큰이 없거나 틀리면 401.
+- `scripts/feedback-weekly.mjs` 가 최근 7일 제보를 받아 `feedback-digest` 로 집계한다. `.github/workflows/feedback-digest.yml` 이 매주 월요일 09:00(KST)에 실행해 결과를 GitHub 이슈 "사용자 제보 주간 집계 <날짜>" 로 올린다(새 제보가 없으면 이슈를 만들지 않는다). 수동 실행도 가능(Actions → feedback-digest → Run workflow).
+- 제보자는 기기마다 무작위로 만든 표식(`dev=`)으로만 구분한다(개인정보 아님). 한 기기의 중복 제보는 1명으로 센다.
+- 설정(1회): 같은 토큰 값을 ① Cloudflare hondi-proxy Worker secret `USER_FEEDBACK_EXPORT_TOKEN` ② 이 저장소 Actions secret `USER_FEEDBACK_EXPORT_TOKEN` 에 넣는다. 로컬 실행: `USER_FEEDBACK_EXPORT_TOKEN=… node scripts/feedback-weekly.mjs --out report.md`
 
 ## 운영자가 반영하는 방법 (주 1회 권장)
 1. 제보 내려받기 — 혼디 L1(PocketBase) `user_feedback` 에서 말머리 `[naviweb:` 가 들어 있는 기록을 JSON 으로 저장한다.

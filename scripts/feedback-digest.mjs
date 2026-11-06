@@ -21,7 +21,8 @@ export function digest(records, { min = 3 } = {}) {
   const groups = new Map(), bugs = [];
   for (const r of (Array.isArray(records) ? records : records?.items) || []) {
     const f = parse(r.raw_text); if (!f) continue;
-    const who = r.guid || r.id || Math.random().toString(36);
+    const dev = /(?:^|; )dev=([^;]+)/.exec(r.context_summary || '');
+    const who = (dev && dev[1]) || r.guid || r.id || Math.random().toString(36);
     if (f.kind === 'bug') { bugs.push({ text: f['내용'] || '', ctx: r.context_summary || '', id: r.id || '' }); continue; }
     const label = f['서류'] || ''; if (!label) continue;
     const key = [f.kind, norm(label), f['문제'] || ''].join('\n');
