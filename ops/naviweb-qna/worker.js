@@ -7,10 +7,10 @@
  * 관리자: Authorization: Bearer <ADMIN_TOKEN>(Worker secret). 토큰이 없거나 틀리면 401.
  * 개인정보: 이메일·전화·주민번호 모양·긴 숫자는 저장 전에 지운다. 이용자 글은 관리자와 본인만 본다(관리자가 공개한 글 제외).
  */
-import { SP_TEXT, SP_ID, SP_VERSION } from './SP-NAVIWEB-MANUAL.v1.js';
+import { composeSP, LANG_NAME, SP_ID, SP_VERSION } from './SP-NAVIWEB-MANUAL.v2.js';
 import { DIGEST } from './manual-digest.js';
 
-export const LIMITS = { title: 80, text: 1200, adminText: 4000, perDayThreads: 10, perDayMsgs: 60, listMax: 100, spTimeoutMs: 20000 };
+export const LIMITS = { title: 80, text: 1200, adminText: 4000, perDayThreads: 10, perDayMsgs: 60, perDayChat: 80, chatTurns: 12, listMax: 100, spTimeoutMs: 20000 };
 const ORIGINS = /^https?:\/\/([a-z0-9-]+\.)*(naviweb\.kr|hondi\.net)$|^http:\/\/localhost(:\d+)?$/i;
 
 /** 개인정보로 보이는 것을 지우고 길이를 줄인다(feedback-kit.js 와 같은 규칙). */
@@ -43,19 +43,18 @@ export function retrieve(question, digest, k) {
   }).filter((x) => x.s >= 3).sort((a, b) => b.s - a.s || a.c.n - b.c.n);
   return scored.slice(0, k || 3).map((x) => x.c);
 }
-export function buildMessages(thread, chapters) {
-  const ctx = chapters.length
-    ? chapters.map((c) => `[사용법 ${c.n}장 · ${c.title}]\n${c.text.slice(0, 1100)}`).join('\n\n')
-    : '(이 질문과 겹치는 매뉴얼 장을 찾지 못했습니다.)';
-  const sys = SP_TEXT + '\n## 매뉴얼 발췌\n' + ctx + '\n';
-  const msgs = [{ role: 'system', content: sys }];
-  for (const m of thread.msgs) {
+/** history: [{ role: 'user'|'sp'|'assistant'|'admin', text }]. ctx 는 composeSP 입력. */
+export function buildMessages(history, ctx) {
+  const msgs = [{ role: 'system', content: composeSP(ctx) }];
+  for (const m of history) {
     if (m.role === 'user') msgs.push({ role: 'user', content: '<질문>' + m.text + '</질문>' });
-    else if (m.role === 'sp') msgs.push({ role: 'assistant', content: m.text });
+    else if (m.role === 'sp' || m.role === 'assistant') msgs.push({ role: 'assistant', content: m.text });
     else if (m.role === 'admin') msgs.push({ role: 'assistant', content: '[관리자 답변] ' + m.text });
   }
   return msgs;
 }
+export const validLang = (l) => (Object.prototype.hasOwnProperty.call(LANG_NAME, l) ? l : 'ko');
+export const chapterOf = (n) => { n = parseInt(n, 10); return n >= 1 && n <= DIGEST.length ? DIGEST[n - 1] : null; };
 
 // ── 순수 함수: 상태·권한 ──────────────────────────────────
 export const STATUS = ['open', 'sp_answered', 'escalated', 'answered', 'closed'];
@@ -99,19 +98,24 @@ async function quota(env, owner, kind, limit, today) {
 }
 
 // ── SP 호출(OpenAI 호환 chat completions) ─────────────────
-/** 반환: { ok, text } | { ok:false, why:'unavailable'|'error' }. SP_API_URL·SP_API_KEY 가 없으면 unavailable(질문은 그대로 접수되고 관리자 질의가 열린다). */
-export async function askSP(env, thread, deps) {
+/** 반환: { ok, text } | { ok:false, why:'unavailable'|'error' }. SP_API_URL·SP_API_KEY 가 없으면 unavailable. */
+export async function callLLM(env, messages, deps) {
   if (!env.SP_API_URL || !env.SP_API_KEY) return { ok: false, why: 'unavailable' };
-  const lastQ = [...thread.msgs].reverse().find((m) => m.role === 'user');
-  const chapters = retrieve(thread.msgs.filter((m) => m.role === 'user').map((m) => m.text).join(' '), DIGEST, 3);
-  const body = { model: env.SP_MODEL || 'deepseek-chat', temperature: 0.2, max_tokens: 700, messages: buildMessages(thread, chapters) };
+  const body = { model: env.SP_MODEL || 'deepseek-chat', temperature: 0.2, max_tokens: 700, messages };
   try {
     const f = (deps && deps.fetch) || fetch;
     const res = await f(env.SP_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.SP_API_KEY }, body: JSON.stringify(body), signal: AbortSignal.timeout(LIMITS.spTimeoutMs) });
     if (!res.ok) return { ok: false, why: 'error' };
     const j = await res.json(); const text = clean(j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content, 2000);
-    return text ? { ok: true, text, ref: chapters.map((c) => c.n), q: lastQ && lastQ.id } : { ok: false, why: 'error' };
+    return text ? { ok: true, text } : { ok: false, why: 'error' };
   } catch (e) { return { ok: false, why: 'error' }; }
+}
+/** 질문·답변 게시판 글의 도우미 답. 질문과 겹치는 장을 찾아 붙인다. */
+export async function askSP(env, thread, deps) {
+  const users = thread.msgs.filter((m) => m.role === 'user').map((m) => m.text).join(' ');
+  const chapters = retrieve(users, DIGEST, 3);
+  const r = await callLLM(env, buildMessages(thread.msgs, { lang: thread.lang, chapter: null, escalated: thread.status === 'escalated' || thread.status === 'answered', chapters }), deps);
+  return r.ok ? { ok: true, text: r.text, ref: chapters.map((c) => c.n) } : r;
 }
 
 // ── HTTP ──────────────────────────────────────────────────
@@ -127,6 +131,19 @@ function isAdmin(request, env) { const m = /^Bearer (.+)$/.exec(request.headers.
 const newId = (now) => 'q' + now.toString(36) + Math.random().toString(36).slice(2, 6);
 const mid = () => 'm' + Math.random().toString(36).slice(2, 8);
 const anon = (owner) => '이용자 ' + owner.slice(0, 4);
+
+/** 대화창이 보낸 대화를 검사·정리한다. 마지막이 user 여야 하는 /chat 과 달리 escalate-chat 은 assistant 로 끝나도 된다. 형식이 틀리면 null. */
+export function chatHistory(arr) {
+  if (!Array.isArray(arr)) return null;
+  const out = [];
+  for (const m of arr.slice(-LIMITS.chatTurns)) {
+    if (!m || (m.role !== 'user' && m.role !== 'assistant')) return null;
+    const text = clean(m.content != null ? m.content : m.text, m.role === 'assistant' ? 2000 : LIMITS.text); if (!text) return null;
+    out.push({ role: m.role, text });
+  }
+  while (out.length && out[0].role !== 'user') out.shift();
+  return out.length && out.some((x) => x.role === 'user') ? out : null;
+}
 
 export async function handle(request, env, deps) {
   deps = deps || {};
@@ -178,6 +195,24 @@ export async function handle(request, env, deps) {
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return err('owner_required', 401, origin);
   const owner = await hashOwner(token);
 
+  if (method === 'POST' && path === '/chat') {   // 사용법 페이지 대화창 — 저장하지 않는다(대화는 브라우저 메모리에만)
+    const hist = chatHistory(body.messages); if (!hist || hist[hist.length - 1].role !== 'user') return err('empty', 400, origin);
+    if (!(await quota(env, owner, 'chat', LIMITS.perDayChat, today))) return err('limit', 429, origin);
+    const ch = chapterOf(body.chapter), q = hist.filter((x) => x.role === 'user').slice(-2).map((x) => x.text).join(' ') + (ch ? ' ' + ch.title : '');
+    const chapters = retrieve(q, DIGEST, 3);
+    const r = await callLLM(env, buildMessages(hist, { lang: validLang(body.lang), chapter: ch, escalated: false, chapters }), deps);
+    return r.ok ? json({ ok: true, reply: r.text, ref: chapters.map((c) => c.n) }, 200, origin) : err(r.why === 'unavailable' ? 'sp_unavailable' : 'sp_error', 503, origin);
+  }
+  if (method === 'POST' && path === '/threads/escalate-chat') {   // 대화창에서 "관리자에게 질의" — 지금까지의 대화를 글로 만들어 바로 접수
+    const hist = chatHistory(body.messages); if (!hist || !hist.some((x) => x.role === 'assistant')) return err('cannot_escalate', 409, origin);
+    if (!(await quota(env, owner, 'thread', LIMITS.perDayThreads, today))) return err('limit', 429, origin);
+    const first = hist.find((x) => x.role === 'user');
+    const t = { id: newId(now), owner, title: clean(first.text, LIMITS.title) || '(제목 없음)', status: 'escalated', vis: 'private', created: iso, updated: iso, escalated: iso, lang: validLang(body.lang), spStatus: 'ok', via: 'chat',
+      msgs: hist.map((x) => ({ id: mid(), role: x.role === 'assistant' ? 'sp' : 'user', text: x.text, at: iso, name: x.role === 'assistant' ? '나비웹 도우미' : undefined })) };
+    const note = clean(body.note, 600); if (note) t.msgs.push({ id: mid(), role: 'user', text: note, at: iso });
+    t.msgs.push({ id: mid(), role: 'system', text: '관리자에게 질의했습니다.', at: iso });
+    await save(env, t); return json({ ok: true, thread: view(t, { mine: true }) }, 200, origin);
+  }
   if (method === 'GET' && path === '/threads/mine') {
     const rows = (await listAll(env, (x) => x.o === owner.slice(0, 16))).sort((a, b) => String(b.m.u).localeCompare(String(a.m.u))).slice(0, LIMITS.listMax);
     return json({ ok: true, threads: rows.map((r) => ({ id: r.id, title: r.m.t, status: r.m.s, vis: r.m.v, created: r.m.c, updated: r.m.u, escalated: r.m.e || null })) }, 200, origin);
@@ -186,7 +221,7 @@ export async function handle(request, env, deps) {
     const text = clean(body.text, LIMITS.text); if (text.length < 2) return err('empty', 400, origin);
     if (!(await quota(env, owner, 'thread', LIMITS.perDayThreads, today))) return err('limit', 429, origin);
     const title = clean(body.title || text, LIMITS.title) || '(제목 없음)';
-    const t = { id: newId(now), owner, title, status: 'open', vis: 'private', created: iso, updated: iso, spStatus: null, msgs: [{ id: mid(), role: 'user', text, at: iso }] };
+    const t = { id: newId(now), owner, title, status: 'open', vis: 'private', created: iso, updated: iso, lang: validLang(body.lang), spStatus: null, msgs: [{ id: mid(), role: 'user', text, at: iso }] };
     await spRound(env, t, deps, iso, mid); await save(env, t);
     return json({ ok: true, thread: view(t, { mine: true }) }, 200, origin);
   }

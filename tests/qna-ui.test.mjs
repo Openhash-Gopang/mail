@@ -19,7 +19,7 @@ test('makeApi: 헤더·경로·본문, 네트워크 오류는 예외 없이 {ok:
   const calls = []; const f = async (u, o) => { calls.push([u, o]); return { json: async () => ({ ok: true }) }; };
   const api = Q.makeApi('/api/qna', 'TOK', f);
   await api.ask('질문'); await api.escalate('q1', '메모'); await api.comment('q1', '댓글'); await api.mine(); await api.pub();
-  assert.equal(calls[0][0], '/api/qna/threads'); assert.equal(calls[0][1].headers['X-Qna-Owner'], 'TOK'); assert.deepEqual(JSON.parse(calls[0][1].body), { text: '질문' });
+  assert.equal(calls[0][0], '/api/qna/threads'); assert.equal(calls[0][1].headers['X-Qna-Owner'], 'TOK'); assert.deepEqual(JSON.parse(calls[0][1].body), { text: '질문', lang: 'ko' });
   assert.equal(calls[1][0], '/api/qna/threads/q1/escalate'); assert.equal(calls[2][0], '/api/qna/threads/q1/comments'); assert.equal(calls[3][0], '/api/qna/threads/mine'); assert.equal(calls[4][0], '/api/qna/public');
   const bad = Q.makeApi('/x', 'T', async () => { throw new Error('offline'); }); assert.deepEqual(await bad.mine(), { ok: false, error: 'network' });
 });
@@ -45,4 +45,24 @@ test('연결: guide.js 탭(사용법 강의 | 질문·답변), desktop.html 스�
   const d = read('desktop.html'); assert.ok(d.indexOf('qna-ui.js') > 0 && d.indexOf('qna-ui.js') < d.indexOf('guide.js?v='));
   const a = read('admin.html'); assert.ok(a.includes('id="qna"') && a.includes('사용법 질의')); assert.ok(a.includes('#qna=')); assert.ok(a.includes('Bearer')); assert.ok(a.includes('[hidden]{display:none}'));
   assert.ok(!a.includes("ADMIN_TOKEN'") || a.includes('sessionStorage'));   // 토큰은 sessionStorage 에만 둔다
+});
+
+const MC = require('../manual-chat.js')._pure;
+test('manual-chat: payload 는 최근 12개 {role, content}, 질의는 도우미 답이 있을 때만', () => {
+  const msgs = Array.from({ length: 20 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', text: 'm' + i }));
+  const p = MC.payload(msgs); assert.equal(p.length, 12); assert.deepEqual(Object.keys(p[0]).sort(), ['content', 'role']); assert.equal(p.at(-1).content, 'm19');
+  assert.equal(MC.canEscalate([{ role: 'user', text: 'a' }]), false); assert.equal(MC.canEscalate([{ role: 'user', text: 'a' }, { role: 'assistant', text: 'b' }]), true);
+});
+test('manual-chat: 화면(안내문·지금 보는 장·질의 버튼·접수 후 안내) 과 이스케이프', () => {
+  const base = { msgs: [], busy: false, note: false, sent: false, unavail: false, msg: '' };
+  const h0 = MC.panelHtml(base, { n: 7, title: '제목' }); assert.ok(h0.includes('지금 보는 장: 7. 제목') && h0.includes('사용법만 안내합니다') && !h0.includes('mc-esc-open'));
+  const conv = [{ role: 'user', text: '<b>질문</b>' }, { role: 'assistant', text: '답 <script>x</script>' }];
+  const h1 = MC.panelHtml({ ...base, msgs: conv }, null); assert.ok(h1.includes('mc-esc-open') && !/<script|<b>질문/.test(h1));
+  assert.ok(MC.panelHtml({ ...base, msgs: conv, note: true }, null).includes('mc-esc-send'));
+  const sent = MC.panelHtml({ ...base, msgs: conv, sent: true }, null); assert.ok(sent.includes('접수되었습니다') && !sent.includes('mc-q'));
+  assert.ok(MC.panelHtml({ ...base, msgs: [{ role: 'user', text: 'q' }], unavail: true }, null).includes('data-m="qna"'));
+});
+test('연결: desktop.html 스크립트 순서(qna-ui → manual-chat → guide), guide.js 가 대화창을 붙인다', () => {
+  const d = read('desktop.html'); const i = d.indexOf('qna-ui.js'), j = d.indexOf('manual-chat.js'), k = d.indexOf('guide.js?v=');
+  assert.ok(i > 0 && i < j && j < k); const g = read('guide.js'); assert.ok(g.includes('ManualChat.mount') && g.includes('attachChat'));
 });

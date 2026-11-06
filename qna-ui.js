@@ -40,13 +40,14 @@
       mine: function () { return call('GET', '/threads/mine'); },
       pub: function () { return call('GET', '/public'); },
       get: function (id) { return call('GET', '/threads/' + encodeURIComponent(id)); },
-      ask: function (text) { return call('POST', '/threads', { text: text }); },
+      ask: function (text) { return call('POST', '/threads', { text: text, lang: langNow() }); },
       say: function (id, text) { return call('POST', '/threads/' + encodeURIComponent(id) + '/messages', { text: text }); },
       escalate: function (id, note) { return call('POST', '/threads/' + encodeURIComponent(id) + '/escalate', { note: note }); },
       resolve: function (id) { return call('POST', '/threads/' + encodeURIComponent(id) + '/resolve', {}); },
       comment: function (id, text) { return call('POST', '/threads/' + encodeURIComponent(id) + '/comments', { text: text }); }
     };
   }
+  function langNow() { try { var l = root.NaviI18n && root.NaviI18n.lang && root.NaviI18n.lang(); l = typeof l === 'string' ? l : (l && l.lang); return /^[a-z]{2}$/.test(l || '') ? l : 'ko'; } catch (e) { return 'ko'; } }
   function when(iso) {
     try { return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)); } catch (e) { return ''; }
   }

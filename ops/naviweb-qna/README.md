@@ -1,6 +1,6 @@
 # naviweb-qna — 사용법 질문·답변·댓글 게시판 서버
 
-이용자가 사용법을 물으면 **SP-NAVIWEB-MANUAL**이 사용법(guide.js) 발췌를 근거로 먼저 답하고, 그래도 해결되지 않으면 이용자가 "관리자에게 질의"를 눌러 **관리자 대시보드(admin.html)의 "사용법 질의"** 에 올린다. 관리자는 링크(`admin.html#qna=<글 번호>`)로 열어 읽고 답한다. 관리자가 "공개 게시판에 올리기"를 켜면 다른 이용자도 보고 댓글을 달 수 있다.
+이용자가 사용법을 물으면 **SP-NAVIWEB-MANUAL v2**(사용법 대화창과 게시판 도우미가 같은 SP)가 사용법(guide.js) 발췌를 근거로 먼저 답하고, 그래도 해결되지 않으면 이용자가 "관리자에게 질의"를 눌러 **관리자 대시보드(admin.html)의 "사용법 질의"** 에 올린다. 관리자는 링크(`admin.html#qna=<글 번호>`)로 열어 읽고 답한다. 관리자가 "공개 게시판에 올리기"를 켜면 다른 이용자도 보고 댓글을 달 수 있다.
 
 ## 배포 (Cloudflare, 약 10분)
 1. **KV** 만들기: Storage & Databases → KV → Create → 이름 `naviweb-qna`. 만든 id 를 `wrangler.toml` 의 `REPLACE_WITH_KV_NAMESPACE_ID` 자리에 넣는다(PR 로 반영).
@@ -18,6 +18,8 @@
 | | `POST /threads/:id/messages` `{text}` | 추가 질문(SP 가 다시 답함). 관리자 답에 다시 묻으면 다시 접수 |
 | | `POST /threads/:id/escalate` `{note?}` | 관리자에게 질의(SP 가 한 번 답한 뒤에만) |
 | | `POST /threads/:id/resolve` | 해결됨 |
+| 대화창 | `POST /chat` `{messages, chapter?, lang?}` | 사용법 페이지 대화창. SP 에 지금 보는 장·화면 언어를 붙여 답하고 **대화는 저장하지 않는다** |
+| | `POST /threads/escalate-chat` `{messages, note?, lang?}` | 대화창에서 "관리자에게 질의" — 그때까지의 대화가 글이 되어 바로 접수(도우미 답이 한 번 이상 있어야 함) |
 | 공개 | `GET /public` · `POST /threads/:id/comments` `{text}` | 공개 글 목록 · 댓글 |
 | 관리자 | `GET /admin/threads?status=escalated\|answered\|all` · `GET /admin/threads/:id` | `Authorization: Bearer <ADMIN_TOKEN>` |
 | | `POST /admin/threads/:id/answer` `{text, publish?}` | 답변(+공개) |
@@ -30,4 +32,4 @@
 
 ## 매뉴얼 발췌 갱신
 SP 의 근거는 `manual-digest.js`(guide.js 에서 자동 생성)다. 사용법 장을 고치면 `node scripts/build-manual-digest.mjs` 를 다시 실행해 함께 커밋한다(테스트가 최신인지 검사한다).
-SP 본문은 `SP-NAVIWEB-MANUAL.v1.js`. 같은 내용을 hondi 저장소 `prompts/` 에도 올려 버전별로 관리한다.
+SP 본문은 `SP-NAVIWEB-MANUAL.v2.js`(원본). 같은 내용을 hondi 저장소 `prompts/SP-NAVIWEB-MANUAL_v2.txt` 로도 올려 버전별로 관리한다. 본문의 `{화면 언어}`·`{지금 보는 장}`·`{관리자 질의 여부}`·`{매뉴얼 발췌}` 는 서버(`composeSP`)가 호출마다 채운다.

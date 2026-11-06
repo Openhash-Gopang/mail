@@ -112,8 +112,9 @@ window.addEventListener('load', () => {
 <script src="feedback-kit.js?v=20261106"></script>
 <script src="agent-bridge.js"></script>
 <script src="doc-helper.js?v=20261104"></script>
-<script src="qna-ui.js?v=20261106a"></script>
-<script src="guide.js?v=20261106a"></script>
+<script src="qna-ui.js?v=20261106b"></script>
+<script src="manual-chat.js?v=20261106a"></script>
+<script src="guide.js?v=20261106b"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -1122,6 +1123,20 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .qn-note{margin:12px 0;padding:10px 14px;border-radius:10px;background:#fff8e6;color:#6b4a00;font-size:13px;line-height:1.6}.qn-note-ok{background:#eef8f2;color:#1b5f43}
 .qn-reply{margin-top:14px}.qn-esc{margin-top:10px;padding:12px 14px;border:1px solid var(--pri);border-radius:10px}.qn-esc p{margin:0 0 8px;font-size:13px;color:var(--sub)}
 .qn-msg{min-height:1.4em;margin-top:10px;color:#b3261e;font-size:13px}
+/* 사용법 도우미 대화창 — manual-chat.js */
+.mc{margin:16px 0 8px;border:1px solid var(--bdr);border-radius:12px;background:var(--card,#fff);padding:14px 16px}
+.mc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.mc-ctx{flex:1;min-width:0;color:var(--sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-log{max-height:340px;overflow:auto;display:grid;gap:8px;margin-bottom:10px}.mc-hint{color:var(--sub);font-size:13px;line-height:1.7;padding:6px 2px}
+.mc-m{border-radius:10px;padding:8px 12px;max-width:92%}.mc-user{background:#f1f5fd;justify-self:end}.mc-bot{background:#f6f7f9;justify-self:start}
+.mc-who{font-size:11px;font-weight:800;color:var(--sub);margin-bottom:2px}.mc-tx{line-height:1.7;word-break:break-word}.mc-dots{color:var(--sub)}
+.mc-in{display:flex;gap:8px;align-items:flex-end}.mc textarea{flex:1;box-sizing:border-box;border:1px solid var(--bdr);border-radius:10px;padding:8px 12px;font:inherit;line-height:1.6;resize:vertical;background:transparent;color:inherit}
+.mc textarea:focus{outline:2px solid var(--pri);border-color:transparent}
+.mc-btn{border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-weight:700;cursor:pointer;flex:none}.mc-btn:disabled{opacity:.55;cursor:default}
+.mc-link{border:0;background:none;color:var(--pri);font:inherit;font-weight:700;cursor:pointer;padding:2px 0}.mc-link:hover{text-decoration:underline}
+.mc-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--sub)}
+.mc-esc textarea{width:100%}
+.mc-esc{margin-top:10px;padding:12px 14px;border:1px solid var(--pri);border-radius:10px}.mc-esc p{margin:0 0 8px;font-size:13px;color:var(--sub)}.mc-acts{display:flex;gap:12px;align-items:center;margin-top:8px}
+.mc-ok{margin-top:8px;padding:10px 14px;border-radius:10px;background:#eef8f2;color:#1b5f43;font-size:13px;line-height:1.7}.mc-msg{min-height:1.2em;margin-top:6px;color:#b3261e;font-size:13px}
 .gd-prog{font-size:13px;color:var(--sub);margin-top:6px;font-weight:700}
 .gd-card{border:1px solid var(--bdr);border-radius:12px;padding:16px 18px;margin:12px 0}
 .gd-h{margin:6px 0 10px;font-size:22px}.gd-body{margin:0;padding-left:20px;line-height:1.75;font-size:15.5px}.gd-body li{margin-bottom:6px}
