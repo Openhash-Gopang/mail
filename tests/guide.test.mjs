@@ -249,7 +249,8 @@ test('예시: 라벨 + "소장 작성해 주세요" 같은 문장은 서류 이�
 
 test('우측 상단 "기능 개선 제안"은 새 탭이 아니라 현재 화면의 탭에 제안 게시판(hondi feedback.html?embed=mail)을 끼워 보여 준다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(h, /id="suggest-btn" onclick="_switchTab\('feedback'\)"/);
+  assert.match(h, /id="tab-btn-feedback" class="nav-btn" data-label="기능 개선 제안" onclick="_switchTab\('feedback'\)"/);   // 왼쪽 메뉴 하단(상단 바에서 옮김)
+  assert.ok(!/id="suggest-btn"/.test(h));
   assert.ok(h.includes('id="tab-feedback"') && h.includes("_HONDI_BASE + '/feedback.html?embed=mail'"));
   assert.ok(!h.includes('href="https://hondi.net/feedback.html" target="_blank"'));
 });
