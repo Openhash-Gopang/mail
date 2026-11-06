@@ -1175,7 +1175,10 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 }
 .side-group{margin-bottom:8px}
 /* 나비 로고: 왼쪽 메뉴 맨 위(홈 단추 위). 아이콘 열(가운데 32px)에 맞춰 접힌 64px 레일에서도 같은 자리에 있다 */
-.side-logo{flex:none;padding:6px 0 10px 16px;line-height:0}
+.side-logo{flex:none;display:block;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;cursor:pointer;padding:6px 0 10px 16px;line-height:0}
+.side-logo:hover{background:rgba(59,125,221,.08)}.side-logo:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+.side-nav:has(#tab-btn-home.active) .side-logo{background:var(--pri-bg)}   /* 홈 화면일 때 로고가 홈 버튼처럼 표시된다 */
+#tab-btn-home{display:none!important}   /* 홈 버튼은 없앴다 — 나비 로고가 그 역할. 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
 .side-logo img{display:block;width:32px;height:32px;object-fit:contain}
 @media (max-width:960px){.side-logo{padding:0 8px 0 10px;display:flex;align-items:center}.side-logo img{width:28px;height:28px}}
 .side-label{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:14px 22px 6px}
@@ -1283,7 +1286,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
 <div class="app-body">
   <nav class="side-nav" aria-label="K-Mail 메뉴">
-    <div class="side-logo"><img src="icons/navi-icon-96.png" alt="" width="32" height="32"></div>
+    <button type="button" class="side-logo" id="side-logo-home" aria-label="홈" title="홈" onclick="_switchTab('home')"><img src="icons/navi-icon-96.png" alt="" width="32" height="32"></button>
     <div class="side-group">
       <div class="side-label">작성·발송</div>
       <button id="tab-btn-home" class="nav-btn active" data-label="홈" onclick="_switchTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
