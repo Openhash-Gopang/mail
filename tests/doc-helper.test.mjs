@@ -311,3 +311,10 @@ test('desktop.html: 새 양식 만들기 — 왼쪽 캔버스 + 오른쪽 양식
 test('도우미 SP: 정부24 개인 민원서류는 이름을 묻지 않고 바로 맡긴다', () => {
   assert.match(html, /3-1\. 정부24 등에서 발급하는 개인 민원서류[^\n]*이름·성명·주민등록번호·주소를 묻지 않고[^\n]*바로 \[AGENT_TASK\]로 맡긴다/);
 });
+
+test('대화창: 어떤 말이든 먼저 "잠시 기다려 주십시오"를 답하고 진행 막대를 켜며, 끝나면 끈다', () => {
+  const f = html.slice(html.indexOf("d.type !== 'hondi-embed-ai'"));
+  assert.match(f, /HondiChat\.say\('잠시 기다려 주십시오\.'\); HondiChat\.busy\(/);
+  assert.match(f, /finally \{ _embedCap = null; _embedBusy = false; try \{[^\n]*HondiChat\.idle\(\)/);
+  assert.ok(f.indexOf('HondiChat.say(') < f.indexOf('_docAsk(text)'), '본 처리보다 먼저');
+});
