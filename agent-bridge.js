@@ -65,7 +65,7 @@
   // 이미 시작한 작업에 나중에 알게 된 정보(예: 법인 이름)를 전한다.
   function update(slot, text) { return call('agent-queue', { job: { update: true, slot: String(slot || ''), text: String(text || '') } }, 3000).then(function (m) { return !!(m && m.ok); }); }
   // Chrome 웹 스토어에 등록한 뒤 이 주소를 채운다(비어 있으면 설치 안내를 보이지 않는다).
-  var STORE_URL = '';
+  var STORE_URL = 'https://chromewebstore.google.com/detail/bhmnnbmebjppofdboeinccngpeheongi';
   // 확장이 받아 온 파일: { label, name, mime, data(ArrayBuffer) } — 넣을지는 호출한 쪽이 사용자에게 물은 뒤 정한다.
   function onFile(cb) {
     if (typeof window === 'undefined' || !window.addEventListener) return;
