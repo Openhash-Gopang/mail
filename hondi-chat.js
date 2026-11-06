@@ -15,6 +15,8 @@
   'use strict';
   var URL_DEFAULT = 'https://hondi.net/webapp.html';
   var KEY_OPEN = 'kmail_hchat_open';
+  var KEY_GEO = 'kmail_hchat_geo';
+  var MIN_W = 300, MIN_H = 280;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
@@ -22,6 +24,24 @@
   function panelBox(vw, vh) {
     if (vw <= 640) return { full: true, width: vw, height: vh };
     return { full: false, width: Math.min(440, vw - 32), height: Math.max(420, Math.min(780, vh - 110)) };
+  }
+  /** 순수 함수 — 사용자가 정한 패널 위치·크기를 화면 안으로 맞춘다(최소 크기, 화면보다 크지 않게, 머리줄은 항상 화면 안에 남게). g 가 올바르지 않으면 null. */
+  function clampGeo(g, vw, vh) {
+    if (!g || [g.left, g.top, g.width, g.height].some(function (n) { return typeof n !== 'number' || !isFinite(n); })) return null;
+    var w = Math.min(Math.max(g.width, Math.min(MIN_W, vw)), vw), h = Math.min(Math.max(g.height, Math.min(MIN_H, vh)), vh);
+    var left = Math.min(Math.max(g.left, 0), Math.max(0, vw - w)), top = Math.min(Math.max(g.top, 0), Math.max(0, vh - h));
+    return { left: Math.round(left), top: Math.round(top), width: Math.round(w), height: Math.round(h) };
+  }
+  /** 순수 함수 — 가장자리·모서리(dir: n s e w ne nw se sw)를 (dx,dy)만큼 끌었을 때의 새 위치·크기(최소 크기 아래로는 줄지 않는다). */
+  function resizeGeo(g, dir, dx, dy) {
+    var l = g.left, t = g.top, w = g.width, h = g.height;
+    if (dir.indexOf('e') >= 0) w = g.width + dx;
+    if (dir.indexOf('s') >= 0) h = g.height + dy;
+    if (dir.indexOf('w') >= 0) { w = g.width - dx; l = g.left + dx; }
+    if (dir.indexOf('n') >= 0) { h = g.height - dy; t = g.top + dy; }
+    if (w < MIN_W) { if (dir.indexOf('w') >= 0) l -= (MIN_W - w); w = MIN_W; }
+    if (h < MIN_H) { if (dir.indexOf('n') >= 0) t -= (MIN_H - h); h = MIN_H; }
+    return { left: l, top: t, width: w, height: h };
   }
   /** 순수 함수 — 메시지 출처가 혼디 앱이고 "수신 대화 요청" 알림인지. */
   function isIncomingMessage(ev, allowedOrigin) {
@@ -53,10 +73,13 @@
   function hasRealLogin() { var t = readCookie('hondi_pvt'); return !!t && t.indexOf('tid-') !== 0; }
   function originOf(url) { try { return new URL(url).origin; } catch (e) { return ''; } }
 
-  var S = { mounted: false, loaded: false, loadedId: '', open: false, badge: false, url: URL_DEFAULT, els: null };
+  var S = { geo: null, mounted: false, loaded: false, loadedId: '', open: false, badge: false, url: URL_DEFAULT, els: null };
 
   function storeGet() { try { return root.localStorage.getItem(KEY_OPEN) === '1'; } catch (e) { return false; } }
   function storeSet(v) { try { root.localStorage.setItem(KEY_OPEN, v ? '1' : '0'); } catch (e) { /* 저장은 편의 기능 */ } }
+
+  function geoGet() { try { var g = JSON.parse(root.localStorage.getItem(KEY_GEO) || 'null'); return g && typeof g === 'object' ? g : null; } catch (e) { return null; } }
+  function geoSet(g) { try { if (g) root.localStorage.setItem(KEY_GEO, JSON.stringify(g)); else root.localStorage.removeItem(KEY_GEO); } catch (e) { /* 저장은 편의 기능 */ } }
 
   function injectStyle(doc) {
     if (doc.getElementById('hchat-style')) return;
@@ -76,6 +99,20 @@
       '#hchat-agent a{pointer-events:auto}',
       '#hchat-head button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer;font-family:inherit}',
       '#hchat-head button:hover{background:rgba(255,255,255,.28)}',
+      '#hchat-head{cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}',
+      '#hchat-head button,#hchat-head a{cursor:pointer}',
+      '#hchat-panel.dragging{user-select:none;-webkit-user-select:none}',
+      '#hchat-panel.dragging #hchat-frame{pointer-events:none}',
+      '#hchat-panel.full .hchat-rz{display:none}',
+      '.hchat-rz{position:absolute;z-index:3;touch-action:none}',
+      '.hchat-rz[data-dir=n]{top:0;left:14px;right:14px;height:6px;cursor:ns-resize}',
+      '.hchat-rz[data-dir=s]{bottom:0;left:14px;right:14px;height:6px;cursor:ns-resize}',
+      '.hchat-rz[data-dir=e]{right:0;top:14px;bottom:14px;width:6px;cursor:ew-resize}',
+      '.hchat-rz[data-dir=w]{left:0;top:14px;bottom:14px;width:6px;cursor:ew-resize}',
+      '.hchat-rz[data-dir=ne]{top:0;right:0;width:14px;height:14px;cursor:nesw-resize}',
+      '.hchat-rz[data-dir=nw]{top:0;left:0;width:14px;height:14px;cursor:nwse-resize}',
+      '.hchat-rz[data-dir=se]{bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize}',
+      '.hchat-rz[data-dir=sw]{bottom:0;left:0;width:14px;height:14px;cursor:nesw-resize}',
       '#hchat-frame{flex:1;border:0;width:100%;min-height:0;background:#fff}',
       '#hchat-busy{display:none;padding:7px 12px 9px;font-size:13px;color:#1b2733;background:#eef4ff;border-top:1px solid #d6e2f7}',
       '#hchat-busy.on{display:block}',
@@ -92,7 +129,39 @@
     if (!S.els) return;
     var b = panelBox(root.innerWidth || 1024, root.innerHeight || 768), p = S.els.panel;
     p.classList.toggle('full', b.full);
-    if (b.full) { p.style.width = ''; p.style.height = ''; } else { p.style.width = b.width + 'px'; p.style.height = b.height + 'px'; }
+    if (b.full) { p.style.width = ''; p.style.height = ''; p.style.left = ''; p.style.top = ''; p.style.right = ''; p.style.bottom = ''; return; }
+    var g = S.geo ? clampGeo(S.geo, root.innerWidth || 1024, root.innerHeight || 768) : null;   // 사용자가 옮기거나 키운 위치·크기가 있으면 그대로(화면 안으로만 맞춘다)
+    if (g) { p.style.left = g.left + 'px'; p.style.top = g.top + 'px'; p.style.right = 'auto'; p.style.bottom = 'auto'; p.style.width = g.width + 'px'; p.style.height = g.height + 'px'; }
+    else { p.style.left = ''; p.style.top = ''; p.style.right = ''; p.style.bottom = ''; p.style.width = b.width + 'px'; p.style.height = b.height + 'px'; }
+  }
+  /** 머리줄을 끌어 옮기고, 가장자리·모서리를 끌어 크기를 바꾼다. 더블클릭하면 원래 위치·크기로. 정한 값은 이 브라우저에 기억한다. */
+  function wireGeometry(doc, panel) {
+    var head = panel.querySelector('#hchat-head');
+    ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].forEach(function (d) { var h = doc.createElement('div'); h.className = 'hchat-rz'; h.setAttribute('data-dir', d); h.setAttribute('aria-hidden', 'true'); panel.appendChild(h); });
+    head.title = '끌어서 옮기기 · 가장자리를 끌어 크기 조절 · 더블클릭하면 원래대로';
+    function current() { var r = panel.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; }
+    function begin(e, dir) {
+      if (e.button != null && e.button !== 0) return;
+      if (panel.classList.contains('full')) return;
+      e.preventDefault();
+      var start = current(), x0 = e.clientX, y0 = e.clientY, vw = root.innerWidth || 1024, vh = root.innerHeight || 768, el = e.currentTarget;
+      panel.classList.add('dragging');
+      try { el.setPointerCapture(e.pointerId); } catch (x) { /* 캡처가 안 돼도 창 이벤트로 이어진다 */ }
+      function move(ev) {
+        var dx = ev.clientX - x0, dy = ev.clientY - y0, g;
+        if (dir === 'move') g = { left: start.left + dx, top: start.top + dy, width: start.width, height: start.height };
+        else g = resizeGeo(start, dir, dx, dy);
+        S.geo = clampGeo(g, vw, vh); layout();
+      }
+      function end() {
+        el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', end); el.removeEventListener('pointercancel', end);
+        panel.classList.remove('dragging'); geoSet(S.geo);
+      }
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    }
+    head.addEventListener('pointerdown', function (e) { if (e.target.closest && e.target.closest('button,a,input,select')) return; begin(e, 'move'); });
+    head.addEventListener('dblclick', function (e) { if (e.target.closest && e.target.closest('button,a,input,select')) return; S.geo = null; geoSet(null); layout(); });
+    panel.querySelectorAll('.hchat-rz').forEach(function (h) { h.addEventListener('pointerdown', function (e) { begin(e, h.getAttribute('data-dir')); }); });
   }
   function paint() {
     if (!S.els) return;
@@ -178,6 +247,7 @@
     doc.body.appendChild(fab); doc.body.appendChild(panel);
     if (typeof window !== 'undefined' && typeof window._agentBadgePlace === 'function') window._agentBadgePlace();   // "나비웹 도우미 0.x.x" 는 대화창 상단 중앙에 둔다
     S.els = { fab: fab, panel: panel, frame: panel.querySelector('#hchat-frame') };
+    S.geo = geoGet(); wireGeometry(doc, panel);
     fab.addEventListener('click', toggle);
     panel.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('[data-hchat]') : null; if (!t) return;
@@ -200,7 +270,7 @@
 
   var API = {
     mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp, say: say, busy: busy, idle: idle,
-    _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
+    _pure: { clampGeo: clampGeo, resizeGeo: resizeGeo, panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
