@@ -201,7 +201,7 @@
   /* ── 상단 바의 언어/국가 선택 ──────────────────────────── */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var GLOBE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 3.9 5.7 3.9 9s-1.3 6.3-3.9 9c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z"/></svg>';
-  /* 국기(시안 C): 상단 바 버튼에만 쓴다. 나라마다 색 덩어리 2~3개로 줄인 3:2 그림이라 모양이 단순하다.
+  /* 국기(시안 C 도형을 시안 B 원형으로 잘라 보여 준다): 상단 바 버튼에만 쓴다. 나라마다 색 덩어리 2~3개로 줄인 3:2 그림이라 모양이 단순하다.
      (윈도우는 국기 이모지를 그리지 못하므로 그림으로 직접 그린다.) 목록의 국가 이름 줄에는 국기를 넣지 않는다.
      표기: 'H 색,색:비율' 가로줄 · 'V …' 세로줄 · 'bg 색' 바탕 · 'r x,y,w,h,색' 사각 · 'c x,y,r,색' 원 · 'o x,y,r,색' 고리 · 's x,y,r,색' 별
            'p x,y x,y … ,색' 다각형 · 'l x1,y1,x2,y2,굵기,색' 선 · 'K x,y,w,h' … '/' 그 안만 보이게 · 'T' 태극 · 'Z 색' 톱니 */
@@ -295,8 +295,8 @@
   function flagHtml(code) {
     if (FLAG_CACHE[code]) return FLAG_CACHE[code];
     if (!FLAGS[code]) return GLOBE;
-    return (FLAG_CACHE[code] = '<svg class="lp-flag" focusable="false" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true">' + flagBody(FLAGS[code]) +
-      '<rect x=".3" y=".3" width="29.4" height="19.4" rx="1" fill="none" stroke="rgba(0,0,0,.22)" stroke-width=".6"/></svg>');
+    return (FLAG_CACHE[code] = '<svg class="lp-flag" focusable="false" viewBox="5 0 20 20" width="24" height="24" aria-hidden="true">' + flagBody(FLAGS[code]) +
+      '<circle cx="15" cy="10" r="9.7" fill="none" stroke="rgba(0,0,0,.22)" stroke-width=".6"/></svg>');
   }
   var MAG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
   var uid = 0;
