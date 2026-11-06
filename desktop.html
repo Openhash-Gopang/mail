@@ -2634,11 +2634,13 @@ function _docHelperSend(text) {   // 대화창의 도우미 SP 에게 사용자 
   try { if (!HondiChat.isOpen()) HondiChat.open(); } catch (x) {}
   _docHelper.sent[id] = text;
   if (!HondiChat.post({ type: 'hondi-embed-sp-ask', id, text })) { delete _docHelper.sent[id]; return false; }
+  try { if (HondiChat.busy) HondiChat.busy('요청을 받았습니다. 도우미가 확인하고 있으니 잠시만 기다려 주세요…', 90000); } catch (x) {}   // 답이 늦어도 멈춘 것으로 보이지 않게 즉시 알린다
   return true;
 }
 window.addEventListener('message', (e) => {   // 대화창이 말을 못 받았다는 답(처리 중·준비 중)이면 입력창에 되돌려 놓는다
   const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || e.origin !== 'https://hondi.net' || !_docHelper.sent[d.id]) return;
   const t = _docHelper.sent[d.id]; delete _docHelper.sent[d.id];
+  try { if (window.HondiChat && HondiChat.idle) HondiChat.idle(); } catch (x) {}   // 답이 왔다 — 기다림 표시를 끈다
   if (!window.DocHelper || !DocHelper.isSendFailure(d.text)) return;
   if (window.HondiChat) HondiChat.say(String(d.text).slice(0, 120));
 });
