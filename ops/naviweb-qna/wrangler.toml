@@ -10,7 +10,7 @@ routes = [
 # 1) 저장소: Cloudflare 대시보드 → Storage & Databases → KV → "naviweb-qna" 를 만들고, 그 id 를 아래에 넣는다.
 [[kv_namespaces]]
 binding = "QNA"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "8f481d8e276e47279e060ea2512529ba"
 
 # 2) 비밀값(Settings → Variables and Secrets, 또는 `npx wrangler secret put <이름>`):
 #    ADMIN_TOKEN   관리자 대시보드가 쓰는 긴 무작위 문자열(예: 40자 이상). 없으면 관리자 API 는 모두 401.
