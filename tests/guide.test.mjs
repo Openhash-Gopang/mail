@@ -34,12 +34,13 @@ test('정답 위치가 한쪽에 쏠리지 않음(찍기 방지): 모든 위치�
 test('채점: 모두 맞아야 all=true, 하나라도 틀리거나 비우면 false', () => {
   const p = G.PAGES[0];
   const right = p.quiz.map(q => q.answer);
-  assert.deepEqual(G.grade(p, right), { ok: [true, true, true], all: true });
-  const wrong = right.slice(); wrong[1] = (wrong[1] + 1) % 3;
+  const n = right.length, allTrue = Array(n).fill(true);
+  assert.deepEqual(G.grade(p, right), { ok: allTrue, all: true });
+  const wrong = right.slice(); wrong[1] = (wrong[1] + 1) % p.quiz[1].opts.length;
   const r = G.grade(p, wrong);
   assert.equal(r.all, false);
-  assert.deepEqual(r.ok, [true, false, true]);
-  assert.equal(G.grade(p, [right[0], null, right[2]]).all, false);
+  assert.deepEqual(r.ok, allTrue.map((_, i) => i !== 1));
+  assert.equal(G.grade(p, right.map((a, i) => (i === 1 ? null : a))).all, false);
   assert.equal(G.grade(p, {}).all, false);
 });
 
@@ -277,17 +278,33 @@ test('사용 설명서(2026-11-05 개편): 1부 구성 항목 10장 → 2부 실
   assert.equal((h.match(/<section /g) || []).length - 2, (h.match(/<\/section>/g) || []).length);   // 주석·스크립트 속 예시 2건 제외
 });
 
-test('설명서·사용법의 화면 캡처: 참조한 이미지 파일이 모두 있고 alt 가 있다', () => {
-  const files = ['manual.html', 'guide.js'];
-  let n = 0;
-  for (const f of files) {
+test('설명서·사용법: 장 안의 화면 이미지는 없다(영상으로 대체) — manual-img 참조 없음', () => {
+  for (const f of ['manual.html', 'guide.js']) {
     const s = readFileSync(new URL('../' + f, import.meta.url), 'utf8');
-    for (const m of s.matchAll(/<img src=\\?"(manual-img\/[^"\\]+)\\?"[^>]*>/g)) {
-      n++; assert.ok(existsSync(new URL('../' + m[1], import.meta.url)), f + ' → ' + m[1]);
-      assert.match(m[0], /alt=/, m[1]);
-    }
+    assert.ok(!/manual-img\//.test(s) && !/<img\b/.test(s.replace(/<img[^>]*data-keep[^>]*>/g, '')), f);
   }
-  assert.ok(n >= 7, 'img ' + n);
+  assert.ok(!existsSync(new URL('../manual-img', import.meta.url)));
+});
+test('유튜브 영상 자리: 장 번호 1~25 와 같은 일련번호, 주소를 넣으면 영상이 된다', async () => {
+  const V = (await import('../manual-videos.js')).default;
+  assert.deepEqual(Object.keys(V.VIDEOS).map(Number), Array.from({ length: 25 }, (_, i) => i + 1));
+  assert.match(V.slot(7), /영상 07/); assert.ok(!V.slot(7).includes('<iframe'));
+  assert.equal(V.idOf('https://youtu.be/dQw4w9WgXcQ?t=3'), 'dQw4w9WgXcQ');
+  assert.equal(V.idOf('https://evil.example/watch?v=dQw4w9WgXcQ'), '');
+  V.VIDEOS[7] = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  assert.match(V.slot(7), /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/); V.VIDEOS[7] = '';
+  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8'), m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
+  assert.match(g, /<\/h2>' \+ videoSlot\(S\.idx \+ 1\) \+ '<ul class="gd-body">/, '사용법: 제목 바로 아래');
+  assert.match(m, /h\.insertAdjacentHTML\('afterend', '<div class="nv-slot" data-vid="'/, '설명서: 제목 바로 아래');
+  assert.match(readFileSync(new URL('../desktop.html', import.meta.url), 'utf8'), /manual-videos\.js[^>]*><\/script>\s*<script src="guide\.js/);
+});
+test('사용법 갱신: 비서와 전문가 AI의 차이, 화면마다 달라지는 💬 담당 AI 를 설명한다', () => {
+  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8'), m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
+  for (const t of [g, m]) {
+    assert.ok(t.includes('전문가 페르소나') && t.includes('나만의 AI 비서'));
+    assert.ok(t.includes('화면') && t.includes('서류 비서') && t.includes('제출 안내 AI') && t.includes('양식 작성 AI') && t.includes('프로필 작성 AI'));
+    assert.ok(t.includes('국기') && t.includes('문제 알리기') && t.includes('스킨'));
+  }
 });
 
 test('사용법 코스(guide.js): 기본 1~10 구성 항목 · 활용 11~20 실습 · 고급 21~(업무 Case는 항상 마지막)', () => {
@@ -430,4 +447,12 @@ test('예시 버튼: 축소(높이 38px·글자 15px), 배경은 전송 버튼�
 test('사용법 3장(왼쪽 메뉴): 옛 방식의 화면 이미지를 싣지 않는다', () => {
   const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
   assert.ok(!g.includes('ui-sidemenu'));
+});
+
+test('사용법: 퀴즈를 통과해 다음 장으로 넘어가면 새 장의 맨 위를 보여 준다(스크롤 위치를 남기지 않음)', () => {
+  const js = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
+  assert.match(js, /function toTop\(\)/);
+  assert.match(js, /S\.idx = n; render\(\); toTop\(\);/, '통과 후 자동 이동');
+  assert.match(js, /S\.result = null; render\(\); toTop\(\); \}/, '번호·이전·다음 이동');
+  assert.match(js, /act === 'restart'\) \{ S\.idx = 0; S\.answers = \{\}; S\.result = null; render\(\); toTop\(\); \}/, '처음부터 다시');
 });
