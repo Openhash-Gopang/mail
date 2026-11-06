@@ -1,6 +1,6 @@
 /* ═════════════════════════════════════════════════
    case-ui.js — 업무(Case) 화면: 맡은 일 · 맡긴 일 · 나 홀로  (M4 첫 조각)
-   2026-11-01. desktop.html 의 사이드바 "업무" 묶음과 3개 패널(tab-caseprov/casecons/casesolo)을 그린다.
+   2026-11-01. desktop.html 의 왼쪽 메뉴 "나비 길잡이 → 업무"와 3개 패널(위쪽 세 탭으로 전환, 2026-11-06)(tab-caseprov/casecons/casesolo)을 그린다.
    - 업무 메뉴는 기본으로 보인다(2026-11-05). 끄려면 주소에 ?case=0 (localStorage kmail_case_ui=0 로 기억), 다시 켜려면 ?case=1.
    - 모든 기록은 이 기기의 PDV(IndexedDB hondi_case_store)에만 저장한다. 서버로는 해시만(큐에 쌓임).
    - 의존: case-core.js, case-invite.js, case-store.js (hondi 저장소가 원본 — 복사본).
@@ -89,10 +89,16 @@
     return '<div class="cs-card cs-notes"><b>나비 비서 알림</b>' + f.slice(0, 8).map(function (x) { return '<div class="cs-note-row' + (x.severity >= 3 ? ' cs-bad' : '') + '">' + esc(x.text) + '</div>'; }).join('') +
       '<div class="cs-sub">이 기기의 기록에서 계산한 알림입니다. 법적 결과를 보장하지 않으며, 중요한 판단은 인간 전문가의 조언을 구하세요.</div></div>';
   }
+  /** 업무 화면 위쪽의 세 탭(맡은 일·맡긴 일·나 홀로) — 업무는 왼쪽 메뉴의 나비 길잡이 아래 "업무" 하나로 들어온다. */
+  function modesHtml(name) {
+    return '<div class="cs-modes" role="tablist" aria-label="업무">' + Object.keys(MODES).map(function (k) {
+      return '<button type="button" role="tab" class="cs-mode' + (k === name ? ' on' : '') + '" aria-selected="' + (k === name) + '" data-act="mode" data-m="' + k + '">' + esc(MODES[k].label) + '</button>';
+    }).join('') + '</div>';
+  }
   async function renderList(name) {
     var p = $('tab-' + name), m = MODES[name]; if (!p) return;
     var cases = mineOf(name, await getStore().listCases()).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
-    p.innerHTML =
+    p.innerHTML = modesHtml(name) +
       '<div class="cs-head"><div><h2 class="cs-h">' + esc(m.label) + '</h2><div class="cs-sub">' + esc(m.blurb) + '</div></div>' +
       '<button class="cs-btn cs-pri" data-act="new">+ 새 일</button></div>' +
       '<div id="cs-form-' + name + '"></div>' + await notesHtml() +
@@ -213,7 +219,7 @@
       else if (c.state === 'closed') acts = b('archive', '보관');
     }
     var pending = (await getStore().flushAnchors(0)).pending;
-    p.innerHTML =
+    p.innerHTML = modesHtml(name) +
       '<div class="cs-head"><div><button class="cs-link" data-act="back">← ' + esc(m.label) + '</button><h2 class="cs-h">' + esc(c.title) + '</h2>' +
       '<div class="cs-sub">' + esc(KIND[c.kind] || c.kind) + ' · <span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span>' +
       ' · <span class="' + (v.ok ? 'cs-ok' : 'cs-bad') + '">' + (v.ok ? '기록 무결성 확인됨 (' + v.length + '건)' : '⚠ 기록 변조 의심 (#' + v.brokenAt + ')') + '</span>' +
@@ -238,7 +244,8 @@
   async function onClick(name, ev) {
     var t = ev.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act'), s = getStore(), m = MODES[name], id = cur[name];
-    if (act === 'new') newForm(name);
+    if (act === 'mode') { var to = t.getAttribute('data-m'); if (MODES[to] && to !== name && typeof root._switchTab === 'function') root._switchTab(to); }
+    else if (act === 'new') newForm(name);
     else if (act === 'cancel-new') $('cs-form-' + name).innerHTML = '';
     else if (act === 'create') await createFromForm(name);
     else if (act === 'open') { cur[name + ':tab'] = 'all'; await openCase(name, t.getAttribute('data-id')); }
@@ -359,7 +366,7 @@
       } catch (e) { msg(e.message || '실패', true); btn.disabled = false; }
     };
   }
-  function applyFlag() { var g = $('side-group-case'); if (g) g.hidden = !enabled(); inviteBanner(); }
+  function applyFlag() { var g = $('tab-btn-case'); if (g) g.hidden = !enabled(); inviteBanner(); }
 
   root.CaseUI = { show: show, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
   if (typeof document !== 'undefined') {
