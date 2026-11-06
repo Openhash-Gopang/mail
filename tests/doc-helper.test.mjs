@@ -181,7 +181,7 @@ test('desktop.html: 메인 입력창·예시 버튼은 서류 검색 그대로, 
 test('desktop.html: 서류를 작성하는 동안 입력창 잠금 — 서류 이름만 보이고, 예시·새 서류는 막고, Draft 저장 후 새 서류로 푼다', () => {
   assert.match(html, /function _docLocked\(\) \{ return _cmpMode === 'doc' && _docHost\.loaded && _docHost\.confirmed && !!_docHost\.writing; \}/);
   assert.match(html, /input\.readOnly = true;[\s\S]{0,260}if \(full\) input\.value = full;/, '잠그면 작성 중인 서류의 전체 이름을 보인다');
-  assert.match(html, /async function _docHostSubmit\(\) \{\n  if \(_docLocked\(\)\) \{ _drToast\(_DOC_LOCK_MSG\); return; \}/, '잠긴 동안 Enter 로 서류를 바꿀 수 없다');
+  assert.match(html, /async function _docHostSubmit\(pick\) {\n  if \(_docLocked\(\)\) \{ _drToast\(_DOC_LOCK_MSG\); return; \}/, '잠긴 동안 Enter 로 서류를 바꿀 수 없다');
   assert.match(html, /_docHost\.confirmed = true; _docHelperSync\(\); _docLockOn\(\);/, '서류를 확정하면 잠근다');
   assert.match(html, /function _docHostInput\(\) \{\n  if \(_cmpMode !== 'doc'\) return;\n  if \(_docLocked\(\)\)/, '잠긴 동안 입력 변화는 서류에 보내지 않는다');
   assert.match(html, /function _cmpExToggle\(e\) \{ if \(e\) e\.stopPropagation\(\); if \(_docLocked\(\)\)/, '잠긴 동안 예시 단추도 막는다');
