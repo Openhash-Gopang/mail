@@ -12,11 +12,11 @@
   // 첨부서류 항목 문구에 맞는 "도우미가 가져오기" 절차. 항목마다 어디서 받는지는 여기서만 정한다(서류 화면은 정규식만 받아 버튼을 붙인다).
   var SLOTS = [
     { re: /법인.*등기|등기사항|등기부/, playbook: 'iros-corp-ecourt', goal: '법인등기사항증명서를 전자소송용으로 결제대상목록에 담아 주세요. 결제는 하지 말고 목록에서 멈춰 주세요. 법인 이름: ' },
-    { re: /주민등록|등본|초본|가족관계|지방세|납세|건강보험|국민연금|소득금액|사업자등록|병적|토지대장|건축물대장/, playbook: 'gov24-doc', goal: '정부24에서 이 서류를 발급받아 나비웹으로 보내 주세요. 서류: ' },
+    { re: /주민등록|등본|초본|가족관계|혼인관계|기본증명|제적|지방세|납세|건강보험|국민연금|소득금액|사업자등록|병적|토지대장|건축물대장/, playbook: 'gov24-doc', instant: true, goal: '정부24에서 이 서류를 발급받아 나비웹으로 보내 주세요. 서류: ' },
   ];
   function slotPlan(label) {
     var t = String(label || '');
-    for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].re.test(t)) return { playbook: SLOTS[i].playbook, goal: SLOTS[i].goal };
+    for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].re.test(t)) return { playbook: SLOTS[i].playbook, goal: SLOTS[i].goal, instant: !!SLOTS[i].instant };
     return null;
   }
   // 사용자가 직접 만들거나 가진 자료(사진·계약서·위임장 등)는 기관에서 받을 수 없으므로 "도우미가 가져오기"를 붙이지 않는다. 그 밖의 모든 첨부서류 항목은 어느 기관 사이트든 도우미가 가져올 수 있다(전용 절차가 없으면 SP 가 기관과 서류를 정해 맡긴다).
