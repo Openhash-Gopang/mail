@@ -74,6 +74,12 @@
       '#hchat-head button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer;font-family:inherit}',
       '#hchat-head button:hover{background:rgba(255,255,255,.28)}',
       '#hchat-frame{flex:1;border:0;width:100%;min-height:0;background:#fff}',
+      '#hchat-busy{display:none;padding:7px 12px 9px;font-size:13px;color:#1b2733;background:#eef4ff;border-top:1px solid #d6e2f7}',
+      '#hchat-busy.on{display:block}',
+      '#hchat-busy .bar{position:relative;height:4px;margin-top:6px;border-radius:2px;background:#d6e2f7;overflow:hidden}',
+      '#hchat-busy .bar::after{content:"";position:absolute;top:0;bottom:0;width:38%;border-radius:2px;background:var(--pri,#3B7DDD);animation:hchat-bar 1.2s ease-in-out infinite}',
+      '@keyframes hchat-bar{0%{left:-40%}100%{left:102%}}',
+      '@media (prefers-reduced-motion:reduce){#hchat-busy .bar::after{animation:none;width:100%;opacity:.5}}',
       '#hchat-note{padding:6px 10px;font-size:12px;color:#5b6676;background:#f4f7f9;border-top:1px solid #e3e8ee}',
     ].join('');
     doc.head.appendChild(st);
@@ -117,6 +123,16 @@
     setTimeout(flushSay, S.loadedOnce ? 50 : 900);
   }
   function flushSay() { var q = S.sayQ || []; while (q.length) { if (!post({ type: 'hondi-embed-say', text: q[0] })) break; q.shift(); } }
+  /** 대화창 아래에 "잠시 기다려 주세요" 줄과 진행 막대를 보인다(모델 응답이 느려도 멈춘 것으로 보이지 않게). 응답이 오면 idle() 로 끈다. 안전장치로 maxMs 뒤에는 저절로 꺼진다. */
+  function busy(text, maxMs) {
+    var el = S.els && S.els.panel.querySelector('#hchat-busy'); if (!el) return;
+    el.querySelector('.msg').textContent = String(text || '잠시만 기다려 주세요…').slice(0, 200); el.classList.add('on');
+    clearTimeout(S.busyT); S.busyT = setTimeout(idle, maxMs || 90000);
+  }
+  function idle() {
+    clearTimeout(S.busyT);
+    var el = S.els && S.els.panel.querySelector('#hchat-busy'); if (el) el.classList.remove('on');
+  }
   function frameWindow() { return S.els && S.els.frame ? S.els.frame.contentWindow : null; }
   /** 처음 열 때 불러오고, K-Mail 로그인 아이디가 바뀌었으면(다른 아이디로 다시 로그인) 새 아이디로 다시 불러온다. */
   function ensureLoaded() {
@@ -154,6 +170,7 @@
       '<button type="button" data-hchat="popup" title="새 창으로 열기">↗ 새 창</button>' +
       '<button type="button" data-hchat="close" title="닫기(대화는 계속 받습니다)">닫기</button></div>' +
       '<iframe id="hchat-frame" title="혼디 대화" allow="microphone; camera; clipboard-write; clipboard-read; notifications; autoplay; fullscreen"></iframe>' +
+      '<div id="hchat-busy" role="status" aria-live="polite"><span class="msg"></span><div class="bar" aria-hidden="true"></div></div>' +
       '<div id="hchat-note">K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.</div>';
     doc.body.appendChild(fab); doc.body.appendChild(panel);
     S.els = { fab: fab, panel: panel, frame: panel.querySelector('#hchat-frame') };
@@ -178,7 +195,7 @@
   }
 
   var API = {
-    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp, say: say,
+    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp, say: say, busy: busy, idle: idle,
     _pure: { panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };
