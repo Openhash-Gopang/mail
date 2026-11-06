@@ -831,7 +831,8 @@ header.topbar .logo-wide{display:block;height:40px;width:auto}
 .lp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lp-empty{margin:0;padding:12px 10px;color:#5b6678;font-size:14px}
 .lp-empty[hidden]{display:none}
-@media (max-width:1100px){.lp-cur{display:none}.lp-btn{padding:0 9px}}
+.lp-cur{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}   /* 국가 이름은 화면에서 숨기고 스크린리더용 이름으로만 둔다 */
+.lp-btn{gap:4px;padding:0 8px 0 7px}.lp-chev{flex:none;opacity:.9;transition:transform .2s}.lp-btn[aria-expanded=true] .lp-chev{transform:rotate(180deg)}
 @media (max-width:560px){.lp{position:static}.lp-pop{position:fixed;top:64px;left:12px;right:12px;width:auto}}
 header.topbar .logo-txt{font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1;color:#fff;white-space:nowrap}
 header.topbar .logo-help .tp-chev{width:28px;height:28px}   /* 열림 화살표: 이전(14px)의 두 배 */

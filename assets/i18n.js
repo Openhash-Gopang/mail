@@ -306,7 +306,7 @@
     var id = 'lp' + (++uid);
     host.innerHTML =
       '<div class="lp">' +
-        '<button type="button" class="lp-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="' + id + '-pop"><span class="lp-fl"></span><span class="lp-cur"></span></button>' +
+        '<button type="button" class="lp-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="' + id + '-pop"><span class="lp-fl"></span><span class="lp-cur"></span><svg class="lp-chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
         '<div class="lp-pop" id="' + id + '-pop" role="dialog" aria-label="" hidden>' +
           '<div class="lp-search">' + MAG + '<input type="search" class="lp-q" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="' + id + '-list" autocomplete="off" spellcheck="false"></div>' +
           '<ul class="lp-list" id="' + id + '-list" role="listbox"></ul>' +
