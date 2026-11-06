@@ -67,3 +67,19 @@ test('제보 집계: 같은 서류·문제를 서로 다른 사람이 min 명 �
   assert.match(md, /\*\*\[추가\]\*\* 지급명령 신청서 · 3명/);
   assert.equal(parse('일반 글'), null);
 });
+
+test('제보 보내기: 기기 표식(dev)을 붙이고, 집계는 같은 기기의 중복을 1명으로 센다', async () => {
+  const sent = [], store = mem(), fetch = async (u, o) => { sent.push(JSON.parse(o.body)); return { ok: true }; };
+  await FB.send('attach', { label: '가족관계증명서', problem: 'agency' }, {}, { fetch, store });
+  await FB.send('attach', { label: '가족관계증명서', problem: 'agency' }, {}, { fetch, store });
+  const d0 = /dev=([^;]+)/.exec(sent[0].context_summary)[1];
+  assert.equal(d0, /dev=([^;]+)/.exec(sent[1].context_summary)[1], '같은 기기는 같은 표식');
+  assert.ok(d0.length >= 8);
+  const recs = sent.map((b, i) => ({ id: 'r' + i, guid: null, raw_text: b.raw_text, context_summary: b.context_summary }));
+  assert.equal(digest(recs, { min: 2 }).attach[0].n, 1);
+});
+test('도우미 AI 직접 제보: 호스트가 [FEEDBACK] 메시지를 받아 미리 채운 제보 창을 연다', () => {
+  assert.match(html, /d\.type === 'hondi-embed-feedback'/);
+  assert.match(html, /\[FEEDBACK: kind=<attach\|newdoc\|bug>/);
+  assert.match(html, /function _fbOpen\(kind, label, text, pre\)/);
+});

@@ -2066,10 +2066,10 @@ function _agentTellDoc() {
 }
 // 서류 화면에서 항목의 "도우미가 가져오기"를 눌렀을 때: 도우미 줄을 그 항목의 절차로 채워 두고, 시작은 사용자가 누른다.
 /** 사용자 제보 창(feedback-kit.js) — 서류 이름·카탈로그 규칙·확장 버전만 함께 보낸다. */
-function _fbOpen(kind, label, text) {
+function _fbOpen(kind, label, text, pre) {
   if (!window.NaviFeedback) return;
   const c = label && window.AttachCatalog ? AttachCatalog.classify(label) : {};
-  NaviFeedback.open({ kind: kind, label: label || '', text: text || '', ctx: { doc: (_docHost && _docHost.title) || '', rule: c.id || c.kind || '', ext: _agentInfo ? _agentInfo.version : '', screen: 'doc' } });
+  NaviFeedback.open({ kind: kind, label: label || '', text: text || '', problem: pre && pre.problem || '', right: pre && pre.right || '', ctx: { doc: (_docHost && _docHost.title) || '', rule: c.id || c.kind || '', ext: _agentInfo ? _agentInfo.version : '', screen: 'doc' } });
 }
 function _agentFetchSlot(label) {
   if (window.DocHelper && _cmpMode === 'doc' && _docChat.on) {
@@ -2677,6 +2677,7 @@ function _docChatSp() {
     '6. 상태가 "실패"면 이유를 한 줄로 말하고 다시 맡길지 묻는다. "맡김"·"진행 중"이면 기다리는 동안 다른 항목을 이어서 진행한다.\n' +
     '7. 블록이 "나비웹 도우미: 연결 안 됨"이면 맡길 수 없다고 한 줄로 알리고, 항목마다 받을 기관과 서류 이름을 짧게 알려 준다. 이때만 사용자가 직접 발급받도록 안내하고, 나비웹 도우미(Chrome 확장)를 켜면 대신 진행할 수 있다고 한 줄 덧붙인다.\n' +
     '8. 발급 결과가 파일이면 도우미가 나비웹 화면으로 보내고, 화면이 사용자에게 서류에 넣을지 묻는다. 사용자에게 내려받아 올리라고 하지 않는다.\n' +
+    '[사용자 제보] 사용자가 오류·불편을 말하거나, 서류의 발급 기관이 틀렸다고 하거나("그건 정부24가 아니라 ○○에서 발급해요"), 찾는 서류가 없다고 하면 한 줄로 사과하고 감사를 전한 뒤, 답변 맨 끝에 한 줄로 쓴다(사용자가 눌러 확인해야 전송된다): [FEEDBACK: kind=<attach|newdoc|bug>; label=<서류 이름>; problem=<agency|fail|own|missing|other>; right=<사용자가 알려 준 올바른 기관>; text=<사용자 말의 요약 한 문장>]. attach 는 첨부서류의 기관·가져오기 문제(problem 필수), newdoc 은 없는 서류 요청, bug 는 그 밖의 오류. 개인정보·주민번호·전화번호는 쓰지 않고, 태그 안에 대괄호와 추가 세미콜론을 쓰지 않는다. 같은 내용으로 두 번 쓰지 않는다.\n' +
     '[서류 작성] 서류 이름과 비어 있는 항목을 짚어 한 번에 한두 가지씩 짧게 묻고 안내한다. 제목을 알 수 없으면 어떤 서류인지 먼저 묻는다. 항목 칸에는 이 대화에서 직접 쓰지 못한다 — 어느 칸에 무엇을 넣을지 짚어 주면 사용자가 화면에서 입력·확인한다. 공동인증서 비밀번호·주민등록번호·계좌번호·카드번호는 이 대화에 입력하라고 하지 않는다.\n' +
     '[주도권 반납] 다음일 때만 답변 맨 끝에 [DOC_HANDBACK: reason=cancel] 또는 [DOC_HANDBACK: reason=complete] 를 쓴다.\n' +
     '- 사용자가 이 서류 작성을 그만두겠다고 하거나, 아래 [다른 요청]에서 Draft 로 저장하고 넘어가겠다고 동의하면 reason=cancel. 시스템이 작성 중인 서류를 Draft 로 저장하고 입력창을 풀어 준다.\n' +
@@ -2776,11 +2777,12 @@ async function _docChatAgentTask(d) {
   _docChatPush();
 }
 window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 낸 태그 — 혼디 대화창(hondi.net)에서만, 도우미 세션 중일 때만 받는다
-  const d = e.data; if (!d || typeof d !== 'object' || (d.type !== 'hondi-embed-agent-task' && d.type !== 'hondi-embed-doc-handback')) return;
+  const d = e.data; if (!d || typeof d !== 'object' || (d.type !== 'hondi-embed-agent-task' && d.type !== 'hondi-embed-doc-handback' && d.type !== 'hondi-embed-feedback')) return;
   const f = document.getElementById('hchat-frame');
   if (!f || e.source !== f.contentWindow || e.origin !== 'https://hondi.net') return;
   if (!_docChat.on) return;
   if (d.type === 'hondi-embed-agent-task') { _docChatAgentTask(d); return; }
+  if (d.type === 'hondi-embed-feedback') { _fbOpen(['attach', 'newdoc', 'bug'].includes(d.kind) ? d.kind : 'bug', String(d.label || '').slice(0, 80), String(d.text || '').slice(0, 300), { problem: String(d.problem || ''), right: String(d.right || '').slice(0, 80) }); return; }   // 도우미 AI 가 사용자의 신고를 받아 미리 채운 제보 창 — 보내기는 사용자가 확인한 뒤
   const r = window.DocHelper ? DocHelper.handBackDecision(String(d.reason || ''), { saved: _docChat.saved }) : { ok: false, msg: '' };
   if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
   if (String(d.reason) === 'cancel' && _docLocked()) {   // 작성 중인 서류는 Draft 로 저장하고 입력창을 푼 뒤 돌려준다(저장하지 못하면 서류를 그대로 둔다)
