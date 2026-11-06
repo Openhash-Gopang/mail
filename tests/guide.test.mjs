@@ -287,7 +287,7 @@ test('설명서·사용법의 화면 캡처: 참조한 이미지 파일이 모�
       assert.match(m[0], /alt=/, m[1]);
     }
   }
-  assert.ok(n >= 8, 'img ' + n);
+  assert.ok(n >= 7, 'img ' + n);
 });
 
 test('사용법 코스(guide.js): 기본 1~10 구성 항목 · 활용 11~20 실습 · 고급 21~(업무 Case는 항상 마지막)', () => {
@@ -425,4 +425,9 @@ test('예시 버튼: 축소(높이 38px·글자 15px), 배경은 전송 버튼�
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /\.cmp-ex-btn\{[^}]*height:38px[^}]*background:var\(--pri\);color:#fff;[^}]*font-size:15px/);
   assert.match(h, /\.chat-send-btn\{[^}]*background:var\(--pri\)/);
+});
+
+test('사용법 3장(왼쪽 메뉴): 옛 방식의 화면 이미지를 싣지 않는다', () => {
+  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
+  assert.ok(!g.includes('ui-sidemenu'));
 });
