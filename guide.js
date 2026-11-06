@@ -299,7 +299,7 @@
   function nextAfterPass(idx, total) { return idx + 1 < total ? idx + 1 : -1; }   // -1 = 마지막(완료 화면)
 
   // ── 화면 ───────────────────────────────────────────────
-  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'course', qn: null };   // idx null = 아직 화면을 연 적 없음
+  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'course', qn: null, mc: null, mcApi: null };   // idx null = 아직 화면을 연 적 없음
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
   function caseOn() { try { return !!(root.CaseUI && root.CaseUI.enabled()); } catch (_) { return false; } }
@@ -317,7 +317,17 @@
     if (!S.qn) { S.qn = document.createElement('div'); S.qn.className = 'qn-host'; root.QnaUI.mount(S.qn); }
     el.appendChild(S.qn);
   }
-  function render() {
+  // 강의 화면 맨 아래에 사용법 도우미 대화창(manual-chat.js)을 붙인다. 한 번 만들어 두고 장을 옮겨도 대화가 이어진다.
+  function attachChat() {
+    var el = $('tab-guide'); if (!el || !root.ManualChat) return;
+    if (!S.mc) {
+      S.mc = document.createElement('div'); S.mc.className = 'mc-host';
+      S.mcApi = root.ManualChat.mount(S.mc, { getChapter: function () { var l = pages(caseOn()); return S.idx >= 0 && l[S.idx] ? { n: S.idx + 1, title: l[S.idx].title } : null; } });
+    }
+    el.appendChild(S.mc); if (S.mcApi) S.mcApi.refresh();
+  }
+  function render() { renderInner(); if (S.mode !== 'qna') attachChat(); }
+  function renderInner() {
     var el = $('tab-guide'); if (!el) return;
     if (S.mode === 'qna') { renderQna(el); return; }
     var list = pages(caseOn()), total = list.length;
@@ -406,7 +416,9 @@
     if (!el.__gdBound) {
       el.__gdBound = true; el.addEventListener('click', onClick);
       el.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.open) { S.open = false; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); } });
-      document.addEventListener('mousedown', function (e) { if (S.open && !(e.target.closest && e.target.closest('.gd-top'))) { S.open = false; render(); } });   // 바깥을 누르면 닫는다
+      document.addEventListener('mousedown', function (e) {   // 바깥을 누르면 번호 목록만 닫는다(전체를 다시 그리면 대화창의 입력 포커스가 풀린다)
+        if (S.open && !(e.target.closest && e.target.closest('.gd-top'))) { S.open = false; var pp = document.getElementById('gd-pop'); if (pp) pp.remove(); var tg = el0() && el0().querySelector('[data-act=toggle-list]'); if (tg) tg.setAttribute('aria-expanded', 'false'); }
+      });   // 바깥을 누르면 닫는다
     }
     var total = pages(caseOn()).length; S.done = clampDone(load(), total);
     // 처음 열면 이어서 할 곳(첫 미완료 페이지)으로, 모두 마쳤으면 완료 화면으로. 이미 보던 중이면 그 자리 유지.
