@@ -201,7 +201,7 @@
   /* ── 상단 바의 언어/국가 선택 ──────────────────────────── */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var GLOBE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 3.9 5.7 3.9 9s-1.3 6.3-3.9 9c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z"/></svg>';
-  /* 국기(시안 C): 상단 바 버튼에만 쓴다. 나라마다 색 덩어리 2~3개로 줄인 3:2 그림이라 모양이 단순하다.
+  /* 국기(시안 C 도형을 시안 B 원형으로 잘라 보여 준다): 상단 바 버튼에만 쓴다. 나라마다 색 덩어리 2~3개로 줄인 3:2 그림이라 모양이 단순하다.
      (윈도우는 국기 이모지를 그리지 못하므로 그림으로 직접 그린다.) 목록의 국가 이름 줄에는 국기를 넣지 않는다.
      표기: 'H 색,색:비율' 가로줄 · 'V …' 세로줄 · 'bg 색' 바탕 · 'r x,y,w,h,색' 사각 · 'c x,y,r,색' 원 · 'o x,y,r,색' 고리 · 's x,y,r,색' 별
            'p x,y x,y … ,색' 다각형 · 'l x1,y1,x2,y2,굵기,색' 선 · 'K x,y,w,h' … '/' 그 안만 보이게 · 'T' 태극 · 'Z 색' 톱니 */
@@ -295,8 +295,8 @@
   function flagHtml(code) {
     if (FLAG_CACHE[code]) return FLAG_CACHE[code];
     if (!FLAGS[code]) return GLOBE;
-    return (FLAG_CACHE[code] = '<svg class="lp-flag" focusable="false" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true">' + flagBody(FLAGS[code]) +
-      '<rect x=".3" y=".3" width="29.4" height="19.4" rx="1" fill="none" stroke="rgba(0,0,0,.22)" stroke-width=".6"/></svg>');
+    return (FLAG_CACHE[code] = '<svg class="lp-flag" focusable="false" viewBox="5 0 20 20" width="24" height="24" aria-hidden="true">' + flagBody(FLAGS[code]) +
+      '<circle cx="15" cy="10" r="9.7" fill="none" stroke="rgba(0,0,0,.22)" stroke-width=".6"/></svg>');
   }
   var MAG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
   var uid = 0;
@@ -309,13 +309,12 @@
         '<button type="button" class="lp-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="' + id + '-pop"><span class="lp-fl"></span><span class="lp-cur"></span></button>' +
         '<div class="lp-pop" id="' + id + '-pop" role="dialog" aria-label="" hidden>' +
           '<div class="lp-search">' + MAG + '<input type="search" class="lp-q" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="' + id + '-list" autocomplete="off" spellcheck="false"></div>' +
-          '<div class="lp-langs" role="group"></div>' +
           '<ul class="lp-list" id="' + id + '-list" role="listbox"></ul>' +
           '<p class="lp-empty" role="status" hidden></p>' +
         '</div>' +
       '</div>';
     var box = host.firstChild, btn = box.querySelector('.lp-btn'), pop = box.querySelector('.lp-pop'), q = box.querySelector('.lp-q');
-    var langs = box.querySelector('.lp-langs'), list = box.querySelector('.lp-list'), empty = box.querySelector('.lp-empty'), cur = box.querySelector('.lp-cur'), fl = box.querySelector('.lp-fl');
+    var list = box.querySelector('.lp-list'), empty = box.querySelector('.lp-empty'), cur = box.querySelector('.lp-cur'), fl = box.querySelector('.lp-fl');
     var rows = [], active = -1;
 
     function label() {
@@ -324,11 +323,7 @@
       btn.setAttribute('aria-label', t('언어·국가 선택') + ': ' + regionName(state.country, 'en') + ', ' + LANG_OF[state.lang].n);
       pop.setAttribute('aria-label', t('언어·국가 선택'));
       q.setAttribute('placeholder', t('국가 검색')); q.setAttribute('aria-label', t('국가 검색'));
-      langs.setAttribute('aria-label', t('언어'));
       empty.textContent = t('일치하는 국가가 없습니다.');
-    }
-    function drawLangs() {
-      langs.innerHTML = LANGS.map(function (l) { return '<button type="button" class="lp-chip" data-l="' + l.c + '" aria-pressed="' + (l.c === state.lang) + '" lang="' + l.tag + '">' + esc(l.n) + '</button>'; }).join('');
     }
     function setActive(i, scroll) {
       var opts = list.children;
@@ -347,7 +342,7 @@
       setActive(q.value ? (rows.length ? 0 : -1) : sel);
     }
     function open() {
-      label(); drawLangs(); q.value = '';
+      label(); q.value = '';
       pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
       drawList();   // 보이는 상태에서 그려야 현재 국가 줄로 스크롤된다
       q.focus();
@@ -369,7 +364,6 @@
     });
     list.addEventListener('click', function (e) { var li = e.target.closest && e.target.closest('li[data-c]'); if (li) choose({ country: li.getAttribute('data-c') }); });
     list.addEventListener('mousemove', function (e) { var li = e.target.closest && e.target.closest('li[data-c]'); if (li) { var i = Array.prototype.indexOf.call(list.children, li); if (i !== active) setActive(i, false); } });
-    langs.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.lp-chip'); if (b) choose({ lang: b.getAttribute('data-l') }); });
     box.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !pop.hidden) { e.stopPropagation(); close(true); } });
     document.addEventListener('mousedown', function away(e) {
       if (!document.body.contains(box)) { document.removeEventListener('mousedown', away); return; }

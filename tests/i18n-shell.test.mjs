@@ -62,3 +62,12 @@ test('다국어: 언어를 바꿔도 메뉴·상단 바 판단은 한국어 원�
   assert.ok(h.includes('.map(n => _i18nOrig(n)).join'));
   assert.ok(h.includes("const _ikey = label + '\\u0001' + _i18nLang();"));
 });
+
+test('다국어: 드롭다운에는 언어 버튼 줄이 없다(국가만 고르면 그 나라의 기본 언어)', () => {
+  assert.ok(!/lp-langs|lp-chip/.test(R('assets/i18n.js') + R('desktop.html')));
+});
+
+test('다국어: 국기는 시안 B(원형, 지름 24px)', () => {
+  assert.ok(R('desktop.html').includes('.lp-flag{display:block;width:24px;height:24px;border-radius:50%}'));
+  assert.ok(R('assets/i18n.js').includes('viewBox="5 0 20 20" width="24" height="24"'));
+});
