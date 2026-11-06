@@ -173,15 +173,15 @@
     var lang = effectiveLang(DEFAULT_LANG[code]), nl = nativeLang(code);
     var key = code + '|' + state.lang;
     if (COUNTRY_CACHE[key]) return COUNTRY_CACHE[key];
-    var ui = regionName(code, state.lang);
-    var hay = [ui, regionName(code, 'en'), regionName(code, 'ko'), regionName(code, nl), code].map(norm);
-    return (COUNTRY_CACHE[key] = { code: code, name: ui, lang: lang, langName: LANG_OF[lang].n, hay: hay, cho: cho(regionName(code, 'ko')) });
+    var ui = regionName(code, state.lang), en = regionName(code, 'en');   // 화면에는 영어 이름만 보이고, 검색은 화면 언어·한국어·그 나라 말·코드로도 된다
+    var hay = [en, ui, regionName(code, 'ko'), regionName(code, nl), code].map(norm);
+    return (COUNTRY_CACHE[key] = { code: code, name: en, lang: lang, langName: LANG_OF[lang].n, hay: hay, cho: cho(regionName(code, 'ko')) });
   }
   /** 입력한 글자로 국가를 찾는다(화면 언어·영어·한국어·그 나라 말·코드·한글 초성). 글자가 없으면 이름순 전체. */
   function searchCountries(query) {
     var rows = REGIONS.map(countryRow), q = norm(query), raw = String(query == null ? '' : query).replace(/\s+/g, ''), out;
     var loc = state.lang;
-    if (!q) return rows.slice().sort(function (a, b) { return a.name.localeCompare(b.name, loc); });
+    if (!q) return rows.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'en'); });
     out = [];
     rows.forEach(function (r) {
       var score = -1, i, h;
@@ -194,19 +194,109 @@
       if (score < 0 && isJamo(raw) && r.cho.indexOf(raw) === 0) score = 1;
       if (score >= 0) out.push({ r: r, s: score });
     });
-    out.sort(function (a, b) { return a.s - b.s || a.r.name.localeCompare(b.r.name, loc); });
+    out.sort(function (a, b) { return a.s - b.s || a.r.name.localeCompare(b.r.name, 'en'); });
     return out.map(function (x) { return x.r; });
   }
 
   /* ── 상단 바의 언어/국가 선택 ──────────────────────────── */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var GLOBE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 3.9 5.7 3.9 9s-1.3 6.3-3.9 9c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z"/></svg>';
-  /* 국기: 한국은 태극기 그림(윈도우는 국기 이모지를 그리지 못해 글자로 보인다), 다른 나라는 국기 이모지(그리지 못하는 환경에서는 국가 코드 글자로 보인다) */
-  var FLAG_KR = '<svg class="lp-flag" focusable="false" viewBox="0 0 36 24" width="30" height="20" aria-hidden="true"><rect width="36" height="24" rx="2" fill="#fff" stroke="#c9ced6" stroke-width=".8"/><g transform="rotate(-33.7 18 12)"><path d="M12 12a6 6 0 0 1 12 0a3 3 0 0 1-6 0a3 3 0 0 0-6 0z" fill="#cd2e3a"/><path d="M24 12a6 6 0 0 1-12 0a3 3 0 0 1 6 0a3 3 0 0 0 6 0z" fill="#0047a0"/></g><g fill="#111"><g transform="translate(10.84 7.23) rotate(-56.3)"><rect x="-3.2" y="-2.55" width="6.4" height="1.1"/><rect x="-3.2" y="-0.55" width="6.4" height="1.1"/><rect x="-3.2" y="1.45" width="6.4" height="1.1"/></g><g transform="translate(25.16 16.77) rotate(123.7)"><rect x="-3.2" y="-2.55" width="2.7" height="1.1"/><rect x="0.5" y="-2.55" width="2.7" height="1.1"/><rect x="-3.2" y="-0.55" width="2.7" height="1.1"/><rect x="0.5" y="-0.55" width="2.7" height="1.1"/><rect x="-3.2" y="1.45" width="2.7" height="1.1"/><rect x="0.5" y="1.45" width="2.7" height="1.1"/></g><g transform="translate(25.16 7.23) rotate(56.3)"><rect x="-3.2" y="-2.55" width="2.7" height="1.1"/><rect x="0.5" y="-2.55" width="2.7" height="1.1"/><rect x="-3.2" y="-0.55" width="6.4" height="1.1"/><rect x="-3.2" y="1.45" width="2.7" height="1.1"/><rect x="0.5" y="1.45" width="2.7" height="1.1"/></g><g transform="translate(10.84 16.77) rotate(236.3)"><rect x="-3.2" y="-2.55" width="6.4" height="1.1"/><rect x="-3.2" y="-0.55" width="2.7" height="1.1"/><rect x="0.5" y="-0.55" width="2.7" height="1.1"/><rect x="-3.2" y="1.45" width="6.4" height="1.1"/></g></g></svg>';
+  /* 국기(시안 C): 상단 바 버튼에만 쓴다. 나라마다 색 덩어리 2~3개로 줄인 3:2 그림이라 모양이 단순하다.
+     (윈도우는 국기 이모지를 그리지 못하므로 그림으로 직접 그린다.) 목록의 국가 이름 줄에는 국기를 넣지 않는다.
+     표기: 'H 색,색:비율' 가로줄 · 'V …' 세로줄 · 'bg 색' 바탕 · 'r x,y,w,h,색' 사각 · 'c x,y,r,색' 원 · 'o x,y,r,색' 고리 · 's x,y,r,색' 별
+           'p x,y x,y … ,색' 다각형 · 'l x1,y1,x2,y2,굵기,색' 선 · 'K x,y,w,h' … '/' 그 안만 보이게 · 'T' 태극 · 'Z 색' 톱니 */
+  var FC = { r: '#d62d36', b: '#2a5db0', n: '#14306e', s: '#4aa3df', w: '#ffffff', g: '#0a9a50', y: '#fcd116', k: '#16181d', o: '#f58220', m: '#8a1538' };
+  var JACK = 'l0,0,14,9.5,2,w;l14,0,0,9.5,2,w;l7,0,7,9.5,3.4,w;l0,4.75,14,4.75,3.4,w;l7,0,7,9.5,1.8,r;l0,4.75,14,4.75,1.8,r';
+  var FLAGS = {
+    KR: 'bg w;T', KP: 'H b:3,w:.7,r:12.6,w:.7,b:3;c8,10,4.4,w;s8,10,3.4,r', JP: 'bg w;c15,10,5.6,r', CN: 'bg r;s6,6,3.6,y',
+    ES: 'H r,y:2,r', MX: 'V g,w,r;c15,10,2.4,#8b6b3c', AR: 'H s,w,s;c15,10,2.2,y', CO: 'H y:2,b,r', CL: 'H w,r;r0,0,10,10,b;s5,5,2.8,w',
+    PE: 'V r,w,r', VE: 'H y,b,r', EC: 'H y:2,b,r', GT: 'V s,w,s', CU: 'H b,w,b,w,b;p0,0 0,20 11,10,r;s3.8,10,2.4,w', BO: 'H r,y,g',
+    DO: 'bg w;r0,0,13,8.5,b;r17,0,13,8.5,r;r0,11.5,13,8.5,r;r17,11.5,13,8.5,b', HN: 'H b,w,b', PY: 'H r,w,b', SV: 'H b,w,b', NI: 'H b,w,b',
+    CR: 'H b,w,r:2,w,b', PA: 'bg w;r15,0,15,10,r;r0,10,15,10,b', UY: 'H w,b,w,b,w,b;r0,0,10,10,w;c5,5,2.4,y',
+    PR: 'H r,w,r,w,r;p0,0 0,20 11,10,b;s3.8,10,2.4,w', GQ: 'H g,w,r;p0,0 0,20 8,10,b',
+    FR: 'V b,w,r', BE: 'V k,y,r', LU: 'H r,w,s', MC: 'H r,w', SN: 'V g,y,r;s15,10.4,3.2,g', CI: 'V o,w,g', CM: 'V g,r,y;s15,10.4,3.2,y',
+    CD: 'bg s;p0,17 0,20 3,20 30,3 30,0 27,0,r;s5,5,3,y', MG: 'bg w;r10,0,20,10,r;r10,10,20,10,g', ML: 'V g,y,r', BF: 'H r,g;s15,10.4,4.4,y',
+    NE: 'H o,w,g;c15,10,2.6,o', TG: 'H g,y,g,y,g;r0,0,12,12,r;s6,6,3,w', BJ: 'bg g;r10,0,20,10,y;r10,10,20,10,r', GA: 'H g,y,b', HT: 'H b,r',
+    DJ: 'H s,g;p0,0 0,20 13,10,w;s4.5,10,2.4,r',
+    DE: 'H k,r,y', AT: 'H r,w,r', LI: 'H b,r;c6,5,2.2,y', CH: 'bg r;r12.5,4,5,12,w;r7,7.5,16,5,w',
+    VN: 'bg r;s15,10.4,6,y', ID: 'H r,w',
+    US: 'bg w;r0,0,30,6.7,r;r0,13.3,30,6.7,r;r0,0,13,10.7,n',
+    GB: 'bg n;l0,0,30,20,3.6,w;l30,0,0,20,3.6,w;l15,0,15,20,6,w;l0,10,30,10,6,w;l15,0,15,20,3.4,r;l0,10,30,10,3.4,r',
+    AU: 'bg n;K0,0,14,9.5;' + JACK + ';/;s22,14,2.6,w;s22,5,1.6,w', NZ: 'bg n;K0,0,14,9.5;' + JACK + ';/;s21,14,1.8,r;s25,8,1.5,r',
+    CA: 'V r,w:2,r;p15,4 18,10 15,16 12,10,r', IE: 'V g,w,o', SG: 'H r,w;c6,5,3.4,w;c7.4,5,2.8,r', IN: 'H o,w,g;o15,10,2.2,n',
+    PH: 'H b,r;p0,0 0,20 17,10,w;s4,10,2.6,y', ZA: 'H r,n;p0,0 0,20 12,10,k;r10,8.7,20,2.6,g',
+    NG: 'V g,w,g', KE: 'H k,r,g;r13,7,4,6,k', GH: 'H r,y,g;s15,10.4,3.4,k', UG: 'H k,y,r,k,y,r;c15,10,3.4,w',
+    TZ: 'bg g;p30,0 30,20 0,20,s;l0,20,30,0,6.4,y;l0,20,30,0,4,k', ET: 'H g,y,r;c15,10,4,b;s15,10.4,2.8,y',
+    PK: 'bg g;r0,0,7.5,20,w;c19,10,4,w;c20.4,9,3.4,g', BD: 'bg g;c13.5,10,5.4,r',
+    LK: 'bg y;r1.4,1.4,27.2,17.2,m;r2.8,2.8,3.6,14.4,g;r6.4,2.8,3.6,14.4,o',
+    NP: 'bg w;p1,0 19,9.6 10.5,9.6 19,20 1,20,b;p2.6,2 15.4,8.2 8,8.2 15.4,18 2.6,18,r',
+    MY: 'H r,w,r,w,r,w,r;r0,0,15,10.7,n;c6.5,5.3,2.8,y', TH: 'H r,w,n:2,w,r', MM: 'H y,g,r;s15,11,5.6,w', KH: 'H n,r:2,n;r10,7.5,10,5,w',
+    LA: 'H r,n:2,r;c15,10,4.4,w', BN: 'bg y;l0,16,30,4,3.4,w;l0,19.5,30,7.5,2.2,k;c15,10,3.6,r', MN: 'V r,n,r;r2.4,6,3,8,y',
+    KZ: 'bg s;c15,10,4,y', UZ: 'H s,w,g;r0,6.4,30,.7,r;r0,12.9,30,.7,r', KG: 'bg r;c15,10,5,y', TJ: 'H r,w:1.5,g;c15,10,2.4,y',
+    TM: 'bg g;r3,0,4.5,20,#a52a2a', AF: 'V k,r,g',
+    IR: 'H g,w,r', IQ: 'H r,w,k;r11,8.5,8,3,g', SA: 'bg g;r7,12.4,16,1.6,w', AE: 'H g,w,k;r0,0,8,20,r', QA: 'bg m;Z w',
+    KW: 'H g,w,r;p0,0 9,6.7 9,13.3 0,20,k', BH: 'bg r;Z w', OM: 'H w,r,g;r0,0,9,20,r', JO: 'H k,w,g;p0,0 0,20 13,10,r',
+    LB: 'H r,w:2,r;c15,10,3,g', SY: 'H r,w,k;s11,10,2,g;s19,10,2,g', YE: 'H r,w,k', IL: 'bg w;r0,3,30,2.4,n;r0,14.6,30,2.4,n;o15,10,3.2,n',
+    TR: 'bg r;c11.5,10,5,w;c13,10,4,r;s17.5,10,2,w', EG: 'H r,w,k;r13.5,8.5,3,3,y', MA: 'bg r;s15,10.4,5.4,g', DZ: 'V g,w;s15,10,4.4,r',
+    TN: 'bg r;c15,10,6,w;c14.5,10,3.8,r;c15.6,10,3,w', LY: 'H r,k:2,g;c15,10,2.6,w;c15.8,10,2.1,k', SD: 'H r,w,k;p0,0 0,20 12,10,g',
+    IT: 'V g,w,r', PT: 'V g:2,r:3;c12,10,3.4,y', BR: 'bg g;p15,2.2 27.4,10 15,17.8 2.6,10,y;c15,10,4.4,n',
+    NL: 'H r,w,n', SE: 'bg n;r9,0,4,20,y;r0,8,30,4,y', NO: 'bg r;r8,0,5.4,20,w;r0,7.3,30,5.4,w;r9.5,0,2.4,20,n;r0,8.8,30,2.4,n',
+    DK: 'bg r;r9,0,4,20,w;r0,8,30,4,w', FI: 'bg w;r8,0,5,20,n;r0,7.5,30,5,n', IS: 'bg n;r8,0,5.4,20,w;r0,7.3,30,5.4,w;r9.5,0,2.4,20,r;r0,8.8,30,2.4,r',
+    PL: 'H w,r', CZ: 'H w,r;p0,0 0,20 15,10,n', SK: 'H w,n,r;c9,10,3,r', HU: 'H r,w,g', RO: 'V n,y,r', BG: 'H w,g,r',
+    GR: 'H n,w,n,w,n,w,n,w,n;r0,0,11.1,11.1,n;r4.4,0,2.2,11.1,w;r0,4.4,11.1,2.2,w', HR: 'H r,w,n', RS: 'H r,n,w', SI: 'H w,n,r',
+    BA: 'bg n;p9,0 24,0 24,20,y', ME: 'bg y;r1.2,1.2,27.6,17.6,r', AL: 'bg r;c15,10,4,k',
+    MK: 'bg r;l0,10,30,10,1.4,y;l15,0,15,20,1.4,y;l0,0,30,20,1.4,y;l30,0,0,20,1.4,y;c15,10,3.4,y',
+    UA: 'H b,y', BY: 'H r:2,g;r0,0,3.5,20,w', RU: 'H w,b,r', LT: 'H y,g,r', LV: 'H #9e3039:2,w:1,#9e3039:2', EE: 'H b,k,w',
+    GE: 'bg w;r13,0,4,20,r;r0,8,30,4,r', AM: 'H r,n,o', AZ: 'H s,r,g;c14,10,2.8,w;c14.8,10,2.3,r',
+    TW: 'bg r;r0,0,15,10,n;c7.5,5,2.6,w', HK: 'bg r;s15,10.4,5.6,w', MO: 'bg g;c15,12,3.4,w;s15,5,2,y',
+    FJ: 'bg s;K0,0,14,9.5;' + JACK + ';/;r18,6,7,8,w;r18,6,7,3,r', PG: 'bg k;p0,0 30,0 30,20,r;s7,14,2.4,w'
+  };
+  function fc(c) { return FC[c] || c; }
+  function starPath(cx, cy, r) {
+    var p = '', i, a, rr;
+    for (i = 0; i < 10; i++) { a = -Math.PI / 2 + i * Math.PI / 5; rr = i % 2 ? r * 0.4 : r; p += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(2) + ' ' + (cy + rr * Math.sin(a)).toFixed(2); }
+    return p + 'Z';
+  }
+  function flagBody(spec) {
+    var out = '', open = false;
+    spec.split(';').forEach(function (tk) {
+      var a, i, tot, y, x, c, t = tk.trim();
+      if (!t) return;
+      if (t === '/') { if (open) out += '</svg>'; open = false; return; }
+      if (t === 'T') { out += '<g transform="rotate(-33.7 15 10)"><path d="M9 10a6 6 0 0 1 12 0a3 3 0 0 1-6 0a3 3 0 0 0-6 0z" fill="#cd2e3a"/><path d="M21 10a6 6 0 0 1-12 0a3 3 0 0 1 6 0a3 3 0 0 0 6 0z" fill="#0047a0"/></g>'; return; }
+      if (t.indexOf('bg ') === 0) { out += '<rect width="30" height="20" fill="' + fc(t.slice(3).trim()) + '"/>'; return; }
+      if (t.charAt(0) === 'Z') { out += '<path d="M0 0H9L12 2L9 4L12 6L9 8L12 10L9 12L12 14L9 16L12 18L9 20H0z" fill="' + fc(t.slice(1).trim()) + '"/>'; return; }
+      if (t.charAt(0) === 'H' || t.charAt(0) === 'V') {
+        a = t.slice(1).trim().split(',').map(function (s) { var m = s.split(':'); return [m[0], m[1] ? parseFloat(m[1]) : 1]; });
+        tot = a.reduce(function (s, v) { return s + v[1]; }, 0); x = 0;
+        for (i = 0; i < a.length; i++) {
+          y = (a[i][1] / tot) * (t.charAt(0) === 'H' ? 20 : 30);
+          out += t.charAt(0) === 'H' ? '<rect y="' + x.toFixed(2) + '" width="30" height="' + (y + 0.05).toFixed(2) + '" fill="' + fc(a[i][0]) + '"/>' : '<rect x="' + x.toFixed(2) + '" width="' + (y + 0.05).toFixed(2) + '" height="20" fill="' + fc(a[i][0]) + '"/>';
+          x += y;
+        }
+        return;
+      }
+      c = t.charAt(0); a = t.slice(1).split(',');
+      if (c === 'K') { out += '<svg x="' + a[0] + '" y="' + a[1] + '" width="' + a[2] + '" height="' + a[3] + '" viewBox="' + a.join(' ') + '">'; open = true; return; }
+      if (c === 'r') out += '<rect x="' + a[0] + '" y="' + a[1] + '" width="' + a[2] + '" height="' + a[3] + '" fill="' + fc(a[4]) + '"/>';
+      else if (c === 'c') out += '<circle cx="' + a[0] + '" cy="' + a[1] + '" r="' + a[2] + '" fill="' + fc(a[3]) + '"/>';
+      else if (c === 'o') out += '<circle cx="' + a[0] + '" cy="' + a[1] + '" r="' + a[2] + '" fill="none" stroke="' + fc(a[3]) + '" stroke-width="1"/>';
+      else if (c === 's') out += '<path d="' + starPath(+a[0], +a[1], +a[2]) + '" fill="' + fc(a[3]) + '"/>';
+      else if (c === 'l') out += '<path d="M' + a[0] + ' ' + a[1] + 'L' + a[2] + ' ' + a[3] + '" stroke="' + fc(a[5]) + '" stroke-width="' + a[4] + '" fill="none"/>';
+      else if (c === 'p') {
+        var pts = t.slice(1).trim().split(' '), last = pts.pop().split(',');
+        pts.push(last[0] + ',' + last[1]);
+        out += '<polygon points="' + pts.join(' ') + '" fill="' + fc(last[2]) + '"/>';
+      }
+    });
+    return out + (open ? '</svg>' : '');
+  }
+  var FLAG_CACHE = {};
   function flagHtml(code) {
-    if (code === 'KR') return FLAG_KR;
-    if (!/^[A-Z]{2}$/.test(code)) return GLOBE;
-    return '<span class="lp-flag lp-emoji" aria-hidden="true">' + String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65) + '</span>';
+    if (FLAG_CACHE[code]) return FLAG_CACHE[code];
+    if (!FLAGS[code]) return GLOBE;
+    return (FLAG_CACHE[code] = '<svg class="lp-flag" focusable="false" viewBox="0 0 30 20" width="30" height="20" aria-hidden="true">' + flagBody(FLAGS[code]) +
+      '<rect x=".3" y=".3" width="29.4" height="19.4" rx="1" fill="none" stroke="rgba(0,0,0,.22)" stroke-width=".6"/></svg>');
   }
   var MAG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
   var uid = 0;
@@ -230,8 +320,8 @@
 
     function label() {
       fl.innerHTML = flagHtml(state.country);
-      cur.textContent = LANG_OF[state.lang].n;
-      btn.setAttribute('aria-label', t('언어·국가 선택') + ': ' + regionName(state.country, state.lang) + ', ' + LANG_OF[state.lang].n);
+      cur.textContent = regionName(state.country, 'en');
+      btn.setAttribute('aria-label', t('언어·국가 선택') + ': ' + regionName(state.country, 'en') + ', ' + LANG_OF[state.lang].n);
       pop.setAttribute('aria-label', t('언어·국가 선택'));
       q.setAttribute('placeholder', t('국가 검색')); q.setAttribute('aria-label', t('국가 검색'));
       langs.setAttribute('aria-label', t('언어'));
@@ -250,7 +340,7 @@
     function drawList() {
       rows = searchCountries(q.value);
       list.innerHTML = rows.map(function (r, i) {
-        return '<li role="option" id="' + id + '-o' + i + '" data-c="' + r.code + '" aria-selected="' + (r.code === state.country) + '"><span class="lp-code">' + flagHtml(r.code) + '</span><span class="lp-name">' + esc(r.name) + '</span><span class="lp-l">' + esc(r.langName) + '</span></li>';
+        return '<li role="option" id="' + id + '-o' + i + '" data-c="' + r.code + '" aria-selected="' + (r.code === state.country) + '"><span class="lp-name">' + esc(r.name) + '</span></li>';
       }).join('');
       empty.hidden = rows.length > 0;
       var sel = -1; rows.forEach(function (r, i) { if (r.code === state.country) sel = i; });

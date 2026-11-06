@@ -15,12 +15,14 @@ test('다국어: 상단 바 오른쪽에 언어·국가 선택 자리가 있고 
   assert.match(h, /document\.addEventListener\('navi:locale'/);
 });
 
-test('다국어: 한국이 기본(태극기 + 한국어)이다', () => {
+test('다국어: 한국이 기본(태극기 + South Korea)이고, 버튼은 선택한 나라의 국기(시안 C) + 영어 국가 이름, 목록은 영어 이름만', () => {
   const j = R('assets/i18n.js');
-  assert.match(j, /if \(code === 'KR'\) return FLAG_KR/);
-  assert.match(j, /cur\.textContent = LANG_OF\[state\.lang\]\.n/);
+  assert.match(j, /cur\.textContent = regionName\(state\.country, 'en'\)/);
   assert.match(j, /return \{ lang: 'en', country: 'US' \}/);   // 브라우저 언어를 모를 때만 영어
   assert.ok(j.includes('#cd2e3a') && j.includes('#0047a0'));
+  const row = /id="' \+ id \+ '-o'[\s\S]*?<\/li>';/.exec(j)[0];
+  assert.ok(!/flagHtml/.test(row), '목록 줄에는 국기가 없음');
+  assert.ok(!/fromCodePoint/.test(j), '국기 이모지는 쓰지 않음(윈도우에서 글자로 보임)');
 });
 
 test('다국어: 서류 화면(iframe)에 언어·국가를 넘기고, 요청에는 출처를 확인해 답한다', () => {
