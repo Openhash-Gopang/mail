@@ -309,13 +309,12 @@
         '<button type="button" class="lp-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="' + id + '-pop"><span class="lp-fl"></span><span class="lp-cur"></span></button>' +
         '<div class="lp-pop" id="' + id + '-pop" role="dialog" aria-label="" hidden>' +
           '<div class="lp-search">' + MAG + '<input type="search" class="lp-q" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="' + id + '-list" autocomplete="off" spellcheck="false"></div>' +
-          '<div class="lp-langs" role="group"></div>' +
           '<ul class="lp-list" id="' + id + '-list" role="listbox"></ul>' +
           '<p class="lp-empty" role="status" hidden></p>' +
         '</div>' +
       '</div>';
     var box = host.firstChild, btn = box.querySelector('.lp-btn'), pop = box.querySelector('.lp-pop'), q = box.querySelector('.lp-q');
-    var langs = box.querySelector('.lp-langs'), list = box.querySelector('.lp-list'), empty = box.querySelector('.lp-empty'), cur = box.querySelector('.lp-cur'), fl = box.querySelector('.lp-fl');
+    var list = box.querySelector('.lp-list'), empty = box.querySelector('.lp-empty'), cur = box.querySelector('.lp-cur'), fl = box.querySelector('.lp-fl');
     var rows = [], active = -1;
 
     function label() {
@@ -324,11 +323,7 @@
       btn.setAttribute('aria-label', t('언어·국가 선택') + ': ' + regionName(state.country, 'en') + ', ' + LANG_OF[state.lang].n);
       pop.setAttribute('aria-label', t('언어·국가 선택'));
       q.setAttribute('placeholder', t('국가 검색')); q.setAttribute('aria-label', t('국가 검색'));
-      langs.setAttribute('aria-label', t('언어'));
       empty.textContent = t('일치하는 국가가 없습니다.');
-    }
-    function drawLangs() {
-      langs.innerHTML = LANGS.map(function (l) { return '<button type="button" class="lp-chip" data-l="' + l.c + '" aria-pressed="' + (l.c === state.lang) + '" lang="' + l.tag + '">' + esc(l.n) + '</button>'; }).join('');
     }
     function setActive(i, scroll) {
       var opts = list.children;
@@ -347,7 +342,7 @@
       setActive(q.value ? (rows.length ? 0 : -1) : sel);
     }
     function open() {
-      label(); drawLangs(); q.value = '';
+      label(); q.value = '';
       pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
       drawList();   // 보이는 상태에서 그려야 현재 국가 줄로 스크롤된다
       q.focus();
@@ -369,7 +364,6 @@
     });
     list.addEventListener('click', function (e) { var li = e.target.closest && e.target.closest('li[data-c]'); if (li) choose({ country: li.getAttribute('data-c') }); });
     list.addEventListener('mousemove', function (e) { var li = e.target.closest && e.target.closest('li[data-c]'); if (li) { var i = Array.prototype.indexOf.call(list.children, li); if (i !== active) setActive(i, false); } });
-    langs.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.lp-chip'); if (b) choose({ lang: b.getAttribute('data-l') }); });
     box.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !pop.hidden) { e.stopPropagation(); close(true); } });
     document.addEventListener('mousedown', function away(e) {
       if (!document.body.contains(box)) { document.removeEventListener('mousedown', away); return; }
