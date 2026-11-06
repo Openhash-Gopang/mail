@@ -366,7 +366,7 @@ test('상단 바 "나만의 AI 비서, 나비": 글자 간격, 클릭하면 소�
   assert.ok(i.includes('나만의 AI 비서') && !i.includes('K-Mail') && !i.includes('<header') && !i.includes('<nav'));
 });
 
-test('좌측 상단 NAVIWEB 로고: 누르면 사용 설명서가 상단 바 밑으로 슬라이드(▼ 표시), 설명서는 embed 모드로 심플하게', () => {
+test('좌측 상단 나비웹(글자) ▾: 누르면 사용 설명서가 상단 바 밑으로 슬라이드(▼ 표시), 설명서는 embed 모드로 심플하게', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('id="logo-help"') && h.includes("onclick=\"_panelToggle('manual'); return false;\"") && h.includes("manual: 'whitepaper.html?embed=mail'"));
   assert.match(h, /function _panelToggle\(/);
