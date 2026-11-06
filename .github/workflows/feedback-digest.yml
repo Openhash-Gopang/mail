@@ -1,0 +1,29 @@
+# 사용자 제보 주간 집계 — 매주 월요일 09:00(KST) 혼디 제보 창구에서 최근 7일 제보를 받아 GitHub 이슈 "사용자 제보 주간 집계"에 올린다.
+# 필요: 저장소 Secret USER_FEEDBACK_EXPORT_TOKEN (혼디 hondi-proxy Worker 의 같은 이름 secret 값). docs/user-feedback.md 참조.
+name: feedback-digest
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 집계
+        env:
+          USER_FEEDBACK_EXPORT_TOKEN: ${{ secrets.USER_FEEDBACK_EXPORT_TOKEN }}
+        run: node scripts/feedback-weekly.mjs --days 7 --out report.md
+      - name: 이슈로 올리기
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if head -1 report.md | grep -q '새 제보 없음'; then echo "새 제보 없음 — 이슈를 만들지 않습니다"; exit 0; fi
+          gh issue create --title "사용자 제보 주간 집계 $(date -u +%Y-%m-%d)" --body-file report.md
