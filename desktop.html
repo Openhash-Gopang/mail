@@ -2056,10 +2056,20 @@ function _docLoad(id) { _docCurrent = id; _docLoadInto(id, { frame: 'doc-frame',
 // 확장 프로그램이 있으면 줄이 나타나고, 서류에 맞는 절차를 골라 "맡기기"를 누르면 확장 쪽 사이드 패널에 채워진다.
 // 시작·로그인·결제는 사용자가 직접 한다. 확장 프로그램이 없으면 줄을 보이지 않는다.
 let _agentInfo = null;
-const _agentBadge = (text, o) => {   // 맨 위 오른쪽 "나비웹 도우미 0.4.5" — o.install: Chrome 에 추가 링크
+/** "나비웹 도우미 0.x.x" 는 혼디 대화창 상단 중앙에 둔다. 확장이 없어 "Chrome에 추가" 링크가 필요할 때(또는 대화창이 아직 없을 때)는 맨 위 오른쪽에 둔다. */
+const _agentBadgeHome = (() => { const b = document.getElementById('agent-badge'); return b ? { parent: b.parentNode, next: b.nextSibling } : null; })();
+function _agentBadgePlace() {
+  const b = document.getElementById('agent-badge'), slot = document.getElementById('hchat-agent'); if (!b || !_agentBadgeHome) return;
+  const wantPanel = !!slot && !b.querySelector('.ab-install:not([hidden])');
+  if (wantPanel) { if (b.parentNode !== slot) slot.appendChild(b); }
+  else if (b.parentNode !== _agentBadgeHome.parent) _agentBadgeHome.parent.insertBefore(b, _agentBadgeHome.next && _agentBadgeHome.next.parentNode === _agentBadgeHome.parent ? _agentBadgeHome.next : null);
+}
+window._agentBadgePlace = _agentBadgePlace;
+const _agentBadge = (text, o) => {   // "나비웹 도우미 0.4.5" — o.install: Chrome 에 추가 링크
   const b = document.getElementById('agent-badge'); if (!b) return;
   b.querySelector('.ab-t').textContent = text || ''; b.hidden = !text;
   const a = b.querySelector('.ab-install'); a.hidden = !(o && o.install); if (o && o.install) a.href = o.install;
+  _agentBadgePlace();
 };
 let _agentMsgTm = 0;
 const _agentSay = (t) => {   // 도우미 진행 상황은 배지 옆에 잠깐 보이고, 전체 문구는 마우스를 올리면 보인다
