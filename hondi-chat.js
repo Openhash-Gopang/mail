@@ -71,6 +71,9 @@
       '#hchat-panel.full{right:0;bottom:0;left:0;top:0;border-radius:0;border:0}',
       '#hchat-head{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--gov,#0B3B33);color:#fff;font-size:14px;font-weight:700}',
       '#hchat-head .sp{flex:1}',
+      '#hchat-head{position:relative;min-height:36px}',
+      '#hchat-agent{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;justify-content:center;max-width:46%;pointer-events:none}',
+      '#hchat-agent a{pointer-events:auto}',
       '#hchat-head button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer;font-family:inherit}',
       '#hchat-head button:hover{background:rgba(255,255,255,.28)}',
       '#hchat-frame{flex:1;border:0;width:100%;min-height:0;background:#fff}',
@@ -166,13 +169,14 @@
     var panel = doc.createElement('div');
     panel.id = 'hchat-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '혼디 대화');
     panel.innerHTML =
-      '<div id="hchat-head"><span>💬 혼디 대화</span><span class="sp"></span>' +
+      '<div id="hchat-head"><span class="sp"></span><span id="hchat-agent"></span><span class="sp"></span>' +
       '<button type="button" data-hchat="popup" title="새 창으로 열기">↗ 새 창</button>' +
       '<button type="button" data-hchat="close" title="닫기(대화는 계속 받습니다)">닫기</button></div>' +
       '<iframe id="hchat-frame" title="혼디 대화" allow="microphone; camera; clipboard-write; clipboard-read; notifications; autoplay; fullscreen"></iframe>' +
       '<div id="hchat-busy" role="status" aria-live="polite"><span class="msg"></span><div class="bar" aria-hidden="true"></div></div>' +
       '<div id="hchat-note">K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.</div>';
     doc.body.appendChild(fab); doc.body.appendChild(panel);
+    if (typeof window !== 'undefined' && typeof window._agentBadgePlace === 'function') window._agentBadgePlace();   // "나비웹 도우미 0.x.x" 는 대화창 상단 중앙에 둔다
     S.els = { fab: fab, panel: panel, frame: panel.querySelector('#hchat-frame') };
     fab.addEventListener('click', toggle);
     panel.addEventListener('click', function (e) {

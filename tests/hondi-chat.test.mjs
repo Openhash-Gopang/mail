@@ -58,3 +58,11 @@ test('setSp: 패널 SP 전환 메시지를 보내고 다시 로드돼도 announc
   assert.match(j, /setSp: setSp/);
   assert.match(j, /S\.spMsg \? 'self' : 'delegate'/);
 });
+
+import { readFileSync as _rf } from 'node:fs';
+test('대화창 상단: "혼디 대화" 문구는 없고, 나비웹 도우미 버전이 상단 중앙 자리를 쓴다', () => {
+  const js = _rf(new URL('../hondi-chat.js', import.meta.url), 'utf8'), html = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(!js.includes('💬 혼디 대화'));
+  assert.match(js, /id="hchat-agent"/); assert.match(js, /#hchat-agent\{position:absolute;left:50%/);
+  assert.match(html, /function _agentBadgePlace\(\)/);
+});
