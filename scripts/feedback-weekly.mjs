@@ -6,9 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { digest, report } from './feedback-digest.mjs';
 
 export const DEFAULT_ENDPOINT = 'https://hondi-proxy.tensor-city.workers.dev';
+// PowerShell 파이프로 넣은 비밀값에는 맨 앞에 보이지 않는 BOM(U+FEFF)·줄바꿈이 붙을 수 있다 — 헤더에 넣기 전에 지운다.
+export const cleanToken = (t) => String(t || '').replace(/[\uFEFF\s]+/g, '');
 export function sinceDate(days, now = new Date()) { return new Date(now.getTime() - days * 864e5).toISOString().slice(0, 10); }
 
-export async function fetchExport({ endpoint = DEFAULT_ENDPOINT, token, since, limit = 2000, fetchImpl = fetch }) {
+export async function fetchExport({ endpoint = DEFAULT_ENDPOINT, token: rawToken, since, limit = 2000, fetchImpl = fetch }) {
+  const token = cleanToken(rawToken);
   if (!token) { const e = new Error('USER_FEEDBACK_EXPORT_TOKEN 이 없습니다'); e.code = 2; throw e; }
   const r = await fetchImpl(`${endpoint}/user-feedback/export?since=${encodeURIComponent(since)}&limit=${limit}`, { headers: { Authorization: `Bearer ${token}` } });
   if (!r.ok) { const e = new Error(`내려받기 실패 (HTTP ${r.status})`); e.code = 3; throw e; }
