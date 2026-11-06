@@ -8035,6 +8035,8 @@ window.addEventListener('message', async (e) => {
   if (!id || (!text && !files.length)) return;
   if (_embedBusy) { reply('앞의 요청을 처리하는 중입니다. 잠시 뒤 다시 보내 주세요.'); return; }
   _embedBusy = true; _embedCap = { buf: [], src: true };
+  /* 어떤 말이든 먼저 "잠시 기다려 주십시오" 한 줄을 답하고 진행 막대를 켠다 — 본 답이 늦어도 사용자가 멈춘 것으로 오해하지 않게(끝나면 finally 에서 끈다). */
+  try { HondiChat.say('잠시 기다려 주십시오.'); HondiChat.busy('잠시 기다려 주십시오…', 120000); } catch (x) {}
   try {
     /* 서류가 화면에 떠 있으면 혼디 대화창은 그 서류의 SP(서류 사이트의 AI)와 대화한다 — 작성 상황을 알고 답하고, 서류를 직접 고친다.
        말은 곧바로 서류 SP 에 보낸다(navi-doc-ask): 서류 SP 가 현재 서류를 보고 짧게 답하고, 수정·기입 지시는 되묻지 않고 화면 칸에 바로 쓴다. (기본 SP 경유는 길게 되묻기만 해서 쓰지 않는다)
@@ -8058,7 +8060,7 @@ window.addEventListener('message', async (e) => {
     await _cmpChatSend();
     reply(_embedCap.buf.filter(Boolean).join('\n').trim() || '입력창으로 보냈습니다. 화면을 확인해 주세요.');
   } catch (err) { reply('처리하지 못했습니다: ' + (err && err.message || err)); }
-  finally { _embedCap = null; _embedBusy = false; }
+  finally { _embedCap = null; _embedBusy = false; try { if (!(typeof _docHelper !== 'undefined' && _docHelper.sent && Object.keys(_docHelper.sent).length)) HondiChat.idle(); } catch (x) {} }
 });
 </script>
 <script src="hondi-chat.js?v=20261102"></script>
