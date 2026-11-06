@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fetchExport, buildReport, sinceDate } from '../scripts/feedback-weekly.mjs';
+import { cleanToken, fetchExport, buildReport, sinceDate } from '../scripts/feedback-weekly.mjs';
 
 test('주간 집계: 기간·토큰·실패 처리', async () => {
   assert.equal(sinceDate(7, new Date('2026-11-09T00:00:00Z')), '2026-11-02');
@@ -20,4 +20,9 @@ test('주간 집계: 보고서 — 3명 이상이면 [조치], 없으면 "새 �
 test('주간 집계 워크플로: 비밀값은 secrets 로만, 이슈 쓰기 권한만 추가', () => {
   const y = readFileSync(new URL('../.github/workflows/feedback-digest.yml', import.meta.url), 'utf8');
   assert.match(y, /secrets\.USER_FEEDBACK_EXPORT_TOKEN/); assert.match(y, /issues: write/); assert.match(y, /cron:/);
+});
+test('주간 집계: 비밀값 앞의 BOM·줄바꿈은 지우고 보낸다', async () => {
+  assert.equal(cleanToken('\uFEFFabc\r\n'), 'abc');
+  let h; await fetchExport({ token: '\uFEFFabc\r\n', since: '2026-11-02', fetchImpl: async (u, o) => { h = o.headers; return { ok: true, json: async () => ({ ok: true, items: [] }) }; } });
+  assert.equal(h.Authorization, 'Bearer abc');
 });
