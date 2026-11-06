@@ -2544,7 +2544,7 @@ function _cmpDocComboPick(b) {
   if (!title) { document.getElementById('cmp-input').focus(); return; }
   const input = document.getElementById('cmp-input');
   input.value = title; _kmailAutoResize(input); _cmpChatUpdateSendState();
-  _docHostInput(); _docHostSubmit();   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
+  _docHostInput(); _docHostSubmit(true);   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
 }
 document.addEventListener('click', (e) => { const gv = e.target.closest && e.target.closest('#cmp-gov-list .doc-combo-it'); if (gv) { _cmpGovPick(gv.getAttribute('data-gov')); return; } if (!e.target.closest || !e.target.closest('#cmp-gov-combo')) _cmpGovClose(); const ex = e.target.closest && e.target.closest('#cmp-exp-list .doc-combo-it'); if (ex) { _cmpExpPick(ex.getAttribute('data-exp')); return; } if (!e.target.closest || !e.target.closest('#cmp-exp-combo')) _cmpExpClose(); const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
 // ── 각종 기관(2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
@@ -3648,13 +3648,13 @@ function _docHostInput() {
   document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
   _docHostPost({ type: 'navi-doc-input', text: t });
 }
-async function _docHostSubmit() {
+async function _docHostSubmit(pick) {
   if (_docLocked()) { _drToast(_DOC_LOCK_MSG); return; }
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
   _docHost.confirmed = true; _docHelperSync(); _docLockOn();
-  _docHostPost({ type: 'navi-doc-submit', text: t });   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
+  _docHostPost({ type: 'navi-doc-submit', text: t, pick: !!pick });   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
 }
 // ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
 // 서류가 다 만들어져 있고(서류 사이트 v3) 수정 가능하면, 입력은 먼저 기본 SP(AC-PRO-CORE, /kmail/assist)가 본다.
@@ -4547,7 +4547,7 @@ function _mfOpenByTitle(site, title) {
   if (sel.value !== sid || !_docHost.loaded) { sel.value = sid; _docHostSite(sid); }
   const input = document.getElementById('cmp-input');
   input.value = title; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
-  _docHostSubmit();
+  _docHostSubmit(true);
 }
 async function _mfOpen(id) {
   const it = (await _drCall('get', { id })).item; if (!it) return;
@@ -4563,7 +4563,7 @@ async function _mfOpen(id) {
     const sel = _cmpDocSelInit(); const sid = it.site && [...sel.options].some(o => o.value === it.site) ? it.site : 'all';
     if (sel.value !== sid || !_docHost.loaded) { sel.value = sid; _docHostSite(sid); }
     _docHostPost({ type: 'navi-doc-userform', form: form });
-    const input = document.getElementById('cmp-input'); input.value = form.title; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput(); _docHostSubmit();
+    const input = document.getElementById('cmp-input'); input.value = form.title; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput(); _docHostSubmit(true);
     return;
   }
   _mfOpenByTitle(it.site, it.title);
@@ -7210,7 +7210,7 @@ function _navToDoc(site, text) {
   if (sel && site && sel.value !== site && [...sel.options].some(o => o.value === site)) { sel.value = site; _docHostSite(site); }
   const input = document.getElementById('cmp-input');
   input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
-  _docHostSubmit();
+  _docHostSubmit(true);
 }
 // 라우팅이 확정됨 — 질의 상태를 비우고 해당 화면으로 연다. text 는 사용자가 처음 보낸 문장.
 async function _navApplyRoute(route, text) {
