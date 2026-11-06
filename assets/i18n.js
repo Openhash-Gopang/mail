@@ -318,7 +318,7 @@
     var rows = [], active = -1;
 
     function label() {
-      fl.innerHTML = flagHtml(state.country);
+      fl.innerHTML = GLOBE;   // 버튼에는 국기 대신 지구본(구글 방식). 국기는 목록 안에서만 보인다
       cur.textContent = regionName(state.country, 'en');
       btn.setAttribute('aria-label', t('언어·국가 선택') + ': ' + regionName(state.country, 'en') + ', ' + LANG_OF[state.lang].n);
       pop.setAttribute('aria-label', t('언어·국가 선택'));
@@ -335,7 +335,7 @@
     function drawList() {
       rows = searchCountries(q.value);
       list.innerHTML = rows.map(function (r, i) {
-        return '<li role="option" id="' + id + '-o' + i + '" data-c="' + r.code + '" aria-selected="' + (r.code === state.country) + '"><span class="lp-name">' + esc(r.name) + '</span></li>';
+        return '<li role="option" id="' + id + '-o' + i + '" data-c="' + r.code + '" aria-selected="' + (r.code === state.country) + '"><span class="lp-lf">' + flagHtml(r.code) + '</span><span class="lp-name">' + esc(r.name) + '</span></li>';
       }).join('');
       empty.hidden = rows.length > 0;
       var sel = -1; rows.forEach(function (r, i) { if (r.code === state.country) sel = i; });

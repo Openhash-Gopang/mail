@@ -832,8 +832,9 @@ header.topbar .logo-wide{display:block;height:40px;width:auto}
 .lp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lp-empty{margin:0;padding:12px 10px;color:#5b6678;font-size:14px}
 .lp-empty[hidden]{display:none}
-/* 국가 이름은 보이지 않게 한다(2026-11-06): 국기만 보이고, 이름은 스크린리더용 aria-label로만 남는다 */
-.lp-cur{display:none}.lp-btn{padding:0 9px;gap:0}
+/* 구글 방식(2026-11-06): 버튼에는 지구본 아이콘만, 국가 이름은 스크린리더용 aria-label로만 남고 국기는 목록 안에서만 보인다 */
+.lp-cur{display:none}.lp-btn{width:38px;padding:0;gap:0;justify-content:center;border-radius:50%}
+.lp-lf{display:inline-flex;flex:none;margin-right:10px;line-height:1}.lp-lf .lp-flag{width:22px;height:22px}
 @media (max-width:560px){.lp{position:static}.lp-pop{position:fixed;top:64px;left:12px;right:12px;width:auto}}
 header.topbar .logo-txt{font-family:Nunito,Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif;font-size:19px;font-weight:800;letter-spacing:0;line-height:1;color:#fff;white-space:nowrap}   /* 영문 로고 Navi Web: Nunito 800, 19px */
 header.topbar .logo-help .tp-chev{width:22px;height:22px}   /* 열림 화살표: 이전(14px)의 두 배 */
