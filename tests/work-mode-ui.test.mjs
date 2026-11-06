@@ -25,3 +25,11 @@ test('혼디 대화창: 혼디 페이지가 직접 답하는 동안(hondi-embed-
   assert.match(chat, /d\.type !== 'hondi-embed-busy'/);
   assert.match(chat, /if \(d\.on\) busy\(/);
 });
+
+test('서류 작업 중 손잡이를 끌어내리면 입력 줄도 함께 내려온다(겹쳐 보임, 높이는 내용만큼)', () => {
+  const m = html.match(/body\.hd-hidden\.hd-peek #tab-compose\[data-docopen="1"\]\.doc-live \.chat-composer\{([^}]*)\}/);
+  assert.ok(m, 'peek 상태에서 입력 줄을 보이는 규칙');
+  assert.match(m[1], /display:block!important/);
+  assert.match(m[1], /position:fixed/);
+  assert.match(m[1], /height:auto/);
+});

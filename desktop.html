@@ -818,6 +818,8 @@ body.hd-hidden:not(.hd-peek) #hd-pull{display:block}
 body.hd-hidden main.content{padding-top:8px}
 body.hd-hidden .pg-bar{display:none}
 body.hd-hidden.hd-peek .tab-panel.active .pg-bar,body.hd-hidden.hd-peek #tab-compose[data-mode=doc] > .pg-bar{display:block;position:fixed;top:54px;left:0;right:0;z-index:99;margin:0;padding:8px 36px 0;background:var(--bg,#fff);box-shadow:0 6px 14px -8px rgba(0,0,0,.3)}
+/* 서류 작업 중 손잡이를 끌어내리면 상단 막대·탭에 이어 서류 이름이 보이는 입력 줄도 함께 내려온다(2026-11-07) — 작업 화면 위에 겹쳐 보이고, 바깥을 누르면 다시 올라간다 */
+body.hd-hidden.hd-peek #tab-compose[data-docopen="1"].doc-live .chat-composer{display:block!important;position:fixed;top:calc(54px + 48px);left:64px;right:0;bottom:auto;height:auto;max-height:none;z-index:98;margin:0;padding:8px 36px 10px;background:var(--bg,#fff);box-shadow:0 8px 14px -8px rgba(0,0,0,.3)}
 @media (prefers-reduced-motion:reduce){body.hd-hidden header.topbar{transition:none}}
 header.topbar{padding:0 22px;gap:18px}
 header.topbar .logo{color:#fff;text-decoration:none}
