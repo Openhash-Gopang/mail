@@ -2,6 +2,7 @@ import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
 import { fetchForNavi, pickDownload } from './files.js';
+import { hostAllowed } from './policy.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 let state = { running: false, abort: false, tabId: null, waiter: null, inbox: [] };
@@ -143,7 +144,7 @@ async function runJob(m) {
       const usable = (t) => t && /^https:/.test(t.url || '') && !isNavi(t.url) && okHost(t.url);
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
-      if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : 'about:blank', active: true }); await wait(2500); }
+      if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
       state.tabId = tab.id;
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
@@ -175,7 +176,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     if (j.autostart && fromNavi && sender.tab && (j.goal || j.playbook)) {
       if (state.running) { send({ ok: false, busy: true }); return; }
       const pb = j.playbook ? PLAYBOOKS[j.playbook] : null;
-      runJob({ playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: sender.tab.windowId });
+      runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: sender.tab.windowId });
       send({ ok: true }); return;
     }
     chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', slot: String(j.slot || '').slice(0, 120), at: Date.now() } })

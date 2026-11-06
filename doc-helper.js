@@ -104,7 +104,7 @@
     if (cur && NO_RETRY[cur.state]) return { ok: false, code: 'dup', msg: '“' + label + '” 항목은 이미 맡겼습니다.' };
     var plan = null; try { plan = o.slotPlan ? o.slotPlan(label) : null; } catch (e) { plan = null; }
     var full = ((plan && plan.goal ? plan.goal : '') + goal + SUFFIX).slice(0, GOAL_MAX);
-    return { ok: true, label: label, job: { playbook: plan && plan.playbook ? plan.playbook : '', goal: full, title: ('첨부서류 발급 — ' + label).slice(0, 60), slot: label } };
+    return { ok: true, label: label, job: { playbook: plan && plan.playbook ? plan.playbook : '', goal: full, title: ('첨부서류 발급 — ' + label).slice(0, 60), slot: label, url: plan && plan.url ? plan.url : '' } };
   }
 
   /**
