@@ -13,7 +13,7 @@ button{font:inherit}[hidden]{display:none!important}
 :root{--pri:#3B7DDD;--pri-bg:#DEE6F6;--pri-t:#2D5FB4;--bg:#F7F9FC;--line:#E9ECEF;--ink:#212529;--sub:#6C757D;--ok-bg:#DDF5EE;--ok-t:#128A66}
 body{background:var(--bg);color:var(--ink)}
 .w{max-width:1000px;margin:0 auto;padding:16px}
-.k{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.k{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .card{background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05)}
 .kp{padding:12px 16px}.kp .l{font-size:var(--fs-sm);color:var(--sub);display:flex;justify-content:space-between;gap:8px}
 .kp .v{font-size:var(--fs-xl);font-weight:600;margin:2px 0;letter-spacing:-.02em}
@@ -33,6 +33,7 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 .pc{padding:16px 18px;display:flex;flex-direction:column;gap:6px}.pc.cur{outline:2px solid var(--pri)}
 .pc h2{font-size:var(--fs-lg);margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pc .pv{font-size:var(--fs-hero);font-weight:700;letter-spacing:-.03em;line-height:1.2}.pc .pv small{font-size:var(--fs-md);font-weight:500;color:var(--sub)}
+.pc .pv.old{color:var(--sub);font-weight:600}.pc .pv.old s{text-decoration-thickness:2px}
 .pc ul{margin:6px 0 10px;padding-left:18px;flex:1}.pc li{padding:2px 0}
 .pc .st{font-size:var(--fs-xs);color:var(--sub);min-height:18px}
 .go2{font-size:var(--fs-md);font-weight:600;color:var(--pri-t);background:#fff;border:1px solid var(--pri);border-radius:4px;padding:8px 14px;cursor:pointer}.go2:hover{background:var(--pri-bg)}.go2[disabled]{opacity:.55;cursor:default}
@@ -60,8 +61,9 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <div class="st"><span data-beta>베타 기간에는 $200 플랜을 $20에 이용</span></div>
 <button type="button" class="go2 pay-go">입금 안내 보기</button></section>
 <section class="card pc" id="plan-p200" data-tier="p200" style="background:var(--pri-bg)"><h2>프로 <span class="bd" data-beta>베타 −90%</span></h2>
+<div class="pv old" data-beta><s data-b="list">$200</s><small> / 월</small></div>
 <div class="pv"><span data-b="usd">$20</span><small> / 월</small></div>
-<div class="st"><span data-beta>정가 <s data-b="list">$200</s> · 2026년 12월 말까지</span></div>
+<div class="st"><span data-beta>2026년 12월 말까지 베타 가격</span></div>
 <ul><li>서류 플랜의 모든 기능</li><li>가상 판결 기능을 자주 쓰는 분께 맞는 사용량</li></ul>
 <button type="button" class="go pay-go">입금 안내 보기</button></section>
 </div>
@@ -78,13 +80,12 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <section class="card kp hl"><div class="l"><span>월 이용료</span><span class="bd" data-beta>베타</span></div><div class="v" data-b="usd">$20</div><div class="m"><span class="d" data-beta>−90%</span><span data-beta>$200 플랜 정가 <span data-b="list">$200</span> · 2026년 12월 말까지</span></div></section>
 <section class="card kp"><div class="l"><span>오늘의 환율</span><span class="bd s" data-b="rdate">—</span></div><div class="v"><span data-b="rate">—</span></div><div class="m">원/USD · <span data-b="rsrc"></span></div></section>
 <section class="card kp"><div class="l"><span>입금액</span><span class="bd">원화</span></div><div class="v" data-b="krw">—</div><div class="m">원 미만 올림</div></section>
-<section class="card kp"><div class="l"><span>입금자명 뒤에 붙일 번호</span><span class="bd s">내 전화번호 끝 8자리</span></div><div class="v" id="pay-code">—</div><div class="m">플랜을 고르면 표시됩니다</div></section>
 </div>
 <div class="warn" id="rate-warn" hidden></div>
 <div class="warn" id="pay-msg" hidden></div><div class="warn" id="pay-ok" hidden style="background:var(--ok-bg);color:var(--ok-t)"></div>
 <div class="r">
 <section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 선택한 플랜이 바로 적용되고 30일간 이용할 수 있습니다. 플랜 이용료는 GDC로 충전되지 않습니다.</p></section>
-<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>위에서 플랜의 「입금 안내 보기」를 누르면 입금액이 정해집니다. 환율이 1,300원이면 $20는 26,000원입니다.</li><li>지정 계좌로 <b>그 금액 그대로</b> 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 하고, 가능하면 뒤에 안내된 번호를 붙입니다.</li><li>입금이 확인되면 플랜이 자동으로 적용됩니다. 보통 몇 분 안에 끝납니다. 금액이 다르면 자동으로 처리되지 않으니 운영자가 확인합니다.</li></ol></section>
+<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>위에서 플랜의 「입금 안내 보기」를 누르면 입금액이 정해집니다. 환율이 1,300원이면 $20는 26,000원입니다.</li><li>지정 계좌로 <b>그 금액 그대로</b> 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 합니다. 입금자 이름·입금액·입금 날짜가 일치하면 본인 입금으로 확인합니다.</li><li>입금이 확인되면 플랜이 자동으로 적용됩니다. 보통 몇 분 안에 끝납니다. 금액이 다르면 자동으로 처리되지 않으니 운영자가 확인합니다.</li></ol></section>
 </div>
 <section class="card cb bt"><h2 class="ct">베타 테스트 안내 <span class="bd s">GDC 보상</span></h2>
 <p class="bp">베타 테스트 기간에는 언제든지 다양한 시스템 오류가 발생할 수 있습니다. 기능 개선을 제안하거나 오류(버그)를 신고해 주시면 중요도에 따라 GDC로 보상합니다. 예를 들어 현저한 개선 아이디어에는 100,000 GDC를 지급합니다.</p>
@@ -152,8 +153,8 @@ document.querySelectorAll('.pay-go').forEach(function(b){b.onclick=function(){va
  $('pay-msg').hidden=false;$('pay-msg').textContent='입금액을 정하는 중입니다…';$('pay-ok').hidden=true;
  post('/biz/plan-request',{phone_verify_token:t,tier:tier}).then(function(x){var d=x.d;
   if(!d||!d.ok){$('pay-msg').textContent=(d&&d.message)||'입금 안내를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.';return}
-  bind('krw',nf.format(d.krw)+'원');bind('usd','$'+d.usd);bind('rate',nf.format(Math.round(d.rate*100)/100));$('pay-code').textContent=d.match_code;
-  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명: 가입한 이름 + '+d.match_code;
+  bind('krw',nf.format(d.krw)+'원');bind('usd','$'+d.usd);bind('rate',nf.format(Math.round(d.rate*100)/100));
+  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명은 가입한 이름과 같게 해 주세요.';
   startPoll(d.grant)},function(){$('pay-msg').textContent='연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'})}});
 $('x-save').onclick=function(){var t=ck('hondi_pvt');if(!t)return;var lim=Number($('x-lim').value||0),on=$('x-on').checked;
  if(on&&!(lim>0)){$('x-msg').textContent='추가 사용량을 켜려면 월 한도를 정해 주세요.';return}
