@@ -2736,8 +2736,23 @@ function _docChatOnSaved() {
   _docChatPush();
 }
 /** 도우미 SP 의 [AGENT_TASK] 한 건 — 확장이 연결돼 있으면 나비웹 도우미에 맡기고(시작·승인은 확장에서 사용자가), 아니면 이유를 대화창에 알린다. */
+async function _agentEarlyOpen(label) {
+  const r = DocHelper.planTask({ slot: label, goal: '(곧 알려 드립니다)' }, { agentOn: !!_agentInfo, labels: (_docChat.attach || []).map(function (a) { return a.l; }), slots: _docChat.slots, slotPlan: NaviAgent.slotPlan });
+  if (!r.ok) return;
+  let ok = false; try { ok = await NaviAgent.queue(r.job); } catch (x) { ok = false; }
+  if (!ok) return;
+  _docChat.early = _docChat.early || {}; _docChat.early[r.label] = true;
+  _embedNote(true, '“' + r.label.slice(0, 40) + '” 항목: 사이트를 먼저 엽니다. 열린 화면에서 로그인해 주시고, 그동안 아래 질문에 답해 주세요.');
+}
 async function _docChatAgentTask(d) {
   if (!window.DocHelper || !window.NaviAgent) return;
+  const _lbl = DocHelper.matchLabel(String(d.slot || ''), (_docChat.attach || []).map(function (a) { return a.l; })) || String(d.slot || '');
+  if (_docChat.early && _docChat.early[_lbl]) {   // 이미 시작한 작업에 알게 된 정보(법인 이름 등)만 전한다
+    delete _docChat.early[_lbl];
+    let ok2 = false; try { ok2 = await NaviAgent.update(_lbl, d.goal); } catch (x) { ok2 = false; }
+    _embedNote(true, ok2 ? '알려 주신 내용을 도우미에 전했습니다. 로그인을 마치시면 이어서 진행합니다.' : '도우미에 전하지 못했습니다. 로그인 창이 닫혔다면 “도우미가 가져오기”를 다시 눌러 주세요.');
+    _docChatPush(); return;
+  }
   const r = DocHelper.planTask({ slot: d.slot, goal: d.goal }, { agentOn: !!_agentInfo, labels: (_docChat.attach || []).map(function (a) { return a.l; }), slots: _docChat.slots, slotPlan: NaviAgent.slotPlan });
   if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
   let ok = false; try { ok = await NaviAgent.queue(r.job); } catch (x) { ok = false; }

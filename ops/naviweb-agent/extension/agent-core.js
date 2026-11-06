@@ -9,6 +9,7 @@ export function buildSystem(playbook) {
     '- 화면을 먼저 read_page 로 확인하고, ref 로만 요소를 조작합니다. 추측해서 누르지 않습니다.',
     '- 로그인, 인증서, 결제, 보안문자, 비밀번호·카드·주민등록번호 입력은 하지 않고 handoff_to_user 로 사용자에게 넘깁니다.',
     '- 로그인이 필요하면 먼저 화면의 "로그인" 링크를 눌러 로그인 창을 직접 연 뒤, handoff_to_user 의 reason 에 사용자가 따를 절차를 한두 문장으로 적습니다(예: 로그인 창에서 간편인증 또는 공동인증서로 로그인한 뒤 "직접 했어요"를 누르세요). 아이디·비밀번호·인증 정보는 묻지도 입력하지도 않습니다. 사용자에게 확장 프로그램 아이콘을 누르라고 안내하지 않습니다(이미 시작된 상태입니다).',
+    '- 목표에 "(곧 알려 드립니다)"처럼 아직 정해지지 않은 정보가 있으면, 그것 없이 할 수 있는 단계(사이트 열기·로그인 요청·검색 화면 준비)를 먼저 진행합니다. 그 정보가 꼭 필요한 시점이 되면 wait 로 기다리며(최대 약 5분) 대화에 "[추가 정보]"가 나타나기를 기다리고, 추측해서 채우지 않습니다.',
     '- 제출·발급·삭제처럼 되돌리기 어려운 버튼은 사용자 확인을 거칩니다(시스템이 묻습니다).',
     '- 나비웹에서 맡긴 첨부서류가 파일로 발급되면(내려받기 링크·단추), 사용자 확인을 거쳐 내려받은 뒤 send_file_to_navi 로 나비웹에 보냅니다. 링크 요소가 보이면 그 ref 를, 단추로 내려받았으면 ref 없이 부릅니다. 파일이 아닌 결과(기관으로 바로 전송 등)와 진행 상황·실패는 report_status 로 알립니다.',
     '- 비슷한 이름이 여러 개면 고르기 전에 지역·번호 등으로 구별해 근거를 한 줄로 남깁니다.',
@@ -36,12 +37,15 @@ function trimImages(messages, keep = 1) {
   }
 }
 
-export async function runAgent({ goal, playbook, host, maxSteps = 40 }) {
+export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
   const system = buildSystem(playbook);
   const extra = (playbook && playbook.allowedHosts) || [];
   const messages = [{ role: 'user', content: [{ type: 'text', text: goal }] }];
   for (let step = 0; step < maxSteps; step++) {
     if (host.aborted && host.aborted()) return { done: false, reason: 'aborted' };
+    // 작업 중에 나비웹이 알려 준 추가 정보(예: 법인 이름)를 마지막 사용자 메시지에 덧붙인다.
+    const more = host.inbox && host.inbox();
+    if (more) { const last = messages[messages.length - 1]; const blk = { type: 'text', text: '[추가 정보] ' + more }; if (last && last.role === 'user' && Array.isArray(last.content)) last.content.push(blk); else messages.push({ role: 'user', content: [blk] }); }
     const resp = await host.callModel({ system, messages, tools: TOOLS, max_tokens: 1500 });
     messages.push({ role: 'assistant', content: resp.content });
     const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
