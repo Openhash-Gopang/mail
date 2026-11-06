@@ -2168,14 +2168,16 @@ async function _agentInit() {
     bar.hidden = false;
   });
   if (_agentInfo) _agentBadge('나비웹 도우미 ' + _agentInfo.version);
+  else _agentBadge('나비웹 도우미 연결 안 됨 — 확장 프로그램을 켜 주세요', { install: NaviAgent.STORE_URL });
   if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
   if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); }
   _agentTellDoc();
 }
 // 서류 화면에 "도우미가 가져오기" 버튼을 붙일 항목(정규식)을 알려 준다. 확장이 연결된 때만.
 function _agentTellDoc() {
-  if (!_agentInfo || !window.NaviAgent || !NaviAgent.slotPatterns) return;
-  _docHostPost({ type: 'navi-doc-agent', on: true, slots: NaviAgent.slotPatterns() });
+  if (!window.NaviAgent || !NaviAgent.slotPatterns) return;
+  /* 연결 여부를 항상 알린다 — 연결이 안 됐으면(on:false) 서류 화면이 첨부 올리기를 막고 "도우미를 켜 주세요"라고 안내한다. */
+  _docHostPost({ type: 'navi-doc-agent', on: !!_agentInfo, slots: _agentInfo ? NaviAgent.slotPatterns() : [] });
 }
 // 서류 화면에서 항목의 "도우미가 가져오기"를 눌렀을 때: 도우미 줄을 그 항목의 절차로 채워 두고, 시작은 사용자가 누른다.
 /** 사용자 제보 창(feedback-kit.js) — 서류 이름·카탈로그 규칙·확장 버전만 함께 보낸다. */
@@ -2251,6 +2253,19 @@ async function _agentHandOff(btn) {
   st.textContent = ok ? '도우미가 바로 시작합니다. 열린 사이트 화면의 안내에 따라 로그인해 주세요. 인증서·결제는 직접 하셔야 합니다.' : '맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.';
 }
 document.addEventListener('DOMContentLoaded', () => { setTimeout(_agentInit, 600); });
+/* 나비웹 도우미는 늦게 켜지거나 나중에 켤 수 있으므로 열 때 한 번만 확인하지 않고 계속 확인한다(연결 여부·버전이 바뀌면 화면을 다시 맞춘다). */
+let _agentWatchBusy = false;
+async function _agentWatchTick() {
+  if (_agentWatchBusy || document.hidden || !window.NaviAgent) return;
+  _agentWatchBusy = true;
+  try {
+    const info = await NaviAgent.detect();
+    if (!!info !== !!_agentInfo || (info && _agentInfo && info.version !== _agentInfo.version)) await _agentInit();
+  } catch (e) { /* 다음 확인에서 다시 */ } finally { _agentWatchBusy = false; }
+}
+setInterval(_agentWatchTick, 4000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) _agentWatchTick(); });
+window.addEventListener('focus', _agentWatchTick);
 function _docBase64(buf) {
   const u8 = new Uint8Array(buf); let bin = '';
   for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
@@ -2788,7 +2803,7 @@ function _docChatSp() {
     '4. 태그를 쓴 답변의 본문은 한두 문장 — 무엇을 어느 기관에서 도우미에 맡겼는지만. 도우미 시작·로그인·결제 안내는 시스템이 따로 알리므로 쓰지 않는다.\n' +
     '5. 사용자가 직접 작성·서명하는 서류(재산목록·별지 목록·위임장 등)는 맡기지 않는다. 작성 도움이 필요한지 묻고, 기관에서 받을 수 없는 사용자 소유 자료(사진·계약서 등)는 어떤 파일이 필요한지 말해 대화창 클립 버튼이나 화면의 올리기 버튼으로 올려 달라고 한다. 이 경우만 사용자에게 준비를 부탁한다.\n' +
     '6. 상태가 "실패"면 이유를 한 줄로 말하고 다시 맡길지 묻는다. "맡김"·"진행 중"이면 기다리는 동안 다른 항목을 이어서 진행한다.\n' +
-    '7. 블록이 "나비웹 도우미: 연결 안 됨"이면 맡길 수 없다고 한 줄로 알리고, 항목마다 받을 기관과 서류 이름을 짧게 알려 준다. 이때만 사용자가 직접 발급받도록 안내하고, 나비웹 도우미(Chrome 확장)를 켜면 대신 진행할 수 있다고 한 줄 덧붙인다.\n' +
+    '7. 블록이 "나비웹 도우미: 연결 안 됨"이면 맡길 수 없다고 한 줄로 알리고, 항목마다 받을 기관과 서류 이름을 짧게 알려 준다. 이때만 사용자가 직접 발급받도록 안내하고, 나비웹 도우미(Chrome 확장)를 켜면 대신 진행할 수 있다고 한 줄 덧붙인다. 나비웹 도우미는 항상 연결돼 있어야 하며 첨부 파일은 도우미가 연결돼야만 올릴 수 있으므로, 연결 안 됨이면 먼저 확장 프로그램을 켜 달라고 안내한다.\n' +
     '8. 발급 결과가 파일이면 도우미가 나비웹 화면으로 보내고, 화면이 사용자에게 서류에 넣을지 묻는다. 사용자에게 내려받아 올리라고 하지 않는다.\n' +
     '[사용자 제보] 사용자가 오류·불편을 말하거나, 서류의 발급 기관이 틀렸다고 하거나("그건 정부24가 아니라 ○○에서 발급해요"), 찾는 서류가 없다고 하면 한 줄로 사과하고 감사를 전한 뒤, 답변 맨 끝에 한 줄로 쓴다(사용자가 눌러 확인해야 전송된다): [FEEDBACK: kind=<attach|newdoc|bug>; label=<서류 이름>; problem=<agency|fail|own|missing|other>; right=<사용자가 알려 준 올바른 기관>; text=<사용자 말의 요약 한 문장>]. attach 는 첨부서류의 기관·가져오기 문제(problem 필수), newdoc 은 없는 서류 요청, bug 는 그 밖의 오류. 개인정보·주민번호·전화번호는 쓰지 않고, 태그 안에 대괄호와 추가 세미콜론을 쓰지 않는다. 같은 내용으로 두 번 쓰지 않는다.\n' +
     '[서류 작성] 서류 이름과 비어 있는 항목을 짚어 한 번에 한두 가지씩 짧게 묻고 안내한다. 제목을 알 수 없으면 어떤 서류인지 먼저 묻는다. 항목 칸에는 이 대화에서 직접 쓰지 못한다 — 어느 칸에 무엇을 넣을지 짚어 주면 사용자가 화면에서 입력·확인한다. 공동인증서 비밀번호·주민등록번호·계좌번호·카드번호는 이 대화에 입력하라고 하지 않는다.\n' +
