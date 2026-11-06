@@ -299,15 +299,27 @@
   function nextAfterPass(idx, total) { return idx + 1 < total ? idx + 1 : -1; }   // -1 = 마지막(완료 화면)
 
   // ── 화면 ───────────────────────────────────────────────
-  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false };   // idx null = 아직 화면을 연 적 없음
+  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'course', qn: null };   // idx null = 아직 화면을 연 적 없음
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
   function caseOn() { try { return !!(root.CaseUI && root.CaseUI.enabled()); } catch (_) { return false; } }
   function load() { try { return parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (_) { return 0; } }
   function save(n) { try { localStorage.setItem(KEY, String(n)); } catch (_) { /* 저장 불가여도 계속 */ } }
 
+  // 사용법 위쪽 탭: 강의(단계별 퀴즈) | 질문·답변(게시판, qna-ui.js). 게시판 화면은 한 번 만들어 두고 탭을 오가도 상태를 유지한다.
+  function modesHtml() {
+    return '<div class="gd-modes" role="tablist" aria-label="사용법"><button type="button" role="tab" class="gd-mode' + (S.mode === 'course' ? ' on' : '') + '" aria-selected="' + (S.mode === 'course') + '" data-act="mode" data-m="course">사용법 강의</button>' +
+      '<button type="button" role="tab" class="gd-mode' + (S.mode === 'qna' ? ' on' : '') + '" aria-selected="' + (S.mode === 'qna') + '" data-act="mode" data-m="qna">질문·답변</button></div>';
+  }
+  function renderQna(el) {
+    el.innerHTML = modesHtml();
+    if (!root.QnaUI) { el.insertAdjacentHTML('beforeend', '<div class="gd-card">질문·답변을 불러오지 못했습니다. 페이지를 새로고침해 주세요.</div>'); return; }
+    if (!S.qn) { S.qn = document.createElement('div'); S.qn.className = 'qn-host'; root.QnaUI.mount(S.qn); }
+    el.appendChild(S.qn);
+  }
   function render() {
     var el = $('tab-guide'); if (!el) return;
+    if (S.mode === 'qna') { renderQna(el); return; }
     var list = pages(caseOn()), total = list.length;
     S.done = clampDone(Math.max(S.done, load()), total);
     if (S.idx >= total) S.idx = total - 1;
@@ -334,7 +346,7 @@
       '<div class="gd-prog">' + S.done + ' / ' + total + ' 단계 완료</div>' + pop + '</div>';
 
     if (S.idx === -1) {
-      el.innerHTML = head + '<div class="gd-card gd-end"><h2>🎉 모든 단계를 마쳤습니다</h2><p>이제 K-Mail의 기본부터 고급 기능까지 알게 되셨습니다. 궁금한 점은 전체 사용법 문서에서 찾아볼 수 있습니다.</p>' +
+      el.innerHTML = modesHtml() + head + '<div class="gd-card gd-end"><h2>🎉 모든 단계를 마쳤습니다</h2><p>이제 K-Mail의 기본부터 고급 기능까지 알게 되셨습니다. 궁금한 점은 전체 사용법 문서에서 찾아볼 수 있습니다.</p>' +
         '<p><a class="gd-btn gd-pri" href="manual.html" target="_blank" rel="noopener">전체 사용법 문서 열기</a> <button class="gd-btn" data-act="restart">처음부터 다시 보기</button></p></div>';
       return;
     }
@@ -354,7 +366,7 @@
     else foot = '<button class="gd-btn gd-pri" data-act="check" ' + (allPicked ? '' : 'disabled') + '>정답 확인</button>' +
       (locked ? ' <button class="gd-btn" data-act="advance">다음 페이지로 →</button>' : '') +
       (res && !res.all ? '<span class="gd-sub"> 틀린 문제를 고쳐서 다시 확인하세요.</span>' : (allPicked ? '' : '<span class="gd-sub"> 모든 문제에 답하면 확인할 수 있습니다.</span>'));
-    el.innerHTML = head + '<div class="gd-card"><div class="gd-lv gd-lv-' + esc(p.level) + '">' + esc(p.level) + '</div>' +
+    el.innerHTML = modesHtml() + head + '<div class="gd-card"><div class="gd-lv gd-lv-' + esc(p.level) + '">' + esc(p.level) + '</div>' +
       '<h2 class="gd-h">' + (S.idx + 1) + '. ' + esc(p.title) + '</h2><ul class="gd-body">' + p.body.map(function (b) { return '<li>' + b + '</li>'; }).join('') + '</ul></div>' +
       '<div class="gd-card"><h3 class="gd-qh">확인 퀴즈 <span class="gd-sub">(모두 맞히면 다음 페이지로 넘어갑니다)</span></h3>' + quiz + '<div class="gd-foot">' + foot + '</div></div>' +
       '<div class="gd-sub gd-nav">' + (S.idx > 0 ? '<button class="gd-link" data-act="go" data-i="' + (S.idx - 1) + '">← 이전 페이지</button>' : '') + '</div>';
@@ -371,6 +383,7 @@
   function onClick(ev) {
     var t = ev.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act'), list = pages(caseOn()), p = list[S.idx];
+    if (S.mode === 'qna' && act !== 'mode') return;   // 게시판의 버튼은 qna-ui.js 가 처리한다
     if (act === 'pick') {   // 전체를 다시 그리지 않는다 — 키보드(화살표) 선택이 끊기지 않게 필요한 부분만 갱신
       S.answers[+t.getAttribute('data-q')] = +t.value; S.result = null;
       el0().querySelectorAll('fieldset.gd-q').forEach(function (f) { f.className = 'gd-q'; var fb = f.querySelector('.gd-fb'); if (fb) fb.remove(); });   // 결과 표시는 한꺼번에 지운다
@@ -383,6 +396,7 @@
       if (S.result.all) { clearTimeout(S.timer); S.timer = setTimeout(passAndAdvance, 1600); }
     }
     else if (act === 'advance') { if (S.result && S.result.all) passAndAdvance(); else if (S.idx < S.done) go(S.idx + 1); }
+    else if (act === 'mode') { S.mode = t.getAttribute('data-m') === 'qna' ? 'qna' : 'course'; S.open = false; render(); }
     else if (act === 'toggle-list') { S.open = !S.open; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); }
     else if (act === 'go') go(+t.getAttribute('data-i'));
     else if (act === 'restart') { S.idx = 0; S.answers = {}; S.result = null; render(); }

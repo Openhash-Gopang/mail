@@ -1,0 +1,19 @@
+name = "naviweb-qna"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+# 같은 도메인(naviweb.kr)에서 /api/qna/* 만 이 Worker 가 받는다(naviweb-proxy 의 naviweb.kr/* 보다 구체적인 경로가 먼저 적용된다).
+routes = [
+  { pattern = "naviweb.kr/api/qna/*", zone_name = "naviweb.kr" },
+]
+
+# 1) 저장소: Cloudflare 대시보드 → Storage & Databases → KV → "naviweb-qna" 를 만들고, 그 id 를 아래에 넣는다.
+[[kv_namespaces]]
+binding = "QNA"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# 2) 비밀값(Settings → Variables and Secrets, 또는 `npx wrangler secret put <이름>`):
+#    ADMIN_TOKEN   관리자 대시보드가 쓰는 긴 무작위 문자열(예: 40자 이상). 없으면 관리자 API 는 모두 401.
+#    SP_API_URL    SP 가 쓸 OpenAI 호환 chat completions 주소(예: https://api.deepseek.com/chat/completions). 없으면 SP 답변 없이 질문만 접수된다.
+#    SP_API_KEY    위 API 키.
+#    SP_MODEL      (선택) 모델 이름. 기본 deepseek-chat.

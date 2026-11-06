@@ -110,6 +110,22 @@ td.num{font-variant-numeric:tabular-nums}
 table.rank td{padding-top:5px;padding-bottom:5px}
 .note{font-size:var(--fs-xs);color:var(--sub);margin:10px 0 0}
 .small{font-size:var(--fs-xs)}
+
+/* 사용법 질의 */
+.qna-auth{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;color:var(--sub)}
+.qna-auth input,#qna-st{font-size:var(--fs-sm);border:1px solid var(--line);border-radius:4px;padding:5px 8px;background:var(--sur);color:var(--txt)}
+.qna-auth[hidden],.qna-detail[hidden]{display:none}
+.qna-auth input{min-width:260px}
+.qna-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
+.qna-detail h3{margin:0 0 4px;font-size:var(--fs-md)}
+.qna-m{border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:8px 0;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.qna-m b{display:block;font-size:var(--fs-xs);color:var(--sub);font-weight:600;margin-bottom:2px}
+.qna-m.user{background:#F1F5FD}.qna-m.admin{background:#F2FBF6}.qna-m.sp{background:#FAFAFA}.qna-m.hid{opacity:.5}
+.qna-m button{float:right}
+.qna-detail textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:4px;padding:8px 10px;font:inherit;resize:vertical}
+.qna-act{display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.qna-err{color:var(--bad);margin-top:8px}
+tr.qna-cur td{background:var(--hov)}
 @media (max-width:1100px){.g4,.g5,.g6,.g7,.g8{grid-column:span 12}}
 @media (max-width:900px){.side{display:none}.brand{width:auto;padding-left:20px}main{padding:16px 12px 32px}.search{display:none}.head{align-items:flex-start;flex-direction:column}}
 @media (max-width:1100px){.kpis{grid-template-columns:1fr 1fr}}
@@ -136,6 +152,7 @@ table.rank td{padding-top:5px;padding-bottom:5px}
     <a href="#top" class="on" data-s="top"><svg class="i" viewBox="0 0 24 24"><path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>대시보드</a>
     <a href="#deposits" data-s="deposits"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>입금·충전<span class="n" id="n-dep">0</span></a>
     <a href="#approvals" data-s="approvals"><svg class="i" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>승인 대기<span class="n" id="n-apr">0</span></a>
+    <a href="#qna" data-s="qna"><svg class="i" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7"/><path d="M12 15.5h.01"/></svg>사용법 질의<span class="n" id="n-qna">0</span></a>
     <a href="#regions" data-s="regions"><svg class="i" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>지역 이용량</a>
     <a href="#users" data-s="users"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2.5.7 4 2.7 4 5.5"/></svg>가입자</a>
     <a href="#usage" data-s="usage"><svg class="i" viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>사용량</a>
@@ -211,6 +228,18 @@ table.rank td{padding-top:5px;padding-bottom:5px}
       <section class="card g6">
         <div class="ch"><h2 class="ct">기능 개선 제안 답글 승인</h2><span class="badge soft">관리자 승인 후 반영</span></div>
         <div class="cb tw"><table><thead><tr><th>제안</th><th>시급도</th><th>등록일</th><th class="r"></th></tr></thead><tbody id="fb-body"></tbody></table></div>
+      </section>
+    </div>
+
+    <div class="grid" id="qna">
+      <section class="card g12">
+        <div class="ch"><h2 class="ct">사용법 질의</h2><span class="badge soft">도우미 답변 뒤 이용자가 “관리자에게 질의”한 건</span>
+          <select id="qna-st" aria-label="상태 보기" style="margin-left:auto"><option value="escalated">답변 대기</option><option value="answered">답변 완료</option><option value="all">전체</option></select></div>
+        <div class="cb">
+          <div id="qna-auth" hidden class="qna-auth"><span>관리자 토큰을 입력하면 실제 질의를 불러옵니다(이 탭을 닫으면 잊습니다).</span><input id="qna-token" type="password" autocomplete="off" placeholder="ADMIN_TOKEN"><button class="btn sm" id="qna-connect">연결</button></div>
+          <div class="tw"><table><thead><tr><th>질문</th><th>접수</th><th>상태</th><th class="r"></th></tr></thead><tbody id="qna-body"></tbody></table></div>
+          <div id="qna-detail" class="qna-detail" hidden></div>
+        </div>
       </section>
     </div>
 
@@ -352,7 +381,7 @@ function renderKpis() {
   $('k-gdc').textContent = nf.format(D.monthly.gdc); $('k-gdc-d').textContent = '+' + D.monthly.deltaPct + '%';
   $('k-dep').textContent = wait.length + '건'; $('k-dep-d').textContent = nf.format(sum) + '원';
   $('k-apr').textContent = apr + '건'; $('k-apr-d').textContent = '면허 ' + D.licenses.length; $('k-apr-s').textContent = '제안 ' + D.feedback.length;
-  $('n-dep').textContent = wait.length; $('n-apr').textContent = apr; $('bell-n').textContent = wait.length + apr;
+  $('n-dep').textContent = wait.length; $('n-apr').textContent = apr; $('bell-n').textContent = wait.length + apr + qnaWaiting();
   $('src-badge').hidden = D.source !== 'sample';
 }
 function renderAll() { renderKpis(); renderBars(); renderMap(); renderDonut(); renderDeposits(); renderLists(); }
@@ -371,7 +400,74 @@ $('today').textContent = '오늘: ' + new Intl.DateTimeFormat('ko-KR', { timeZon
 document.querySelectorAll('.side a[data-s]').forEach(function (a) {
   a.addEventListener('click', function () { document.querySelectorAll('.side a[data-s]').forEach(function (x) { x.classList.remove('on'); }); a.classList.add('on'); });
 });
-async function init() { D = await loadData(); renderAll(); }
+
+/* ── 사용법 질의(qna) — ops/naviweb-qna 의 관리자 API ───────────────
+   토큰(ADMIN_TOKEN)은 이 탭의 sessionStorage 에만 둔다. 토큰이 없으면 목록은 비어 있고 연결 입력창이 보인다.
+   링크: admin.html#qna=<글 번호> → 해당 질의를 열어 읽고 답한다. */
+var QNA = { rows: [], cur: null, err: '', wait: 0 };
+function qnaWaiting() { return QNA.wait || 0; }
+function qnaBase() { return window.NAVI_QNA_API || (location.hostname === 'naviweb.kr' ? '/api/qna' : 'https://naviweb.kr/api/qna'); }
+function qnaTok() { try { return sessionStorage.getItem('navi_admin_qna') || ''; } catch (e) { return ''; } }
+async function qnaCall(method, path, body) {
+  try {
+    var r = await fetch(qnaBase() + path, { method: method, headers: Object.assign({ Authorization: 'Bearer ' + qnaTok() }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined });
+    return await r.json().catch(function () { return { ok: false, error: 'network' }; });
+  } catch (e) { return { ok: false, error: 'network' }; }
+}
+function qnaErr(r) { return r && r.error === 'unauthorized' ? '토큰이 올바르지 않습니다.' : '서버에 연결할 수 없습니다.'; }
+function qnaWhen(iso) { try { return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)); } catch (e) { return ''; } }
+function qnaIdFromHash() { var m = /^#qna=([\w-]+)$/.exec(location.hash); return m ? m[1] : ''; }
+async function loadQna() {
+  $('qna-auth').hidden = !!qnaTok() && !QNA.err;
+  if (!qnaTok()) { QNA.rows = []; renderQna(); return; }
+  var r = await qnaCall('GET', '/admin/threads?status=' + encodeURIComponent($('qna-st').value));
+  if (r.ok) { QNA.rows = r.threads; QNA.err = ''; } else { QNA.rows = []; QNA.err = qnaErr(r); if (r.error === 'unauthorized') { try { sessionStorage.removeItem('navi_admin_qna'); } catch (e) { /* */ } } }
+  $('qna-auth').hidden = !!qnaTok();
+  renderQna();
+}
+function renderQna() {
+  var wait = QNA.rows.filter(function (x) { return x.status === 'escalated'; }).length;
+  if ($('qna-st').value !== 'answered') { QNA.wait = wait; $('n-qna').textContent = wait; }
+  if (D) renderKpis();
+  var ST = { escalated: '<span class="badge wait">답변 대기</span>', answered: '<span class="badge ok">답변 완료</span>', closed: '<span class="badge soft">해결됨</span>' };
+  $('qna-body').innerHTML = QNA.rows.length ? QNA.rows.map(function (x) {
+    return '<tr' + (QNA.cur && QNA.cur.id === x.id ? ' class="qna-cur"' : '') + '><td>' + esc(x.title) + '</td><td class="sub">' + esc(qnaWhen(x.escalated || x.updated)) + '</td><td>' + (ST[x.status] || esc(x.status)) + '</td><td class="r"><a class="btn sm ghost" href="#qna=' + esc(x.id) + '">열기</a></td></tr>';
+  }).join('') : empty(4, qnaTok() ? (QNA.err || '표시할 질의가 없습니다.') : '관리자 토큰을 연결하면 질의가 표시됩니다.');
+  renderQnaDetail();
+}
+function renderQnaDetail() {
+  var el = $('qna-detail'), t = QNA.cur; if (!t) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  var ROLE = { user: '이용자', sp: '나비웹 도우미', admin: '관리자', comment: '댓글', system: '안내' };
+  el.innerHTML = '<h3>' + esc(t.title) + '</h3><div class="small sub">글 번호 ' + esc(t.id) + ' · ' + esc(t.vis === 'public' ? '공개 중' : '비공개') + ' · 링크 admin.html#qna=' + esc(t.id) + '</div>' +
+    t.msgs.map(function (m) {
+      return '<div class="qna-m ' + esc(m.role) + (m.hidden ? ' hid' : '') + '"><b>' + esc(ROLE[m.role] || m.role) + (m.name && m.role === 'comment' ? ' · ' + esc(m.name) : '') + ' · ' + esc(qnaWhen(m.at)) + (m.hidden ? ' · 가려짐' : '') + '</b>' +
+        (m.role === 'comment' ? '<button class="btn sm ghost" data-qna-hide="' + esc(m.id) + '" data-h="' + (m.hidden ? '0' : '1') + '">' + (m.hidden ? '보이기' : '가리기') + '</button>' : '') + esc(m.text) + '</div>';
+    }).join('') +
+    '<textarea id="qna-ans" maxlength="4000" placeholder="이용자에게 보낼 답변"></textarea><div class="qna-act"><button class="btn" id="qna-send">답변 등록</button><label><input type="checkbox" id="qna-pub"' + (t.vis === 'public' ? ' checked disabled' : '') + '> 공개 게시판에 올리기(다른 이용자도 보고 댓글)</label>' +
+    (t.vis === 'public' ? '<button class="btn sm ghost" id="qna-unpub">비공개로 되돌리기</button>' : '') + '<button class="btn sm ghost" id="qna-close">닫기</button></div><div class="qna-err" id="qna-e" role="status"></div>';
+}
+async function openQna(id) {
+  if (!id) { QNA.cur = null; renderQna(); return; }
+  if (!qnaTok()) { $('qna-auth').hidden = false; $('qna-token').focus(); QNA.cur = null; renderQna(); return; }
+  var r = await qnaCall('GET', '/admin/threads/' + encodeURIComponent(id));
+  if (r.ok) { QNA.cur = r.thread; renderQna(); $('qna').scrollIntoView({ block: 'start' }); } else { QNA.cur = null; QNA.err = qnaErr(r); renderQna(); }
+}
+document.addEventListener('click', async function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'qna-connect') { var v = $('qna-token').value.trim(); if (!v) return; try { sessionStorage.setItem('navi_admin_qna', v); } catch (x) { /* */ } QNA.err = ''; $('qna-token').value = ''; await loadQna(); if (qnaIdFromHash()) openQna(qnaIdFromHash()); }
+  else if (b.id === 'qna-close') { history.replaceState(null, '', '#qna'); QNA.cur = null; renderQna(); }
+  else if (b.id === 'qna-send') {
+    var text = $('qna-ans').value.trim(), pubEl = $('qna-pub'); if (!text) { $('qna-e').textContent = '답변을 적어 주세요.'; return; }
+    b.disabled = true; var r = await qnaCall('POST', '/admin/threads/' + encodeURIComponent(QNA.cur.id) + '/answer', { text: text, publish: !!(pubEl && pubEl.checked && !pubEl.disabled) });
+    if (r.ok) { QNA.cur = r.thread; await loadQna(); } else { b.disabled = false; $('qna-e').textContent = qnaErr(r); }
+  }
+  else if (b.id === 'qna-unpub') { var r2 = await qnaCall('POST', '/admin/threads/' + encodeURIComponent(QNA.cur.id) + '/visibility', { vis: 'private' }); if (r2.ok) { QNA.cur = r2.thread; renderQna(); } }
+  else if (b.getAttribute('data-qna-hide')) { var r3 = await qnaCall('POST', '/admin/threads/' + encodeURIComponent(QNA.cur.id) + '/hide', { msgId: b.getAttribute('data-qna-hide'), hidden: b.getAttribute('data-h') === '1' }); if (r3.ok) { QNA.cur = r3.thread; renderQna(); } }
+});
+$('qna-st').addEventListener('change', loadQna);
+window.addEventListener('hashchange', function () { var id = qnaIdFromHash(); if (id) openQna(id); });
+async function init() { D = await loadData(); renderAll(); await loadQna(); if (qnaIdFromHash()) openQna(qnaIdFromHash()); }
 init();
 </script>
 </body>
