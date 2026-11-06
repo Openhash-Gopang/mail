@@ -307,3 +307,7 @@ test('desktop.html: 새 양식 만들기 — 왼쪽 캔버스 + 오른쪽 양식
   const nw = [{ f: [{ l: 'C', t: 'short' }, { l: 'A', t: 'short', w: 4 }, { l: 'D', t: 'short' }] }];
   assert.deepEqual(m._mfbDiff(old, nw), { add: 1, del: 1, move: 1, mod: 1 });
 });
+
+test('도우미 SP: 정부24 개인 민원서류는 이름을 묻지 않고 바로 맡긴다', () => {
+  assert.match(html, /3-1\. 정부24 등에서 발급하는 개인 민원서류[^\n]*이름·성명·주민등록번호·주소를 묻지 않고[^\n]*바로 \[AGENT_TASK\]로 맡긴다/);
+});
