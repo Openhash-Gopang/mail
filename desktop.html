@@ -118,6 +118,7 @@ window.addEventListener('load', () => {
 <script src="guide.js?v=20261106c"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap">
 <style>
 :root {
   /* Material(Mira) 팔레트 — 2026-11-06: 파란 상단 막대·흰 사이드바·연한 회청색 바탕·그림자만 있는 흰 카드 */
@@ -832,8 +833,8 @@ header.topbar .logo-wide{display:block;height:40px;width:auto}
 .lp-empty{margin:0;padding:12px 10px;color:#5b6678;font-size:14px}
 .lp-empty[hidden]{display:none}
 @media (max-width:1100px){.lp-cur{display:none}.lp-btn{padding:0 9px}}
-header.topbar .logo-txt{font-family:var(--font,Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif);font-size:19px;font-weight:800;letter-spacing:.04em;line-height:1;color:#fff;white-space:nowrap}
-header.topbar .logo-txt{font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1;color:#fff;white-space:nowrap}
+@media (max-width:560px){.lp{position:static}.lp-pop{position:fixed;top:64px;left:12px;right:12px;width:auto}}
+header.topbar .logo-txt{font-family:Nunito,Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif;font-size:19px;font-weight:800;letter-spacing:0;line-height:1;color:#fff;white-space:nowrap}   /* 영문 로고 Navi Web: Nunito 800, 19px */
 header.topbar .logo-help .tp-chev{width:22px;height:22px}   /* 열림 화살표: 이전(14px)의 두 배 */
 header.topbar .logo-img{display:block;width:34px;height:34px;padding:3px;box-sizing:border-box;background:#fff;border-radius:9px;object-fit:contain}
 .crumb{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,.7)}
@@ -1267,7 +1268,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 .skin-sample .card{margin:0;flex:1;min-width:200px}
 </style>
 <header class="topbar">
-  <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><span class="logo-txt">나비웹</span><svg class="tp-chev" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
+  <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><span class="logo-txt">Navi Web</span><svg class="tp-chev" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
   <div class="topbar-right">
     <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
