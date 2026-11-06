@@ -2117,7 +2117,7 @@ async function _agentHandOff(btn) {
   const bar = btn.closest('.doc-agent'), sel = bar.querySelector('select'), g = bar.querySelector('input'), st = bar.querySelector('.da-state');
   if (!sel.value && !g.value.trim()) { st.textContent = '맡길 일을 적어 주세요. 예) 정부24에서 주민등록등본 발급 화면을 열어 주세요'; return; }
   const ok = await NaviAgent.queue({ playbook: sel.value, goal: g.value.trim(), title: sel.value ? sel.options[sel.selectedIndex].text : '자유 작업', slot: bar.dataset.slot || '' }); delete bar.dataset.slot;
-  st.textContent = ok ? '맡겼습니다. 브라우저 도구 모음의 나비웹 도우미 아이콘을 눌러 내용을 확인하고 시작하세요. 로그인·결제는 직접 하셔야 합니다.' : '맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.';
+  st.textContent = ok ? '도우미가 바로 시작합니다. 열린 사이트 화면의 안내에 따라 로그인해 주세요. 인증서·결제는 직접 하셔야 합니다.' : '맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.';
 }
 document.addEventListener('DOMContentLoaded', () => { setTimeout(_agentInit, 600); });
 function _docBase64(buf) {
@@ -2737,7 +2737,7 @@ async function _docChatAgentTask(d) {
   if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
   let ok = false; try { ok = await NaviAgent.queue(r.job); } catch (x) { ok = false; }
   _docChat.slots = DocHelper.applySlot(_docChat.slots, r.label, ok ? 'queued' : 'failed', ok ? '' : '맡기지 못함');
-  _embedNote(true, ok ? '“' + r.label.slice(0, 40) + '” 항목을 나비웹 도우미에 맡겼습니다. 브라우저 도구 모음의 나비웹 도우미 아이콘을 눌러 내용을 확인하고 시작하세요. 로그인·결제는 직접 하셔야 합니다.'
+  _embedNote(true, ok ? '“' + r.label.slice(0, 40) + '” 항목을 도우미가 바로 진행합니다. 사이트가 열리면 화면의 안내에 따라 로그인해 주세요. 인증서·결제는 직접 하셔야 합니다.'
                       : '“' + r.label.slice(0, 40) + '” 항목을 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
   _docChatPush();
 }

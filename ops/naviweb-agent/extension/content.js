@@ -1,6 +1,6 @@
 // 페이지 안에서 도구를 실행한다. 요소는 ref_N 으로만 가리킨다(좌표 클릭을 쓰지 않는다).
 (() => {
-  if (window.__naviAgentV === 4) return;
+  if (window.__naviAgentV === 5) return;
   const refs = new Map(); let seq = 0;
   const SEL = 'a,button,input,select,textarea,label,area,img[alt],[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[tabindex],[onclick]';
   const PTR = 'span,div,li,td,img,i';
@@ -84,13 +84,38 @@
     // 내려받기 링크의 주소는 확장(배경)만 받는다. AI 에게는 돌려주지 않는다(주소에 세션 값이 들어 있을 수 있다).
     link_href: ({ ref }) => { const el = need(ref); const a = el.closest && el.closest('a[href]'); if (!a) throw new Error('링크 요소가 아닙니다.'); return a.href; },
   };
+  // 작업 중인 탭 위쪽에 안내 띠를 띄운다(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
+  let ovHost = null, ovRoot = null;
+  function overlay(mode, text) {
+    if (window !== window.top) return;
+    if (mode === 'off') { if (ovHost) { ovHost.remove(); ovHost = null; ovRoot = null; } return; }
+    if (!ovHost || !ovHost.isConnected) {
+      ovHost = document.createElement('div'); ovHost.style.cssText = 'all:initial;position:fixed;top:0;left:0;right:0;z-index:2147483647';
+      ovRoot = ovHost.attachShadow({ mode: 'closed' }); document.documentElement.appendChild(ovHost);
+    }
+    const st = document.createElement('style');
+    st.textContent = '.b{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1}.k{display:flex;gap:8px}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
+    const box = document.createElement('div'); box.className = 'b' + (mode === 'handoff' || mode === 'confirm' ? ' w' : mode === 'error' ? ' e' : mode === 'done' ? ' d' : ''); box.style.position = 'relative';
+    const t = document.createElement('div'); t.className = 't'; t.textContent = '나비웹 도우미 · ' + String(text || (mode === 'busy' ? '작업 중입니다. 잠시만 기다려 주세요.' : '')).slice(0, 400); box.appendChild(t);
+    const k = document.createElement('div'); k.className = 'k';
+    const btn = (label, cls, fn) => { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; k.appendChild(b); };
+    const rep = (ok) => () => { chrome.runtime.sendMessage({ type: 'reply', ok }); overlay('busy', ''); };
+    if (mode === 'confirm') { btn('진행', '', rep(true)); btn('취소', 's', rep(false)); }
+    else if (mode === 'handoff') { btn('직접 했어요', '', rep(true)); btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' })); }
+    else if (mode === 'busy') btn('중단', 's', () => { chrome.runtime.sendMessage({ type: 'stop' }); });
+    else btn('닫기', '', () => overlay('off'));
+    box.appendChild(k);
+    if (mode === 'busy') { const bar = document.createElement('div'); bar.className = 'bar'; bar.appendChild(document.createElement('i')); box.appendChild(bar); }
+    ovRoot.replaceChildren(st, box);
+  }
   chrome.runtime.onMessage.addListener((msg, _s, send) => {
     if (msg && msg.__navi === 'ping') { send({ ok: true }); return; }
+    if (msg && msg.__navi === 'overlay') { overlay(msg.mode, msg.text); send({ ok: true }); return; }
     if (!msg || msg.__navi !== 'tool') return;
     try {
       if (msg.describe) { const el = msg.input && msg.input.ref ? refs.get(msg.input.ref) : null; send({ ok: true, info: el ? describe(el) : {} }); }
       else send({ ok: true, text: String(run[msg.name](msg.input || {})) });
     } catch (e) { send({ ok: false, error: e.message }); }
   });
-  window.__naviAgentV = 4;
+  window.__naviAgentV = 5;
 })();

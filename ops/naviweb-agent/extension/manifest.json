@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "나비웹 도우미",
-  "version": "0.5.0",
-  "description": "나비웹에서 맡긴 웹 사이트 작업(서류 절차 등)을 대신 진행하는 도우미. 사이트마다, 그리고 중요한 동작마다 사용자 승인을 받습니다. 로그인·인증서·결제는 사용자가 직접 합니다.",
+  "version": "0.6.0",
+  "description": "나비웹에서 맡긴 웹 사이트 작업(서류 발급 등)을 대신 진행하는 도우미. 맡기면 바로 사이트를 열고 화면에서 안내합니다. 로그인·인증서·결제는 사용자가 직접 하고, 제출·발급 같은 중요한 동작은 확인을 받습니다.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -13,9 +13,7 @@
     "downloads"
   ],
   "host_permissions": [
-    "https://naviweb.kr/*",
-    "https://*.naviweb.kr/*",
-    "https://*.hondi.net/*"
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -44,9 +42,6 @@
       "all_frames": false,
       "run_at": "document_idle"
     }
-  ],
-  "optional_host_permissions": [
-    "https://*/*"
   ],
   "icons": {
     "16": "icons/16.png",
