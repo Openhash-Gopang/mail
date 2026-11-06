@@ -25,6 +25,8 @@ body{background:var(--bg);color:var(--ink)}
 .ar{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line)}.ar span{color:var(--sub)}
 ol{margin:0;padding-left:18px}li{padding:2px 0}
 details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;font-weight:600}details p{margin:6px 0 0;color:var(--sub)}
+.bt{margin-top:12px;border-left:3px solid var(--pri)}.bp{margin:0 0 10px;color:var(--ink)}
+.go{font-size:var(--fs-sm);font-weight:600;color:#fff;background:var(--pri);border:0;border-radius:4px;padding:6px 14px;cursor:pointer}.go:hover{background:#2F6CC7}
 .n{color:var(--sub);font-size:var(--fs-xs);margin:8px 0 0}
 @media (max-width:760px){.k{grid-template-columns:1fr 1fr}.r{grid-template-columns:1fr}}
 
@@ -41,6 +43,9 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 그날의 환율로 환산한 원화가 GDC로 충전됩니다(1 GDC = 1원).</p></section>
 <section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>오늘의 환율로 입금액을 확인합니다. 환율이 1,300원이면 $10는 13,000원입니다.</li><li>지정 계좌로 해당 금액을 입금합니다. 입금자명은 나비웹에 가입한 이름과 같게 합니다.</li><li>입금이 확인되면 입금액이 GDC로 충전됩니다.</li></ol></section>
 </div>
+<section class="card cb bt"><h2 class="ct">베타 테스트 안내 <span class="bd s">GDC 보상</span></h2>
+<p class="bp">베타 테스트 기간에는 언제든지 다양한 시스템 오류가 발생할 수 있습니다. 기능 개선을 제안하거나 오류(버그)를 신고해 주시면 중요도에 따라 GDC로 보상합니다. 예를 들어 현저한 개선 아이디어에는 100,000 GDC를 지급합니다.</p>
+<button type="button" class="go" id="go-fb">기능 개선 제안·오류 신고하기</button></section>
 <section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2><details><summary>환율은 언제 적용되나요?</summary><p>입금이 확인된 그날의 환율로 환산합니다. 기준 날짜는 환율 옆에 표시됩니다.</p></details><details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 정가 월 $100이 적용됩니다.</p></details><details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details></section>
 </main>
 <script>
@@ -69,5 +74,6 @@ async function loadRate(){for(var i=0;i<RATE_SOURCES.length;i++){try{var c=new A
  var res=await fetch(RATE_SOURCES[i].url,{signal:c.signal,cache:'no-store'});clearTimeout(t);if(!res.ok)throw 0;
  renderRate(RATE_SOURCES[i].parse(await res.json()),RATE_SOURCES[i].name);return}catch(e){}}renderFail()}
 renderPrice();renderAccount();loadRate();
+$('go-fb').onclick=function(){try{if(parent!==window&&parent._switchTab)parent._switchTab('feedback');else location.href='desktop.html'}catch(e){location.href='desktop.html'}};
 if(new URLSearchParams(location.search).get('embed'))document.body.style.background='transparent';
 </script></body></html>
