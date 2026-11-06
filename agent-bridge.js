@@ -11,12 +11,12 @@
   ];
   // 첨부서류 항목 문구에 맞는 "도우미가 가져오기" 절차. 항목마다 어디서 받는지는 여기서만 정한다(서류 화면은 정규식만 받아 버튼을 붙인다).
   var SLOTS = [
-    { re: /법인.*등기|등기사항|등기부/, playbook: 'iros-corp-ecourt', goal: '법인등기사항증명서를 전자소송용으로 결제대상목록에 담아 주세요. 결제는 하지 말고 목록에서 멈춰 주세요. 법인 이름: ' },
+    { re: /법인.*등기|등기사항|등기부/, playbook: 'iros-corp-ecourt', early: true, goal: '법인등기사항증명서를 전자소송용으로 결제대상목록에 담아 주세요. 결제는 하지 말고 목록에서 멈춰 주세요. 법인 이름: ' },
     { re: /주민등록|등본|초본|가족관계|혼인관계|기본증명|제적|지방세|납세|건강보험|국민연금|소득금액|사업자등록|병적|토지대장|건축물대장/, playbook: 'gov24-doc', instant: true, goal: '정부24에서 이 서류를 발급받아 나비웹으로 보내 주세요. 서류: ' },
   ];
   function slotPlan(label) {
     var t = String(label || '');
-    for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].re.test(t)) return { playbook: SLOTS[i].playbook, goal: SLOTS[i].goal, instant: !!SLOTS[i].instant };
+    for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].re.test(t)) return { playbook: SLOTS[i].playbook, goal: SLOTS[i].goal, instant: !!SLOTS[i].instant, early: !!SLOTS[i].early };
     return null;
   }
   // 사용자가 직접 만들거나 가진 자료(사진·계약서·위임장 등)는 기관에서 받을 수 없으므로 "도우미가 가져오기"를 붙이지 않는다. 그 밖의 모든 첨부서류 항목은 어느 기관 사이트든 도우미가 가져올 수 있다(전용 절차가 없으면 SP 가 기관과 서류를 정해 맡긴다).
@@ -47,6 +47,8 @@
   }
   function detect() { return call('agent-ping', {}, 1200).then(function (m) { return m && m.ok ? { version: m.version, playbooks: m.playbooks || [] } : null; }); }
   function queue(job) { job = Object.assign({}, job, { autostart: true }); try { if (!job.token && window.KAuth && KAuth.getToken) job = Object.assign({}, job, { token: KAuth.getToken() || '' }); } catch (e) { /* 로그인 전 */ } return call('agent-queue', { job: job }, 3000).then(function (m) { return !!(m && m.ok); }); }
+  // 이미 시작한 작업에 나중에 알게 된 정보(예: 법인 이름)를 전한다.
+  function update(slot, text) { return call('agent-queue', { job: { update: true, slot: String(slot || ''), text: String(text || '') } }, 3000).then(function (m) { return !!(m && m.ok); }); }
   // Chrome 웹 스토어에 등록한 뒤 이 주소를 채운다(비어 있으면 설치 안내를 보이지 않는다).
   var STORE_URL = '';
   // 확장이 받아 온 파일: { label, name, mime, data(ArrayBuffer) } — 넣을지는 호출한 쪽이 사용자에게 물은 뒤 정한다.
@@ -67,7 +69,7 @@
       cb({ label: String(m.label || ''), state: String(m.state || ''), note: String(m.note || '') });
     });
   }
-  var api = { onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
+  var api = { onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);
