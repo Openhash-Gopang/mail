@@ -104,7 +104,7 @@ window.addEventListener('load', () => {
 <script src="assistant-runtime.js?v=20261101e"></script>
 <script src="assistant-host.js?v=20261101e"></script>
 <script src="case-host.js?v=20261101d"></script>
-<script src="case-ui.js?v=20261106a"></script>
+<script src="case-ui.js?v=20261106b"></script>
 <script src="case-assist.js?v=20261101f"></script>
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
@@ -1049,6 +1049,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .cs-btn{white-space:nowrap;border:1px solid var(--bdr);background:transparent;border-radius:8px;padding:7px 13px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;margin-right:6px}
 .cs-btn:hover{background:rgba(0,0,0,.04)}.cs-pri{background:var(--pri);border-color:var(--pri);color:#fff}.cs-pri:hover{background:var(--pri);opacity:.9}
 .cs-link{background:none;border:none;color:var(--pri);font-weight:700;padding:0;cursor:pointer;font-size:13.5px}
+.cs-solo{margin-top:18px}.cs-solo-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.cs-solo-h b{font-size:16px;color:var(--txt,#1a1d24)}.cs-solo-h .cs-sub{flex:1;min-width:160px}
 .cs-list{display:flex;flex-direction:column;gap:6px}
 .cs-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--bdr);background:transparent;border-radius:10px;padding:12px 14px;cursor:pointer;font-size:15px}
 .cs-row:hover{background:rgba(0,0,0,.04)}.cs-title{font-weight:800;flex:1;color:var(--txt,#1a1d24)}.cs-meta{font-size:13px;color:var(--hint)}
@@ -1255,15 +1256,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
         </div>
       </div>
-      <div class="nav-group collapsed" id="nav-group-guide">
-        <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideNavOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V3"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg>나비 길잡이</button>
-        <button type="button" class="nav-toggle" id="nav-toggle-guide" aria-label="나비 길잡이 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-guide" onclick="_navToggleGuide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="nav-sub" id="nav-sub-guide" role="group" aria-label="나비 길잡이 하위 메뉴">
-          <button id="tab-btn-gprog" class="nav-subitem nav-gv" data-label="진행 중" onclick="_switchTab('gprog')">진행 중<span class="unread-badge" data-for="guide" hidden></span></button>
-          <button id="tab-btn-gdone" class="nav-subitem nav-gv" data-label="완료한 과제" onclick="_switchTab('gdone')">완료한 과제</button>
-          <button id="tab-btn-case" class="nav-subitem nav-gv" data-label="업무" onclick="_switchTab(_caseLast())">업무</button>
-        </div>
-      </div>
+      <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideTabOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        나비 길잡이<span class="unread-badge" data-for="guide" hidden></span></button>
     </div>
     <div class="side-group">
       <div class="side-label">도움말</div>
@@ -1879,6 +1873,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   </div>
 
   <div id="tab-gprog" class="tab-panel">
+    <div id="gt-bar-gprog"></div>
     <div class="card">
       <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
       <div class="sub">나비 길잡이와 계획을 세운 과제 가운데 아직 끝내지 않은 것입니다. 과제를 누르면 대화창과 계획서가 열립니다. <span id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</span></div>
@@ -1888,17 +1883,20 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div id="gprog-empty" style="display:none;font-size:14px;color:var(--hint)">진행 중인 과제가 없습니다. "새 과제"를 눌러 시작해 보세요.</div>
       <div id="gprog-items"></div>
     </div>
+    <div id="gprog-solo" class="cs-solo"></div>
   </div>
 
   <div id="gl-toast" role="status" aria-live="polite" hidden></div>
 
   <div id="tab-gdone" class="tab-panel">
+    <div id="gt-bar-gdone"></div>
     <div class="card">
       <h2>완료한 과제</h2>
       <div class="sub">성공 여부와, 성공하지 못했다면 그 원인·교훈을 기록해 둔 과제입니다. 새 과제를 세울 때 나비 길잡이가 이 기록을 참고합니다.</div>
       <div id="gdone-empty" style="display:none;font-size:14px;color:var(--hint)">아직 완료한 과제가 없습니다. 과제를 끝내면 판정과 원인 분석이 여기에 쌓입니다.</div>
       <div id="gdone-items"></div>
     </div>
+    <div id="gdone-solo" class="cs-solo"></div>
   </div>
 
   <div id="tab-guide" class="tab-panel gd-panel"></div>
@@ -3381,21 +3379,19 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => { _guideNotifyCheck(); _guidePdvSync(); _guideServerSync(); }, 5 * 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { _guidePdvSync(); _guideLoad(); _guideNotifyCheck(); } });
 });
-// ── 나비 길잡이 왼쪽 메뉴: 메일 아래 "나비 길잡이" + 하위 "진행 중"·"완료한 과제" (2026-11-03) ──
-const _NAV_GUIDE_KEY = 'kmail_nav_guide_open';
-function _navToggleGuide(force) {
-  const g = document.getElementById('nav-group-guide'); if (!g) return;
-  const open = typeof force === 'boolean' ? force : g.classList.contains('collapsed');
-  g.classList.toggle('collapsed', !open);
-  const t = document.getElementById('nav-toggle-guide'); if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
-  try { localStorage.setItem(_NAV_GUIDE_KEY, open ? '1' : '0'); } catch (e) {}
+// ── 나비 길잡이(2026-11-06): 하위 메뉴 없이 한 페이지. 위쪽 탭 = 진행 중 · 완료 · 맡긴 일 · 맡은 일 ──
+// 나 홀로 일은 따로 페이지를 두지 않고 "진행 중"(끝나지 않은 일)·"완료"(종료·보관) 탭 안에 함께 나온다. 마지막에 본 탭을 기억한다.
+const _GTABS = [['gprog', '진행 중'], ['gdone', '완료'], ['casecons', '맡긴 일'], ['caseprov', '맡은 일']];
+const _GTAB_KEY = 'kmail_guide_tab';
+function _guideLastTab() { let t = ''; try { t = localStorage.getItem(_GTAB_KEY) || ''; } catch (e) {} return _GTABS.some(x => x[0] === t) ? t : 'gprog'; }
+function _gtabsHtml(active) {
+  const caseOn = !window.CaseUI || CaseUI.enabled();   // 업무(맡긴 일·맡은 일)를 껐으면 두 탭은 숨김
+  return '<div class="cs-modes" role="tablist" aria-label="' + _i18nEsc(_T('나비 길잡이')) + '">' + _GTABS.filter(x => caseOn || x[0].indexOf('case') !== 0).map(x =>
+    '<button type="button" role="tab" class="cs-mode' + (x[0] === active ? ' on' : '') + '" aria-selected="' + (x[0] === active) + '" onclick="_switchTab(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) + '</button>').join('') + '</div>';
 }
-document.addEventListener('DOMContentLoaded', () => { let open = false; try { open = localStorage.getItem(_NAV_GUIDE_KEY) === '1'; } catch (e) {} _navToggleGuide(open); });
-/** 왼쪽 메뉴의 "나비 길잡이"를 누르면 홈 화면에서 나비 길잡이 대화창을 연다. */
-// 업무(맡은 일·맡긴 일·나 홀로)는 나비 길잡이의 하위 메뉴 "업무" 하나이고, 화면 위쪽의 세 탭으로 오간다(2026-11-06). 마지막에 본 탭을 기억한다.
-const _CASE_TAB_KEY = 'kmail_case_tab';
-function _caseLast() { let t = ''; try { t = localStorage.getItem(_CASE_TAB_KEY) || ''; } catch (e) {} return ['caseprov', 'casecons', 'casesolo'].includes(t) ? t : 'caseprov'; }
-function _guideNavOpen() { _switchTab('home'); _cmpGuidePick(); }
+function _gtabsFill(name) { const el = document.getElementById('gt-bar-' + name); if (el) el.innerHTML = _gtabsHtml(name); }
+/** 왼쪽 메뉴의 "나비 길잡이"를 누르면 마지막에 보던 탭(처음엔 "진행 중")이 열린다. 새 과제는 "진행 중" 탭의 ＋ 새 과제로 시작한다. */
+function _guideTabOpen() { _switchTab(_guideLastTab()); }
 /** 과제 목록에서 과제를 열거나(id), 새 과제를 시작한다(null). */
 function _guideOpen(id) { _guideLoad(); _guide.cur = id && _guide.plans[id] ? id : null; _guideStore(); _switchTab('home'); _cmpGuidePick(); }
 /** 종료한 과제인가: 판정이 있거나 상태가 종료. */
@@ -4630,13 +4626,12 @@ function _switchTab(name) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name.indexOf('case') === 0 ? 'case' : name === 'doc' ? 'docwrite' : name === 'verdict' || name === 'feedback' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  const _navBtn = document.getElementById('tab-btn-' + (name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' || name === 'feedback' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
   if (name !== 'verdict' && name !== 'feedback') _navBtn.classList.add('active');
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
-  if (_navBtn.classList.contains('nav-gv')) _navToggleGuide(true);
-  if (name === 'gprog' || name === 'gdone') _guideRenderList(name === 'gdone' ? 'done' : 'prog');
+  if (name === 'gprog' || name === 'gdone') { _gtabsFill(name); _guideRenderList(name === 'gdone' ? 'done' : 'prog'); if (window.CaseUI) CaseUI.fillSolo(name === 'gdone' ? 'done' : 'prog'); }
   if (name === 'docdrafts') _drRenderDocList('draft');
   if (name === 'myforms') _mfRender();
   if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
@@ -4650,7 +4645,8 @@ function _switchTab(name) {
   if (name === 'whitepaper') _wpSwitch(document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi');
   if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
-  if (name.indexOf('case') === 0) { try { localStorage.setItem(_CASE_TAB_KEY, name); } catch (e) {} if (window.CaseUI) CaseUI.show(name); }
+  if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
+  if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
   _navSyncMailSub();
 }

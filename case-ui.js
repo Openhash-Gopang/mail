@@ -1,5 +1,6 @@
 /* ═════════════════════════════════════════════════
    case-ui.js — 업무(Case) 화면: 맡은 일 · 맡긴 일 · 나 홀로  (M4 첫 조각)
+   2026-11-06: 나비 길잡이는 하위 메뉴 없이 위쪽 탭(진행 중·완료·맡긴 일·맡은 일)이다. 나 홀로 목록은 진행 중·완료 탭 안에 나오고(fillSolo), tab-casesolo 는 그 일의 상세 화면만 그린다.
    2026-11-01. desktop.html 의 왼쪽 메뉴 "나비 길잡이 → 업무"와 3개 패널(위쪽 세 탭으로 전환, 2026-11-06)(tab-caseprov/casecons/casesolo)을 그린다.
    - 업무 메뉴는 기본으로 보인다(2026-11-05). 끄려면 주소에 ?case=0 (localStorage kmail_case_ui=0 로 기억), 다시 켜려면 ?case=1.
    - 모든 기록은 이 기기의 PDV(IndexedDB hondi_case_store)에만 저장한다. 서버로는 해시만(큐에 쌓임).
@@ -89,13 +90,14 @@
     return '<div class="cs-card cs-notes"><b>나비 비서 알림</b>' + f.slice(0, 8).map(function (x) { return '<div class="cs-note-row' + (x.severity >= 3 ? ' cs-bad' : '') + '">' + esc(x.text) + '</div>'; }).join('') +
       '<div class="cs-sub">이 기기의 기록에서 계산한 알림입니다. 법적 결과를 보장하지 않으며, 중요한 판단은 인간 전문가의 조언을 구하세요.</div></div>';
   }
-  /** 업무 화면 위쪽의 세 탭(맡은 일·맡긴 일·나 홀로) — 업무는 왼쪽 메뉴의 나비 길잡이 아래 "업무" 하나로 들어온다. */
-  function modesHtml(name) {
-    return '<div class="cs-modes" role="tablist" aria-label="업무">' + Object.keys(MODES).map(function (k) {
-      return '<button type="button" role="tab" class="cs-mode' + (k === name ? ' on' : '') + '" aria-selected="' + (k === name) + '" data-act="mode" data-m="' + k + '">' + esc(MODES[k].label) + '</button>';
-    }).join('') + '</div>';
+  /** 화면 위쪽 탭(진행 중·완료·맡긴 일·맡은 일) — desktop.html 의 _gtabsHtml. 나 홀로 상세는 일의 상태에 따라 진행 중(미종료)·완료(종료·보관)가 켜진다. */
+  function isDone(c) { return c.state === 'closed' || c.state === 'archived'; }
+  function modesHtml(name, state) {
+    var on = name === 'casesolo' ? (state === 'closed' || state === 'archived' ? 'gdone' : 'gprog') : name;
+    return typeof root._gtabsHtml === 'function' ? root._gtabsHtml(on) : '';
   }
   async function renderList(name) {
+    if (name === 'casesolo') { if (typeof root._switchTab === 'function') root._switchTab('gprog'); return; }   // 나 홀로 목록은 진행 중·완료 탭에 있다
     var p = $('tab-' + name), m = MODES[name]; if (!p) return;
     var cases = mineOf(name, await getStore().listCases()).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
     p.innerHTML = modesHtml(name) +
@@ -139,6 +141,7 @@
         if (host() && mailNow && mailNow.checked) { try { var sm = await host().sendInviteMail(id); if (!sm.ok) cur['inv-msg'] = '초대 메일을 보내지 못했습니다(' + errText(sm) + '). 아래 버튼으로 다시 보내거나 링크를 직접 전달하세요.'; } catch (_) {} }
       }
     }
+    if (m.solo) { cur[name] = id; cur[name + ':tab'] = 'all'; if (typeof root._switchTab === 'function') root._switchTab('casesolo'); return; }
     await openCase(name, id);
   }
 
@@ -219,8 +222,9 @@
       else if (c.state === 'closed') acts = b('archive', '보관');
     }
     var pending = (await getStore().flushAnchors(0)).pending;
-    p.innerHTML = modesHtml(name) +
-      '<div class="cs-head"><div><button class="cs-link" data-act="back">← ' + esc(m.label) + '</button><h2 class="cs-h">' + esc(c.title) + '</h2>' +
+    cur[name + ':st'] = c.state;
+    p.innerHTML = modesHtml(name, c.state) +
+      '<div class="cs-head"><div><button class="cs-link" data-act="back">← ' + esc(m.solo ? (isDone(c) ? '완료' : '진행 중') : m.label) + '</button><h2 class="cs-h">' + esc(c.title) + '</h2>' +
       '<div class="cs-sub">' + esc(KIND[c.kind] || c.kind) + ' · <span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span>' +
       ' · <span class="' + (v.ok ? 'cs-ok' : 'cs-bad') + '">' + (v.ok ? '기록 무결성 확인됨 (' + v.length + '건)' : '⚠ 기록 변조 의심 (#' + v.brokenAt + ')') + '</span>' +
       ' · 이 기기의 해시 전송 대기 ' + pending + '건</div></div><div class="cs-actions">' + acts + '</div></div>' +
@@ -249,7 +253,7 @@
     else if (act === 'cancel-new') $('cs-form-' + name).innerHTML = '';
     else if (act === 'create') await createFromForm(name);
     else if (act === 'open') { cur[name + ':tab'] = 'all'; await openCase(name, t.getAttribute('data-id')); }
-    else if (act === 'back') await renderList(name);
+    else if (act === 'back') { if (m.solo) { cur[name] = null; if (typeof root._switchTab === 'function') root._switchTab(cur[name + ':st'] === 'closed' || cur[name + ':st'] === 'archived' ? 'gdone' : 'gprog'); } else await renderList(name); }
     else if (act === 'tab') { cur[name + ':tab'] = t.getAttribute('data-t'); await openCase(name, id); }
     else if (act === 'copy') { var i = $('cs-invite-link'); i.select(); try { document.execCommand('copy'); t.textContent = '복사됨'; } catch (_) {} }
     else if (act === 'add-note') {
@@ -325,6 +329,28 @@
 
   function note(name, r) { var el = $('cs-sync-msg') || $('cs-c-msg'); if (el) { el.style.color = ''; el.textContent = errText(r); } else if (typeof alert === 'function') alert(errText(r)); }
 
+  /** 진행 중·완료 탭 아래의 "나 홀로 일" 목록. kind = 'prog'(끝나지 않은 일 + ＋ 새 일) | 'done'(종료·보관). */
+  function fillSolo(kind) {
+    var box = $('g' + kind + '-solo'); if (!box) return Promise.resolve();
+    if (!enabled()) { box.innerHTML = ''; return Promise.resolve(); }
+    if (!box.__csBound) { box.__csBound = true; box.addEventListener('click', function (ev) {
+      var t = ev.target.closest('[data-act]'); if (!t) return; var act = t.getAttribute('data-act');
+      if (act === 'new') newForm('casesolo');
+      else if (act === 'cancel-new') { var f = $('cs-form-casesolo'); if (f) f.innerHTML = ''; }
+      else if (act === 'create') createFromForm('casesolo');
+      else if (act === 'open') { cur.casesolo = t.getAttribute('data-id'); cur['casesolo:tab'] = 'all'; if (typeof root._switchTab === 'function') root._switchTab('casesolo'); }
+    }); }
+    var H = host();
+    return (H ? H.initLocal().catch(function () {}) : Promise.resolve()).then(function () { return getStore().listCases(); }).then(function (all) {
+      var list = all.filter(function (c) { return c.mode === 'solo' && (kind === 'done') === isDone(c); }).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+      box.innerHTML = '<div class="cs-solo-h"><b>나 홀로 일</b><span class="cs-sub">상대 없이 내가 직접 처리하는 일</span>' + (kind === 'prog' ? '<button class="cs-btn cs-pri" data-act="new">+ 새 일</button>' : '') + '</div>' +
+        '<div id="cs-form-casesolo"></div>' +
+        (list.length ? '<div class="cs-list">' + list.map(function (c) {
+          return '<button class="cs-row" data-act="open" data-id="' + esc(c.case_id) + '"><span class="cs-title">' + esc(c.title) + '</span><span class="cs-meta">' + esc(KIND[c.kind] || c.kind) + '</span><span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span></button>';
+        }).join('') + '</div>' : '<div class="cs-empty">' + (kind === 'done' ? '완료한 나 홀로 일이 없습니다.' : '진행 중인 나 홀로 일이 없습니다. “+ 새 일”로 시작하세요.') + '</div>');
+    }).catch(function () { box.innerHTML = ''; });
+  }
+
   function show(name) {
     if (!MODES[name]) return;
     var p = $('tab-' + name); if (!p) return;
@@ -366,9 +392,9 @@
       } catch (e) { msg(e.message || '실패', true); btn.disabled = false; }
     };
   }
-  function applyFlag() { var g = $('tab-btn-case'); if (g) g.hidden = !enabled(); inviteBanner(); }
+  function applyFlag() { inviteBanner(); }
 
-  root.CaseUI = { show: show, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
+  root.CaseUI = { show: show, fillSolo: fillSolo, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyFlag); else applyFlag();
   }
