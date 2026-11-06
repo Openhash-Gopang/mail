@@ -1278,7 +1278,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
     <div class="lp-host" id="lp-host"></div>
-    <button type="button" class="suggest-btn" id="pricing-btn" onclick="_switchTab('pricing')">플랜 업그레이드</button>
     <button type="button" class="suggest-btn" id="suggest-btn" onclick="_switchTab('feedback')">기능 개선 제안</button>
     <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
     <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
@@ -2072,7 +2071,7 @@ function _kmailAutoResize(el) {
   nav.addEventListener('focusin', (e) => { try { if (e.target.matches(':focus-visible')) snOpen(); } catch (x) {} });
   nav.addEventListener('focusout', (e) => { if (!nav.contains(e.relatedTarget)) snClose(); });
   nav.addEventListener('click', (e) => {
-    if (!e.target.closest('.nav-btn,.nav-subitem')) return;
+    if (!e.target.closest('.nav-btn,.nav-subitem,.side-logo')) return;   // 나비 로고(홈 버튼)를 눌러도 아이콘 막대로 접는다
     snClose();
     if (document.activeElement && nav.contains(document.activeElement)) document.activeElement.blur();
   });
@@ -8152,7 +8151,7 @@ window.addEventListener('hashchange', function () {
   else if (h === 'mail' || h === 'docs') _notifyGo('mail');   // 이미 열려 있는 탭에서 푸시 알림을 눌렀을 때
 });
 </script>
-<script src="https://hondi.net/auth/user-badge.js?v=20261028" defer></script>
+<script src="https://hondi.net/auth/user-badge.js?v=20261106" defer></script>
 <script>
 /* 2026-10-27 — 입력을 시작하면 예시 문구(placeholder)를 숨긴다(한글 입력기 조합 중 포함). 문서 전체에서 이벤트를 받으므로
    나중에 생기는 입력창에도 적용된다. 키를 누르거나(조합 시작 키 포함) 조합을 시작하거나 붙여 넣거나 값이 생기면 .ph-typing을 붙이고,

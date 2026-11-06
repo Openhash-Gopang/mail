@@ -5,7 +5,7 @@ const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
 const p = readFileSync(new URL('../pricing.html', import.meta.url), 'utf8');
 test('요금제 — 좌측 메뉴와 상단 바에 동시에 있다', () => {
   assert.match(d, /id="tab-btn-pricing"[^>]*onclick="_switchTab\('pricing'\)"/);
-  assert.match(d, /id="pricing-btn"[^>]*onclick="_switchTab\('pricing'\)"/);
+  assert.ok(!d.includes('id="pricing-btn"'), '위쪽 바의 단추는 없앴다');
   assert.match(d, /id="tab-pricing" class="tab-panel"/);
   assert.match(d, /pricing\.html\?embed=mail/);
 });

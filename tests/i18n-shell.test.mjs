@@ -8,7 +8,7 @@ const dict = (l) => { const w = { NAVI_I18N: {} }; new Function('window', R(`i18
 test('다국어: 상단 바 오른쪽에 언어·국가 선택 자리가 있고 언어 모듈을 머리에서 동기로 불러온다', () => {
   const h = R('desktop.html');
   assert.ok(h.includes('<div class="lp-host" id="lp-host"></div>'));
-  assert.ok(h.indexOf('id="lp-host"') < h.indexOf('id="pricing-btn"'), '요금제 단추 앞');
+  assert.ok(!h.includes('id="pricing-btn"'), '우측 상단 플랜 업그레이드 단추는 없앴다(왼쪽 메뉴에만 있다)');
   assert.ok(h.includes('<script src="assets/i18n.js"></script>'));
   assert.ok(h.indexOf('assets/i18n.js') < h.indexOf('</head>'));
   assert.match(h, /mountPicker\(host\)/);
