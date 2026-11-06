@@ -318,3 +318,11 @@ test('대화창: 어떤 말이든 먼저 "잠시 기다려 주십시오"를 답�
   assert.match(f, /finally \{ _embedCap = null; _embedBusy = false; try \{[^\n]*HondiChat\.idle\(\)/);
   assert.ok(f.indexOf('HondiChat.say(') < f.indexOf('_docAsk(text)'), '본 처리보다 먼저');
 });
+
+test('대화창 상단: "혼디 대화" 문구는 없고, 나비웹 도우미 배지가 상단 중앙 자리를 갖는다', () => {
+  const js = readFileSync(new URL('../hondi-chat.js', import.meta.url), 'utf8');
+  assert.ok(!js.includes('<span>💬 혼디 대화</span>'));
+  assert.match(js, /<span id="hchat-agent"><\/span>/);
+  assert.match(js, /#hchat-agent\{position:absolute;left:50%/);
+  assert.match(js, /getElementById\('agent-badge'\)[\s\S]{0,200}_slot\.appendChild\(_ab\)/);
+});

@@ -69,7 +69,9 @@
       '#hchat-panel{position:fixed;right:20px;bottom:86px;z-index:9991;display:none;flex-direction:column;background:#fff;border:1px solid var(--bdr,#d8dee6);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;opacity:.8;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}',   /* 반투명 — 뒤 화면(서류·입력창)이 흐릿하게 비쳐 입력칸이 비었는지 알 수 있다 */
       '#hchat-panel.open{display:flex}',
       '#hchat-panel.full{right:0;bottom:0;left:0;top:0;border-radius:0;border:0}',
-      '#hchat-head{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--gov,#0B3B33);color:#fff;font-size:14px;font-weight:700}',
+      '#hchat-head{position:relative;display:flex;align-items:center;gap:6px;padding:8px 10px;min-height:34px;background:var(--gov,#0B3B33);color:#fff;font-size:14px;font-weight:700}',
+      '#hchat-agent{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:46%;pointer-events:none}',   /* 나비웹 도우미 배지(0.6.2 등)가 대화창 상단 중앙에 온다 */
+      '#hchat-agent .agent-badge{pointer-events:auto;font-size:12px;font-weight:600}#hchat-agent .agent-badge .ab-msg{display:none}',
       '#hchat-head .sp{flex:1}',
       '#hchat-head button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer;font-family:inherit}',
       '#hchat-head button:hover{background:rgba(255,255,255,.28)}',
@@ -166,7 +168,7 @@
     var panel = doc.createElement('div');
     panel.id = 'hchat-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '혼디 대화');
     panel.innerHTML =
-      '<div id="hchat-head"><span>💬 혼디 대화</span><span class="sp"></span>' +
+      '<div id="hchat-head"><span id="hchat-agent"></span><span class="sp"></span>' +
       '<button type="button" data-hchat="popup" title="새 창으로 열기">↗ 새 창</button>' +
       '<button type="button" data-hchat="close" title="닫기(대화는 계속 받습니다)">닫기</button></div>' +
       '<iframe id="hchat-frame" title="혼디 대화" allow="microphone; camera; clipboard-write; clipboard-read; notifications; autoplay; fullscreen"></iframe>' +
@@ -174,6 +176,7 @@
       '<div id="hchat-note">K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.</div>';
     doc.body.appendChild(fab); doc.body.appendChild(panel);
     S.els = { fab: fab, panel: panel, frame: panel.querySelector('#hchat-frame') };
+    var _ab = doc.getElementById('agent-badge'), _slot = panel.querySelector('#hchat-agent'); if (_ab && _slot) _slot.appendChild(_ab);   // 나비웹 도우미 배지를 위쪽 바에서 대화창 상단 중앙으로 옮긴다(없으면 그대로 둔다)
     fab.addEventListener('click', toggle);
     panel.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('[data-hchat]') : null; if (!t) return;
