@@ -377,3 +377,13 @@ test('0.6: 로그인 링크는 직접 열고, 입력·인증·제출 단추는 �
   assert.equal(classify('click', { ref: 'r' }, { tag: 'button', text: '로그인', host: 'www.gov.kr' }).act, 'handoff');
   assert.equal(classify('type', { text: 'x' }, { type: 'password', host: 'www.gov.kr' }).act, 'handoff');
 });
+
+test('가져오기 버튼: 정부24 민원서류는 AI 답을 기다리지 않고 바로 맡긴다(instant)', async () => {
+  const fs = await import('node:fs');
+  const NA = (await import('node:module')).createRequire(import.meta.url)('../agent-bridge.js');
+  assert.equal(NA.slotPlan('가족관계증명서').instant, true);
+  assert.equal(NA.slotPlan('혼인관계증명서').playbook, 'gov24-doc');
+  assert.equal(NA.slotPlan('법인등기사항증명서').instant, false);
+  const html = fs.readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(html, /ip\.instant && _agentInfo\) \{ _docChatAgentTask\(\{ slot: label, goal: label \}\); return; \}/);
+});
