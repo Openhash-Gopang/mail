@@ -299,7 +299,7 @@
   function nextAfterPass(idx, total) { return idx + 1 < total ? idx + 1 : -1; }   // -1 = 마지막(완료 화면)
 
   // ── 화면 ───────────────────────────────────────────────
-  var S = { idx: null, done: 0, answers: {}, result: null, timer: null };   // idx null = 아직 화면을 연 적 없음
+  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false };   // idx null = 아직 화면을 연 적 없음
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
   function caseOn() { try { return !!(root.CaseUI && root.CaseUI.enabled()); } catch (_) { return false; } }
@@ -312,14 +312,26 @@
     S.done = clampDone(Math.max(S.done, load()), total);
     if (S.idx >= total) S.idx = total - 1;
     var finished = S.done >= total && S.idx === -1;
-    var steps = list.map(function (p, i) {
-      var st = i < S.done ? 'done' : (i === S.idx ? 'cur' : (i === S.done || OPEN_ALL ? 'next' : 'lock'));
-      if (i === S.idx) st = (i < S.done ? 'done cur' : 'cur');
-      var can = OPEN_ALL ? (i >= 0 && i < total) : canOpen(S.done, i, total);
-      return '<button class="gd-step ' + st + '" ' + (can ? '' : 'disabled ') + 'data-act="go" data-i="' + i + '" aria-label="' + (i + 1) + '단계 ' + esc(p.title) + (i < S.done ? ' (완료)' : can ? '' : ' (잠김)') + '"' + (i === S.idx ? ' aria-current="step"' : '') + '>' + (i < S.done ? '✓' : (i + 1)) + '</button>';
-    }).join('<span class="gd-bar' + '"></span>');
-    var head = '<div class="gd-top"><div class="gd-steps" role="navigation" aria-label="사용법 진행 상태">' + steps + '</div>' +
-      '<div class="gd-prog">' + S.done + ' / ' + total + ' 단계 완료</div></div>';
+    // 한 줄 표시(2026-11-06): ‹ 이전 | 7 / 25 · 제목 ▾ | 다음 › + 얇은 진행 막대. ▾ 를 누르면 레벨별로 묶은 번호 격자가 펼쳐진다 → 장이 몇 개로 늘어도 한 줄.
+    var fin = S.idx === -1, ci = fin ? total - 1 : S.idx;
+    var can = function (i) { return OPEN_ALL ? (i >= 0 && i < total) : canOpen(S.done, i, total); };
+    var pv = fin ? total - 1 : S.idx - 1, nx = fin ? -1 : (S.idx + 1 < total ? S.idx + 1 : -1);
+    var seg = list.map(function (p, i) { return '<i class="' + (i < S.done ? 'done' : '') + (i === S.idx ? ' cur' : '') + '"></i>'; }).join('');
+    var groups = [];
+    list.forEach(function (p, i) { var g = groups[groups.length - 1]; if (!g || g.level !== p.level) groups.push(g = { level: p.level, items: [] }); g.items.push(i); });
+    var pop = S.open ? '<div class="gd-pop" id="gd-pop" role="group" aria-label="단계 선택">' + groups.map(function (g) {
+      return '<div class="gd-grp-h">' + esc(g.level) + ' <span class="gd-sub">' + (g.items[0] + 1) + '–' + (g.items[g.items.length - 1] + 1) + '</span></div><div class="gd-grid">' + g.items.map(function (i) {
+        var st = (i < S.done ? 'done' : '') + (i === S.idx ? ' cur' : '');
+        return '<button type="button" class="gd-n ' + st + '" ' + (can(i) ? '' : 'disabled ') + 'data-act="go" data-i="' + i + '" title="' + esc(list[i].title) + '" aria-label="' + (i + 1) + '단계 ' + esc(list[i].title) + (i < S.done ? ' (완료)' : can(i) ? '' : ' (잠김)') + '"' + (i === S.idx ? ' aria-current="step"' : '') + '>' + (i < S.done ? '✓' : (i + 1)) + '</button>';
+      }).join('') + '</div>';
+    }).join('') + '</div>' : '';
+    var head = '<div class="gd-top"><div class="gd-row" role="navigation" aria-label="사용법 진행 상태">' +
+      '<button type="button" class="gd-pn" data-act="go" data-i="' + pv + '" aria-label="이전 단계"' + (pv >= 0 && can(pv) ? '' : ' disabled') + '>‹</button>' +
+      '<button type="button" class="gd-cur" data-act="toggle-list" aria-haspopup="true" aria-expanded="' + (S.open ? 'true' : 'false') + '" aria-controls="gd-pop"><span class="gd-cur-n">' + (fin ? total + ' / ' + total : (ci + 1) + ' / ' + total) + '</span><span class="gd-cur-t">' + (fin ? '모든 단계 완료' : esc(list[ci].title)) + '</span>' +
+      '<svg class="gd-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+      '<button type="button" class="gd-pn" data-act="go" data-i="' + nx + '" aria-label="다음 단계"' + (nx >= 0 && can(nx) ? '' : ' disabled') + '>›</button></div>' +
+      '<div class="gd-seg" role="progressbar" aria-label="사용법 진행률" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + S.done + '">' + seg + '</div>' +
+      '<div class="gd-prog">' + S.done + ' / ' + total + ' 단계 완료</div>' + pop + '</div>';
 
     if (S.idx === -1) {
       el.innerHTML = head + '<div class="gd-card gd-end"><h2>🎉 모든 단계를 마쳤습니다</h2><p>이제 K-Mail의 기본부터 고급 기능까지 알게 되셨습니다. 궁금한 점은 전체 사용법 문서에서 찾아볼 수 있습니다.</p>' +
@@ -348,7 +360,7 @@
       '<div class="gd-sub gd-nav">' + (S.idx > 0 ? '<button class="gd-link" data-act="go" data-i="' + (S.idx - 1) + '">← 이전 페이지</button>' : '') + '</div>';
   }
 
-  function go(i) { var total = pages(caseOn()).length; if (OPEN_ALL ? !(i >= 0 && i < total) : !canOpen(S.done, i, total)) return; clearTimeout(S.timer); S.idx = i; S.answers = {}; S.result = null; render(); window.scrollTo && $('tab-guide') && $('tab-guide').scrollIntoView && $('tab-guide').scrollIntoView({ block: 'start' }); }
+  function go(i) { var total = pages(caseOn()).length; if (OPEN_ALL ? !(i >= 0 && i < total) : !canOpen(S.done, i, total)) return; clearTimeout(S.timer); S.open = false; S.idx = i; S.answers = {}; S.result = null; render(); window.scrollTo && $('tab-guide') && $('tab-guide').scrollIntoView && $('tab-guide').scrollIntoView({ block: 'start' }); }
   function passAndAdvance() {
     var total = pages(caseOn()).length;
     if (S.idx >= S.done) { S.done = Math.min(S.idx + 1, total); save(S.done); }
@@ -371,12 +383,17 @@
       if (S.result.all) { clearTimeout(S.timer); S.timer = setTimeout(passAndAdvance, 1600); }
     }
     else if (act === 'advance') { if (S.result && S.result.all) passAndAdvance(); else if (S.idx < S.done) go(S.idx + 1); }
+    else if (act === 'toggle-list') { S.open = !S.open; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); }
     else if (act === 'go') go(+t.getAttribute('data-i'));
     else if (act === 'restart') { S.idx = 0; S.answers = {}; S.result = null; render(); }
   }
   function show() {
     var el = $('tab-guide'); if (!el) return;
-    if (!el.__gdBound) { el.__gdBound = true; el.addEventListener('click', onClick); }
+    if (!el.__gdBound) {
+      el.__gdBound = true; el.addEventListener('click', onClick);
+      el.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.open) { S.open = false; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); } });
+      document.addEventListener('mousedown', function (e) { if (S.open && !(e.target.closest && e.target.closest('.gd-top'))) { S.open = false; render(); } });   // 바깥을 누르면 닫는다
+    }
     var total = pages(caseOn()).length; S.done = clampDone(load(), total);
     // 처음 열면 이어서 할 곳(첫 미완료 페이지)으로, 모두 마쳤으면 완료 화면으로. 이미 보던 중이면 그 자리 유지.
     if (S.idx === null) S.idx = S.done >= total ? -1 : S.done;
