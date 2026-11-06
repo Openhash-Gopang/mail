@@ -21,3 +21,8 @@ test('요금제 — 제목 없음, Pretendard, 지정 계좌', () => {
   assert.match(p, /Pretendard/);
   assert.match(p, /415-092028-04-011/);
 });
+test('요금제 — 베타 테스트 보상 안내와 제안 화면 이동 버튼', () => {
+  assert.match(p, /베타 테스트 안내/);
+  assert.match(p, /100,000 GDC/);
+  assert.match(p, /_switchTab\('feedback'\)/);
+});
