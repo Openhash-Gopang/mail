@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import gw, { toOpenAI, fromOpenAI, withCache, whoIs } from '../ops/naviweb-agent/gateway/worker.js';
 import { classify, hostAllowed } from '../ops/naviweb-agent/extension/policy.js';
@@ -451,4 +452,18 @@ test('서류 화면 제한(식 20개·200자) 안에서도 모든 기관 서류�
   assert.ok(C.patterns().length <= 20);
   for (const l of ['주민등록등본(초본)', '건축물대장등본', '취득세 영수필확인서', '국민주택채권 매입 필증']) assert.ok(re.some((x) => x.test(l)), l);
   assert.ok(!re.some((x) => x.test('사진')) && !re.some((x) => x.test('재직증명서')));
+});
+
+// ── 0.6.4: 설치 직후 이미 열려 있던 나비웹 탭에도 다리를 넣는다 ────────────────
+test('0.6.4: 설치·시작 때 열려 있는 나비웹 탭에 bridge.js 주입 (새로고침 없이 연결)', () => {
+  const rd = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+  const bg = rd('ops/naviweb-agent/extension/background.js'), mf = JSON.parse(rd('ops/naviweb-agent/extension/manifest.json'));
+  assert.match(bg, /chrome\.runtime\.onInstalled\.addListener\(\(\) => \{ injectBridgeIntoOpenTabs\(\)/);
+  assert.match(bg, /chrome\.runtime\.onStartup\.addListener/);
+  assert.match(bg, /files: \['bridge\.js'\]/);
+  // 주입 대상은 bridge.js 의 matches 와 같아야 한다
+  const m = mf.content_scripts[0].matches;
+  for (const u of m) assert.ok(bg.includes(`'${u}'`), u);
+  assert.ok(mf.host_permissions.includes('https://*/*') && mf.permissions.includes('scripting') && mf.permissions.includes('tabs'));
+  assert.match(mf.version, /^0\.6\.([4-9]|\d\d)/);
 });
