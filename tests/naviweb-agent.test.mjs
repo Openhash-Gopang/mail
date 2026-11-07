@@ -386,7 +386,7 @@ test('가져오기 버튼: 정부24 민원서류는 AI 답을 기다리지 않�
   assert.equal(NA.slotPlan('혼인관계증명서').playbook, 'gov24-doc');
   assert.equal(NA.slotPlan('법인등기사항증명서').instant, false);
   const html = fs.readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(html, /ip\.instant && _agentInfo\) \{ _docChatAgentTask\(\{ slot: label, goal: label \}\); return; \}/);
+  assert.match(html, /ip\.instant \|\| \(ip\.url && !ip\.playbook\)\)\) \{ _docChatAgentTask\(\{ slot: label, goal: label \}\); return; \}/);
 });
 
 test('가져오기: 법인 이름이 필요한 항목은 사이트를 먼저 열고 이름은 나중에 전한다(early/update)', async () => {
@@ -414,7 +414,7 @@ test('카탈로그: 기관 발급·개별 기관 발급·사용자 자료를 AI 
   const k = (l) => C.classify(l).kind;
   for (const l of ['법인등기부등본', '가족관계증명서 1부', '주민등록표등본', '건축물대장등본', '토지등기사항증명서', '국세완납증명서', '건강보험자격득실확인서', '송달증명원']) assert.equal(k(l), 'agency', l);
   for (const l of ['재직증명서', '진단서', '졸업증명서', '시험성적서']) assert.equal(k(l), 'thirdparty', l);
-  for (const l of ['사업자등록증사본', '신분증사본', '주민등록증사본', '위임장', '사업계획서', '시설배치도', '통장사본']) assert.equal(k(l), 'user', l);
+  for (const l of ['신분증사본', '주민등록증사본', '위임장', '사업계획서', '시설배치도', '통장사본']) assert.equal(k(l), 'user', l);
   assert.equal(k('아주특이한서류이름'), 'unknown');
   assert.equal(C.classify('가족관계증명서').instant, true);
   assert.equal(C.classify('법인등기부등본').playbook, 'iros-corp-ecourt');
@@ -426,4 +426,17 @@ test('카탈로그: 기관 발급·개별 기관 발급·사용자 자료를 AI 
 test('카탈로그: 기관 사이트는 도우미 기본 허용 사이트에 들어 있다(이동마다 묻지 않는다)', async () => {
   const C = (await import('node:module')).createRequire(import.meta.url)('../attach-catalog.js');
   for (const a of Object.values(C.AGENCIES)) assert.equal(hostAllowed(a.url), true, a.url);
+});
+
+test('카탈로그 전수조사 보정: 기관을 특정하고 AI 없이 사이트를 연다', async () => {
+  const C = (await import('node:module')).createRequire(import.meta.url)('../attach-catalog.js');
+  const want = { '취득세 영수필확인서': 'wetax', '국민주택채권 매입 필증': 'nhuf', '사업자등록증(사본)': 'hometax', '폐업사실증명원': 'hometax',
+    '원천징수영수증': 'hometax', '범죄경력조회회보서': 'police', '교통사고사실확인원': 'efine', '농지원부': 'gov24', '신탁원부': 'iros', '특허증 사본': 'patent' };
+  for (const [t, ag] of Object.entries(want)) { const r = C.classify(t); assert.equal(r.kind, 'agency', t); assert.equal(r.agency, ag, t); assert.ok(/^https:/.test(r.url), t); }
+  assert.equal(C.classify('임금대장').kind, 'user');
+  assert.equal(C.classify('송금내역').kind, 'thirdparty');
+  const NA = (await import('node:module')).createRequire(import.meta.url)('../agent-bridge.js');
+  assert.ok(NA.slotPlan('국민주택채권 매입 필증').url, '입력이 필요한 기관 서류도 사이트 주소를 갖는다');
+  const { hostAllowed } = await import('../ops/naviweb-agent/extension/policy.js');
+  for (const t of Object.keys(want)) { const r = C.classify(t); assert.ok(hostAllowed(r.url), r.url + ' 은 확장이 열 수 있어야 한다'); }
 });

@@ -2213,7 +2213,7 @@ function _agentFetchSlot(label) {
   if (window.DocHelper && _cmpMode === 'doc' && _docChat.on) {
     // 정부24 같은 공공기관 민원서류는 물을 것이 없으니 AI 답변을 기다리지 않고 곧바로 도우미에 맡겨 사이트를 연다(법인 이름 등 입력이 필요한 항목만 도우미 SP 를 거친다).
     const ip = window.NaviAgent && NaviAgent.slotPlan(label);
-    if (ip && ip.instant && _agentInfo) { _docChatAgentTask({ slot: label, goal: label }); return; }
+    if (ip && _agentInfo && (ip.instant || (ip.url && !ip.playbook))) { _docChatAgentTask({ slot: label, goal: label }); return; }   // 기관이 정해진 서류는 AI 답을 기다리지 않고 그 사이트를 먼저 연다(대상 입력은 사이트에서)
     _docHelperSend(DocHelper.slotAsk(label)); return;
   }   // 도우미 지시창 모드(도우미 줄에는 입력칸이 없다) — 도우미 SP 에게 맡긴다(상태·중복 방지는 SP 와 호스트가 함께 본다)
   const plan = window.NaviAgent && NaviAgent.slotPlan(label);

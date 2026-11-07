@@ -2,7 +2,8 @@
 // 결과: { act: 'auto' | 'confirm' | 'handoff' | 'deny', reason }
 export const DEFAULT_HOSTS = ['iros.go.kr', 'ecfs.scourt.go.kr', 'gov.kr', 'hondi.net', 'naviweb.kr',
   // 첨부서류 카탈로그(attach-catalog.js)의 기관 사이트
-  'hometax.go.kr', 'nhis.or.kr', 'nps.or.kr', '4insure.or.kr', 'scourt.go.kr', 'patent.go.kr', 'wetax.go.kr', 'eum.go.kr', 'eais.go.kr'];
+  'hometax.go.kr', 'nhis.or.kr', 'nps.or.kr', '4insure.or.kr', 'scourt.go.kr', 'patent.go.kr', 'wetax.go.kr', 'eum.go.kr', 'eais.go.kr',
+  'police.go.kr', 'efine.go.kr', 'kdca.go.kr', 'customs.go.kr', 'molit.go.kr'];
 
 const RRN = /\d{6}\s*-?\s*[1-8]\d{6}/;
 const SECRET_NAME = /passw|passwd|pwd|비밀번호|card|카드번호|cvc|cvv|otp|보안카드|계좌번호|주민|rrn|ssn/i;
