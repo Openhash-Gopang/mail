@@ -4028,6 +4028,7 @@ function _drSnapshot() {
 }
 // 반환: true = 저장 요청을 보냈거나 저장할 것이 없음 / false = 자동 저장을 쓸 수 없음(호출한 쪽이 확인창으로 대신한다)
 function _drAutoSave(reason) {
+  if (_cmpMode === 'doc') _scrDocSave();   // PDV 가 준비되기 전에도 열어 둔 서류는 기억한다
   const draftable = _cmpMode === 'letter' || _cmpMode === 'campaign' || _cmpMode === 'doc';
   if (!draftable || !_dr.ready) return false;
   const item = _drSnapshot();
@@ -4757,14 +4758,36 @@ function _scrSave(name) {
     else sessionStorage.setItem(_SCR_KEY, JSON.stringify({ n: name, sub: name === 'mail' ? ((document.querySelector('.mail-sub.active') || {}).id || '').replace('mail-sub-', '') : '', t: Date.now() }));
   } catch (e) {}
 }
-function _scrDraftIdSave(id, kind) { try { if (id) sessionStorage.setItem(_SCR_DID, JSON.stringify({ id, kind, t: Date.now() })); else sessionStorage.removeItem(_SCR_DID); } catch (e) {} }
+function _scrDraftIdSave(id, kind) { try { if (id) sessionStorage.setItem(_SCR_DID, JSON.stringify({ id, kind, t: Date.now() })); else { sessionStorage.removeItem(_SCR_DID); sessionStorage.removeItem(_SCR_DOC); } } catch (e) {} }
+/* 서류 작성 중 새로 고침: 어떤 서류(사이트·제목)를 열었는지는 PDV 와 무관하게 sessionStorage 에 두고, 새로 고침 뒤 그 서류 페이지를 다시 연다 */
+const _SCR_DOC = 'kmail_doc';
+function _scrDocSave() {
+  if (_scrRestoring) return;
+  try {
+    const input = document.getElementById('cmp-input'), t = input ? input.value.trim() : '';
+    const confirmed = !!(_docHost.loaded && _docHost.confirmed), title = confirmed ? String(_docHost.title || '') : '';
+    if (_cmpMode !== 'doc' || (!t && !title)) { sessionStorage.removeItem(_SCR_DOC); return; }
+    sessionStorage.setItem(_SCR_DOC, JSON.stringify({ site: _docHost.id || '', title, text: t, confirmed, t: Date.now() }));
+  } catch (e) {}
+}
+function _scrResumeDoc(k) {   // 서류 화면을 다시 열고(사이트 선택·요청문), 확정돼 있던 서류는 같은 서류로 바로 다시 연다
+  _switchTab('doc');
+  const sel = _cmpDocSelInit();
+  const site = k.site && [...sel.options].some(o => o.value === k.site) ? k.site : 'all';
+  if (sel.value !== site || !_docHost.loaded) { sel.value = site; _docHostSite(site); }
+  const input = document.getElementById('cmp-input');
+  input.value = (k.confirmed && k.title) || k.text || ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
+  if (k.confirmed && k.title) _docHostSubmit(true);   // 첫 후보 확정 — 서류 페이지가 아직 로드 중이면 호스트 대기열이 로드 뒤에 전한다
+}
 async function _scrRestore() {
   let s = null, d = null;
   try { s = JSON.parse(sessionStorage.getItem(_SCR_KEY) || 'null'); d = JSON.parse(sessionStorage.getItem(_SCR_DID) || 'null'); } catch (e) {}
   if (!s || !s.n || Date.now() - s.t > 12 * 3600 * 1000) return;
   _scrRestoring = true;
   try {
-    let it = null;
+    let it = null, dk = null;
+    try { dk = JSON.parse(sessionStorage.getItem(_SCR_DOC) || 'null'); } catch (e) {}
+    if (dk && s.n === 'doc' && Date.now() - dk.t < 12 * 3600 * 1000) { _scrResumeDoc(dk); _scrRestoring = false; _scrSave(s.n); return; }
     if (d && d.id && ['letter', 'compose', 'doc'].indexOf(s.n) >= 0) { try { it = (await _drCall('get', { id: d.id }, 10000)).item; } catch (e) {} }
     if (it && it.kind === 'doc') _drResumeDoc(it);
     else if (it && (it.kind === 'letter' || it.kind === 'campaign')) _drResumeChat(it);
