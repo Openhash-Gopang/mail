@@ -33,3 +33,14 @@ test('서류 작업 중 손잡이를 끌어내리면 입력 줄도 함께 내려
   assert.match(m[1], /position:fixed/);
   assert.match(m[1], /height:auto/);
 });
+
+test('후보가 여럿이라 서류 쪽이 되돌리면 입력창 글자를 친 그대로 되돌린다(전체 이름으로 바뀐 채 남지 않는다)', () => {
+  assert.match(html, /_docHost\.typed = t;/);
+  assert.match(html, /navi-doc-pending[\s\S]{0,700}inp\.value = ty;/);
+});
+
+test('서류를 확정한 작업 화면에서는 서류 칸이 문서 높이만큼 커져 안쪽 스크롤바가 없다', () => {
+  assert.match(html, /function _docHostFit\(\)/);
+  assert.match(html, /setProperty\('height', Math\.ceil\(_docHost\.h\) \+ 'px', 'important'\)/);
+  assert.match(html, /\.doc-grow\{display:block;height:auto;min-height:0\}/);
+});
