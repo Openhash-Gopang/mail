@@ -384,6 +384,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose[data-mode="doc"].doc-live .chat-thread{display:none}   /* 대화는 혼디 대화창이 맡는다 */
 #tab-compose[data-mode="doc"].doc-live #cmp-loading,#tab-compose[data-mode="doc"].doc-live #cmp-err{order:2;flex:none}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{order:3;flex:1 1 0;min-height:0;height:auto!important;margin-top:0}
+/* 작업 화면(서류 확정 후)에서는 서류 칸이 문서 높이만큼 커지고 화면 전체가 스크롤된다 — 칸 안쪽 스크롤바를 두지 않는다 */
+#tab-compose.active[data-docopen="1"][data-mode="doc"].doc-live.doc-grow{display:block;height:auto;min-height:0}
+#tab-compose[data-docopen="1"][data-mode="doc"].doc-live.doc-grow #doc-host-frame{flex:none;min-height:0}
 /* 서류를 고르면(2026-11-05) 입력 필드를 화면에서 아예 없앤다. 새 서류는 작성 완료·Draft 저장 뒤 왼쪽 메뉴의 홈(또는 로고)으로 새 입력 필드를 불러와 시작한다. */
 #tab-compose[data-docopen="1"].doc-live .chat-composer{display:none!important}
 /* nav-mail-group — 메일 하위 메뉴가 길어졌으므로 묶음 사이에 가는 선, 링크 모양을 버튼과 같게 */
@@ -2754,6 +2757,7 @@ function _docLockSync() {
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
   if (!tab || !input) return;
   if (_cmpMode === 'doc' && _docHost.loaded && _docHost.confirmed && tab.classList.contains('doc-live')) tab.setAttribute('data-docopen', '1'); else tab.removeAttribute('data-docopen');
+  try { _docHostFit(); } catch (e) { /* 높이 맞춤 실패가 잠금 동작을 막지 않는다 */ }
   if (_docLocked()) {
     tab.setAttribute('data-docwrite', '1');
     const dr = document.getElementById('agent-draft'); if (dr) dr.hidden = false;
@@ -3603,10 +3607,19 @@ function _cmpDocSelChange(sel) {
 }
 // 서류 페이지가 알려 준 문서 높이(px)로 iframe 높이를 맞춘다. 0·잘못된 값이면 자동 높이를 풀고 기본 높이(CSS)로 돌아간다.
 function _docHostAutoHeight(h) {
-  // 2026-11-02: 서류 칸은 입력창 아래에서 스스로 스크롤한다(고정 높이 칸). 문서 높이에 맞춰 늘리지 않는다.
+  if (h) _docHost.h = h;
+  _docHostFit();
+}
+// 서류를 확정해 작업 화면이 되면(입력 줄·탭이 숨은 상태) 서류 칸을 문서 높이만큼 늘려 안쪽 스크롤바를 없애고 화면 전체가 스크롤되게 한다(2026-11-07).
+// 아직 고르는 중이면 예전처럼 입력창 아래 고정 높이 칸이 스스로 스크롤한다.
+function _docHostFit() {
   const fr = _docHostFrame(), tab = document.getElementById('tab-compose');
   if (!fr) return;
-  fr.style.height = ''; fr.removeAttribute('scrolling'); if (tab) tab.classList.remove('doc-auto');
+  if (tab && tab.getAttribute('data-docopen') === '1' && _docHost.h > 0) {
+    fr.style.setProperty('height', Math.ceil(_docHost.h) + 'px', 'important'); fr.setAttribute('scrolling', 'no'); tab.classList.add('doc-grow');
+  } else {
+    fr.style.removeProperty('height'); fr.removeAttribute('scrolling'); if (tab) { tab.classList.remove('doc-auto'); tab.classList.remove('doc-grow'); }
+  }
 }
 function _docHostMode(on) {
   const input = document.getElementById('cmp-input');
@@ -3655,6 +3668,7 @@ async function _docHostSubmit(pick) {
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
+  _docHost.typed = t;   // 후보가 여럿이라 서류 쪽이 되돌리면(navi-doc-pending) 입력창 글자를 사용자가 친 그대로 되돌린다
   _docHost.confirmed = true; _docHelperSync(); _docLockOn();
   _docHostPost({ type: 'navi-doc-submit', text: t, pick: !!pick });   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
 }
@@ -3752,6 +3766,8 @@ function _docHostMessage(d, e) {
     q.forEach(m => { try { e.source.postMessage(m, e.origin); } catch (x) {} });
   } else if (d.type === 'navi-doc-pending') {   // 후보가 여럿이라 서류 쪽이 아직 고르지 않았다 — 방금 건 잠금을 풀고, 서류 쪽이 안내한 대로 고르게 한다
     _docHost.confirmed = false; _docHost.writing = false; _docHelperSync(); _docLockSync();
+    { const inp = document.getElementById('cmp-input'), ty = _docHost.typed;   // 잠글 때 입력창이 서류 전체 이름으로 바뀌어 '선택된 것'처럼 보이는 문제 — 친 글자로 되돌리고 후보를 고르게 한다
+      if (inp && ty && inp.value !== ty) { inp.value = ty; _kmailAutoResize(inp); _cmpChatUpdateSendState(); } }
   } else if (d.type === 'navi-doc-confirmed') {   // 후보를 눌러 고른 경우 — Enter 로 확정한 것과 똑같이 잠그고(입력창 수정 불가) 접는다
     _docHost.confirmed = true; _docHost.title = String(d.title || '').replace(/\s+/g, ' ').trim().slice(0, 80) || _docHost.title;
     document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();
