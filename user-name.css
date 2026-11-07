@@ -1,0 +1,5 @@
+/* 사용자 표시: 사진·점 없이 아이디(이름)만 글자로(2026-11-07). hondi.net 공용 배지(user-badge.js)의 칩을 글자 모양으로 바꾼다. */
+.hondi-user-slot #hondi-user-badge .hub-chip{width:auto;height:auto;padding:6px 10px;border:0;border-radius:8px;background:transparent;box-shadow:none;color:#334155}
+.hondi-user-slot #hondi-user-badge .hub-chip:hover{background:rgba(15,23,42,.07);box-shadow:none}
+.hondi-user-slot #hondi-user-badge .hub-chip .hub-av,.hondi-user-slot #hondi-user-badge .hub-chip .hub-dot,.hondi-user-slot #hondi-user-badge .hub-head .hub-av{display:none}
+.hondi-user-slot #hondi-user-badge .hub-chip::after{content:attr(aria-label);font:600 14px/1.2 Pretendard,system-ui,sans-serif;white-space:nowrap}

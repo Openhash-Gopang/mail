@@ -304,7 +304,7 @@ test('사용법 갱신: 비서와 전문가 AI의 차이, 화면마다 달라지
   for (const t of [g, m]) {
     assert.ok(t.includes('전문가 페르소나') && t.includes('나만의 AI 비서'));
     assert.ok(t.includes('화면') && t.includes('서류 비서') && t.includes('제출 안내 AI') && t.includes('양식 작성 AI') && t.includes('프로필 작성 AI'));
-    assert.ok(t.includes('국기') && t.includes('문제 알리기') && t.includes('스킨'));
+    assert.ok(t.includes('언어·지역') && t.includes('문제 알리기') && t.includes('스킨'));
   }
 });
 
@@ -325,9 +325,12 @@ test('사용법 코스: 임시로 모든 페이지로 이동할 수 있다(OPEN_
   assert.match(g, /var OPEN_ALL = true;/);
 });
 
-test('상단 바 링크 문구는 "나비웹 ↗"(주소는 hondi.net)', () => {
+test('나비웹 홈페이지 링크는 Whitepaper 탭·사용법에 있고, 상단 막대·언어 버튼은 설정으로 옮겼다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes('<a href="https://hondi.net" target="_blank">나비웹 ↗</a>'));
+  assert.match(h, /<a class="wp-site" href="https:\/\/hondi\.net"[^>]*>나비웹 홈페이지 ↗<\/a>/);
+  assert.match(h, /header\.topbar,#hd-pull\{display:none!important\}/);
+  assert.match(h, /id="set-sec-skin"[^]*?<div class="lp-host" id="lp-host">/);
+  assert.match(h, /<main class="content">\s*<div class="user-row" id="user-row">/);
 });
 
 test('가상 판결은 예시 줄(정부 AI 오른쪽)로, PDV 는 설정의 첫 탭으로 옮겼다', () => {
