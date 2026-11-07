@@ -332,7 +332,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .sent-card .sc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .sent-card .sc-x{position:absolute;top:8px;right:10px;width:30px;height:30px;border:none;background:none;font-size:22px;line-height:1;color:var(--sub);cursor:pointer;border-radius:6px}
 .sent-card .sc-x:hover{background:rgba(0,0,0,.06)}
+/* 상단 막대 제거(2026-11-07) */
+header{background:transparent;color:#1e293b;box-shadow:none;position:static}
+header a.back{color:#475569}header a.back:hover{color:#0f172a}
 </style>
+<link rel="stylesheet" href="user-name.css">
 </head>
 <body>
 
@@ -341,7 +345,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
   <a class="back" href="https://naviweb.kr/index.html">← 소개 페이지</a>
   <a class="back" href="manual.html">사용 설명서</a>
   <a class="back" href="https://hondi.net" target="_blank">hondi.net ↗</a>
-  <span class="hondi-user-slot" data-hondi-user-slot="dark" style="margin-left:auto;flex:none;display:flex;align-items:center;padding-left:10px"></span>
+  <span class="hondi-user-slot" data-hondi-user-slot="light" style="margin-left:auto;flex:none;display:flex;align-items:center;padding-left:10px"></span>
 </header>
 
 <main>

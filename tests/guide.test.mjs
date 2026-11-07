@@ -304,7 +304,7 @@ test('사용법 갱신: 비서와 전문가 AI의 차이, 화면마다 달라지
   for (const t of [g, m]) {
     assert.ok(t.includes('전문가 페르소나') && t.includes('나만의 AI 비서'));
     assert.ok(t.includes('화면') && t.includes('서류 비서') && t.includes('제출 안내 AI') && t.includes('양식 작성 AI') && t.includes('프로필 작성 AI'));
-    assert.ok(t.includes('국기') && t.includes('문제 알리기') && t.includes('스킨'));
+    assert.ok(t.includes('언어·지역') && t.includes('문제 알리기') && t.includes('스킨'));
   }
 });
 

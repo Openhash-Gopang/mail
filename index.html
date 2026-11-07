@@ -226,7 +226,15 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
    입력창·placeholder·버튼·코드·외부 라이브러리(Quill 등) 포함 모든 글자에 적용한다.
    글꼴 스택은 --font(Pretendard 우선, 로딩 실패 시에만 시스템 글꼴)이다. */
 *,*::before,*::after,::placeholder{font-family:var(--font)!important}
+/* 상단 막대 제거(2026-11-07): 색 막대·그림자 없이 글자 링크만, 오른쪽 끝은 사용자 이름 */
+.gov-bar{display:none}
+.topnav{background:transparent;box-shadow:none;position:static}
+.topnav-logo{color:var(--gov-nav,#1B2A6B);border-right-color:rgba(15,23,42,.15)}
+.topnav-links a{color:#475569}.topnav-links a:hover{background:rgba(15,23,42,.06);color:#0f172a}
+.topnav-cta{background:transparent;border-color:rgba(15,23,42,.25);color:#1e293b}
+.topnav-live{display:none}
 </style>
+<link rel="stylesheet" href="user-name.css">
 </head>
 <body>
 
@@ -247,7 +255,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     <div class="topnav-right">
       <span class="topnav-live" title="hondi.net 앱 내 서비스 · 라이브 운영 중" role="img" aria-label="라이브 운영 중"><span class="status-dot-green"></span></span>
       <a href="desktop.html" class="topnav-cta">K-Mail 열기 ↗</a>
-      <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
+      <span class="hondi-user-slot" data-hondi-user-slot="light" style="flex:none;display:flex;align-items:center"></span>
     </div>
   </div>
 </nav>
