@@ -44,3 +44,8 @@ test('서류를 확정한 작업 화면에서는 서류 칸이 문서 높이만�
   assert.match(html, /setProperty\('height', Math\.ceil\(_docHost\.h\) \+ 'px', 'important'\)/);
   assert.match(html, /\.doc-grow\{display:block;height:auto;min-height:0\}/);
 });
+
+test('서류 입력창: Enter(보내기) 한 번으로 보이는 첫 후보가 확정된다(pick) — 두 번 누르게 하지 않는다', () => {
+  const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(html, /if \(_cmpMode === 'doc'\) \{ await _docHostSubmit\(true\); return; \}/);
+});
