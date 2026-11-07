@@ -108,7 +108,13 @@
   function patterns() {
     var ag = [], other = [];
     RULES.forEach(function (r) { (r.kind === 'agency' ? ag : other).push(r.re.source); });
-    return ag.concat(['^(?!.*(?:' + other.join('|') + ')).+']);
+    /* 서류 화면(navi-pro)은 식 20개·식당 200자까지만 받는다. 기관 규칙은 200자 이하 묶음으로 합쳐 개수를 줄인다(규칙이 늘어도 뒤쪽 항목의 버튼이 사라지지 않게). */
+    var chunks = [], cur = '';
+    ag.forEach(function (src) {
+      if (cur && (cur + '|' + src).length > 190) { chunks.push(cur); cur = src; } else cur = cur ? cur + '|' + src : src;
+    });
+    if (cur) chunks.push(cur);
+    return chunks.concat(['^(?!.*(?:' + other.join('|') + ')).+']);
   }
   function stats() { var k = {}; RULES.forEach(function (r) { k[r.kind] = (k[r.kind] || 0) + 1; }); return { rules: RULES.length, byKind: k, verified: VERIFIED, reviewed: false }; }
 

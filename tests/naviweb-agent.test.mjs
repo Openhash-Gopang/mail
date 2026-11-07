@@ -440,3 +440,15 @@ test('카탈로그 전수조사 보정: 기관을 특정하고 AI 없이 사이�
   const { hostAllowed } = await import('../ops/naviweb-agent/extension/policy.js');
   for (const t of Object.keys(want)) { const r = C.classify(t); assert.ok(hostAllowed(r.url), r.url + ' 은 확장이 열 수 있어야 한다'); }
 });
+
+test('서류 화면 제한(식 20개·200자) 안에서도 모든 기관 서류에 가져오기 버튼이 붙는다', async () => {
+  const C = (await import('node:module')).createRequire(import.meta.url)('../attach-catalog.js');
+  const re = C.patterns().slice(0, 20).map((s) => { try { return new RegExp(s.slice(0, 200)); } catch { return null; } }).filter(Boolean);
+  for (const r of C.RULES.filter((x) => x.kind === 'agency')) {
+    const sample = { resident: '주민등록등본(초본)', 'vehicle-reg': '자동차등록원부', nhis: '건강보험 자격득실확인서' }[r.id];
+    if (sample) assert.ok(re.some((x) => x.test(sample)), sample + ' 버튼 누락');
+  }
+  assert.ok(C.patterns().length <= 20);
+  for (const l of ['주민등록등본(초본)', '건축물대장등본', '취득세 영수필확인서', '국민주택채권 매입 필증']) assert.ok(re.some((x) => x.test(l)), l);
+  assert.ok(!re.some((x) => x.test('사진')) && !re.some((x) => x.test('재직증명서')));
+});
