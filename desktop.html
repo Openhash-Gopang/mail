@@ -1237,6 +1237,20 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .field input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(59,125,221,.18)}
 .errbox,.okbox,.org-notice{border-radius:4px}
 #doc-frame,#pdv-frame{border:0;border-radius:4px;box-shadow:var(--sh)}
+
+/* ── 상단 제목 막대 제거(2026-11-07) ─ 사용자·언어는 왼쪽 메뉴 맨 아래, 도우미 버튼·상태는 오른쪽 위에 필요할 때만 ── */
+:root{--hd:0px}
+header.topbar,#hd-pull{display:none!important}
+.topbar-float{position:fixed;top:10px;right:16px;z-index:120;display:flex;align-items:center;gap:8px;margin:0}
+.topbar-float:not(:has(:not([hidden]))){display:none}
+.topbar-float .agent-badge{background:#fff;color:var(--sub,#334155);border:1px solid var(--bdr,#e2e8f0);border-radius:999px;padding:5px 12px;box-shadow:0 2px 10px rgba(15,23,42,.12)}
+.topbar-float .agent-badge .ab-msg{color:inherit}.topbar-float .agent-badge .ab-install{color:var(--pri,#2563eb)}
+.topbar-float .suggest-btn{box-shadow:0 2px 10px rgba(15,23,42,.18)}
+.side-user{margin-top:8px;padding:10px 12px;border-top:1px solid var(--bdr,#e2e8f0);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.side-user .hondi-user-slot{flex:1 1 auto;min-width:0;display:flex;align-items:center}
+.side-user .su-site{font-size:12px;color:var(--sub,#64748b);text-decoration:none}.side-user .su-site:hover{text-decoration:underline}
+@media (max-width:1280px){.side-user{padding:8px 4px;justify-content:center}.side-user .su-site,.side-user .lp-host{display:none}}
+@media (max-width:1027px){.side-user{margin:0 0 0 auto;border-top:0;padding:0 4px;flex-wrap:nowrap}.side-user .su-site{display:none}}
 </style>
 <style id="skin-style">
 /* ══ 스킨 — 설정 > 화면(스킨). <html data-color|menu|dens|btn|field|card> 값에 따라 색·메뉴·밀도·단추·입력칸·카드 모양이 바뀐다. 기본값(파랑·레일·보통·네모·윤곽·그림자)은 data 속성이 없을 때의 모양과 같다. ══ */
@@ -1298,15 +1312,13 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 <header class="topbar">
   <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><span class="logo-txt">Navi Web</span><svg class="tp-chev" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
-  <div class="topbar-right">
+  <!-- 상단 제목 막대는 쓰지 않는다(2026-11-07). 로고·소개·언어·사용자·도우미 상태는 왼쪽 메뉴 아래로 옮겼다. -->
+</header>
+<div class="topbar-right topbar-float" id="topbar-float">
     <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
-    <div class="lp-host" id="lp-host"></div>
-    <a href="https://hondi.net" target="_blank">나비웹 ↗</a>
-    <span class="hondi-user-slot" data-hondi-user-slot="dark" style="flex:none;display:flex;align-items:center"></span>
-  </div>
-</header>
+</div>
 
 <div class="app-body">
   <nav class="side-nav" aria-label="K-Mail 메뉴">
@@ -1353,6 +1365,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button id="tab-btn-feedback" class="nav-btn" data-label="기능 개선 제안" onclick="_switchTab('feedback')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 8v4M12 15h.01"/></svg>
         기능 개선 제안</button>
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
+    </div>
+    <div class="side-user" id="side-user">
+      <span class="hondi-user-slot" data-hondi-user-slot="light"></span>
+      <div class="lp-host" id="lp-host"></div>
+      <a class="su-site" href="https://hondi.net" target="_blank" rel="noopener" title="나비웹 홈페이지">나비웹 ↗</a>
     </div>
   </nav>
 
