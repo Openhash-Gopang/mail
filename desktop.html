@@ -7327,7 +7327,7 @@ async function _navQuickDoc(text) {
 
 async function _cmpChatSend() {
   if (_cmpMode === 'org') { await _orgSend(); return; }
-  if (_cmpMode === 'doc') { await _docHostSubmit(); return; }
+  if (_cmpMode === 'doc') { await _docHostSubmit(true); return; }   // Enter(또는 보내기) = 보이는 첫 후보로 바로 확정 — 두 번 누르게 하지 않는다
   if (_cmpMode === 'verdict') { if (window.VerdictHost) await VerdictHost.submit(); return; }
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();

@@ -169,7 +169,7 @@ test('slotAsk · isSendFailure', () => {
 });
 
 test('desktop.html: 메인 입력창·예시 버튼은 서류 검색 그대로, 도우미 줄은 연결 상태만, 가져오기 버튼은 도우미 SP 로', () => {
-  assert.match(html, /if \(_cmpMode === 'doc'\) \{ await _docHostSubmit\(\); return; \}/, '서류 모드의 메인 입력은 서류 검색·선택');
+  assert.match(html, /if \(_cmpMode === 'doc'\) \{ await _docHostSubmit\(true\); return; \}/, '서류 모드의 메인 입력은 서류 검색·선택');
   assert.doesNotMatch(html, /cmp-helper-strip|cmp-helper-search|_docHelperSearch|data-helper="1"\] \.cmp-inrow/, '입력창을 접거나 안내줄을 두지 않는다');
   assert.match(html, /#tab-compose\[data-helper="1"\] \.doc-agent select[^{]*\.da-ext\{display:none!important\}/, '도우미 줄의 입력·선택·버튼은 숨김(연결 상태만)');
   assert.match(html, /연결됨';/, '연결 상태 문구');
