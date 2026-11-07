@@ -156,6 +156,20 @@ async function runJob(m) {
     } catch (e) { say({ type: 'error', text: e.message }); await overlay('error', e.message); }
     state.running = false;
   }
+// 설치·업데이트·브라우저 시작 때 이미 열려 있는 나비웹 탭에도 다리(bridge.js)를 바로 넣는다.
+// 콘텐츠 스크립트는 "페이지를 새로 열 때"만 들어가므로, 이게 없으면 설치 직후 열려 있던 탭은 새로고침하기 전까지 도우미를 못 본다(2026-11-08).
+const NAVI_TABS = ['https://naviweb.kr/*', 'https://*.naviweb.kr/*', 'https://*.hondi.net/*'];
+async function injectBridgeIntoOpenTabs() {
+  let tabs = [];
+  try { tabs = await chrome.tabs.query({ url: NAVI_TABS }); } catch { return 0; }
+  let n = 0;
+  for (const t of tabs) {
+    try { await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['bridge.js'] }); n++; } catch { /* 닫히는 중이거나 주입할 수 없는 탭 */ }
+  }
+  return n;
+}
+chrome.runtime.onInstalled.addListener(() => { injectBridgeIntoOpenTabs(); });
+chrome.runtime.onStartup.addListener(() => { injectBridgeIntoOpenTabs(); });
 chrome.runtime.onMessage.addListener((m, sender, send) => {
   if (m && m.type === 'deliver-file' && sender.id === chrome.runtime.id && !sender.tab) { deliverToNavi(m).then(() => send({ ok: true }), (e) => send({ ok: false, error: e.message })); return true; }
   if (m && m.type === 'info') { send({ version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) }); return; }
