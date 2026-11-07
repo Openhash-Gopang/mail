@@ -1262,6 +1262,11 @@ body.hd-hidden .user-row{display:none}
 .side-intro{transition:opacity .2s ease}
 .side-nav:not(.sn-open) .side-intro{opacity:0;pointer-events:none}
 html[data-menu=open] .side-nav .side-intro{opacity:1!important;pointer-events:auto!important}
+/* 사용자 표시: 사진·점 없이 아이디(이름)만 글자로 보인다(2026-11-07). 눌러서 메뉴가 열리고 ⋮ 는 설정으로 간다. */
+.user-row #hondi-user-badge .hub-chip{width:auto;height:auto;padding:6px 10px;border:0;border-radius:8px;background:transparent;box-shadow:none;color:var(--sub,#334155)}
+.user-row #hondi-user-badge .hub-chip:hover{background:var(--pri-bg,#e8f0fe);box-shadow:none}
+.user-row #hondi-user-badge .hub-chip .hub-av,.user-row #hondi-user-badge .hub-chip .hub-dot,.user-row #hondi-user-badge .hub-head .hub-av{display:none}
+.user-row #hondi-user-badge .hub-chip::after{content:attr(aria-label);font:600 14px/1.2 inherit;white-space:nowrap}
 .set-lang .lp-host{position:relative;display:inline-flex}
 .set-lang .lp-btn{border-color:var(--bdr,#cbd5e1);color:var(--sub,#334155)}.set-lang .lp-btn:hover,.set-lang .lp-btn[aria-expanded=true]{background:var(--pri-bg,#e8f0fe)}
 .set-lang .lp-pop{right:auto;left:0}
