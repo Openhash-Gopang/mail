@@ -87,7 +87,7 @@ async function host(playbook) {
     async callModel(body) {
       const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : { 'x-navi-token': encodeURIComponent(c.userToken) }) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
       const j = await r.json().catch(() => ({}));
-      if (r.status === 401) throw new Error('나비웹 로그인이 확인되지 않았습니다. 나비웹에 로그인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.');
+      if (r.status === 401) throw new Error('사이트는 열었습니다. AI 자동 조작은 나비웹 로그인이 확인돼야 쓸 수 있습니다. 나비웹에 로그인한 뒤 서류 작성 화면에서 다시 맡기시거나, 열린 사이트에서 직접 진행해 주세요.');
       if (r.status === 429) throw new Error('오늘 사용할 수 있는 도우미 단계 수를 모두 썼습니다. 내일 다시 이용해 주세요.');
       if (!r.ok) throw new Error('모델 호출 실패: ' + (j.error || r.status)); return j;
     },
