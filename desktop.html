@@ -1238,6 +1238,15 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .errbox,.okbox,.org-notice{border-radius:4px}
 #doc-frame,#pdv-frame{border:0;border-radius:4px;box-shadow:var(--sh)}
 
+.side-brand{display:flex;align-items:center;flex:none;width:100%}
+.side-brand .side-logo{width:auto;flex:none}
+.side-intro{margin-left:auto;margin-right:14px;display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:var(--pri,#2563eb);font:600 14px/1 inherit;cursor:pointer;padding:8px 6px;border-radius:8px}
+.side-intro:hover{background:var(--pri-bg,#e8f0fe)}.side-intro .tp-chev{transition:transform .35s cubic-bezier(.22,1,.36,1)}.side-intro[aria-expanded=true] .tp-chev{transform:rotate(180deg)}
+.side-nav:has(#tab-btn-home.active) .side-brand{background:var(--pri-bg)}
+@media (max-width:1280px){.side-intro{display:none}}
+#intro-panel,#intro-backdrop{left:260px!important}   /* 소개 패널은 왼쪽 메뉴를 가리지 않고 그 오른쪽에서 열린다(소개 버튼이 계속 보여 다시 눌러 닫는다) */
+@media (max-width:1280px){#intro-panel,#intro-backdrop{left:64px!important}}
+@media (max-width:1027px){#intro-panel,#intro-backdrop{left:0!important}}
 /* ── 상단 제목 막대 제거(2026-11-07) ─ 사용자·언어는 왼쪽 메뉴 맨 아래, 도우미 버튼·상태는 오른쪽 위에 필요할 때만 ── */
 :root{--hd:0px}
 header.topbar,#hd-pull{display:none!important}
@@ -1322,7 +1331,10 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
 <div class="app-body">
   <nav class="side-nav" aria-label="K-Mail 메뉴">
-    <button type="button" class="side-logo" id="side-logo-home" aria-label="홈" title="홈" onclick="_switchTab('home')"><img src="icons/navi-icon-96.png" alt="" width="32" height="32"></button>
+    <div class="side-brand">
+      <button type="button" class="side-logo" id="side-logo-home" aria-label="홈" title="홈" onclick="_switchTab('home')"><img src="icons/navi-icon-96.png" alt="" width="32" height="32"></button>
+      <button type="button" class="side-intro" id="side-intro" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나비와 나비웹 소개" onclick="_panelToggle('manual')"><span>소개</span><svg class="tp-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+    </div>
     <div class="side-group">
       <div class="side-label">작성·발송</div>
       <button id="tab-btn-home" class="nav-btn active" data-label="홈" onclick="_switchTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
@@ -6919,6 +6931,7 @@ function _panelSync() {
   const t = document.getElementById('topbar-page'), l = document.getElementById('logo-help'), o = _introIsOpen();
   if (t) t.setAttribute('aria-expanded', o && _panelKind === 'intro' ? 'true' : 'false');
   if (l) l.setAttribute('aria-expanded', o && _panelKind === 'manual' ? 'true' : 'false');
+  const si = document.getElementById('side-intro'); if (si) si.setAttribute('aria-expanded', o && _panelKind === 'manual' ? 'true' : 'false');
 }
 function _panelOpen(kind) {
   const p = document.getElementById('intro-panel'), f = document.getElementById('intro-frame'), b = document.getElementById('intro-backdrop'), t = document.getElementById('topbar-page');
