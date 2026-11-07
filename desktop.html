@@ -1250,16 +1250,23 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 /* ── 상단 제목 막대 제거(2026-11-07) ─ 사용자·언어는 왼쪽 메뉴 맨 아래, 도우미 버튼·상태는 오른쪽 위에 필요할 때만 ── */
 :root{--hd:0px}
 header.topbar,#hd-pull{display:none!important}
-.topbar-float{position:fixed;top:10px;right:16px;z-index:120;display:flex;align-items:center;gap:8px;margin:0}
+.user-row{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:flex-end;gap:12px;height:var(--ur,48px);padding:0 16px;background:var(--bg,#f5f6f8)}
+.user-row .hondi-user-slot{flex:none;display:flex;align-items:center}
+.topbar-float{display:flex;align-items:center;gap:8px;margin:0}
 .topbar-float:not(:has(:not([hidden]))){display:none}
-.topbar-float .agent-badge{background:#fff;color:var(--sub,#334155);border:1px solid var(--bdr,#e2e8f0);border-radius:999px;padding:5px 12px;box-shadow:0 2px 10px rgba(15,23,42,.12)}
+.topbar-float .agent-badge{background:#fff;color:var(--sub,#334155);border:1px solid var(--bdr,#e2e8f0);border-radius:999px;padding:5px 12px}
 .topbar-float .agent-badge .ab-msg{color:inherit}.topbar-float .agent-badge .ab-install{color:var(--pri,#2563eb)}
-.topbar-float .suggest-btn{box-shadow:0 2px 10px rgba(15,23,42,.18)}
-.side-user{margin-top:8px;padding:10px 12px;border-top:1px solid var(--bdr,#e2e8f0);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.side-user .hondi-user-slot{flex:1 1 auto;min-width:0;display:flex;align-items:center}
-.side-user .su-site{font-size:12px;color:var(--sub,#64748b);text-decoration:none}.side-user .su-site:hover{text-decoration:underline}
-@media (max-width:1280px){.side-user{padding:8px 4px;justify-content:center}.side-user .su-site,.side-user .lp-host{display:none}}
-@media (max-width:1027px){.side-user{margin:0 0 0 auto;border-top:0;padding:0 4px;flex-wrap:nowrap}.side-user .su-site{display:none}}
+body.hd-hidden .user-row{display:none}
+:root{--hd:48px}body.hd-hidden{--hd:0px}
+.side-nav{top:0!important;height:100vh!important}
+.side-intro{transition:opacity .2s ease}
+.side-nav:not(.sn-open) .side-intro{opacity:0;pointer-events:none}
+html[data-menu=open] .side-nav .side-intro{opacity:1!important;pointer-events:auto!important}
+.set-lang .lp-host{position:relative;display:inline-flex}
+.set-lang .lp-btn{border-color:var(--bdr,#cbd5e1);color:var(--sub,#334155)}.set-lang .lp-btn:hover,.set-lang .lp-btn[aria-expanded=true]{background:var(--pri-bg,#e8f0fe)}
+.set-lang .lp-pop{right:auto;left:0}
+.wp-site{margin-left:auto;align-self:center;font-size:13px;color:var(--pri,#2563eb);text-decoration:none;padding:0 6px}.wp-site:hover{text-decoration:underline}
+@media (max-width:1027px){.side-nav{top:auto!important;height:auto!important}}
 </style>
 <style id="skin-style">
 /* ══ 스킨 — 설정 > 화면(스킨). <html data-color|menu|dens|btn|field|card> 값에 따라 색·메뉴·밀도·단추·입력칸·카드 모양이 바뀐다. 기본값(파랑·레일·보통·네모·윤곽·그림자)은 data 속성이 없을 때의 모양과 같다. ══ */
@@ -1323,11 +1330,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div class="topbar-page can-intro" id="topbar-page" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="intro-panel" title="나만의 AI 비서 소개" onclick="_panelToggle('intro')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_panelToggle('intro');}"><span class="tp-txt">나만의 AI 비서, <b>나비</b></span><svg class="tp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
   <!-- 상단 제목 막대는 쓰지 않는다(2026-11-07). 로고·소개·언어·사용자·도우미 상태는 왼쪽 메뉴 아래로 옮겼다. -->
 </header>
-<div class="topbar-right topbar-float" id="topbar-float">
-    <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
-    <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
-    <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
-</div>
 
 <div class="app-body">
   <nav class="side-nav" aria-label="K-Mail 메뉴">
@@ -1378,14 +1380,17 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         기능 개선 제안</button>
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
     </div>
-    <div class="side-user" id="side-user">
-      <span class="hondi-user-slot" data-hondi-user-slot="light"></span>
-      <div class="lp-host" id="lp-host"></div>
-      <a class="su-site" href="https://hondi.net" target="_blank" rel="noopener" title="나비웹 홈페이지">나비웹 ↗</a>
-    </div>
   </nav>
 
 <main class="content">
+<div class="user-row" id="user-row">
+<div class="topbar-right topbar-float" id="topbar-float">
+    <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
+    <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
+    <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
+</div>
+<span class="hondi-user-slot" data-hondi-user-slot="light"></span>
+</div>
 
   <!-- ══════════════════════════════════════════════════════════
        새 캠페인 — 대화로 목적 파악 → 대상 검색/특정 → 발송 확정.
@@ -1864,7 +1869,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <!-- 화면(스킨): 색·메뉴·밀도·단추·입력칸·카드 모양을 고른다. 로그인과 무관하게 이 브라우저에 저장된다. -->
     <section id="set-sec-skin" class="set-sec">
-      <div class="skin-grp"><h3>색상</h3><p>상단 막대·강조색·활성 메뉴의 색입니다. 서류 작성 화면의 강조색도 함께 바뀝니다(파랑은 직역별 색 유지).</p><div class="skin-opts" data-skin="color"></div></div>
+      <div class="skin-grp set-lang"><h3>언어·지역</h3><p>처음에는 가입 때의 지역에 맞춰 자동으로 정해집니다. 다른 언어로 보고 싶을 때만 바꾸세요.</p><div class="lp-host" id="lp-host"></div></div>
+      <div class="skin-grp"><h3>색상</h3><p>강조색·활성 메뉴의 색입니다. 서류 작성 화면의 강조색도 함께 바뀝니다(파랑은 직역별 색 유지).</p><div class="skin-opts" data-skin="color"></div></div>
       <div class="skin-grp"><h3>왼쪽 메뉴</h3><p>레일은 평소에 아이콘만 보이다가 마우스를 올리면 펼쳐집니다.</p><div class="skin-opts" data-skin="menu"></div></div>
       <div class="skin-grp"><h3>밀도</h3><p>글자 크기와 줄 간격입니다.</p><div class="skin-opts" data-skin="dens"></div></div>
       <div class="skin-grp"><h3>단추 모양</h3><div class="skin-opts" data-skin="btn"></div></div>
@@ -2027,6 +2033,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="wp-tabs" role="tablist" aria-label="Whitepaper">
       <button type="button" role="tab" class="wp-tab active" id="wp-tab-navi" aria-selected="true" onclick="_wpSwitch('navi')">나비와 나비웹</button>
       <button type="button" role="tab" class="wp-tab" id="wp-tab-openhash" aria-selected="false" onclick="_wpSwitch('openhash')">Openhash</button>
+      <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
     <iframe id="whitepaper-frame" title="Whitepaper" allow="clipboard-write"></iframe>
   </div>
