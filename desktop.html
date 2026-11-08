@@ -282,6 +282,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .wp-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
 #tab-whitepaper iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
 #tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
+#tab-vault iframe{overflow:hidden}
 #gdc-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:0;background:transparent}
 #pdv-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:1px solid var(--bdr);border-radius:12px;background:#fff}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
@@ -2044,7 +2045,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
     <iframe id="whitepaper-frame" title="Whitepaper" allow="clipboard-write"></iframe>
   </div>
-  <div id="tab-vault" class="tab-panel"><iframe id="vault-frame" title="내 데이터 금고(PDV)" allow="clipboard-write"></iframe></div>
+  <div id="tab-vault" class="tab-panel"><iframe id="vault-frame" title="내 데이터 금고(PDV)" allow="clipboard-write" scrolling="no"></iframe></div>
   <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
@@ -8530,5 +8531,25 @@ function _agentGuideOpen() {
 window._agentGuideOpen = _agentGuideOpen;
 </script>
 <script src="hondi-chat.js?v=20261107b"></script>
+<script>
+/* 내 데이터 금고: ① iframe 높이를 내용에 맞춰 iframe 자체 스크롤바를 없앤다 ② 우측 하단 대화창 아이콘이 이 탭에서는 '나만의 AI 비서(나비)'를 연다 */
+(function () {
+  function frame() { return document.getElementById('vault-frame'); }
+  function active() { var p = document.getElementById('tab-vault'); return !!(p && p.classList.contains('active')); }
+  function post(m) { var f = frame(); if (f && f.contentWindow) f.contentWindow.postMessage(m, '*'); }
+  function viewport() {
+    var f = frame(); if (!f || !active()) return;
+    var r = f.getBoundingClientRect(), top = Math.max(0, r.top);
+    post({ type: 'pdv:viewport', top: Math.max(0, -r.top), height: Math.max(0, Math.min(window.innerHeight, r.bottom) - top) });
+  }
+  window.addEventListener('message', function (e) {
+    var f = frame(); if (!f || e.source !== f.contentWindow || !e.data || e.data.type !== 'pdv:height') return;
+    var h = Number(e.data.height); if (!isFinite(h) || h <= 0) return;
+    f.style.height = Math.max(520, Math.ceil(h)) + 'px'; viewport();
+  });
+  window.addEventListener('scroll', viewport, true); window.addEventListener('resize', viewport);
+  if (window.HondiChat) window.HondiChat.onFab = function () { if (!active()) return false; viewport(); post({ type: 'pdv:bot-toggle' }); return true; };
+})();
+</script>
 </body>
 </html>
