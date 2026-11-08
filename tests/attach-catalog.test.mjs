@@ -72,3 +72,40 @@ test('v3: 기관 정의·규칙 일관성', () => {
   for (const r of C.RULES) if (r.kind === 'agency') assert.ok(C.AGENCIES[r.agency], r.id + ' 기관 정의');
   assert.equal(new Set(C.RULES.map((r) => r.id)).size, C.RULES.length, '규칙 id 는 겹치지 않는다');
 });
+
+test('v4: 홈택스 서류를 서류별로 나누고, 타인 회사의 사업자등록증은 기관 서류가 아니다', () => {
+  assert.equal(c('사업자등록증사본').id, 'biz-reg');
+  assert.equal(c('폐업사실증명서').id, 'biz-closure');
+  assert.equal(c('원천징수영수증').id, 'withholding');
+  assert.ok(c('원천징수영수증').fallback, '조회가 안 되면 회사에 요청');
+  assert.equal(c('세금계산서').id, 'tax-invoice');
+  assert.equal(c('세금계산서').input, 'ask', '확인 전에는 바로 가져오지 않는다');
+  assert.equal(c('세금계산서').unverified, true);
+  assert.equal(c('소득증명원').id, 'income-cert');
+  for (const l of ['제조사사업자등록증', '임대사업자등록증', '거래처사업자등록증사본']) assert.equal(c(l).kind, 'user', l);
+});
+
+test('v4: 제적등본은 전자가족관계등록시스템, 법인 인감증명서는 등기소, 토지이용계획서는 사용자 자료', () => {
+  for (const l of ['제적등본', '피상속인제적등본']) { const r = c(l); assert.equal(r.agency, 'efamily', l); assert.match(r.url, /efamily\.scourt\.go\.kr/); }
+  assert.equal(c('가족관계증명서').agency, 'gov24');
+  assert.equal(c('법인인감증명서').agency, 'iros');
+  assert.equal(c('인감증명서').agency, 'gov24', '개인 인감증명서는 그대로');
+  assert.equal(c('토지이용계획확인서').id, 'landuse');
+  for (const l of ['토지이용계획서', '토지이용계획도']) assert.notEqual(c(l).kind, 'agency', l);
+});
+
+test('v4: 결제가 드는 서류 표시(paid)와 사유 코드 설명(REASONS)', () => {
+  assert.equal(c('특허증 사본').paid, true);
+  assert.equal(c('특허등록원부').paid, true);
+  assert.equal(c('가족관계증명서').paid, false);
+  for (const k of ['AGENCY', 'THIRD_PARTY', 'USER_OWNED', 'USER_HELD', 'GENERIC', 'UNKNOWN', 'SYSTEM_OUTAGE', 'FETCH_FAILED']) assert.ok(C.REASONS[k], k);
+});
+
+test('v4: 서류 화면 제한(식 20개·200자)을 계속 지킨다', () => {
+  const pats = C.patterns();
+  assert.ok(pats.length <= 20);
+  for (const p of pats.slice(0, -1)) { assert.ok(p.length <= 200, p.length + '자'); new RegExp(p); }
+  const hit = (l) => pats.slice(0, 20).some((s) => { try { return new RegExp(s.slice(0, 200)).test(l); } catch { return false; } });
+  for (const l of ['사업자등록증 사본', '폐업사실증명원', '제적등본', '법인인감증명서', '특허증']) assert.ok(hit(l), l);
+  for (const l of ['제조사사업자등록증', '임대사업자등록증', '토지이용계획서']) assert.ok(!hit(l), l);
+});

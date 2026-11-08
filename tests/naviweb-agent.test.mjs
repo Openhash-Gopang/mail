@@ -61,15 +61,23 @@ test('정책: 로그인·결제·비밀정보는 넘기고, 제출은 확인, �
   assert.equal(classify('click', {}, { text: '취소' }).act, 'auto');
   assert.equal(classify('navigate', { url: 'https://www.iros.go.kr/a' }).act, 'auto');
   assert.equal(classify('navigate', { url: 'http://www.iros.go.kr/a' }).act, 'deny');
-  // 기본 사이트 밖은 어디든 갈 수 있지만 이동·입력·클릭마다 승인을 받는다
-  assert.equal(classify('navigate', { url: 'https://example.com/' }).act, 'confirm');
-  assert.equal(classify('click', { ref: 'ref_1' }, { text: '다음', host: 'example.com' }).act, 'confirm');
-  assert.equal(classify('type', { ref: 'ref_1', text: '가나다' }, { name: 'q', host: 'example.com' }).act, 'confirm');
+  // 사이트 제한은 없다(2026-11-08): 어느 https 사이트든 이동·입력·클릭을 바로 진행한다. 지키는 것은 사이트가 아니라 동작이다.
+  assert.equal(classify('navigate', { url: 'https://example.com/' }).act, 'auto');
+  assert.equal(classify('navigate', { url: 'https://iros.go.kr.evil.com/' }).act, 'auto', '사이트 이름으로는 막지 않는다');
+  assert.equal(classify('navigate', { url: 'http://example.com/' }).act, 'deny', 'http 는 열지 않는다');
+  assert.equal(classify('click', { ref: 'ref_1' }, { text: '다음', host: 'example.com' }).act, 'auto');
+  assert.equal(classify('type', { ref: 'ref_1', text: '가나다' }, { name: 'q', host: 'example.com' }).act, 'auto');
   assert.equal(classify('click', { ref: 'ref_1' }, { text: '다음', host: 'www.iros.go.kr' }).act, 'auto');
+  // 동작 규칙은 어느 사이트에서든 같다
   assert.equal(classify('click', { ref: 'ref_1' }, { text: '로그인', host: 'example.com' }).act, 'handoff', '로그인은 승인이 아니라 직접 진행');
+  assert.equal(classify('click', { ref: 'ref_1' }, { text: '결제하기', host: 'example.com' }).act, 'handoff', '결제는 직접');
+  assert.equal(classify('click', { ref: 'ref_1' }, { text: '발급', host: 'example.com' }).act, 'confirm', '발급·제출은 확인');
   assert.equal(classify('type', { ref: 'ref_1', text: '900101-1234567' }, { name: 'q', host: 'example.com' }).act, 'deny');
-  assert.equal(classify('navigate', { url: 'https://iros.go.kr.evil.com/' }).act, 'confirm', '비슷한 이름의 다른 사이트는 기본 사이트가 아니다');
+  assert.equal(classify('type', { ref: 'ref_1', text: 'x' }, { type: 'password', host: 'example.com' }).act, 'handoff', '비밀번호 입력칸은 직접');
   assert.equal(hostAllowed('https://ecfs.scourt.go.kr/psp/index.on'), true);
+  assert.equal(hostAllowed('https://example.org/'), true);
+  assert.equal(hostAllowed('http://example.org/'), false);
+  assert.equal(hostAllowed(''), false);
   assert.equal(classify('handoff_to_user', { reason: '로그인' }).act, 'handoff');
 });
 
