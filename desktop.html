@@ -109,7 +109,7 @@ window.addEventListener('load', () => {
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
 <script src="attach-catalog.js?v=20261108"></script>
-<script src="feedback-kit.js?v=20261106"></script>
+<script src="feedback-kit.js?v=20261108"></script>
 <script src="agent-bridge.js"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
@@ -2260,8 +2260,8 @@ function _agentTellDoc() {
 /** 사용자 제보 창(feedback-kit.js) — 서류 이름·카탈로그 규칙·확장 버전만 함께 보낸다. */
 function _fbOpen(kind, label, text, pre) {
   if (!window.NaviFeedback) return;
-  const c = label && window.AttachCatalog ? AttachCatalog.classify(label) : {};
-  NaviFeedback.open({ kind: kind, label: label || '', text: text || '', problem: pre && pre.problem || '', right: pre && pre.right || '', ctx: { doc: (_docHost && _docHost.title) || '', rule: c.id || c.kind || '', ext: _agentInfo ? _agentInfo.version : '', screen: 'doc' } });
+  const c = label && kind !== 'report' && window.AttachCatalog ? AttachCatalog.classify(label) : {};
+  NaviFeedback.open({ kind: kind, label: label || '', text: text || '', problem: pre && pre.problem || '', right: pre && pre.right || '', ctx: { doc: (_docHost && _docHost.title) || '', rule: c.id || c.kind || '', ext: _agentInfo ? _agentInfo.version : '', screen: pre && pre.where ? 'doc-' + pre.where : 'doc' } });
 }
 function _agentFetchSlot(label) {
   if (window.DocHelper && _cmpMode === 'doc' && _docChat.on) {
@@ -2988,7 +2988,7 @@ window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 �
   if (!f || e.source !== f.contentWindow || e.origin !== 'https://hondi.net') return;
   if (!_docChat.on) return;
   if (d.type === 'hondi-embed-agent-task') { _docChatAgentTask(d); return; }
-  if (d.type === 'hondi-embed-feedback') { _fbOpen(['attach', 'newdoc', 'bug'].includes(d.kind) ? d.kind : 'bug', String(d.label || '').slice(0, 80), String(d.text || '').slice(0, 300), { problem: String(d.problem || ''), right: String(d.right || '').slice(0, 80) }); return; }   // 도우미 AI 가 사용자의 신고를 받아 미리 채운 제보 창 — 보내기는 사용자가 확인한 뒤
+  if (d.type === 'hondi-embed-feedback') { _fbOpen(['attach', 'newdoc', 'bug', 'report'].includes(d.kind) ? d.kind : 'bug', String(d.label || '').slice(0, 80), String(d.text || '').slice(0, 300), { problem: String(d.problem || ''), right: String(d.right || '').slice(0, 80) }); return; }   // 도우미 AI 가 사용자의 신고를 받아 미리 채운 제보 창 — 보내기는 사용자가 확인한 뒤
   const r = window.DocHelper ? DocHelper.handBackDecision(String(d.reason || ''), { saved: _docChat.saved }) : { ok: false, msg: '' };
   if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
   if (String(d.reason) === 'cancel' && _docLocked()) {   // 작성 중인 서류는 Draft 로 저장하고 입력창을 푼 뒤 돌려준다(저장하지 못하면 서류를 그대로 둔다)
@@ -3827,6 +3827,8 @@ function _docHostMessage(d, e) {
     document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();
   } else if (d.type === 'navi-doc-report') {   // 서류 화면의 첨부서류 ⚑ — 기관·가져오기 문제 제보
     _fbOpen('attach', String(d.label || '').slice(0, 120));
+  } else if (d.type === 'navi-doc-feedback') {   // 서류 화면 위·아래 오른쪽의 "오류 신고와 제안" 버튼 — where: top | bottom
+    _fbOpen('report', (_docHost && _docHost.title) || '', '', { where: d.where === 'bottom' ? 'bottom' : 'top' });
 } else if (d.type === 'navi-doc-fetch-slot') {
     _agentFetchSlot(String(d.label || '').slice(0, 120));
   } else if (d.type === 'navi-doc-keep-list') { _keepList(e, d);   // 첨부서류 보관·재활용(2026-11-06): 서류 화면 ↔ PDV 중계

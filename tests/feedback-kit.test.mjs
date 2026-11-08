@@ -83,3 +83,28 @@ test('도우미 AI 직접 제보: 호스트가 [FEEDBACK] 메시지를 받아 �
   assert.match(html, /\[FEEDBACK: kind=<attach\|newdoc\|bug>/);
   assert.match(html, /function _fbOpen\(kind, label, text, pre\)/);
 });
+
+test('오류 신고와 제안: 유형을 고르고 내용이 있어야 하며, 제안은 기능 요청 분류로 보낸다', () => {
+  const b = FB.build('report', { label: '채권압류 및 추심명령 신청서', type: 'bug', text: '저장이 안 돼요 010-1234-5678' }, { doc: '채권압류', screen: 'doc-top', ext: '0.6.5' });
+  assert.match(b.raw_text, /^\[naviweb:report\] 서류=채권압류 및 추심명령 신청서 \| 유형=bug \| 내용=저장이 안 돼요/);
+  assert.ok(!/010-1234/.test(b.raw_text));
+  assert.equal(b.category, 'bug'); assert.match(b.context_summary, /screen=doc-top/);
+  const i = FB.build('report', { label: '서류', type: 'idea', text: '서류 목록 검색이 있으면 좋겠어요' }, {});
+  assert.match(i.raw_text, /유형=idea/); assert.equal(i.category, 'feature_request');
+  assert.equal(FB.build('report', { type: 'bug', text: ' ' }), null, '내용 필수');
+  assert.equal(FB.build('report', { text: '내용' }), null, '유형 필수');
+  assert.equal(FB.KINDS.report.title, '오류 신고와 제안');
+});
+test('오류 신고와 제안: 주간 집계에서 오류와 제안으로 나뉜다', () => {
+  const recs = [
+    { id: 'a', raw_text: '[naviweb:report] 서류=위임장 | 유형=bug | 내용=칸이 안 보여요', context_summary: 'dev=x1; screen=doc-bottom' },
+    { id: 'b', raw_text: '[naviweb:report] 서류=위임장 | 유형=idea | 내용=PDF 저장 버튼', context_summary: 'dev=x2' }
+  ];
+  assert.equal(parse(recs[0].raw_text).kind, 'report');
+  const d = digest(recs); assert.equal(d.bugs.length, 1); assert.equal(d.ideas.length, 1);
+  const md = report(d); assert.match(md, /## 오류·불편 신고[\s\S]*\[위임장\] 칸이 안 보여요/); assert.match(md, /## 제안[\s\S]*\[위임장\] PDF 저장 버튼/);
+});
+test('오류 신고와 제안: 서류 화면 메시지(navi-doc-feedback)를 받아 제보 창을 연다', () => {
+  assert.match(html, /d\.type === 'navi-doc-feedback'[\s\S]{0,240}_fbOpen\('report'/);
+  assert.match(html, /\['attach', 'newdoc', 'bug', 'report'\]\.includes\(d\.kind\)/);
+});
