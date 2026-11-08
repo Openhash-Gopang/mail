@@ -4891,7 +4891,14 @@ function _switchTab(name) {
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
   const _navBtn = document.getElementById('tab-btn-' + (name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
-  if (name !== 'verdict') _navBtn.classList.add('active');   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
+  if (name !== 'verdict') _navBtn.classList.add('active');
+  // 주소의 #해시를 지금 화면에 맞춘다 — 설정을 한 번 열면 #settings 가 남아, 다른 화면에서 새로고침해도 설정이 열리던 오류를 막는다.
+  // 새로고침해도 돌아올 수 있는 화면만 해시로 남기고(홈·메일 묶음·가상 판결 등은 비운다) replaceState 라 뒤로 가기 기록은 늘지 않는다.
+  try {
+    const _hk = name === 'gprog' ? 'guide-prog' : (_isCompose || name === 'verdict' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
+    const _nh = _hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '';
+    if ((location.hash || '') !== _nh) history.replaceState(null, '', location.pathname + location.search + _nh);
+  } catch (e) {}   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
