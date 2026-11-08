@@ -1,410 +1,148 @@
-<!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XO Korea · 나비웹</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XO Korea에서 OpenHash, 나비웹까지</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
-:root{--fs-xs:12px;--fs-sm:13px;--fs-md:14px;--fs-lg:16px;--fs-xl:20px;--fs-hero:28px;--pri:#3B7DDD;--pri-bg:#DEE6F6;--pri-t:#2D5FB4;--bg:#F7F9FC;--line:#E9ECEF;--ink:#212529;--sub:#6C757D;--ok-bg:#DDF5EE;--ok-t:#128A66}
-*{box-sizing:border-box}html,body{margin:0}
-body{font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:var(--fs-md);line-height:1.65;letter-spacing:-.01em;background:var(--bg);color:var(--ink);overflow-wrap:anywhere}
-.w{max-width:1000px;margin:0 auto;padding:16px}
-h1{font-size:var(--fs-hero);line-height:1.3;margin:4px 0 4px;letter-spacing:-.03em}
-.sub{color:var(--sub);margin:0 0 14px;font-size:var(--fs-md)}
-h2{font-size:var(--fs-xl);margin:28px 0 10px;padding:0 0 0 10px;border-left:3px solid var(--pri);letter-spacing:-.02em;scroll-margin-top:12px}
-h3{font-size:var(--fs-lg);margin:20px 0 6px;color:var(--pri-t)}
-p{margin:8px 0}ul,ol{padding-left:20px;margin:6px 0}li{padding:2px 0}
-.meta{font-size:var(--fs-xs);color:var(--sub);margin:0 0 14px}
-.tag{display:inline-block;font-size:var(--fs-xs);line-height:18px;padding:0 7px;border-radius:4px;margin-right:4px;font-weight:600;white-space:nowrap}
-.t-w{background:var(--pri-bg);color:var(--pri-t)}.t-r{background:var(--ok-bg);color:var(--ok-t)}
-.tw{overflow-x:auto;margin:10px 0}
-table{border-collapse:collapse;width:100%;font-size:var(--fs-sm);background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05)}
-th,td{border-top:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
-tr:first-child th,tr:first-child td{border-top:0}th{background:var(--bg);font-weight:600}
-nav.toc,.card{background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05);padding:12px 16px;margin:12px 0}
-.card{border-left:3px solid var(--pri)}
-nav.toc ol{list-style:none;padding:0;margin:6px 0 0;columns:2;column-gap:24px}
-nav.toc a{color:var(--ink);text-decoration:none}nav.toc a:hover{color:var(--pri-t)}
-blockquote{margin:10px 0;padding:8px 14px;background:var(--pri-bg);color:var(--pri-t);border-radius:6px;font-size:var(--fs-sm)}
-code{font:12px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);padding:1px 5px;border-radius:3px}
-.small{font-size:var(--fs-xs);color:var(--sub)}
-.lineage{display:flex;align-items:stretch;margin:14px 0;flex-wrap:wrap;gap:0}
-.node{flex:1 1 220px;background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05);padding:12px 16px}
-.node b{display:block;font-size:var(--fs-xs);color:var(--pri-t);font-weight:600}
-.node h4{margin:2px 0 4px;font-size:var(--fs-lg)}.node small{color:var(--sub);display:block;line-height:1.5}
-.arrow{flex:0 0 32px;display:flex;align-items:center;justify-content:center;color:var(--pri);font-size:22px}
-@media (max-width:760px){nav.toc ol{columns:1}.arrow{flex:0 0 28px;width:100%;font-size:0}.arrow::before{content:"↓";font-size:22px}h1{font-size:22px}}
-</style></head><body>
-<main class="w">
+:root{--pri:#1A73E8;--on:#202124;--on2:#5F6368;--line:#DADCE0;--bg:#fff}
+@media (prefers-color-scheme:dark){:root{--pri:#8AB4F8;--on:#E8EAED;--on2:#9AA0A6;--line:#3C4043;--bg:#202124}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',Roboto,-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--on);font-size:15px;line-height:1.75;word-break:keep-all;-webkit-font-smoothing:antialiased}
+.wrap{max-width:840px;margin:0 auto;padding:32px 24px 64px}
+h1{font-size:28px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+h1 small{display:block;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--on2);margin-bottom:8px}
+.lead{margin-top:6px;color:var(--on2);font-size:16px}
+.meta{font-size:13px;color:var(--on2);margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 8px}
+.toc a{border:1px solid var(--line);color:var(--on);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;text-decoration:none}
+.toc a:hover{border-color:var(--pri);color:var(--pri)}
+section{margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
+h2{font-size:20px;line-height:1.4;font-weight:600;margin-bottom:12px}
+h2 .n{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--pri);margin-bottom:2px}
+h3{font-size:16px;font-weight:600;margin:24px 0 6px}
+p{color:var(--on2);margin:0 0 12px}p b,li b,td b{color:var(--on);font-weight:600}
+ul,ol{margin:0 0 12px 22px;color:var(--on2)}li{margin:4px 0}
+a{color:var(--pri)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;color:var(--on)}
+.key{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.key div{border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--on2);font-size:14px;line-height:1.6}
+.key div b{display:block;color:var(--on);font-size:14px;font-weight:600;margin-bottom:2px}
+.callout{border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:4px 12px 12px 4px;padding:12px 18px;margin:16px 0}
+.callout p{margin:0 0 8px}.callout p:last-child{margin:0}
+blockquote{border-left:3px solid var(--line);padding:2px 0 2px 14px;color:var(--on2);font-size:14px;margin:12px 0}
+.tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;color:var(--on2);border-top:1px solid var(--line)}
+tr:first-child th,tr:first-child td{border-top:0}
+th{color:var(--on);font-weight:600}
+.tag{display:inline-block;font-size:11px;line-height:18px;padding:0 6px;border:1px solid var(--line);border-radius:4px;margin-right:4px;font-weight:500;color:var(--on2);white-space:nowrap;vertical-align:1px}
+.small{font-size:13px}
+h4{font-size:15px;font-weight:600}
+@media (max-width:700px){.key{grid-template-columns:1fr}h1{font-size:24px}.wrap{padding:24px 16px 48px}}
+</style>
+</head>
+<body>
+<script>if (/[?&]embed=mail/.test(location.search)) document.body.classList.add('embed');</script>
+<div class="wrap">
 
-<h1>XO Korea에서 OpenHash, 나비웹까지</h1>
-<p class="sub">2006–2010 · 2017 · 2026 — 하나로 이어지는 계통</p>
-<div class="meta">나비웹 · 팀 주피터 · 2026-11-08<br>출처 표기 <span class="tag t-w">OLPC 위키</span>wiki.laptop.org 원문 <span class="tag t-r">혼디 문서</span>혼디·OpenHash 저장소의 공개 문서</div>
-
-<nav class="toc"><strong>목차</strong><ol><li><a href="#s0">0. 개요와 계통도</a></li><li><a href="#s1">1. 배경: OLPC와 XO 노트북</a></li><li><a href="#s2">2. 제1기 (2006–2010) XO Korea 프로젝트</a></li><li><a href="#s3">3. XO Korea의 과제 목록과 한글화 지침</a></li><li><a href="#s4">4. 당시의 기술 구상: 파이썬 전자정부, 메쉬, 분산 원장</a></li><li><a href="#s5">5. TamTam과 Etoys</a></li><li><a href="#s6">6. User:php5의 활동</a></li><li><a href="#s7">7. 제2기 (2017–) OpenHash</a></li><li><a href="#s8">8. 제3기 (2026) 나비웹 — OpenHash의 첫 상용화</a></li><li><a href="#s9">9. 대응표: XO Korea 구상에서 나비웹 구성요소까지</a></li><li><a href="#s10">10. 종합</a></li><li><a href="#a1">A 연표</a></li><li><a href="#a2">B 출처 목록</a></li><li><a href="#a4">C 용어집</a></li></ol></nav>
-
-<h2 id="s0">0. 개요와 계통도</h2>
-<p>이 문서는 2006~2010년의 OLPC 프로젝트 내 <b>XO Korea</b>, 2017년에 시작된 <b>OpenHash</b>, 2026년의 <b>나비웹</b>(혼디)을 하나의 계통으로 묶어 정리한다. 세 시기의 중심에는 같은 인물, <b>도영민</b>(OLPC 위키 계정 <code>User:Php5</code>)이 있다.</p>
-
-<div class="lineage">
-<div class="node"><b>1기 · 2006–2010</b><h4>XO Korea</h4><small>OLPC 위키 위의 한국 커뮤니티. 정부·교육·산업을 기능 단위로 분해하고 서버–클라이언트 메쉬로 재구성하는 구상.</small></div>
-<div class="arrow">→</div>
-<div class="node"><b>2기 · 2017–</b><h4>OpenHash</h4><small>행정 계층(읍면동→전국→글로벌)을 신뢰 구조로 쓰는 계층형 분산원장.</small></div>
-<div class="arrow">→</div>
-<div class="node"><b>3기 · 2026</b><h4>나비웹</h4><small>OpenHash 최초의 상용화. AI 정부, AI 서류 작성, GDC 화폐·금융 통합 인프라, 내 데이터 금고.</small></div>
-</div>
-
-
-<div class="card"><p><b>하나의 목표.</b> XO Korea, OpenHash, 나비웹은 &lsquo;분산 원장 기반의 e-Government&rsquo;라는 하나의 목표를 시기별로 실천한 세 단계다. 2006~2010년에는 구조(기능 모듈, 계층 서버, 메쉬)를 설계했고, 2017년부터는 그 구조의 신뢰를 분산원장(OpenHash)으로 구현했으며, 2026년에는 그 위에서 AI가 운영하는 정부 서비스(나비웹)로 상용화했다.</p>
-<p><b>진화의 경로.</b> XO Korea 시기의 기능 분해·계층 서버·메쉬는 2017년 OpenHash 분산원장으로 진화했고, 다시 2026년 나비웹의 AI 정부, AI 전문가 페르소나, AI 인프라, AI 서류 작성으로 진화했다.</p>
-<p><b>나비웹의 핵심 기술은 AI가 아니라 OpenHash 기반의 PDV(내 데이터 금고)다.</b> AI는 누구나 쓸 수 있는 기술이지만, 원본은 이용자의 단말에만 두고 해시만 원장에 남기며 모든 기록을 6하원칙의 개인 재무제표로 축적하는 PDV는 나비웹만의 것이다. PDV가 나비웹을 다른 AI 서비스와 구분하는 결정적 차이다.</p>
-<p><b>이 문서의 논지.</b> 2026년 나비웹 AI 정부 아키텍처의 기술적 토대는 OpenHash이고, OpenHash의 뿌리는 XO Korea의 e-Government Architecture이다.</p>
-<p>XO Korea는 정부 기능을 모듈로 분해하고(Open Enterprise Architecture), 모듈을 계층 서버(Government Server)에 배치하며, 모든 서버가 동시에 클라이언트인 메쉬로 잇는 전자정부 구조를 그렸다. OpenHash는 이 구조에서 &lsquo;누가 무엇을 언제 했는지&rsquo;를 증명하는 신뢰 계층만을 떼어 분산원장으로 만든 것이고, 나비웹의 AI 정부는 그 위에서 개인 AI와 기관 AI가 소통하는 형태로 구현된다.</p>
-<p>XO Korea e-Government Architecture → OpenHash(신뢰의 토대) → 나비웹 AI 정부</p></div>
-<h3>한 문단 요약</h3>
-<p>나비웹은 사람과 사람의 소통을 각자를 대변하는 AI와 AI의 소통으로 대체해 2006년에 목표한 e-Government를 실현하는 수단이다. XO Korea는 국가를 수십만 개의 사회적 단위와 수만 개의 기능으로 분해하고, 모든 서버가 동시에 클라이언트인 계층 구조 위에서 행정·교육·산업을 다시 짜려 했다. OpenHash는 이 계층 구조를 그대로 신뢰의 구조로 옮겨 분산원장으로 만든 것이며, 나비웹은 그 원장 위에 AI 정부, AI 서류 작성, GDC 금융 인프라, 개인 데이터 금고를 올린 첫 상용 서비스다. </p>
-
-<h2 id="s1">1. 배경: OLPC와 XO 노트북</h2>
-<p>OLPC(One Laptop Per Child)는 MIT 미디어랩이 주관한 프로젝트로, 개발도상국 어린이를 위한 저가 교육용 노트북 XO를 보급하려는 것이었다. XO는 파이썬으로 작성된 Sugar 사용자 환경, 전원이 꺼져도 인접 기기로 패킷을 중계할 수 있는 메쉬 네트워킹, 저전력·저사양 하드웨어(AMD 433MHz, 128MB RAM, 1GB 플래시)를 특징으로 한다.</p>
+<h1><small>XO KOREA · OPENHASH · NAVIWEB</small>XO Korea에서 OpenHash, 나비웹까지</h1>
+<p class="lead">2006–2010 · 2017 · 2026 — 하나로 이어지는 계통</p>
+<p class="meta">팀 주피터 · 2026-11-08</p>
+<div class="toc"><a href="#s0">0. 개요</a><a href="#s1">1. 배경</a><a href="#s2">2. XO Korea</a><a href="#s3">3. 과제·한글화</a><a href="#s4">4. 기술 구상</a><a href="#s5">5. TamTam·Etoys</a><a href="#s6">6. User:php5</a><a href="#s7">7. OpenHash</a><a href="#s8">8. 나비웹</a><a href="#s9">9. 대응표</a><a href="#s10">10. 앞으로</a><a href="#a1">A. 연표</a><a href="#a2">B. 출처</a><a href="#a4">C. 용어집</a></div>
+<section id="s0">
+<h2><span class="n">0</span>개요와 계통도</h2>
+<p>XO Korea(2006–2010), OpenHash(2017~), 나비웹(2026)은 하나의 계통이다. 세 시기의 중심에는 같은 인물, <b>도영민</b>(OLPC 위키 계정 <code>User:Php5</code>)이 있다.</p>
+<div class="key"><div><b>1기 · 2006–2010 · XO Korea</b>OLPC 위키 위의 한국 커뮤니티. 정부·교육·산업을 기능 단위로 분해하고 서버–클라이언트 메쉬로 재구성하는 구상.</div><div><b>2기 · 2017– · OpenHash</b>행정 계층(읍면동→전국→글로벌)을 신뢰 구조로 쓰는 계층형 분산원장.</div><div><b>3기 · 2026 · 나비웹</b>OpenHash 최초의 상용화. AI 정부, AI 서류 작성, GDC 화폐·금융 통합 인프라, 내 데이터 금고.</div></div>
+<div class="callout"><p><b>하나의 목표.</b> XO Korea, OpenHash, 나비웹은 ‘분산 원장 기반의 e-Government’라는 하나의 목표를 시기별로 실천한 세 단계다. 2006~2010년에는 구조(기능 모듈, 계층 서버, 메쉬)를 설계했고, 2017년부터는 그 구조의 신뢰를 분산원장(OpenHash)으로 구현했으며, 2026년에는 그 위에서 AI가 운영하는 정부 서비스(나비웹)로 상용화했다.</p>
+<p><b>구조의 계승.</b> XO Korea는 정부 기능을 모듈로 분해하고(Open Enterprise Architecture), 모듈을 계층 서버(Government Server)에 배치하며, 모든 서버가 동시에 클라이언트인 메쉬로 잇는 전자정부 구조를 그렸다. OpenHash는 이 구조에서 ‘누가 무엇을 언제 했는지’를 증명하는 신뢰 계층만을 떼어 분산원장으로 만든 것이고, 나비웹의 AI 정부는 그 위에서 개인 AI와 기관 AI가 소통하는 형태로 구현된다.</p>
+<p><b>AI 대 AI.</b> 나비웹은 사람과 사람의 소통을 각자를 대변하는 AI와 AI의 소통으로 대체함으로써, 2006년에 목표한 e-Government를 실현하는 구체적 수단이다.</p>
+<p><b>핵심 기술은 PDV.</b> 나비웹의 핵심 기술은 AI가 아니라 OpenHash 기반의 PDV(내 데이터 금고)다. AI는 누구나 쓸 수 있지만, 원본은 이용자의 단말에만 두고 해시만 원장에 남기며 모든 기록을 6하원칙의 개인 재무제표로 축적하는 PDV는 나비웹만의 것이다.</p></div>
+</section>
+<section id="s1">
+<h2><span class="n">1</span>배경: OLPC와 XO 노트북</h2>
+<p>OLPC(One Laptop Per Child)는 MIT 미디어랩이 주관한 프로젝트로, 개발도상국 어린이를 위한 저가 교육용 노트북 XO를 보급하려는 것이었다. XO는 파이썬 기반의 Sugar 사용자 환경과, 전원이 꺼져도 이웃 기기로 패킷을 중계하는 메쉬 네트워킹을 갖췄다.</p>
 <p>이 환경이 XO Korea 구상의 기술적 전제가 되었다. 서버가 없어도 기기끼리 연결되고, 모든 기기가 클라이언트이자 서버가 될 수 있다는 성질은 이후 계층형 원장의 노드 구조로 이어진다.</p>
-
-<h2 id="s2">2. 제1기 (2006–2010) XO Korea 프로젝트</h2>
+</section>
+<section id="s2">
+<h2><span class="n">2</span>제1기 (2006–2010) XO Korea 프로젝트</h2>
 <h3>2.1 성격</h3>
-<p>OLPC 위키의 XO Korea 페이지는 스스로를 제주도를 중심으로 한 소규모 시민 공동체로 소개한다. 구성원은 출판, 농업, 건설, 어업, 교육 등 다양한 배경을 가졌다. 위키는 이 모임이 OLPC 재단과 별개의 시민 활동이며 위키 텍스트의 재사용을 허용한다고 밝힌다. <span class="tag t-w">OLPC 위키</span> wiki.laptop.org/go/XO_Korea</p>
-<p>2008년 1월 조선비즈 기사는 제주도 중문단지 인근의 이 모임이 OLPC 재단 측의 비공식 권고를 참조해 향후 북한 적용을 염두에 둔다고 보도했다.</p>
-
-<h3>2.2 목표</h3>
-<ul>
-<li>대한민국의 비전 2030과 정합시킨다.</li>
-<li>OLPC를 통합한다.</li>
-<li>FEA(Federal Enterprise Architecture)를 확장한 개방형 구조(OEA, Open Enterprise Architecture)를 만든다. OEA는 개방적·전지구적·총체적이라는 세 성질을 가지며, 유닉스에서 리눅스로의 전환에 비유된다.</li>
-<li>오픈소스로 구현한다.</li>
-</ul>
-<p>위키는 2007년 시점의 상태를 &lsquo;orange&rsquo;로 표시했다. <span class="tag t-w">OLPC 위키</span> Core Ideas, Table of Contents</p>
-
-<h3>2.3 핵심 아이디어 (Core Ideas)</h3>
-<div class="tw"><table>
-<tr><th>항목</th><th>내용</th></tr>
-<tr><td>사회의 분해</td><td>국가를 30만 개 이상의 사회적 단위(social section)로 분해한다.</td></tr>
-<tr><td>정부의 분해</td><td>한국 정부를 15만 개 이상의 단위와 8만 개 이상의 기능으로 분석한다. 거친 기능 단위로는 약 6만 개, 각 기능은 1~10개의 세부 기능을 가진다.</td></tr>
-<tr><td>워크플로 표현</td><td>업무 흐름은 YAWL과 파이썬으로 기술한다.</td></tr>
-<tr><td>시범 사례</td><td>건설교통부 업무를 분석해 1/10 인력으로 수행하는 시험 사례, 산업은행 업무 흐름의 자동화 분석(역시 1/10 인력).</td></tr>
-<tr><td>서버–클라이언트</td><td>모든 서버는 동시에 클라이언트이다.</td></tr>
-<tr><td>제품군</td><td>XO Phone, IO Book, OpenOffice, 도구 모음.</td></tr>
-</table></div>
-<p><span class="tag t-w">OLPC 위키</span> Core Ideas, Government/Introduction, our_work/summary</p>
-
-<h3>2.4 정부 서버 구상 (Government Server)</h3>
-<ul>
-<li>정부 서버 약 5만 대 계획. 지방정부 약 3,500, 기업·비영리 약 2,400이 별도 대상.</li>
-<li>3계층: Tier 1 (10~15대), Tier 2 (60~70대), Tier 3 (900~1,000대, 각 1~10개 기능 제공).</li>
-<li>2008년 말까지 정부 서버 약 1,000대 구축을 목표로 함.</li>
-<li>공통 모듈은 파이썬으로 작성, 서버는 200여 개국 언어로 지역화.</li>
-<li>&lsquo;Prosumer&rsquo; 원칙: 사용자가 곧 생산자. 아프리카 국가의 어린이·시민이 한국 측과 함께 모듈을 작성하는 시나리오 포함.</li>
-</ul>
-<p><span class="tag t-w">OLPC 위키</span> government_server/content_overview</p>
-
-<h3>2.5 한국 메쉬 네트워크 (Korean Mesh Network)</h3>
-<ul>
-<li>2천만 대 이상의 XO 및 파생 기기를 전제로 한다.</li>
-<li>교육망은 5계층: 학급 → 학교 → 지역 → 광역(16) → 전국.</li>
-<li>행정망은 교육망 구조를 그대로 따르며, 커뮤니티 서버 1대가 약 20명의 시민을 담당한다.</li>
-<li>기업망은 UNSPSC 분류 체계를 기반으로 구성한다.</li>
-<li>통신: 노트북–서버는 Wi-Fi, 서버–서버는 WiMAX.</li>
-</ul>
-<p><span class="tag t-w">OLPC 위키</span> Korean Mesh Network</p>
-
-<h3>2.6 FAQ에서 확인되는 사항</h3>
-<p>XO Korea가 자체 개발하는 소프트웨어는 &lsquo;XO City&rsquo; 게임이며, 강소(Jiangsu)의 PC 제조사와의 협업과 2007년 5월 말 목표의 시험 모델이 언급된다. 또한 위키는 OLPC 재단과의 관계가 없음을 명시한다. <span class="tag t-w">OLPC 위키</span> FAQ</p>
-
-<h2 id="s3">3. XO Korea의 과제 목록과 한글화 지침</h2>
-<p class="small">이 장은 위키의 과제 목록과 한글화 논의를 정리한 요약에 근거한다. 원문은 부록 B에서 찾을 수 있다.</p>
-<h3>3.1 과제 목록</h3>
-<div class="tw"><table>
-<tr><th>분과</th><th>내용</th></tr>
-<tr><td>교육 모델·콘텐츠</td><td>TamTam, Etoys, Squeak 등 활동을 한국 교육과정에 맞게 재편. 참여자가 스승이자 제자가 되는 열린 대학(College) 모델.</td></tr>
-<tr><td>하드웨어 개량</td><td>Larger XO / Keyboard, Mesh Phone, Stackable Car.</td></tr>
-<tr><td>시민사회 인프라·정부 모델</td><td>One Local e-Government Per Community: 파이썬 기반 웹 시스템으로 투명한 행정 서비스 제공.</td></tr>
-<tr><td>대안 금융</td><td>XO Bank, XO Stock Exchange: 공동체 기반 P2P 금융·증권 교환 메커니즘 구상.</td></tr>
-</table></div>
-<h3>3.2 한글화 지침</h3>
-<ol>
-<li><b>직관성과 어린이 눈높이</b>: 파일·디렉토리·프로세스 같은 PC 용어를 지양하고, 소프트웨어는 &lsquo;활동(Activity)&rsquo;, 작업 기록 공간은 &lsquo;일지(Journal)&rsquo;로 일관되게 번역한다.</li>
-<li><b>HIG 준수</b>: 단추·도구 모음·팝업 등 UI 구성요소의 글자 수와 가독성을 점검하고, 번역 제안은 요청 게시판(Request board/lang-ko)을 거쳐 합의 후 마스터 파일에 반영한다.</li>
-<li><b>범용성</b>: 지나치게 남한 중심적이거나 관공서 지향적인 어휘를 배제하고, 파이썬 전자정부 모듈 등 다른 앱이 동일한 한글 UI 팩을 상속할 수 있도록 표준화한다.</li>
-</ol>
-<p>이 지침의 핵심은 &lsquo;기술 용어를 사용자의 언어로 바꾼다&rsquo;는 원칙이며, 같은 원칙이 이후 나비(비서)의 쉬운 말 응대 방식과 PDV의 6하원칙 기록 방식에 이어진다.</p>
-
-<h2 id="s4">4. 당시의 기술 구상: 파이썬 전자정부, 메쉬, 분산 원장</h2>
+<p>OLPC 위키의 XO Korea 페이지는 스스로를 제주도를 중심으로 한 소규모 시민 공동체로 소개한다. 구성원은 출판, 농업, 건설, 어업, 교육 등 다양한 배경을 가졌다.</p>
+<h3>2.2 목표</h3><ul><li>대한민국의 비전 2030과 정합시킨다.</li><li>OLPC를 통합한다.</li><li>FEA(Federal Enterprise Architecture)를 확장한 개방형 구조(OEA, Open Enterprise Architecture)를 만든다. OEA는 개방적·전지구적·총체적이라는 세 성질을 가지며, 유닉스에서 리눅스로의 전환에 비유된다.</li><li>오픈소스로 구현한다.</li></ul>
+<h3>2.3 핵심 아이디어</h3><div class="tbl"><table><tr><th>항목</th><th>내용</th></tr><tr><td>사회의 분해</td><td>국가를 30만 개 이상의 사회적 단위(social section)로 분해한다.</td></tr><tr><td>정부의 분해</td><td>한국 정부를 15만 개 이상의 단위와 8만 개 이상의 기능으로 분석한다. 거친 기능 단위로는 약 6만 개, 각 기능은 1~10개의 세부 기능을 가진다.</td></tr><tr><td>워크플로 표현</td><td>업무 흐름은 YAWL과 파이썬으로 기술한다.</td></tr><tr><td>시범 사례</td><td>건설교통부 업무를 분석해 1/10 인력으로 수행하는 시험 사례, 산업은행 업무 흐름의 자동화 분석(역시 1/10 인력).</td></tr><tr><td>서버–클라이언트</td><td>모든 서버는 동시에 클라이언트이다.</td></tr></table></div>
+<h3>2.4 정부 서버 구상 (Government Server)</h3><ul><li>정부 서버 약 5만 대 계획. 지방정부 약 3,500, 기업·비영리 약 2,400이 별도 대상.</li><li>3계층: Tier 1(10~15대), Tier 2(60~70대), Tier 3(900~1,000대, 각 1~10개 기능 제공).</li><li>2008년 말까지 정부 서버 약 1,000대 구축을 목표로 함.</li><li>공통 모듈은 파이썬으로 작성, 서버는 200여 개국 언어로 지역화.</li><li>‘Prosumer’ 원칙: 사용자가 곧 생산자.</li></ul>
+<h3>2.5 한국 메쉬 네트워크</h3><ul><li>2천만 대 이상의 XO 및 파생 기기를 전제로 한다.</li><li>교육망은 5계층: 학급 → 학교 → 지역 → 광역(16) → 전국.</li><li>행정망은 교육망 구조를 그대로 따르며, 커뮤니티 서버 1대가 약 20명의 시민을 담당한다.</li><li>기업망은 UNSPSC 분류 체계를 기반으로 구성한다.</li></ul>
+</section>
+<section id="s3">
+<h2><span class="n">3</span>XO Korea의 과제 목록과 한글화 지침</h2>
+<h3>3.1 과제 목록</h3><div class="tbl"><table><tr><th>분과</th><th>내용</th></tr><tr><td>교육 모델·콘텐츠</td><td>TamTam, Etoys, Squeak 등 활동을 한국 교육과정에 맞게 재편. 참여자가 스승이자 제자가 되는 열린 대학(College) 모델.</td></tr><tr><td>시민사회 인프라·정부 모델</td><td>One Local e-Government Per Community: 파이썬 기반 웹 시스템으로 투명한 행정 서비스 제공.</td></tr><tr><td>대안 금융</td><td>XO Bank, XO Stock Exchange: 공동체 기반 P2P 금융·증권 교환 메커니즘 구상.</td></tr></table></div><h3>3.2 한글화 지침</h3><ul><li><b>직관성과 어린이 눈높이</b>: 파일·디렉토리·프로세스 같은 PC 용어를 지양하고, 소프트웨어는 ‘활동(Activity)’, 작업 기록 공간은 ‘일지(Journal)’로 일관되게 번역한다.</li><li><b>범용성</b>: 지나치게 남한 중심적이거나 관공서 지향적인 어휘를 배제하고, 파이썬 전자정부 모듈 등 다른 앱이 동일한 한글 UI 팩을 상속할 수 있도록 표준화한다.</li></ul><p>이 지침의 핵심은 ‘기술 용어를 사용자의 언어로 바꾼다’는 원칙이며, 같은 원칙이 이후 나비(비서)의 쉬운 말 응대 방식과 PDV의 6하원칙 기록 방식에 이어진다.</p>
+</section>
+<section id="s4">
+<h2><span class="n">4</span>당시의 기술 구상: 파이썬 전자정부, 메쉬, 분산 원장</h2>
 <h3>4.1 One Local e-Government Per Community</h3>
-<p>위키의 중앙정부 페이지(2007-05-29)는 &lsquo;또 하나의 OLPC: One Local e-Government Per Community&rsquo;를 내세운다. 커뮤니티마다 하나의 지역 전자정부를 두는 것이다. 구현은 Sugar 활동 형태의 파이썬 모듈로 구상되었고, 정부 UI는 사용자가 하나의 인터페이스로 모든 서비스를 쓰도록 통일된다(2009-11-26 government 페이지).</p>
-
-<h3>4.2 P2P·메쉬 구조</h3>
-<ul>
-<li>802.11s 메쉬: 본체 전원이 꺼져도 무선 칩셋이 패킷을 중계할 수 있다.</li>
-<li>Sugar의 Tube 계층: 메쉬 패킷을 파이썬 애플리케이션으로 연결하는 P2P 추상화.</li>
-<li>세션 공유: 활동의 이벤트가 이웃 기기에 복제·동기화된다.</li>
-</ul>
-<p></p>
-
+<p>‘또 하나의 OLPC: One Local e-Government Per Community’는 커뮤니티마다 하나의 지역 전자정부를 두는 구상이다. 구현은 Sugar 활동 형태의 파이썬 모듈로 구상되었고, 정부 UI는 사용자가 하나의 인터페이스로 모든 서비스를 쓰도록 통일된다.</p>
+<h3>4.2 P2P·메쉬 구조</h3><ul><li>802.11s 메쉬: 본체 전원이 꺼져도 무선 칩셋이 패킷을 중계할 수 있다.</li><li>Sugar의 Tube 계층: 메쉬 패킷을 파이썬 애플리케이션으로 연결하는 P2P 추상화.</li><li>세션 공유: 활동의 이벤트가 이웃 기기에 복제·동기화된다.</li></ul>
 <h3>4.3 가상 자산과 경량 합의</h3>
-<p>당시 구상 요약은 XO Bank와 XO Stock Exchange를 통해, 거래 내역을 마을 노드에 분산 저장하고 이웃 노드가 장부를 대조·상호 서명하여 승인하는 경량 합의 구조(작업증명을 쓰지 않음)를 설명한다. 쌀·어획량 같은 실물 생산물을 디지털 증서로 만들어 전자정부의 통계·행정 체계에 반영하는 구성도 포함된다.</p>
-<blockquote>XO Korea 시기에는 &lsquo;분산 원장&rsquo;이라는 용어를 쓰지 않았지만 개념은 같았다는 것이 설계자의 설명이다. 이 절의 XO Bank, XO Stock Exchange, 경량 합의 방식은 당시 구상을 정리한 요약에 따른 것이며, 위키에서는 기능 분해·계층 서버·계층 메쉬·UNSPSC 기업망의 구조로 확인된다.</blockquote>
-
-<h2 id="s5">5. TamTam과 Etoys</h2>
-<div class="tw"><table>
-<tr><th></th><th>TamTam</th><th>Etoys</th></tr>
-<tr><td>성격</td><td>메쉬 기반 분산 음악 저작·합주 도구</td><td>객체 지향 비주얼 스크립팅 학습 환경</td></tr>
-<tr><td>구조</td><td>파이썬(UI·통신) + Csound(음 합성)</td><td>Squeak Smalltalk VM 위의 독립 샌드박스</td></tr>
-<tr><td>공유 방식</td><td>Tube로 세션 방송, 악보 이벤트만 전송하고 소리는 각 기기에서 합성</td><td>VM의 소켓을 Tube와 결합해 프로젝트 파일 전송·공동 조작</td></tr>
-<tr><td>철학</td><td>협업 중심 교육</td><td>Papert의 구성주의, Alan Kay 계열 (Scratch·Entry의 조상)</td></tr>
-</table></div>
-<p>. 이 두 활동은 XO Korea의 &lsquo;교육 모델&rsquo; 분과에서 한국 교육과정에 맞게 재편할 대상이었다. 이벤트만 주고받고 렌더링은 로컬에서 한다는 TamTam의 방식은, OpenHash가 원본을 보내지 않고 해시만 보내는 설계와 같은 발상(전송은 최소로, 실체는 현지에)이다.</p>
-
-<h2 id="s6">6. User:php5의 활동</h2>
-<h3>6.0 User:Php5 페이지 원문 (OLPC 위키, 2026-11-08 열람)</h3>
-<p><span class="tag t-w">OLPC 위키</span> wiki.laptop.org/go/User:Php5 는 본인 소개를 다음과 같이 기록한다.</p>
-<ul>
-<li><b>소개</b>: 제주도에 사는 농부이자 어부이며, 한국 시민들의 XO 도입 관심(XO Smartphone, Mesh Phone, Larger XO 등 변형 모델)을 영어로 번역해 wiki.laptop 등에 게시하는 역할을 맡았다.</li>
-<li><b>e-Government</b>: 한국 정부 기능을 독립적이고 프로그램 가능한 모듈(객체)로 분류해 Squeak, Smalltalk, Python으로 Open Enterprise Architecture 아래에서 코딩한다. 행정자치부가 공개한 정부 기능 약 65,000개를 약 30,000개 객체로 재분류했고, &ldquo;3~5년 안에 인력 없이 운영되는 완전히 새로운 전자정부&rdquo;를 전망했다.</li>
-<li><b>Mesh Network</b>: IEEE 802.11s XO를 중계기로 쓰는 전국 메쉬망. 1천만 대 이상의 XO와 학교 서버로 완전히 독립된 통신망을 구성하고, 5년 안에 통신비 없는 20~30달러 와이파이 폰을 목표로 했다.</li>
-<li><b>School Servers</b>: 방화벽과 콘텐츠·활동 제공을 겸하는 학교 서버 네트워크 센터.</li>
-<li><b>XO Korea</b>: 수리, 신규 활동 개발, 국내 XO 활동 조정을 맡는 지원팀. 한국 정부 설득, XO 파생기기(XO Smartphone, Larger XO), 공공·민간 부문 적용(Open Enterprise Architecture), Government Server(행정·입법·사법 인프라 재설계), Business Server(업무 프로세스 재설계), XO City(개방 민주주의·에너지 효율의 도시 공동체)를 주요 작업으로 꼽았다.</li>
-<li><b>할 일 목록</b>: 한국 학교급별 OLPC 배치 예산 추정, 중앙·지방정부·공공기관·기업 부문 적용 경과, 하드웨어 시제품(Larger XO, XO Smartphone, 10달러 메쉬폰), 소프트웨어 구조(Open Enterprise Architecture, Python Developer Framework, Moodle), Korean Mesh Network.</li>
-</ul>
-<p>번역 담당, 제주 농어업, 전자정부, 메쉬라는 활동 축이 모두 위키 원문에서 확인된다. 함께 참고한 위키 페이지는 <code>XO Korea/justice deployment</code>(사법 배치), <code>XO Korea/business deployment</code>(UNSPSC 기반 업종별 배치), <code>XO Korea/xbrl</code>(투명·시장 친화 원칙), <code>XO Korea/XO city</code>이다. <span class="tag t-w">OLPC 위키</span> 사법·입법·행정 3권과 기업 부문까지 한 구조로 다룬 점이 나비웹의 AI 정부 구성(입법·사법·행정 기관 AI)과 직접 닿는다.</p>
-<h3>6.1 활동 연표</h3>
-<div class="tw"><table>
-<tr><th>시기</th><th>활동</th><th>출처</th></tr>
-<tr><td>2007</td><td>OLPC 위키에서 한국어 번역 요청 게시판(Request board/lang-ko, 2007-07-17 항목) 관리, 한국 측 의견을 영문으로 전달</td><td>—</td></tr>
-<tr><td>2007-04-30</td><td>KLDP에서 &ldquo;OLPC iso 사용 후 느낀 점&rdquo; 논의에 참여, XO를 &lsquo;처음 컴퓨터를 접하는 어린이의 눈높이&rsquo;에서 봐야 한다고 제안</td><td>—</td></tr>
-<tr><td>2007~</td><td>별도의 한국어 OLPC 위키(php5.javasarang.net 등) 개설로 자료 축적 지원</td><td>—</td></tr>
-<tr><td>2007~2010</td><td>User:Php5 페이지(미러 기준 2010-11-10 판)에 &lsquo;Who am I&rsquo;와 작업 내용을 정리 (원문 확인, 6.0절)</td><td><span class="tag t-w">OLPC 위키</span></td></tr>
-<tr><td>2006~</td><td>XO Korea의 핵심 아이디어(기능 분해·계층 서버·메쉬)를 설계한 중심 인물. 제주도에서 농업·어업에 종사하며 활동</td><td>—</td></tr>
-<tr><td>2017~</td><td>팀 주피터 활동 시작, OpenHash 설계</td><td><span class="tag t-r">혼디 문서</span> </td></tr>
-</table></div>
-<p>혼디 저장소의 보고서(<code>reports/hondi-mine-ai-secretary.html</code> §6)는 &ldquo;2017년부터 팀 주피터가 개발해 왔으며, 주피터는 OLPC에 참여했고 혼디 시스템 전체를 설계했으며, 대표적으로 OpenHash가 있다&rdquo;고 기록한다. <span class="tag t-r">혼디 문서</span></p>
-
+<p>XO Bank와 XO Stock Exchange는 거래 내역을 마을 노드에 분산 저장하고, 이웃 노드가 장부를 대조·상호 서명하여 승인하는 경량 합의 구조(작업증명을 쓰지 않음)로 구상되었다고 전해진다. 쌀·어획량 같은 실물 생산물을 디지털 증서로 만들어 전자정부의 통계·행정 체계에 반영하는 구성도 포함된다.</p>
+<p>XO Korea 시기에는 ‘분산 원장’이라는 용어를 쓰지 않았지만 개념은 같았다.</p>
+</section>
+<section id="s5">
+<h2><span class="n">5</span>TamTam과 Etoys</h2>
+<div class="tbl"><table><tr><th></th><th>TamTam</th><th>Etoys</th></tr><tr><td>성격</td><td>메쉬 기반 분산 음악 저작·합주 도구</td><td>객체 지향 비주얼 스크립팅 학습 환경</td></tr><tr><td>구조</td><td>파이썬(UI·통신) + Csound(음 합성)</td><td>Squeak Smalltalk VM 위의 독립 샌드박스</td></tr><tr><td>공유 방식</td><td>Tube로 세션 방송, 악보 이벤트만 전송하고 소리는 각 기기에서 합성</td><td>VM의 소켓을 Tube와 결합해 프로젝트 파일 전송·공동 조작</td></tr><tr><td>철학</td><td>협업 중심 교육</td><td>Papert의 구성주의, Alan Kay 계열(Scratch·Entry의 조상)</td></tr></table></div><p>이 두 활동은 XO Korea의 ‘교육 모델’ 분과에서 한국 교육과정에 맞게 재편할 대상이었다. 이벤트만 주고받고 렌더링은 로컬에서 한다는 TamTam의 방식은, OpenHash가 원본을 보내지 않고 해시만 보내는 설계와 같은 발상(전송은 최소로, 실체는 현지에)이다.</p>
+</section>
+<section id="s6">
+<h2><span class="n">6</span>User:php5의 활동</h2>
+<h3>6.1 User:Php5 소개</h3><ul><li><b>소개</b>: 제주도에 사는 농부이자 어부로, 한국 시민들의 XO 도입 관심(XO Smartphone, Mesh Phone, Larger XO 등 변형 모델)을 영어로 번역해 위키 등에 게시하는 역할을 맡았다.</li><li><b>e-Government</b>: 한국 정부 기능을 독립적이고 프로그램 가능한 모듈(객체)로 분류해 Squeak, Smalltalk, Python으로 Open Enterprise Architecture 아래에서 코딩한다. 행정자치부가 공개한 정부 기능 약 65,000개를 약 30,000개 객체로 재분류했고, “3~5년 안에 인력 없이 운영되는 완전히 새로운 전자정부”를 전망했다.</li><li><b>Mesh Network</b>: IEEE 802.11s XO를 중계기로 쓰는 전국 메쉬망. 1천만 대 이상의 XO와 학교 서버로 완전히 독립된 통신망을 구성하고, 5년 안에 통신비 없는 20~30달러 와이파이 폰을 목표로 했다.</li><li><b>School Servers</b>: 방화벽과 콘텐츠·활동 제공을 겸하는 학교 서버 네트워크 센터.</li><li><b>XO Korea</b>: 한국 정부 설득, XO 파생기기, 공공·민간 부문 적용(Open Enterprise Architecture), Government Server(행정·입법·사법 인프라 재설계), Business Server(업무 프로세스 재설계), XO City(개방 민주주의·에너지 효율의 도시 공동체)를 주요 작업으로 꼽았다.</li></ul>
+<p>행정·입법·사법 3권과 기업 부문까지 한 구조로 다룬 점이 나비웹의 AI 정부 구성(입법·사법·행정 기관 AI)과 직접 닿는다.</p>
 <h3>6.2 후신: 팀 주피터와 교육 사업의 연장</h3>
-<p>팀 주피터는 한국인 개발자 50여 명이 모인 비영리 모임이며, XO Korea의 후신이다. XO Korea가 OLPC를 통해 추구한 교육 사업은 팀 주피터로 이어져, 2017년부터 2025년까지 약 5,800개의 프로그래밍 강의 영상이 녹화되어 유튜브에 공개되었다(채널 <code>@teamjupeter9451</code>).</p>
-<ul>
-<li>채널 소개에 따르면 MIT, Stanford, Berkeley 등의 머신러닝 강좌를 한국 중·고등학생 수준에 맞게 다시 만들어 제공한다.</li>
-<li>리눅스, 프로그래밍, 컴퓨터 과학, 영어, 수학, 물리, 화학 등 머신러닝 학습의 기초가 되는 과목도 함께 제작한다.</li>
-<li>인공지능, 블록체인, 암호학, Rust, Elixir/Phoenix/Ecto, 로보틱스, 표준화폐·표준은행 같은 주제도 다룬다.</li>
-</ul>
-<p>XO Korea의 교육 모델(참여자가 곧 스승이자 제자인 열린 대학, 쉬운 말 한글화)이 영상 강의라는 형태로 이어졌고, OpenHash와 나비웹을 만들어 낸 개발 역량도 이 교육의 연장선에서 길러졌다. 즉 한 갈래는 사람을 길러 내는 교육, 다른 한 갈래는 e-Government 기술로 이어지며, 두 갈래의 뿌리가 모두 XO Korea다.</p>
-
-<h2 id="s7">7. 제2기 (2017–) OpenHash</h2>
-<p>OpenHash는 XO Korea에서 유래한 기술이며, 나비웹 AI 정부 아키텍처의 기술적 토대다. 두 활동의 중심은 같은 인물이고, 설계자 본인이 그렇게 밝힌다. 설계자에 따르면 OpenHash는 2017년부터 개발되었고, XO Korea 시기에는 &lsquo;분산 원장&rsquo;이라는 용어를 쓰지 않았을 뿐 개념은 같았다. 7.3절은 두 구조의 대응을 정리한다.</p>
+<p>팀 주피터는 한국인 개발자 50여 명이 모인 비영리 모임이며, XO Korea의 후신이다. XO Korea가 OLPC를 통해 추구한 교육 사업은 팀 주피터로 이어져, 2017년부터 2025년까지 약 5,800개의 프로그래밍 강의 영상이 녹화되어 유튜브에 공개되었다(채널 <code>@teamjupeter9451</code>).</p><ul><li>MIT, Stanford, Berkeley 등의 머신러닝 강좌를 한국 중·고등학생 수준에 맞게 다시 만들어 제공한다.</li><li>리눅스, 프로그래밍, 컴퓨터 과학, 영어, 수학, 물리, 화학 등 머신러닝 학습의 기초가 되는 과목도 함께 제작한다.</li></ul><p>XO Korea의 교육 모델(참여자가 곧 스승이자 제자인 열린 대학, 쉬운 말 한글화)이 영상 강의라는 형태로 이어졌다. 한 갈래는 사람을 길러 내는 교육, 다른 한 갈래는 e-Government 기술로 이어지며, 두 갈래의 뿌리가 모두 XO Korea다.</p>
+</section>
+<section id="s7">
+<h2><span class="n">7</span>제2기 (2017–) OpenHash</h2>
+<p>OpenHash는 XO Korea에서 유래한 기술이며, 나비웹 AI 정부 아키텍처의 기술적 토대다. OpenHash는 2017년부터 개발되었고, XO Korea 시기에는 ‘분산 원장’이라는 용어를 쓰지 않았을 뿐 개념은 같았다. 7.3절은 두 구조의 대응을 정리한다.</p>
 <h3>7.1 개념</h3>
-<p>OpenHash는 읍면동(L1)에서 시군구(L2), 광역(L3), 국가(L4), 글로벌(L5)로 이어지는 5계층 신뢰 구조를 쓰는 계층형 분산원장이다. 작업증명·지분증명 대신 기존의 행정·통신 계층을 신뢰의 뼈대로 삼고, 상위 계층에는 원본이 아닌 해시(137바이트 패킷)만 올린다. <span class="tag t-r">혼디 문서</span> docs/openhash_whitepaper.html (v1.1, 2026-06-09)</p>
-<div class="tw"><table>
-<tr><th>구성 요소</th><th>역할</th></tr>
-<tr><td>5계층 구조</td><td>L1 읍면동 · L2 시군구 · L3 광역 · L4 국가 · L5 글로벌</td></tr>
-<tr><td>PLSM</td><td>확률적 계층 선택</td></tr>
-<tr><td>ILMV</td><td>상·하위 계층 간 양방향 검증</td></tr>
-<tr><td>LPBFT</td><td>비상시 PBFT 합의</td></tr>
-<tr><td>LCAT</td><td>두 당사자의 최소 공통 상위 계층 결정 (예: 제주–서울 거래는 L4)</td></tr>
-<tr><td>이동통신 융합</td><td>기지국/5G MEC를 L1 노드로, SIM 기반 인증과 Ed25519 서명 연동</td></tr>
-</table></div>
-
-<h3>7.2 특허와 공개 저장소</h3>
-<ul>
-<li>OpenHash의 계층 구조는 초기 초안의 4계층(단말·지역 서버·핵심 인프라·클라우드 보관)에서 최종 특허 명세서의 5계층(읍면동·시군구·광역·국가·글로벌)으로 정리되었다.</li>
-<li>team-jupeter/openhash 저장소는 2025-11-23에 업로드되었고(GPL-3.0), 특허 초안 &ldquo;오픈해시 기반 프라이빗 데이터 금고 시스템 및 그 운영 방법&rdquo;을 담고 있다. 이 초안은 PDV를 &lsquo;6하원칙 확장 재무제표(장부·일기·로그의 통합)&rsquo;로 정의하고, 원본은 기기에서 AES-256으로 암호화해 보관하며 계층에는 SHA-256 해시만 기록한다고 서술한다. <span class="tag t-r">혼디 문서</span></li>
-<li>저장소 실험 기록: AWS 환경 초당 25,907건 처리, 계층별 분포 70.2% / 20.9% / 8.9%. 백서는 이 자체 실험 결과를 제3자 검증 전의 값으로 표시한다.</li>
-<li>OpenHash·에이전트 관련 특허 3건이 심사 중이다(소통 시점 기반 분산 해시 체인, 오픈해시 적응형 계층 구조, 개인/기관 에이전트). 나비 숫자 코드 출원은 준비 중이다. </li>
-<li>제주 한림읍 파일럿: L1 실노드 1 + 모의 노드 13, L2~L5 노드 5, Oracle Cloud 배치, 단말–L1 처리 지연 100ms 미만, 일일 스냅샷의 GitHub 업로드. 단계 로드맵은 한림읍 → 제주시 → 제주도 → 육지(금융결제원 등 L4 참여)다. <span class="tag t-r">혼디 문서</span> 백서 §9</li>
-</ul>
-
-<h3>7.3 XO Korea와의 구조적 연결</h3>
-<div class="tw"><table>
-<tr><th>XO Korea (1기)</th><th>OpenHash (2기)</th></tr>
-<tr><td>교육망 5계층: 학급→학교→지역→광역→전국</td><td>신뢰망 5계층: L1 읍면동→L2→L3→L4 국가→L5 글로벌</td></tr>
-<tr><td>정부 서버 3단계(Tier 1~3), 커뮤니티 서버 1대가 약 20명 담당</td><td>L1 노드가 읍면동 단위 기관과 주민을 담당</td></tr>
-<tr><td>모든 서버가 동시에 클라이언트</td><td>모든 참여자가 기록자이면서 검증자</td></tr>
-<tr><td>메쉬: 서버 없이 이웃 노드끼리 중계</td><td>하위·상위 계층의 양방향 검증(ILMV)</td></tr>
-<tr><td>이벤트만 전송, 실체는 로컬 (TamTam)</td><td>해시만 상위 계층에, 원본은 기기에 (PDV)</td></tr>
-<tr><td>이웃 노드의 상호 서명으로 승인하고 작업증명은 쓰지 않는 경량 합의 (당시 구상 요약)</td><td>작업증명·지분증명 없이 행정 계층으로 신뢰 확보</td></tr>
-<tr><td>정부·산업 기능의 분해와 자동화</td><td>기관 단위 에이전트와 기관 노드</td></tr>
-</table></div>
-
-<h2 id="s8">8. 제3기 (2026) 나비웹 — OpenHash의 첫 상용화</h2>
-<p>나비웹(혼디, hondi.net)은 OpenHash를 처음 상용 서비스로 구현한 플랫폼이다. 한 대화창에서 사법·행정·상거래·교육·의료를 아우르는 AI 서비스를 제공하며, 설계자는 같은 인물이다. <span class="tag t-r">혼디 문서</span></p>
-
-<p>나비웹의 AI 정부, AI 전문가 페르소나, AI 인프라, AI 서류 작성은 모두 PDV 위에서 작동한다. AI가 무엇을 하든 그 근거 기록과 증명은 PDV와 OpenHash에 남으며, 이 점이 나비웹을 AI 서비스 일반과 가르는 지점이다.</p>
-<h3>8.1 구성 요소</h3>
-<div class="tw"><table>
-<tr><th>구성요소</th><th>내용</th><th>출처</th></tr>
-<tr><td>AI 정부</td><td>시민의 개인 AI와 기관 AI가 소통하는 구조. 입법·사법·행정부의 전 기관과 부서별 시스템 프롬프트를 작성하는 기관 AI 비서 로드맵(reports/hondi-institutional-ai-roadmap.html). 개인 에이전트와 기관 에이전트의 쌍.</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>AI 서류 작성</td><td>대화로 서류·신청서·서면을 작성하는 서비스군(사법·행정 업무 지원). 나비(비서)가 대화창 안내를 담당.</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>GDC 화폐·금융 통합 인프라</td><td>글로벌 디지털 화폐(기호 ₮). 은행·보험·증권·거래소·금융감독의 기능을 디지털 화폐 안에 융합한다는 목표. 모든 가입자의 재무제표를 OpenHash로 자동 기록·상호 연동, 재무제표가 곧 화폐이며 곧 신용. 채권 발행이 곧 대출. 현재는 구독료와 K-Law 등 서비스 결제에 필드 테스트 중(2026-08-11 보고서).</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>K-Law · 예방 법학</td><td>대법원 판결 예측(K-Law v15.1)과, 문서 작성 시점의 준법성 검토로 분쟁을 사전에 막는 예방 법학. 서류 작성 메뉴와 연결.</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>내 데이터 금고 (PDV)</td><td>일상과 업무를 6하원칙으로 기록하고, 원본은 기기에만 두며 해시를 OpenHash에 남기는 개인 데이터 금고. 나비웹 좌측 메뉴 &ldquo;플랜 업그레이드&rdquo; 아래에 항목으로 추가(2026-11).</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>나만의 AI 비서 &lsquo;나비&rsquo;</td><td>우측 하단 대화창 아이콘으로 열리는 개인 비서. 금고 탭에서는 같은 아이콘이 금고 전용 비서로 동작.</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-</table></div>
-
-<h3>8.2 플랫폼 연동 구조</h3>
-<p>사용자 → HTTPS → Cloudflare Worker → Supabase(PDV 원본, 암호화 보관) → SHA-256 해시 → OpenHash L1 노드 → ILMV → L2~L5. 원본은 원장에 노출되지 않는다. <span class="tag t-r">혼디 문서</span> 백서 §9.3</p>
-
-<h3>8.3 사법 혁신의 결실: K-Law와 예방 법학</h3>
-<p>XO Korea는 행정뿐 아니라 사법을 정부 재설계의 한 축으로 다뤘다. 위키에는 사법 배치(<code>XO Korea/justice deployment</code>)와 국가·지역별 사법 하위 페이지가 있고, 작업 목록에도 &ldquo;행정·입법·사법 인프라 재설계&rdquo;가 들어 있다. 이 구상이 2026년 4월 발표된 <b>K-Law v15.1</b>로 이어졌다.</p>
-<div class="tw"><table>
-<tr><th>항목</th><th>내용</th></tr>
-<tr><td>자체 테스트</td><td>대법원 공개 판례 300건을 사건 개요만으로 입력해 예측하고 실제 판결과 비교. 일치도 73~74%.</td></tr>
-<tr><td>비교 기준</td><td>같은 테스트에서 1심·2심 판결과 대법원 판결의 일치도는 40%대, 범용 대형 AI 모델은 약 40%. 이는 대법원 공개 판례에 한정한 수치다.</td></tr>
-<tr><td>테스트 조건</td><td>AI는 A4 한 쪽 분량의 사건 개요만 보고, 웹·판례 검색은 차단했다. 1·2심은 수백 쪽의 조서와 변론을 거친다.</td></tr>
-<tr><td>다음 단계</td><td>K-Law v20.0(2027년 상반기 공개 예정). 예측 정확도가 &lsquo;100%에 준하는&rsquo; 수준에 이르는 것을 목표이자 기대로 삼는다.</td></tr>
-<tr><td>검증 상태</td><td>모든 수치는 자체 실험 결과이며 제3자 검증 전이다.</td></tr>
-</table></div>
+<p>OpenHash는 읍면동(L1)에서 시군구(L2), 광역(L3), 국가(L4), 글로벌(L5)로 이어지는 5계층 신뢰 구조를 쓰는 계층형 분산원장이다. 작업증명·지분증명 대신 기존의 행정·통신 계층을 신뢰의 뼈대로 삼고, 상위 계층에는 원본이 아닌 해시(137바이트 패킷)만 올린다.</p><div class="tbl"><table><tr><th>구성 요소</th><th>역할</th></tr><tr><td>PLSM</td><td>확률적 계층 선택</td></tr><tr><td>ILMV</td><td>상·하위 계층 간 양방향 검증</td></tr><tr><td>LPBFT</td><td>비상시 PBFT 합의</td></tr><tr><td>LCAT</td><td>두 당사자의 최소 공통 상위 계층 결정(예: 제주–서울 거래는 L4)</td></tr><tr><td>이동통신 융합</td><td>기지국/5G MEC를 L1 노드로, SIM 기반 인증과 Ed25519 서명 연동</td></tr></table></div>
+<h3>7.2 특허와 실증</h3><ul><li>특허 초안은 PDV를 ‘6하원칙 확장 재무제표(장부·일기·로그의 통합)’로 정의하고, 원본은 기기에서 AES-256으로 암호화해 보관하며 계층에는 SHA-256 해시만 기록한다고 서술한다.</li><li>OpenHash·에이전트 관련 특허 3건이 심사 중이다(소통 시점 기반 분산 해시 체인, 오픈해시 적응형 계층 구조, 개인/기관 에이전트). 나비 숫자 코드 출원은 준비 중이다.</li><li>자체 실험에서 AWS 환경 초당 25,907건을 처리했다. 제3자 검증 전의 값이다.</li><li>제주 한림읍 파일럿: L1 실노드 1 + 모의 노드 13, L2~L5 노드 5, 단말–L1 처리 지연 100ms 미만. 단계 로드맵은 한림읍 → 제주시 → 제주도 → 육지(금융결제원 등 L4 참여)다.</li></ul>
+<h3>7.3 XO Korea와의 구조적 연결</h3><div class="tbl"><table><tr><th>XO Korea (1기)</th><th>OpenHash (2기)</th></tr><tr><td>교육망 5계층: 학급→학교→지역→광역→전국</td><td>신뢰망 5계층: L1 읍면동→L2→L3→L4 국가→L5 글로벌</td></tr><tr><td>정부 서버 3단계(Tier 1~3), 커뮤니티 서버 1대가 약 20명 담당</td><td>L1 노드가 읍면동 단위 기관과 주민을 담당</td></tr><tr><td>모든 서버가 동시에 클라이언트</td><td>모든 참여자가 기록자이면서 검증자</td></tr><tr><td>메쉬: 서버 없이 이웃 노드끼리 중계</td><td>하위·상위 계층의 양방향 검증(ILMV)</td></tr><tr><td>이벤트만 전송, 실체는 로컬(TamTam)</td><td>해시만 상위 계층에, 원본은 기기에(PDV)</td></tr><tr><td>정부·산업 기능의 분해와 자동화</td><td>기관 단위 에이전트와 기관 노드</td></tr></table></div>
+</section>
+<section id="s8">
+<h2><span class="n">8</span>제3기 (2026) 나비웹 — OpenHash의 첫 상용화</h2>
+<p>나비웹(혼디, hondi.net)은 OpenHash를 처음 상용 서비스로 구현한 플랫폼이다. 한 대화창에서 사법·행정·상거래·교육·의료를 아우르는 AI 서비스를 제공한다. 나비웹의 AI 정부, AI 전문가 페르소나, AI 인프라, AI 서류 작성은 모두 PDV 위에서 작동하며, AI가 무엇을 하든 그 근거 기록과 증명은 PDV와 OpenHash에 남는다. 이 점이 나비웹을 AI 서비스 일반과 가르는 지점이다.</p>
+<h3>8.1 구성 요소</h3><div class="tbl"><table><tr><th>구성요소</th><th>내용</th></tr><tr><td>AI 정부</td><td>입법·사법·행정부의 전 기관과 부서마다 기관 AI 비서를 두고, 시민의 개인 AI와 소통하게 한다.</td></tr><tr><td>AI 서류 작성</td><td>대화로 서류·신청서·서면을 작성하는 서비스군(사법·행정 업무 지원).</td></tr><tr><td>GDC 화폐·금융 통합 인프라</td><td>글로벌 디지털 화폐(기호 ₮). 은행·보험·증권·거래소·금융감독의 기능을 디지털 화폐 안에 융합한다는 목표. 모든 가입자의 재무제표를 OpenHash로 자동 기록·상호 연동하며, 재무제표가 곧 화폐이자 신용이고 채권 발행이 곧 대출이다. 현재는 구독료와 K-Law 등 서비스 결제에 필드 테스트 중.</td></tr><tr><td>K-Law · 예방 법학</td><td>대법원 판결 예측(K-Law v15.1)과, 문서 작성 시점의 준법성 검토로 분쟁을 사전에 막는 예방 법학.</td></tr><tr><td>내 데이터 금고(PDV)</td><td>일상과 업무를 6하원칙으로 기록하고, 원본은 기기에만 두며 해시를 OpenHash에 남기는 개인 데이터 금고.</td></tr><tr><td>나만의 AI 비서 ‘나비’</td><td>시민 한 사람을 대변하는 개인 비서. 화면 우측 하단의 대화창으로 연다.</td></tr></table></div>
+<h3>8.2 사법 혁신의 결실: K-Law와 예방 법학</h3>
+<p>XO Korea는 행정뿐 아니라 사법을 정부 재설계의 한 축으로 다뤘다. 위키에는 사법 배치(<code>XO Korea/justice deployment</code>)와 국가·지역별 사법 하위 페이지가 있고, 작업 목록에도 “행정·입법·사법 인프라 재설계”가 들어 있다. 이 구상이 2026년 4월 발표된 <b>K-Law v15.1</b>로 이어졌다.</p><div class="tbl"><table><tr><th>항목</th><th>내용</th></tr><tr><td>자체 테스트</td><td>대법원 공개 판례 300건을 사건 개요만으로 입력해 예측하고 실제 판결과 비교. 일치도 73~74%.</td></tr><tr><td>비교 기준</td><td>같은 테스트에서 1심·2심 판결과 대법원 판결의 일치도는 40%대, 범용 대형 AI 모델은 약 40%. 대법원 공개 판례에 한정한 수치다.</td></tr><tr><td>테스트 조건</td><td>AI는 A4 한 쪽 분량의 사건 개요만 보고, 웹·판례 검색은 차단했다. 1·2심은 수백 쪽의 조서와 변론을 거친다.</td></tr><tr><td>다음 단계</td><td>K-Law v20.0(2027년 상반기 공개 예정). 예측 정확도가 ‘100%에 준하는’ 수준에 이르는 것을 목표로 한다.</td></tr><tr><td>검증 상태</td><td>모든 수치는 자체 실험 결과이며 제3자 검증 전이다.</td></tr></table></div>
 <p>정확도가 그 수준에 이르면 사건이 발생하는 즉시, 수년 뒤 대법원 판결이 어떻게 나올지를 미리 서술형 리포트로 보여줄 수 있게 된다는 것이 K-Law가 그리는 장면이다.</p>
-
 <h3>예방 법학</h3>
-<p>K-Law는 여기서 한 걸음 더 나아가 <b>예방 법학</b>을 제안하고, 이를 서비스에 적용하는 상황화 과정을 진행 중이다. 예방 법학은 분쟁이 생긴 뒤 다투는 사후 사법이 아니라, 분쟁이 생기지 않도록 앞단에서 막는 법학이다.</p>
-<ol>
-<li>나비웹에서 오가는 모든 문서의 작성과 전달에 AI를 쓴다 (나비웹의 서류 작성 메뉴).</li>
-<li>작성하는 시점에 문서의 준법성을 검토한다.</li>
-<li>시민의 일상과 업무에서 주고받는 대화와 문서가 법의 테두리를 벗어나지 않도록 사전에 차단한다.</li>
-<li>그 결과 미래의 분쟁과 다툼을 미연에 방지한다.</li>
-</ol>
-<p>OpenHash는 이 흐름에서 문서와 거래의 작성·전달 사실을 변조 방지 기록으로 남기는 바탕이 된다. XO Korea가 구상한 &lsquo;정부 기능을 소프트웨어 모듈로 분해해 실행한다&rsquo;는 발상이 사법의 영역에서 사전 준법 검토로 구현되는 셈이다.</p>
-
-<h3>8.4 e-Government를 실현하는 구체적 수단: AI 대 AI 소통</h3>
+<p>K-Law는 여기서 한 걸음 더 나아가 예방 법학을 제안하고, 이를 서비스에 적용하는 상황화 과정을 진행 중이다. 예방 법학은 분쟁이 생긴 뒤 다투는 사후 사법이 아니라, 분쟁이 생기지 않도록 앞단에서 막는 법학이다.</p><ol><li>나비웹에서 오가는 모든 문서의 작성과 전달에 AI를 쓴다(서류 작성 메뉴).</li><li>작성하는 시점에 문서의 준법성을 검토한다.</li><li>시민의 일상과 업무에서 주고받는 대화와 문서가 법의 테두리를 벗어나지 않도록 사전에 차단한다.</li><li>그 결과 미래의 분쟁과 다툼을 미연에 방지한다.</li></ol>
+<h3>8.3 e-Government를 실현하는 구체적 수단: AI 대 AI 소통</h3>
 <p>나비웹의 핵심 방식은 사람과 사람 사이의 소통을, 각자를 대변하는 AI와 AI 사이의 소통으로 바꾸는 것이다. 시민에게는 개인 AI 비서(나비)가, 기관에는 기관 AI가 있어, 시민과 기관, 시민과 시민, 기관과 기관이 주고받는 요청·서류·확인이 이 두 종류의 AI를 통해 오간다. 사람은 자신의 의사를 말하고 결과를 확인하며, 작성·전달·검토·기록은 AI와 OpenHash가 맡는다.</p>
-<p>이것이 2006년 XO Korea가 목표한 e-Government를 실현하는 구체적 수단이다. 당시 구상은 정부 기능을 독립된 모듈로 분해해 사람의 손을 거치지 않고 운영되는 전자정부를 그렸는데, 나비웹에서는 그 모듈의 자리에 기관 AI가, 시민 쪽에는 개인 AI가 들어서고, 둘 사이의 모든 교환이 OpenHash에 변조 방지 기록으로 남는다. 예방 법학 역시 이 AI 대 AI 흐름 안에서, 문서가 작성되는 시점에 준법성을 검토하는 방식으로 작동한다.</p>
-
-<h3>AI 대 AI 소통의 구성</h3>
-<p>나비웹(hondi.net) 화면을 기준으로 이 구조를 이루는 요소는 다음과 같다. 서비스는 현재 베타 단계이며, 설명은 모두 자체 기술로서 제3자 검증을 거치지 않았다.</p>
-<div class="tw"><table>
-<tr><th>요소</th><th>역할</th></tr>
-<tr><td>나만의 AI 비서 &lsquo;나비&rsquo;</td><td>시민 한 사람을 대변하는 전속 비서. 이용자의 적성과 경험을 파악해 요청을 정리하고 서류를 준비·제출한다. 화면 우측 하단의 대화창에서 &ldquo;나비 AI에게 요청하세요&rdquo;라고 말하면 시작된다.</td></tr>
-<tr><td>그만의 AI 비서 (기관 AI)</td><td>입법·사법·행정 등 기관과 부서마다 배정되는 AI. 기관 간 업무도 이 AI들끼리 실시간으로 주고받는다. 정부 기관을 대체하지 않는 중개자이며, 심사와 결정의 권한은 해당 기관에 있다.</td></tr>
-<tr><td>나비 숫자 코드</td><td>가입 시 발급되는 개인 숫자 코드. 서로를 검색하고 연결하는 주소 역할을 하며, 사업자는 이 코드로 연결되는 미니 웹사이트 형태의 프로필을 둔다. 스마트폰으로 스캔하는 &lsquo;나비 코드&rsquo; 화면이 있다.</td></tr>
-<tr><td>서류 작성</td><td>사용자의 지시에 따라 나비가 서류를 준비하고 제출하는 업무 흐름. 소개 자료는 개인파산과 건축 인허가를 사례로 든다. 작성 시점에 준법성을 검토한다(8.3절의 예방 법학).</td></tr>
-<tr><td>OpenHash</td><td>작성·전달·확인의 사실을 해시로 남겨 변조를 막는다. 원본은 이용자 단말에만 있고, 네트워크에는 해시 값만 남는다.</td></tr>
-<tr><td>내 데이터 금고(PDV)</td><td>개인이 자신의 일상과 업무를 보관하는 금고. 진위 증명은 본인이 선택한다.</td></tr>
-<tr><td>GDC</td><td>나비 이용료와 이용자 간 결제에 쓰는 디지털 화폐. 테스트 기간에는 1T = 1원, 최소 충전 100원, 종량제이며, 나비마켓 결제는 2026년 하반기 시험 운용을 예정한다.</td></tr>
-</table></div>
-
+<p>2006년 구상은 정부 기능을 독립된 모듈로 분해해 사람의 손을 거치지 않고 운영되는 전자정부를 그렸다. 나비웹에서는 그 모듈의 자리에 기관 AI가, 시민 쪽에는 개인 AI가 들어서고, 둘 사이의 모든 교환이 OpenHash에 변조 방지 기록으로 남는다. 계층은 OpenHash의 읍면동에서 글로벌까지의 5계층이 이어받았다.</p>
+<h3>구성</h3><div class="tbl"><table><tr><th>요소</th><th>역할</th></tr><tr><td>나만의 AI 비서 ‘나비’</td><td>시민 한 사람을 대변하는 전속 비서. 요청을 정리하고 서류를 준비·제출한다.</td></tr><tr><td>그만의 AI 비서(기관 AI)</td><td>입법·사법·행정 등 기관과 부서마다 배정되는 AI. 기관 간 업무도 이 AI들끼리 실시간으로 주고받는다. 정부 기관을 대체하지 않는 중개자이며, 심사와 결정의 권한은 해당 기관에 있다.</td></tr><tr><td>나비 숫자 코드</td><td>가입 시 발급되는 개인 숫자 코드. 서로를 검색하고 연결하는 주소 역할을 하며, 사업자는 이 코드로 연결되는 미니 웹사이트 형태의 프로필을 둔다.</td></tr><tr><td>서류 작성</td><td>사용자의 지시에 따라 나비가 서류를 준비하고 제출한다. 작성 시점에 준법성을 검토한다(8.2절).</td></tr><tr><td>OpenHash</td><td>작성·전달·확인의 사실을 해시로 남겨 변조를 막는다. 원본은 이용자 단말에만 있고, 네트워크에는 해시 값만 남는다.</td></tr><tr><td>GDC</td><td>나비 이용료와 이용자 간 결제에 쓰는 디지털 화폐. 테스트 기간에는 1T = 1원, 최소 충전 100원, 종량제.</td></tr></table></div>
 <h3>한 건의 흐름 (예시)</h3>
-<ol>
-<li><b>요청</b>: 시민이 나비에게 말로 요청한다. 예) 건축 인허가를 신청하고 싶다.</li>
-<li><b>준비</b>: 나비가 필요한 서류와 요건을 파악하고, 금고에 있는 본인 자료로 서류를 작성한다. 이때 준법성을 작성 시점에 검토한다.</li>
-<li><b>전달</b>: 나비가 담당 기관의 AI에게 서류를 보낸다. 사람이 창구를 오가는 대신 AI와 AI가 주고받는다.</li>
-<li><b>심사</b>: 기관 AI가 요건을 확인하고 관련 부서 AI와 협의한다. 최종 심사와 결정은 해당 기관의 권한이다.</li>
-<li><b>기록</b>: 제출·수령·확인의 각 단계가 OpenHash에 해시로 남아 위·변조를 막고 시점을 증명한다.</li>
-<li><b>결과</b>: 결과가 나비를 통해 시민에게 돌아오고, 수수료는 GDC로 치른다.</li>
-</ol>
-<p>시민이 하는 일은 요청과 확인이다. 서류의 작성·전달·검토·기록은 AI와 OpenHash가 맡는다. 제주 지역에서 실·국·과·읍면동 단위로 행정 자동화를 시범하고 있으며, 정식 출시는 2027년 상반기로 예정되어 있다.</p>
-<p>이 구조는 XO Korea의 원안과 같은 모양이다. 당시에는 정부 기능을 6만여 개로 분해해 모듈로 만들고 커뮤니티 서버가 약 20명의 시민을 맡는 계층 구조를 그렸다. 지금은 그 모듈의 자리에 기관 AI가, 시민 쪽에 개인 AI가 있고, 계층은 OpenHash의 읍면동에서 글로벌까지의 5계층이 이어받았다.</p>
-
-<h2 id="s9">9. 대응표: XO Korea 구상에서 나비웹 구성요소까지</h2>
-<div class="tw"><table>
-<tr><th>XO Korea (2006–2010)</th><th>OpenHash (2017–)</th><th>나비웹 (2026)</th></tr>
-<tr><td>One Local e-Government Per Community, 정부를 15만 개 단위·8만 개 기능으로 분해</td><td>기관·부서 단위의 노드와 계층 구조</td><td>AI 정부: 입법·사법·행정 기관별 AI 비서</td></tr>
-<tr><td>정부·은행 업무 흐름을 YAWL/파이썬으로 기술해 1/10 인력으로 자동화</td><td>거래·서류의 사건 단위 해시 기록</td><td>AI 서류 작성: 대화로 서류를 작성하고 기록으로 남김</td></tr>
-<tr><td>XO Bank, XO Stock Exchange(당시 구상), 기업망의 UNSPSC 분류</td><td>재무제표 기반 거래 기록, 계층별 합의</td><td>GDC: 재무제표=화폐=신용, 채권=대출, 은행·보험·증권·거래소·감독의 통합</td></tr>
-<tr><td>Prosumer: 사용자가 곧 생산자, 저널(Journal)에 작업을 기록</td><td>원본은 기기에, 해시는 계층에</td><td>내 데이터 금고: 6하원칙 기록, 변조 방지 증명</td></tr>
-<tr><td>사법 배치(Justice Deployment), 행정·입법·사법 인프라 재설계</td><td>당사자 간 기록의 교차 검증</td><td>K-Law 판결 예측, 예방 법학: 작성 시점 준법 검토</td></tr>
-<tr><td>쉬운 말 한글화 지침 (활동/일지)</td><td>—</td><td>나비: 대화창에서 쉬운 말로 응대하는 비서</td></tr>
-<tr><td>5계층 교육·행정·기업 메쉬</td><td>L1~L5 계층, LCAT, ILMV</td><td>한림읍 파일럿 → 제주 → 전국 → 글로벌 로드맵</td></tr>
-<tr><td>Wi-Fi/WiMAX로 노트북과 서버 연결, XO Phone</td><td>기지국/MEC를 L1 노드로, SIM 기반 서명</td><td>스마트폰 중심의 대화 서비스</td></tr>
-</table></div>
-<p class="small">이 표의 세 번째 열은 혼디 문서에 기술된 구성과 계획이며, 일부 항목(예: GDC의 은행·보험·증권 융합)은 목표 단계에 있다.</p>
-
-<h2 id="s10">10. 종합</h2>
-<ol>
-<li><b>일관된 문제 설정</b>: 중앙 인프라가 닿지 않는 곳까지 행정·교육·금융을 개방형 구조로 제공한다. XO Korea는 이를 노트북과 메쉬로, OpenHash는 계층 원장으로, 나비웹은 AI 대화창으로 구현했다.</li>
-<li><b>교육의 연장</b>: 팀 주피터는 XO Korea의 후신이며, 2017~2025년 약 5,800개의 프로그래밍 강의 영상으로 XO Korea의 교육 사업을 이어 왔다.</li>
-<li><b>핵심 기술</b>: 나비웹의 핵심 기술은 AI가 아니라 OpenHash 기반의 PDV이며, PDV가 나비웹을 다른 AI 기술과 구분한다.</li>
-<li><b>하나의 목표</b>: 세 시기는 분산 원장 기반의 e-Government라는 하나의 목표를 추구한 각 시기별 실천이다.</li>
-<li><b>토대의 계통</b>: 나비웹 AI 정부 아키텍처의 기술적 토대는 OpenHash이며, OpenHash의 뿌리는 XO Korea의 e-Government Architecture(정부 기능의 모듈 분해, 계층 서버, 메쉬)이다.</li>
-<li><b>일관된 구조</b>: 5계층 위계, 모든 노드가 클라이언트이자 서버, 실체는 현지에 두고 증명만 올리는 방식이 세 시기를 관통한다.</li>
-<li><b>일관된 설계자</b>: XO Korea 구상의 중심, OpenHash의 창안자, 나비웹의 설계자가 같은 인물이다. 나비웹은 OpenHash를 상용화한 첫 시도이다.</li>
-<li><b>e-Government의 실현</b>: 나비웹은 사람 간 소통을 사람을 대변하는 AI 간 소통으로 대체함으로써 2006년의 e-Government 목표를 구체적으로 실현하는 수단이다.</li>
-<li><b>사법의 결실</b>: 사법 혁신 구상은 K-Law와 예방 법학으로 이어졌다. 사후 판결 예측에서 사전 분쟁 예방으로 무게가 옮겨 가고 있다.</li>
-<li><b>다음 단계</b>: K-Law v20.0 공개(2027년 상반기 예정), 심사 중인 특허 3건, 나비 숫자 코드 출원 준비, 한림읍 실노드 확대, 제3자 검증 확보.</li>
-</ol>
-
-<h2 id="a1">부록 A 연표</h2>
-<div class="tw"><table>
-<tr><th>일자</th><th>사건</th><th>출처</th></tr>
-<tr><td>2006–2007</td><td>XO Korea 위키 페이지 작성 시작, 2007년 상태 &lsquo;orange&rsquo;</td><td><span class="tag t-w">OLPC 위키</span></td></tr>
-<tr><td>2007-04-30</td><td>KLDP 게시글 &ldquo;OLPC iso 사용 후 느낀 점&rdquo;</td><td>—</td></tr>
-<tr><td>2007-05-29</td><td>중앙정부 페이지(한국어판): One Local e-Government Per Community</td><td>—</td></tr>
-<tr><td>2007-07-17</td><td>Request board/lang-ko 항목</td><td>—</td></tr>
-<tr><td>2008-01-08</td><td>조선비즈: 제주 중문단지 인근 모임, 북한 적용 검토</td><td>—</td></tr>
-<tr><td>2008 말</td><td>정부 서버 1,000대 구축 목표</td><td><span class="tag t-w">OLPC 위키</span></td></tr>
-<tr><td>2009-11-26</td><td>XO Korea/government 페이지(미러 판)</td><td>—</td></tr>
-<tr><td>2010-11-10</td><td>User:Php5 페이지(미러 판)</td><td>—</td></tr>
-<tr><td>2017–2025</td><td>팀 주피터가 프로그래밍 강의 영상 약 5,800개를 녹화해 유튜브에 공개 (XO Korea 교육 사업의 연장)</td><td>—</td></tr>
-<tr><td>2017</td><td>팀 주피터 개발 시작, OpenHash 창안</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2025-11-23</td><td>team-jupeter/openhash 저장소 업로드 (특허 초안, GPL-3.0)</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2026-04</td><td>K-Law v15.1 발표 (대법원 공개 판례 300건 자체 테스트, 일치도 73~74%)</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2026-06-09</td><td>OpenHash 백서 v1.1</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2026-08-11</td><td>혼디넷과 GDC 보고서</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2026-09</td><td>hondi · mail 저장소 이전 (GitHub)</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2026-11</td><td>나비웹에 &ldquo;내 데이터 금고&rdquo; 메뉴 추가 (PDV 페이지)</td><td><span class="tag t-r">혼디 문서</span></td></tr>
-<tr><td>2027 상반기</td><td>K-Law v20.0 공개 예정</td><td>—</td></tr>
-</table></div>
-
-<h2 id="a2">부록 B 출처 목록</h2>
-<h3>B.1 OLPC 위키 (wiki.laptop.org)</h3>
-<ul>
-<li>XO Korea — https://wiki.laptop.org/go/XO_Korea</li>
-<li>XO Korea/Table of Contents, Core Ideas, FAQ</li>
-<li>XO Korea/Government/Introduction, government_server/content_overview</li>
-<li>XO Korea/Korean Mesh Network, our_work/summary</li>
-<li>User:Php5 — https://wiki.laptop.org/go/User:Php5</li>
-</ul>
-<h3>B.2 보관·미러</h3>
-<ul>
-<li>yzu.moe의 OLPC Wiki 미러: Request board/lang-ko, User:Php5, Xo korea/government, XO Korea/central government/mj/lang-ko</li>
-<li>KLDP(kldp.org): &ldquo;OLPC iso 사용 후 느낀 점&rdquo; 2007-04-30</li>
-</ul>
-<h3>B.3 저장소·문서</h3>
-<ul>
-<li>hondi: docs/openhash_whitepaper.html, reports/hondi-mine-ai-secretary.html, reports/hondi-institutional-ai-roadmap.html, reports/hondi-gdc-currency-scenario-bw.html, pdv.html</li>
-<li>team-jupeter/openhash: 특허 초안 &ldquo;(11_18) 오픈해시 기반 프라이빗 데이터 금고 시스템 및 그 운영 방법&rdquo;, LICENSE</li>
-</ul>
-<h3>B.4 언론·외부</h3>
-<ul>
-<li>조선비즈 2008-01-08 &ldquo;본격 보급 나선 100달러 노트북, 성공 전망은&rdquo;; 지디넷코리아, 위키백과 OLPC XO, K2Base, 나무위키, Python Wiki, Gentoo Wiki </li>
-</ul>
-
-<h2 id="a4">부록 C 용어집</h2>
-<div class="tw"><table>
-<tr><th>용어</th><th>설명</th></tr>
-<tr><td>OLPC</td><td>One Laptop Per Child. 어린이용 저가 노트북 프로젝트.</td></tr>
-<tr><td>XO</td><td>OLPC의 노트북 모델. XO-1 등.</td></tr>
-<tr><td>Sugar</td><td>XO의 파이썬 기반 사용자 환경. 프로그램은 &lsquo;활동&rsquo;, 작업 기록은 &lsquo;일지&rsquo;.</td></tr>
-<tr><td>Tube</td><td>Sugar의 P2P 통신 추상화 계층.</td></tr>
-<tr><td>FEA / OEA</td><td>연방 엔터프라이즈 아키텍처 / 이를 확장한 개방형 구조(Open Enterprise Architecture).</td></tr>
-<tr><td>YAWL</td><td>Yet Another Workflow Language. 워크플로 기술 언어.</td></tr>
-<tr><td>UNSPSC</td><td>상품·서비스 분류 표준 코드.</td></tr>
-<tr><td>Prosumer</td><td>생산자이자 소비자.</td></tr>
-<tr><td>OpenHash</td><td>행정 계층을 신뢰 구조로 삼는 5계층 분산원장.</td></tr>
-<tr><td>PLSM / ILMV / LPBFT / LCAT</td><td>확률적 계층 선택 / 양방향 계층 검증 / 비상 합의 / 최소 공통 상위 계층.</td></tr>
-<tr><td>PDV</td><td>개인 데이터 금고. 6하원칙 기록, 원본은 기기에, 해시는 원장에.</td></tr>
-<tr><td>GDC</td><td>Global Digital Currency(₮). 재무제표 기반 디지털 화폐.</td></tr>
-<tr><td>나비 / 나비웹</td><td>개인 AI 비서 / 혼디의 웹 서비스 이름.</td></tr>
-</table></div>
-
-</main>
-<script>
-(function(){
-  var emb=new URLSearchParams(location.search).get('embed');
-  if(emb)document.body.style.background='transparent';
-  function h(){return Math.ceil(document.documentElement.scrollHeight)}
-  function post(m){try{parent.postMessage(m,'*')}catch(e){}}
-  function report(){if(emb)post({type:'xo:height',height:h()})}
-  window.addEventListener('load',report);window.addEventListener('resize',report);
-  if(window.ResizeObserver)new ResizeObserver(report).observe(document.body);
-  document.addEventListener('click',function(e){
-    var a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a)return;
-    var t=document.getElementById(a.getAttribute('href').slice(1));if(!t)return;
-    e.preventDefault();
-    if(emb)post({type:'xo:scroll',y:t.getBoundingClientRect().top+window.scrollY-12});
-    else t.scrollIntoView({behavior:'smooth'});
-  });
-})();
-</script>
-</body></html>
+<ol><li><b>요청</b>: 시민이 나비에게 말로 요청한다. 예) 건축 인허가를 신청하고 싶다.</li><li><b>준비</b>: 나비가 필요한 서류와 요건을 파악하고, 금고에 있는 본인 자료로 서류를 작성한다. 이때 준법성을 작성 시점에 검토한다.</li><li><b>전달</b>: 나비가 담당 기관의 AI에게 서류를 보낸다. 사람이 창구를 오가는 대신 AI와 AI가 주고받는다.</li><li><b>심사</b>: 기관 AI가 요건을 확인하고 관련 부서 AI와 협의한다. 최종 심사와 결정은 해당 기관의 권한이다.</li><li><b>기록</b>: 제출·수령·확인의 각 단계가 OpenHash에 해시로 남아 위·변조를 막고 시점을 증명한다.</li><li><b>결과</b>: 결과가 나비를 통해 시민에게 돌아오고, 수수료는 GDC로 치른다.</li></ol>
+<p>시민이 하는 일은 요청과 확인이다. 서류의 작성·전달·검토·기록은 AI와 OpenHash가 맡는다. 서비스는 현재 베타 단계이며, 제주 지역에서 실·국·과·읍면동 단위 행정 자동화를 시범하고 있다. 정식 출시는 2027년 상반기로 예정되어 있다.</p>
+</section>
+<section id="s9">
+<h2><span class="n">9</span>대응표: XO Korea 구상에서 나비웹 구성요소까지</h2>
+<div class="tbl"><table><tr><th>XO Korea (2006–2010)</th><th>OpenHash (2017–)</th><th>나비웹 (2026)</th></tr><tr><td>One Local e-Government Per Community, 정부를 15만 개 단위·8만 개 기능으로 분해</td><td>기관·부서 단위의 노드와 계층 구조</td><td>AI 정부: 입법·사법·행정 기관별 AI 비서</td></tr><tr><td>정부·은행 업무 흐름을 YAWL/파이썬으로 기술해 1/10 인력으로 자동화</td><td>거래·서류의 사건 단위 해시 기록</td><td>AI 서류 작성: 대화로 서류를 작성하고 기록으로 남김</td></tr><tr><td>XO Bank, XO Stock Exchange, 기업망의 UNSPSC 분류</td><td>재무제표 기반 거래 기록, 계층별 합의</td><td>GDC: 재무제표=화폐=신용, 채권=대출, 은행·보험·증권·거래소·감독의 통합</td></tr><tr><td>Prosumer: 사용자가 곧 생산자, 저널(Journal)에 작업을 기록</td><td>원본은 기기에, 해시는 계층에</td><td>내 데이터 금고: 6하원칙 기록, 변조 방지 증명</td></tr><tr><td>사법 배치(Justice Deployment), 행정·입법·사법 인프라 재설계</td><td>당사자 간 기록의 교차 검증</td><td>K-Law 판결 예측, 예방 법학: 작성 시점 준법 검토</td></tr><tr><td>쉬운 말 한글화 지침(활동/일지)</td><td>—</td><td>나비: 대화창에서 쉬운 말로 응대하는 비서</td></tr><tr><td>5계층 교육·행정·기업 메쉬</td><td>L1~L5 계층, LCAT, ILMV</td><td>한림읍 파일럿 → 제주 → 전국 → 글로벌 로드맵</td></tr></table></div><p class="small">나비웹 열은 현재의 구성과 계획이며, 일부 항목(예: GDC의 은행·보험·증권 융합)은 목표 단계에 있다.</p>
+</section>
+<section id="s10">
+<h2><span class="n">10</span>앞으로</h2>
+<p>K-Law v20.0 공개(2027년 상반기 예정), 나비웹 정식 출시(2027년 상반기 예정), 심사 중인 특허 3건, 나비 숫자 코드 출원 준비, 한림읍 실노드 확대, 제3자 검증 확보.</p>
+</section>
+<section id="a1">
+<h2><span class="n">A</span>연표</h2>
+<div class="tbl"><table><tr><th>일자</th><th>사건</th></tr><tr><td>2006–2010</td><td>XO Korea 활동. 2008년 말 정부 서버 1,000대 구축 목표</td></tr><tr><td>2017</td><td>OpenHash 개발 시작</td></tr><tr><td>2017–2025</td><td>팀 주피터가 프로그래밍 강의 영상 약 5,800개를 녹화해 유튜브에 공개</td></tr><tr><td>2025-11</td><td>OpenHash 특허 초안 공개</td></tr><tr><td>2026-04</td><td>K-Law v15.1 발표(대법원 공개 판례 300건 자체 테스트, 일치도 73~74%)</td></tr><tr><td>2026-06</td><td>OpenHash 백서 v1.1</td></tr><tr><td>2026-11</td><td>나비웹에 “내 데이터 금고” 메뉴 추가</td></tr><tr><td>2027 상반기</td><td>K-Law v20.0 공개 예정, 나비웹 정식 출시 예정</td></tr></table></div>
+</section>
+<section id="a2">
+<h2><span class="n">B</span>출처</h2>
+<ul><li>OLPC 위키 — <a href="https://wiki.laptop.org/go/XO_Korea">XO Korea</a> (Table of Contents, Core Ideas, Government, Government Server, Korean Mesh Network)</li><li>OLPC 위키 — <a href="https://wiki.laptop.org/go/User:Php5">User:Php5</a></li><li>YouTube — <a href="https://www.youtube.com/@teamjupeter9451">Team Jupeter</a></li></ul>
+</section>
+<section id="a4">
+<h2><span class="n">C</span>용어집</h2>
+<div class="tbl"><table><tr><th>용어</th><th>설명</th></tr><tr><td>OLPC</td><td>One Laptop Per Child. 어린이용 저가 노트북 프로젝트.</td></tr><tr><td>XO</td><td>OLPC의 노트북 모델.</td></tr><tr><td>Sugar</td><td>XO의 파이썬 기반 사용자 환경. 프로그램은 ‘활동’, 작업 기록은 ‘일지’.</td></tr><tr><td>Tube</td><td>Sugar의 P2P 통신 추상화 계층.</td></tr><tr><td>FEA / OEA</td><td>연방 엔터프라이즈 아키텍처 / 이를 확장한 개방형 구조(Open Enterprise Architecture).</td></tr><tr><td>YAWL</td><td>Yet Another Workflow Language. 워크플로 기술 언어.</td></tr><tr><td>UNSPSC</td><td>상품·서비스 분류 표준 코드.</td></tr><tr><td>Prosumer</td><td>생산자이자 소비자.</td></tr><tr><td>OpenHash</td><td>행정 계층을 신뢰 구조로 삼는 5계층 분산원장.</td></tr><tr><td>PLSM / ILMV / LPBFT / LCAT</td><td>확률적 계층 선택 / 양방향 계층 검증 / 비상 합의 / 최소 공통 상위 계층.</td></tr><tr><td>PDV</td><td>개인 데이터 금고. 6하원칙 기록, 원본은 기기에, 해시는 원장에.</td></tr><tr><td>GDC</td><td>Global Digital Currency(₮). 재무제표 기반 디지털 화폐.</td></tr><tr><td>나비 / 나비웹</td><td>개인 AI 비서 / 혼디의 웹 서비스 이름.</td></tr></table></div>
+</section>
+</div>
+</body>
+</html>
