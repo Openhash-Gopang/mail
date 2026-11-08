@@ -18,7 +18,7 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: {}, required: [] } },
   { name: 'screenshot', description: '현재 화면을 이미지로 본다. 요소 목록으로 부족할 때만 쓴다.',
     input_schema: { type: 'object', properties: {}, required: [] } },
-  { name: 'navigate', description: '허용된 사이트 주소로 이동한다.',
+  { name: 'navigate', description: 'https 사이트 주소로 이동한다.',
     input_schema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
   { name: 'wait', description: '잠시 기다린다(초, 최대 10).',
     input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },

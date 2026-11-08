@@ -1,9 +1,7 @@
 // 안전 규칙: 도구 호출을 실행 전에 분류한다. 모델이 무엇을 요청하든 이 규칙이 우선한다.
 // 결과: { act: 'auto' | 'confirm' | 'handoff' | 'deny', reason }
-export const DEFAULT_HOSTS = ['iros.go.kr', 'ecfs.scourt.go.kr', 'gov.kr', 'hondi.net', 'naviweb.kr',
-  // 첨부서류 카탈로그(attach-catalog.js)의 기관 사이트
-  'hometax.go.kr', 'nhis.or.kr', 'nps.or.kr', '4insure.or.kr', 'scourt.go.kr', 'patent.go.kr', 'wetax.go.kr', 'eum.go.kr', 'eais.go.kr',
-  'police.go.kr', 'efine.go.kr', 'kdca.go.kr', 'customs.go.kr', 'molit.go.kr'];
+// 사이트 제한은 없다(2026-11-08 결정): 나비웹 도우미는 사용자가 작업에 필요로 하는 모든 https 사이트를 다룬다.
+// 지켜야 할 것은 사이트가 아니라 동작이다 — 로그인·인증·결제·보안문자는 사용자가 직접(handoff), 주민등록번호·비밀번호·카드번호는 입력하지 않고(deny), 제출·발급·전송·삭제는 확인(confirm)을 받는다.
 
 const RRN = /\d{6}\s*-?\s*[1-8]\d{6}/;
 const SECRET_NAME = /passw|passwd|pwd|비밀번호|card|카드번호|cvc|cvv|otp|보안카드|계좌번호|주민|rrn|ssn/i;
@@ -12,28 +10,16 @@ const CONFIRM_TEXT = /제출|접수|신청서|발급|전송|삭제|확정|동의
 // 메뉴 이동처럼 되돌릴 수 있는 항목은 묻지 않는다.
 const NAV_OK = /^(열람[·\s]*발급|등기상호검색|신청결과|법인\s*열람|결제대상목록|처음으로|이전|다음)/;
 
+/** https 주소이면 어느 사이트든 허용한다. (http 는 열지 않는다) extra 인자는 예전 호출과의 호환을 위해 받지만 쓰지 않는다. */
 export function hostAllowed(url, extra = []) {
-  try {
-    const h = new URL(url).hostname;
-    if (new URL(url).protocol !== 'https:') return false;
-    return [...DEFAULT_HOSTS, ...extra].some((d) => h === d || h.endsWith('.' + d));
-  } catch { return false; }
+  try { return new URL(url).protocol === 'https:'; } catch { return false; }
 }
 
 // info: 대상 요소 설명 {tag,type,name,autocomplete,text}
-// 어느 사이트든 다룰 수 있지만, 기본 사이트(DEFAULT_HOSTS) 밖에서는 이동·입력·클릭마다 사용자 승인을 받는다.
-// 그 위에 브라우저가 사이트별 접근 허용(권한 창)을 따로 요구한다.
-function httpsHost(url) { try { const u = new URL(url); return u.protocol === 'https:' ? u.hostname : ''; } catch { return ''; } }
+// 어느 사이트든 다룬다. 이동은 https 이면 바로 하고, 입력·클릭은 아래 동작 규칙(classifyKnown)만 따른다.
 export function classify(tool, input = {}, info = {}, extraHosts = []) {
   if (tool === 'navigate') {
-    const h = httpsHost(input.url);
-    if (!h) return { act: 'deny', reason: 'https 주소만 열 수 있습니다.' };
-    return hostAllowed(input.url, extraHosts) ? { act: 'auto' } : { act: 'confirm', reason: `"${h}" 사이트로 이동할까요?` };
-  }
-  if ((tool === 'click' || tool === 'type' || tool === 'select_option') && info.host && !hostAllowed('https://' + info.host + '/', extraHosts)) {
-    const verdict = classifyKnown(tool, input, info);
-    if (verdict.act === 'auto') return { act: 'confirm', reason: `"${info.host}" 에서 ${tool === 'click' ? '"' + String(info.text || info.name || '요소').trim().slice(0, 30) + '" 을(를) 누를까요?' : tool === 'type' ? '글자를 입력할까요?' : '선택을 바꿀까요?'}` };
-    return verdict;
+    return hostAllowed(input.url) ? { act: 'auto' } : { act: 'deny', reason: 'https 주소만 열 수 있습니다.' };
   }
   return classifyKnown(tool, input, info);
 }
