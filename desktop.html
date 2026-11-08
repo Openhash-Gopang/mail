@@ -1205,7 +1205,14 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .side-logo{flex:none;display:block;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;cursor:pointer;padding:6px 0 10px 16px;line-height:0}
 .side-logo:hover{background:rgba(59,125,221,.08)}.side-logo:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
 .side-nav:has(#tab-btn-home.active) .side-logo{background:var(--pri-bg)}   /* 홈 화면일 때 로고가 홈 버튼처럼 표시된다 */
-#tab-btn-home{display:none!important}   /* 홈 버튼은 없앴다 — 나비 로고가 그 역할. 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
+#tab-btn-home,#tab-btn-xokorea{display:none!important}   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
+.home-xo{position:fixed;left:72px;right:0;bottom:22px;display:none;justify-content:center;pointer-events:none;z-index:5}
+.home-xo a{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;color:var(--sub);font-size:14px;font-weight:500;text-decoration:none;cursor:pointer}
+.home-xo a:hover{background:var(--pri-bg);color:var(--pri)}
+.home-xo svg{width:18px;height:18px}
+#tab-compose.active[data-mode="default"] .home-xo{display:flex}
+#tab-compose:has(#cmp-thread > *) .home-xo{display:none!important}
+@media (max-width:960px){.home-xo{left:0;position:static;margin-top:28px}}   /* 홈 버튼은 없앴다 — 나비 로고가 그 역할. 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
 .side-logo img{display:block;width:32px;height:32px;object-fit:contain}
 @media (max-width:960px){.side-logo{padding:0 8px 0 10px;display:flex;align-items:center}.side-logo img{width:28px;height:28px}}
 .side-label{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:14px 22px 6px}
@@ -1413,6 +1420,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="chat-landing-title">무엇을 도와드릴까요?</div>
       <div class="chat-landing-sub">누구에게, 왜, 무엇을 보내고 싶은지 편하게 말씀해 주세요. 대상을 못 찾으면 검색해서 후보를 찾아드리고, 제목·본문·발송 시각까지 정리해 확인받은 뒤에만 실제로 보냅니다.</div>
     </div>
+
+    <div class="home-xo"><a role="button" tabindex="0" onclick="_switchTab('xokorea')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_switchTab('xokorea')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg>XO Korea</a></div>
 
     <div class="chat-thread-header" id="cmp-thread-header" style="display:none">
       <button type="button" onclick="_cmpNewConversation()">+ 새 대화</button>
@@ -2050,10 +2059,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-vault" class="tab-panel"><iframe id="vault-frame" title="내 데이터 금고(PDV)" allow="clipboard-write" scrolling="no"></iframe></div>
   <div id="tab-xokorea" class="tab-panel">
     <div class="wp-tabs" role="tablist" aria-label="XO Korea">
-      <button type="button" role="tab" class="wp-tab active" aria-selected="true">XO Korea</button>
+      <button type="button" role="tab" class="wp-tab active" id="xk-tab-xo" aria-selected="true" onclick="_xkSwitch('xo')">XO</button>
+      <button type="button" role="tab" class="wp-tab" id="xk-tab-history" aria-selected="false" onclick="_xkSwitch('history')">History</button>
       <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
-    <iframe id="xokorea-frame" title="XO Korea에서 OpenHash, 나비웹까지" allow="clipboard-write"></iframe>
+    <iframe id="xokorea-frame" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
   </div>
   <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
@@ -4898,7 +4908,7 @@ function _switchTab(name) {
   if (name !== 'settings') _profLeave();
   if (name === 'whitepaper') _wpSwitch(document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi');
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
-  if (name === 'xokorea') { const f = document.getElementById('xokorea-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'xo-korea.html?embed=mail'); }   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
+  if (name === 'xokorea') _xkSwitch(document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo');   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
   if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
@@ -6972,6 +6982,13 @@ function _panelOpen(kind) {
 }
 window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _introClose(); _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _introClose(); _switchTab('whitepaper'); } });
 const _WP_URL = { navi: 'manual.html?embed=mail', openhash: 'openhash.html?embed=mail' };
+const _XK_URL = { xo: 'xo.html?embed=mail', history: 'xo-korea.html?embed=mail' };
+function _xkSwitch(k) {
+  const f = document.getElementById('xokorea-frame');
+  if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.setAttribute('src', _XK_URL[k]); }
+  ['xo', 'history'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
+}
+window.addEventListener('message', (e) => { const f = document.getElementById('xokorea-frame'); if (f && e.source === f.contentWindow && e.data && e.data.type === 'xokorea-tab' && _XK_URL[e.data.k]) _xkSwitch(e.data.k); });
 function _wpSwitch(k) {
   const f = document.getElementById('whitepaper-frame');
   if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.setAttribute('src', _WP_URL[k]); }

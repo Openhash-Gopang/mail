@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XO</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--pri:#1A73E8;--on:#202124;--on2:#5F6368;--line:#DADCE0;--bg:#fff}
+@media (prefers-color-scheme:dark){:root{--pri:#8AB4F8;--on:#E8EAED;--on2:#9AA0A6;--line:#3C4043;--bg:#202124}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',Roboto,-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--on);font-size:15px;line-height:1.75;word-break:keep-all;-webkit-font-smoothing:antialiased}
+.wrap{max-width:840px;margin:0 auto;padding:32px 24px 64px}
+h1{font-size:28px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+h1 small{display:block;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--on2);margin-bottom:8px}
+.lead{margin-top:6px;color:var(--on2);font-size:16px}
+.meta{font-size:13px;color:var(--on2);margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 8px}
+.toc a{border:1px solid var(--line);color:var(--on);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;text-decoration:none}
+.toc a:hover{border-color:var(--pri);color:var(--pri)}
+section{margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
+h2{font-size:20px;line-height:1.4;font-weight:600;margin-bottom:12px}
+h2 .n{display:inline;font-size:inherit;font-weight:inherit;color:var(--pri);margin-right:10px}
+h3{font-size:16px;font-weight:600;margin:24px 0 6px}
+p{color:var(--on2);margin:0 0 12px}p b,li b,td b{color:var(--on);font-weight:600}
+ul,ol{margin:0 0 12px 22px;color:var(--on2)}li{margin:4px 0}
+a{color:var(--pri)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;color:var(--on)}
+.key{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.key div{border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--on2);font-size:14px;line-height:1.6}
+.key div b{display:block;color:var(--on);font-size:14px;font-weight:600;margin-bottom:2px}
+.callout{border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:4px 12px 12px 4px;padding:12px 18px;margin:16px 0}
+.callout p{margin:0 0 8px}.callout p:last-child{margin:0}
+blockquote{border-left:3px solid var(--line);padding:2px 0 2px 14px;color:var(--on2);font-size:14px;margin:12px 0}
+.tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;color:var(--on2);border-top:1px solid var(--line)}
+tr:first-child th,tr:first-child td{border-top:0}
+th{color:var(--on);font-weight:600}
+.tag{display:inline-block;font-size:11px;line-height:18px;padding:0 6px;border:1px solid var(--line);border-radius:4px;margin-right:4px;font-weight:500;color:var(--on2);white-space:nowrap;vertical-align:1px}
+.small{font-size:13px}
+h4{font-size:15px;font-weight:600}
+@media (max-width:700px){.key{grid-template-columns:1fr}h1{font-size:24px}.wrap{padding:24px 16px 48px}}
+</style>
+</head>
+<body>
+<script>if (/[?&]embed=mail/.test(location.search)) document.body.classList.add('embed');</script>
+<div class="wrap">
+<h1><small>OLPC · XO</small>XO</h1>
+<p class="lead">어린이 한 명에게 노트북 한 대. 그리고 서버 없이 서로 연결되는 기기들.</p>
+<section>
+<h2>XO란</h2>
+<p>XO는 OLPC(One Laptop Per Child)가 개발도상국 어린이를 위해 만든 저가 교육용 노트북이다. OLPC는 MIT 미디어랩이 주관한 프로젝트다.</p>
+<div class="key">
+<div><b>Sugar</b>파이썬 기반 사용자 환경. 프로그램은 ‘활동’, 작업 기록은 ‘일지’라 부른다.</div>
+<div><b>메쉬 네트워킹</b>전원이 꺼져도 무선 칩셋이 이웃 기기로 패킷을 중계한다. 서버가 없어도 기기끼리 연결된다.</div>
+<div><b>클라이언트 겸 서버</b>모든 기기가 클라이언트이자 서버가 될 수 있다. 이 성질이 이후 계층형 원장의 노드 구조로 이어진다.</div>
+</div>
+</section>
+<section>
+<h2>XO Korea</h2>
+<p>XO Korea(2006–2010)는 OLPC 위키 위에서 운영된 한국 커뮤니티다. XO 노트북을 교육에 그치지 않고, 정부 기능을 기능 단위로 분해해 서버–클라이언트 메쉬 위에 올리는 e-Government의 기반으로 확장했다.</p>
+<ul>
+<li>정부 기능을 독립적이고 프로그램 가능한 객체로 분해한다.</li>
+<li>객체를 계층형 정부 서버에 배치하고, 메쉬로 연결한다.</li>
+<li>한글화와 교육 콘텐츠 과제를 함께 진행한다.</li>
+</ul>
+</section>
+<section>
+<h2>XO의 학습 도구</h2>
+<div class="tbl"><table><tr><th></th><th>TamTam</th><th>Etoys</th></tr><tr><td>성격</td><td>메쉬 기반 분산 음악 저작·합주 도구</td><td>객체 지향 비주얼 스크립팅 학습 환경</td></tr><tr><td>공유 방식</td><td>악보 이벤트만 전송하고 소리는 각 기기에서 합성</td><td>프로젝트 파일 전송·공동 조작</td></tr></table></div>
+</section>
+<section>
+<h2>이어지는 이야기</h2>
+<p>XO Korea의 구상이 OpenHash(2017)와 나비웹(2026)으로 이어진 과정은 History 탭에서 볼 수 있다.</p>
+<p><a href="#" id="go-history">History 탭으로 이동 →</a></p>
+</section>
+</div>
+<script>document.getElementById('go-history').addEventListener('click',function(e){e.preventDefault();try{parent.postMessage({type:'xokorea-tab',k:'history'},'*')}catch(x){}});</script>
+</body>
+</html>
