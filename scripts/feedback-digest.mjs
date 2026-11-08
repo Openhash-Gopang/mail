@@ -11,18 +11,22 @@ const C = createRequire(import.meta.url)('../attach-catalog.js');
 
 const norm = (s) => String(s ?? '').normalize('NFKC').toLowerCase().replace(/[\s·.,:;!?()[\]{}<>\-_/\\'"“”‘’~]/g, '');
 export function parse(raw) {
-  const m = /^\[naviweb:(attach|newdoc|bug)\]\s*(.*)$/s.exec(String(raw || '')); if (!m) return null;
+  const m = /^\[naviweb:(attach|newdoc|bug|report)\]\s*(.*)$/s.exec(String(raw || '')); if (!m) return null;
   const f = { kind: m[1] };
   for (const part of m[2].split(' | ')) { const i = part.indexOf('='); if (i > 0) f[part.slice(0, i).trim()] = part.slice(i + 1).trim(); }
   return f;
 }
 const PROBLEM_TEXT = { agency: '기관이 달라요', fail: '가져오지 못해요', own: '직접 준비 서류예요', missing: '버튼이 없어요', other: '그 밖의 문제' };
 export function digest(records, { min = 3 } = {}) {
-  const groups = new Map(), bugs = [];
+  const groups = new Map(), bugs = [], ideas = [];
   for (const r of (Array.isArray(records) ? records : records?.items) || []) {
     const f = parse(r.raw_text); if (!f) continue;
     const dev = /(?:^|; )dev=([^;]+)/.exec(r.context_summary || '');
     const who = (dev && dev[1]) || r.guid || r.id || Math.random().toString(36);
+    if (f.kind === 'report') {   // 서류 화면의 "오류 신고와 제안" 버튼 — 유형이 idea 면 제안, 아니면 오류 신고
+      const item = { text: (f['서류'] ? '[' + f['서류'] + '] ' : '') + (f['내용'] || ''), ctx: r.context_summary || '', id: r.id || '' };
+      (f['유형'] === 'idea' ? ideas : bugs).push(item); continue;
+    }
     if (f.kind === 'bug') { bugs.push({ text: f['내용'] || '', ctx: r.context_summary || '', id: r.id || '' }); continue; }
     const label = f['서류'] || ''; if (!label) continue;
     const key = [f.kind, norm(label), f['문제'] || ''].join('\n');
@@ -33,7 +37,7 @@ export function digest(records, { min = 3 } = {}) {
     groups.set(key, g);
   }
   const rows = [...groups.values()].map((g) => ({ ...g, n: g.users.size, action: g.users.size >= min })).sort((a, b) => b.n - a.n);
-  return { attach: rows.filter((g) => g.kind === 'attach'), newdoc: rows.filter((g) => g.kind === 'newdoc'), bugs, min };
+  return { attach: rows.filter((g) => g.kind === 'attach'), newdoc: rows.filter((g) => g.kind === 'newdoc'), bugs, ideas, min };
 }
 export function report(d) {
   const L = [`# 사용자 제보 집계 (조치 후보 기준: 서로 다른 ${d.min}명 이상)`, ''];
@@ -49,6 +53,9 @@ export function report(d) {
   L.push('', '## 오류·불편 신고', '');
   if (!d.bugs.length) L.push('(없음)');
   for (const b of d.bugs) L.push(`- ${b.text}${b.ctx ? ' (' + b.ctx + ')' : ''}`);
+  L.push('', '## 제안 (서류 화면의 "오류 신고와 제안" 버튼)', '');
+  if (!d.ideas || !d.ideas.length) L.push('(없음)');
+  for (const b of d.ideas || []) L.push(`- ${b.text}${b.ctx ? ' (' + b.ctx + ')' : ''}`);
   return L.join('\n') + '\n';
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
