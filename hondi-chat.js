@@ -248,7 +248,7 @@
     if (typeof window !== 'undefined' && typeof window._agentBadgePlace === 'function') window._agentBadgePlace();   // "나비웹 도우미 0.x.x" 는 대화창 상단 중앙에 둔다
     S.els = { fab: fab, panel: panel, frame: panel.querySelector('#hchat-frame') };
     S.geo = geoGet(); wireGeometry(doc, panel);
-    fab.addEventListener('click', toggle);
+    fab.addEventListener('click', function () { if (root.HondiChat && typeof root.HondiChat.onFab === 'function' && root.HondiChat.onFab()) return; toggle(); });   // onFab: 화면(탭)이 아이콘 동작을 대신 맡고 싶을 때(true 를 돌려주면 기본 동작 생략)
     panel.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('[data-hchat]') : null; if (!t) return;
       var a = t.getAttribute('data-hchat'); if (a === 'close') close(); else if (a === 'popup') popup();
