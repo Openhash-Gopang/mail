@@ -280,7 +280,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .wp-tab{background:none;border:0;border-bottom:3px solid transparent;padding:9px 18px;font:inherit;font-size:16px;font-weight:700;color:var(--hint);cursor:pointer;margin-bottom:-1px}
 .wp-tab:hover{color:var(--pri)}
 .wp-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
-#tab-whitepaper iframe,#tab-xokorea iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
+#tab-whitepaper iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
+#tab-xokorea iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent;overflow:hidden}   /* 높이는 안쪽 문서가 알려 준 값으로 맞춘다(_xkSwitch 옆 message 처리) — 안쪽 스크롤 막대 없음 */
 #tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #tab-vault iframe{overflow:hidden}
 #gdc-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:0;background:transparent}
@@ -2063,7 +2064,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button type="button" role="tab" class="wp-tab" id="xk-tab-history" aria-selected="false" onclick="_xkSwitch('history')">History</button>
       <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
-    <iframe id="xokorea-frame" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
+    <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
   </div>
   <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
@@ -6992,10 +6993,15 @@ const _WP_URL = { navi: 'manual.html?embed=mail', openhash: 'openhash.html?embed
 const _XK_URL = { xo: 'xo.html?embed=mail', history: 'xo-korea.html?embed=mail' };
 function _xkSwitch(k) {
   const f = document.getElementById('xokorea-frame');
-  if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.setAttribute('src', _XK_URL[k]); }
+  if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.style.height = ''; f.setAttribute('src', _XK_URL[k]); window.scrollTo(0, 0); }
   ['xo', 'history'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
 }
-window.addEventListener('message', (e) => { const f = document.getElementById('xokorea-frame'); if (f && e.source === f.contentWindow && e.data && e.data.type === 'xokorea-tab' && _XK_URL[e.data.k]) _xkSwitch(e.data.k); });
+window.addEventListener('message', (e) => {
+  const f = document.getElementById('xokorea-frame'); if (!f || e.source !== f.contentWindow || !e.data) return;
+  if (e.data.type === 'xokorea-tab' && _XK_URL[e.data.k]) _xkSwitch(e.data.k);
+  else if (e.data.type === 'xokorea-height' && e.data.h > 0) f.style.height = e.data.h + 'px';   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
+  else if (e.data.type === 'xokorea-scroll') window.scrollTo({ top: window.pageYOffset + f.getBoundingClientRect().top + e.data.y - 8, behavior: 'smooth' });
+});
 function _wpSwitch(k) {
   const f = document.getElementById('whitepaper-frame');
   if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.setAttribute('src', _WP_URL[k]); }

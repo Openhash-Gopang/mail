@@ -144,5 +144,23 @@ h4{font-size:15px;font-weight:600}
 <div class="tbl"><table><tr><th>용어</th><th>설명</th></tr><tr><td>OLPC</td><td>One Laptop Per Child. 어린이용 저가 노트북 프로젝트.</td></tr><tr><td>XO</td><td>OLPC의 노트북 모델.</td></tr><tr><td>Sugar</td><td>XO의 파이썬 기반 사용자 환경. 프로그램은 ‘활동’, 작업 기록은 ‘일지’.</td></tr><tr><td>Tube</td><td>Sugar의 P2P 통신 추상화 계층.</td></tr><tr><td>FEA / OEA</td><td>연방 엔터프라이즈 아키텍처 / 이를 확장한 개방형 구조(Open Enterprise Architecture).</td></tr><tr><td>YAWL</td><td>Yet Another Workflow Language. 워크플로 기술 언어.</td></tr><tr><td>UNSPSC</td><td>상품·서비스 분류 표준 코드.</td></tr><tr><td>Prosumer</td><td>생산자이자 소비자.</td></tr><tr><td>OpenHash</td><td>행정 계층을 신뢰 구조로 삼는 5계층 분산원장.</td></tr><tr><td>PLSM / ILMV / LPBFT / LCAT</td><td>확률적 계층 선택 / 양방향 계층 검증 / 비상 합의 / 최소 공통 상위 계층.</td></tr><tr><td>PDV</td><td>개인 데이터 금고. 6하원칙 기록, 원본은 기기에, 해시는 원장에.</td></tr><tr><td>GDC</td><td>Global Digital Currency(₮). 재무제표 기반 디지털 화폐.</td></tr><tr><td>나비 / 나비웹</td><td>개인 AI 비서 / 혼디의 웹 서비스 이름.</td></tr></table></div>
 </section>
 </div>
+<script>
+/* naviweb 안에 끼워 넣었을 때(?embed=mail): 이 문서는 안쪽 스크롤 막대를 두지 않는다. 문서 높이를 부모에 알리면 부모가 iframe 높이를 그만큼 늘려
+   바깥 화면 하나로만 스크롤된다(위쪽 탭 줄은 함께 올라간다). 목차 같은 #앵커 이동도 부모가 대신 스크롤한다. */
+(function(){
+  if (window.parent === window || !/[?&]embed=mail/.test(location.search)) return;
+  document.documentElement.style.overflow = 'hidden';
+  var last = 0;
+  function post(){ var h = Math.ceil(document.documentElement.getBoundingClientRect().height); if (h && h !== last) { last = h; parent.postMessage({ type: 'xokorea-height', h: h }, '*'); } }
+  window.addEventListener('load', post); window.addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.body); else setInterval(post, 500);
+  post();
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
+    var id = a.getAttribute('href').slice(1), t = id && document.getElementById(id); if (!t) return;
+    e.preventDefault(); parent.postMessage({ type: 'xokorea-scroll', y: Math.round(t.getBoundingClientRect().top + window.pageYOffset) }, '*');
+  });
+})();
+</script>
 </body>
 </html>
