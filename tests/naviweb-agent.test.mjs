@@ -645,3 +645,9 @@ test('화면을 PDF 로 만들기: 디버거에 붙였다가 반드시 떼고, �
   assert.equal((await printTabToPdf(mk('x', 'attach'), 7)).ok, false);
   assert.equal((await printTabToPdf(mk('A'.repeat(400), null), 7, 100)).ok, false);
 });
+test('받아 온 파일은 되묻지 않고 바로 넣고, 정부24 열림 안내는 파일이 오면 지운다', () => {
+  const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const fn = /function _agentOnFile\(f\) \{[\s\S]*?\n\}\n/.exec(d)[0];
+  assert.ok(!/confirm\(/.test(fn)); assert.match(fn, /navi-doc-fill-slot/); assert.match(fn, /agent-open-note/);
+  assert.match(d, /const od = document\.getElementById\('agent-open-note'\); if \(od\) od\.remove\(\);/);
+});

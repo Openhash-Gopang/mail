@@ -2356,7 +2356,7 @@ function _agentOpenedNotice(s) {
 }
 function _agentOnStatus(s) {
   if (s.state === 'opened') { _agentOpenedNotice(s); return; }
-  const od = document.getElementById('agent-open-note'); if (od && ['sent', 'failed'].includes(s.state)) od.remove();
+  const od = document.getElementById('agent-open-note'); if (od) od.remove();
   if (!['sent', 'pending', 'failed'].includes(s.state)) return;
   if (_docChat.on && window.DocHelper) {   // 서류 작성 도우미 세션 — 도우미 SP 가 다음 말에서 이 상태를 "지금 화면"으로 읽는다
     _docChat.slots = DocHelper.applySlot(_docChat.slots, DocHelper.matchLabel(String(s.label || ''), (_docChat.attach || []).map(function (a) { return a.l; })) || String(s.label || ''), s.state, s.note);
@@ -2379,7 +2379,8 @@ function _agentOnFile(f) {
   const kb = f.data && f.data.byteLength ? Math.max(1, Math.round(f.data.byteLength / 1024)) : 0;
   const bar = _agentBars().find(b => b.offsetParent !== null), st = bar && bar.querySelector('.da-state');
   if (!kb) { if (st) st.textContent = '도우미가 보낸 파일이 비어 있어 넣지 않았습니다.'; return; }
-  if (!confirm('나비웹 도우미가 받아 온 파일을 “' + f.label + '” 항목에 넣을까요?\n\n' + f.name + ' (' + kb + 'KB)')) { if (st) st.textContent = '파일을 넣지 않았습니다.'; return; }
+  const on0 = document.getElementById('agent-open-note'); if (on0) on0.remove();   // 파일이 도착했으면 "정부24 페이지를 열었습니다" 안내는 더 필요 없다
+  // 사용자가 이미 맡긴 일이므로 다시 묻지 않고 바로 넣는다(항목이 맞지 않으면 서류 화면이 사유와 함께 거절한다).
   _docHostPost({ type: 'navi-doc-fill-slot', label: f.label, name: f.name, mime: f.mime, data: f.data });
   if (st) st.textContent = '“' + f.label + '” 항목에 파일을 넣는 중입니다.';
 }
@@ -3946,6 +3947,7 @@ function _docHostMessage(d, e) {
       _docChat.slots = DocHelper.applySlot(_docChat.slots, lb, d.ok ? 'received' : 'failed', d.ok ? '' : String(d.msg || ''));
       setTimeout(_docChatPush, 0);
     }
+    { const on1 = document.getElementById('agent-open-note'); if (on1) on1.remove(); }
     _agentBars().forEach(b => { const st = b.querySelector('.da-state'); if (st && b.offsetParent !== null) st.textContent = d.ok ? '“' + String(d.label || '').slice(0, 60) + '” 항목에 ' + String(d.name || '파일').slice(0, 60) + ' 파일을 넣었습니다. 내용을 확인하세요.' : '파일을 넣지 못했습니다: ' + String(d.msg || '').slice(0, 80); });
   } else if (d.type === 'navi-doc-snapshot') {
     const w = _docHost.snapWait; if (w) { _docHost.snapWait = null; clearTimeout(w.t); w.resolve(d); }
