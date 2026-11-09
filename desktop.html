@@ -4989,6 +4989,17 @@ function _switchTab(name) {
   const _isCompose = _NAV_COMPOSE_NAMES.indexOf(name) >= 0;
   const _panelName = _isCompose ? 'compose' : name;
   document.getElementById('tab-' + _panelName).classList.add('active');
+  // 다른 화면에 갔다가 홈·서류 작성 메뉴로 돌아오면 이전에 열어 둔 서류가 그대로(숨은 iframe 에 남아) 저절로 나타나던 문제 — 작업 중이던 서류는 위에서 Draft 로 저장했으므로,
+  // 사용자가 직접 메뉴로 들어올 때는 서류 선택 화면부터 새로 시작한다(이어 쓰기는 Draft·내 서류·새로 고침 복원이 맡는다).
+  if (_isCompose && !_wasComposeActive && !_scrRestoring && (name === 'home' || name === 'doc') && _cmpMode === 'doc' && _docHost.loaded) {
+    try {
+      _docHost.confirmed = false; _docHost.writing = false; _docHost.title = '';
+      const _in = document.getElementById('cmp-input'); if (_in) { _in.readOnly = false; _in.value = ''; _kmailAutoResize(_in); }
+      document.getElementById('tab-compose').classList.remove('doc-live');
+      _docHostPost({ type: 'navi-doc-input', text: '' }); _docLockSync(); _cmpChatUpdateSendState();
+      if (name === 'home') _cmpSetMode('default', { force: true });
+    } catch (e) {}
+  }
   if (_isCompose) {
     if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
