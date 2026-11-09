@@ -3793,14 +3793,15 @@ function _docHostInput() {
   document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
   _docHostPost({ type: 'navi-doc-input', text: t });
 }
-async function _docHostSubmit(pick) {
+async function _docHostSubmit(pick, resume) {
   if (_docLocked()) { _drToast(_DOC_LOCK_MSG); return; }
   const t = document.getElementById('cmp-input').value.trim();
   if (!t) return;
   document.getElementById('tab-compose').classList.add('doc-live');
   _docHost.typed = t;   // 후보가 여럿이라 서류 쪽이 되돌리면(navi-doc-pending) 입력창 글자를 사용자가 친 그대로 되돌린다
   _docHost.confirmed = true; _docHelperSync(); _docLockOn();
-  _docHostPost({ type: 'navi-doc-submit', text: t, pick: !!pick });   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
+  _docHostPost({ type: 'navi-doc-submit', text: t, pick: !!pick, resume: !!resume });
+  try { _scrDocSave(); } catch (e) {}   // 열자마자 화면·서류를 기록한다(입력 전에 새로 고쳐도 돌아온다)   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
 }
 // ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
 // 서류가 다 만들어져 있고(서류 사이트 v3) 수정 가능하면, 입력은 먼저 기본 SP(AC-PRO-CORE, /kmail/assist)가 본다.
@@ -4915,14 +4916,18 @@ function _scrSave(name) {
 }
 function _scrDraftIdSave(id, kind) { try { if (id) sessionStorage.setItem(_SCR_DID, JSON.stringify({ id, kind, t: Date.now() })); else { sessionStorage.removeItem(_SCR_DID); sessionStorage.removeItem(_SCR_DOC); } } catch (e) {} }
 /* 서류 작성 중 새로 고침: 어떤 서류(사이트·제목)를 열었는지는 PDV 와 무관하게 sessionStorage 에 두고, 새로 고침 뒤 그 서류 페이지를 다시 연다 */
-const _SCR_DOC = 'kmail_doc';
+const _SCR_DOC = 'kmail_doc', _SCR_DOC_LS = 'kmail_doc_ls';
 function _scrDocSave() {
   if (_scrRestoring) return;
   try {
     const input = document.getElementById('cmp-input'), t = input ? input.value.trim() : '';
     const confirmed = !!(_docHost.loaded && _docHost.confirmed), title = confirmed ? String(_docHost.title || '') : '';
-    if (_cmpMode !== 'doc' || (!t && !title)) { sessionStorage.removeItem(_SCR_DOC); return; }
+    if (_cmpMode !== 'doc' || (!t && !title)) { sessionStorage.removeItem(_SCR_DOC); try { localStorage.removeItem(_SCR_DOC_LS); } catch (e) {} return; }
     sessionStorage.setItem(_SCR_DOC, JSON.stringify({ site: _docHost.id || '', title, text: t, confirmed, t: Date.now() }));
+    // 홈 화면의 '서류 작성' 목록·예시 버튼으로 연 서류는 _switchTab 을 거치지 않아 화면 이름이 기록되지 않았다 → 새로 고침하면 홈으로 갔다.
+    // 서류 모드인 동안은 여기서도 화면 이름을 'doc' 으로 기록한다. 같은 내용을 localStorage 에도 남겨 탭 복원·새 탭에서도 24시간 이어 열 수 있게 한다.
+    sessionStorage.setItem(_SCR_KEY, JSON.stringify({ n: 'doc', sub: '', t: Date.now() }));
+    try { localStorage.setItem(_SCR_DOC_LS, JSON.stringify({ site: _docHost.id || '', title, text: t, confirmed, t: Date.now() })); } catch (e) {}
   } catch (e) {}
 }
 function _scrResumeDoc(k) {   // 서류 화면을 다시 열고(사이트 선택·요청문), 확정돼 있던 서류는 같은 서류로 바로 다시 연다
@@ -4932,12 +4937,17 @@ function _scrResumeDoc(k) {   // 서류 화면을 다시 열고(사이트 선택
   if (sel.value !== site || !_docHost.loaded) { sel.value = site; _docHostSite(site); }
   const input = document.getElementById('cmp-input');
   input.value = (k.confirmed && k.title) || k.text || ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput();
-  if (k.confirmed && k.title) _docHostSubmit(true);   // 첫 후보 확정 — 서류 페이지가 아직 로드 중이면 호스트 대기열이 로드 뒤에 전한다
+  if (k.confirmed && k.title) _docHostSubmit(true, true);   // 첫 후보 확정 — 서류 페이지가 아직 로드 중이면 호스트 대기열이 로드 뒤에 전한다
 }
 async function _scrRestore() {
   let s = null, d = null;
   try { s = JSON.parse(sessionStorage.getItem(_SCR_KEY) || 'null'); d = JSON.parse(sessionStorage.getItem(_SCR_DID) || 'null'); } catch (e) {}
-  if (!s || !s.n || Date.now() - s.t > 12 * 3600 * 1000) return;
+  if (!s || !s.n) {   // 이 탭의 기록이 없으면(새 탭·탭 복원) 24시간 안에 작성하던 서류가 있는지 본다 — 홈으로 곧바로 열린 경우만
+    let l = null; try { l = JSON.parse(localStorage.getItem(_SCR_DOC_LS) || 'null'); } catch (e) {}
+    if (l && Date.now() - l.t < 24 * 3600 * 1000 && !location.hash) { _scrRestoring = true; try { _scrResumeDoc(l); } catch (e) {} _scrRestoring = false; _scrSave('doc'); }
+    return;
+  }
+  if (Date.now() - s.t > 12 * 3600 * 1000) return;
   _scrRestoring = true;
   try {
     let it = null, dk = null;
