@@ -181,7 +181,13 @@
     var f = S.els && S.els.frame; if (!f || !f.contentWindow) return false;
     try { f.contentWindow.postMessage(msg, originOf(S.url)); return true; } catch (e) { return false; }
   }
-  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' }); if (S.spMsg) post(S.spMsg); }
+  /** 전화 인증으로 로그인한 경우 — 혼디 앱(hondi.net)은 다른 사이트라 이 사이트의 로그인 쿠키를 읽지 못한다. 그래서 토큰을 혼디 앱 창에만(출처를 지정해서) 넘긴다. 테스트 아이디(tid-)는 ?testid= 로 이미 전달된다. */
+  function postAuth() {
+    var t = readCookie('hondi_pvt'), e = Number(readCookie('hondi_pvt_exp') || 0);
+    if (!t || t.indexOf('tid-') === 0 || !e || Date.now() > e - 30000) return false;
+    return post({ type: 'hondi-embed-auth', token: t, exp: e });
+  }
+  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' }); if (S.spMsg) post(S.spMsg); postAuth(); }
   /** 패널의 SP 를 바꾼다(각종 기관 선택). msg 가 null 이면 이 화면 기본 SP 위임으로 되돌린다. 페이지가 다시 로드돼도 announce() 가 다시 보낸다. */
   function setSp(msg) {
     S.spMsg = msg || null;
@@ -257,6 +263,11 @@
     root.addEventListener('message', function (ev) {
       if (!isIncomingMessage(ev, originOf(S.url))) return;
       S.badge = true; if (!S.open) open(); else paint();   // 상대의 대화 요청 — 패널을 열어 수락 창이 보이게 한다
+    });
+    root.addEventListener('message', function (ev) {   // 혼디 앱이 "로그인을 알려 달라"고 하면(요청만 오고 비밀값은 없다) 이 패널의 창에서 온 것일 때만 답한다
+      var d = ev && ev.data;
+      if (!d || typeof d !== 'object' || d.type !== 'hondi-embed-auth-request' || ev.origin !== originOf(S.url) || ev.source !== frameWindow()) return;
+      postAuth();
     });
     root.addEventListener('message', function (ev) {   // 혼디 페이지가 직접 답하는 동안(서류 SP 등 ai:self)에도 진행 막대를 켜고 끈다
       var d = ev && ev.data;
