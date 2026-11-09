@@ -84,9 +84,42 @@
     // 내려받기 링크의 주소는 확장(배경)만 받는다. AI 에게는 돌려주지 않는다(주소에 세션 값이 들어 있을 수 있다).
     link_href: ({ ref }) => { const el = need(ref); const a = el.closest && el.closest('a[href]'); if (!a) throw new Error('링크 요소가 아닙니다.'); return a.href; },
   };
+  // ── 도우미 커서: 클릭·입력 직전에 가상 마우스 포인터가 대상으로 움직이고, 대상에 테두리가 잠깐 켜진다(Claude in Chrome 처럼 무엇을 하는지 보이게). ──
+  // 페이지와 섞이지 않게 닫힌 shadow DOM 에 그리고, 마우스 이벤트는 받지 않는다. 움직임 줄이기 설정이면 이동 없이 테두리만 켠다.
+  let curHost = null, curRoot = null, curEl = null, curX = 0, curY = 0, curTimer = null;
+  const curReduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+  function curEnsure() {
+    if (curHost && curHost.isConnected) return;
+    curHost = document.createElement('div'); curHost.style.cssText = 'all:initial;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:2147483646;pointer-events:none';
+    curRoot = curHost.attachShadow({ mode: 'closed' });
+    const st = document.createElement('style');
+    st.textContent = '.p{position:fixed;left:0;top:0;width:24px;height:24px;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));transition:opacity .4s}.ring{position:fixed;border:2px solid #2f5bd8;border-radius:6px;box-shadow:0 0 0 3px rgba(47,91,216,.25);pointer-events:none}.rip{position:fixed;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:rgba(47,91,216,.35);border:2px solid #2f5bd8;pointer-events:none}';
+    curEl = document.createElement('div'); curEl.className = 'p'; curEl.style.opacity = '0';
+    curEl.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#2f5bd8" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+    curRoot.append(st, curEl); document.documentElement.appendChild(curHost);
+    curX = Math.round(innerWidth * 0.55); curY = Math.round(innerHeight * 0.35); curEl.style.transform = `translate(${curX}px,${curY}px)`;
+  }
+  function curHide() { clearTimeout(curTimer); if (curEl) curEl.style.opacity = '0'; }
+  async function glide(el, click) {
+    try {
+      curEnsure(); const r = el.getBoundingClientRect(); if (!r.width && !r.height) return;
+      const tx = Math.round(Math.min(Math.max(r.left + Math.min(r.width / 2, 120), 4), innerWidth - 8)), ty = Math.round(Math.min(Math.max(r.top + r.height / 2, 4), innerHeight - 8));
+      clearTimeout(curTimer); curEl.style.opacity = '1';
+      const ring = document.createElement('div'); ring.className = 'ring'; ring.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`; curRoot.appendChild(ring);
+      if (!curReduced()) {
+        const d = Math.hypot(tx - curX, ty - curY);
+        await curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(550, Math.max(180, d * 0.55)), easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished;
+      }
+      curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`;
+      if (click) { const rip = document.createElement('div'); rip.className = 'rip'; rip.style.cssText = `left:${tx}px;top:${ty}px`; curRoot.appendChild(rip); rip.animate([{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.8)', opacity: 0 }], { duration: 380 }).finished.then(() => rip.remove(), () => rip.remove()); await new Promise((res) => setTimeout(res, 140)); }
+      setTimeout(() => ring.remove(), 700);
+      curTimer = setTimeout(curHide, 3500);
+    } catch (e) { /* 그림은 부가 기능이라 실패해도 조작은 계속한다 */ }
+  }
   // 작업 중인 탭 위쪽에 안내 띠를 띄운다(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
   let ovHost = null, ovRoot = null, ovLast = null, ovWd = null;
   function overlay(mode, text, options) {
+    if (mode === 'off' || mode === 'done' || mode === 'error') curHide();
     if (window !== window.top) return;
     if (mode === 'off') { ovLast = null; if (ovWd) { clearInterval(ovWd); ovWd = null; } if (ovHost) { ovHost.remove(); ovHost = null; ovRoot = null; } return; }
     ovLast = { mode, text, options };
@@ -140,6 +173,11 @@
     if (!msg || msg.__navi !== 'tool') return;
     try {
       if (msg.describe) { const el = msg.input && msg.input.ref ? refs.get(msg.input.ref) : null; send({ ok: true, info: el ? describe(el) : {} }); }
+      else if (['click', 'type', 'select_option'].includes(msg.name) && msg.input && msg.input.ref && refs.get(msg.input.ref) && refs.get(msg.input.ref).isConnected) {
+        const el = refs.get(msg.input.ref); try { el.scrollIntoView({ block: 'center' }); } catch (e) { /* 건너뜀 */ }
+        glide(el, msg.name === 'click').then(() => { try { send({ ok: true, text: String(run[msg.name](msg.input || {})) }); } catch (e) { send({ ok: false, error: e.message }); } });
+        return true;   // 커서가 움직인 뒤에 조작하므로 응답을 잠시 뒤에 보낸다
+      }
       else send({ ok: true, text: String(run[msg.name](msg.input || {})) });
     } catch (e) { send({ ok: false, error: e.message }); }
   });
