@@ -10,6 +10,7 @@
   chrome.runtime.onMessage.addListener((m) => {
     if (!live()) return;
     if (m && m.type === 'status' && ['sent', 'pending', 'failed'].includes(m.state)) window.postMessage({ source: 'navi-agent', type: 'agent-status', label: String(m.label || '').slice(0, 120), state: m.state, note: String(m.note || '').slice(0, 200) }, location.origin);
+    if (m && m.type === 'pdv' && typeof m.rid === 'string') { window.postMessage({ source: 'navi-agent', type: 'agent-pdv', rid: m.rid.slice(0, 40), op: m.op === 'set' ? 'set' : 'get', keys: Array.isArray(m.keys) ? m.keys.slice(0, 5) : [], values: m.values && typeof m.values === 'object' ? m.values : {} }, location.origin); return; }
     if (!m || m.type !== 'deliver' || typeof m.b64 !== 'string' || m.b64.length > 14 * 1024 * 1024) return;
     try {
       const bin = atob(m.b64), u8 = new Uint8Array(bin.length);
@@ -21,6 +22,7 @@
   window.addEventListener('message', async (e) => {
     const m = e.data;
     if (!live() || e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-web') return;
+    if (m.type === 'agent-pdv-result') { chrome.runtime.sendMessage({ type: 'pdv-result', rid: String(m.rid || '').slice(0, 40), ok: !!m.ok, values: m.values || {}, saved: m.saved || [] }); return; }
     try {
       if (m.type === 'agent-ping') { const info = await chrome.runtime.sendMessage({ type: 'info' }); reply(m.id, 'agent-pong', { ok: true, ...info }); }
       else if (m.type === 'agent-queue') {

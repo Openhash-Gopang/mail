@@ -4046,6 +4046,19 @@ function _drCall(op, payload, ms) {
     if (_dr.ready) send(); else _dr.waiters.push(send);
   });
 }
+// ── 나비웹 도우미 ↔ 내 데이터 금고 (2026-11-09) ──
+// 도우미(확장)가 서류 입력칸에 넣을 개인 정보(성명·시도·주소·전화번호·이메일)를 금고에서 읽고, 사용자에게 물어 받은 값을 금고에 보관한다.
+// 확장 다리(bridge.js)가 이 화면으로 요청을 넘기고, 이 화면은 PDV 중계(pdv-draft-bridge)로 전달만 한다. 옛 중계(profile_* 미지원)이면 실패로 답한다.
+window.addEventListener('message', async (e) => {
+  const m = e.data;
+  if (e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-agent' || m.type !== 'agent-pdv' || typeof m.rid !== 'string') return;
+  const out = { source: 'navi-web', type: 'agent-pdv-result', rid: m.rid, ok: false };
+  try {
+    const r = m.op === 'set' ? await _drCall('profile_set', { values: m.values || {} }, 6000) : await _drCall('profile_get', { keys: m.keys || [] }, 6000);
+    Object.assign(out, { ok: true, values: r.values || {}, saved: r.saved || [] });
+  } catch (x) { out.error = String((x && x.message) || x); }
+  window.postMessage(out, location.origin);
+});
 // ── 첨부서류 보관·재활용 (2026-11-06) ──
 // 서류 화면(navi-pro)에서 항목에 들어간 첨부서류를 이 기기의 PDV(kind='attach')에 보관했다가, 같은 종류의 서류를 쓸 때 다시 꺼내 쓴다.
 // 서류 종류와 유효 기간은 서류 화면이 정하고, 이 화면은 PDV 중계(pdv-draft-bridge)로 전달만 한다. 유효 기간이 지난 보관본은 목록을 물을 때마다 PDV 에서 지운다(purge).

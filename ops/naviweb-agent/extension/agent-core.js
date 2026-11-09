@@ -20,7 +20,8 @@ export function buildSystem(playbook) {
     '- 화면에 "로그아웃"·"마이페이지"·사용자 이름이 보이면 이미 로그인된 상태입니다. 로그인하라고 요청하지 말고 곧바로 다음 단계를 진행합니다. 보이지 않을 때만 로그인 안내를 합니다.',
     '- 서류 종류가 여럿으로 갈리면(예: 등본/초본) 목표에 이미 정해진 것은 묻지 말고, 정해지지 않았을 때만 ask_choice 로 고르게 합니다.',
     '- 사용자가 직접 하는 일은 로그인·본인인증(공동인증서·간편인증)·결제·보안문자뿐입니다. 그 밖의 모든 조작(메뉴 이동, 서비스·옵션 선택, 입력칸 채우기, 체크, 다음·신청·발급 단추 누르기)은 도우미가 직접 합니다. "화면에서 직접 선택해 주세요"라고 넘기지 마세요. 선택이 사용자 몫이면 ask_choice 로 단추를 보여 주고, 고른 값대로 도우미가 화면을 조작합니다. 인증·결제 단계가 오면 그 단계에서만 handoff_to_user 로 멈추고, 끝나면 이어서 진행합니다.',
-    '- 입력칸에 넣을 개인 정보(거주지·전화번호·이메일 등)를 모르면 ask_input 으로 물어 받아 직접 입력합니다. 사용자가 직접 입력하겠다고 하면 건너뜁니다. 비밀번호·주민등록번호·카드·계좌·인증번호는 ask_input 으로 받지 말고 handoff_to_user 로 사용자가 직접 입력하게 합니다.',
+    '- 입력칸에 넣을 개인 정보(성명·거주지 시도·주소·전화번호·이메일)는 먼저 pdv_get 으로 내 데이터 금고에서 찾아 쓰고, 없을 때만 ask_input(save_as 로 금고 항목을 지정)으로 물어 받아 직접 입력합니다. save_as 로 받은 값은 도우미가 금고에 보관합니다.',
+    '- 입력칸에 넣을 그 밖의 개인 정보를 모르면 ask_input 으로 물어 받아 직접 입력합니다. 사용자가 직접 입력하겠다고 하면 건너뜁니다. 비밀번호·주민등록번호·카드·계좌·인증번호는 ask_input 으로 받지 말고 handoff_to_user 로 사용자가 직접 입력하게 합니다.',
     '- 끝나면 한 일, 남은 일, 확인이 필요한 점을 짧게 보고합니다.',
   ].join('\n');
   return playbook ? `${base}\n\n[절차: ${playbook.title}]\n${playbook.guide}` : base;
@@ -42,6 +43,7 @@ function trimImages(messages, keep = 1) {
   }
 }
 
+export const PDV_KEYS = ['name', 'sido', 'address', 'phone', 'email'];
 export const needsAnswer = (t) => /알려\s*주세요|알려\s*주시|말씀해|선택해\s*주|정해\s*주|골라\s*주|어느\s*(것|쪽)|무엇을.*(할까요|드릴까요)|\?\s*$|까요\s*[?.]?\s*$/m.test(String(t || ''));
 
 export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
@@ -79,7 +81,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
         if (host.progress && verdict.act === 'auto') host.progress(`화면을 조작하는 중입니다 (${step + 1}단계 · ${({ click: '누르기', type: '입력', navigate: '이동', read_page: '화면 읽기', find: '찾기', screenshot: '화면 보기' })[u.name] || u.name})`);
         host.log({ kind: 'tool', name: u.name, input: u.input, act: verdict.act });
         if (verdict.act === 'input') {
-          const v = await host.input(String(u.input.question || '값을 입력해 주세요.').slice(0, 300), String(u.input.label || '').slice(0, 40));
+          const v = await host.input(String(u.input.question || '값을 입력해 주세요.').slice(0, 300), String(u.input.label || '').slice(0, 40), PDV_KEYS.includes(u.input.save_as) ? u.input.save_as : '');
           say(v == null ? '사용자가 입력하지 않고 중단했습니다.' : v && v.manual ? '사용자가 페이지에 직접 입력했다고 알렸습니다. 화면을 다시 읽고 다음 단계로 가세요.' : '사용자가 입력한 값: ' + String(v).slice(0, 200));
         } else if (verdict.act === 'choice') {
           const opts = (Array.isArray(u.input.options) ? u.input.options : []).map((x) => String(x).slice(0, 60)).filter(Boolean).slice(0, 6);
