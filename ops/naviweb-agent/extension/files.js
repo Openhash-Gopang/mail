@@ -98,3 +98,20 @@ export async function grabPdfInPage(maxBytes) {
   }
   return { ok: false, msg: big ? '문서가 너무 큽니다(최대 10MB).' : '이 화면이 불러온 PDF 를 찾지 못했습니다.' };
 }
+
+// "인쇄" 단추만 있는 뷰어(정부24 문서출력 창)용: 사용자가 인쇄 창에서 "PDF 로 저장"을 고르는 것과 같은 결과를 확장이 직접 만든다.
+// 탭을 잠깐 디버거에 붙여 Page.printToPDF 로 화면(인쇄용 스타일 적용)을 PDF 로 만들고 바로 뗀다. 사본이므로 원본 파일과 같지 않을 수 있다.
+export async function printTabToPdf(dbg, tabId, maxBytes = MAX_BYTES) {
+  const target = { tabId };
+  try { await dbg.attach(target, '1.3'); } catch (e) { return { ok: false, msg: '화면을 PDF 로 만들지 못했습니다(디버거 연결 실패: ' + (e && e.message ? e.message : e) + ').' }; }
+  try {
+    const r = await dbg.sendCommand(target, 'Page.printToPDF', { printBackground: true, preferCSSPageSize: true, paperWidth: 8.27, paperHeight: 11.69 });
+    const b64 = r && r.data ? String(r.data) : '';
+    if (!b64) return { ok: false, msg: '화면을 PDF 로 만들지 못했습니다(빈 결과).' };
+    const size = Math.floor(b64.length * 3 / 4);
+    if (size > maxBytes) return { ok: false, msg: `PDF 가 너무 큽니다(${Math.round(size / 1048576)}MB, 최대 10MB).` };
+    return { ok: true, size, b64 };
+  } catch (e) {
+    return { ok: false, msg: '화면을 PDF 로 만들지 못했습니다: ' + (e && e.message ? e.message : e) };
+  } finally { try { await dbg.detach(target); } catch { /* 이미 떼어짐 */ } }
+}

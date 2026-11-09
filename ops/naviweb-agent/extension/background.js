@@ -1,7 +1,7 @@
 import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
-import { fetchForNavi, pickDownload, grabPdfInPage, safeName, MAX_BYTES } from './files.js';
+import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, safeName, MAX_BYTES } from './files.js';
 import { hostAllowed } from './policy.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -255,11 +255,25 @@ async function host(playbook) {
               if (hit) {
                 const nm = safeName(state.slot, 'application/pdf', '');
                 await deliverToNavi({ kind: 'file', label: state.slot, name: nm, mime: 'application/pdf', b64: hit.b64 });
-                await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다. 서류에 넣을지 확인해 주세요.' }).catch(() => {});
-                return { text: `나비웹으로 보냈습니다: ${nm} (${Math.round(hit.size / 1024)}KB). 사용자가 나비웹 화면에서 서류에 넣을지 확인합니다.` };
+                await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다.' }).catch(() => {});
+                return { text: `나비웹으로 보냈습니다: ${nm} (${Math.round(hit.size / 1024)}KB). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 서류에 넣을지 다시 묻지 말고, 이어서 남은 일이 없으면 작업을 마치세요.` };
               }
             } catch { /* 이 탭은 읽을 수 없다 — 다음 탭 */ }
           }
+          // 찾지 못하면(인쇄 단추만 있는 뷰어) 지금 보이는 문서 화면을 PDF 로 만든다 — 사용자가 인쇄 창에서 "PDF 로 저장"하는 것과 같은 결과
+          try {
+            const url = String((await chrome.tabs.get(state.tabId)).url || '');
+            if (/^https:\/\/[^/]*gov\.kr\/ezpdfwv\//i.test(url)) {
+              const pr = await printTabToPdf(chrome.debugger, state.tabId);
+              if (pr.ok) {
+                const nm = safeName(state.slot, 'application/pdf', '');
+                await deliverToNavi({ kind: 'file', label: state.slot, name: nm, mime: 'application/pdf', b64: pr.b64 });
+                await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '문서 화면을 PDF 로 만들어 나비웹으로 보냈습니다.' }).catch(() => {});
+                return { text: `나비웹으로 보냈습니다: ${nm} (${Math.round(pr.size / 1024)}KB, 화면을 PDF 로 만든 사본). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 서류에 넣을지 다시 묻지 말고, 이어서 남은 일이 없으면 작업을 마치세요.` };
+              }
+              return { text: pr.msg };
+            }
+          } catch { /* 탭 정보를 읽지 못함 — 아래 기존 방법으로 */ }
         }
         let fileUrl = '';
         if (input && input.ref) fileUrl = String((await toTab('link_href', { ref: input.ref }, false)).text || '');
@@ -273,8 +287,8 @@ async function host(playbook) {
         const f = await fetchForNavi(fileUrl, tabUrl);
         if (!f.ok) { await deliverToNavi({ kind: 'status', label: state.slot, state: 'failed', note: f.msg.slice(0, 120) }).catch(() => {}); return { text: '파일을 보내지 못했습니다: ' + f.msg }; }
         await deliverToNavi({ kind: 'file', label: state.slot, name: f.name, mime: f.mime, b64: f.b64 });
-        await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다. 서류에 넣을지 확인해 주세요.' }).catch(() => {});
-        return { text: `나비웹으로 보냈습니다: ${f.name} (${Math.round(f.size / 1024)}KB). 사용자가 나비웹 화면에서 서류에 넣을지 확인합니다.` };
+        await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다.' }).catch(() => {});
+        return { text: `나비웹으로 보냈습니다: ${f.name} (${Math.round(f.size / 1024)}KB). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 서류에 넣을지 다시 묻지 말고, 이어서 남은 일이 없으면 작업을 마치세요.` };
       }
       if (name === 'wait') { await wait(Math.min(10, Number(input.seconds) || 1) * 1000); return { text: '대기 완료' }; }
       throw new Error('알 수 없는 도구: ' + name);
