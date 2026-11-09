@@ -118,10 +118,10 @@
     curRoot.append(st, curEl); document.documentElement.appendChild(curHost);
     curX = Math.round(innerWidth * 0.55); curY = Math.round(innerHeight * 0.35); curEl.style.transform = `translate(${curX}px,${curY}px)`;
   }
-  let curBusy = false, curGliding = false, curWan = null;
+  let curBusy = false, curGliding = false, curWan = null, curSuppressed = false;   // curSuppressed: 팝업이 떠 있을 때 메인 창 커서를 숨김
   function curHide() { clearTimeout(curTimer); curBusy = false; clearTimeout(curWan); curWan = null; if (curEl) curEl.style.opacity = '0'; }
   // 도우미가 작업하는 동안에는 클릭·입력 사이에도 커서를 계속 보인다(생각하는 시간에 사라져 안 보인다는 지적). 끝나거나 사용자 차례가 되면 숨긴다.
-  function curShow() { try { curEnsure(); curBusy = true; clearTimeout(curTimer); curEl.style.opacity = '1'; if (!curWan) curWander(); } catch (e) { /* 부가 기능 */ } }
+  function curShow() { try { if (curSuppressed) return; curEnsure(); curBusy = true; clearTimeout(curTimer); curEl.style.opacity = '1'; if (!curWan) curWander(); } catch (e) { /* 부가 기능 */ } }
   // 생각하는 동안에도 커서가 화면 위를 천천히 오가며 "작업 중"임을 보인다(대상으로 갈 때는 glide 가 가로챈다). 움직임 줄이기 설정이면 가만히 둔다.
   function curWander() {
     if (!curBusy || curReduced()) { curWan = null; return; }
@@ -211,7 +211,12 @@
   }
   chrome.runtime.onMessage.addListener((msg, _s, send) => {
     if (msg && msg.__navi === 'ping') { send({ ok: true }); return; }
-    if (msg && msg.__navi === 'overlay') { overlay(msg.mode, msg.text, msg.options); send({ ok: true }); return; }
+    if (msg && msg.__navi === 'overlay') {
+      if (msg.part === 'cursor') { curSuppressed = false; overlay('off'); if (window === window.top) curShow(); }   // 팝업: 커서만(띠 문구 없음)
+      else if (msg.part === 'banner') { curSuppressed = true; curHide(); overlay(msg.mode, msg.text, msg.options); curHide(); }   // 메인: 띠만(커서 숨김)
+      else { curSuppressed = false; overlay(msg.mode, msg.text, msg.options); }
+      send({ ok: true }); return;
+    }
     if (!msg || msg.__navi !== 'tool') return;
     try {
       if (msg.describe) { const el = msg.input && msg.input.ref ? refs.get(msg.input.ref) : null; send({ ok: true, info: el ? describe(el) : {} }); }

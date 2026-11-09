@@ -69,12 +69,31 @@ async function toTab(name, input, describe) {
   return one(0, input);
 }
 // 작업 탭 위의 안내 띠(content.js). 탭이 바뀌거나 새로 불러와도 다시 붙인다.
+// 팝업 창(문서 보기 창 등)이 떠 있는 동안: 커서는 팝업에서만 보이고(메인 창 커서는 숨김), 안내 문구는 팝업에 띄우지 않고 메인 창에만 둔다.
+// 단, 사용자가 답해야 하는 안내(확인·선택·입력·직접 처리)는 사용자가 보고 있는 팝업에 띄운다.
+async function isPopupTab(id) {
+  try { const t = await chrome.tabs.get(id); const w = await chrome.windows.get(t.windowId); return w.type === 'popup' || /\/ezpdfwv\//.test(t.url || ''); } catch { return false; }
+}
+async function overlayTo(id, msg, inject) {
+  try { await chrome.tabs.sendMessage(id, msg, { frameId: 0 }); }
+  catch { if (!inject) return; try { await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, files: ['content.js'] }); await chrome.tabs.sendMessage(id, msg, { frameId: 0 }); } catch { /* 주입할 수 없는 화면 */ } }
+}
 async function overlay(mode, text, options) {
   state.ov = mode === 'off' ? null : { mode, text, options };
   if (state.tabId == null) return;
-  const msg = { __navi: 'overlay', mode, text, options };
-  try { await chrome.tabs.sendMessage(state.tabId, msg, { frameId: 0 }); }
-  catch { try { await chrome.scripting.executeScript({ target: { tabId: state.tabId, allFrames: true }, files: ['content.js'] }); await chrome.tabs.sendMessage(state.tabId, msg, { frameId: 0 }); } catch { /* 주입할 수 없는 화면 */ } }
+  const base = { __navi: 'overlay', mode, text, options };
+  const fam = [...(state.family || [])].filter((x) => x !== state.tabId);
+  if (mode !== 'off' && mode !== 'busy' && mode !== 'done' && mode !== 'error' || !(await isPopupTab(state.tabId))) {
+    // 보통 경우: 작업 탭에만 띠와 커서, 나머지 탭은 정리
+    await overlayTo(state.tabId, base, true);
+    for (const id of fam) await overlayTo(id, { __navi: 'overlay', mode: 'off' }, false);
+    return;
+  }
+  // 팝업이 작업 탭: 팝업에는 커서만, 메인(비팝업) 탭에는 띠만
+  const main = [];
+  for (const id of fam) if (!(await isPopupTab(id))) main.push(id);
+  await overlayTo(state.tabId, mode === 'busy' ? { ...base, part: 'cursor' } : { __navi: 'overlay', mode: 'off' }, true);
+  for (const id of fam) await overlayTo(id, main.includes(id) ? { ...base, part: 'banner' } : { __navi: 'overlay', mode: 'off' }, main.includes(id));
 }
 chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text, state.ov.options); });
 function choose(question, options) { say({ type: 'prompt', kind: 'choice', text: question, options }); overlay('choice', question, options); return new Promise((res) => { state.waiter = (ok, value) => { overlay('busy', ''); res(ok ? value : null); }; }); }
