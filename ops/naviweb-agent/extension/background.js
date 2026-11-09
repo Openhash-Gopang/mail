@@ -87,9 +87,9 @@ async function host(playbook) {
     async callModel(body) {
       const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : {}), ...(c.userToken ? { 'x-navi-token': encodeURIComponent(c.userToken) } : {}) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
       const j = await r.json().catch(() => ({}));
-      if (r.status === 401) throw new Error(c.userToken
+      if (r.status === 401) throw new Error((j && j.reason ? '[게이트웨이 거절 사유: ' + String(j.reason).slice(0, 60) + '] ' : '') + (c.userToken
         ? '사이트는 열었습니다. 나비웹 로그인 확인이 거절됐습니다(로그인이 만료됐거나, 도우미 설정의 토큰 칸에 옛 값이 남아 있을 수 있습니다). 나비웹을 새로고침해 다시 로그인된 것을 확인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.'
-        : '사이트는 열었습니다. 나비웹 로그인 정보를 받지 못했습니다. 나비웹 화면에서 "도우미가 가져오기"를 다시 눌러 주세요(나비웹에 로그인되어 있어야 합니다). 급하면 열린 사이트에서 직접 진행해 주세요.');
+        : '사이트는 열었습니다. 나비웹 로그인 정보를 받지 못했습니다. 나비웹 화면에서 "도우미가 가져오기"를 다시 눌러 주세요(나비웹에 로그인되어 있어야 합니다). 급하면 열린 사이트에서 직접 진행해 주세요.'));
       if (r.status === 429) throw new Error('오늘 사용할 수 있는 도우미 단계 수를 모두 썼습니다. 내일 다시 이용해 주세요.');
       if (!r.ok) throw new Error('모델 호출 실패: ' + (j.error || r.status)); return j;
     },

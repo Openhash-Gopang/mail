@@ -261,6 +261,8 @@ test('게이트웨이: 나비웹 로그인 사용자(X-Navi-Token, 한글 포함
     const user = { 'x-navi-token': encodeURIComponent('user-ok-한글') };
     assert.equal((await whoIs(req({ authorization: 'Bearer tok' }), env)).operator, true);
     assert.equal(await whoIs(req(user), { AGENT_TOKEN: 'tok' }), null, 'AUTH_VERIFY_URL 이 없으면 사용자 토큰은 거부');
+    { const why = {}; await whoIs(req(user), { AGENT_TOKEN: 'tok' }, why); assert.equal(why.r, 'no_verify_url', '거절 사유를 알려 준다'); }
+    { const why = {}; await whoIs(req({}), env, why); assert.equal(why.r, 'no_token_header'); }
     assert.equal((await gw.fetch(req({ 'x-navi-token': encodeURIComponent('nope') }), env)).status, 401);
     assert.equal((await gw.fetch(req({ 'x-navi-token': '%E0%A4%A' }), env)).status, 401, '깨진 인코딩');
     assert.equal((await gw.fetch(req(user), env)).status, 200);
