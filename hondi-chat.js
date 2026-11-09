@@ -197,7 +197,8 @@
   }
   /** 대화창에 AI 말풍선 한 줄을 보여 준다(모델 호출 없음). 창이 아직 로드 중이면 로드된 뒤 보낸다. */
   function say(text) {
-    if (!S.mounted) return; S.sayQ = S.sayQ || []; S.sayQ.push(String(text || '').slice(0, 600)); open();
+    if (!S.mounted) return; S.sayQ = S.sayQ || []; S.sayQ.push(String(text || '').slice(0, 600));
+    ensureLoaded(); notify();   // 대화창은 사용자가 아이콘을 눌러 열 때만 연다 — 말풍선은 뒤에서 쌓이고 아이콘에 점으로 알린다(2026-11-09)
     setTimeout(flushSay, S.loadedOnce ? 50 : 900);
   }
   function flushSay() { var q = S.sayQ || []; while (q.length) { if (!post({ type: 'hondi-embed-say', text: q[0] })) break; q.shift(); } }
