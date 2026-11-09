@@ -307,5 +307,23 @@ contentHash = SHA-256( 원문 )          ← 원문은 PDV에만 있음</pre>
 </section>
 
 </div>
+<script>
+/* naviweb 안에 끼워 넣었을 때(?embed=mail): 이 문서는 안쪽 스크롤 막대를 두지 않는다. 문서 높이를 부모에 알리면 부모가 iframe 높이를 그만큼 늘려
+   바깥 화면 하나로만 스크롤된다(위쪽 탭 줄은 함께 올라간다). 목차 같은 #앵커 이동도 부모가 대신 스크롤한다. */
+(function(){
+  if (window.parent === window || !/[?&]embed=mail/.test(location.search)) return;
+  document.documentElement.style.overflow = 'hidden';
+  var last = 0;
+  function post(){ var h = Math.ceil(document.documentElement.getBoundingClientRect().height); if (h && h !== last) { last = h; parent.postMessage({ type: 'xokorea-height', h: h }, '*'); } }
+  window.addEventListener('load', post); window.addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.body); else setInterval(post, 500);
+  post();
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
+    var id = a.getAttribute('href').slice(1), t = id && document.getElementById(id); if (!t) return;
+    e.preventDefault(); parent.postMessage({ type: 'xokorea-scroll', y: Math.round(t.getBoundingClientRect().top + window.pageYOffset) }, '*');
+  });
+})();
+</script>
 </body>
 </html>
