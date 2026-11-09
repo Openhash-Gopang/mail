@@ -651,3 +651,14 @@ test('받아 온 파일은 되묻지 않고 바로 넣고, 정부24 열림 안�
   assert.ok(!/confirm\(/.test(fn)); assert.match(fn, /navi-doc-fill-slot/); assert.match(fn, /agent-open-note/);
   assert.match(d, /const od = document\.getElementById\('agent-open-note'\); if \(od\) od\.remove\(\);/);
 });
+test('지시 이행 원칙: 맡긴 일을 "진행할까요?"로 되묻는 선택은 묻지 않고 진행하고, 위험한 질문은 묻는다', async () => {
+  const { autoProceed } = await import('../ops/naviweb-agent/extension/policy.js');
+  const q = '신청 전 확인: 주민등록표 등본을 제주시 주소 기준, 전체 발급, 온라인발급(본인출력)으로 신청합니다. 진행할까요? (신청 후 인증서 인증·결제가 나오면 직접 하셔야 합니다)';
+  assert.equal(autoProceed(q, ['신청 진행', '취소', '중단']), '신청 진행');
+  assert.equal(autoProceed('이 서류를 삭제할까요?', ['진행', '취소']), null);
+  assert.equal(autoProceed('수수료 1,000원을 내고 발급할까요?', ['진행', '취소']), null);
+  assert.equal(autoProceed('어느 주소로 할까요?', ['제주', '서울']), null);
+  assert.equal(autoProceed('진행할까요?', ['진행']), null);
+  const ac = readFileSync(new URL('../ops/naviweb-agent/extension/agent-core.js', import.meta.url), 'utf8');
+  assert.match(ac, /지시 이행 원칙/); assert.match(ac, /autoProceed\(String\(u\.input\.question/);
+});
