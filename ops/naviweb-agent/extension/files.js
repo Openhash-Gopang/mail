@@ -53,7 +53,7 @@ export async function fetchForNavi(fileUrl, tabUrl, fetchImpl = fetch) {
   if (!rc.ok) return rc;
   const mime = String((r.headers && r.headers.get && r.headers.get('content-type')) || '').split(';')[0].trim().toLowerCase();
   const name = safeName(parseDisposition(r.headers && r.headers.get && r.headers.get('content-disposition')), mime, c.url);
-  if (!OK_MIME.test(mime) && !(mime === '' && OK_EXT.test(name))) return { ok: false, msg: `서류 파일이 아닌 응답입니다(${mime || '형식 없음'}). 로그인이 풀렸거나 오류 화면일 수 있습니다.` };
+  if (!OK_MIME.test(mime) && !(mime === '' && OK_EXT.test(name))) return { ok: false, msg: `서류 파일이 아닌 응답입니다(${mime || '형식 없음'}). 로그인이 풀렸거나 오류 화면일 수 있습니다. 이 링크는 파일이 아니라 화면입니다. 같은 화면(또는 처리완료 상세 화면)의 "문서출력"·"저장"·"다운로드" 단추를 눌러 파일을 내려받은 뒤 ref 없이 send_file_to_navi 를 다시 부르세요. 문서출력이 새 창을 열면 그 창에서 저장 단추를 누릅니다.` };
   const len = Number(r.headers && r.headers.get && r.headers.get('content-length')) || 0;
   if (len > MAX_BYTES) return { ok: false, msg: `파일이 너무 큽니다(${Math.round(len / 1048576)}MB, 최대 10MB).` };
   const buf = new Uint8Array(await r.arrayBuffer());

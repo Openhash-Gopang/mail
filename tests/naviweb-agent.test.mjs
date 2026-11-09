@@ -541,3 +541,10 @@ test('기관 사이트를 열면 나비웹에 opened 상태를 알린다(다리 
   assert.match(br, /'opened'/); assert.match(bg, /notifyOpened/);
   assert.match(readFileSync(new URL('../desktop.html', import.meta.url), 'utf8'), /_agentOpenedNotice/);
 });
+
+test('처리완료 화면(text/html) 응답이면 문서출력·저장 단추로 내려받으라고 안내, 문서출력 단추는 가져오기 작업에서 자동', async () => {
+  const r = await fetchForNavi('https://www.gov.kr/x', 'https://www.gov.kr/y', async () => ({ ok: true, url: 'https://www.gov.kr/x', status: 200, headers: new Headers({ 'content-type': 'text/html' }), arrayBuffer: async () => new ArrayBuffer(4) }));
+  assert.equal(r.ok, false); assert.match(r.msg, /문서출력/);
+  assert.equal(classify('click', { ref: 'e1' }, { tag: 'button', text: '문서출력' }, [], { fetchJob: true }).act, 'auto');
+  assert.match(buildSystem({ goal: 'g' }), /문서출력/);
+});
