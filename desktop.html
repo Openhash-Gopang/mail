@@ -1280,9 +1280,10 @@ html[data-menu=open] .side-nav .side-intro{opacity:1!important;pointer-events:au
 .user-row #hondi-user-badge .hub-chip:hover{background:var(--pri-bg,#e8f0fe);box-shadow:none}
 .user-row #hondi-user-badge .hub-chip .hub-av,.user-row #hondi-user-badge .hub-chip .hub-dot,.user-row #hondi-user-badge .hub-head .hub-av{display:none}
 .user-row #hondi-user-badge .hub-chip::after{content:attr(aria-label);font:600 14px/1.2 inherit;white-space:nowrap}
-.set-lang .lp-host{position:relative;display:inline-flex}
-.set-lang .lp-btn{border-color:var(--bdr,#cbd5e1);color:var(--sub,#334155)}.set-lang .lp-btn:hover,.set-lang .lp-btn[aria-expanded=true]{background:var(--pri-bg,#e8f0fe)}
-.set-lang .lp-pop{right:auto;left:0}
+/* 언어·국가 선택: 상단 오른쪽(기능 개선 제안 왼쪽). 밝은 바탕이라 글자·윤곽을 어둡게 */
+.user-row .lp-host{position:relative;display:inline-flex}
+.user-row .lp-btn{height:34px;border-color:var(--bdr,#cbd5e1);color:var(--sub,#334155)}.user-row .lp-btn:hover,.user-row .lp-btn[aria-expanded=true]{background:var(--pri-bg,#e8f0fe)}
+.user-row .lp-pop{right:0;left:auto}
 .wp-site{margin-left:auto;align-self:center;font-size:13px;color:var(--pri,#2563eb);text-decoration:none;padding:0 6px}.wp-site:hover{text-decoration:underline}
 @media (max-width:1027px){.side-nav{top:auto!important;height:auto!important}}
 </style>
@@ -1409,6 +1410,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
 </div>
+<div class="lp-host" id="lp-host"></div>
 <button type="button" class="fb-top" id="fb-top" title="기능 개선 제안" onclick="_switchTab('feedback')">기능 개선 제안</button>
 <span class="hondi-user-slot" data-hondi-user-slot="light"></span>
 </div>
@@ -1892,7 +1894,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <!-- 화면(스킨): 색·메뉴·밀도·단추·입력칸·카드 모양을 고른다. 로그인과 무관하게 이 브라우저에 저장된다. -->
     <section id="set-sec-skin" class="set-sec">
-      <div class="skin-grp set-lang"><h3>언어·지역</h3><p>처음에는 가입 때의 지역에 맞춰 자동으로 정해집니다. 다른 언어로 보고 싶을 때만 바꾸세요.</p><div class="lp-host" id="lp-host"></div></div>
+      <div class="skin-grp"><h3>언어·지역</h3><p>화면 오른쪽 위의 지구본 버튼에서 언어와 국가를 바꿉니다. 처음에는 가입 때의 지역에 맞춰 자동으로 정해집니다.</p></div>
       <div class="skin-grp"><h3>색상</h3><p>강조색·활성 메뉴의 색입니다. 서류 작성 화면의 강조색도 함께 바뀝니다(파랑은 직역별 색 유지).</p><div class="skin-opts" data-skin="color"></div></div>
       <div class="skin-grp"><h3>왼쪽 메뉴</h3><p>레일은 평소에 아이콘만 보이다가 마우스를 올리면 펼쳐집니다.</p><div class="skin-opts" data-skin="menu"></div></div>
       <div class="skin-grp"><h3>밀도</h3><p>글자 크기와 줄 간격입니다.</p><div class="skin-opts" data-skin="dens"></div></div>
@@ -5529,7 +5531,7 @@ function _i18nOrig(n) {
 }
 function _i18nShell() {
   if (!window.NaviI18n) return;
-  document.querySelectorAll('.side-nav, .topbar-right, #logo-help, #topbar-page').forEach(root => {
+  document.querySelectorAll('.side-nav, .topbar-right, .user-row, #logo-help, #topbar-page').forEach(root => {
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.parentElement && n.parentElement.closest('.lp-host,script,style')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
     const nodes = []; while (w.nextNode()) nodes.push(w.currentNode);
     nodes.forEach(n => {

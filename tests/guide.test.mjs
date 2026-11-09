@@ -325,11 +325,11 @@ test('사용법 코스: 임시로 모든 페이지로 이동할 수 있다(OPEN_
   assert.match(g, /var OPEN_ALL = true;/);
 });
 
-test('나비웹 홈페이지 링크는 Whitepaper 탭·사용법에 있고, 상단 막대·언어 버튼은 설정으로 옮겼다', () => {
+test('나비웹 홈페이지 링크는 Whitepaper 탭·사용법에 있고, 상단 막대는 숨기고 언어·국가 버튼은 오른쪽 위 줄에 둔다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /<a class="wp-site" href="https:\/\/hondi\.net"[^>]*>나비웹 홈페이지 ↗<\/a>/);
   assert.match(h, /header\.topbar,#hd-pull\{display:none!important\}/);
-  assert.match(h, /id="set-sec-skin"[^]*?<div class="lp-host" id="lp-host">/);
+  assert.match(h, /<div class="lp-host" id="lp-host"><\/div>\s*<button type="button" class="fb-top"/);
   assert.match(h, /<main class="content">\s*<div class="user-row" id="user-row">/);
 });
 
