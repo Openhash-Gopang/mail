@@ -73,3 +73,28 @@ export function pickDownload(items, now = Date.now()) {
   if (!/^https:/i.test(url)) return { ok: false, msg: '내려받은 파일이 화면 안에서 만든 파일(blob/data)이라 자동으로 가져올 수 없습니다. 사용자가 저장한 파일을 나비웹에 직접 올려야 합니다.' };
   return { ok: true, url, name: String(d.filename || '').split(/[\\/]/).pop() };
 }
+
+// 문서 보기(뷰어) 창에서 문서를 직접 가져온다. 정부24 "문서출력" 창(plus.gov.kr/ezpdfwv/viewer)처럼 내려받기 링크도 저장 파일도 없이
+// 화면 안에서 PDF 를 그려 주는 경우를 위한 것으로, 그 화면이 불러온 주소 중 PDF 를 찾아 로그인된 세션으로 다시 받는다.
+// 페이지 안에서 실행된다(자체 완결 — 바깥 변수를 쓰지 않는다). 같은 사이트의 https 주소만, 내용이 %PDF- 로 시작할 때만 받는다.
+export async function grabPdfInPage(maxBytes) {
+  const base = (h) => h.split('.').slice(-2).join('.');
+  const mine = base(location.hostname);
+  const bad = /\.(js|css|png|jpe?g|gif|svg|ico|woff2?|ttf|eot|map|json|html?)(\?|$)/i;
+  const urls = [];
+  try { performance.getEntriesByType('resource').forEach((e) => urls.push(e.name)); } catch { /* 읽을 수 없음 */ }
+  const cands = [...new Set(urls)].filter((u) => { try { const x = new URL(u); return x.protocol === 'https:' && base(x.hostname) === mine && !bad.test(x.pathname + x.search); } catch { return false; } }).reverse().slice(0, 40);
+  let big = false;
+  for (const u of cands) {
+    try {
+      const r = await fetch(u, { credentials: 'include' });
+      if (!r.ok) continue;
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.length < 100 || String.fromCharCode(buf[0], buf[1], buf[2], buf[3], buf[4]) !== '%PDF-') continue;
+      if (buf.length > maxBytes) { big = true; continue; }
+      let s = ''; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+      return { ok: true, size: buf.length, b64: btoa(s) };
+    } catch { /* 다음 후보 */ }
+  }
+  return { ok: false, msg: big ? '문서가 너무 큽니다(최대 10MB).' : '이 화면이 불러온 PDF 를 찾지 못했습니다.' };
+}
