@@ -74,6 +74,8 @@
       const a = el.closest && el.closest('a[href]');
       if (a && /^\s*javascript:/i.test(a.getAttribute('href') || '')) { a.setAttribute('data-navi-click', '1'); return `@@MAIN@@클릭: ${nameOf(el)}`; }
       el.click(); return `클릭: ${nameOf(el)}`; },
+    rect: ({ ref }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect();   // 실제 마우스 입력용 좌표(화면 기준 가운데 점)
+      return JSON.stringify({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), w: Math.round(r.width), h: Math.round(r.height) }); },
     type: ({ ref, text, submit }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); el.focus(); setValue(el, String(text));
       if (submit) { el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true })); el.form && el.form.requestSubmit && el.form.requestSubmit(); }
       return `입력 완료: ${nameOf(el)}`; },
@@ -115,7 +117,7 @@
       if (!curBusy) return;
       if (!curGliding && curEl && curEl.isConnected) {
         try {
-          const tx = Math.round(Math.min(Math.max(curX + (Math.random() - 0.5) * 360, 24), innerWidth - 40)), ty = Math.round(Math.min(Math.max(curY + (Math.random() - 0.5) * 240, 90), innerHeight - 40));
+          const tx = Math.round(Math.min(Math.max(curX + (Math.random() - 0.5) * 180, 24), innerWidth - 40)), ty = Math.round(Math.min(Math.max(curY + (Math.random() - 0.5) * 120, 90), innerHeight - 40));
           const d = Math.hypot(tx - curX, ty - curY), a = curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(1400, Math.max(500, d * 3.2)), easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
           await a.finished;
           if (!curGliding) { curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`; }

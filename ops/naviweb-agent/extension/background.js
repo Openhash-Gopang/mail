@@ -1,7 +1,7 @@
 import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
-import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, safeName, MAX_BYTES } from './files.js';
+import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, debuggerClick, safeName, MAX_BYTES } from './files.js';
 import { hostAllowed } from './policy.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -227,6 +227,19 @@ async function host(playbook) {
     },
     async describe(name, input) { return DOM_TOOLS.has(name) && input && input.ref ? (await toTab(name, input, true)).info : {}; },
     async execTool(name, input) {
+      if (name === 'click' && input && input.ref && state.slot && !/^f\d+\./.test(input.ref)) {
+        // 도우미가 가져오기 작업의 발급·출력·열람류 단추는 사람처럼 실제 마우스 입력으로 누른다(페이지의 el.click() 은 "사용자 조작"이 아니라 새 창이 막히거나 반응하지 못할 수 있다).
+        try {
+          const info = (await toTab('click', input, true)).info || {};
+          if (/출력|열람|보기|다운로드|내려받기|저장|발급|인쇄|조회/.test(String(info.text || ''))) {
+            const g = JSON.parse((await toTab('rect', input, false)).text || '{}');
+            if (g && g.w > 0 && g.h > 0) {
+              const r = await debuggerClick(chrome.debugger, state.tabId, g.x, g.y);
+              if (r.ok) return { text: `클릭: ${String(info.text).slice(0, 40)} (실제 마우스 입력으로 눌렀습니다)` };
+            }
+          }
+        } catch { /* 아래 일반 클릭으로 */ }
+      }
       if (DOM_TOOLS.has(name)) return toTab(name, input, false);
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
       if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); notifyOpened(input.url); await wait(2500); return { text: '이동: ' + input.url }; }

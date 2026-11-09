@@ -115,3 +115,22 @@ export async function printTabToPdf(dbg, tabId, maxBytes = MAX_BYTES) {
     return { ok: false, msg: '화면을 PDF 로 만들지 못했습니다: ' + (e && e.message ? e.message : e) };
   } finally { try { await dbg.detach(target); } catch { /* 이미 떼어짐 */ } }
 }
+
+// 사람이 마우스를 누르는 것과 같은 입력(이동 → 누름 → 잠깐 유지 → 뗌)을 브라우저가 직접 보낸다. 페이지 스크립트의 el.click() 과 달리 "사용자 조작"으로 인정되어
+// 새 창 열기(window.open)가 팝업 차단에 막히지 않고, 누름·뗌 사이에 반응하는 단추도 동작한다. 탭을 디버거에 잠깐 붙였다가 바로 뗀다.
+export async function debuggerClick(dbg, tabId, x, y, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), holdMs = 120) {
+  const target = { tabId };
+  try { await dbg.attach(target, '1.3'); } catch (e) { return { ok: false, msg: '마우스 입력을 보내지 못했습니다(디버거 연결 실패).' }; }
+  try {
+    const send = (type, extra) => dbg.sendCommand(target, 'Input.dispatchMouseEvent', { type, x, y, button: 'left', ...extra });
+    await send('mouseMoved', { buttons: 0 });
+    await sleep(60);
+    await send('mousePressed', { buttons: 1, clickCount: 1 });
+    await sleep(holdMs);
+    await send('mouseReleased', { buttons: 0, clickCount: 1 });
+    await sleep(250);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, msg: '마우스 입력을 보내지 못했습니다: ' + (e && e.message ? e.message : e) };
+  } finally { try { await dbg.detach(target); } catch { /* 이미 떼어짐 */ } }
+}
