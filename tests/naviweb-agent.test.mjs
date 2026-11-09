@@ -698,3 +698,9 @@ test('이름표(aria-label)와 보이는 글자가 다른 단추도 글자로 �
   assert.match(ct, /const textsOf = \(el\) =>/); assert.match(ct, /textsOf\(el\)\.some\(\(t\) => t\.toLowerCase\(\)\.includes\(filter\)\)/);
   assert.match(ct, /t\.includes\(want\)/); assert.ok(ct.includes('글자=')); 
 });
+test('팝업 창이 뜨면 커서는 팝업에서만, 안내 문구는 팝업에 띄우지 않는다(메인 창 커서는 숨김)', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /async function isPopupTab/); assert.match(bg, /part: 'cursor'/); assert.match(bg, /part: 'banner'/);
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(ct, /curSuppressed/); assert.match(ct, /msg\.part === 'cursor'/); assert.match(ct, /msg\.part === 'banner'/);
+});
