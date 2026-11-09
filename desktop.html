@@ -1252,7 +1252,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .side-intro{margin-left:auto;margin-right:14px;display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:var(--pri,#2563eb);font:600 14px/1 inherit;cursor:pointer;padding:8px 6px;border-radius:8px}
 .side-intro:hover{background:var(--pri-bg,#e8f0fe)}.side-intro .tp-chev{transition:transform .35s cubic-bezier(.22,1,.36,1)}.side-intro[aria-expanded=true] .tp-chev{transform:rotate(180deg)}
 .side-nav:has(#tab-btn-home.active) .side-brand{background:var(--pri-bg)}
-@media (max-width:1280px){.side-intro{display:none}}
+@media (max-width:960px){.side-intro{display:none}}   /* 창이 좁아도(브라우저 확대 포함) 왼쪽 메뉴를 펼치면 소개 ⌄ 가 보인다 — 예전에는 1280px 이하에서 숨겼다 */
 #intro-panel,#intro-backdrop{left:260px!important}   /* 소개 패널은 왼쪽 메뉴를 가리지 않고 그 오른쪽에서 열린다(소개 버튼이 계속 보여 다시 눌러 닫는다) */
 @media (max-width:1280px){#intro-panel,#intro-backdrop{left:64px!important}}
 @media (max-width:1027px){#intro-panel,#intro-backdrop{left:0!important}}
