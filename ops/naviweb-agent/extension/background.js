@@ -134,7 +134,7 @@ async function host(playbook) {
     async execTool(name, input) {
       if (DOM_TOOLS.has(name)) return toTab(name, input, false);
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
-      if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); await wait(2500); return { text: '이동: ' + input.url }; }
+      if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); notifyOpened(input.url); await wait(2500); return { text: '이동: ' + input.url }; }
       if (name === 'report_status') {
         if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 나비웹 화면에는 표시하지 않았습니다.' };
         const st = ['sent', 'pending', 'failed'].includes(input.state) ? input.state : 'pending';
@@ -182,6 +182,15 @@ async function deliverToNavi(msg) {
   if (naviTabId == null) throw new Error('나비웹 화면을 찾지 못했습니다. 나비웹에서 다시 맡겨 주세요.');
   await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : 'deliver', label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
 }
+// 기관 사이트(정부24 등)를 열었다고 나비웹 서류 화면에 알린다. 작업 하나에 한 번만.
+function notifyOpened(url) {
+  try {
+    if (!state.slot || state.openedNotified) return;
+    const h = new URL(url).hostname; if (!/^https?:/.test(url) || h === 'about:blank') return;
+    state.openedNotified = true;
+    deliverToNavi({ kind: 'status', label: state.slot, state: 'opened', note: h }).catch(() => {});
+  } catch { /* 주소가 아니면 알리지 않는다 */ }
+}
 async function runJob(m) {
     state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120) };
     const me = state;
@@ -195,6 +204,7 @@ async function runJob(m) {
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
       state.tabId = tab.id;
+      notifyOpened(tab.url || (pb && pb.start) || m.url);
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;

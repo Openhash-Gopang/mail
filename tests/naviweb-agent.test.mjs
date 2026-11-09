@@ -534,3 +534,10 @@ test('pdv_get·save_as: 금고에서 읽고, 받은 값은 지정 항목으로 �
   await runAgent({ goal: 'g', host: h2 });
   assert.equal(saved, '');
 });
+
+test('기관 사이트를 열면 나비웹에 opened 상태를 알린다(다리 허용 상태·배경 코드)', () => {
+  const br = readFileSync(new URL('../ops/naviweb-agent/extension/bridge.js', import.meta.url), 'utf8');
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(br, /'opened'/); assert.match(bg, /notifyOpened/);
+  assert.match(readFileSync(new URL('../desktop.html', import.meta.url), 'utf8'), /_agentOpenedNotice/);
+});
