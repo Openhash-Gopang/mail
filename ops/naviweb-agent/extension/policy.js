@@ -26,7 +26,7 @@ export function classify(tool, input = {}, info = {}, extraHosts = [], opts = {}
 }
 // 요소 글자에 보이는 글과 숨은 글이 겹쳐 "발급 발급하기" 처럼 나오는 것을 다듬는다.
 const tidy = (t) => String(t || '').replace(/\s+/g, ' ').trim().replace(/(\S{2,}) (?=\1)/g, '');
-const HANDOFF_REASON = /로그인|인증|공동|인증서|간편|본인|결제|카드|비밀번호|보안문자|캡차|captcha|납부|지불|otp|login|password|payment/i;
+const HANDOFF_REASON = /로그인|인증|공동|인증서|간편|본인|결제|카드|비밀번호|보안문자|캡차|captcha|납부|지불|otp|login|password|payment|주민|등록번호|계좌|개인\s*정보|키패드/i;
 const ISSUE_ONLY = /발급|다운로드|내려받기|download|문서\s*출력|pdf\s*저장|파일\s*저장|저장하기/i;
 const STRONG_CONFIRM = /제출|접수|신청서|전송|삭제|확정|동의|보내기|send|submit|delete/i;
 function classifyKnown(tool, input = {}, info = {}, opts = {}) {

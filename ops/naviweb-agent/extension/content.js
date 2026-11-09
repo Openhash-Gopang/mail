@@ -112,7 +112,7 @@
       setTimeout(() => inp.focus(), 0);
     }
     else if (mode === 'choice') { (options || []).forEach((o) => btn(String(o), '', () => { chrome.runtime.sendMessage({ type: 'reply', ok: true, value: o }); overlay('busy', ''); })); btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' })); }
-    else if (mode === 'handoff') { btn('직접 했어요', '', rep(true)); btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' })); }
+    else if (mode === 'handoff') { btn('완료', '', rep(true)); btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' })); }
     else if (mode === 'busy') btn('중단', 's', () => { chrome.runtime.sendMessage({ type: 'stop' }); });
     else btn('닫기', '', () => overlay('off'));
     box.appendChild(k);

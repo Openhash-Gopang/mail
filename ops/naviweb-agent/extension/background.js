@@ -100,6 +100,17 @@ function inputAsk(question, label, saveAs) {
     };
   });
 }
+// 사용자가 할 일이 생기면 작업 탭을 앞으로 가져온다(나비웹 탭을 보고 있어도 알아챌 수 있게).
+async function focusTab() {
+  try { if (state.tabId == null) return; const t = await chrome.tabs.update(state.tabId, { active: true }); if (t && t.windowId != null) await chrome.windows.update(t.windowId, { focused: true }); } catch { /* 탭이 없으면 건너뛴다 */ }
+}
+// 사용자 직접 입력 단계의 안내는 같은 틀로: 무엇을 한 뒤 "완료"를 누르는지, 그다음은 도우미가 이어서 한다는 것.
+function handoffText(t) {
+  let s = String(t || '').replace(/"?직접 했어요"?/g, '"완료"').replace(/\s+/g, ' ').trim();
+  if (!/완료/.test(s)) s += ' 마치면 "완료"를 눌러 주세요.';
+  if (!/이어서 진행/.test(s)) s += ' 그 다음은 제가 이어서 진행하겠습니다.';
+  return s;
+}
 function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
@@ -182,9 +193,9 @@ async function host(playbook) {
       throw new Error('알 수 없는 도구: ' + name);
     },
     ask: (t) => ask('confirm', t),
-    choose: (q, o) => choose(q, o),
-    input: (q, l, k) => inputAsk(q, l, k),
-    handoff: async (t) => { await ask('handoff', t); },
+    choose: async (q, o) => { await focusTab(); return choose(q, o); },
+    input: async (q, l, k) => { await focusTab(); return inputAsk(q, l, k); },
+    handoff: async (t) => { await focusTab(); await ask('handoff', handoffText(t)); },
   };
 }
 
