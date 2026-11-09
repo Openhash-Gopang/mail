@@ -263,6 +263,9 @@ test('게이트웨이: 나비웹 로그인 사용자(X-Navi-Token, 한글 포함
     assert.equal(await whoIs(req(user), { AGENT_TOKEN: 'tok' }), null, 'AUTH_VERIFY_URL 이 없으면 사용자 토큰은 거부');
     { const why = {}; await whoIs(req(user), { AGENT_TOKEN: 'tok' }, why); assert.equal(why.r, 'no_verify_url', '거절 사유를 알려 준다'); }
     { const why = {}; await whoIs(req({}), env, why); assert.equal(why.r, 'no_token_header'); }
+    { let called = ''; const env2 = { ...env, HONDI_PROXY: { fetch: async (u) => { called = String(u); return new Response(JSON.stringify({ ok: true, mail_id: 'ceo' }), { status: 200 }); } } };
+      const who = await whoIs(req(user), env2); assert.equal(who.sub, 'ceo'); assert.ok(called.startsWith('https://auth.example/me?phone_verify_token='), '서비스 바인딩으로 확인'); }
+    { const env3 = { ...env, HONDI_PROXY: { fetch: async () => new Response('error code: 1042', { status: 404 }) } }; const why = {}; await whoIs(req(user), env3, why); assert.match(why.r, /^verify_http_404 error code: 1042/); }
     assert.equal((await gw.fetch(req({ 'x-navi-token': encodeURIComponent('nope') }), env)).status, 401);
     assert.equal((await gw.fetch(req({ 'x-navi-token': '%E0%A4%A' }), env)).status, 401, '깨진 인코딩');
     assert.equal((await gw.fetch(req(user), env)).status, 200);

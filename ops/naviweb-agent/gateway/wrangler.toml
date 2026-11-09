@@ -13,3 +13,8 @@ AUTH_VERIFY_URL = "https://hondi-proxy.tensor-city.workers.dev/kmail/settings"
 USER_DAILY_STEPS = "400"           # 사용자 1명이 하루에 쓸 수 있는 모델 호출 수
 
 # 비밀값(대시보드 또는 wrangler secret put): AGENT_TOKEN, ANTHROPIC_API_KEY, GEMMA_BASE_URL, GEMMA_API_KEY
+
+# 로그인 확인 때 hondi-proxy 를 부르는 서비스 바인딩 — 공개 주소 호출이 404(1042)로 막히는 문제를 피한다(2026-11-09)
+[[services]]
+binding = "HONDI_PROXY"
+service = "hondi-proxy"

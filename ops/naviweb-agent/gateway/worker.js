@@ -230,8 +230,9 @@ export async function whoIs(request, env, why) {   // why: 거절 이유를 받�
   let tok; try { tok = decodeURIComponent(enc); } catch { return no('bad_token_encoding'); }
   try {
     const u = new URL(env.AUTH_VERIFY_URL); u.searchParams.set(env.AUTH_VERIFY_PARAM || 'phone_verify_token', tok);
-    const r = await fetch(u.toString());
-    if (!r.ok) return no('verify_http_' + r.status);
+    // 같은 계정의 다른 워커(hondi-proxy)를 공개 주소로 부르면 Cloudflare 가 404(error 1042)로 막는 경우가 있어, 서비스 바인딩(env.HONDI_PROXY)이 있으면 그것으로 부른다.
+    const r = env.HONDI_PROXY && typeof env.HONDI_PROXY.fetch === 'function' ? await env.HONDI_PROXY.fetch(u.toString()) : await fetch(u.toString());
+    if (!r.ok) { let b = ''; try { b = (await r.text()).replace(/\s+/g, ' ').slice(0, 80); } catch { /* 본문 없음 */ } return no('verify_http_' + r.status + (b ? ' ' + b : '')); }   // 응답 본문 앞 80자(오류 코드) — 토큰은 응답에 없다
     const j = await r.json().catch(() => ({}));
     const sub = j.id || j.guid || j.user_id || j.sub || j.mail_id || j.kmail_address || (j.user && (j.user.id || j.user.guid));
     return sub ? { sub: String(sub).slice(0, 80) } : no('verify_no_id');
