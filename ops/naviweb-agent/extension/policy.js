@@ -54,3 +54,16 @@ function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   }
   return { act: 'auto' };
 }
+
+// 지시 이행 원칙: 사용자가 이미 맡긴 일("도우미가 가져오기")을 "진행할까요?" 식으로 되묻는 선택 질문은 묻지 않고 진행 쪽 선택지로 처리한다.
+// 삭제·제출·동의·송금·금액이 걸린 질문은 예외(사용자 판단이 필요하다). 로그인·인증·결제는 어차피 사용자가 직접 한다(handoff).
+const ASK_FORM = /(까요|하시겠습니까|하겠습니까|괜찮습니까)\s*[?？.]?\s*(\(.*\))?\s*$|확인\s*:/;
+const RISKY_Q = /삭제|제출|동의|송금|이체|전송|수수료|유료|\d[\d,]*\s*원/;
+const PROCEED_OPT = /^(신청\s*진행|진행|계속|예|네|확인|그대로|발급|신청|출력|문서\s*출력)/;
+const CANCEL_OPT = /취소|중단|아니|하지\s*않|그만/;
+export function autoProceed(question, options) {
+  const q = String(question || ''), opts = Array.isArray(options) ? options.map(String) : [];
+  if (!ASK_FORM.test(q) || RISKY_Q.test(q)) return null;
+  const go = opts.find((o) => PROCEED_OPT.test(o.trim()));
+  return go && opts.some((o) => CANCEL_OPT.test(o)) ? go : null;
+}

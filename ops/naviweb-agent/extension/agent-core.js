@@ -1,6 +1,6 @@
 // 에이전트 루프. 브라우저/네트워크는 host 로 주입받아 Node 에서 시험할 수 있다.
 import { TOOLS } from './tools.js';
-import { classify } from './policy.js';
+import { classify, autoProceed } from './policy.js';
 
 export function buildSystem(playbook) {
   const base = [
@@ -12,6 +12,7 @@ export function buildSystem(playbook) {
     '- 목표에 "(곧 알려 드립니다)"처럼 아직 정해지지 않은 정보가 있으면, 그것 없이 할 수 있는 단계(사이트 열기·로그인 요청·검색 화면 준비)를 먼저 진행합니다. 그 정보가 꼭 필요한 시점이 되면 wait 로 기다리며(최대 약 5분) 대화에 "[추가 정보]"가 나타나기를 기다리고, 추측해서 채우지 않습니다.',
     '- 제출·발급·삭제처럼 되돌리기 어려운 버튼은 사용자 확인을 거칩니다(시스템이 묻습니다).',
     '- 나비웹에서 맡긴 첨부서류가 파일로 발급되면(내려받기 링크·단추), 사용자 확인을 거쳐 내려받은 뒤 send_file_to_navi 로 나비웹에 보냅니다. 링크 요소가 보이면 그 ref 를, 단추로 내려받았으면 ref 없이 부릅니다. 파일이 아닌 결과(기관으로 바로 전송 등)와 진행 상황·실패는 report_status 로 알립니다.',
+    '- 지시 이행 원칙: 사용자가 맡긴 일(서류 발급·첨부 등)은 되묻지 말고 끝까지 이행합니다. 사용자가 이미 말한 것(온라인 발급, 본인 출력, 주소 기준, 전체 발급 등)을 "진행할까요?"처럼 다시 확인하지 않습니다. 신청 옵션은 기본값으로 정하고 바로 진행하며, 사용자만 알 수 있는 정보(성명·주소 등 PDV 에 없는 값)나 서로 다른 결과를 낳는 선택일 때만 ask_choice·ask_input 을 씁니다. 로그인·인증·결제·보안문자만 사용자가 직접 합니다.',
     '- 서류 파일을 나비웹에 보낸 뒤에는 "서류에 넣을까요?"처럼 사용자에게 다시 묻지 않습니다(나비웹이 자동으로 넣습니다). 사용자가 이미 지시한 일은 되묻지 말고 끝까지 진행하며, 맡긴 항목 이름에 "등본(초본)"처럼 둘이 함께 적혀 있으면 사용자가 말한 쪽을 발급해 그대로 보냅니다.',
     '- 방금 신청해 처리완료된 서류는 신청 내역에서 "가장 위 행 + 접수 시각이 현재 시각 몇 분 안"인 건이 도우미가 신청한 건입니다. 이를 사용자에게 되묻거나 "기록으로 확인되지 않는다"며 멈추지 말고 곧바로 그 행의 "문서출력" 단추를 눌러 문서 보기 창을 열고 send_file_to_navi 로 나비웹에 보냅니다. 시각이 맞는 행이 없을 때만 다시 신청합니다. 신청 직후 화면이 신청 내역으로 바뀌는 것은 정상이며 로그인이 풀린 것이 아닙니다.',
     '- 정부24처럼 처리완료 화면의 링크가 파일이 아니라 화면(text/html)이면 포기하지 말고, 처리완료 상세 화면에서 "문서출력"(또는 저장·다운로드·PDF 저장) 단추를 눌러 문서 보기 창을 열고 문서가 화면에 보이면 인쇄·저장 단추를 누르지 말고 바로 ref 없이 send_file_to_navi 를 부릅니다(열린 문서 보기 화면에서 PDF 를 직접 가져오거나, 인쇄만 되는 뷰어면 화면을 PDF 로 만들어 보냅니다). 가져오지 못했다는 답이 오면 그 창의 저장 단추로 내려받은 뒤 다시 부릅니다. 새 창이 열리면 도우미가 그 창을 이어서 조작합니다. 인쇄 대화상자만 나오고 저장할 방법이 없을 때만 report_status 로 실패 이유를 알립니다.',
@@ -92,7 +93,9 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
           say(v == null ? '사용자가 입력하지 않고 중단했습니다.' : v && v.manual ? '사용자가 페이지에 직접 입력했다고 알렸습니다. 화면을 다시 읽고 다음 단계로 가세요.' : '사용자가 입력한 값: ' + String(v).slice(0, 200));
         } else if (verdict.act === 'choice') {
           const opts = (Array.isArray(u.input.options) ? u.input.options : []).map((x) => String(x).slice(0, 60)).filter(Boolean).slice(0, 6);
+          const auto = host.fetchJob && host.fetchJob() ? autoProceed(String(u.input.question || ''), opts) : null;
           if (opts.length < 2) say('선택지가 2개 이상 필요합니다.');
+          else if (auto) say('사용자가 이미 지시한 일이라 묻지 않고 "' + auto + '"(으)로 진행했습니다. 같은 내용을 다시 묻지 말고 이어서 진행하세요.');
           else { const v = await host.choose(String(u.input.question || '선택해 주세요.').slice(0, 300), opts); say(v == null ? '사용자가 선택하지 않고 중단했습니다.' : '사용자가 고른 항목: ' + v); }
         } else if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
         else if (verdict.act === 'handoff') { const h = await host.handoff(verdict.reason); say(h === 'say' ? '사용자가 완료를 누르지 않고 메시지를 보냈습니다. 아래 [사용자 메시지]를 보고 답하거나 행동하세요. 직접 입력이 아직 필요하면 handoff_to_user 를 다시 부르세요.' : '사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
