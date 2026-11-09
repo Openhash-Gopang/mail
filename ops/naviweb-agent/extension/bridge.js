@@ -5,7 +5,8 @@
   // 확장을 새로고침(↻)하면 이미 열려 있던 탭의 옛 다리는 연결이 끊긴 채 남는다. 예전에는 '이미 있다'며 새 다리를 막아 확장이 계속 안 보였다.
   // 이제는 새 다리가 자리를 이어받고, 옛 다리는 자기 번호가 다르면 아무 것도 하지 않는다(같은 확장이 두 번 주입돼도 한 번만 답한다).
   const myId = Math.random().toString(36).slice(2); window.__naviBridgeId = myId;
-  const live = () => window.__naviBridgeId === myId;
+  // 확장이 새로고침·업데이트되면 열려 있던 탭의 옛 다리는 chrome.runtime.id 가 사라진 채 남는다 — 그때도 아무 것도 하지 않는다(오류도 내지 않는다)
+  const live = () => { try { return window.__naviBridgeId === myId && !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; } };
   // 확장(서비스 워커)이 받아 온 파일을 나비웹 화면으로 넘긴다. 같은 출처로만 보내고, 넣을지는 화면이 사용자에게 묻는다.
   chrome.runtime.onMessage.addListener((m) => {
     if (!live()) return;
