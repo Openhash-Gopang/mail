@@ -468,3 +468,7 @@ test('안내 영상: 왼쪽 메뉴 "나비 길잡이" 아래, YouTube 아이콘 
   const ids = ['PsqV8Rj445k', 'pFSTOKbYGAE'].map(x => h.indexOf("id: '" + x + "'"));
   assert.ok(ids.every(x => x > 0) && ids[0] < ids[1] && !h.includes("id: 'aLfvRkbX4mE'") && h.includes('navi 02 - 대략적 구성') && h.includes('class="yt-desc"'));
 });
+
+test('안내 영상 항목은 나비 길잡이보다 2cm 아래', () => {
+  assert.match(readFileSync(new URL('../desktop.html', import.meta.url), 'utf8'), /#tab-btn-youtube\{margin-top:2cm\}/);
+});
