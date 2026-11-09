@@ -2306,7 +2306,36 @@ function _autoReportFail(s, why) {
     NaviFeedback.autoReport(String(s.label || ''), why, { rule: c.id || c.kind || '', agency: c.agency || '', ext: _agentInfo ? _agentInfo.version : '' });
   } catch (e) { /* 보고는 실패해도 작업에 영향을 주지 않는다 */ }
 }
+// 도우미가 기관 사이트를 열면 서류 작성 화면에 안내 팝업을 띄운다 — 지금 작업이 어느 탭에서 진행되는지, 개인 정보는 누가 입력하는지 알린다.
+const _AGENCY_NAMES = { 'gov.kr': '정부24', 'www.gov.kr': '정부24', 'www.gov.kr:443': '정부24', 'iros.go.kr': '인터넷등기소', 'www.iros.go.kr': '인터넷등기소', 'hometax.go.kr': '홈택스', 'www.hometax.go.kr': '홈택스', 'nhis.or.kr': '건강보험공단', 'www.nhis.or.kr': '건강보험공단', 'minwon.go.kr': '민원24', 'efamily.scourt.go.kr': '전자가족관계등록시스템' };
+function _agentAgencyName(host) {
+  host = String(host || '').toLowerCase();
+  if (_AGENCY_NAMES[host]) return _AGENCY_NAMES[host];
+  const base = host.split('.').slice(-3).join('.'), b2 = host.split('.').slice(-2).join('.');
+  return _AGENCY_NAMES[base] || _AGENCY_NAMES[b2] || host.replace(/^www\./, '') || '기관';
+}
+function _agentOpenedNotice(s) {
+  const ag = _agentAgencyName(s.note);
+  let who = '';
+  try { const el = document.querySelector('[data-hondi-user-slot]'); who = el ? (el.textContent || '').replace(/\s+/g, ' ').trim().split(' ')[0] : ''; } catch (x) {}
+  if (!who || who.length > 24) who = '사용자';
+  let d = document.getElementById('agent-open-note');
+  if (!d) {
+    d = document.createElement('div'); d.id = 'agent-open-note'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-live', 'polite');
+    d.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:9000;max-width:380px;background:#fff;color:#1f2937;border:1px solid #d6dbe4;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:16px 18px;font:14px/1.6 system-ui,"Malgun Gothic",sans-serif';
+    document.body.appendChild(d);
+  }
+  d.textContent = '';
+  const t = document.createElement('div'); t.style.cssText = 'font-weight:600;margin-bottom:6px'; t.textContent = ag + ' 페이지를 열었습니다';
+  const p = document.createElement('div');
+  p.textContent = ag + ' 페이지를 열었으므로, 도우미와 함께 첨부서류 가져오기 작업을 진행하십시오. 개인 정보는 ' + who + '님이 ' + ag + ' 페이지에 직접 입력하셔야 합니다.';
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = '확인'; b.style.cssText = 'margin-top:10px;border:0;border-radius:8px;background:#2f5bd8;color:#fff;padding:6px 16px;font:inherit;cursor:pointer';
+  b.onclick = () => d.remove();
+  d.append(t, p, b);
+}
 function _agentOnStatus(s) {
+  if (s.state === 'opened') { _agentOpenedNotice(s); return; }
+  const od = document.getElementById('agent-open-note'); if (od && ['sent', 'failed'].includes(s.state)) od.remove();
   if (!['sent', 'pending', 'failed'].includes(s.state)) return;
   if (_docChat.on && window.DocHelper) {   // 서류 작성 도우미 세션 — 도우미 SP 가 다음 말에서 이 상태를 "지금 화면"으로 읽는다
     _docChat.slots = DocHelper.applySlot(_docChat.slots, DocHelper.matchLabel(String(s.label || ''), (_docChat.attach || []).map(function (a) { return a.l; })) || String(s.label || ''), s.state, s.note);
