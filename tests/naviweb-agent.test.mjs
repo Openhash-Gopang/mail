@@ -576,3 +576,16 @@ test('0.6.21: 클릭·입력 전에 도우미 커서가 움직인다(닫힌 shad
   assert.match(ct, /async function glide/); assert.match(ct, /prefers-reduced-motion/); assert.match(ct, /pointer-events:none/);
   assert.match(ct, /glide\(el, msg\.name === 'click'\)/);
 });
+
+test('게이트웨이: 예외가 나도 CORS 머리글이 달린 500(worker_error)으로 답한다', async () => {
+  const env = { ALLOWED_ORIGINS: 'chrome-extension://abc', get AGENT_TOKEN() { throw new Error('boom'); } };
+  const res = await gw.fetch(new Request('https://gw.example/v1/step', { method: 'POST', headers: { origin: 'chrome-extension://abc', authorization: 'Bearer x', 'content-type': 'application/json' }, body: '{}' }), env);
+  assert.equal(res.status, 500);
+  assert.equal(res.headers.get('access-control-allow-origin'), 'chrome-extension://abc');
+  assert.equal((await res.json()).error, 'worker_error');
+});
+
+test('0.6.22: 확장은 네트워크 끊김·5xx 를 재시도하고 서비스 워커를 깨워 둔다', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /async function postStep/); assert.match(bg, /3번 시도/); assert.match(bg, /getPlatformInfo/);
+});

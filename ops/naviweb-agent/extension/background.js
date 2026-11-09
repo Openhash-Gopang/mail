@@ -144,6 +144,23 @@ chrome.tabs.onRemoved.addListener((id) => {
   state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } }
 });
 
+// 게이트웨이 호출: 네트워크 끊김·서버 5xx 는 두 번까지 다시 시도한다(2초, 5초 뒤). 90초 무응답은 다시 시도하지 않고 알린다.
+async function postStep(c, body, onRetry) {
+  const send = () => fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : {}), ...(c.userToken ? { 'x-navi-token': encodeURIComponent(c.userToken) } : {}) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }), signal: AbortSignal.timeout(90000) });
+  let last;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await send();
+      if (r.status < 500 || i === 2) return r;
+      last = new Error('서버 응답 ' + r.status);
+    } catch (e) {
+      if (e && e.name === 'TimeoutError') throw new Error('AI 응답이 90초가 넘도록 없습니다. 잠시 뒤 나비웹에서 "도우미가 가져오기"를 다시 눌러 주세요.');
+      last = e;
+    }
+    if (i < 2) { if (onRetry) onRetry(i + 2); await wait(i === 0 ? 2000 : 5000); }
+  }
+  throw new Error('도우미 서버에 연결하지 못했습니다(3번 시도): ' + (last && last.message || last));
+}
 async function host(playbook) {
   const c = await cfg();
   const mine = state;
@@ -154,7 +171,7 @@ async function host(playbook) {
     inbox: () => state.inbox.shift() || null,
     log: (e) => say({ type: 'log', e }),
     async callModel(body) {
-      const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : {}), ...(c.userToken ? { 'x-navi-token': encodeURIComponent(c.userToken) } : {}) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }), signal: AbortSignal.timeout(90000) }).catch((e) => { throw new Error(e && e.name === 'TimeoutError' ? 'AI 응답이 90초가 넘도록 없습니다. 잠시 뒤 나비웹에서 "도우미가 가져오기"를 다시 눌러 주세요.' : '도우미 서버에 연결하지 못했습니다: ' + (e && e.message || e)); });
+      const r = await postStep(c, body, (n) => { if (!mine.abort) overlay('busy', `도우미 서버 연결을 다시 시도하는 중입니다 (${n}/3)`); });
       const j = await r.json().catch(() => ({}));
       if (r.status === 401) throw new Error((j && j.reason ? '[게이트웨이 거절 사유: ' + String(j.reason).slice(0, 60) + '] ' : '') + (c.userToken
         ? '사이트는 열었습니다. 나비웹 로그인 확인이 거절됐습니다(로그인이 만료됐거나, 도우미 설정의 토큰 칸에 옛 값이 남아 있을 수 있습니다). 나비웹을 새로고침해 다시 로그인된 것을 확인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.'
@@ -226,6 +243,7 @@ function notifyOpened(url) {
 async function runJob(m) {
     state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120) };
     const me = state;
+    const keep = setInterval(() => { try { chrome.runtime.getPlatformInfo(); } catch { /* 살아 있음 확인용 호출 */ } }, 20000);   // 서비스 워커가 긴 대기 중에 잠들어 작업이 끊기지 않게
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
       const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
@@ -245,7 +263,7 @@ async function runJob(m) {
       if (res && res.done) await overlay('done', String(res.text || '작업을 마쳤습니다.').replace(/[#*`]/g, '').slice(0, 300));
       else await overlay(res && res.reason === 'aborted' ? 'off' : 'error', '작업을 끝내지 못했습니다. 나비웹 화면에서 다시 맡겨 주세요.');
     } catch (e) { say({ type: 'error', text: e.message }); await overlay('error', e.message); }
-    me.running = false;   // 새 작업이 이미 state 를 바꿨다면 그 작업의 표시는 건드리지 않는다
+    clearInterval(keep); me.running = false;   // 새 작업이 이미 state 를 바꿨다면 그 작업의 표시는 건드리지 않는다
   }
 // 설치·업데이트·브라우저 시작 때 이미 열려 있는 나비웹 탭에도 다리(bridge.js)를 바로 넣는다.
 // 콘텐츠 스크립트는 "페이지를 새로 열 때"만 들어가므로, 이게 없으면 설치 직후 열려 있던 탭은 새로고침하기 전까지 도우미를 못 본다(2026-11-08).
