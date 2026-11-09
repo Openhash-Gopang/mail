@@ -669,3 +669,16 @@ test('문서 보기 창은 작업 탭이 아니어도 찾아 PDF 로 만든다(�
   const pb = readFileSync(new URL('../ops/naviweb-agent/extension/playbooks.js', import.meta.url), 'utf8');
   assert.match(pb, /find 로 \\"문서출력\\"|find 로 "문서출력"/);
 });
+test('실제 마우스 입력: 이동 → 누름 → 잠깐 유지 → 뗌 순서로 보내고 반드시 디버거를 뗀다', async () => {
+  const { debuggerClick } = await import('../ops/naviweb-agent/extension/files.js');
+  const log = []; const dbg = { attach: async () => { log.push('attach'); }, sendCommand: async (t, m, p) => { log.push(p.type); }, detach: async () => { log.push('detach'); } };
+  const waits = []; const r = await debuggerClick(dbg, 3, 10, 20, async (ms) => { waits.push(ms); }, 150);
+  assert.equal(r.ok, true); assert.deepEqual(log, ['attach', 'mouseMoved', 'mousePressed', 'mouseReleased', 'detach']);
+  assert.ok(waits.includes(150));   // 누른 채로 유지하는 시간
+  const bad = { attach: async () => { throw new Error('x'); }, sendCommand: async () => {}, detach: async () => {} };
+  assert.equal((await debuggerClick(bad, 3, 1, 1, async () => {})).ok, false);
+  const fail = []; const d2 = { attach: async () => {}, sendCommand: async () => { throw new Error('y'); }, detach: async () => { fail.push('detach'); } };
+  assert.equal((await debuggerClick(d2, 3, 1, 1, async () => {})).ok, false); assert.deepEqual(fail, ['detach']);
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /debuggerClick\(chrome\.debugger, state\.tabId, g\.x, g\.y\)/);
+});
