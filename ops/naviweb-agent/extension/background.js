@@ -92,6 +92,7 @@ async function host(playbook) {
   const c = await cfg();
   const mine = state;
   return {
+    fetchJob: () => !!mine.slot,   // "도우미가 가져오기"(항목 지정)로 시작한 작업
     aborted: () => mine.abort,   // 이 작업의 중단 표시(새 작업이 state 를 바꿔도 옛 작업은 자기 표시를 본다)
     inbox: () => state.inbox.shift() || null,
     log: (e) => say({ type: 'log', e }),

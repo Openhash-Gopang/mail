@@ -313,6 +313,15 @@ test('내려받기·발급 단추는 사용자 확인을 거친다', () => {
   assert.equal(classify('click', { ref: 'r' }, { text: '다운로드', host: 'www.gov.kr' }).act, 'confirm');
   assert.equal(classify('click', { ref: 'r' }, { text: 'PDF 내려받기', host: 'www.gov.kr' }).act, 'confirm');
   assert.equal(classify('click', { ref: 'r' }, { text: '다음', host: 'www.gov.kr' }).act, 'auto');
+  // 나비웹 "도우미가 가져오기"로 시작한 작업은 발급·다운로드를 다시 묻지 않는다(제출·전송·삭제·동의는 그대로 묻고, 결제는 직접)
+  const J = { fetchJob: true };
+  assert.equal(classify('click', { ref: 'r' }, { text: '발급하기', host: 'www.gov.kr' }, [], J).act, 'auto');
+  assert.equal(classify('click', { ref: 'r' }, { text: 'PDF 내려받기', host: 'www.gov.kr' }, [], J).act, 'auto');
+  assert.equal(classify('click', { ref: 'r' }, { text: '발급 신청서 제출', host: 'www.gov.kr' }, [], J).act, 'confirm');
+  assert.equal(classify('click', { ref: 'r' }, { text: '삭제', host: 'www.gov.kr' }, [], J).act, 'confirm');
+  assert.equal(classify('click', { ref: 'r' }, { text: '결제하기', host: 'www.gov.kr' }, [], J).act, 'handoff');
+  assert.equal(classify('click', { ref: 'r' }, { text: '발급하기', host: 'www.gov.kr' }).act, 'confirm', '자유 작업은 그대로 묻는다');
+  assert.match(classify('click', { ref: 'r' }, { text: '주민등록표 등본 발급 발급하기 버튼', host: 'x.kr' }).reason, /^\"주민등록표 등본 발급하기 버튼\"/, '겹친 글자 다듬기');
 });
 
 test('files: 같은 기관 사이트만, https 만, blob 은 안내', () => {
