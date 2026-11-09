@@ -26,11 +26,16 @@ export function classify(tool, input = {}, info = {}, extraHosts = [], opts = {}
 }
 // 요소 글자에 보이는 글과 숨은 글이 겹쳐 "발급 발급하기" 처럼 나오는 것을 다듬는다.
 const tidy = (t) => String(t || '').replace(/\s+/g, ' ').trim().replace(/(\S{2,}) (?=\1)/g, '');
+const HANDOFF_REASON = /로그인|인증|공동|인증서|간편|본인|결제|카드|비밀번호|보안문자|캡차|captcha|납부|지불|otp|login|password|payment/i;
 const ISSUE_ONLY = /발급|다운로드|내려받기|download/i;
 const STRONG_CONFIRM = /제출|접수|신청서|전송|삭제|확정|동의|보내기|send|submit|delete/i;
 function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   if (tool === 'ask_choice') return { act: 'choice' };
-  if (tool === 'handoff_to_user') return { act: 'handoff', reason: input.reason || '직접 진행이 필요합니다.' };
+  if (tool === 'handoff_to_user') {
+    // 사용자가 할 일은 본인 인증과 결제뿐이다. 그 밖의 이유로 넘기려 하면 거부하고 직접 조작하게 한다.
+    if (!HANDOFF_REASON.test(String(input.reason || ''))) return { act: 'deny', reason: '사용자가 직접 할 일은 로그인·본인인증·결제·보안문자뿐입니다. 이 단계는 도우미가 직접 화면을 조작하세요. 사용자의 선택이 필요하면 ask_choice 로 단추를 보여 주세요.' };
+    return { act: 'handoff', reason: input.reason };
+  }
   if (tool === 'type') {
     const t = String(input.text ?? '');
     if (RRN.test(t)) return { act: 'deny', reason: '주민등록번호는 에이전트가 입력하지 않습니다.' };
@@ -43,7 +48,7 @@ function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   if (tool === 'click' || tool === 'select_option') {
     const label = `${info.text || ''} ${info.name || ''}`;
     if (HANDOFF_TEXT.test(label)) return { act: 'handoff', reason: `"${(info.text || info.name || '').trim().slice(0, 30)}" 단계는 직접 진행해 주세요.` };
-    if (tool === 'click' && opts.fetchJob && ISSUE_ONLY.test(label) && !STRONG_CONFIRM.test(label)) return { act: 'auto' };
+    if (tool === 'click' && opts.fetchJob && (ISSUE_ONLY.test(label) || /신청하기|민원\s*신청|신청\s*$/.test(label.trim())) && !STRONG_CONFIRM.test(label)) return { act: 'auto' };
     if (tool === 'click' && !NAV_OK.test((info.text || info.name || '').trim()) && CONFIRM_TEXT.test(label)) return { act: 'confirm', reason: `"${tidy(info.text || info.name).slice(0, 30)}" 을(를) 누를까요?` };
   }
   return { act: 'auto' };

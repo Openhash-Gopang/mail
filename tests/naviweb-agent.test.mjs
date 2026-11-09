@@ -505,3 +505,9 @@ test('글로만 묻고 끝내면 ask_choice 로 다시 묻게 한다', async () 
   const r = await runAgent({ goal: 'g', host: h });
   assert.equal(r.text, '완료'); assert.ok(needsAnswer('알려 주세요')); assert.ok(!needsAnswer('모두 끝났습니다.'));
 });
+
+test('handoff 는 인증·결제 사유만 허용, 그 밖은 거부', () => {
+  assert.equal(classify('handoff_to_user', { reason: '등본/초본을 직접 선택하세요' }, {}).act, 'deny');
+  assert.equal(classify('handoff_to_user', { reason: '간편인증으로 본인 확인하세요' }, {}).act, 'handoff');
+  assert.equal(classify('handoff_to_user', { reason: '결제를 진행하세요' }, {}).act, 'handoff');
+});
