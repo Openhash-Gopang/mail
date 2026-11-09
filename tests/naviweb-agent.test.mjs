@@ -704,3 +704,8 @@ test('팝업 창이 뜨면 커서는 팝업에서만, 안내 문구는 팝업에
   const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
   assert.match(ct, /curSuppressed/); assert.match(ct, /msg\.part === 'cursor'/); assert.match(ct, /msg\.part === 'banner'/);
 });
+
+test('다리(bridge.js): pdv-result 전달이 끊겨도(확장 새로고침 등) 오류를 던지지 않는다', () => {
+  const b = readFileSync(new URL('../ops/naviweb-agent/extension/bridge.js', import.meta.url), 'utf8');
+  assert.match(b, /pr\.catch\(\(\) => \{\}\)/); assert.match(b, /Extension context invalidated/);
+});
