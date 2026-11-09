@@ -1206,7 +1206,8 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .side-logo{flex:none;display:block;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;cursor:pointer;padding:6px 0 10px 16px;line-height:0}
 .side-logo:hover{background:rgba(59,125,221,.08)}.side-logo:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
 .side-nav:has(#tab-btn-home.active) .side-logo{background:var(--pri-bg)}   /* 홈 화면일 때 로고가 홈 버튼처럼 표시된다 */
-#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback{display:none!important}   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
+#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback,#tab-btn-pricing{display:none!important}
+.side-group:has(#tab-btn-pricing){display:none}   /* 도움말 묶음은 비었다 — 플랜 업그레이드는 사용자 팝업으로 옮겼다 */   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
 .home-xo{position:fixed;left:72px;right:0;bottom:22px;display:none;justify-content:center;pointer-events:none;z-index:5}
 .home-xo a{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;color:var(--sub);font-size:14px;font-weight:500;text-decoration:none;cursor:pointer}
 .home-xo a:hover{background:var(--pri-bg);color:var(--pri)}
@@ -7038,6 +7039,21 @@ function _introClose() {
 }
 function _panelToggle(kind) { if (_introIsOpen() && _panelKind === kind) _introClose(); else _panelOpen(kind); }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIsOpen()) _introClose(); });
+// ── 사용자 팝업(ceo ⌄)에 '플랜 업그레이드' 추가 ──
+// 팝업은 hondi.net/auth/user-badge.js 가 그린다(다른 저장소). 그 코드는 건드리지 않고, 팝업이 열려 '로그아웃' 단추가 생기면 그 위에 한 줄을 끼워 넣는다.
+(function () {
+  const root = document.getElementById('user-row'); if (!root) return;
+  function addPlan() {
+    root.querySelectorAll('#hondi-user-badge .hub-menu').forEach(menu => {
+      if (menu.querySelector('.hub-plan')) return;
+      const out = [].find.call(menu.querySelectorAll('button.hub-text'), b => /로그아웃/.test(b.textContent)); if (!out) return;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'hub-btn hub-text hub-plan'; b.textContent = '플랜 업그레이드';
+      b.addEventListener('click', () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.body.click(); } catch (e) {} _switchTab('pricing'); });
+      out.parentNode.insertBefore(b, out);
+    });
+  }
+  new MutationObserver(addPlan).observe(root, { childList: true, subtree: true }); addPlan();
+})();
 const _TOPBAR_HOME = '나만의 AI 비서, 나비';
 const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
 function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => _i18nOrig(n)).join('').trim(); }   // 언어를 바꿔도 판단은 한국어 원문으로   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
