@@ -693,3 +693,8 @@ test('open_issued_document: 문서출력 찾기·실제 클릭·뷰어 확인·P
   const pb = readFileSync(new URL('../ops/naviweb-agent/extension/playbooks.js', import.meta.url), 'utf8');
   assert.match(pb, /open_issued_document/);
 });
+test('이름표(aria-label)와 보이는 글자가 다른 단추도 글자로 찾는다(정부24 문서출력: aria-label="새 창 열림")', () => {
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(ct, /const textsOf = \(el\) =>/); assert.match(ct, /textsOf\(el\)\.some\(\(t\) => t\.toLowerCase\(\)\.includes\(filter\)\)/);
+  assert.match(ct, /t\.includes\(want\)/); assert.ok(ct.includes('글자=')); 
+});

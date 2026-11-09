@@ -8,6 +8,8 @@
   const visible = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
   const nameOf = (el) => clean(el.getAttribute('aria-label') || (el.labels && el.labels[0] && el.labels[0].innerText) || el.placeholder || el.title || el.alt
     || (el.tagName === 'INPUT' && /button|submit/.test(el.type) ? el.value : '') || el.innerText || el.textContent || (el.querySelector && el.querySelector('img') && (el.querySelector('img').alt || el.querySelector('img').title)) || el.getAttribute('value') || el.name || el.id).slice(0, 80);
+  // 이름표(aria-label·title)와 눈에 보이는 글자가 다른 단추가 많다(예: aria-label="새 창 열림" + 보이는 글자 "문서출력"). 둘 다 찾는 데 쓴다.
+  const textsOf = (el) => [el.getAttribute && el.getAttribute('aria-label'), el.title, el.innerText, el.textContent, el.tagName === 'INPUT' ? el.value : ''].map(clean).filter(Boolean);
   const kind = (el) => el.tagName === 'INPUT' ? `input[${el.type}]` : el.tagName === 'SELECT' ? 'select' : (el.getAttribute('role') || el.tagName.toLowerCase());
   function refOf(el) { for (const [k, v] of refs) if (v === el) return k; const k = 'ref_' + (++seq); refs.set(k, el); return k; }
   function describe(el) {
@@ -39,13 +41,13 @@
     for (const el of candidates(root)) {
       if (!visible(el)) continue;
       const n = nameOf(el);
-      if (filter && !(n.toLowerCase().includes(filter) || (el.name || '').toLowerCase().includes(filter) || (el.id || '').toLowerCase().includes(filter))) continue;
+      if (filter && !(n.toLowerCase().includes(filter) || textsOf(el).some((t) => t.toLowerCase().includes(filter)) || (el.name || '').toLowerCase().includes(filter) || (el.id || '').toLowerCase().includes(filter))) continue;
       const r = el.getBoundingClientRect();
       (r.bottom > 0 && r.top < vh ? inView : rest).push([el, n]);
     }
     const out = []; let chars = 0; let skipped = 0;
     for (const [el, n] of [...inView, ...rest]) {
-      let line = `${refOf(el)} ${kind(el)} "${n}"`;
+      let line = `${refOf(el)} ${kind(el)} "${n}"`; { const vt = clean(el.innerText).slice(0, 40); if (vt && vt !== n) line += ` 글자="${vt}"`; }
       if (el.tagName === 'INPUT' && /checkbox|radio/.test(el.type)) line += el.checked ? ' [선택됨]' : ' [해제]';
       else if (el.tagName === 'SELECT') line += ` 값="${clean(el.options[el.selectedIndex] && el.options[el.selectedIndex].text)}" 옵션=[${[...el.options].slice(0, 40).map((o) => clean(o.text)).join(' | ')}]`;
       else if (el.tagName === 'INPUT' && el.type !== 'password' && el.value && !/button|submit|radio|checkbox/.test(el.type)) line += ` 값="${clean(el.value).slice(0, 60)}"`;
@@ -74,8 +76,10 @@
       const a = el.closest && el.closest('a[href]');
       if (a && /^\s*javascript:/i.test(a.getAttribute('href') || '')) { a.setAttribute('data-navi-click', '1'); return `@@MAIN@@클릭: ${nameOf(el)}`; }
       el.click(); return `클릭: ${nameOf(el)}`; },
-    pick_by_text: ({ text, nth }) => {   // 글자가 정확히 text 인 보이는 요소의 n 번째(0부터, 화면 위에서 아래 순)를 찾아 ref·좌표·행 글자를 돌려준다
-      const want = clean(text), els = candidates().filter((el) => visible(el) && nameOf(el) === want && !el.closest('[data-navi-overlay],#navi-agent-host'));
+    pick_by_text: ({ text, nth }) => {   // 글자(보이는 글자·aria-label·title·value)에 text 가 들어 있는 보이는 요소 중 가장 안쪽 것의 n 번째(위에서 아래 순)를 찾아 ref·좌표·행 글자를 돌려준다
+      const want = clean(text);
+      let els = candidates().filter((el) => visible(el) && textsOf(el).some((t) => t.length <= want.length + 12 && t.includes(want)));
+      els = els.filter((el) => !els.some((o) => o !== el && el.contains(o)));   // 안쪽 요소만(바깥 감싸개 제외)
       els.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
       const el = els[Math.max(0, Number(nth) || 0)];
       if (!el) return JSON.stringify({ found: false, count: els.length });
