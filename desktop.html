@@ -1196,6 +1196,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 /* 나비 로고: 왼쪽 메뉴 맨 위(홈 단추 위). 아이콘 열(가운데 32px)에 맞춰 접힌 64px 레일에서도 같은 자리에 있다 */
 /* 소개(백서): 다른 화면처럼 본문에 나타난다. 위쪽 줄의 닫기 단추로 읽던 화면으로 돌아간다 */
 /* YouTube 재생목록: 카드를 재생목록 순서대로 */
+.side-nav .nav-btn .yt-ico{width:20px;height:auto;flex-shrink:0;display:block}
 .yt-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 16px}
 .yt-head h2{margin:0;font-size:1.25rem;font-weight:700;color:var(--sub,#334155)}
 .yt-all{font-size:.9rem;color:var(--pri,#2563eb);text-decoration:none}.yt-all:hover{text-decoration:underline}
@@ -1394,6 +1395,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       </div>
       <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideTabOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         나비 길잡이<span class="unread-badge" data-for="guide" hidden></span></button>
+      <button id="tab-btn-youtube" class="nav-btn" data-label="안내 영상" onclick="_switchTab('youtube')"><img class="yt-ico" src="assets/youtube-icon.png" alt="" aria-hidden="true">안내 영상</button>
     </div>
     <div class="side-group">
       <div class="side-label">도움말</div>
@@ -1407,7 +1409,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         기능 개선 제안</button>
       <button id="tab-btn-guide" class="nav-btn" data-label="사용법" onclick="_switchTab('guide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>사용법</button>
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
-      <button id="tab-btn-youtube" class="nav-btn" data-label="YouTube" onclick="_switchTab('youtube')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor"/></svg>YouTube</button>
     </div>
   </nav>
 
@@ -2084,7 +2085,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
-    <div class="yt-head"><h2>나만의 AI 비서, 나비</h2><a class="yt-all" href="https://www.youtube.com/playlist?list=PLExMxaYxMDPE" target="_blank" rel="noopener">YouTube에서 전체 보기</a></div>
+    <div class="yt-head"><h2>안내 영상</h2><a class="yt-all" href="https://www.youtube.com/playlist?list=PLExMxaYxMDPE" target="_blank" rel="noopener">YouTube에서 전체 보기</a></div>
     <ol class="yt-grid" id="yt-grid"></ol>
   </div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
@@ -7166,11 +7167,10 @@ function _panelSync() {
   if (l) l.setAttribute('aria-expanded', o && _panelKind === 'manual' ? 'true' : 'false');
   const si = document.getElementById('side-intro'); if (si) si.setAttribute('aria-expanded', o && _panelKind === 'manual' ? 'true' : 'false');
 }
-// ── YouTube 재생목록(나만의 AI 비서, 나비) — 카드를 재생목록 순서대로. 카드를 누르면 그 자리에서 재생한다 ──
+// ── 안내 영상(YouTube 재생목록 '나만의 AI 비서, 나비') — 카드를 번호 순으로. 카드를 누르면 그 자리에서 재생한다 ──
 const _YT_LIST = [
-  { id: 'aLfvRkbX4mE', t: 'navi 02 - 서류 작성', len: '2:08' },
-  { id: 'pFSTOKbYGAE', t: 'navi 03 - 대략적 구성', len: '5:52' },
-  { id: 'PsqV8Rj445k', t: 'navi 01 - 나만의 AI 비서, 나비', len: '7:06' }
+  { id: 'PsqV8Rj445k', t: 'navi 01 - 나만의 AI 비서, 나비', len: '7:06' },
+  { id: 'aLfvRkbX4mE', t: 'navi 02 - 서류 작성', len: '2:08' }
 ];
 function _ytRender() {
   const ol = document.getElementById('yt-grid'); if (!ol || ol.childElementCount) return;
