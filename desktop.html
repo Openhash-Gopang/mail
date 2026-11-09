@@ -7004,7 +7004,7 @@ window.addEventListener('scroll', () => {
     try { sessionStorage.setItem('kmail_xk_y', JSON.stringify({ k: f.getAttribute('data-k'), y: Math.round(window.pageYOffset), t: Date.now() })); } catch (e) {}
   }, 200);
 }, { passive: true });
-const _XK_V = '20261109b';   // 문서를 고칠 때 올린다 — 브라우저가 옛 문서를 캐시로 쓰지 않게 한다
+const _XK_V = String(Math.floor(Date.now() / 60000));   // 1분마다 바뀌는 값 — Cloudflare(max-age 4시간)·브라우저가 옛 문서를 붙들지 않게 한다
 const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V };
 function _xkSwitch(k) {
   const f = document.getElementById('xokorea-frame');
