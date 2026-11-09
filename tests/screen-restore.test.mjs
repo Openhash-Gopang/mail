@@ -16,5 +16,5 @@ test('서류 작성 중 새로 고침: 열어 둔 서류(사이트·제목)를 P
   assert.match(h, /const _SCR_DOC = 'kmail_doc'/);
   assert.match(h, /function _drAutoSave\(reason\) \{\s*\n\s*if \(_cmpMode === 'doc'\) _scrDocSave\(\);/);
   assert.match(h, /if \(dk && s\.n === 'doc'[^\n]*_scrResumeDoc\(dk\)/);
-  assert.match(h, /if \(k\.confirmed && k\.title\) _docHostSubmit\(true\)/);
+  assert.match(h, /if \(k\.confirmed && k\.title\) _docHostSubmit\(true, true\)/);
 });

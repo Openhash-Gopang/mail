@@ -4911,7 +4911,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const _NAV_COMPOSE_NAMES = ['home', 'compose', 'letter', 'doc', 'verdict'];
 /* 새로 고침 후에도 보던 화면·작성 중인 초안을 되살린다(2026-11-07): 화면 이름·Draft id 는 sessionStorage, 내용은 PDV Draft */
 const _SCR_KEY = 'kmail_screen', _SCR_DID = 'kmail_draft_id';
-let _scrRestoring = false;
+let _scrRestoring = false, _scrUserNav = false;   // _scrUserNav: 복원 전에 사용자가 직접 화면을 옮겼는지
 function _scrSave(name) {
   if (_scrRestoring) return;
   try {
@@ -4921,18 +4921,18 @@ function _scrSave(name) {
 }
 function _scrDraftIdSave(id, kind) { try { if (id) sessionStorage.setItem(_SCR_DID, JSON.stringify({ id, kind, t: Date.now() })); else { sessionStorage.removeItem(_SCR_DID); sessionStorage.removeItem(_SCR_DOC); } } catch (e) {} }
 /* 서류 작성 중 새로 고침: 어떤 서류(사이트·제목)를 열었는지는 PDV 와 무관하게 sessionStorage 에 두고, 새로 고침 뒤 그 서류 페이지를 다시 연다 */
-const _SCR_DOC = 'kmail_doc', _SCR_DOC_LS = 'kmail_doc_ls';
+const _SCR_DOC = 'kmail_doc';
+try { localStorage.removeItem('kmail_doc_ls'); } catch (e) {}   // 이전 버전이 남긴 24시간 저장본 — 더 쓰지 않으므로 지운다
 function _scrDocSave() {
   if (_scrRestoring) return;
   try {
     const input = document.getElementById('cmp-input'), t = input ? input.value.trim() : '';
     const confirmed = !!(_docHost.loaded && _docHost.confirmed), title = confirmed ? String(_docHost.title || '') : '';
-    if (_cmpMode !== 'doc' || (!t && !title)) { sessionStorage.removeItem(_SCR_DOC); try { localStorage.removeItem(_SCR_DOC_LS); } catch (e) {} return; }
+    if (_cmpMode !== 'doc' || (!t && !title)) { sessionStorage.removeItem(_SCR_DOC); return; }
     sessionStorage.setItem(_SCR_DOC, JSON.stringify({ site: _docHost.id || '', title, text: t, confirmed, t: Date.now() }));
     // 홈 화면의 '서류 작성' 목록·예시 버튼으로 연 서류는 _switchTab 을 거치지 않아 화면 이름이 기록되지 않았다 → 새로 고침하면 홈으로 갔다.
     // 서류 모드인 동안은 여기서도 화면 이름을 'doc' 으로 기록한다. 같은 내용을 localStorage 에도 남겨 탭 복원·새 탭에서도 24시간 이어 열 수 있게 한다.
     sessionStorage.setItem(_SCR_KEY, JSON.stringify({ n: 'doc', sub: '', t: Date.now() }));
-    try { localStorage.setItem(_SCR_DOC_LS, JSON.stringify({ site: _docHost.id || '', title, text: t, confirmed, t: Date.now() })); } catch (e) {}
   } catch (e) {}
 }
 function _scrResumeDoc(k) {   // 서류 화면을 다시 열고(사이트 선택·요청문), 확정돼 있던 서류는 같은 서류로 바로 다시 연다
@@ -4947,11 +4947,8 @@ function _scrResumeDoc(k) {   // 서류 화면을 다시 열고(사이트 선택
 async function _scrRestore() {
   let s = null, d = null;
   try { s = JSON.parse(sessionStorage.getItem(_SCR_KEY) || 'null'); d = JSON.parse(sessionStorage.getItem(_SCR_DID) || 'null'); } catch (e) {}
-  if (!s || !s.n) {   // 이 탭의 기록이 없으면(새 탭·탭 복원) 24시간 안에 작성하던 서류가 있는지 본다 — 홈으로 곧바로 열린 경우만
-    let l = null; try { l = JSON.parse(localStorage.getItem(_SCR_DOC_LS) || 'null'); } catch (e) {}
-    if (l && Date.now() - l.t < 24 * 3600 * 1000 && !location.hash) { _scrRestoring = true; try { _scrResumeDoc(l); } catch (e) {} _scrRestoring = false; _scrSave('doc'); }
-    return;
-  }
+  if (!s || !s.n) return;   // 이 탭에 기록이 없으면(새 탭·새 창) 홈 그대로 — 예전 서류를 저절로 열지 않는다
+  if (_scrUserNav) return;   // 복원이 늦게 도착했는데 사용자가 이미 메뉴를 눌렀다면 사용자의 선택이 우선이다
   if (Date.now() - s.t > 12 * 3600 * 1000) return;
   _scrRestoring = true;
   try {
@@ -4977,6 +4974,7 @@ setInterval(() => { try { _drAutoSave('tick'); } catch (e) {} }, 4000);
 window.addEventListener('pagehide', () => { try { _drAutoSave('hide'); } catch (e) {} });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { _drAutoSave('hide'); } catch (e) {} } });
 function _switchTab(name) {
+  if (!_scrRestoring) _scrUserNav = true;   // 사용자가 직접 화면을 옮겼다 — 늦게 도착한 새로 고침 복원이 이를 덮어쓰지 않게
   if (name === 'whitepaper') { _subSet('xk', _subGet('wp') === 'openhash' ? 'oh' : 'wp'); name = 'xokorea'; }   // Whitepaper 는 XO Korea 화면의 탭으로 옮겼다
   // 서류를 작성하는 중에 홈(로고)을 누르면 작성 중인 서류를 Draft 로 저장하고 새 입력 필드를 불러온다
   if (name === 'home' && _docLocked() && document.getElementById('tab-compose').classList.contains('active')) {
