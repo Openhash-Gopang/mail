@@ -110,7 +110,19 @@ async function stopCurrent() {
   for (let i = 0; i < 40 && state.running; i++) await wait(100);
 }
 // 작업하던 탭을 닫으면 그 작업도 끝낸다(남아 있으면 다음 "도우미가 가져오기"가 막힌다).
-chrome.tabs.onRemoved.addListener((id) => { if (state.running && id === state.tabId) { state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } } } });
+// 작업 중 누른 단추가 새 탭·창(예: 정부24 문서출력 뷰어)을 열면 그 탭으로 따라가고, 그 탭이 닫히면 원래 탭으로 돌아온다.
+chrome.tabs.onCreated.addListener((t) => {
+  if (!state.running || state.tabId == null || t.openerTabId == null || t.openerTabId !== state.tabId) return;
+  state.parentTabId = state.tabId; state.tabId = t.id; state.ov && overlay(state.ov.mode, state.ov.text, state.ov.options);
+  chrome.tabs.update(t.id, { active: true }).catch(() => {});
+});
+chrome.tabs.onRemoved.addListener((id) => {
+  if (state.running && id === state.tabId && state.parentTabId != null) {
+    const back = state.parentTabId; state.parentTabId = null;
+    chrome.tabs.get(back).then(() => { if (state.running) { state.tabId = back; chrome.tabs.update(back, { active: true }).catch(() => {}); overlay('busy', ''); } }).catch(() => { state.abort = true; });
+    return;
+  }
+  if (state.running && id === state.tabId) { state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } } } });
 
 async function host(playbook) {
   const c = await cfg();
