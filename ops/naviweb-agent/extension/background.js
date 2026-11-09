@@ -40,7 +40,8 @@ async function ensureContent(tabId) {
 async function frames(tabId) {
   try { return (await chrome.webNavigation.getAllFrames({ tabId })).filter((f) => /^https?:/.test(f.url)).map((f) => f.frameId); } catch { return [0]; }
 }
-const send1 = (tabId, frameId, msg) => chrome.tabs.sendMessage(tabId, msg, { frameId });
+// 화면(탭)이 25초 안에 답하지 않으면 멈춘 것으로 보고 오류로 알린다(예전에는 영원히 기다렸다).
+const send1 = (tabId, frameId, msg) => Promise.race([chrome.tabs.sendMessage(tabId, msg, { frameId }), new Promise((_, rej) => setTimeout(() => rej(new Error('화면이 25초 넘게 응답하지 않습니다. 탭을 새로고침(F5)한 뒤 다시 맡겨 주세요.')), 25000))]);
 async function mainClick(frameId) {
   // javascript: 링크는 확장 프로그램 환경에서 막히므로 페이지 자체 환경(MAIN)에서 누른다.
   await chrome.scripting.executeScript({ target: { tabId: state.tabId, frameIds: [frameId] }, world: 'MAIN', func: () => { const e = document.querySelector('[data-navi-click]'); if (e) { e.removeAttribute('data-navi-click'); e.click(); } } });
@@ -92,12 +93,13 @@ async function host(playbook) {
   const c = await cfg();
   const mine = state;
   return {
+    progress: (t) => { if (!mine.abort) overlay('busy', t); },
     fetchJob: () => !!mine.slot,   // "도우미가 가져오기"(항목 지정)로 시작한 작업
     aborted: () => mine.abort,   // 이 작업의 중단 표시(새 작업이 state 를 바꿔도 옛 작업은 자기 표시를 본다)
     inbox: () => state.inbox.shift() || null,
     log: (e) => say({ type: 'log', e }),
     async callModel(body) {
-      const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : {}), ...(c.userToken ? { 'x-navi-token': encodeURIComponent(c.userToken) } : {}) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }) });
+      const r = await fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : {}), ...(c.userToken ? { 'x-navi-token': encodeURIComponent(c.userToken) } : {}) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }), signal: AbortSignal.timeout(90000) }).catch((e) => { throw new Error(e && e.name === 'TimeoutError' ? 'AI 응답이 90초가 넘도록 없습니다. 잠시 뒤 나비웹에서 "도우미가 가져오기"를 다시 눌러 주세요.' : '도우미 서버에 연결하지 못했습니다: ' + (e && e.message || e)); });
       const j = await r.json().catch(() => ({}));
       if (r.status === 401) throw new Error((j && j.reason ? '[게이트웨이 거절 사유: ' + String(j.reason).slice(0, 60) + '] ' : '') + (c.userToken
         ? '사이트는 열었습니다. 나비웹 로그인 확인이 거절됐습니다(로그인이 만료됐거나, 도우미 설정의 토큰 칸에 옛 값이 남아 있을 수 있습니다). 나비웹을 새로고침해 다시 로그인된 것을 확인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.'
