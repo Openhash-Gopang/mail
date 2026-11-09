@@ -461,10 +461,10 @@ test('사용법: 퀴즈를 통과해 다음 장으로 넘어가면 새 장의 �
   assert.match(js, /act === 'restart'\) \{ S\.idx = 0; S\.answers = \{\}; S\.result = null; render\(\); toTop\(\); \}/, '처음부터 다시');
 });
 
-test('안내 영상: 왼쪽 메뉴 "나비 길잡이" 아래, YouTube 아이콘 이미지, 영상 2개를 번호 순으로 카드로', () => {
+test('안내 영상: 왼쪽 메뉴 "나비 길잡이" 아래, YouTube 아이콘 이미지, 영상 2개(navi 02 는 삭제됨)를 번호 순으로 카드로', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.ok(h.includes('id="tab-btn-youtube"') && h.includes('data-label="안내 영상"') && h.includes('assets/youtube-icon.png') && h.includes('id="tab-youtube"'));
   assert.ok(h.indexOf('id="tab-btn-guidenav"') < h.indexOf('id="tab-btn-youtube"') && h.indexOf('id="tab-btn-youtube"') < h.indexOf('class="side-settings"'));
-  const ids = ['PsqV8Rj445k', 'aLfvRkbX4mE'].map(x => h.indexOf("id: '" + x + "'"));
-  assert.ok(ids.every(x => x > 0) && ids[0] < ids[1] && !h.includes("id: 'pFSTOKbYGAE'"));
+  const ids = ['PsqV8Rj445k', 'pFSTOKbYGAE'].map(x => h.indexOf("id: '" + x + "'"));
+  assert.ok(ids.every(x => x > 0) && ids[0] < ids[1] && !h.includes("id: 'aLfvRkbX4mE'"));
 });
