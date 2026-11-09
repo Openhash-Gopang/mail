@@ -131,7 +131,7 @@
       if (!curGliding && curEl && curEl.isConnected) {
         try {
           const tx = Math.round(Math.min(Math.max(curX + (Math.random() - 0.5) * 180, 24), innerWidth - 40)), ty = Math.round(Math.min(Math.max(curY + (Math.random() - 0.5) * 120, 90), innerHeight - 40));
-          const d = Math.hypot(tx - curX, ty - curY), a = curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(1400, Math.max(500, d * 3.2)), easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
+          const d = Math.hypot(tx - curX, ty - curY), a = curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(2800, Math.max(1000, d * 6.4)), easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
           await a.finished;
           if (!curGliding) { curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`; }
           a.cancel();
@@ -149,7 +149,7 @@
       const ring = document.createElement('div'); ring.className = 'ring'; ring.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`; curRoot.appendChild(ring);
       if (!curReduced()) {
         const d = Math.hypot(tx - curX, ty - curY);
-        await curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(550, Math.max(180, d * 0.55)), easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished;
+        await curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(1100, Math.max(360, d * 1.1)), easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished;
       }
       curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`; curGliding = false;
       if (click) { const rip = document.createElement('div'); rip.className = 'rip'; rip.style.cssText = `left:${tx}px;top:${ty}px`; curRoot.appendChild(rip); rip.animate([{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.8)', opacity: 0 }], { duration: 380 }).finished.then(() => rip.remove(), () => rip.remove()); await new Promise((res) => setTimeout(res, 140)); }
