@@ -600,3 +600,8 @@ test('0.6.24: 로그인 안내 중 "로그아웃" 단추가 새로 보이면 사
   for (const t of ['로그아웃', '로그 아웃', 'Logout', 'Sign out']) assert.ok(re.test(t), t);
   for (const t of ['로그인', '로그아웃 연장 안내문구입니다']) assert.ok(!re.test(t), t);
 });
+
+test('0.6.25: 작업 중 커서가 화면 위를 천천히 오간다(대상으로 갈 때는 중단, 움직임 줄이기 존중)', () => {
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(ct, /function curWander/); assert.match(ct, /curGliding/); assert.match(ct, /if \(!curBusy \|\| curReduced\(\)\)/);
+});
