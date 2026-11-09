@@ -1206,7 +1206,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .side-logo{flex:none;display:block;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;cursor:pointer;padding:6px 0 10px 16px;line-height:0}
 .side-logo:hover{background:rgba(59,125,221,.08)}.side-logo:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
 .side-nav:has(#tab-btn-home.active) .side-logo{background:var(--pri-bg)}   /* 홈 화면일 때 로고가 홈 버튼처럼 표시된다 */
-#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper{display:none!important}   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
+#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback{display:none!important}   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
 .home-xo{position:fixed;left:72px;right:0;bottom:22px;display:none;justify-content:center;pointer-events:none;z-index:5}
 .home-xo a{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;color:var(--sub);font-size:14px;font-weight:500;text-decoration:none;cursor:pointer}
 .home-xo a:hover{background:var(--pri-bg);color:var(--pri)}
@@ -1261,6 +1261,9 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 header.topbar,#hd-pull{display:none!important}
 .user-row{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:flex-end;gap:12px;height:var(--ur,48px);padding:0 16px;background:var(--bg,#f5f6f8)}
 .user-row .hondi-user-slot{flex:none;display:flex;align-items:center}
+.fb-top{flex:none;border:1px solid var(--bdr,#dadce0);border-radius:10px;background:transparent;color:var(--pri,#1a73e8);font:600 13px/1 inherit;padding:8px 14px;cursor:pointer;white-space:nowrap}   /* 기능 개선 제안 — 왼쪽 메뉴에서 프로필 옆으로 옮김 */
+.fb-top:hover{background:var(--pri-bg,#e8f0fe)}.fb-top:focus-visible{outline:2px solid var(--pri,#1a73e8);outline-offset:2px}
+body:has(#tab-feedback.active) .fb-top{background:var(--pri-bg,#e8f0fe);border-color:var(--pri,#1a73e8)}
 .topbar-float{display:flex;align-items:center;gap:8px;margin:0}
 .topbar-float:not(:has(:not([hidden]))){display:none}
 .topbar-float .agent-badge{background:#fff;color:var(--sub,#334155);border:1px solid var(--bdr,#e2e8f0);border-radius:999px;padding:5px 12px}
@@ -1407,6 +1410,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
 </div>
+<button type="button" class="fb-top" id="fb-top" title="기능 개선 제안" onclick="_switchTab('feedback')">기능 개선 제안</button>
 <span class="hondi-user-slot" data-hondi-user-slot="light"></span>
 </div>
 
