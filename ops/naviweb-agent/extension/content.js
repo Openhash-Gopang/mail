@@ -106,7 +106,7 @@
       const go = () => { const v = inp.value.trim(); if (!v) return; chrome.runtime.sendMessage({ type: 'reply', ok: true, value: v }); overlay('busy', ''); };
       inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') go(); }, true);
       ['keyup', 'keypress'].forEach((n) => inp.addEventListener(n, (e) => e.stopPropagation(), true));
-      k.appendChild(inp); btn('보내기', '', go);
+      k.appendChild(inp); btn(options && options[1] ? '보내기 · 금고에 저장' : '보내기', '', go);
       btn('직접 입력할게요', 's', () => { chrome.runtime.sendMessage({ type: 'reply', ok: true, manual: true }); overlay('busy', ''); });
       btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' }));
       setTimeout(() => inp.focus(), 0);

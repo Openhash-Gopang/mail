@@ -521,3 +521,16 @@ test('ask_input: 값을 받아 모델에 전달, 직접 입력 선택 시 건너
   assert.equal(classify('ask_input', { question: '주민등록번호?' }, {}).act, 'deny');
   assert.ok(TOOLS.some((t) => t.name === 'ask_input'));
 });
+
+test('pdv_get·save_as: 금고에서 읽고, 받은 값은 지정 항목으로 보관하도록 host 에 전달', async () => {
+  assert.ok(TOOLS.some((t) => t.name === 'pdv_get'));
+  assert.equal(classify('pdv_get', { keys: ['phone'] }, {}).act, 'auto');
+  assert.match(buildSystem({ goal: 'g' }), /pdv_get/);
+  let saved = null;
+  const h = fakeHost([use('1', 'ask_input', { question: '전화번호?', label: '전화번호', save_as: 'phone' }), end('완료')], { host: { input: async (q, l, k) => { saved = k; return '010-1234-5678'; } } });
+  await runAgent({ goal: 'g', host: h });
+  assert.equal(saved, 'phone');
+  const h2 = fakeHost([use('1', 'ask_input', { question: 'x', save_as: 'rrn' }), end('완료')], { host: { input: async (q, l, k) => { saved = k; return 'v'; } } });
+  await runAgent({ goal: 'g', host: h2 });
+  assert.equal(saved, '');
+});

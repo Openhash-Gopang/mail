@@ -78,7 +78,28 @@ async function overlay(mode, text, options) {
 }
 chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text, state.ov.options); });
 function choose(question, options) { say({ type: 'prompt', kind: 'choice', text: question, options }); overlay('choice', question, options); return new Promise((res) => { state.waiter = (ok, value) => { overlay('busy', ''); res(ok ? value : null); }; }); }
-function inputAsk(question, label) { say({ type: 'prompt', kind: 'input', text: question }); overlay('input', question, [label]); return new Promise((res) => { state.waiter = (ok, value, manual) => { overlay('busy', ''); res(!ok ? null : manual ? { manual: true } : value); }; }); }
+// 나비웹 탭(내 데이터 금고 중계가 있는 곳)에 금고 읽기·쓰기를 부탁한다. 안 열려 있거나 늦으면 null.
+const pdvWait = new Map();
+async function pdvCall(op, data) {
+  try {
+    const { naviTabId } = (chrome.storage.session && await chrome.storage.session.get('naviTabId')) || {};
+    if (naviTabId == null) return null;
+    const rid = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const p = new Promise((res) => { const t = setTimeout(() => { pdvWait.delete(rid); res(null); }, 8000); pdvWait.set(rid, (r) => { clearTimeout(t); res(r); }); });
+    await chrome.tabs.sendMessage(naviTabId, { type: 'pdv', rid, op, ...data });
+    return await p;
+  } catch { return null; }
+}
+function inputAsk(question, label, saveAs) {
+  say({ type: 'prompt', kind: 'input', text: question }); overlay('input', question, [label, saveAs || '']);
+  return new Promise((res) => {
+    state.waiter = async (ok, value, manual) => {
+      overlay('busy', ''); if (!ok) return res(null); if (manual) return res({ manual: true });
+      if (saveAs && value) { const r = await pdvCall('set', { values: { [saveAs]: value } }); if (r && r.ok && Array.isArray(r.saved) && r.saved.includes(saveAs)) say({ type: 'prompt', kind: 'saved', text: '내 데이터 금고에 저장했습니다.' }); }
+      res(value);
+    };
+  });
+}
 function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
@@ -120,6 +141,13 @@ async function host(playbook) {
         await deliverToNavi({ kind: 'status', label: state.slot, state: st, note: String(input.note || '').slice(0, 200) });
         return { text: '나비웹 화면에 알렸습니다: ' + st };
       }
+      if (name === 'pdv_get') {
+        const r = await pdvCall('get', { keys: Array.isArray(input.keys) ? input.keys.slice(0, 5) : [] });
+        if (!r || !r.ok) return { text: '내 데이터 금고를 읽지 못했습니다(나비웹 화면이 닫혀 있거나 금고 중계가 아직 지원하지 않습니다). 사용자에게 ask_input 으로 물으세요.' };
+        const L = { name: '성명', sido: '거주지 시도', address: '주소', phone: '전화번호', email: '이메일' }, v = r.values || {};
+        const lines = Object.keys(v).filter((k) => L[k]).map((k) => `${L[k]}(${k}): ${String(v[k]).slice(0, 200)}`);
+        return { text: lines.length ? lines.join('\n') : '금고에 보관된 값이 없습니다.' };
+      }
       if (name === 'send_file_to_navi') {   // 받은 서류 파일을 나비웹 탭으로 보낸다(파일·주소는 AI 에게 보내지 않는다)
         if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 파일을 보낼 곳이 없습니다.' };
         const tabUrl = (await chrome.tabs.get(state.tabId)).url || '';
@@ -143,7 +171,7 @@ async function host(playbook) {
     },
     ask: (t) => ask('confirm', t),
     choose: (q, o) => choose(q, o),
-    input: (q, l) => inputAsk(q, l),
+    input: (q, l, k) => inputAsk(q, l, k),
     handoff: async (t) => { await ask('handoff', t); },
   };
 }
@@ -223,6 +251,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     return true;
   }
   const mine = sender.id === chrome.runtime.id && (!sender.tab || sender.tab.id === state.tabId);
+  if (m.type === 'pdv-result' && sender.tab && pdvWait.has(m.rid)) { const f = pdvWait.get(m.rid); pdvWait.delete(m.rid); f(m); return; }
   if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false, m.value, m.manual); }
   if (m.type === 'stop' && mine) { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
   if (m.type === 'start' && !state.running) runJob(m);
