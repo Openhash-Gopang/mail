@@ -6990,16 +6990,20 @@ function _panelOpen(kind) {
 }
 window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _introClose(); _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _introClose(); _switchTab('whitepaper'); } });
 const _WP_URL = { navi: 'manual.html?embed=mail', openhash: 'openhash.html?embed=mail' };
-const _XK_URL = { xo: 'xo.html?embed=mail', history: 'xo-korea.html?embed=mail' };
+const _XK_V = '20261109';   // 문서를 고칠 때 올린다 — 브라우저가 옛 문서를 캐시로 쓰지 않게 한다
+const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V };
 function _xkSwitch(k) {
   const f = document.getElementById('xokorea-frame');
-  if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.style.height = ''; f.setAttribute('src', _XK_URL[k]); window.scrollTo(0, 0); }
+  if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.style.height = ''; f.removeAttribute('data-sized'); f.setAttribute('scrolling', 'no'); f.setAttribute('src', _XK_URL[k]); window.scrollTo(0, 0);
+    // 안쪽 문서가 높이를 알려 오지 않으면(옛 문서·로딩 실패) 안쪽 스크롤을 되살려 내용이 잘리지 않게 한다
+    setTimeout(() => { if (f.getAttribute('data-k') === k && !f.getAttribute('data-sized')) f.setAttribute('scrolling', 'auto'); }, 3000);
+  }
   ['xo', 'history'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
 }
 window.addEventListener('message', (e) => {
   const f = document.getElementById('xokorea-frame'); if (!f || e.source !== f.contentWindow || !e.data) return;
   if (e.data.type === 'xokorea-tab' && _XK_URL[e.data.k]) _xkSwitch(e.data.k);
-  else if (e.data.type === 'xokorea-height' && e.data.h > 0) f.style.height = e.data.h + 'px';   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
+  else if (e.data.type === 'xokorea-height' && e.data.h > 0) { f.style.height = e.data.h + 'px'; f.setAttribute('data-sized', '1'); }   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
   else if (e.data.type === 'xokorea-scroll') window.scrollTo({ top: window.pageYOffset + f.getBoundingClientRect().top + e.data.y - 8, behavior: 'smooth' });
 });
 function _wpSwitch(k) {
