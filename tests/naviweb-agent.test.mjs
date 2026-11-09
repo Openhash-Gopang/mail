@@ -662,3 +662,10 @@ test('지시 이행 원칙: 맡긴 일을 "진행할까요?"로 되묻는 선택
   const ac = readFileSync(new URL('../ops/naviweb-agent/extension/agent-core.js', import.meta.url), 'utf8');
   assert.match(ac, /지시 이행 원칙/); assert.match(ac, /autoProceed\(String\(u\.input\.question/);
 });
+test('문서 보기 창은 작업 탭이 아니어도 찾아 PDF 로 만든다(열린 뷰어 탭 조회)', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /tabs\.query\(\{ url: 'https:\/\/\*\.gov\.kr\/ezpdfwv\/\*' \}\)/);
+  assert.match(bg, /printTabToPdf\(chrome\.debugger, tid\)/);
+  const pb = readFileSync(new URL('../ops/naviweb-agent/extension/playbooks.js', import.meta.url), 'utf8');
+  assert.match(pb, /find 로 \\"문서출력\\"|find 로 "문서출력"/);
+});

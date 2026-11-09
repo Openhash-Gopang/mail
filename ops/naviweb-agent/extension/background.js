@@ -248,6 +248,7 @@ async function host(playbook) {
         const tabUrl = (await chrome.tabs.get(state.tabId)).url || '';
         if (!(input && input.ref)) {   // ref 가 없으면 먼저 지금 열린 문서 보기 화면에서 PDF 를 직접 가져온다(정부24 문서출력 창 등)
           const ids = [state.tabId, ...(state.family || [])].filter((x, i, a) => x != null && a.indexOf(x) === i);
+          try { (await chrome.tabs.query({ url: 'https://*.gov.kr/ezpdfwv/*' })).forEach((t) => { if (t.id != null && !ids.includes(t.id)) ids.push(t.id); }); } catch { /* 조회 실패 */ }
           for (const id of ids) {
             try {
               const rs = await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, func: grabPdfInPage, args: [MAX_BYTES] });
@@ -262,9 +263,14 @@ async function host(playbook) {
           }
           // 찾지 못하면(인쇄 단추만 있는 뷰어) 지금 보이는 문서 화면을 PDF 로 만든다 — 사용자가 인쇄 창에서 "PDF 로 저장"하는 것과 같은 결과
           try {
-            const url = String((await chrome.tabs.get(state.tabId)).url || '');
-            if (/^https:\/\/[^/]*gov\.kr\/ezpdfwv\//i.test(url)) {
-              const pr = await printTabToPdf(chrome.debugger, state.tabId);
+            // 문서 보기 창은 새 창으로 열려 작업 탭(state.tabId)이 아직 목록 화면일 수 있다 — 작업 탭 묶음과 열려 있는 뷰어 탭 중에서 찾는다.
+            const isViewer = (u) => /^https:\/\/[^/]*gov\.kr\/ezpdfwv\//i.test(String(u || ''));
+            const cand = [];
+            for (const id of ids) { try { const t = await chrome.tabs.get(id); if (isViewer(t.url)) cand.push(id); } catch { /* 닫힌 탭 */ } }
+            if (!cand.length) { try { const ts = await chrome.tabs.query({ url: 'https://*.gov.kr/ezpdfwv/*' }); ts.sort((a, c) => (c.id || 0) - (a.id || 0)); ts.forEach((t) => { if (t.id != null) cand.push(t.id); }); } catch { /* 조회 실패 */ } }
+            if (cand.length) {
+              const tid = cand[0];
+              const pr = await printTabToPdf(chrome.debugger, tid);
               if (pr.ok) {
                 const nm = safeName(state.slot, 'application/pdf', '');
                 await deliverToNavi({ kind: 'file', label: state.slot, name: nm, mime: 'application/pdf', b64: pr.b64 });
