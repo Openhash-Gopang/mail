@@ -389,7 +389,7 @@ test('0.6: 모든 https 사이트 권한, 맡기면 바로 시작, 작업 탭 �
   assert.match(bg, /if \(m\.type === 'start' && !state\.running\) runJob\(m\)/);
   assert.match(bg, /mine/, '답/중단은 작업 탭 또는 확장 화면에서 온 것만');
   const ct = rd('content.js');
-  assert.match(ct, /__navi === 'overlay'/); assert.match(ct, /직접 했어요/); assert.match(ct, /mode: 'closed'/);
+  assert.match(ct, /__navi === 'overlay'/); assert.match(ct, /완료/); assert.match(ct, /mode: 'closed'/);
   const NA = (await import('node:module')).createRequire(import.meta.url)('../agent-bridge.js');
   assert.ok(NA.slotPlan('주민등록표 등본(초본) 1부'));
   assert.match(buildSystem(null), /로그인 창을 직접 연 뒤/);
@@ -547,4 +547,20 @@ test('처리완료 화면(text/html) 응답이면 문서출력·저장 단추로
   assert.equal(r.ok, false); assert.match(r.msg, /문서출력/);
   assert.equal(classify('click', { ref: 'e1' }, { tag: 'button', text: '문서출력' }, [], { fetchJob: true }).act, 'auto');
   assert.match(buildSystem({ goal: 'g' }), /문서출력/);
+});
+
+test('0.6.19: 직접 입력 단계 단추는 "완료", 민감 정보 입력 사유의 handoff 는 허용', () => {
+  const c = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(c, /btn\('완료'/); assert.doesNotMatch(c, /btn\('직접 했어요'/);
+  assert.equal(classify('handoff_to_user', { reason: '주민등록번호는 직접 입력해 주세요' }, {}).act, 'handoff');
+  assert.equal(classify('handoff_to_user', { reason: '화면 하단 버튼을 눌러 주세요' }, {}).act, 'deny');
+});
+
+test('0.6.20: 작업 탭 묶음·띠 되살리기·사용자 말하기·가입 대행 규칙', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(bg, /state\.family/); assert.match(bg, /tabs\.onActivated/); assert.match(bg, /m\.type === 'say'/);
+  assert.match(ct, /ovWd/); assert.match(ct, /input\.i2|'i2'/);
+  assert.match(buildSystem({ goal: 'g' }), /회원가입/);
+  assert.equal(classify('handoff_to_user', { reason: '약관 동의와 아이디 만들기는 직접 해 주세요' }, {}).act, 'handoff');
 });

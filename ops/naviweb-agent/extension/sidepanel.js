@@ -28,7 +28,7 @@ chrome.runtime.onMessage.addListener((m) => {
   else if (m.type === 'prompt') {
     permitHost = m.kind === 'permit' ? m.text : '';
     $('asktext').textContent = m.kind === 'permit' ? `"${m.text}" 사이트의 화면을 읽고 조작하도록 허용할까요? (브라우저 허용 창이 한 번 더 나옵니다)` : (m.kind === 'handoff' ? '직접 진행이 필요합니다: ' : '확인: ') + m.text;
-    $('yes').textContent = m.kind === 'permit' ? '이 사이트 허용' : m.kind === 'handoff' ? '직접 했어요' : '진행';
+    $('yes').textContent = m.kind === 'permit' ? '이 사이트 허용' : m.kind === 'handoff' ? '완료' : '진행';
     $('ask').hidden = false;
   }
   if (m.type === 'done') {
