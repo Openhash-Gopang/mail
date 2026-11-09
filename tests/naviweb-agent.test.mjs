@@ -635,3 +635,13 @@ test('문서 보기 화면 PDF 가져오기: 같은 사이트의 PDF 만 받고,
   const big = await run(['https://plus.gov.kr/d'], ok(pdf), 50);
   assert.equal(big.ok, false); assert.match(big.msg, /너무 큽니다/);
 });
+test('화면을 PDF 로 만들기: 디버거에 붙였다가 반드시 떼고, 결과를 검사한다', async () => {
+  const { printTabToPdf } = await import('../ops/naviweb-agent/extension/files.js');
+  const mk = (data, fail) => { const log = []; return { log, attach: async () => { log.push('attach'); if (fail === 'attach') throw new Error('x'); }, sendCommand: async (t, m) => { log.push(m); if (fail === 'cmd') throw new Error('y'); return { data }; }, detach: async () => { log.push('detach'); } }; };
+  const a = mk(Buffer.from('%PDF-1.4 hello').toString('base64')); const r = await printTabToPdf(a, 7);
+  assert.equal(r.ok, true); assert.deepEqual(a.log, ['attach', 'Page.printToPDF', 'detach']);
+  const b = mk('', null); assert.equal((await printTabToPdf(b, 7)).ok, false); assert.equal(b.log.at(-1), 'detach');
+  const c = mk('QUJD', 'cmd'); assert.equal((await printTabToPdf(c, 7)).ok, false); assert.equal(c.log.at(-1), 'detach');
+  assert.equal((await printTabToPdf(mk('x', 'attach'), 7)).ok, false);
+  assert.equal((await printTabToPdf(mk('A'.repeat(400), null), 7, 100)).ok, false);
+});

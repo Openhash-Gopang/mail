@@ -1,7 +1,7 @@
 import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
-import { fetchForNavi, pickDownload, grabPdfInPage, safeName, MAX_BYTES } from './files.js';
+import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, safeName, MAX_BYTES } from './files.js';
 import { hostAllowed } from './policy.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -260,6 +260,20 @@ async function host(playbook) {
               }
             } catch { /* 이 탭은 읽을 수 없다 — 다음 탭 */ }
           }
+          // 찾지 못하면(인쇄 단추만 있는 뷰어) 지금 보이는 문서 화면을 PDF 로 만든다 — 사용자가 인쇄 창에서 "PDF 로 저장"하는 것과 같은 결과
+          try {
+            const url = String((await chrome.tabs.get(state.tabId)).url || '');
+            if (/^https:\/\/[^/]*gov\.kr\/ezpdfwv\//i.test(url)) {
+              const pr = await printTabToPdf(chrome.debugger, state.tabId);
+              if (pr.ok) {
+                const nm = safeName(state.slot, 'application/pdf', '');
+                await deliverToNavi({ kind: 'file', label: state.slot, name: nm, mime: 'application/pdf', b64: pr.b64 });
+                await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '문서 화면을 PDF 로 만들어 나비웹으로 보냈습니다. 내용을 확인하고 서류에 넣을지 정해 주세요.' }).catch(() => {});
+                return { text: `나비웹으로 보냈습니다: ${nm} (${Math.round(pr.size / 1024)}KB, 화면을 PDF 로 만든 사본). 사용자가 나비웹 화면에서 내용을 확인하고 서류에 넣을지 정합니다.` };
+              }
+              return { text: pr.msg };
+            }
+          } catch { /* 탭 정보를 읽지 못함 — 아래 기존 방법으로 */ }
         }
         let fileUrl = '';
         if (input && input.ref) fileUrl = String((await toTab('link_href', { ref: input.ref }, false)).text || '');
