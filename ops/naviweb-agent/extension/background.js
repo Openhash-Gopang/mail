@@ -69,14 +69,15 @@ async function toTab(name, input, describe) {
   return one(0, input);
 }
 // 작업 탭 위의 안내 띠(content.js). 탭이 바뀌거나 새로 불러와도 다시 붙인다.
-async function overlay(mode, text) {
-  state.ov = mode === 'off' ? null : { mode, text };
+async function overlay(mode, text, options) {
+  state.ov = mode === 'off' ? null : { mode, text, options };
   if (state.tabId == null) return;
-  const msg = { __navi: 'overlay', mode, text };
+  const msg = { __navi: 'overlay', mode, text, options };
   try { await chrome.tabs.sendMessage(state.tabId, msg, { frameId: 0 }); }
   catch { try { await chrome.scripting.executeScript({ target: { tabId: state.tabId, allFrames: true }, files: ['content.js'] }); await chrome.tabs.sendMessage(state.tabId, msg, { frameId: 0 }); } catch { /* 주입할 수 없는 화면 */ } }
 }
-chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text); });
+chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text, state.ov.options); });
+function choose(question, options) { say({ type: 'prompt', kind: 'choice', text: question, options }); overlay('choice', question, options); return new Promise((res) => { state.waiter = (ok, value) => { overlay('busy', ''); res(ok ? value : null); }; }); }
 function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
@@ -140,6 +141,7 @@ async function host(playbook) {
       throw new Error('알 수 없는 도구: ' + name);
     },
     ask: (t) => ask('confirm', t),
+    choose: (q, o) => choose(q, o),
     handoff: async (t) => { await ask('handoff', t); },
   };
 }
@@ -219,7 +221,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     return true;
   }
   const mine = sender.id === chrome.runtime.id && (!sender.tab || sender.tab.id === state.tabId);
-  if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false); }
+  if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false, m.value); }
   if (m.type === 'stop' && mine) { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
   if (m.type === 'start' && !state.running) runJob(m);
   send && send({ ok: true });

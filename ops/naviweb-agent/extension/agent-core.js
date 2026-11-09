@@ -16,6 +16,9 @@ export function buildSystem(playbook) {
     '- read_page 결과에 "화면 위에 팝업" 경고가 있으면 가려진 영역은 읽지 못한 것으로 보고, 팝업 내용을 사용자에게 알립니다. 팝업을 닫을지는 사용자에게 묻고, 맘대로 누르지 않습니다.',
     '- 메뉴·목록을 묻는 질문은 화면 위쪽 주 메뉴부터 빠짐없이 답하고, 요소 목록에 없어서 확인하지 못한 부분은 "확인하지 못했다"고 씁니다. 보지 못한 내용을 추측해 적지 않습니다.',
     '- 보고는 마크다운 기호(**, #) 없이 일반 문장과 "- " 목록으로 씁니다.',
+    '- 사용자의 답이 필요하면 글로 \"알려 주세요\" 하고 끝내지 말고 반드시 ask_choice 도구로 질문과 선택지(2~6개)를 단추로 제시합니다. 사용자는 글을 입력할 수 없고 단추만 누를 수 있습니다. 답을 기다리며 작업을 끝내지 마세요.',
+    '- 화면에 "로그아웃"·"마이페이지"·사용자 이름이 보이면 이미 로그인된 상태입니다. 로그인하라고 요청하지 말고 곧바로 다음 단계를 진행합니다. 보이지 않을 때만 로그인 안내를 합니다.',
+    '- 서류 종류가 여럿으로 갈리면(예: 등본/초본) 목표에 이미 정해진 것은 묻지 말고, 정해지지 않았을 때만 ask_choice 로 고르게 합니다.',
     '- 끝나면 한 일, 남은 일, 확인이 필요한 점을 짧게 보고합니다.',
   ].join('\n');
   return playbook ? `${base}\n\n[절차: ${playbook.title}]\n${playbook.guide}` : base;
@@ -62,7 +65,11 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
         const verdict = classify(u.name, u.input, info, extra, { fetchJob: !!(host.fetchJob && host.fetchJob()) });
         if (host.progress && verdict.act === 'auto') host.progress(`화면을 조작하는 중입니다 (${step + 1}단계 · ${({ click: '누르기', type: '입력', navigate: '이동', read_page: '화면 읽기', find: '찾기', screenshot: '화면 보기' })[u.name] || u.name})`);
         host.log({ kind: 'tool', name: u.name, input: u.input, act: verdict.act });
-        if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
+        if (verdict.act === 'choice') {
+          const opts = (Array.isArray(u.input.options) ? u.input.options : []).map((x) => String(x).slice(0, 60)).filter(Boolean).slice(0, 6);
+          if (opts.length < 2) say('선택지가 2개 이상 필요합니다.');
+          else { const v = await host.choose(String(u.input.question || '선택해 주세요.').slice(0, 300), opts); say(v == null ? '사용자가 선택하지 않고 중단했습니다.' : '사용자가 고른 항목: ' + v); }
+        } else if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
         else if (verdict.act === 'handoff') { await host.handoff(verdict.reason); say('사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
         else if (verdict.act === 'confirm' && !(await host.ask(verdict.reason))) say('사용자가 거절했습니다. 진행하지 마세요.');
         else {

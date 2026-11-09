@@ -489,3 +489,13 @@ test('0.6.4: 설치·시작 때 열려 있는 나비웹 탭에 bridge.js 주입 
   assert.ok(mf.host_permissions.includes('https://*/*') && mf.permissions.includes('scripting') && mf.permissions.includes('tabs'));
   assert.match(mf.version, /^0\.6\.([4-9]|\d\d)/);
 });
+
+test('ask_choice: 선택지를 단추로 묻고 고른 값을 모델에 돌려준다', async () => {
+  let asked = null;
+  const h = fakeHost([use('1', 'ask_choice', { question: '어느 서류?', options: ['등본', '초본'] }), end('끝')], { host: { choose: async (q, o) => { asked = [q, o]; return '초본'; } } });
+  const r = await runAgent({ goal: 'g', host: h });
+  assert.deepEqual(asked, ['어느 서류?', ['등본', '초본']]); assert.equal(r.done, true); assert.equal(h.calls.length, 0);
+  assert.equal(classify('ask_choice', {}, {}).act, 'choice');
+  assert.ok(TOOLS.some((t) => t.name === 'ask_choice'));
+  assert.match(buildSystem({ goal: 'g' }), /ask_choice/);
+});
