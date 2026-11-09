@@ -78,6 +78,7 @@ async function overlay(mode, text, options) {
 }
 chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text, state.ov.options); });
 function choose(question, options) { say({ type: 'prompt', kind: 'choice', text: question, options }); overlay('choice', question, options); return new Promise((res) => { state.waiter = (ok, value) => { overlay('busy', ''); res(ok ? value : null); }; }); }
+function inputAsk(question, label) { say({ type: 'prompt', kind: 'input', text: question }); overlay('input', question, [label]); return new Promise((res) => { state.waiter = (ok, value, manual) => { overlay('busy', ''); res(!ok ? null : manual ? { manual: true } : value); }; }); }
 function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
@@ -142,6 +143,7 @@ async function host(playbook) {
     },
     ask: (t) => ask('confirm', t),
     choose: (q, o) => choose(q, o),
+    input: (q, l) => inputAsk(q, l),
     handoff: async (t) => { await ask('handoff', t); },
   };
 }
@@ -221,7 +223,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     return true;
   }
   const mine = sender.id === chrome.runtime.id && (!sender.tab || sender.tab.id === state.tabId);
-  if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false, m.value); }
+  if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false, m.value, m.manual); }
   if (m.type === 'stop' && mine) { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
   if (m.type === 'start' && !state.running) runJob(m);
   send && send({ ok: true });

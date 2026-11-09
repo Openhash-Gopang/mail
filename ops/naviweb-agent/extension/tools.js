@@ -28,6 +28,8 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
   { name: 'ask_choice', description: '사용자의 선택이 필요할 때 질문과 선택지를 화면 띠에 단추로 보여 주고 고른 값을 돌려받는다. 사용자에게 "알려 주세요"라고 글로만 묻지 말고 반드시 이 도구를 쓴다.',
     input_schema: { type: 'object', properties: { question: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 6 } }, required: ['question', 'options'] } },
+  { name: 'ask_input', description: '화면 입력칸에 넣을 값을 사용자에게서 받아야 할 때(예: 거주지 시도, 전화번호, 이메일) 띠에 입력칸을 보여 주고 값을 돌려받는다. 사용자가 "직접 입력할게요"를 고르면 사용자가 페이지에 직접 입력한 것이니 입력을 건너뛰고 다음 단계로 간다. 비밀번호·주민등록번호·카드·계좌·인증번호는 이 도구로 받지 않는다.',
+    input_schema: { type: 'object', properties: { question: { type: 'string' }, label: { type: 'string' } }, required: ['question'] } },
   { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
     input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
 ];

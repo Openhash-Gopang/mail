@@ -511,3 +511,13 @@ test('handoff 는 인증·결제 사유만 허용, 그 밖은 거부', () => {
   assert.equal(classify('handoff_to_user', { reason: '간편인증으로 본인 확인하세요' }, {}).act, 'handoff');
   assert.equal(classify('handoff_to_user', { reason: '결제를 진행하세요' }, {}).act, 'handoff');
 });
+
+test('ask_input: 값을 받아 모델에 전달, 직접 입력 선택 시 건너뜀, 민감 항목은 거부', async () => {
+  const mk = (ans) => fakeHost([use('1', 'ask_input', { question: '전화번호?', label: '전화번호' }), end('완료')], { host: { input: async () => ans } });
+  assert.equal((await runAgent({ goal: 'g', host: mk('010-1234-5678') })).done, true);
+  assert.equal((await runAgent({ goal: 'g', host: mk({ manual: true }) })).done, true);
+  assert.equal(classify('ask_input', { question: '전화번호?' }, {}).act, 'input');
+  assert.equal(classify('ask_input', { question: '비밀번호를 알려 주세요' }, {}).act, 'deny');
+  assert.equal(classify('ask_input', { question: '주민등록번호?' }, {}).act, 'deny');
+  assert.ok(TOOLS.some((t) => t.name === 'ask_input'));
+});
