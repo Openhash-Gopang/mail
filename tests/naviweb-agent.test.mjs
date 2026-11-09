@@ -617,3 +617,21 @@ test('로그인 감지: 로그아웃 단추(남은 시간 포함)와 "님의 MyG
   assert.equal(mk([], '도영민 님의 MyGOV 서비스 신청 내역'), true);
   assert.equal(mk(['로그인', '회원가입'], '로그인이 필요합니다'), false);
 });
+test('문서 보기 화면 PDF 가져오기: 같은 사이트의 PDF 만 받고, PDF 가 아니면 실패한다', async () => {
+  const { grabPdfInPage } = await import('../ops/naviweb-agent/extension/files.js');
+  const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, ...new Array(200).fill(65)]);
+  const run = async (entries, fetchImpl, max = 10 * 1024 * 1024) => {
+    const G = globalThis, save = { location: G.location, performance: G.performance, fetch: G.fetch };
+    G.location = { hostname: 'plus.gov.kr' }; G.performance = { getEntriesByType: () => entries.map((name) => ({ name })) }; G.fetch = fetchImpl;
+    try { return await grabPdfInPage(max); } finally { Object.assign(G, save); }
+  };
+  const ok = (body) => async () => ({ ok: true, arrayBuffer: async () => body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) });
+  const r = await run(['https://plus.gov.kr/app.js', 'https://evil.com/x.pdf', 'https://plus.gov.kr/ezpdfwv/data?contentId=1'], ok(pdf));
+  assert.equal(r.ok, true); assert.equal(r.size, pdf.length); assert.ok(r.b64.length > 100);
+  const seen = []; await run(['https://evil.com/x', 'https://plus.gov.kr/a.png'], async (u) => { seen.push(u); return ok(pdf)(); });
+  assert.equal(seen.length, 0);   // 다른 사이트·그림 파일은 요청하지 않는다
+  const html = await run(['https://plus.gov.kr/ezpdfwv/viewer'], ok(new Uint8Array(300).fill(60)));
+  assert.equal(html.ok, false);
+  const big = await run(['https://plus.gov.kr/d'], ok(pdf), 50);
+  assert.equal(big.ok, false); assert.match(big.msg, /너무 큽니다/);
+});

@@ -1,7 +1,7 @@
 import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
-import { fetchForNavi, pickDownload } from './files.js';
+import { fetchForNavi, pickDownload, grabPdfInPage, safeName, MAX_BYTES } from './files.js';
 import { hostAllowed } from './policy.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -246,6 +246,21 @@ async function host(playbook) {
       if (name === 'send_file_to_navi') {   // 받은 서류 파일을 나비웹 탭으로 보낸다(파일·주소는 AI 에게 보내지 않는다)
         if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 파일을 보낼 곳이 없습니다.' };
         const tabUrl = (await chrome.tabs.get(state.tabId)).url || '';
+        if (!(input && input.ref)) {   // ref 가 없으면 먼저 지금 열린 문서 보기 화면에서 PDF 를 직접 가져온다(정부24 문서출력 창 등)
+          const ids = [state.tabId, ...(state.family || [])].filter((x, i, a) => x != null && a.indexOf(x) === i);
+          for (const id of ids) {
+            try {
+              const rs = await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, func: grabPdfInPage, args: [MAX_BYTES] });
+              const hit = rs.map((r) => r && r.result).find((r) => r && r.ok);
+              if (hit) {
+                const nm = safeName(state.slot, 'application/pdf', '');
+                await deliverToNavi({ kind: 'file', label: state.slot, name: nm, mime: 'application/pdf', b64: hit.b64 });
+                await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다. 서류에 넣을지 확인해 주세요.' }).catch(() => {});
+                return { text: `나비웹으로 보냈습니다: ${nm} (${Math.round(hit.size / 1024)}KB). 사용자가 나비웹 화면에서 서류에 넣을지 확인합니다.` };
+              }
+            } catch { /* 이 탭은 읽을 수 없다 — 다음 탭 */ }
+          }
+        }
         let fileUrl = '';
         if (input && input.ref) fileUrl = String((await toTab('link_href', { ref: input.ref }, false)).text || '');
         else { const p = pickDownload(await chrome.downloads.search({ orderBy: ['-startTime'], limit: 10 })); if (!p.ok) return { text: p.msg }; fileUrl = p.url; }

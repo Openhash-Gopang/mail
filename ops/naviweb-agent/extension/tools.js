@@ -24,7 +24,7 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },
   { name: 'report_status', description: '나비웹에서 맡긴 첨부서류 항목의 진행 결과를 나비웹 화면에 알린다. 파일이 아닌 결과(법원·기관으로 바로 전송 등)와 진행 상황·실패를 알릴 때 쓴다. state: sent(기관으로 전송 완료), pending(아직 진행 중), failed(실패). note 는 한 줄(법인 이름·건수 등).',
     input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
-  { name: 'send_file_to_navi', description: '발급·내려받은 서류 파일을 나비웹의 맡긴 첨부서류 항목으로 보낸다(파일 내용은 AI 에게 보이지 않는다). 내려받기 링크 요소의 ref 를 주면 그 링크의 파일을, ref 없이 부르면 방금 내려받은 파일을 보낸다. 나비웹 화면이 사용자에게 서류에 넣을지 한 번 더 묻는다.',
+  { name: 'send_file_to_navi', description: '발급·내려받은 서류 파일을 나비웹의 맡긴 첨부서류 항목으로 보낸다(파일 내용은 AI 에게 보이지 않는다). 내려받기 링크 요소의 ref 를 주면 그 링크의 파일을, ref 없이 부르면 지금 열린 문서 보기 화면(정부24 \"문서출력\" 창 등)이 불러온 PDF 를 직접 가져오고, 그런 화면이 아니면 방금 내려받은 파일을 보낸다. 나비웹 화면이 사용자에게 서류에 넣을지 한 번 더 묻는다.',
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
   { name: 'ask_choice', description: '사용자의 선택이 필요할 때 질문과 선택지를 화면 띠에 단추로 보여 주고 고른 값을 돌려받는다. 사용자에게 "알려 주세요"라고 글로만 묻지 말고 반드시 이 도구를 쓴다.',
     input_schema: { type: 'object', properties: { question: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 6 } }, required: ['question', 'options'] } },
