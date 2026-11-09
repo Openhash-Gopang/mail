@@ -26,6 +26,8 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
   { name: 'send_file_to_navi', description: '발급·내려받은 서류 파일을 나비웹의 맡긴 첨부서류 항목으로 보낸다(파일 내용은 AI 에게 보이지 않는다). 내려받기 링크 요소의 ref 를 주면 그 링크의 파일을, ref 없이 부르면 방금 내려받은 파일을 보낸다. 나비웹 화면이 사용자에게 서류에 넣을지 한 번 더 묻는다.',
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
+  { name: 'ask_choice', description: '사용자의 선택이 필요할 때 질문과 선택지를 화면 띠에 단추로 보여 주고 고른 값을 돌려받는다. 사용자에게 "알려 주세요"라고 글로만 묻지 말고 반드시 이 도구를 쓴다.',
+    input_schema: { type: 'object', properties: { question: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 6 } }, required: ['question', 'options'] } },
   { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
     input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
 ];

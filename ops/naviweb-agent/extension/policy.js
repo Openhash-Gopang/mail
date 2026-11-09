@@ -29,6 +29,7 @@ const tidy = (t) => String(t || '').replace(/\s+/g, ' ').trim().replace(/(\S{2,}
 const ISSUE_ONLY = /발급|다운로드|내려받기|download/i;
 const STRONG_CONFIRM = /제출|접수|신청서|전송|삭제|확정|동의|보내기|send|submit|delete/i;
 function classifyKnown(tool, input = {}, info = {}, opts = {}) {
+  if (tool === 'ask_choice') return { act: 'choice' };
   if (tool === 'handoff_to_user') return { act: 'handoff', reason: input.reason || '직접 진행이 필요합니다.' };
   if (tool === 'type') {
     const t = String(input.text ?? '');
