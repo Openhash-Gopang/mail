@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
 test('화면 이름을 저장하고 부팅 시 복원한다', () => {
-  assert.match(h, /_scrSave\(name\);\s*\n\}/);
+  assert.match(h, /_scrSave\(name\); _scrHashSync\(\);\s*\n\}/);
   assert.match(h, /async function _scrRestore\(/);
   assert.match(h, /_scrBoot\(\)/);
 });
@@ -17,4 +17,13 @@ test('서류 작성 중 새로 고침: 열어 둔 서류(사이트·제목)를 P
   assert.match(h, /function _drAutoSave\(reason\) \{\s*\n\s*if \(_cmpMode === 'doc'\) _scrDocSave\(\);/);
   assert.match(h, /if \(dk && s\.n === 'doc'[^\n]*_scrResumeDoc\(dk\)/);
   assert.match(h, /if \(k\.confirmed && k\.title\) _docHostSubmit\(true, true\)/);
+});
+
+test('새로 고침만 복원 · 서류는 주소(#doc/<Draft 번호>)에 담고 떠나면 지운다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(h, /function _scrHashSync\(\)/); assert.match(h, /'#doc\/' \+ encodeURIComponent\(id\)/);
+  assert.match(h, /function _scrDocForget\(\)/);
+  assert.match(h, /_scrNavType\(\) === 'navigate'/);   // 주소로 들어온 경우는 복원하지 않는다
+  assert.match(h, /if \(mode !== 'doc'\) \{ _scrDocForget\(\); _scrHashSync\(\); \}/);
+  assert.match(h, /_drCall\('get', \{ id: want \}/);   // #doc/<id> 는 Draft 에서 같은 서류를 연다
 });
