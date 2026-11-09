@@ -115,13 +115,16 @@ function handoffText(t) {
 // 로그인 안내(handoff)를 띄운 동안 작업 탭 묶음을 살펴, 화면에 "로그아웃"이 새로 나타나면 로그인된 것으로 보고 사용자가 완료를 누른 것처럼 이어 간다.
 // 화면에 보이는 "로그아웃" 단추·링크 유무만 보며(이름·번호 등 내용은 읽지 않는다), 시작할 때 이미 보이던 탭은 새 신호가 아니므로 제외한다.
 function loginProbe() {   // 페이지 안에서 실행된다(자체 완결)
-  const re = /^(로그\s*아웃|log\s*out|logout|sign\s*out)$/i;
+  // 신호 1: 화면에 보이는 "로그아웃" 단추·링크("로그아웃 (29:59)"처럼 뒤에 남은 시간이 붙는 것 포함)
+  const re = /^(로그\s*아웃|log\s*out|logout|sign\s*out)(?:\s*[(\[]?[\d:\s분초]*[)\]]?)?$/i;
+  const vis = (el) => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
   for (const el of document.querySelectorAll('a,button,[role=button],input[type=button],input[type=submit]')) {
     const t = (el.tagName === 'INPUT' ? el.value : el.textContent || '').replace(/\s+/g, ' ').trim();
-    if (t.length > 12 || !re.test(t)) continue;
-    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
-    if (r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none') return true;
+    if (t.length > 20 || !re.test(t)) continue;
+    if (vis(el)) return true;
   }
+  // 신호 2: 로그인한 사람에게만 보이는 문구 — "○○○ 님의 MyGOV"(정부24 첫 화면), "로그인 시간 연장". 문구가 있는지만 보며 이름은 읽지 않는다.
+  try { if (/님의\s*MyGOV|(로그인|세션)\s*(시간\s*)?연장/.test(document.body ? document.body.innerText : '')) return true; } catch { /* 읽을 수 없는 화면 */ }
   return false;
 }
 async function loggedInTabs() {
