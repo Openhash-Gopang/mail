@@ -4896,7 +4896,7 @@ function _switchTab(name) {
   // 주소의 #해시를 지금 화면에 맞춘다 — 설정을 한 번 열면 #settings 가 남아, 다른 화면에서 새로고침해도 설정이 열리던 오류를 막는다.
   // 새로고침해도 돌아올 수 있는 화면만 해시로 남기고(홈·메일 묶음·가상 판결 등은 비운다) replaceState 라 뒤로 가기 기록은 늘지 않는다.
   try {
-    const _hk = name === 'gprog' ? 'guide-prog' : (_isCompose || name === 'verdict' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
+    const _hk = name === 'gprog' ? 'guide-prog' : (_isCompose || name === 'verdict' || name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
     const _nh = _hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '';
     if ((location.hash || '') !== _nh) history.replaceState(null, '', location.pathname + location.search + _nh);
   } catch (e) {}   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
@@ -4914,9 +4914,9 @@ function _switchTab(name) {
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'settings') _settingsInit();
   if (name !== 'settings') _profLeave();
-  if (name === 'whitepaper') _wpSwitch(document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi');
+  if (name === 'whitepaper') _wpSwitch(_subGet('wp') || (document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi'));
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
-  if (name === 'xokorea') _xkSwitch(document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo');   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
+  if (name === 'xokorea') _xkSwitch(_subGet('xk') || (document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo'));   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
   if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
@@ -6990,10 +6990,25 @@ function _panelOpen(kind) {
 }
 window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _introClose(); _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _introClose(); _switchTab('whitepaper'); } });
 const _WP_URL = { navi: 'manual.html?embed=mail', openhash: 'openhash.html?embed=mail' };
+// 위쪽 탭(Whitepaper·XO+/History)과 XO+ 문서의 스크롤 위치는 새로고침해도 이어서 본다 — sessionStorage(이 탭에서만, 쓸 수 없으면 건너뜀)
+function _subGet(k) { try { return sessionStorage.getItem('kmail_sub_' + k) || ''; } catch (e) { return ''; } }
+function _subSet(k, v) { try { sessionStorage.setItem('kmail_sub_' + k, v); } catch (e) {} }
+let _xkWantY = null;
+try { const _o = JSON.parse(sessionStorage.getItem('kmail_xk_y') || 'null'); if (_o && Date.now() - _o.t < 12 * 3600 * 1000) _xkWantY = _o; } catch (e) {}
+let _xkYTimer = 0;
+window.addEventListener('scroll', () => {
+  clearTimeout(_xkYTimer);
+  _xkYTimer = setTimeout(() => {
+    const f = document.getElementById('xokorea-frame'), pnl = document.getElementById('tab-xokorea');
+    if (!f || !pnl || !pnl.classList.contains('active') || !f.getAttribute('data-sized')) return;
+    try { sessionStorage.setItem('kmail_xk_y', JSON.stringify({ k: f.getAttribute('data-k'), y: Math.round(window.pageYOffset), t: Date.now() })); } catch (e) {}
+  }, 200);
+}, { passive: true });
 const _XK_V = '20261109';   // 문서를 고칠 때 올린다 — 브라우저가 옛 문서를 캐시로 쓰지 않게 한다
 const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V };
 function _xkSwitch(k) {
   const f = document.getElementById('xokorea-frame');
+  _subSet('xk', k);
   if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.style.height = ''; f.removeAttribute('data-sized'); f.setAttribute('scrolling', 'no'); f.setAttribute('src', _XK_URL[k]); window.scrollTo(0, 0);
     // 안쪽 문서가 높이를 알려 오지 않으면(옛 문서·로딩 실패) 안쪽 스크롤을 되살려 내용이 잘리지 않게 한다
     setTimeout(() => { if (f.getAttribute('data-k') === k && !f.getAttribute('data-sized')) f.setAttribute('scrolling', 'auto'); }, 3000);
@@ -7003,11 +7018,12 @@ function _xkSwitch(k) {
 window.addEventListener('message', (e) => {
   const f = document.getElementById('xokorea-frame'); if (!f || e.source !== f.contentWindow || !e.data) return;
   if (e.data.type === 'xokorea-tab' && _XK_URL[e.data.k]) _xkSwitch(e.data.k);
-  else if (e.data.type === 'xokorea-height' && e.data.h > 0) { f.style.height = e.data.h + 'px'; f.setAttribute('data-sized', '1'); }   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
+  else if (e.data.type === 'xokorea-height' && e.data.h > 0) { f.style.height = e.data.h + 'px'; f.setAttribute('data-sized', '1'); if (_xkWantY && _xkWantY.k === f.getAttribute('data-k')) { const y = _xkWantY.y; _xkWantY = null; setTimeout(() => window.scrollTo(0, y), 50); } }   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
   else if (e.data.type === 'xokorea-scroll') window.scrollTo({ top: window.pageYOffset + f.getBoundingClientRect().top + e.data.y - 8, behavior: 'smooth' });
 });
 function _wpSwitch(k) {
   const f = document.getElementById('whitepaper-frame');
+  _subSet('wp', k);
   if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.setAttribute('src', _WP_URL[k]); }
   ['navi', 'openhash'].forEach(x => { const b = document.getElementById('wp-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
 }
