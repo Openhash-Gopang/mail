@@ -3934,6 +3934,8 @@ function _docHostMessage(d, e) {
     const _fl = String(d.label || '').slice(0, 120);
     if (d.fresh) _slotReset(_fl);   // 이미 올린 파일을 새로 발급받은 것으로 바꾸려는 요청 — 이전 기록 때문에 "이미 맡겼습니다"로 막히지 않게
     _agentFetchSlot(_fl, !!d.fresh);
+  } else if (d.type === 'navi-doc-saveform') {   // 서류 화면에서 양식을 고친 뒤 "내 양식으로 저장" — 내 서류함 ▸ 내가 만든 양식에 담는다
+    _saveMyForm(d.form);
   } else if (d.type === 'navi-doc-keep-list') { _keepList(e, d);   // 첨부서류 보관·재활용(2026-11-06): 서류 화면 ↔ PDV 중계
   } else if (d.type === 'navi-doc-keep-put') { _keepPut(e, d);
   } else if (d.type === 'navi-doc-keep-get') { _keepGet(e, d);
@@ -4624,6 +4626,16 @@ async function _mfbSave() {
     if (!_MFB.id) { let ex = null; try { ex = (await _drCall('get', { id })).item; } catch (e) {} if (ex && !confirm('같은 이름의 양식이 이미 있습니다. 덮어쓸까요?')) return; }
     await _drCall('put', { item: { id: id, kind: 'form', box: 'mine', site: _MFB.site || _docHost.id || 'all', title: r.form.title, body: JSON.stringify(r.form) } });
     _mfbClose(true); _drToast('내 서류함에 저장했습니다'); _mfRender();
+  } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
+}
+async function _saveMyForm(form) {
+  if (!form || typeof form !== 'object' || !Array.isArray(form.sections) || !form.sections.length) return;
+  const title = String(form.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  if (!title || !_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+  const clean = { title: title, sections: form.sections.slice(0, 12), attach: (Array.isArray(form.attach) ? form.attach : []).slice(0, 12) };
+  try {
+    await _drCall('put', { item: { id: 'form-mine-' + _mfHash(title), kind: 'form', box: 'mine', site: _docHost.id || 'all', title: title, body: JSON.stringify(clean) } });
+    _drToast('내 서류함 ▸ 내가 만든 양식에 저장했습니다');
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
 }
 async function _mfEdit(id) {
