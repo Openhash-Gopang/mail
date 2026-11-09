@@ -709,3 +709,8 @@ test('다리(bridge.js): pdv-result 전달이 끊겨도(확장 새로고침 등)
   const b = readFileSync(new URL('../ops/naviweb-agent/extension/bridge.js', import.meta.url), 'utf8');
   assert.match(b, /pr\.catch\(\(\) => \{\}\)/); assert.match(b, /Extension context invalidated/);
 });
+
+test('다리(bridge.js): 확장이 새로고침돼 연결이 끊긴 옛 다리는 아무 것도 하지 않는다', () => {
+  const b = readFileSync(new URL('../ops/naviweb-agent/extension/bridge.js', import.meta.url), 'utf8');
+  assert.match(b, /!!\(chrome\.runtime && chrome\.runtime\.id\)/);
+});
