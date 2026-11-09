@@ -78,10 +78,21 @@ async function overlay(mode, text) {
 chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text); });
 function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
 
+// 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
+async function stopCurrent() {
+  if (!state.running) return;
+  state.abort = true;
+  if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* 이미 끝남 */ } }
+  for (let i = 0; i < 40 && state.running; i++) await wait(100);
+}
+// 작업하던 탭을 닫으면 그 작업도 끝낸다(남아 있으면 다음 "도우미가 가져오기"가 막힌다).
+chrome.tabs.onRemoved.addListener((id) => { if (state.running && id === state.tabId) { state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } } } });
+
 async function host(playbook) {
   const c = await cfg();
+  const mine = state;
   return {
-    aborted: () => state.abort,
+    aborted: () => mine.abort,   // 이 작업의 중단 표시(새 작업이 state 를 바꿔도 옛 작업은 자기 표시를 본다)
     inbox: () => state.inbox.shift() || null,
     log: (e) => say({ type: 'log', e }),
     async callModel(body) {
@@ -138,6 +149,7 @@ async function deliverToNavi(msg) {
 }
 async function runJob(m) {
     state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120) };
+    const me = state;
     try {
       const pb = m.playbook ? PLAYBOOKS[m.playbook] : null;
       const okHost = (u) => /^https:/.test(u || '') && (!pb || pb.allowedHosts.some((h) => { try { const x = new URL(u).hostname; return x === h || x.endsWith('.' + h); } catch { return false; } }));
@@ -156,7 +168,7 @@ async function runJob(m) {
       if (res && res.done) await overlay('done', String(res.text || '작업을 마쳤습니다.').replace(/[#*`]/g, '').slice(0, 300));
       else await overlay(res && res.reason === 'aborted' ? 'off' : 'error', '작업을 끝내지 못했습니다. 나비웹 화면에서 다시 맡겨 주세요.');
     } catch (e) { say({ type: 'error', text: e.message }); await overlay('error', e.message); }
-    state.running = false;
+    me.running = false;   // 새 작업이 이미 state 를 바꿨다면 그 작업의 표시는 건드리지 않는다
   }
 // 설치·업데이트·브라우저 시작 때 이미 열려 있는 나비웹 탭에도 다리(bridge.js)를 바로 넣는다.
 // 콘텐츠 스크립트는 "페이지를 새로 열 때"만 들어가므로, 이게 없으면 설치 직후 열려 있던 탭은 새로고침하기 전까지 도우미를 못 본다(2026-11-08).
@@ -190,10 +202,14 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     }
     // 나비웹에서 맡기면 바로 시작한다(도구 모음 아이콘·옆 창을 열 필요 없음). 로그인·인증서·결제는 작업 탭의 안내에 따라 사용자가 직접 한다.
     if (j.autostart && fromNavi && sender.tab && (j.goal || j.playbook)) {
-      if (state.running) { send({ ok: false, busy: true }); return; }
-      const pb = j.playbook ? PLAYBOOKS[j.playbook] : null;
-      runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: sender.tab.windowId });
-      send({ ok: true }); return;
+      // 사용자가 다시 맡기면 하던 작업(예: 닫힌 정부24 탭을 기다리던 작업)을 끝내고 새로 시작한다 — 예전에는 '이미 진행 중'으로 아무 일도 안 했다.
+      const pb = j.playbook ? PLAYBOOKS[j.playbook] : null, winId = sender.tab.windowId;
+      (async () => {
+        await stopCurrent();
+        runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: winId });
+        send({ ok: true });
+      })();
+      return true;
     }
     chrome.storage.local.set({ pending: { playbook: j.playbook || '', goal: j.goal || '', title: j.title || '', slot: String(j.slot || '').slice(0, 120), at: Date.now() } })
       .then(() => { chrome.action.setBadgeText({ text: '1' }); chrome.action.setBadgeBackgroundColor({ color: '#2f5bd8' }); send({ ok: true }); });
