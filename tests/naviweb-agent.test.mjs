@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import gw, { toOpenAI, fromOpenAI, withCache, whoIs } from '../ops/naviweb-agent/gateway/worker.js';
 import { classify, hostAllowed } from '../ops/naviweb-agent/extension/policy.js';
-import { runAgent, buildSystem } from '../ops/naviweb-agent/extension/agent-core.js';
+import { runAgent, buildSystem, needsAnswer } from '../ops/naviweb-agent/extension/agent-core.js';
 import { PLAYBOOKS } from '../ops/naviweb-agent/extension/playbooks.js';
 import { TOOLS } from '../ops/naviweb-agent/extension/tools.js';
 import { baseDomain, checkFileUrl, fetchForNavi, pickDownload, parseDisposition, safeName } from '../ops/naviweb-agent/extension/files.js';
@@ -498,4 +498,10 @@ test('ask_choice: 선택지를 단추로 묻고 고른 값을 모델에 돌려�
   assert.equal(classify('ask_choice', {}, {}).act, 'choice');
   assert.ok(TOOLS.some((t) => t.name === 'ask_choice'));
   assert.match(buildSystem({ goal: 'g' }), /ask_choice/);
+});
+
+test('글로만 묻고 끝내면 ask_choice 로 다시 묻게 한다', async () => {
+  const h = fakeHost([end('서류 종류를 정해 주셔야 합니다. 초본이 필요하면 알려 주세요.'), use('1', 'ask_choice', { question: '무엇을 발급?', options: ['등본', '초본'] }), end('완료')], { host: { choose: async () => '등본' } });
+  const r = await runAgent({ goal: 'g', host: h });
+  assert.equal(r.text, '완료'); assert.ok(needsAnswer('알려 주세요')); assert.ok(!needsAnswer('모두 끝났습니다.'));
 });

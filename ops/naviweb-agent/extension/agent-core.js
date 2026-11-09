@@ -40,7 +40,10 @@ function trimImages(messages, keep = 1) {
   }
 }
 
+export const needsAnswer = (t) => /알려\s*주세요|알려\s*주시|말씀해|선택해\s*주|정해\s*주|골라\s*주|어느\s*(것|쪽)|무엇을.*(할까요|드릴까요)|\?\s*$|까요\s*[?.]?\s*$/m.test(String(t || ''));
+
 export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
+  let nudges = 0;
   const system = buildSystem(playbook);
   const extra = (playbook && playbook.allowedHosts) || [];
   const messages = [{ role: 'user', content: [{ type: 'text', text: goal }] }];
@@ -55,7 +58,15 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
     const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
     if (text) host.log({ kind: 'say', text });
     const uses = resp.content.filter((b) => b.type === 'tool_use');
-    if (!uses.length) return { done: true, text };
+    if (!uses.length) {
+      // 사용자 답이 필요한 질문을 글로만 던지고 끝내면 사용자가 답할 수 없다. 선택 단추로 다시 묻게 한다.
+      if (nudges < 2 && needsAnswer(text) && host.choose) {
+        nudges++;
+        messages.push({ role: 'user', content: [{ type: 'text', text: '사용자는 글을 입력할 수 없습니다. 방금 보고에서 사용자의 답이 필요한 항목이 있으면, 항목마다 ask_choice 도구로 질문과 선택지를 단추로 제시하고, 고른 값으로 작업을 이어 가세요. 답이 필요한 항목이 정말 없으면 한 줄로 "완료"라고만 답하세요.' }] });
+        continue;
+      }
+      return { done: true, text };
+    }
     const results = [];
     for (const u of uses) {
       const out = { type: 'tool_result', tool_use_id: u.id, content: [] };
