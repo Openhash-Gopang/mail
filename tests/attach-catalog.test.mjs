@@ -109,3 +109,17 @@ test('v4: 서류 화면 제한(식 20개·200자)을 계속 지킨다', () => {
   for (const l of ['사업자등록증 사본', '폐업사실증명원', '제적등본', '법인인감증명서', '특허증']) assert.ok(hit(l), l);
   for (const l of ['제조사사업자등록증', '임대사업자등록증', '토지이용계획서']) assert.ok(!hit(l), l);
 });
+
+test('조사 결과 안내(note·conf)와 explain — 서류 화면의 “버튼이 없는 이유”', () => {
+  const g = c('주민등록등본'); assert.match(g.note, /대리 불가/); assert.equal(g.conf, '높음');
+  assert.match(c('법인등기사항증명서').note, /1,000원/); assert.equal(C.AGENCIES.iros.reviewAfter, '2026-11-23');
+  assert.match(c('특허증').note, /수수료/); assert.equal(c('특허증').paid, true);
+  assert.equal(c('범죄경력조회회보서').conf, '미조사');
+  const named = C.RULES.filter((r) => r.kind === 'agency' && !r.note).map((r) => r.id);
+  assert.ok(named.length <= 3, '기관 규칙은 거의 모두 안내가 있다: ' + named.join(','));
+  const e1 = C.explain('재직증명서'); assert.equal(e1.reason, 'THIRD_PARTY'); assert.match(e1.text, /소속 회사/);
+  assert.match(C.explain('입원기록지').text, /병원/); assert.match(C.explain('위임장').text, /직접 작성/);
+  assert.match(C.explain('사업자등록증사본').note, /재발급/); assert.equal(C.explain('사업자등록증사본').text, '');
+  assert.match(C.explain('변경사실을증명하는서류').text, /도우미에게 물어보세요/);
+  assert.equal(C.explain('아주특이한서류이름'), null, '규칙이 없으면 null(도우미 AI 가 판단)');
+});

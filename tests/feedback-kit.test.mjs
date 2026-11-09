@@ -46,7 +46,7 @@ test('나비웹 화면 연결: 서류 요청·문제 알리기 버튼, 첨부서
   assert.match(html, /<script src="feedback-kit\.js\?v=\d+"><\/script>/);
   assert.match(html, /_fbOpen\('newdoc'\)/); assert.match(html, /_fbOpen\('bug'\)/);
   assert.match(html, /d\.type === 'navi-doc-report'\) \{[^\n]*\n\s*_fbOpen\('attach'/);
-  assert.match(html, /s\.state === 'failed'\) _embedNote\(true, [^\n]*⚑/);
+  assert.match(html, /s\.state === 'failed'\) \{[\s\S]{0,600}_autoReportFail\(s, why\)[\s\S]{0,900}⚑/, '가져오기 실패 → 자동 보고 + 안내(⚑ 안내 유지)');
   assert.match(html, /NaviFeedback\.fromChat\(text\)/);
   assert.ok(html.indexOf('NaviFeedback.fromChat(text)') < html.indexOf("if (_embedBusy) { reply('앞의 요청을"), '진행 중 처리보다 먼저 가로챈다');
 });
@@ -107,4 +107,37 @@ test('오류 신고와 제안: 주간 집계에서 오류와 제안으로 나뉜
 test('오류 신고와 제안: 서류 화면 메시지(navi-doc-feedback)를 받아 제보 창을 연다', () => {
   assert.match(html, /d\.type === 'navi-doc-feedback'[\s\S]{0,240}_fbOpen\('report'/);
   assert.match(html, /\['attach', 'newdoc', 'bug', 'report'\]\.includes\(d\.kind\)/);
+});
+
+test('자동 보고(auto): 서류 이름·사유 코드·규칙만 보내고, 같은 기기·같은 날·같은 서류·같은 사유는 한 번', async () => {
+  const b = FB.build('auto', { label: '재직증명서(홍길동 010-1234-5678)', reason: 'SYSTEM_OUTAGE', rule: 'family', agency: 'gov24', text: '사용자가 쓴 글은 무시' }, { ext: '0.6.5' });
+  assert.match(b.raw_text, /^\[naviweb:auto\] 서류=재직증명서/); assert.match(b.raw_text, /사유=SYSTEM_OUTAGE \| 규칙=family \| 기관=gov24/);
+  assert.ok(!/내용=/.test(b.raw_text) && !/010-1234/.test(b.raw_text), '사용자 글·전화번호는 들어가지 않는다');
+  assert.equal(FB.build('auto', { label: '서류', reason: 'OTHER' }), null, '정해진 사유 코드만');
+  assert.equal(FB.build('auto', { reason: 'FETCH_FAILED' }), null, '서류 이름 필수');
+  const mem = {}, store = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); } };
+  let sent = 0; const fetchImpl = async () => { sent++; return { ok: true }; };
+  const r1 = await FB.autoReport('가족관계증명서', 'FETCH_FAILED', { rule: 'family' }, { store, fetch: fetchImpl, endpoint: 'https://x' });
+  const r2 = await FB.autoReport('가족관계증명서', 'FETCH_FAILED', { rule: 'family' }, { store, fetch: fetchImpl, endpoint: 'https://x' });
+  const r3 = await FB.autoReport('가족관계증명서', 'SYSTEM_OUTAGE', { rule: 'family' }, { store, fetch: fetchImpl, endpoint: 'https://x' });
+  assert.deepEqual([r1.code, r2.code, r3.code], ['sent', 'dup', 'sent']); assert.equal(sent, 2);
+  assert.equal(FB.outageReason('정부24 서비스 점검 중입니다'), 'SYSTEM_OUTAGE'); assert.equal(FB.outageReason('버튼을 찾지 못함'), 'FETCH_FAILED');
+});
+test('자동 보고(auto): 주간 집계와 admin.html 보고함이 같은 코어로 모은다', async () => {
+  const { createRequire } = await import('node:module');
+  const Core = createRequire(import.meta.url)('../feedback-digest-core.js');
+  const rec = (g, t) => ({ id: g + t, raw_text: t, context_summary: 'dev=' + g });
+  const items = ['d1', 'd2', 'd3'].map((g) => rec(g, '[naviweb:auto] 서류=가족관계증명서 | 사유=FETCH_FAILED | 규칙=family | 기관=gov24')).concat([rec('d1', '[naviweb:auto] 서류=토지대장 | 사유=SYSTEM_OUTAGE')]);
+  const d = Core.digest(items, { min: 3 });
+  assert.equal(d.auto.length, 2); assert.equal(d.auto[0].n, 3); assert.equal(d.auto[0].action, true);
+  assert.equal(d.auto.find((g) => g.reason === 'SYSTEM_OUTAGE').action, false, '시스템 장애는 조치 후보로 세지 않는다');
+  const md = report(Core.digest(items, { min: 3 })); assert.match(md, /## 자동 보고[\s\S]*\*\*\[조치\]\*\* 가족관계증명서 — 가져오기 실패 · 3명 · 규칙: family · 기관: gov24/);
+  assert.equal(digest(items, { min: 3 }).auto.length, 2, 'scripts/feedback-digest.mjs 도 같은 코어');
+  const admin = (await import('node:fs')).readFileSync(new URL('../admin.html', import.meta.url), 'utf8');
+  assert.match(admin, /<script src="feedback-digest-core\.js"><\/script>/); assert.match(admin, /id="ib-connect"/); assert.match(admin, /\/user-feedback\/export\?since=/);
+  assert.match(admin, /sessionStorage\.setItem\('navi_admin_fb'/, '토큰은 탭 sessionStorage 에만');
+});
+test('서류 화면 안내: 호스트가 버튼 없는 첨부서류의 이유(navi-doc-slot-reason)에 답한다', () => {
+  assert.match(html, /d\.type === 'navi-doc-slot-reason'[\s\S]{0,400}AttachCatalog\.explain[\s\S]{0,400}navi-doc-slot-reason-result/);
+  assert.match(html, /_pn\.note \? ' 참고: '/, '가져오기 시작 안내에 수수료·절차 note 를 덧붙인다');
 });

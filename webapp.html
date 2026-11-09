@@ -77,14 +77,15 @@ window.K_AUTH_CONFIG = { serviceLabel: 'K-Mail' };
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root {
-  --gov:    #0B3B33; --nav: #12564A; --pri: #0F8F7E; --pri-lt: #14B39B;
-  --pri-bg: #E4F5F2; --pri-bd: #B7E4DC; --teal: #3D4FC4; --teal-bg: #EEF2FF;
-  --sur: #FFFFFF; --bg: #F5F6FA; --bdr: #DFE2ED; --txt: #1A202C;
-  --sub: #4A5568; --hint: #718096;
-  --grn: #1B6B3A; --gbg: #E6F4EC; --red: #C01C28; --rbg: #FEE2E2;
-  --org: #C05621; --obg: #FEF3E2;
+  /* Material(Mira) 팔레트 — 2026-11-06: 파란 상단 막대·흰 사이드바·연한 회청색 바탕·그림자만 있는 흰 카드 */
+  --gov:    #1E3F85; --nav: #2F64C8; --pri: #3B7DDD; --pri-lt: #5C93E6;
+  --pri-bg: #E3ECF9; --pri-bd: #BFD3F0; --teal: #3B7DDD; --teal-bg: #E3ECF9;
+  --sur: #FFFFFF; --bg: #F7F9FC; --bdr: #E4E8EE; --txt: #212529;
+  --sub: #495057; --hint: #6C757D;
+  --grn: #1E7B46; --gbg: #E2F4EA; --red: #C9302C; --rbg: #FDE9E8;
+  --org: #B86E00; --obg: #FFF1D6;
   --font: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
-  --r: 8px; --sh: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --r: 4px; --sh: 0 0 .875rem 0 rgba(33,37,41,.06);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);font-size:15px;color:var(--txt);background:var(--bg);line-height:1.65;-webkit-font-smoothing:antialiased}
@@ -95,7 +96,7 @@ button{font-family:var(--font);cursor:pointer}
 
 header{background:var(--nav);color:#fff;padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.22)}
 header .logo{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
-header .logo-icon{width:28px;height:28px;background:var(--pri-lt);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#0B3B33}
+header .logo-icon{width:28px;height:28px;background:var(--pri-lt);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#1E3F85}
 header a.back{margin-left:auto;font-size:13px;color:rgba(255,255,255,.7);text-decoration:none}
 header a.back:hover{color:#fff}
 
@@ -181,11 +182,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .mail-subnav button{background:#F2F4F3;border:1px solid transparent;border-radius:999px;padding:7px 14px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer}
 .mail-subnav button.active{background:var(--pri);color:#fff}
 /* 2026-10-28 — 안 읽은 메일 개수 배지(받은메일함 오른쪽) */
-.unread-badge{display:inline-block;min-width:18px;padding:1px 6px;margin-left:6px;border-radius:999px;background:#D92D20;color:#fff;font-size:11.5px;font-weight:800;line-height:16px;text-align:center;vertical-align:middle}
+.unread-badge{display:inline-block;min-width:18px;padding:1px 6px;margin-left:6px;border-radius:999px;background:#C9302C;color:#fff;font-size:11.5px;font-weight:800;line-height:16px;text-align:center;vertical-align:middle}
 .unread-badge[hidden]{display:none}
 .nav-subitem .unread-badge{float:right;margin-top:1px}
 .list-item.is-unread .li-title{font-weight:800}
-.list-item.is-unread .li-title::before{content:"● ";color:#D92D20;font-size:10px;vertical-align:middle}
+.list-item.is-unread .li-title::before{content:"● ";color:#C9302C;font-size:10px;vertical-align:middle}
 .mail-sub{display:none}
 .mail-sub.active{display:block}
 .tab-panel.active{display:block}
@@ -226,27 +227,27 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-textarea::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
 .camp-bulk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 12px;font-size:14px}
 .camp-bulk label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-.camp-bulk .btn-danger,.camp-del-btn{border:1px solid #d92d20;color:#d92d20;background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
+.camp-bulk .btn-danger,.camp-del-btn{border:1px solid #C9302C;color:#C9302C;background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
 .camp-bulk .btn-danger:disabled{opacity:.4;cursor:default}
 .camp-del-btn{padding:4px 10px;flex-shrink:0}
 .camp-del-btn:hover,.camp-bulk .btn-danger:not(:disabled):hover{background:#fef3f2}
 .camp-sel{width:17px;height:17px;flex-shrink:0;cursor:pointer}
 .rcpt-wrap{position:relative}
 .rcpt-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:6px 8px;background:var(--card,#fff);cursor:text}
-.rcpt-box:focus-within{border-color:var(--teal,#0d9488)}
+.rcpt-box:focus-within{border-color:var(--teal,#3B7DDD)}
 .rcpt-box input{flex:1;min-width:180px;width:auto!important;border:none!important;outline:none!important;box-shadow:none!important;padding:5px 4px!important;background:transparent!important;font-size:15px}
-.rcpt-chip{display:inline-flex;align-items:center;gap:4px;background:#e6f4f1;color:#0f5f58;border-radius:14px;padding:3px 6px 3px 10px;font-size:14px;max-width:100%}
+.rcpt-chip{display:inline-flex;align-items:center;gap:4px;background:#E3ECF9;color:#1E3F85;border-radius:14px;padding:3px 6px 3px 10px;font-size:14px;max-width:100%}
 .rcpt-chip button{border:none;background:transparent;cursor:pointer;font-size:16px;line-height:1;color:inherit;padding:0 2px}
 .rcpt-sug{position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--card,#fff);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.14);max-height:260px;overflow-y:auto;margin-top:2px}
 .rcpt-sug div{padding:8px 12px;cursor:pointer;font-size:14px}
-.rcpt-sug div:hover,.rcpt-sug div.on{background:#e6f4f1}
+.rcpt-sug div:hover,.rcpt-sug div.on{background:#E3ECF9}
 .rcpt-sug small{color:var(--hint);margin-left:6px}
 .rcpt-toggles{margin:-4px 0 10px;font-size:13px;display:flex;gap:12px}
-.rcpt-toggles button{border:none;background:transparent;color:var(--teal,#0d9488);cursor:pointer;padding:2px 0;font-size:13px}
+.rcpt-toggles button{border:none;background:transparent;color:var(--teal,#3B7DDD);cursor:pointer;padding:2px 0;font-size:13px}
 .cmp-approve-row{display:flex;gap:8px;margin:2px 0 10px 0}
-.cmp-approve-btn{background:var(--teal,#0d9488);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:15px;font-weight:600;cursor:pointer}
+.cmp-approve-btn{background:var(--teal,#3B7DDD);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:15px;font-weight:600;cursor:pointer}
 .cmp-approve-btn:disabled{opacity:.5;cursor:default}
-.kmail-sched-toast{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:#0f766e;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
+.kmail-sched-toast{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:#2F64C8;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
 .chat-send-btn{flex-shrink:0;width:36px;height:36px;border-radius:50%;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .08s}
 .chat-send-btn:disabled{opacity:.35;cursor:not-allowed}
 .chat-send-btn:not(:disabled):hover{transform:scale(1.06)}
@@ -371,7 +372,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
     <div class="chat-landing" id="cmp-landing">
       <div class="chat-landing-emoji">✉️</div>
       <div class="chat-landing-title">어떤 메일을 보낼까요?</div>
-      <div class="chat-landing-sub">누구에게, 왜, 무엇을 보내고 싶은지 편하게 말씀해 주세요. 대상을 못 찾으면 검색해서 후보를 찾아드리고, 제목·본문·발송 시각까지 정리해 확인받은 뒤에만 실제로 보냅니다.</div>
+      <div class="chat-landing-sub">누구에게 무엇을 보낼지 말씀해 주세요. 발송 전에 반드시 확인받습니다.</div>
     </div>
 
     <div class="chat-thread-header" id="cmp-thread-header" style="display:none">
@@ -379,7 +380,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
     </div>
     <div class="chat-thread" id="cmp-thread"></div>
 
-    <div id="cmp-loading" class="loading-row" style="display:none"><span class="spinner"></span><span>K-Mail이 확인하고 있습니다…</span></div>
+    <div id="cmp-loading" class="loading-row" style="display:none"><span class="spinner"></span><span>확인 중…</span></div>
     <div class="errbox" id="cmp-err" style="display:none"></div>
 
     <div class="chat-composer">
@@ -397,7 +398,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
       </div>
-      <div class="hint">발송을 확정하기 전에 K-Mail이 수신자·제목·본문·시각을 한 번에 정리해 "이대로 보낼까요?"라고 반드시 확인합니다. 회신을 모아 정리해달라고 말하면 그 시점도 함께 정하고, 도착한 보고는 "내 캠페인" 탭에서 볼 수 있습니다.</div>
+      <div class="hint">회신 취합을 요청하면 보고서는 “내 캠페인”에서 볼 수 있습니다.</div>
     </div>
   </div>
 
@@ -408,9 +409,9 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
   <div id="tab-contacts" class="tab-panel">
     <div class="card">
       <h2>AI로 일괄 관리 (K-Address)</h2>
-      <div class="sub">이름·이메일 명단을 통째로 붙여넣고 "등록해줘"처럼 말하면 한 번에 처리합니다. 수정·보완·승인/거부·병합·태그·삭제도 대화로 가능합니다 — 아래 수동 등록·목록과는 별개의 대화형 도구입니다.</div>
+      <div class="sub">명단을 붙여넣고 “등록해줘”라고 말하세요. 수정·병합·태그·삭제도 대화로 됩니다.</div>
       <div id="kaddr-thread"></div>
-      <div id="kaddr-loading" class="loading-row" style="display:none"><span class="spinner"></span>K-Address가 처리하고 있습니다…</div>
+      <div id="kaddr-loading" class="loading-row" style="display:none"><span class="spinner"></span>처리 중…</div>
       <div id="kaddr-err" class="errbox" style="display:none"></div>
       <div class="chat-inputbar">
         <textarea id="kaddr-input" data-requires-login="주소록 AI 관리" class="chat-textarea" rows="1" placeholder="예: 아래 명단을 주소록에 등록해줘 / 소속 정보 없는 사람들 보여줘"></textarea>
@@ -422,11 +423,11 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
 
     <div class="card">
       <h2>CSV/엑셀 일괄 업로드</h2>
-      <div class="sub">CSV나 엑셀(.xlsx) 파일을 올리면 AI를 거치지 않고 바로 주소록에 등록합니다 — 첫 행은 헤더(이름/이메일/소속/부서/전화/직책/관계/주소/웹사이트/메모/태그/카테고리)로 인식하며, 이메일 열 하나만 있어도 됩니다. 소속명으로 분류 가능한 경우 카테고리를 자동으로 채웁니다(애매하면 빈 값으로 남김).</div>
+      <div class="sub">CSV·엑셀(.xlsx)을 올리면 바로 등록합니다. 첫 행은 이름·이메일·소속·부서·전화·직책·관계·주소·웹사이트·메모·태그·카테고리 헤더이며, 이메일만 있어도 됩니다. 소속명으로 분류가 가능하면 카테고리를 자동으로 채웁니다.</div>
       <input type="file" id="ct-csv-file" accept=".csv,.xlsx,.xls" onchange="_ctCsvFileSelected(event)">
       <div id="ct-csv-preview" style="display:none;font-size:14px;color:var(--hint);margin-top:6px"></div>
       <div id="ct-csv-err" class="errbox" style="display:none"></div>
-      <div style="margin-top:6px;font-size:14px;color:var(--hint)"><label><input type="checkbox" id="ct-csv-pending"> 승인 대기(pending_review)로 등록 — 기본은 바로 확인됨(confirmed)</label></div>
+      <div style="margin-top:6px;font-size:14px;color:var(--hint)"><label><input type="checkbox" id="ct-csv-pending"> 승인 대기로 등록 (기본: 바로 확인됨)</label></div>
       <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-csv-upload-btn" data-requires-login="주소록 일괄 업로드" disabled onclick="_ctCsvUpload()">업로드</button></div>
     </div>
 
@@ -440,9 +441,9 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
         <div class="field"><label>전화번호(선택)</label><input type="text" id="ct-new-phone" placeholder="010-0000-0000"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>주소록 분류(선택)</label><input type="text" id="ct-new-path" list="ct-new-path-list" autocomplete="off" placeholder="예: 지인>제주 — 목록에서 고르거나 새로 적기 (비우면 미분류)" onfocus="_ctNewPathLoad()"><datalist id="ct-new-path-list"></datalist></div>
+        <div class="field"><label>주소록 분류(선택)</label><input type="text" id="ct-new-path" list="ct-new-path-list" autocomplete="off" placeholder="예: 지인>제주 (비우면 미분류)" onfocus="_ctNewPathLoad()"><datalist id="ct-new-path-list"></datalist></div>
       </div>
-      <div class="sub" style="margin:-8px 0 12px">분류는 ‘&gt;’로 단계를 나눕니다. 목록에 있는 분류를 고르면 그 아래로, 없는 이름을 적으면 <b>새 분류를 만들어</b> 추가합니다.</div>
+      <div class="sub" style="margin:-8px 0 12px">분류는 ‘&gt;’로 단계를 나눕니다. 목록에 없는 이름은 새 분류로 만들어집니다.</div>
       <div id="ct-new-err" class="errbox" style="display:none"></div>
       <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-new-btn" onclick="_ctAddNew()">등록</button></div>
       <div id="ct-new-result" style="display:none"></div>
@@ -450,7 +451,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
 
     <div class="card">
       <h2>주소록</h2>
-      <div class="sub">K-Mail과의 대화 중 검색으로 찾은 후보도 여기 승인 대기로 올라옵니다 — "승인 대기" 필터로 확인하고 승인해 주세요. 검색어가 없으면 카테고리별 건수만 보여주고, 검색하면 카테고리와 무관하게 전체에서 바로 찾습니다.</div>
+      <div class="sub">검색으로 찾은 후보는 “승인 대기”에 올라옵니다. 승인하면 발송에 쓸 수 있습니다. 검색어가 없으면 카테고리별 건수를, 검색하면 전체에서 바로 찾습니다.</div>
       <div class="filter-row">
         <select id="ct-filter-status" onchange="_ctFilterChanged()">
           <option value="all">전체 상태</option>
@@ -479,11 +480,11 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
   <div id="tab-campaigns" class="tab-panel">
     <div class="card" id="camp-list-card">
       <h2>내 캠페인</h2>
-      <div class="sub">이 화면 하나로 모든 캠페인을 검색·인출할 수 있습니다. 제목으로 찾아보고, 자세히 보려면 항목을 눌러 K-Mail에게 직접 물어보세요.</div>
+      <div class="sub">캠페인을 제목으로 검색하고, 항목을 눌러 상세를 확인합니다.</div>
       <div class="filter-row"><input type="text" id="camp-filter-q" placeholder="제목으로 검색" oninput="_campFilterApply()"></div>
       <div class="camp-bulk" id="camp-bulk" style="display:none"><label><input type="checkbox" id="camp-sel-all" onchange="_campSelAll(this.checked)"> 전체 선택</label><button type="button" class="btn-danger" id="camp-del-sel" onclick="_campDeleteSelected()" disabled>선택 삭제</button><button type="button" class="btn-danger" id="camp-del-all" onclick="_campDeleteAll()">전체 삭제</button><span id="camp-del-msg" style="color:var(--hint)"></span></div>
       <div id="camp-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">아직 만든 캠페인이 없습니다 — "새 캠페인" 탭에서 K-Mail과 대화를 시작해 보세요.</div>
+      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">캠페인이 없습니다. “새 캠페인” 탭에서 시작하세요.</div>
       <div id="camp-items"></div>
     </div>
 
@@ -497,7 +498,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
         <button class="btn btn-primary btn-sm" onclick="_campAskChatAboutThis()">💬 K-Mail에게 이 캠페인 자세히 물어보기</button>
         <button class="btn btn-primary btn-sm" id="camp-resume-btn" style="display:none" onclick="_campResumeConversation()">🔄 이어서 대화하기</button>
       </div>
-      <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 "새 캠페인" 탭으로 이동해 이 캠페인에 대해 바로 물어봅니다. "진행 중(초안)" 상태인 캠페인은 "이어서 대화하기"로 지금까지 나눴던 대화를 그대로 불러와 이어갈 수 있습니다.</div>
+      <div class="hint">수신자별 현황·기관별 집계 등 세부 내용은 K-Mail에게 물어보세요. 초안은 “이어서 대화”로 계속할 수 있습니다.</div>
     </div>
   </div>
 
@@ -511,7 +512,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
   <div id="qs-sent-card" class="sent-card" role="status" aria-live="polite" tabindex="-1" style="display:none"></div>
     <div class="card">
       <h2>빠른 발송</h2>
-      <div class="sub">외부 이메일 주소로 한 통을 바로 보냅니다. 캠페인으로 설계하지 않는 단순 발송이며, 답장은 상대방의 실제 이메일로 직접 받으셔야 합니다(이 화면에는 받은편지함이 없습니다).</div>
+      <div class="sub">외부 주소로 한 통을 바로 보냅니다. 캠페인 설계 없는 단순 발송입니다.</div>
       <div class="field"><label>받는 사람</label><input type="email" id="qs-to" placeholder="example@email.com"></div>
       <div class="field"><label>제목</label><input type="text" id="qs-subject" placeholder="제목"></div>
       <div class="field"><label>내용</label><textarea id="qs-text" rows="8" placeholder="내용을 입력하세요" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-family:inherit;font-size:15px"></textarea></div>
@@ -574,7 +575,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
 
       <!-- 임시보관함 -->
       <div id="mail-sub-drafts" class="mail-sub">
-        <div class="sub">보내지 않고 저장해 둔 편지입니다. 눌러서 이어 쓰거나 삭제할 수 있습니다.</div>
+        <div class="sub">저장해 둔 편지입니다. 눌러서 이어 쓰거나 삭제합니다.</div>
         <div id="mail-drafts-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-drafts-empty" style="display:none;font-size:14px;color:var(--hint)">임시보관함이 비어 있습니다.</div>
         <div id="mail-drafts-items"></div>
@@ -582,7 +583,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
 
       <!-- 보낸메일함 -->
       <div id="mail-sub-sent" class="mail-sub">
-        <div class="sub">이 웹앱(빠른 발송·메일 탭)에서 직접 보낸 메일만 모입니다 — 캠페인 발송은 "내 캠페인" 탭에서 확인해 주세요.</div>
+        <div class="sub">직접 보낸 메일만 표시됩니다. 캠페인 발송은 “내 캠페인”에서 확인하세요.</div>
         <div id="mail-sent-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-sent-empty" style="display:none;font-size:14px;color:var(--hint)">보낸 메일이 없습니다.</div>
         <div id="mail-sent-items"></div>
@@ -590,7 +591,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
 
       <!-- 받은메일함 -->
       <div id="mail-sub-inbox" class="mail-sub">
-        <div class="sub">받은 메일에 라벨을 달면 "태그별 보관함"에서 모아볼 수 있습니다. 제목을 눌러 펼치면 읽음으로 표시됩니다.</div>
+        <div class="sub">제목을 누르면 열리고 읽음 처리됩니다. 라벨은 “태그별 보관함”에서 모아 봅니다.</div>
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" id="mail-inbox-markall" onclick="_mailMarkAllRead()">모두 읽음으로 표시</button></div>
         <div id="mail-inbox-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-inbox-empty" style="display:none;font-size:14px;color:var(--hint)">받은 메일이 없습니다.</div>
@@ -601,7 +602,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
       <div id="mail-sub-tags" class="mail-sub">
         <div id="mail-tags-back" style="display:none;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" onclick="_mailTagsShowSummary()">← 태그 목록으로</button></div>
         <div id="mail-tags-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-        <div id="mail-tags-empty" style="display:none;font-size:14px;color:var(--hint)">라벨이 달린 메일이 없습니다 — 받은메일함에서 라벨을 추가해 보세요.</div>
+        <div id="mail-tags-empty" style="display:none;font-size:14px;color:var(--hint)">라벨이 달린 메일이 없습니다.</div>
         <div id="mail-tags-summary"></div>
         <div id="mail-tags-items"></div>
       </div>
@@ -612,7 +613,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
            (<mail_id>@naviweb.kr). 예전 내부 주소(<guid>@naviweb.kr)로 온 메일도
            계속 받는다. -->
       <div id="mail-sub-idsettings" class="mail-sub">
-        <div class="sub">이 ID가 내 메일 주소(아이디@naviweb.kr)입니다. 메일을 보낼 때 보내는 주소로 쓰이고, 다른 사람이 이 주소로 보낸 메일도 받습니다. 아이디를 바꾸면 이전 아이디로 온 메일은 받지 못합니다.</div>
+        <div class="sub">아이디@naviweb.kr이 내 메일 주소이며 보낼 때와 받을 때 모두 쓰입니다. 아이디를 바꾸면 이전 아이디로 온 메일은 받지 못합니다.</div>
 
         <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
@@ -623,7 +624,7 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
           </div>
 
           <div id="mail-id-empty-state" style="display:none">
-            <div class="sub" style="margin-top:4px">아직 메일 ID를 설정하지 않았습니다. 자동으로 만들거나 직접 정할 수 있습니다.</div>
+            <div class="sub" style="margin-top:4px">메일 ID가 없습니다. 자동 생성하거나 직접 정하세요.</div>
             <div style="margin-top:8px">
               <button type="button" class="btn btn-primary" id="mail-id-auto-btn" onclick="_mailIdAuto()">자동으로 만들기</button>
             </div>

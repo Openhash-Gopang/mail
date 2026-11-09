@@ -11,6 +11,7 @@
     attach: { tag: 'attach', cat: 'bug', title: '첨부서류 문제 알리기' },
     newdoc: { tag: 'newdoc', cat: 'feature_request', title: '찾는 서류가 없어요' },
     bug:    { tag: 'bug', cat: 'bug', title: '오류·불편 신고' },
+    auto:   { tag: 'auto', cat: 'bug', title: '자동 보고' },   // 도우미가 가져오지 못했을 때 — 서류 이름·사유 코드·규칙만 보낸다(사용자가 쓴 내용 없음)
     report: { tag: 'report', cat: 'bug', title: '오류 신고와 제안' }   // 서류 화면 위·아래 오른쪽 버튼 — 유형(bug|idea)을 고른다
   };
   var PROBLEMS = [
@@ -32,16 +33,18 @@
   function build(kind, f, ctx) {
     var k = KINDS[kind]; if (!k) return null;
     f = f || {}; ctx = ctx || {};
+    if (kind === 'auto') f = { label: f.label, reason: f.reason, rule: f.rule, agency: f.agency };   // 자동 보고에는 사용자가 쓴 글이 들어가지 않는다
     var parts = [];
     var label = clean(f.label, LABEL_MAX); if (label) parts.push('서류=' + label);
     if (kind === 'attach') { var p = PROBLEMS.filter(function (x) { return x[0] === f.problem; })[0]; if (!p) return null; parts.push('문제=' + p[0]); }
     if (kind === 'report') { if (f.type !== 'bug' && f.type !== 'idea') return null; parts.push('유형=' + f.type); }
+    if (kind === 'auto') { if (f.reason !== 'FETCH_FAILED' && f.reason !== 'SYSTEM_OUTAGE') return null; parts.push('사유=' + f.reason); var ar = clean(f.rule, 40); if (ar) parts.push('규칙=' + ar); var aa = clean(f.agency, 40); if (aa) parts.push('기관=' + aa); }
     var right = clean(f.right, LABEL_MAX); if (right) parts.push('올바른기관=' + right);
     var use = clean(f.use, 200); if (use) parts.push('용도=' + use);
     var text = clean(f.text, TEXT_MAX); if (text) parts.push('내용=' + text);
     if (kind === 'newdoc' && !label) return null;
     if ((kind === 'bug' || kind === 'report') && !text) return null;
-    if (kind === 'attach' && !label) return null;
+    if ((kind === 'attach' || kind === 'auto') && !label) return null;
     var cs = [];
     ['doc', 'rule', 'ext', 'screen', 'dev'].forEach(function (n) { var v = clean(ctx[n], 80); if (v) cs.push(n + '=' + v); });
     var cat = (kind === 'attach' && f.problem === 'missing') || (kind === 'report' && f.type === 'idea') ? 'feature_request' : k.cat;
@@ -52,24 +55,45 @@
     try { var v = store.getItem('navi_fb_dev'); if (!v) { v = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); store.setItem('navi_fb_dev', v); } return v; } catch (e) { return ''; }
   }
   function today() { return new Date().toISOString().slice(0, 10); }
-  function quotaOk(store) {
-    try { var d = JSON.parse(store.getItem('navi_fb_q') || '{}'); if (d.d !== today()) d = { d: today(), n: 0 }; return d.n < DAILY_LIMIT; } catch (e) { return true; }
+  function quotaOk(store, key, limit) {
+    try { var d = JSON.parse(store.getItem(key || 'navi_fb_q') || '{}'); if (d.d !== today()) d = { d: today(), n: 0 }; return d.n < (limit || DAILY_LIMIT); } catch (e) { return true; }
   }
-  function quotaUse(store) {
-    try { var d = JSON.parse(store.getItem('navi_fb_q') || '{}'); if (d.d !== today()) d = { d: today(), n: 0 }; d.n++; store.setItem('navi_fb_q', JSON.stringify(d)); } catch (e) { /* 저장 불가 */ }
+  function quotaUse(store, key) {
+    key = key || 'navi_fb_q';
+    try { var d = JSON.parse(store.getItem(key) || '{}'); if (d.d !== today()) d = { d: today(), n: 0 }; d.n++; store.setItem(key, JSON.stringify(d)); } catch (e) { /* 저장 불가 */ }
   }
   /** 제보 보내기 → Promise<{ ok, code }>. code: sent | invalid | limit | fail */
   function send(kind, fields, ctx, opts) {
     opts = opts || {};
     var body = build(kind, fields, ctx); if (!body) return Promise.resolve({ ok: false, code: 'invalid' });
     var store = opts.store || (typeof localStorage !== 'undefined' ? localStorage : { getItem: function () { return null; }, setItem: function () {} });
-    if (!quotaOk(store)) return Promise.resolve({ ok: false, code: 'limit' });
+    var qk = kind === 'auto' ? 'navi_fb_qa' : 'navi_fb_q', ql = kind === 'auto' ? 20 : DAILY_LIMIT;   // 자동 보고는 사용자 제보 한도와 따로 센다
+    if (!quotaOk(store, qk, ql)) return Promise.resolve({ ok: false, code: 'limit' });
     var f = opts.fetch || (typeof fetch !== 'undefined' ? fetch : null); if (!f) return Promise.resolve({ ok: false, code: 'fail' });
     ctx = Object.assign({}, ctx || {}); ctx.dev = devId(store);
     body = build(kind, fields, ctx);
     return f((opts.endpoint || ENDPOINT) + '/user-feedback/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(function (r) { if (r && r.ok) { quotaUse(store); return { ok: true, code: 'sent' }; } return { ok: false, code: 'fail' }; })
+      .then(function (r) { if (r && r.ok) { quotaUse(store, qk); return { ok: true, code: 'sent' }; } return { ok: false, code: 'fail' }; })
       .catch(function () { return { ok: false, code: 'fail' }; });
+  }
+
+  /** 기관 사이트가 점검·장애 중이라 가져오지 못했는지, 그 밖의 실패인지 — 확장이 알려 준 메시지로 가른다. */
+  function outageReason(text) {
+    return /점검|장애|서비스\s*(?:가\s*)?(?:중단|이용이?\s*원활)|접속\s*(?:이\s*)?(?:지연|불가)|시스템\s*오류|일시적|사용할\s*수\s*없/.test(String(text || '')) ? 'SYSTEM_OUTAGE' : 'FETCH_FAILED';
+  }
+  /** 도우미가 가져오지 못한 서류를 관리자에게 자동 보고한다(서류 이름·사유 코드·규칙만. 같은 기기·같은 날·같은 서류·같은 사유는 한 번). Promise<{ ok, code }> — code: sent | dup | invalid | limit | fail */
+  function autoReport(label, reason, ctx, opts) {
+    opts = opts || {}; label = clean(label, LABEL_MAX);
+    var store = opts.store || (typeof localStorage !== 'undefined' ? localStorage : { getItem: function () { return null; }, setItem: function () {} });
+    var key = label + '|' + reason, d;
+    try { d = JSON.parse(store.getItem('navi_fb_auto') || '{}'); } catch (e) { d = {}; }
+    if (d.d !== today()) d = { d: today(), k: [] };
+    if (d.k.indexOf(key) >= 0) return Promise.resolve({ ok: false, code: 'dup' });
+    ctx = ctx || {};
+    return send('auto', { label: label, reason: reason, rule: ctx.rule, agency: ctx.agency }, { ext: ctx.ext, rule: ctx.rule }, opts).then(function (r) {
+      if (r.ok) { d.k.push(key); try { store.setItem('navi_fb_auto', JSON.stringify(d)); } catch (e) { /* 저장 불가 */ } }
+      return r;
+    });
   }
 
   // ── 화면: 작은 대화상자 ──
@@ -134,6 +158,6 @@
     return { kind: /서류/.test(w) ? 'newdoc' : w === '제안' ? 'idea' : 'bug', text: clean(m[2], TEXT_MAX) };
   }
 
-  var api = { build: build, clean: clean, send: send, open: open, close: close, fromChat: fromChat, KINDS: KINDS, PROBLEMS: PROBLEMS, DAILY_LIMIT: DAILY_LIMIT };
+  var api = { build: build, clean: clean, send: send, autoReport: autoReport, outageReason: outageReason, open: open, close: close, fromChat: fromChat, KINDS: KINDS, PROBLEMS: PROBLEMS, DAILY_LIMIT: DAILY_LIMIT };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.NaviFeedback = api;
 })(typeof window !== 'undefined' ? window : this);
