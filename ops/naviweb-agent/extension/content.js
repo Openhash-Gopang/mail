@@ -103,13 +103,32 @@
     curRoot.append(st, curEl); document.documentElement.appendChild(curHost);
     curX = Math.round(innerWidth * 0.55); curY = Math.round(innerHeight * 0.35); curEl.style.transform = `translate(${curX}px,${curY}px)`;
   }
-  let curBusy = false;
-  function curHide() { clearTimeout(curTimer); curBusy = false; if (curEl) curEl.style.opacity = '0'; }
+  let curBusy = false, curGliding = false, curWan = null;
+  function curHide() { clearTimeout(curTimer); curBusy = false; clearTimeout(curWan); curWan = null; if (curEl) curEl.style.opacity = '0'; }
   // 도우미가 작업하는 동안에는 클릭·입력 사이에도 커서를 계속 보인다(생각하는 시간에 사라져 안 보인다는 지적). 끝나거나 사용자 차례가 되면 숨긴다.
-  function curShow() { try { curEnsure(); curBusy = true; clearTimeout(curTimer); curEl.style.opacity = '1'; } catch (e) { /* 부가 기능 */ } }
+  function curShow() { try { curEnsure(); curBusy = true; clearTimeout(curTimer); curEl.style.opacity = '1'; if (!curWan) curWander(); } catch (e) { /* 부가 기능 */ } }
+  // 생각하는 동안에도 커서가 화면 위를 천천히 오가며 "작업 중"임을 보인다(대상으로 갈 때는 glide 가 가로챈다). 움직임 줄이기 설정이면 가만히 둔다.
+  function curWander() {
+    if (!curBusy || curReduced()) { curWan = null; return; }
+    curWan = setTimeout(async () => {
+      curWan = null;
+      if (!curBusy) return;
+      if (!curGliding && curEl && curEl.isConnected) {
+        try {
+          const tx = Math.round(Math.min(Math.max(curX + (Math.random() - 0.5) * 360, 24), innerWidth - 40)), ty = Math.round(Math.min(Math.max(curY + (Math.random() - 0.5) * 240, 90), innerHeight - 40));
+          const d = Math.hypot(tx - curX, ty - curY), a = curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(1400, Math.max(500, d * 3.2)), easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
+          await a.finished;
+          if (!curGliding) { curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`; }
+          a.cancel();
+        } catch (e) { /* 중단됨 */ }
+      }
+      curWander();
+    }, 300 + Math.random() * 500);
+  }
   async function glide(el, click) {
     try {
       curEnsure(); const r = el.getBoundingClientRect(); if (!r.width && !r.height) return;
+      curGliding = true;
       const tx = Math.round(Math.min(Math.max(r.left + Math.min(r.width / 2, 120), 4), innerWidth - 8)), ty = Math.round(Math.min(Math.max(r.top + r.height / 2, 4), innerHeight - 8));
       clearTimeout(curTimer); curEl.style.opacity = '1';
       const ring = document.createElement('div'); ring.className = 'ring'; ring.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`; curRoot.appendChild(ring);
@@ -117,11 +136,11 @@
         const d = Math.hypot(tx - curX, ty - curY);
         await curEl.animate([{ transform: `translate(${curX}px,${curY}px)` }, { transform: `translate(${tx}px,${ty}px)` }], { duration: Math.min(550, Math.max(180, d * 0.55)), easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished;
       }
-      curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`;
+      curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`; curGliding = false;
       if (click) { const rip = document.createElement('div'); rip.className = 'rip'; rip.style.cssText = `left:${tx}px;top:${ty}px`; curRoot.appendChild(rip); rip.animate([{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.8)', opacity: 0 }], { duration: 380 }).finished.then(() => rip.remove(), () => rip.remove()); await new Promise((res) => setTimeout(res, 140)); }
       setTimeout(() => ring.remove(), 700);
       if (!curBusy) curTimer = setTimeout(curHide, 3500);
-    } catch (e) { /* 그림은 부가 기능이라 실패해도 조작은 계속한다 */ }
+    } catch (e) { curGliding = false; /* 그림은 부가 기능이라 실패해도 조작은 계속한다 */ }
   }
   // 작업 중인 탭 위쪽에 안내 띠를 띄운다(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
   let ovHost = null, ovRoot = null, ovLast = null, ovWd = null;
