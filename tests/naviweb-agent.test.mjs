@@ -570,3 +570,9 @@ test('확장 새로고침 직후 설치 안내가 뜨지 않게: 연결된 적 �
   assert.match(d, /_agentDetectPatient/); assert.match(d, /if \(!_agentSeen\(\)\) setTimeout\(\(\) => window\._agentGuideOpen/);
   assert.match(d, /_agentMiss/);
 });
+
+test('0.6.21: 클릭·입력 전에 도우미 커서가 움직인다(닫힌 shadow DOM, 움직임 줄이기 존중)', () => {
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(ct, /async function glide/); assert.match(ct, /prefers-reduced-motion/); assert.match(ct, /pointer-events:none/);
+  assert.match(ct, /glide\(el, msg\.name === 'click'\)/);
+});
