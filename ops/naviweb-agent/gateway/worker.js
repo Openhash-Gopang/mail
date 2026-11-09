@@ -217,22 +217,25 @@ async function callGemma(req, env) {
 
 // 누가 요청했는지 확인한다. 운영자 토큰이면 운영자, 아니면 AUTH_VERIFY_URL(나비웹 로그인 확인 주소)에 같은 Authorization 을 보내
 // 200 이면 로그인한 사용자. AUTH_VERIFY_URL 이 없으면 운영자 토큰만 통과한다(기본 거부). 응답 JSON 의 id/guid/user_id/sub/mail_id 중 첫 값이 사용자 식별자.
-export async function whoIs(request, env) {
+export async function whoIs(request, env, why) {   // why: 거절 이유를 받을 빈 객체(선택) — { r: 'no_verify_url' | 'no_token_header' | … }. 값(토큰)은 담지 않는다
   const auth = request.headers.get('authorization') || '';
   if (env.AGENT_TOKEN && auth === 'Bearer ' + env.AGENT_TOKEN) return { sub: 'operator', operator: true };
   // 나비웹 로그인 토큰은 한글이 섞여 있어 HTTP 헤더에 그대로 못 싣는다. 확장이 encodeURIComponent 한 값을 X-Navi-Token 으로 보내고,
   // 여기서 풀어 나비웹 인증 서버에 쿼리(phone_verify_token)로 전달한다(나비웹 KAuth 와 같은 방식).
   const enc = request.headers.get('x-navi-token') || '';
-  if (!env.AUTH_VERIFY_URL || !enc || enc.length > 6000) return null;
-  let tok; try { tok = decodeURIComponent(enc); } catch { return null; }
+  const no = (r) => { if (why) why.r = r; return null; };
+  if (!env.AUTH_VERIFY_URL) return no('no_verify_url');
+  if (!enc) return no(auth ? 'operator_token_mismatch_and_no_user_token' : 'no_token_header');
+  if (enc.length > 6000) return no('token_too_long');
+  let tok; try { tok = decodeURIComponent(enc); } catch { return no('bad_token_encoding'); }
   try {
     const u = new URL(env.AUTH_VERIFY_URL); u.searchParams.set(env.AUTH_VERIFY_PARAM || 'phone_verify_token', tok);
     const r = await fetch(u.toString());
-    if (!r.ok) return null;
+    if (!r.ok) return no('verify_http_' + r.status);
     const j = await r.json().catch(() => ({}));
     const sub = j.id || j.guid || j.user_id || j.sub || j.mail_id || j.kmail_address || (j.user && (j.user.id || j.user.guid));
-    return sub ? { sub: String(sub).slice(0, 80) } : null;
-  } catch { return null; }
+    return sub ? { sub: String(sub).slice(0, 80) } : no('verify_no_id');
+  } catch (e) { return no('verify_fetch_error'); }
 }
 // 사용자별 하루 단계 수 제한(이 실행 환경 안에서의 최선 노력. 전체 상한은 Cloudflare 속도 제한 규칙과 Anthropic 지출 한도로 둔다).
 const usage = new Map();
@@ -250,11 +253,12 @@ export default {
       return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type, x-navi-token', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
     }
     const url = new URL(request.url);
-    if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude' }, 200, c.headers);
+    if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude', auth_verify: !!env.AUTH_VERIFY_URL, operator_token: !!env.AGENT_TOKEN, v: 2 }, 200, c.headers);   // 설정 여부(참/거짓)만 — 값은 내보내지 않는다
     if (url.pathname !== '/v1/step' || request.method !== 'POST') return json({ error: 'not_found' }, 404, c.headers);
     if (!c.ok) return json({ error: 'origin_not_allowed' }, 403);
-    const who = await whoIs(request, env);
-    if (!who) return json({ error: 'unauthorized' }, 401, c.headers);
+    const why = {};
+    const who = await whoIs(request, env, why);
+    if (!who) return json({ error: 'unauthorized', reason: why.r || '' }, 401, c.headers);
     if (!who.operator && overQuota(who.sub, env)) return json({ error: 'daily_limit' }, 429, c.headers);
     const len = Number(request.headers.get('content-length') || 0);
     if (len > MAX_BODY) return json({ error: 'too_large' }, 413, c.headers);
