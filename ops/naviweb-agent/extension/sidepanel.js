@@ -22,7 +22,8 @@ $('yes').onclick = async () => {
 $('no').onclick = () => reply(false);
 chrome.runtime.onMessage.addListener((m) => {
   if (m.type === 'log') add(m.e.kind === 'say' ? 'say' : 'tool', m.e.kind === 'say' ? m.e.text : `· ${m.e.name} ${JSON.stringify(m.e.input)} [${m.e.act}]`);
-  if (m.type === 'prompt' && m.kind === 'choice') { add('say', '선택 필요: ' + m.text + ' — ' + (m.options || []).join(' / ') + ' (화면 위쪽 띠의 단추로 고르세요)'); }
+  if (m.type === 'prompt' && m.kind === 'input') { add('say', '입력 필요: ' + m.text + ' (화면 위쪽 띠의 입력칸에 쓰거나, 페이지에 직접 입력한 뒤 "직접 입력할게요"를 누르세요)'); }
+  else if (m.type === 'prompt' && m.kind === 'choice') { add('say', '선택 필요: ' + m.text + ' — ' + (m.options || []).join(' / ') + ' (화면 위쪽 띠의 단추로 고르세요)'); }
   else if (m.type === 'prompt') {
     permitHost = m.kind === 'permit' ? m.text : '';
     $('asktext').textContent = m.kind === 'permit' ? `"${m.text}" 사이트의 화면을 읽고 조작하도록 허용할까요? (브라우저 허용 창이 한 번 더 나옵니다)` : (m.kind === 'handoff' ? '직접 진행이 필요합니다: ' : '확인: ') + m.text;

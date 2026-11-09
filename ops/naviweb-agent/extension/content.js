@@ -94,13 +94,23 @@
       ovRoot = ovHost.attachShadow({ mode: 'closed' }); document.documentElement.appendChild(ovHost);
     }
     const st = document.createElement('style');
-    st.textContent = '.b{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1}.k{display:flex;gap:8px;flex-wrap:wrap}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
-    const box = document.createElement('div'); box.className = 'b' + (mode === 'handoff' || mode === 'confirm' || mode === 'choice' ? ' w' : mode === 'error' ? ' e' : mode === 'done' ? ' d' : ''); box.style.position = 'relative';
+    st.textContent = '.b{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1}.k{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input.i{font:inherit;border:0;border-radius:6px;padding:6px 10px;min-width:200px;background:#fff;color:#111}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
+    const box = document.createElement('div'); box.className = 'b' + (mode === 'handoff' || mode === 'confirm' || mode === 'choice' || mode === 'input' ? ' w' : mode === 'error' ? ' e' : mode === 'done' ? ' d' : ''); box.style.position = 'relative';
     const t = document.createElement('div'); t.className = 't'; t.textContent = '나비웹 도우미 · ' + String(text || (mode === 'busy' ? '작업 중입니다. 잠시만 기다려 주세요.' : '')).slice(0, 400); box.appendChild(t);
     const k = document.createElement('div'); k.className = 'k';
     const btn = (label, cls, fn) => { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; k.appendChild(b); };
     const rep = (ok) => () => { chrome.runtime.sendMessage({ type: 'reply', ok }); overlay('busy', ''); };
     if (mode === 'confirm') { btn('진행', '', rep(true)); btn('취소', 's', rep(false)); }
+    else if (mode === 'input') {
+      const inp = document.createElement('input'); inp.placeholder = (options && options[0]) || '입력'; inp.className = 'i'; inp.maxLength = 100; inp.autocomplete = 'off';
+      const go = () => { const v = inp.value.trim(); if (!v) return; chrome.runtime.sendMessage({ type: 'reply', ok: true, value: v }); overlay('busy', ''); };
+      inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') go(); }, true);
+      ['keyup', 'keypress'].forEach((n) => inp.addEventListener(n, (e) => e.stopPropagation(), true));
+      k.appendChild(inp); btn('보내기', '', go);
+      btn('직접 입력할게요', 's', () => { chrome.runtime.sendMessage({ type: 'reply', ok: true, manual: true }); overlay('busy', ''); });
+      btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' }));
+      setTimeout(() => inp.focus(), 0);
+    }
     else if (mode === 'choice') { (options || []).forEach((o) => btn(String(o), '', () => { chrome.runtime.sendMessage({ type: 'reply', ok: true, value: o }); overlay('busy', ''); })); btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' })); }
     else if (mode === 'handoff') { btn('직접 했어요', '', rep(true)); btn('중단', 's', () => chrome.runtime.sendMessage({ type: 'stop' })); }
     else if (mode === 'busy') btn('중단', 's', () => { chrome.runtime.sendMessage({ type: 'stop' }); });
