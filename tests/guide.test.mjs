@@ -460,3 +460,11 @@ test('사용법: 퀴즈를 통과해 다음 장으로 넘어가면 새 장의 �
   assert.match(js, /S\.result = null; render\(\); toTop\(\); \}/, '번호·이전·다음 이동');
   assert.match(js, /act === 'restart'\) \{ S\.idx = 0; S\.answers = \{\}; S\.result = null; render\(\); toTop\(\); \}/, '처음부터 다시');
 });
+
+test('YouTube: 왼쪽 메뉴 맨 아래 아이콘 → 재생목록(PLExMxaYxMDPE) 영상 3개를 목록 순서대로 카드로', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="tab-btn-youtube"') && h.includes("_switchTab('youtube')") && h.includes('id="tab-youtube"'));
+  assert.ok(h.indexOf('id="tab-btn-settings"') < h.indexOf('id="tab-btn-youtube"'));
+  const ids = ['aLfvRkbX4mE', 'pFSTOKbYGAE', 'PsqV8Rj445k'].map(x => h.indexOf("id: '" + x + "'"));
+  assert.ok(ids.every(x => x > 0) && ids[0] < ids[1] && ids[1] < ids[2]);
+});
