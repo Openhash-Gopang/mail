@@ -17,13 +17,18 @@ export function hostAllowed(url, extra = []) {
 
 // info: 대상 요소 설명 {tag,type,name,autocomplete,text}
 // 어느 사이트든 다룬다. 이동은 https 이면 바로 하고, 입력·클릭은 아래 동작 규칙(classifyKnown)만 따른다.
-export function classify(tool, input = {}, info = {}, extraHosts = []) {
+// opts.fetchJob: 나비웹의 "도우미가 가져오기"로 시작한 작업 — 사용자가 이미 그 서류를 받아 오라고 맡겼으므로 발급·다운로드 단추는 다시 묻지 않는다(제출·전송·삭제·동의·결제는 그대로 묻거나 직접).
+export function classify(tool, input = {}, info = {}, extraHosts = [], opts = {}) {
   if (tool === 'navigate') {
     return hostAllowed(input.url) ? { act: 'auto' } : { act: 'deny', reason: 'https 주소만 열 수 있습니다.' };
   }
-  return classifyKnown(tool, input, info);
+  return classifyKnown(tool, input, info, opts);
 }
-function classifyKnown(tool, input = {}, info = {}) {
+// 요소 글자에 보이는 글과 숨은 글이 겹쳐 "발급 발급하기" 처럼 나오는 것을 다듬는다.
+const tidy = (t) => String(t || '').replace(/\s+/g, ' ').trim().replace(/(\S{2,}) (?=\1)/g, '');
+const ISSUE_ONLY = /발급|다운로드|내려받기|download/i;
+const STRONG_CONFIRM = /제출|접수|신청서|전송|삭제|확정|동의|보내기|send|submit|delete/i;
+function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   if (tool === 'handoff_to_user') return { act: 'handoff', reason: input.reason || '직접 진행이 필요합니다.' };
   if (tool === 'type') {
     const t = String(input.text ?? '');
@@ -37,7 +42,8 @@ function classifyKnown(tool, input = {}, info = {}) {
   if (tool === 'click' || tool === 'select_option') {
     const label = `${info.text || ''} ${info.name || ''}`;
     if (HANDOFF_TEXT.test(label)) return { act: 'handoff', reason: `"${(info.text || info.name || '').trim().slice(0, 30)}" 단계는 직접 진행해 주세요.` };
-    if (tool === 'click' && !NAV_OK.test((info.text || info.name || '').trim()) && CONFIRM_TEXT.test(label)) return { act: 'confirm', reason: `"${(info.text || info.name || '').trim().slice(0, 30)}" 을(를) 누를까요?` };
+    if (tool === 'click' && opts.fetchJob && ISSUE_ONLY.test(label) && !STRONG_CONFIRM.test(label)) return { act: 'auto' };
+    if (tool === 'click' && !NAV_OK.test((info.text || info.name || '').trim()) && CONFIRM_TEXT.test(label)) return { act: 'confirm', reason: `"${tidy(info.text || info.name).slice(0, 30)}" 을(를) 누를까요?` };
   }
   return { act: 'auto' };
 }

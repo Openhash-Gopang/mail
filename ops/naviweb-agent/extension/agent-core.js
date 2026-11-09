@@ -58,7 +58,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
       const say = (t) => out.content.push({ type: 'text', text: t });
       try {
         const info = (await host.describe(u.name, u.input)) || {};
-        const verdict = classify(u.name, u.input, info, extra);
+        const verdict = classify(u.name, u.input, info, extra, { fetchJob: !!(host.fetchJob && host.fetchJob()) });
         host.log({ kind: 'tool', name: u.name, input: u.input, act: verdict.act });
         if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
         else if (verdict.act === 'handoff') { await host.handoff(verdict.reason); say('사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
