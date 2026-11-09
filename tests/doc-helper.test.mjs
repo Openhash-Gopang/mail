@@ -174,7 +174,7 @@ test('desktop.html: 메인 입력창·예시 버튼은 서류 검색 그대로, 
   assert.match(html, /#tab-compose\[data-helper="1"\] \.doc-agent select[^{]*\.da-ext\{display:none!important\}/, '도우미 줄의 입력·선택·버튼은 숨김(연결 상태만)');
   assert.match(html, /연결됨';/, '연결 상태 문구');
   assert.doesNotMatch(html, /어느 사이트든 맡길 수 있습니다/);
-  assert.match(html, /function _agentFetchSlot\(label\) \{\n  if \(window\.DocHelper && _cmpMode === 'doc' && _docChat\.on\) \{[\s\S]{0,1000}_docHelperSend\(DocHelper\.slotAsk\(label\)\)/, '항목의 "도우미가 가져오기"는(즉시 맡길 수 없는 것은) 도우미 SP 로');
+  assert.match(html, /function _agentFetchSlot\(label(?:, fresh)?\) \{\n  if \(window\.DocHelper && _cmpMode === 'doc' && _docChat\.on\) \{[\s\S]{0,1000}_docHelperSend\(DocHelper\.slotAsk\(label(?:, fresh)?\)\)/, '항목의 "도우미가 가져오기"는(즉시 맡길 수 없는 것은) 도우미 SP 로');
   assert.match(html, /input\.value\.trim\(\) \|\| \(_docHost\.loaded && _docHost\.confirmed \? String\(_docHost\.title/, '입력창이 비어도 작성 중인 서류는 Draft 로 저장');
 });
 
@@ -317,4 +317,13 @@ test('대화창: 어떤 말이든 먼저 "잠시 기다려 주십시오"를 답�
   assert.match(f, /HondiChat\.say\('잠시 기다려 주십시오\.'\); HondiChat\.busy\(/);
   assert.match(f, /finally \{ _embedCap = null; _embedBusy = false; try \{[^\n]*HondiChat\.idle\(\)/);
   assert.ok(f.indexOf('HondiChat.say(') < f.indexOf('_docAsk(text)'), '본 처리보다 먼저');
+});
+
+test('올린 첨부서류를 지우거나 새로 가져오면 도우미 진행 기록을 풀어 다시 맡길 수 있다', async () => {
+  const DH = (await import('../doc-helper.js')).default || globalThis.DocHelper;
+  const slots = { '주민등록등본': { state: 'received', note: '' } };
+  const plan = (s) => DH.planTask({ slot: '주민등록등본', goal: '새로 발급' }, { agentOn: true, labels: ['주민등록등본'], slots: s });
+  assert.equal(plan(slots).code, 'dup');          // 받은 기록이 남아 있으면 막힌다
+  assert.equal(plan({}).ok, true);                 // 기록을 풀면(_slotReset) 다시 맡길 수 있다
+  assert.match(DH.slotAsk('주민등록등본', true), /새로 발급받아 교체/);
 });

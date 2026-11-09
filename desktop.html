@@ -2291,14 +2291,21 @@ function _fbOpen(kind, label, text, pre) {
   const c = label && kind !== 'report' && window.AttachCatalog ? AttachCatalog.classify(label) : {};
   NaviFeedback.open({ kind: kind, label: label || '', text: text || '', problem: pre && pre.problem || '', right: pre && pre.right || '', ctx: { doc: (_docHost && _docHost.title) || '', rule: c.id || c.kind || '', ext: _agentInfo ? _agentInfo.version : '', screen: pre && pre.where ? 'doc-' + pre.where : 'doc' } });
 }
-function _agentFetchSlot(label) {
+function _slotReset(label) {
+  if (!window.DocHelper || !label) return;
+  const lb = DocHelper.matchLabel(label, (_docChat.attach || []).map(function (a) { return a.l; })) || label;
+  if (_docChat.slots && _docChat.slots[lb]) { const n = {}; Object.keys(_docChat.slots).forEach(function (k) { if (k !== lb) n[k] = _docChat.slots[k]; }); _docChat.slots = n; }
+  if (_docChat.early) delete _docChat.early[lb];
+  setTimeout(_docChatPush, 0);
+}
+function _agentFetchSlot(label, fresh) {
   if (window.DocHelper && _cmpMode === 'doc' && _docChat.on) {
     // 정부24 같은 공공기관 민원서류는 물을 것이 없으니 AI 답변을 기다리지 않고 곧바로 도우미에 맡겨 사이트를 연다(법인 이름 등 입력이 필요한 항목만 도우미 SP 를 거친다).
     const ip = window.NaviAgent && NaviAgent.slotPlan(label);
     if (ip && _agentInfo && (ip.instant || (ip.url && !ip.playbook))) { _docChatAgentTask({ slot: label, goal: label }); return; }   // 기관이 정해진 서류는 AI 답을 기다리지 않고 그 사이트를 먼저 연다(대상 입력은 사이트에서)
     // 사이트가 정해졌지만 물어볼 것(건물 종류·주소 등)이 있는 서류(건축물대장 등)도 AI 답을 기다리지 않고 사이트부터 연다 — AI 가 느리거나 [AGENT_TASK] 를 내지 않아도 정부24 가 열리도록. 대상 정보는 AI 가 묻고 나중에 전한다.
     if (ip && _agentInfo && ip.early && ip.url) { try { _agentEarlyOpen(label); } catch (e) { /* AI 대화로 계속 */ } }
-    _docHelperSend(DocHelper.slotAsk(label)); return;
+    _docHelperSend(DocHelper.slotAsk(label, fresh)); return;
   }   // 도우미 지시창 모드(도우미 줄에는 입력칸이 없다) — 도우미 SP 에게 맡긴다(상태·중복 방지는 SP 와 호스트가 함께 본다)
   const plan = window.NaviAgent && NaviAgent.slotPlan(label);
   const bars = _agentBars().filter(b => !b.hidden && b.offsetParent !== null);
@@ -3921,8 +3928,12 @@ function _docHostMessage(d, e) {
     _docHostPost({ type: 'navi-doc-slot-reason-result', label: lb, reason: e ? e.reason : '', text: e ? e.text : '', note: e ? e.note : '', conf: e ? e.conf : '', paid: !!(e && e.paid), fallback: e ? e.fallback : '' });
   } else if (d.type === 'navi-doc-feedback') {   // 서류 화면 위·아래 오른쪽의 "오류 신고와 제안" 버튼 — where: top | bottom
     _fbOpen('report', (_docHost && _docHost.title) || '', '', { where: d.where === 'bottom' ? 'bottom' : 'top' });
-} else if (d.type === 'navi-doc-fetch-slot') {
-    _agentFetchSlot(String(d.label || '').slice(0, 120));
+} else if (d.type === 'navi-doc-slot-clear') {   // 사용자가 올린 파일을 지웠다 — 그 항목의 도우미 진행 기록(받음·전송 완료 등)도 풀어 다시 맡길 수 있게 한다
+    _slotReset(String(d.label || '').slice(0, 120));
+  } else if (d.type === 'navi-doc-fetch-slot') {
+    const _fl = String(d.label || '').slice(0, 120);
+    if (d.fresh) _slotReset(_fl);   // 이미 올린 파일을 새로 발급받은 것으로 바꾸려는 요청 — 이전 기록 때문에 "이미 맡겼습니다"로 막히지 않게
+    _agentFetchSlot(_fl, !!d.fresh);
   } else if (d.type === 'navi-doc-keep-list') { _keepList(e, d);   // 첨부서류 보관·재활용(2026-11-06): 서류 화면 ↔ PDV 중계
   } else if (d.type === 'navi-doc-keep-put') { _keepPut(e, d);
   } else if (d.type === 'navi-doc-keep-get') { _keepGet(e, d);

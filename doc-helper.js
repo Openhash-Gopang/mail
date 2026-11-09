@@ -33,7 +33,7 @@
   /** 도우미 SP 가 서류 작성을 이끄는 중인지(도우미 줄은 연결 상태만 보인다). st: { cmpMode, chatOn(도우미 SP 가 주도권을 가짐), confirmed(서류 확정) } */
   function helperMode(st) { st = st || {}; return st.cmpMode === 'doc' && !!st.chatOn && !!st.confirmed; }
   /** 서류 화면의 "도우미가 가져오기" 버튼을 눌렀을 때 도우미 SP 에게 대신 전할 사용자 말. */
-  function slotAsk(label) { var l = oneLine(label, LABEL_MAX); return l ? '“' + l + '” 항목을 도우미가 가져와 주세요.' : ''; }
+  function slotAsk(label, fresh) { var l = oneLine(label, LABEL_MAX); return l ? (fresh ? '“' + l + '” 항목은 이미 올린 파일을 버리고 도우미가 새로 발급받아 교체해 주세요.' : '“' + l + '” 항목을 도우미가 가져와 주세요.') : ''; }
   /** 대화창이 사용자 말을 받지 못했다는 답(처리 중·준비 중)인지 — 이때 말은 입력창에 되돌려 놓는다. */
   function isSendFailure(t) { return /^(앞의 요청을 처리하는 중입니다|이 기관의 상담은 준비 중입니다)/.test(String(t == null ? '' : t)); }
 
