@@ -1196,7 +1196,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 /* 나비 로고: 왼쪽 메뉴 맨 위(홈 단추 위). 아이콘 열(가운데 32px)에 맞춰 접힌 64px 레일에서도 같은 자리에 있다 */
 /* 소개(백서): 다른 화면처럼 본문에 나타난다. 위쪽 줄의 닫기 단추로 읽던 화면으로 돌아간다 */
 .intro-bar{position:sticky;top:var(--ur,48px);z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px 10px;background:var(--bg,#f5f6f8)}
-.intro-bar h2{margin:0;font:600 18px/1.3 inherit;color:var(--sub,#334155)}
+.intro-bar .intro-tabs{flex:1;min-width:0;padding:0;border-bottom:0;flex-wrap:wrap}
 .intro-close{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid var(--bdr,#cbd5e1);border-radius:18px;background:#fff;color:var(--sub,#334155);font:600 14px/1 inherit;cursor:pointer}
 .intro-close:hover{background:var(--pri-bg,#e8f0fe)}.intro-close:focus-visible{outline:3px solid var(--pri,#2563eb);outline-offset:2px}
 #tab-intro iframe{background:#fff;border-radius:10px}
@@ -2068,7 +2068,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
   </div>
   <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
-  <div id="tab-intro" class="tab-panel"><div class="intro-bar"><h2 id="intro-title">나비와 나비웹 백서</h2><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
+  <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
@@ -7149,9 +7149,8 @@ function _panelSync() {
 }
 let _introPrev = null;   // 소개를 열기 전에 보던 화면(패널 id, 왼쪽 메뉴에서 켜져 있던 항목 id) — 닫으면 그대로 돌아간다
 function _panelOpen(kind) {
-  const p = document.getElementById('tab-intro'), f = document.getElementById('intro-frame'), t = document.getElementById('topbar-page');
+  const p = document.getElementById('tab-intro'), f = document.getElementById('intro-frame');
   if (!p || !_PANEL_URL[kind]) return;
-  if (kind === 'intro' && (!t || !t.classList.contains('can-intro'))) return;
   const title = kind === 'manual' ? '나비와 나비웹 백서' : '나만의 AI 비서 소개';
   if (!_introIsOpen()) {
     const on = document.querySelector('.tab-panel.active');
@@ -7163,9 +7162,9 @@ function _panelOpen(kind) {
   }
   _panelKind = kind;
   if (f && f.getAttribute('data-kind') !== kind) { f.setAttribute('data-kind', kind); f.setAttribute('src', _PANEL_URL[kind]); }
-  if (f) f.title = title; const h = document.getElementById('intro-title'); if (h) h.textContent = _T(title);
+  if (f) f.title = title;
+  ['manual', 'intro'].forEach(k => { const b = document.getElementById('intro-tab-' + k); if (b) { b.classList.toggle('active', k === kind); b.setAttribute('aria-selected', k === kind ? 'true' : 'false'); } });
   window.scrollTo(0, 0); _panelSync();
-  const c = document.getElementById('intro-close'); if (c) c.focus({ preventScroll: true });
 }
 window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _introClose(); _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _introClose(); _switchTab('whitepaper'); } });
 const _WP_URL = { navi: 'manual.html?embed=mail', openhash: 'openhash.html?embed=mail' };
