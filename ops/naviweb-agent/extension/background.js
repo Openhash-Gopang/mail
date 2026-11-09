@@ -240,6 +240,7 @@ async function host(playbook) {
           }
         } catch { /* 아래 일반 클릭으로 */ }
       }
+      if (name === 'open_issued_document') return openIssuedDocument(Math.max(0, Number(input && input.row) || 0));
       if (DOM_TOOLS.has(name)) return toTab(name, input, false);
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
       if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); notifyOpened(input.url); await wait(2500); return { text: '이동: ' + input.url }; }
@@ -333,6 +334,47 @@ function notifyOpened(url) {
     state.openedNotified = true;
     deliverToNavi({ kind: 'status', label: state.slot, state: 'opened', note: h }).catch(() => {});
   } catch { /* 주소가 아니면 알리지 않는다 */ }
+}
+
+// 신청 내역 화면에서 "문서출력"을 눌러 뷰어 창을 열고 문서를 나비웹으로 보낸다(단추 찾기·누르기·창 확인·PDF 만들기·전송을 한 번에).
+const VIEWER_URL = 'https://*.gov.kr/ezpdfwv/*';
+async function viewerIds() { try { return new Set((await chrome.tabs.query({ url: VIEWER_URL })).map((t) => t.id)); } catch { return new Set(); } }
+async function waitNewViewer(before, ms) {
+  for (let t = 0; t < ms; t += 400) { await wait(400); const now = await viewerIds(); for (const id of now) if (!before.has(id)) return id; }
+  return null;
+}
+async function openIssuedDocument(row) {
+  if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 문서를 보낼 곳이 없습니다.' };
+  const pick = JSON.parse((await toTab('pick_by_text', { text: '문서출력', nth: row }, false)).text || '{}');
+  if (!pick.found) return { text: `화면에서 "문서출력" 단추를 찾지 못했습니다(보이는 단추 ${pick.count || 0}개). 신청 내역(처리완료) 화면인지 확인하고, 아니면 그 화면으로 이동한 뒤 다시 부르세요.` };
+  const before = await viewerIds(); let vid = null; const tried = [];
+  // 1) 사람처럼 실제 마우스 입력(이동 → 누름 → 유지 → 뗌)
+  const g = await debuggerClick(chrome.debugger, state.tabId, pick.x, pick.y); tried.push(g.ok ? '실제 마우스 입력' : '실제 마우스 입력(실패)');
+  if (g.ok) vid = await waitNewViewer(before, 6000);
+  // 2) 페이지 안 일반 클릭
+  if (vid == null) { try { await toTab('click', { ref: pick.ref }, false); tried.push('일반 클릭'); vid = await waitNewViewer(before, 4000); } catch { /* 다음 방법 */ } }
+  // 3) 페이지 환경(MAIN)에서 마우스 이벤트 전체 순서
+  if (vid == null) {
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: state.tabId }, world: 'MAIN', func: () => { const e = document.querySelector('[data-navi-pick]'); if (!e) return; for (const t of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) e.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window, button: 0 })); } });
+      tried.push('마우스 이벤트 전체'); vid = await waitNewViewer(before, 4000);
+    } catch { /* 실패 */ }
+  }
+  try { await chrome.scripting.executeScript({ target: { tabId: state.tabId }, func: () => { const e = document.querySelector('[data-navi-pick]'); if (e) e.removeAttribute('data-navi-pick'); } }); } catch { /* 무시 */ }
+  if (vid == null) return { text: `"문서출력"을 ${tried.join(' → ')} 순서로 눌렀지만 문서 보기 창이 열리지 않았습니다. 브라우저가 팝업을 막았을 수 있습니다(주소창 오른쪽의 팝업 차단 표시 확인). 사용자에게 알리고 report_status 로 실패를 알리세요.` };
+  await wait(2500);   // 뷰어가 문서를 그릴 때까지
+  let pr = null;
+  try {
+    const rs = await chrome.scripting.executeScript({ target: { tabId: vid, allFrames: true }, func: grabPdfInPage, args: [MAX_BYTES] });
+    const hit = rs.map((r) => r && r.result).find((r) => r && r.ok);
+    if (hit) pr = hit;
+  } catch { /* 화면 PDF 로 */ }
+  if (!pr) pr = await printTabToPdf(chrome.debugger, vid);
+  if (!pr.ok) return { text: pr.msg };
+  const nm = safeName(state.slot, 'application/pdf', '');
+  await deliverToNavi({ kind: 'file', label: state.slot, name: nm, mime: 'application/pdf', b64: pr.b64 });
+  await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '발급된 문서를 나비웹으로 보냈습니다.' }).catch(() => {});
+  return { text: `문서출력 → 문서 보기 창 → PDF 로 나비웹에 보냈습니다: ${nm} (${Math.round(pr.size / 1024)}KB). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 다시 묻지 말고 작업을 마치세요.` };
 }
 async function runJob(m) {
     state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120) };

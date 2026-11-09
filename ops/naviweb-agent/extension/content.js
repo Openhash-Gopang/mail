@@ -74,6 +74,15 @@
       const a = el.closest && el.closest('a[href]');
       if (a && /^\s*javascript:/i.test(a.getAttribute('href') || '')) { a.setAttribute('data-navi-click', '1'); return `@@MAIN@@클릭: ${nameOf(el)}`; }
       el.click(); return `클릭: ${nameOf(el)}`; },
+    pick_by_text: ({ text, nth }) => {   // 글자가 정확히 text 인 보이는 요소의 n 번째(0부터, 화면 위에서 아래 순)를 찾아 ref·좌표·행 글자를 돌려준다
+      const want = clean(text), els = candidates().filter((el) => visible(el) && nameOf(el) === want && !el.closest('[data-navi-overlay],#navi-agent-host'));
+      els.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+      const el = els[Math.max(0, Number(nth) || 0)];
+      if (!el) return JSON.stringify({ found: false, count: els.length });
+      el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(), tr = el.closest && el.closest('tr');
+      el.setAttribute('data-navi-pick', '1');
+      return JSON.stringify({ found: true, count: els.length, ref: refOf(el), x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), w: Math.round(r.width), h: Math.round(r.height), row: tr ? clean(tr.innerText).slice(0, 140) : '' });
+    },
     rect: ({ ref }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect();   // 실제 마우스 입력용 좌표(화면 기준 가운데 점)
       return JSON.stringify({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), w: Math.round(r.width), h: Math.round(r.height) }); },
     type: ({ ref, text, submit }) => { const el = need(ref); el.scrollIntoView({ block: 'center' }); el.focus(); setValue(el, String(text));
