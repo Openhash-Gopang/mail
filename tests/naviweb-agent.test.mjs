@@ -605,3 +605,15 @@ test('0.6.25: 작업 중 커서가 화면 위를 천천히 오간다(대상으�
   const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
   assert.match(ct, /function curWander/); assert.match(ct, /curGliding/); assert.match(ct, /if \(!curBusy \|\| curReduced\(\)\)/);
 });
+test('로그인 감지: 로그아웃 단추(남은 시간 포함)와 "님의 MyGOV" 문구를 로그인 신호로 본다', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  const src = /function loginProbe\(\) \{[\s\S]*?\n\}\n/.exec(bg)[0];
+  const mk = (btns, text) => {
+    const doc = { body: { innerText: text }, querySelectorAll: () => btns.map((t) => ({ tagName: 'A', textContent: t, getBoundingClientRect: () => ({ width: 10, height: 10 }) })) };
+    return new Function('document', 'getComputedStyle', src + '; return loginProbe();')(doc, () => ({ visibility: 'visible', display: 'block' }));
+  };
+  assert.equal(mk(['로그아웃'], ''), true);
+  assert.equal(mk(['로그아웃 (29:59)'], ''), true);
+  assert.equal(mk([], '도영민 님의 MyGOV 서비스 신청 내역'), true);
+  assert.equal(mk(['로그인', '회원가입'], '로그인이 필요합니다'), false);
+});
