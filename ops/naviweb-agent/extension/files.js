@@ -105,7 +105,7 @@ export async function printTabToPdf(dbg, tabId, maxBytes = MAX_BYTES) {
   const target = { tabId };
   try { await dbg.attach(target, '1.3'); } catch (e) { return { ok: false, msg: '화면을 PDF 로 만들지 못했습니다(디버거 연결 실패: ' + (e && e.message ? e.message : e) + ').' }; }
   try {
-    const r = await dbg.sendCommand(target, 'Page.printToPDF', { printBackground: true, preferCSSPageSize: true });
+    const r = await dbg.sendCommand(target, 'Page.printToPDF', { printBackground: true, preferCSSPageSize: true, paperWidth: 8.27, paperHeight: 11.69 });
     const b64 = r && r.data ? String(r.data) : '';
     if (!b64) return { ok: false, msg: '화면을 PDF 로 만들지 못했습니다(빈 결과).' };
     const size = Math.floor(b64.length * 3 / 4);
