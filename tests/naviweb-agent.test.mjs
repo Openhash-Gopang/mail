@@ -564,3 +564,9 @@ test('0.6.20: 작업 탭 묶음·띠 되살리기·사용자 말하기·가입 �
   assert.match(buildSystem({ goal: 'g' }), /회원가입/);
   assert.equal(classify('handoff_to_user', { reason: '약관 동의와 아이디 만들기는 직접 해 주세요' }, {}).act, 'handoff');
 });
+
+test('확장 새로고침 직후 설치 안내가 뜨지 않게: 연결된 적 있으면 재확인·자동 안내 생략, 연속 2회 미응답만 끊김', () => {
+  const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(d, /_agentDetectPatient/); assert.match(d, /if \(!_agentSeen\(\)\) setTimeout\(\(\) => window\._agentGuideOpen/);
+  assert.match(d, /_agentMiss/);
+});

@@ -2242,9 +2242,21 @@ const _agentSay = (t) => {   // 도우미 진행 상황은 배지 옆에 잠깐 
   clearTimeout(_agentMsgTm); _agentMsgTm = setTimeout(() => { m.textContent = ''; }, 9000);
 };
 const _agentBars = () => [...document.querySelectorAll('.doc-agent')];
+// 확장을 새로고침·업데이트한 직후에는 연결이 몇 초 끊겼다가 돌아온다. 그때마다 설치 안내를 띄우지 않도록,
+// ① 전에 연결된 적이 있으면 여러 번 기다려 다시 확인하고 ② 그래도 안 되면 설치 안내 대신 "연결 확인 중" 표시만 한다(설치 안내는 한 번도 연결된 적이 없을 때만 저절로 열린다).
+const _AG_SEEN = 'navi_agent_seen_v1';
+function _agentSeen() { try { return !!localStorage.getItem(_AG_SEEN); } catch (e) { return false; } }
+async function _agentDetectPatient(tries) {
+  for (let i = 0; i < tries; i++) {
+    const r = await NaviAgent.detect();
+    if (r) { try { localStorage.setItem(_AG_SEEN, String(Date.now())); } catch (e) { /* 저장 불가 */ } return r; }
+    if (i < tries - 1) await new Promise(res => setTimeout(res, 1200));
+  }
+  return null;
+}
 async function _agentInit() {
   if (!window.NaviAgent) return;
-  _agentInfo = await NaviAgent.detect();
+  _agentInfo = await _agentDetectPatient(_agentSeen() ? 4 : 1);
   _agentBars().forEach(bar => {
     if (!_agentInfo) { bar.hidden = true; return; }
     const sel = bar.querySelector('select'); sel.innerHTML = '';
@@ -2257,9 +2269,9 @@ async function _agentInit() {
   });
   if (_agentInfo) _agentBadge('나비웹 도우미 ' + _agentInfo.version);
   else {
-    _agentBadge('나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
+    _agentBadge(_agentSeen() ? '나비웹 도우미 연결 확인 중 — 확장을 새로고침했다면 이 페이지도 새로고침해 주세요' : '나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
     const _bt = document.querySelector('#agent-badge .ab-t'); if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
-    setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800);   // 확장이 없으면 화면을 열 때마다 설치 안내를 보여 준다(2026-11-07)
+    if (!_agentSeen()) setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800);   // 한 번도 연결된 적이 없으면 화면을 열 때마다 설치 안내를 보여 준다(2026-11-07). 전에 연결된 적이 있으면 일시적인 끊김일 수 있어 띄우지 않는다.
   }
   if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
   if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
@@ -2391,12 +2403,14 @@ async function _agentHandOff(btn) {
 }
 document.addEventListener('DOMContentLoaded', () => { setTimeout(_agentInit, 600); });
 /* 나비웹 도우미는 늦게 켜지거나 나중에 켤 수 있으므로 열 때 한 번만 확인하지 않고 계속 확인한다(연결 여부·버전이 바뀌면 화면을 다시 맞춘다). */
-let _agentWatchBusy = false;
+let _agentWatchBusy = false, _agentMiss = 0;
 async function _agentWatchTick() {
   if (_agentWatchBusy || document.hidden || !window.NaviAgent) return;
   _agentWatchBusy = true;
   try {
-    const info = await NaviAgent.detect();
+    let info = await NaviAgent.detect();
+    if (!info && _agentInfo && ++_agentMiss < 2) return;   // 연결돼 있던 도우미가 한 번 응답 못 한 것은 끊김으로 보지 않는다(두 번 연속일 때만)
+    if (info) _agentMiss = 0;
     if (!!info !== !!_agentInfo || (info && _agentInfo && info.version !== _agentInfo.version)) await _agentInit();
   } catch (e) { /* 다음 확인에서 다시 */ } finally { _agentWatchBusy = false; }
 }
@@ -3871,7 +3885,14 @@ function _docHostReset() {
   if (_cmpMode === 'doc' && _docHost.loaded) _docHostPost({ type: 'navi-doc-input', text: '' });
 }
 function _docHostMessage(d, e) {
-  if (d.type === 'navi-doc-need-agent') { if (window._agentGuideOpen) window._agentGuideOpen(); return; }   // 서류 화면에서 연결 안 된 채 첨부를 누르면 설치 안내를 연다
+  if (d.type === 'navi-doc-need-agent') {   // 연결이 잠깐 끊긴 것일 수 있으니 먼저 다시 확인하고, 정말 없을 때만 설치 안내를 연다
+    (async () => {
+      const r = await _agentDetectPatient(3);
+      if (r) { await _agentInit(); _drToast('나비웹 도우미가 연결되었습니다. 가져오기를 다시 눌러 주세요.'); return; }
+      if (window._agentGuideOpen) window._agentGuideOpen();
+    })();
+    return;
+  }   // 서류 화면에서 연결 안 된 채 첨부를 누르면 설치 안내를 연다
   if (d.type === 'navi-doc-ready') {
     _docHost.ready = true; _docHost.cap = (d.v | 0) >= 2; setTimeout(function () { _docChatEnsure(); }, 0);
     _docHost.v3 = (d.v | 0) >= 3;
