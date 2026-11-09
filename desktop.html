@@ -7175,13 +7175,22 @@ const _YT_LIST = [
   { id: 'pFSTOKbYGAE', t: 'navi 02 - 대략적 구성', len: '5:52', d: '현재 Pre-alpha 단계인 나비와 나비웹의 대략적인 구성과 도우미(크롬 확장) 소개, 12월 v1.0 출시 계획.' },
   { id: 'yv0THEXTF58', t: 'navi 003 - 한국 vs 글로벌(K-Law 대법원 판결문 예상 시뮬레이션)', len: '23:13', d: '나비웹의 글로벌 적용 구상과, K-Law가 만든 대법원 예상 판결문과 실제 판결문의 일치도(자체 추정 약 90%)를 공개합니다.' }
 ];
-function _ytRender() {
-  const ol = document.getElementById('yt-grid'); if (!ol || ol.childElementCount) return;
-  _YT_LIST.forEach((v, i) => {
+// guide-videos.json 은 GitHub Actions(guide-videos.yml)가 재생목록에서 30분마다 갱신한다. 못 읽으면 위의 기본 목록을 쓴다.
+async function _ytLoad() {
+  try {
+    const r = await fetch('guide-videos.json', { cache: 'no-cache' });
+    if (r.ok) { const j = await r.json(), a = (j && Array.isArray(j.videos) ? j.videos : []).filter(v => v && /^[\w-]{11}$/.test(v.id) && typeof v.t === 'string'); if (a.length) return a; }
+  } catch (e) {}
+  return _YT_LIST;
+}
+async function _ytRender() {
+  const ol = document.getElementById('yt-grid'); if (!ol || ol.childElementCount || ol.dataset.busy) return;
+  ol.dataset.busy = '1'; const list = await _ytLoad(); delete ol.dataset.busy; if (ol.childElementCount) return;
+  list.forEach((v, i) => {
     const li = document.createElement('li'); li.className = 'yt-card';
-    li.innerHTML = '<button type="button" class="yt-th" aria-label="' + v.t + ' 재생"><img src="https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg" alt="" loading="lazy"><span class="yt-play"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="#fff"/></svg></span><span class="yt-len">' + v.len + '</span></button>' +
+    li.innerHTML = '<button type="button" class="yt-th"><img src="https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg" alt="" loading="lazy"><span class="yt-play"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="#fff"/></svg></span><span class="yt-len"' + (v.len ? '' : ' hidden') + '>' + (v.len || '') + '</span></button>' +
       '<div class="yt-info"><div class="yt-no">' + (i + 1) + '</div><h3 class="yt-ttl"></h3><p class="yt-desc"></p></div>';
-    li.querySelector('.yt-ttl').textContent = v.t; li.querySelector('.yt-desc').textContent = v.d;
+    li.querySelector('.yt-ttl').textContent = v.t; li.querySelector('.yt-th').setAttribute('aria-label', v.t + ' 재생'); li.querySelector('.yt-desc').textContent = v.d || '';
     li.querySelector('.yt-th').addEventListener('click', e => {
       const b = e.currentTarget, f = document.createElement('iframe');
       f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?autoplay=1&rel=0'; f.title = v.t; f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true;

@@ -472,3 +472,19 @@ test('안내 영상: 왼쪽 메뉴 "나비 길잡이" 아래, YouTube 아이콘 
 test('안내 영상 항목은 나비 길잡이보다 2cm 아래', () => {
   assert.match(readFileSync(new URL('../desktop.html', import.meta.url), 'utf8'), /#tab-btn-youtube\{margin-top:2cm\}/);
 });
+
+test('안내 영상: 재생목록(YouTube)을 자동으로 따라간다 — 동기화 스크립트·워크플로·JSON 읽기, 실패 시 기본 목록', async () => {
+  const { parseFeed, sortByNumber, merge } = await import('../scripts/guide-videos-sync.mjs');
+  const xml = readFileSync(new URL('./fixtures/guide-feed.xml', import.meta.url), 'utf8');
+  const f = parseFeed(xml);
+  assert.equal(f.length, 3); assert.equal(f[0].t, 'navi 003 - 한국 vs  글로벌(K-Law & 대법원)'); assert.equal(f[0].d, '나비웹은 글로벌 적용을 상정한 설계입니다.');
+  assert.deepEqual(sortByNumber(f).map(v => v.id), ['PsqV8Rj445k', 'pFSTOKbYGAE', 'yv0THEXTF58']);   // 번호 순(01, 02, 003)
+  const m = merge(f, [{ id: 'pFSTOKbYGAE', len: '5:52', d: '이전 설명' }]);
+  assert.equal(m[1].len, '5:52'); assert.equal(m[1].d, '이전 설명');   // 이번에 못 얻은 길이·설명은 이전 값 유지
+  const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
+  assert.ok(wf.includes('cron:') && wf.includes('guide-videos-sync.mjs PLExMxaYxMDPE') && wf.includes('contents: write'));
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes("fetch('guide-videos.json'") && h.includes('return _YT_LIST;'));
+  const j = JSON.parse(readFileSync(new URL('../guide-videos.json', import.meta.url), 'utf8'));
+  assert.ok(j.list === 'PLExMxaYxMDPE' && j.videos.length >= 3 && j.videos.every(v => /^[\w-]{11}$/.test(v.id)));
+});
