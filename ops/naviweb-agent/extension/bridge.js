@@ -22,7 +22,11 @@
   window.addEventListener('message', async (e) => {
     const m = e.data;
     if (!live() || e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-web') return;
-    if (m.type === 'agent-pdv-result') { chrome.runtime.sendMessage({ type: 'pdv-result', rid: String(m.rid || '').slice(0, 40), ok: !!m.ok, values: m.values || {}, saved: m.saved || [] }); return; }
+    if (m.type === 'agent-pdv-result') {
+      // 확장을 새로고침해 연결이 끊겼거나 응답할 쪽이 없으면 sendMessage 가 예외·거부를 낸다 — 확장 오류 목록에 쌓이지 않게 삼킨다
+      try { const pr = chrome.runtime.sendMessage({ type: 'pdv-result', rid: String(m.rid || '').slice(0, 40), ok: !!m.ok, values: m.values || {}, saved: m.saved || [] }); if (pr && pr.catch) pr.catch(() => {}); } catch (er) { /* Extension context invalidated */ }
+      return;
+    }
     try {
       if (m.type === 'agent-ping') { const info = await chrome.runtime.sendMessage({ type: 'info' }); reply(m.id, 'agent-pong', { ok: true, ...info }); }
       else if (m.type === 'agent-queue') {
