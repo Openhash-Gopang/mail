@@ -249,6 +249,15 @@ function overQuota(sub, env) {
 
 export default {
   async fetch(request, env) {
+    try { return await handle(request, env); }
+    catch (e) {   // 예외가 나도 CORS 머리글을 달아 돌려줘야 브라우저가 "Failed to fetch" 대신 원인을 읽고 다시 시도할 수 있다
+      let h = {}; try { h = cors(request, env).headers || {}; } catch { /* 머리글 없이 */ }
+      return json({ error: 'worker_error', detail: String((e && e.message) || e).slice(0, 120) }, 500, h);
+    }
+  },
+};
+async function handle(request, env) {
+  {
     const c = cors(request, env);
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type, x-navi-token', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
@@ -274,5 +283,5 @@ export default {
     const res = provider === 'gemma' ? await callGemma(req, env) : await callClaude(req, env);
     if (res.error) return json({ error: 'upstream', status: res.status, detail: res.error }, 502, c.headers);
     return json({ ...res.out, provider, input_estimate: fit.exact ?? fit.est, trimmed: fit.dropped }, 200, c.headers);
-  },
-};
+  }
+}
