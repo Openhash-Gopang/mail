@@ -111,7 +111,7 @@ function handoffText(t) {
   if (!/이어서 진행/.test(s)) s += ' 그 다음은 제가 이어서 진행하겠습니다.';
   return s;
 }
-function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok) => { overlay('busy', ''); res(ok); }; }); }
+function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok, v) => { overlay('busy', ''); res(v === '__say' ? 'say' : ok); }; }); }
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
 async function stopCurrent() {
@@ -121,19 +121,28 @@ async function stopCurrent() {
   for (let i = 0; i < 40 && state.running; i++) await wait(100);
 }
 // 작업하던 탭을 닫으면 그 작업도 끝낸다(남아 있으면 다음 "도우미가 가져오기"가 막힌다).
-// 작업 중 누른 단추가 새 탭·창(예: 정부24 문서출력 뷰어)을 열면 그 탭으로 따라가고, 그 탭이 닫히면 원래 탭으로 돌아온다.
+// 작업 탭 묶음: 작업 중 열린 탭(로그인·회원가입 창, 문서 보기 창 등)을 한 묶음으로 보고, 사용자가 그 사이를 오가거나 닫아도 안내 띠가 따라다닌다.
+// 묶음 안의 탭을 사용자가 보면 그 탭이 작업 탭이 되고, 작업 탭이 닫히면 남은 탭으로 옮긴다. 모두 닫히면 작업을 끝낸다.
+const famHas = (id) => !!(state.family && state.family.has(id));
+function followTab(id, activate) {
+  state.tabId = id;
+  if (state.ov) overlay(state.ov.mode, state.ov.text, state.ov.options); else overlay('busy', '');
+  if (activate) chrome.tabs.update(id, { active: true }).catch(() => {});
+}
 chrome.tabs.onCreated.addListener((t) => {
-  if (!state.running || state.tabId == null || t.openerTabId == null || t.openerTabId !== state.tabId) return;
-  state.parentTabId = state.tabId; state.tabId = t.id; state.ov && overlay(state.ov.mode, state.ov.text, state.ov.options);
-  chrome.tabs.update(t.id, { active: true }).catch(() => {});
+  if (!state.running || t.openerTabId == null || !famHas(t.openerTabId)) return;
+  state.family.add(t.id);
+  if (t.openerTabId === state.tabId) followTab(t.id, true);
 });
+chrome.tabs.onActivated.addListener(({ tabId }) => { if (state.running && famHas(tabId) && tabId !== state.tabId) followTab(tabId, false); });
 chrome.tabs.onRemoved.addListener((id) => {
-  if (state.running && id === state.tabId && state.parentTabId != null) {
-    const back = state.parentTabId; state.parentTabId = null;
-    chrome.tabs.get(back).then(() => { if (state.running) { state.tabId = back; chrome.tabs.update(back, { active: true }).catch(() => {}); overlay('busy', ''); } }).catch(() => { state.abort = true; });
-    return;
-  }
-  if (state.running && id === state.tabId) { state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } } } });
+  if (!state.running || !famHas(id)) return;
+  state.family.delete(id);
+  if (id !== state.tabId) return;
+  const next = [...state.family].pop();
+  if (next != null) { followTab(next, true); return; }
+  state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } }
+});
 
 async function host(playbook) {
   const c = await cfg();
@@ -195,7 +204,7 @@ async function host(playbook) {
     ask: (t) => ask('confirm', t),
     choose: async (q, o) => { await focusTab(); return choose(q, o); },
     input: async (q, l, k) => { await focusTab(); return inputAsk(q, l, k); },
-    handoff: async (t) => { await focusTab(); await ask('handoff', handoffText(t)); },
+    handoff: async (t) => { await focusTab(); const r = await ask('handoff', handoffText(t)); return r === 'say' ? 'say' : 'done'; },
   };
 }
 
@@ -226,7 +235,7 @@ async function runJob(m) {
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
-      state.tabId = tab.id;
+      state.tabId = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
@@ -283,9 +292,14 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
       .then(() => { chrome.action.setBadgeText({ text: '1' }); chrome.action.setBadgeBackgroundColor({ color: '#2f5bd8' }); send({ ok: true }); });
     return true;
   }
-  const mine = sender.id === chrome.runtime.id && (!sender.tab || sender.tab.id === state.tabId);
+  const mine = sender.id === chrome.runtime.id && (!sender.tab || sender.tab.id === state.tabId || famHas(sender.tab.id));
   if (m.type === 'pdv-result' && sender.tab && pdvWait.has(m.rid)) { const f = pdvWait.get(m.rid); pdvWait.delete(m.rid); f(m); return; }
   if (m.type === 'reply' && state.waiter && mine) { const w = state.waiter; state.waiter = null; w(m.ok !== false, m.value, m.manual); }
+  if (m.type === 'say' && mine && state.running && typeof m.text === 'string' && m.text.trim()) {
+    const txt = m.text.trim().slice(0, 500);
+    state.inbox.push('[사용자 메시지] ' + txt); say({ type: 'prompt', kind: 'saved', text: '사용자: ' + txt });
+    if (state.waiter && state.ov && state.ov.mode === 'handoff') { const w = state.waiter; state.waiter = null; w(true, '__say'); }   // 직접 입력을 기다리던 중이면 메시지로 깨워 판단하게 한다
+  }
   if (m.type === 'stop' && mine) { state.abort = true; if (state.waiter) { state.waiter(false); state.waiter = null; } }
   if (m.type === 'start' && !state.running) runJob(m);
   send && send({ ok: true });

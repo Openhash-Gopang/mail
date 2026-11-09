@@ -555,3 +555,12 @@ test('0.6.19: 직접 입력 단계 단추는 "완료", 민감 정보 입력 사�
   assert.equal(classify('handoff_to_user', { reason: '주민등록번호는 직접 입력해 주세요' }, {}).act, 'handoff');
   assert.equal(classify('handoff_to_user', { reason: '화면 하단 버튼을 눌러 주세요' }, {}).act, 'deny');
 });
+
+test('0.6.20: 작업 탭 묶음·띠 되살리기·사용자 말하기·가입 대행 규칙', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(bg, /state\.family/); assert.match(bg, /tabs\.onActivated/); assert.match(bg, /m\.type === 'say'/);
+  assert.match(ct, /ovWd/); assert.match(ct, /input\.i2|'i2'/);
+  assert.match(buildSystem({ goal: 'g' }), /회원가입/);
+  assert.equal(classify('handoff_to_user', { reason: '약관 동의와 아이디 만들기는 직접 해 주세요' }, {}).act, 'handoff');
+});

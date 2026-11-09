@@ -23,6 +23,8 @@ export function buildSystem(playbook) {
     '- 사용자가 직접 하는 일은 로그인·본인인증(공동인증서·간편인증)·결제·보안문자뿐입니다. 그 밖의 모든 조작(메뉴 이동, 서비스·옵션 선택, 입력칸 채우기, 체크, 다음·신청·발급 단추 누르기)은 도우미가 직접 합니다. "화면에서 직접 선택해 주세요"라고 넘기지 마세요. 선택이 사용자 몫이면 ask_choice 로 단추를 보여 주고, 고른 값대로 도우미가 화면을 조작합니다. 인증·결제 단계가 오면 그 단계에서만 handoff_to_user 로 멈추고, 끝나면 이어서 진행합니다.',
     '- 입력칸에 넣을 개인 정보(성명·거주지 시도·주소·전화번호·이메일)는 먼저 pdv_get 으로 내 데이터 금고에서 찾아 쓰고, 없을 때만 ask_input(save_as 로 금고 항목을 지정)으로 물어 받아 직접 입력합니다. save_as 로 받은 값은 도우미가 금고에 보관합니다.',
     '- 입력칸에 넣을 그 밖의 개인 정보를 모르면 ask_input 으로 물어 받아 직접 입력합니다. 사용자가 직접 입력하겠다고 하면 건너뜁니다. 비밀번호·주민등록번호·카드·계좌·인증번호는 ask_input 으로 받지 말고 handoff_to_user 로 사용자가 직접 입력하게 합니다.',
+    '- 처음 가는 사이트라 회원가입이 필요하면 가입 절차도 도우미가 진행합니다: 회원가입 화면으로 이동하고, 회원 유형(개인 등) 선택과 성명·전화번호·이메일 같은 일반 정보는 pdv_get 으로 찾아 채웁니다. 약관 동의, 본인인증, 아이디·비밀번호 만들기, 가입 완료 단추는 사용자가 직접 하도록 handoff_to_user 로 넘기고(어느 칸·단추인지 구체적으로 안내), 완료를 받으면 이어서 진행합니다. 가입·로그인이 끝나면 원래 하던 서류 작업으로 돌아갑니다.',
+    '- 사용자가 직접 하는 단계 동안 사용자는 여러 페이지를 열고 닫을 수 있습니다. 사용자 메시지([사용자 메시지])가 오면 질문에는 짧게 답하고 필요한 행동을 이어 가세요. 작업을 마쳤다고 먼저 끝내지 말고, 로그인·가입이 끝나 원래 작업을 이어 갈 수 있을 때까지 완료 신호를 기다립니다.',
     '- 끝나면 한 일, 남은 일, 확인이 필요한 점을 짧게 보고합니다.',
   ].join('\n');
   return playbook ? `${base}\n\n[절차: ${playbook.title}]\n${playbook.guide}` : base;
@@ -89,7 +91,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
           if (opts.length < 2) say('선택지가 2개 이상 필요합니다.');
           else { const v = await host.choose(String(u.input.question || '선택해 주세요.').slice(0, 300), opts); say(v == null ? '사용자가 선택하지 않고 중단했습니다.' : '사용자가 고른 항목: ' + v); }
         } else if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
-        else if (verdict.act === 'handoff') { await host.handoff(verdict.reason); say('사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
+        else if (verdict.act === 'handoff') { const h = await host.handoff(verdict.reason); say(h === 'say' ? '사용자가 완료를 누르지 않고 메시지를 보냈습니다. 아래 [사용자 메시지]를 보고 답하거나 행동하세요. 직접 입력이 아직 필요하면 handoff_to_user 를 다시 부르세요.' : '사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
         else if (verdict.act === 'confirm' && !(await host.ask(verdict.reason))) say('사용자가 거절했습니다. 진행하지 마세요.');
         else {
           const r = await host.execTool(u.name, u.input);

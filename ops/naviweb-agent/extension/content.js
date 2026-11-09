@@ -85,16 +85,19 @@
     link_href: ({ ref }) => { const el = need(ref); const a = el.closest && el.closest('a[href]'); if (!a) throw new Error('링크 요소가 아닙니다.'); return a.href; },
   };
   // 작업 중인 탭 위쪽에 안내 띠를 띄운다(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
-  let ovHost = null, ovRoot = null;
+  let ovHost = null, ovRoot = null, ovLast = null, ovWd = null;
   function overlay(mode, text, options) {
     if (window !== window.top) return;
-    if (mode === 'off') { if (ovHost) { ovHost.remove(); ovHost = null; ovRoot = null; } return; }
+    if (mode === 'off') { ovLast = null; if (ovWd) { clearInterval(ovWd); ovWd = null; } if (ovHost) { ovHost.remove(); ovHost = null; ovRoot = null; } return; }
+    ovLast = { mode, text, options };
+    // 사이트가 화면을 다시 그려 띠가 사라져도 1초 안에 되살린다(로그인·가입으로 화면이 바뀌어도 띠가 남도록).
+    if (!ovWd) ovWd = setInterval(() => { if (ovLast && (!ovHost || !ovHost.isConnected)) overlay(ovLast.mode, ovLast.text, ovLast.options); }, 1000);
     if (!ovHost || !ovHost.isConnected) {
       ovHost = document.createElement('div'); ovHost.style.cssText = 'all:initial;position:fixed;top:0;left:0;right:0;z-index:2147483647';
       ovRoot = ovHost.attachShadow({ mode: 'closed' }); document.documentElement.appendChild(ovHost);
     }
     const st = document.createElement('style');
-    st.textContent = '.b{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1}.k{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input.i{font:inherit;border:0;border-radius:6px;padding:6px 10px;min-width:200px;background:#fff;color:#111}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
+    st.textContent = '.r2{flex-basis:100%;display:flex;gap:8px}input.i2{flex:1;min-width:120px}.b{flex-wrap:wrap}.b{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1}.k{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input.i,input.i2{font:inherit;border:0;border-radius:6px;padding:6px 10px;min-width:200px;background:#fff;color:#111}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
     const box = document.createElement('div'); box.className = 'b' + (mode === 'handoff' || mode === 'confirm' || mode === 'choice' || mode === 'input' ? ' w' : mode === 'error' ? ' e' : mode === 'done' ? ' d' : ''); box.style.position = 'relative';
     const t = document.createElement('div'); t.className = 't'; t.textContent = '나비웹 도우미 · ' + String(text || (mode === 'busy' ? '작업 중입니다. 잠시만 기다려 주세요.' : '')).slice(0, 400); box.appendChild(t);
     const k = document.createElement('div'); k.className = 'k';
@@ -117,6 +120,18 @@
     else btn('닫기', '', () => overlay('off'));
     box.appendChild(k);
     if (mode === 'busy') { const bar = document.createElement('div'); bar.className = 'bar'; bar.appendChild(document.createElement('i')); box.appendChild(bar); }
+    // 도우미에게 말하기: 작업 중·직접 입력 대기 중에 사용자가 한 줄을 보낼 수 있다(진행 표시가 갱신돼도 쓰던 글은 유지).
+    const old = ovRoot.querySelector && ovRoot.querySelector('input.i2'), keep = old ? { v: old.value, f: ovRoot.activeElement === old, p: old.placeholder } : null;
+    if (mode === 'busy' || mode === 'handoff') {
+      const row = document.createElement('div'); row.className = 'r2';
+      const inp = document.createElement('input'); inp.className = 'i2'; inp.maxLength = 300; inp.autocomplete = 'off'; inp.placeholder = (keep && keep.p) || '도우미에게 말하기 (예: 회원가입도 같이 해 줘)';
+      const go = () => { const v = inp.value.trim(); if (!v) return; chrome.runtime.sendMessage({ type: 'say', text: v }); inp.value = ''; inp.placeholder = '전달했습니다. 도우미가 다음 단계에서 반영합니다.'; };
+      inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') go(); }, true);
+      ['keyup', 'keypress'].forEach((n) => inp.addEventListener(n, (e) => e.stopPropagation(), true));
+      const sb = document.createElement('button'); sb.textContent = '보내기'; sb.className = 's'; sb.onclick = go;
+      row.append(inp, sb); box.appendChild(row);
+      if (keep) { inp.value = keep.v; if (keep.f) setTimeout(() => inp.focus(), 0); }
+    }
     ovRoot.replaceChildren(st, box);
   }
   chrome.runtime.onMessage.addListener((msg, _s, send) => {
