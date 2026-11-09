@@ -116,6 +116,7 @@ table.rank td{padding-top:5px;padding-bottom:5px}
 .qna-auth input,#qna-st{font-size:var(--fs-sm);border:1px solid var(--line);border-radius:4px;padding:5px 8px;background:var(--sur);color:var(--txt)}
 .qna-auth[hidden],.qna-detail[hidden]{display:none}
 .qna-auth input{min-width:260px}
+.ib h3{font-size:var(--fs-md,15px);margin:18px 0 6px;color:var(--txt)}.ib h3:first-child{margin-top:0}.ib ul{margin:0;padding-left:18px;color:var(--txt);line-height:1.7}.ib .act{color:var(--red);font-weight:700}.ib .m{color:var(--sub)}
 .qna-detail{margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
 .qna-detail h3{margin:0 0 4px;font-size:var(--fs-md)}
 .qna-m{border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:8px 0;line-height:1.6;white-space:pre-wrap;word-break:break-word}
@@ -153,6 +154,7 @@ tr.qna-cur td{background:var(--hov)}
     <a href="#deposits" data-s="deposits"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>입금·충전<span class="n" id="n-dep">0</span></a>
     <a href="#approvals" data-s="approvals"><svg class="i" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>승인 대기<span class="n" id="n-apr">0</span></a>
     <a href="#qna" data-s="qna"><svg class="i" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7"/><path d="M12 15.5h.01"/></svg>사용법 질의<span class="n" id="n-qna">0</span></a>
+    <a href="#inbox" data-s="inbox"><svg class="i" viewBox="0 0 24 24"><path d="M4 13l2-8h12l2 8"/><path d="M4 13v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6h-5a3 3 0 0 1-6 0z"/></svg>제보 보고함</a>
     <a href="#regions" data-s="regions"><svg class="i" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>지역 이용량</a>
     <a href="#users" data-s="users"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2.5.7 4 2.7 4 5.5"/></svg>가입자</a>
     <a href="#usage" data-s="usage"><svg class="i" viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>사용량</a>
@@ -243,6 +245,18 @@ tr.qna-cur td{background:var(--hov)}
       </section>
     </div>
 
+    <div class="grid" id="inbox">
+      <section class="card g12">
+        <div class="ch"><h2 class="ct">제보 보고함</h2><span class="badge soft">오류 신고·제안·가져오기 실패(자동)</span>
+          <select id="ib-days" aria-label="기간" style="margin-left:auto"><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="90">최근 90일</option></select></div>
+        <div class="cb">
+          <div id="ib-auth" hidden class="qna-auth"><span>제보 내려받기 토큰을 입력하면 실제 제보를 불러옵니다(이 탭을 닫으면 잊습니다).</span><input id="ib-token" type="password" autocomplete="off" placeholder="USER_FEEDBACK_EXPORT_TOKEN"><button class="btn sm" id="ib-connect">연결</button></div>
+          <div id="ib-msg" class="sub"></div>
+          <div id="ib-out" class="ib"></div>
+        </div>
+      </section>
+    </div>
+
     <div class="grid" id="users">
       <section class="card g12">
         <div class="ch"><h2 class="ct">최근 가입자</h2></div>
@@ -252,6 +266,7 @@ tr.qna-cur td{background:var(--hov)}
   </main>
 </div>
 
+<script src="feedback-digest-core.js"></script>
 <script>
 /* ── 자료 연결부 ──────────────────────────────────────────────
    지금은 화면 확인용 샘플입니다(실제 가입자·입금 정보가 아닙니다).
@@ -467,7 +482,49 @@ document.addEventListener('click', async function (e) {
 });
 $('qna-st').addEventListener('change', loadQna);
 window.addEventListener('hashchange', function () { var id = qnaIdFromHash(); if (id) openQna(id); });
-async function init() { D = await loadData(); renderAll(); await loadQna(); if (qnaIdFromHash()) openQna(qnaIdFromHash()); }
+/* ── 제보 보고함 — 혼디 제보 창구의 GET /user-feedback/export (운영자 전용) ─────────────
+   토큰(USER_FEEDBACK_EXPORT_TOKEN)은 이 탭의 sessionStorage 에만 둔다. 이 주소가 admin.html 의 출처를 허용(CORS)해야 불러올 수 있다.
+   불러오지 못해도 주간 집계 이슈(GitHub, scripts/feedback-weekly.mjs)로 같은 내용을 볼 수 있다. */
+function ibBase() { return window.NAVI_FEEDBACK_API || 'https://hondi-proxy.tensor-city.workers.dev'; }
+function ibTok() { try { return (sessionStorage.getItem('navi_admin_fb') || '').replace(/[\uFEFF\s]+/g, ''); } catch (e) { return ''; } }
+function ibSince(days) { return new Date(Date.now() - days * 864e5).toISOString().slice(0, 10); }
+var IB_REASON = { FETCH_FAILED: '가져오기 실패', SYSTEM_OUTAGE: '기관 시스템 장애(일시적일 수 있음)' };
+var IB_PROBLEM = { agency: '기관이 달라요', fail: '가져오지 못해요', own: '직접 준비 서류예요', missing: '버튼이 없어요', other: '그 밖의 문제' };
+function renderInbox(items) {
+  var d = FeedbackDigest.digest(items, { min: 3 }), h = '';
+  function sec(title, rows) { h += '<h3>' + esc(title) + ' <span class="m">(' + rows.length + ')</span></h3>' + (rows.length ? '<ul>' + rows.join('') + '</ul>' : '<div class="m">없음</div>'); }
+  sec('가져오기 실패·시스템 장애 (자동 보고)', d.auto.map(function (g) { return '<li>' + (g.action ? '<span class="act">[조치]</span> ' : '') + esc(g.label) + ' — ' + esc(IB_REASON[g.reason] || g.reason) + ' · ' + g.n + '명' + (g.rule ? ' · 규칙 ' + esc(g.rule) : '') + (g.agency ? ' · ' + esc(g.agency) : '') + '</li>'; }));
+  sec('오류·불편 신고', d.bugs.map(function (b) { return '<li>' + esc(b.text) + (b.ctx ? ' <span class="m">(' + esc(b.ctx) + ')</span>' : '') + '</li>'; }));
+  sec('제안', d.ideas.map(function (b) { return '<li>' + esc(b.text) + (b.ctx ? ' <span class="m">(' + esc(b.ctx) + ')</span>' : '') + '</li>'; }));
+  sec('첨부서류 문제 — 카탈로그 규칙 수정 후보', d.attach.map(function (g) { return '<li>' + (g.action ? '<span class="act">[조치]</span> ' : '') + esc(g.label) + ' — ' + esc(IB_PROBLEM[g.problem] || g.problem) + ' · ' + g.n + '명' + (g.notes.length ? ' · ' + esc(g.notes.join(' / ')) : '') + '</li>'; }));
+  sec('찾는 서류가 없어요 — 새 서류 양식 후보', d.newdoc.map(function (g) { return '<li>' + (g.action ? '<span class="act">[추가]</span> ' : '') + esc(g.label) + ' · ' + g.n + '명</li>'; }));
+  $('ib-out').innerHTML = h;
+  $('ib-msg').textContent = '받은 제보 ' + items.length + '건(조치 후보: 서로 다른 ' + d.min + '명 이상)';
+}
+async function loadInbox() {
+  var tok = ibTok(); $('ib-auth').hidden = !!tok;
+  if (!tok) { $('ib-msg').textContent = ''; $('ib-out').innerHTML = ''; return; }
+  $('ib-msg').textContent = '불러오는 중…';
+  try {
+    var r = await fetch(ibBase() + '/user-feedback/export?since=' + encodeURIComponent(ibSince(Number($('ib-days').value))) + '&limit=2000', { headers: { Authorization: 'Bearer ' + tok } });
+    if (r.status === 401 || r.status === 403) { try { sessionStorage.removeItem('navi_admin_fb'); } catch (e) { /* */ } $('ib-auth').hidden = false; $('ib-msg').textContent = '토큰이 올바르지 않습니다.'; $('ib-out').innerHTML = ''; return; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var j = await r.json(); if (!j || j.ok !== true) throw new Error('응답 형식');
+    renderInbox(j.items || []);
+  } catch (e) {
+    $('ib-out').innerHTML = '';
+    $('ib-msg').textContent = '제보를 불러오지 못했습니다(' + (e && e.message ? e.message : e) + '). 제보 창구가 이 화면의 출처를 허용하는지(CORS) 확인해 주세요. 주간 집계 이슈(GitHub)에서도 같은 내용을 볼 수 있습니다.';
+  }
+}
+document.addEventListener('click', async function (e) {
+  var b = e.target.closest('button'); if (!b || b.id !== 'ib-connect') return;
+  var v = $('ib-token').value.trim(); if (!v) return;
+  try { sessionStorage.setItem('navi_admin_fb', v); } catch (x) { /* */ }
+  $('ib-token').value = ''; await loadInbox();
+});
+$('ib-days').addEventListener('change', loadInbox);
+
+async function init() { D = await loadData(); renderAll(); await loadInbox(); await loadQna(); if (qnaIdFromHash()) openQna(qnaIdFromHash()); }
 init();
 </script>
 </body>

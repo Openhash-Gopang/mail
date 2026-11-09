@@ -108,8 +108,8 @@ window.addEventListener('load', () => {
 <script src="case-assist.js?v=20261101f"></script>
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
-<script src="attach-catalog.js?v=20261108"></script>
-<script src="feedback-kit.js?v=20261108"></script>
+<script src="attach-catalog.js?v=20261109"></script>
+<script src="feedback-kit.js?v=20261109"></script>
 <script src="agent-bridge.js"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
@@ -1422,7 +1422,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="chat-landing" id="cmp-landing">
       <div class="chat-landing-title">무엇을 도와드릴까요?</div>
-      <div class="chat-landing-sub">누구에게, 왜, 무엇을 보내고 싶은지 편하게 말씀해 주세요. 대상을 못 찾으면 검색해서 후보를 찾아드리고, 제목·본문·발송 시각까지 정리해 확인받은 뒤에만 실제로 보냅니다.</div>
+      <div class="chat-landing-sub">누구에게 무엇을 보낼지 말씀해 주세요. 발송 전에 반드시 확인받습니다.</div>
     </div>
 
     <div class="home-xo"><a role="button" tabindex="0" onclick="_switchTab('xokorea')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_switchTab('xokorea')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg>XO Korea</a></div>
@@ -1432,7 +1432,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
     <div class="chat-thread" id="cmp-thread"></div>
 
-    <div id="cmp-loading" class="loading-row" style="display:none"><span class="spinner"></span><span>K-Mail이 확인하고 있습니다…</span></div>
+    <div id="cmp-loading" class="loading-row" style="display:none"><span class="spinner"></span><span>확인 중…</span></div>
     <div class="errbox" id="cmp-err" style="display:none"></div>
 
     <div class="chat-composer">
@@ -1513,10 +1513,10 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <input type="file" id="doc-host-form" accept="image/*,.pdf,application/pdf" style="display:none">
       </div>
       <div class="vd-notice" id="cmp-verdict-notice"><div>
-        <p>참고용 가상 판결문이며 실제 판결이나 법률 자문이 아닙니다. 이름·연락처·주소 같은 개인정보는 빼고 입력해 주세요. 입력한 내용은 AI 제공자에게 전송되고, 작성에 쓴 만큼 GDC가 차감됩니다. <a href="https://klaw.hondi.net/verdict-generate.html" target="_blank" rel="noopener">K-Law에서 자세히 보기</a></p>
-        <p class="vd-meter-row"><span id="cmp-verdict-meter" aria-live="polite"></span><span class="vd-keyhint">줄바꿈은 Enter, 보내기는 Ctrl 또는 ⌘ + Enter</span></p>
+        <p>참고용 가상 판결문이며 법률 자문이 아닙니다. 개인정보는 빼고 입력해 주세요. 입력 내용은 AI 제공자에게 전송되며 사용량만큼 GDC가 차감됩니다. <a href="https://klaw.hondi.net/verdict-generate.html" target="_blank" rel="noopener">K-Law에서 자세히 보기</a></p>
+        <p class="vd-meter-row"><span id="cmp-verdict-meter" aria-live="polite"></span><span class="vd-keyhint">Enter 줄바꿈 · Ctrl/⌘+Enter 전송</span></p>
       </div></div>
-      <div class="hint">발송을 확정하기 전에 K-Mail이 수신자·제목·본문·시각을 한 번에 정리해 "이대로 보낼까요?"라고 반드시 확인합니다. 회신을 모아 정리해달라고 말하면 그 시점도 함께 정하고, 도착한 보고는 "내 캠페인" 탭에서 볼 수 있습니다.</div>
+      <div class="hint">회신 취합을 요청하면 보고서는 “내 캠페인”에서 볼 수 있습니다.</div>
     </div>
     <div id="cmp-foi-doc" aria-label="정보 공개 청구서" hidden>
       <div class="foi-doc-bar"><strong id="cmp-foi-title">정보 공개 청구서</strong><span class="foi-doc-sp"></span>
@@ -1525,7 +1525,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <button type="button" class="btn btn-sm btn-primary" onclick="window.open('https://www.open.go.kr','_blank','noopener')">정보공개포털 열기</button>
       </div>
       <textarea id="cmp-foi-text" spellcheck="false" aria-label="정보 공개 청구서 본문(고쳐 쓸 수 있습니다)" placeholder="대화로 알려 주시면 청구서가 여기에 만들어집니다. 만들어진 청구서는 직접 고쳐 쓸 수 있습니다."></textarea>
-      <div class="foi-doc-note">청구서는 정보공개포털(open.go.kr) 등에 사용자가 직접 제출합니다. 청구인 정보는 [대괄호] 칸에 직접 적어 주세요.</div>
+      <div class="foi-doc-note">청구서는 open.go.kr 등에 직접 제출합니다. [대괄호] 칸에 청구인 정보를 적어 주세요.</div>
     </div>
     <div id="cmp-guide-doc" aria-label="과제 계획서" hidden>
       <div class="gl-bar"><strong>과제 계획서</strong>
@@ -1539,7 +1539,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="gl-prog"><progress id="cmp-guide-bar" max="100" value="0" aria-label="할 일 진행률"></progress><span id="cmp-guide-prog-t" role="status"></span></div>
       <div class="gl-view" id="cmp-guide-view" aria-live="polite"></div>
       <textarea id="cmp-guide-text" spellcheck="false" hidden aria-label="과제 계획서 본문(고쳐 쓸 수 있습니다)"></textarea>
-      <div class="foi-doc-note">계획서는 이 브라우저에 저장됩니다. 할 일의 체크 칸을 누르면 진행 상황이 바뀌고, 다음 메시지부터 나비 길잡이가 그 상태를 보고 답합니다.</div>
+      <div class="foi-doc-note">계획서는 이 브라우저에 저장됩니다. 체크하면 나비 길잡이가 다음 답변에 반영합니다.</div>
     </div>
   </div>
 
@@ -1551,9 +1551,9 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="mail"></div>
     <div class="card">
       <h2>AI로 일괄 관리 (K-Address)</h2>
-      <div class="sub">이름·이메일 명단을 통째로 붙여넣고 "등록해줘"처럼 말하면 한 번에 처리합니다. 수정·보완·승인/거부·병합·태그·삭제도 대화로 가능합니다 — 아래 수동 등록·목록과는 별개의 대화형 도구입니다.</div>
+      <div class="sub">명단을 붙여넣고 “등록해줘”라고 말하세요. 수정·병합·태그·삭제도 대화로 됩니다.</div>
       <div id="kaddr-thread"></div>
-      <div id="kaddr-loading" class="loading-row" style="display:none"><span class="spinner"></span>K-Address가 처리하고 있습니다…</div>
+      <div id="kaddr-loading" class="loading-row" style="display:none"><span class="spinner"></span>처리 중…</div>
       <div id="kaddr-err" class="errbox" style="display:none"></div>
       <div class="chat-inputbar">
         <textarea id="kaddr-input" data-requires-login="주소록 AI 관리" class="chat-textarea" rows="1" placeholder="예: 아래 명단을 주소록에 등록해줘 / 소속 정보 없는 사람들 보여줘"></textarea>
@@ -1565,11 +1565,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <div class="card">
       <h2>CSV/엑셀 일괄 업로드</h2>
-      <div class="sub">CSV나 엑셀(.xlsx) 파일을 올리면 AI를 거치지 않고 바로 주소록에 등록합니다 — 첫 행은 헤더(이름/이메일/소속/부서/전화/직책/관계/주소/웹사이트/메모/태그/카테고리)로 인식하며, 이메일 열 하나만 있어도 됩니다. 소속명으로 분류 가능한 경우 카테고리를 자동으로 채웁니다(애매하면 빈 값으로 남김).</div>
+      <div class="sub">CSV·엑셀(.xlsx)을 올리면 바로 등록합니다. 첫 행은 이름·이메일·소속·부서·전화·직책·관계·주소·웹사이트·메모·태그·카테고리 헤더이며, 이메일만 있어도 됩니다. 소속명으로 분류가 가능하면 카테고리를 자동으로 채웁니다.</div>
       <input type="file" id="ct-csv-file" accept=".csv,.xlsx,.xls" onchange="_ctCsvFileSelected(event)">
       <div id="ct-csv-preview" style="display:none;font-size:14px;color:var(--hint);margin-top:6px"></div>
       <div id="ct-csv-err" class="errbox" style="display:none"></div>
-      <div style="margin-top:6px;font-size:14px;color:var(--hint)"><label><input type="checkbox" id="ct-csv-pending"> 승인 대기(pending_review)로 등록 — 기본은 바로 확인됨(confirmed)</label></div>
+      <div style="margin-top:6px;font-size:14px;color:var(--hint)"><label><input type="checkbox" id="ct-csv-pending"> 승인 대기로 등록 (기본: 바로 확인됨)</label></div>
       <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-csv-upload-btn" data-requires-login="주소록 일괄 업로드" disabled onclick="_ctCsvUpload()">업로드</button></div>
     </div>
 
@@ -1583,9 +1583,9 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="field"><label>전화번호(선택)</label><input type="text" id="ct-new-phone" placeholder="010-0000-0000"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>주소록 분류(선택)</label><input type="text" id="ct-new-path" list="ct-new-path-list" autocomplete="off" placeholder="예: 지인>제주 — 목록에서 고르거나 새로 적기 (비우면 미분류)" onfocus="_ctNewPathLoad()"><datalist id="ct-new-path-list"></datalist></div>
+        <div class="field"><label>주소록 분류(선택)</label><input type="text" id="ct-new-path" list="ct-new-path-list" autocomplete="off" placeholder="예: 지인>제주 (비우면 미분류)" onfocus="_ctNewPathLoad()"><datalist id="ct-new-path-list"></datalist></div>
       </div>
-      <div class="sub" style="margin:-8px 0 12px">분류는 ‘&gt;’로 단계를 나눕니다. 목록에 있는 분류를 고르면 그 아래로, 없는 이름을 적으면 <b>새 분류를 만들어</b> 추가합니다.</div>
+      <div class="sub" style="margin:-8px 0 12px">분류는 ‘&gt;’로 단계를 나눕니다. 목록에 없는 이름은 새 분류로 만들어집니다.</div>
       <div id="ct-new-err" class="errbox" style="display:none"></div>
       <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-new-btn" onclick="_ctAddNew()">등록</button></div>
       <div id="ct-new-result" style="display:none"></div>
@@ -1593,7 +1593,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <div class="card">
       <h2>주소록</h2>
-      <div class="sub">K-Mail과의 대화 중 검색으로 찾은 후보도 여기 승인 대기로 올라옵니다 — "승인 대기" 필터로 확인하고 승인해 주세요. 검색어가 없으면 카테고리별 건수만 보여주고, 검색하면 카테고리와 무관하게 전체에서 바로 찾습니다.</div>
+      <div class="sub">검색으로 찾은 후보는 “승인 대기”에 올라옵니다. 승인하면 발송에 쓸 수 있습니다. 검색어가 없으면 카테고리별 건수를, 검색하면 전체에서 바로 찾습니다.</div>
       <div class="filter-row">
         <select id="ct-filter-status" onchange="_ctFilterChanged()">
           <option value="all">전체 상태</option>
@@ -1623,11 +1623,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="mail"></div>
     <div class="card" id="camp-list-card">
       <h2>내 캠페인</h2>
-      <div class="sub">이 화면 하나로 모든 캠페인을 검색·인출할 수 있습니다. 제목으로 찾아보고, 자세히 보려면 항목을 눌러 K-Mail에게 직접 물어보세요.</div>
+      <div class="sub">캠페인을 제목으로 검색하고, 항목을 눌러 상세를 확인합니다.</div>
       <div class="filter-row"><input type="text" id="camp-filter-q" placeholder="제목으로 검색" oninput="_campFilterApply()"></div>
       <div class="camp-bulk" id="camp-bulk" style="display:none"><label><input type="checkbox" id="camp-sel-all" onchange="_campSelAll(this.checked)"> 전체 선택</label><button type="button" class="btn-danger" id="camp-del-sel" onclick="_campDeleteSelected()" disabled>선택 삭제</button><button type="button" class="btn-danger" id="camp-del-all" onclick="_campDeleteAll()">전체 삭제</button><span id="camp-del-msg" style="color:var(--hint)"></span></div>
       <div id="camp-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">아직 만든 캠페인이 없습니다 — 홈 화면 입력창의 메일(✉) → "캠페인"에서 K-Mail과 대화를 시작해 보세요.</div>
+      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">캠페인이 없습니다. 홈에서 메일 → 캠페인으로 시작하세요.</div>
       <div id="camp-items"></div>
     </div>
 
@@ -1641,7 +1641,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <button class="btn btn-primary btn-sm" onclick="_campAskChatAboutThis()">💬 K-Mail에게 이 캠페인 자세히 물어보기</button>
         <button class="btn btn-primary btn-sm" id="camp-resume-btn" style="display:none" onclick="_campResumeConversation()">🔄 이어서 대화하기</button>
       </div>
-      <div class="hint">수신자별 발송·회신 현황, 기관별 집계, 접속 추적 결과처럼 더 자세한 내용은 K-Mail이 대화로 답합니다 — 위 버튼을 누르면 홈 화면의 "메일 · 캠페인" 모드로 이동해 이 캠페인에 대해 바로 물어봅니다. "진행 중(초안)" 상태인 캠페인은 "이어서 대화하기"로 지금까지 나눴던 대화를 그대로 불러와 이어갈 수 있습니다.</div>
+      <div class="hint">수신자별 현황·기관별 집계 등 세부 내용은 K-Mail에게 물어보세요. 초안은 “이어서 대화”로 계속할 수 있습니다.</div>
     </div>
   </div>
 
@@ -1656,7 +1656,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="qs-sent-card" class="sent-card" role="status" aria-live="polite" tabindex="-1" style="display:none"></div>
     <div class="card">
       <h2>빠른 발송</h2>
-      <div class="sub">외부 이메일 주소로 한 통을 바로 보냅니다. 캠페인으로 설계하지 않는 단순 발송이며, 답장은 상대방의 실제 이메일로 직접 받으셔야 합니다(이 화면에는 받은편지함이 없습니다).</div>
+      <div class="sub">외부 주소로 한 통을 바로 보냅니다. 캠페인 설계 없는 단순 발송입니다.</div>
       <div class="field"><label>받는 사람</label><div class="rcpt-wrap"><input type="email" id="qs-to" autocomplete="off" placeholder="이름·이메일로 주소록 검색 또는 주소 직접 입력" style="padding-right:46px" oninput="_qsRcptInput()" onkeydown="_qsRcptKey(event)" onblur="_qsRcptBlur()"><button type="button" class="qs-sbtn" id="qs-search-btn" title="주소록에서 검색" aria-label="주소록에서 검색" onclick="_qsRcptInput(true)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button><div class="rcpt-sug" id="qs-sug" style="display:none"></div></div></div>
       <div class="field"><label>제목</label><input type="text" id="qs-subject" placeholder="제목"></div>
       <div class="field"><label>내용</label><textarea id="qs-text" rows="8" placeholder="내용을 입력하세요" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-family:inherit;font-size:15px"></textarea></div>
@@ -1722,7 +1722,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
       <!-- 임시보관함 -->
       <div id="mail-sub-drafts" class="mail-sub">
-        <div class="sub">보내지 않고 저장해 둔 편지입니다. 눌러서 이어 쓰거나 삭제할 수 있습니다. 홈 화면에서 편지·캠페인을 쓰다가 나가면 대화가 자동으로 저장됩니다(이 기기).</div>
+        <div class="sub">저장해 둔 편지입니다. 눌러서 이어 쓰거나 삭제합니다. 홈에서 쓰다 나가면 이 기기에 자동 저장됩니다.</div>
         <div id="mail-drafts-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-drafts-empty" style="display:none;font-size:14px;color:var(--hint)">저장된 Draft가 없습니다.</div>
         <div id="mail-drafts-items"></div>
@@ -1731,7 +1731,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
       <!-- 보낸메일함 -->
       <div id="mail-sub-sent" class="mail-sub">
-        <div class="sub">이 웹앱(빠른 발송·메일 탭)에서 직접 보낸 메일만 모입니다 — 캠페인 발송은 "내 캠페인" 탭에서 확인해 주세요.</div>
+        <div class="sub">직접 보낸 메일만 표시됩니다. 캠페인 발송은 “내 캠페인”에서 확인하세요.</div>
         <div id="mail-sent-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-sent-empty" style="display:none;font-size:14px;color:var(--hint)">보낸 메일이 없습니다.</div>
         <div id="mail-sent-items"></div>
@@ -1739,7 +1739,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
       <!-- 받은메일함 -->
       <div id="mail-sub-inbox" class="mail-sub">
-        <div class="sub">받은 메일에 라벨을 달면 "태그별 보관함"에서 모아볼 수 있습니다. 제목을 눌러 펼치면 읽음으로 표시됩니다.</div>
+        <div class="sub">제목을 누르면 열리고 읽음 처리됩니다. 라벨은 “태그별 보관함”에서 모아 봅니다.</div>
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" id="mail-inbox-markall" onclick="_mailMarkAllRead()">모두 읽음으로 표시</button></div>
         <div id="mail-inbox-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-inbox-empty" style="display:none;font-size:14px;color:var(--hint)">받은 메일이 없습니다.</div>
@@ -1750,7 +1750,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div id="mail-sub-tags" class="mail-sub">
         <div id="mail-tags-back" style="display:none;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" onclick="_mailTagsShowSummary()">← 태그 목록으로</button></div>
         <div id="mail-tags-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-        <div id="mail-tags-empty" style="display:none;font-size:14px;color:var(--hint)">라벨이 달린 메일이 없습니다 — 받은메일함에서 라벨을 추가해 보세요.</div>
+        <div id="mail-tags-empty" style="display:none;font-size:14px;color:var(--hint)">라벨이 달린 메일이 없습니다.</div>
         <div id="mail-tags-summary"></div>
         <div id="mail-tags-items"></div>
       </div>
@@ -1767,7 +1767,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-settings" class="tab-panel">
     <div class="settings-head">
       <h2>설정</h2>
-      <div class="sub">메일 아이디, 받는 사람에게 보이는 이름, 보내는 메일 끝에 붙는 서명, 부재중 자동응답을 정합니다.</div>
+      
     </div>
     <div class="set-tabs" role="tablist" aria-label="설정 항목">
       <button type="button" role="tab" id="set-tab-account" class="active" aria-selected="true" onclick="_settingsSwitch('account')">계정</button>
@@ -1791,7 +1791,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
             <button type="button" id="pf-send" class="pf-send" onclick="_profSend()" disabled>보내기</button>
           </div>
         </div>
-        <div class="pf-hint">Enter로 보내고 Shift+Enter로 줄을 바꿉니다. 나비는 주소·이메일·나이·성별을 먼저 묻지 않으며, 공개 여부는 나비가 아니라 내가 아래 항목에서 정합니다.</div>
+        <div class="pf-hint">Enter 전송 · Shift+Enter 줄바꿈. 나비는 주소·이메일·나이·성별을 먼저 묻지 않으며, 공개 여부는 아래 항목에서 직접 정합니다.</div>
         <div class="pf-grid">
           <div class="pf-prev">
             <div class="pf-prev-bar">
@@ -1856,7 +1856,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           <div class="set-lbl">아이디 바꾸기</div>
           <div>
             <div id="mail-id-empty-state" style="display:none;margin-bottom:12px">
-              <div class="set-hint" style="margin:0 0 8px">아직 메일 ID를 설정하지 않았습니다. 자동으로 만들거나 직접 정할 수 있습니다.</div>
+              <div class="set-hint" style="margin:0 0 8px">메일 ID가 없습니다. 자동 생성하거나 직접 정하세요.</div>
               <button type="button" class="btn btn-primary" id="mail-id-auto-btn" onclick="_mailIdAuto()">자동으로 만들기</button>
             </div>
             <input type="text" id="mail-id-input" placeholder="예: jupiter (3~30자, 영문 소문자·숫자·-·_)" oninput="_mailIdCheckDebounced()">
@@ -1943,7 +1943,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           <div class="set-lbl">마지막 날<small>(선택)</small></div>
           <div>
             <input type="date" id="set-ar-until" onchange="_arDirty()">
-            <div class="set-hint">고른 날 밤 11시 59분(한국 시간)까지 보냅니다. 비워 두면 끌 때까지 계속 보냅니다.</div>
+            <div class="set-hint">선택한 날 23:59(한국 시간)까지 보냅니다. 비우면 끌 때까지 보냅니다.</div>
             <div id="set-ar-msg" style="font-size:14px;margin-top:6px;min-height:1.4em;color:var(--red)"></div>
             <div id="set-ar-err" class="errbox" style="display:none"></div>
             <div id="set-ar-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
@@ -1995,7 +1995,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
       <h2>서류 Draft</h2>
-      <div class="sub">작성하다 나간 서류가 이 기기의 PDV에 자동으로 저장됩니다. 서류 페이지의 입력칸까지는 복원되지 않고, 요청문과(받아 둔 경우) 작성본 Word 파일이 보관됩니다. 다른 기기와의 동기화는 아직 없습니다.</div>
+      <div class="sub">작성 중 나간 서류가 이 기기에 자동 저장됩니다. 요청문과 받아 둔 Word 파일이 보관되며 입력칸은 복원되지 않습니다. 다른 기기와는 동기화되지 않습니다.</div>
       <div id="docdrafts-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="docdrafts-empty" style="display:none;font-size:14px;color:var(--hint)">저장된 서류 Draft가 없습니다.</div>
       <div id="docdrafts-items"></div>
@@ -2016,7 +2016,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
       <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
-      <div class="sub">자주 쓰는 양식, 내가 만든 양식, 올려 둔 양식을 이 기기의 PDV에 보관합니다. 항목을 누르면 서류 작성 화면에서 바로 열립니다. 서류 작성 중 위쪽의 "★ 내 서류함에 담기"로 자주 쓰는 양식을 추가하고, 양식 파일을 올리면 자동으로 이곳에 보관됩니다.</div>
+      <div class="sub">자주 쓰는 양식과 올린 양식이 이 기기에 보관됩니다. 누르면 바로 열리며, 작성 중 “내 서류함에 담기”로 추가할 수 있습니다.</div>
       <div id="mf-new" hidden></div>
       <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="mf-empty" style="display:none;font-size:14px;color:var(--hint)">아직 보관한 양식이 없습니다.</div>
@@ -2028,11 +2028,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div id="gt-bar-gprog"></div>
     <div class="card">
       <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
-      <div class="sub">나비 길잡이와 계획을 세운 과제 가운데 아직 끝내지 않은 것입니다. 과제를 누르면 대화창과 계획서가 열립니다. <span id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</span></div>
+      <div class="sub">아직 끝나지 않은 과제입니다. 누르면 대화와 계획서가 열립니다. <span id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</span></div>
       <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-notify-btn" onclick="_guideNotifyToggle()">브라우저 알림 켜기</button><span id="gl-notify-st"></span></div>
       <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-server-btn" onclick="_guideServerToggle()">서버 알림 켜기</button><span id="gl-server-st"></span></div>
       <div id="gl-alerts"></div>
-      <div id="gprog-empty" style="display:none;font-size:14px;color:var(--hint)">진행 중인 과제가 없습니다. "새 과제"를 눌러 시작해 보세요.</div>
+      <div id="gprog-empty" style="display:none;font-size:14px;color:var(--hint)">진행 중인 과제가 없습니다.</div>
       <div id="gprog-items"></div>
     </div>
     <div id="gprog-solo" class="cs-solo"></div>
@@ -2044,8 +2044,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div id="gt-bar-gdone"></div>
     <div class="card">
       <h2>완료한 과제</h2>
-      <div class="sub">성공 여부와, 성공하지 못했다면 그 원인·교훈을 기록해 둔 과제입니다. 새 과제를 세울 때 나비 길잡이가 이 기록을 참고합니다.</div>
-      <div id="gdone-empty" style="display:none;font-size:14px;color:var(--hint)">아직 완료한 과제가 없습니다. 과제를 끝내면 판정과 원인 분석이 여기에 쌓입니다.</div>
+      <div class="sub">성공 여부와 원인·교훈이 기록된 과제입니다. 새 과제를 세울 때 참고됩니다.</div>
+      <div id="gdone-empty" style="display:none;font-size:14px;color:var(--hint)">완료한 과제가 없습니다.</div>
       <div id="gdone-items"></div>
     </div>
     <div id="gdone-solo" class="cs-solo"></div>
@@ -2298,6 +2298,14 @@ function _agentFetchSlot(label) {
   const g = bars[0].querySelector('input'); g.focus(); g.setSelectionRange(g.value.length, g.value.length);
 }
 // 도우미가 알린 항목 진행 결과(예: 법원으로 전송됨)를 도우미 줄과 서류 화면의 그 항목에 표시한다.
+// 도우미가 가져오지 못한 서류를 관리자에게 자동 보고한다(서류 이름·사유 코드·규칙만. 하루에 같은 서류·사유는 한 번).
+function _autoReportFail(s, why) {
+  try {
+    if (!window.NaviFeedback || !NaviFeedback.autoReport) return;
+    const c = window.AttachCatalog ? AttachCatalog.classify(String(s.label || '')) : {};
+    NaviFeedback.autoReport(String(s.label || ''), why, { rule: c.id || c.kind || '', agency: c.agency || '', ext: _agentInfo ? _agentInfo.version : '' });
+  } catch (e) { /* 보고는 실패해도 작업에 영향을 주지 않는다 */ }
+}
 function _agentOnStatus(s) {
   if (!['sent', 'pending', 'failed'].includes(s.state)) return;
   if (_docChat.on && window.DocHelper) {   // 서류 작성 도우미 세션 — 도우미 SP 가 다음 말에서 이 상태를 "지금 화면"으로 읽는다
@@ -2307,7 +2315,14 @@ function _agentOnStatus(s) {
   const txt = ({ sent: '전송 완료', pending: '진행 중', failed: '실패' })[s.state] + (s.note ? ' — ' + s.note : '');
   _agentBars().forEach(b => { const st = b.querySelector('.da-state'); if (st && b.offsetParent !== null) st.textContent = '“' + s.label.slice(0, 60) + '” 항목: ' + txt; });
   _docHostPost({ type: 'navi-doc-slot-status', label: s.label, state: s.state, note: s.note });
-  if (s.state === 'failed') _embedNote(true, '“' + String(s.label || '').slice(0, 40) + '” 항목을 가져오지 못했습니다. 계속되면 서류 화면 항목 옆 ⚑ 버튼으로 알려 주세요. 개선에 반영합니다.');
+  if (s.state === 'failed') {
+    const why = window.NaviFeedback && NaviFeedback.outageReason ? NaviFeedback.outageReason(s.note) : 'FETCH_FAILED';
+    _autoReportFail(s, why);
+    const nm = '“' + String(s.label || '').slice(0, 40) + '” 항목';
+    _embedNote(true, why === 'SYSTEM_OUTAGE'
+      ? nm + ': 기관 사이트가 점검·장애 중일 수 있습니다. 잠시 뒤 다시 시도해 주세요. 관리자에게 알렸습니다(서류 이름과 원인 코드만 전달).'
+      : nm + '을 가져오지 못했습니다. 관리자에게 알렸습니다(서류 이름과 원인 코드만 전달). 자세히 알리시려면 서류 화면의 ⚑ 버튼이나 “오류 신고와 제안”을 써 주세요.');
+  }
 }
 // 확장이 받아 온 파일: 사용자가 확인하면 서류 화면의 그 항목에 넣는다(파일은 이 PC 안에서만 오간다).
 function _agentOnFile(f) {
@@ -2979,7 +2994,8 @@ async function _agentEarlyOpen(label) {
   let ok = false; try { ok = await NaviAgent.queue(r.job); } catch (x) { ok = false; }
   if (!ok) return;
   _docChat.early = _docChat.early || {}; _docChat.early[r.label] = true;
-  _embedNote(true, '“' + r.label.slice(0, 40) + '” 항목: 사이트를 먼저 엽니다. 열린 화면에서 로그인해 주시고, 그동안 아래 질문에 답해 주세요.');
+  const _pn2 = (NaviAgent.slotPlan && NaviAgent.slotPlan(r.label)) || {};
+  _embedNote(true, '“' + r.label.slice(0, 40) + '” 항목: 사이트를 먼저 엽니다. 열린 화면에서 로그인해 주시고, 그동안 아래 질문에 답해 주세요.' + (_pn2.note ? ' 참고: ' + _pn2.note : ''));
 }
 async function _docChatAgentTask(d) {
   if (!window.DocHelper || !window.NaviAgent) return;
@@ -2994,7 +3010,8 @@ async function _docChatAgentTask(d) {
   if (!r.ok) { if (r.msg) _embedNote(true, r.msg); return; }
   let ok = false; try { ok = await NaviAgent.queue(r.job); } catch (x) { ok = false; }
   _docChat.slots = DocHelper.applySlot(_docChat.slots, r.label, ok ? 'queued' : 'failed', ok ? '' : '맡기지 못함');
-  _embedNote(true, ok ? '“' + r.label.slice(0, 40) + '” 항목을 도우미가 바로 진행합니다. 사이트가 열리면 화면의 안내에 따라 로그인해 주세요. 인증서·결제는 직접 하셔야 합니다.'
+  const _pn = (NaviAgent.slotPlan && NaviAgent.slotPlan(r.label)) || {}, _pt = _pn.note ? ' 참고: ' + _pn.note + (_pn.paid ? ' (결제는 직접 하셔야 합니다)' : '') : '';
+  _embedNote(true, ok ? '“' + r.label.slice(0, 40) + '” 항목을 도우미가 바로 진행합니다. 사이트가 열리면 화면의 안내에 따라 로그인해 주세요. 인증서·결제는 직접 하셔야 합니다.' + _pt
                       : '“' + r.label.slice(0, 40) + '” 항목을 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
   _docChatPush();
 }
@@ -3843,6 +3860,9 @@ function _docHostMessage(d, e) {
     document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();
   } else if (d.type === 'navi-doc-report') {   // 서류 화면의 첨부서류 ⚑ — 기관·가져오기 문제 제보
     _fbOpen('attach', String(d.label || '').slice(0, 120));
+  } else if (d.type === 'navi-doc-slot-reason') {   // 서류 화면이 “도우미가 가져오기” 버튼이 없는 첨부서류에 이유를 보여 주려고 묻는다
+    const lb = String(d.label || '').slice(0, 120), e = window.AttachCatalog && AttachCatalog.explain ? AttachCatalog.explain(lb) : null;
+    _docHostPost({ type: 'navi-doc-slot-reason-result', label: lb, reason: e ? e.reason : '', text: e ? e.text : '', note: e ? e.note : '', conf: e ? e.conf : '', paid: !!(e && e.paid), fallback: e ? e.fallback : '' });
   } else if (d.type === 'navi-doc-feedback') {   // 서류 화면 위·아래 오른쪽의 "오류 신고와 제안" 버튼 — where: top | bottom
     _fbOpen('report', (_docHost && _docHost.title) || '', '', { where: d.where === 'bottom' ? 'bottom' : 'top' });
 } else if (d.type === 'navi-doc-fetch-slot') {

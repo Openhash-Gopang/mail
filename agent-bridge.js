@@ -20,9 +20,9 @@
   function slotPlan(label) {
     var t = String(label || ''), c = CAT ? CAT.classify(t) : null;
     if (c && c.kind === 'agency') {
-      if (c.playbook) return { playbook: c.playbook, goal: SLOTS[0].goal, instant: false, early: true, url: c.url };
-      if (c.agency === 'gov24') return { playbook: 'gov24-doc', goal: SLOTS[1].goal, instant: c.input === 'none', early: c.input === 'ask', url: c.url };
-      return { playbook: '', goal: c.goal, instant: c.instant, early: c.input === 'ask', url: c.url };
+      if (c.playbook) return { playbook: c.playbook, goal: SLOTS[0].goal, instant: false, early: true, url: c.url, note: c.note || '', paid: !!c.paid };
+      if (c.agency === 'gov24') return { playbook: 'gov24-doc', goal: SLOTS[1].goal, instant: c.input === 'none', early: c.input === 'ask', url: c.url, note: c.note || '', paid: !!c.paid };
+      return { playbook: '', goal: c.goal, instant: c.instant, early: c.input === 'ask', url: c.url, note: c.note || '', paid: !!c.paid };
     }
     if (c && (c.kind === 'user' || c.kind === 'thirdparty')) return null;
     for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].re.test(t)) return { playbook: SLOTS[i].playbook, goal: SLOTS[i].goal, instant: !!SLOTS[i].instant, early: !!SLOTS[i].early };
