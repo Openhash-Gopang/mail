@@ -667,7 +667,7 @@ test('문서 보기 창은 작업 탭이 아니어도 찾아 PDF 로 만든다(�
   assert.match(bg, /tabs\.query\(\{ url: 'https:\/\/\*\.gov\.kr\/ezpdfwv\/\*' \}\)/);
   assert.match(bg, /printTabToPdf\(chrome\.debugger, tid\)/);
   const pb = readFileSync(new URL('../ops/naviweb-agent/extension/playbooks.js', import.meta.url), 'utf8');
-  assert.match(pb, /find 로 \\"문서출력\\"|find 로 "문서출력"/);
+  assert.match(pb, /open_issued_document/);
 });
 test('실제 마우스 입력: 이동 → 누름 → 잠깐 유지 → 뗌 순서로 보내고 반드시 디버거를 뗀다', async () => {
   const { debuggerClick } = await import('../ops/naviweb-agent/extension/files.js');
@@ -681,4 +681,15 @@ test('실제 마우스 입력: 이동 → 누름 → 잠깐 유지 → 뗌 순�
   assert.equal((await debuggerClick(d2, 3, 1, 1, async () => {})).ok, false); assert.deepEqual(fail, ['detach']);
   const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
   assert.match(bg, /debuggerClick\(chrome\.debugger, state\.tabId, g\.x, g\.y\)/);
+});
+test('open_issued_document: 문서출력 찾기·실제 클릭·뷰어 확인·PDF 전송을 한 번에 하는 도구', async () => {
+  const { TOOLS } = await import('../ops/naviweb-agent/extension/tools.js');
+  assert.ok(TOOLS.some((t) => t.name === 'open_issued_document'));
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /name === 'open_issued_document'/); assert.match(bg, /pick_by_text/); assert.match(bg, /waitNewViewer/);
+  assert.match(bg, /실제 마우스 입력\(실패\)/); assert.match(bg, /마우스 이벤트 전체/);
+  const ct = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(ct, /pick_by_text: \(\{ text, nth \}\)/);
+  const pb = readFileSync(new URL('../ops/naviweb-agent/extension/playbooks.js', import.meta.url), 'utf8');
+  assert.match(pb, /open_issued_document/);
 });
