@@ -589,3 +589,14 @@ test('0.6.22: 확장은 네트워크 끊김·5xx 를 재시도하고 서비스 �
   const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
   assert.match(bg, /async function postStep/); assert.match(bg, /3번 시도/); assert.match(bg, /getPlatformInfo/);
 });
+
+test('0.6.24: 로그인 안내 중 "로그아웃" 단추가 새로 보이면 사용자가 완료한 것으로 이어 간다', () => {
+  const bg = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(bg, /function loginProbe/); assert.match(bg, /function watchLogin/);
+  assert.match(bg, /kind === 'handoff' && \/로그인\//);
+  assert.match(bg, /hits >= 2/);   // 두 번 연속 확인
+  // 프로브가 로그아웃 문구만 가려내는지(페이지 밖에서 같은 정규식으로 확인)
+  const re = /^(로그\s*아웃|log\s*out|logout|sign\s*out)$/i;
+  for (const t of ['로그아웃', '로그 아웃', 'Logout', 'Sign out']) assert.ok(re.test(t), t);
+  for (const t of ['로그인', '로그아웃 연장 안내문구입니다']) assert.ok(!re.test(t), t);
+});

@@ -108,10 +108,53 @@ async function focusTab() {
 function handoffText(t) {
   let s = String(t || '').replace(/"?직접 했어요"?/g, '"완료"').replace(/\s+/g, ' ').trim();
   if (!/완료/.test(s)) s += ' 마치면 "완료"를 눌러 주세요.';
+  if (/로그인/.test(s) && !/자동/.test(s)) s += ' (로그인된 것이 확인되면 자동으로 이어 갑니다.)';
   if (!/이어서 진행/.test(s)) s += ' 그 다음은 제가 이어서 진행하겠습니다.';
   return s;
 }
-function ask(kind, text) { say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text); return new Promise((res) => { state.waiter = (ok, v) => { overlay('busy', ''); res(v === '__say' ? 'say' : ok); }; }); }
+// 로그인 안내(handoff)를 띄운 동안 작업 탭 묶음을 살펴, 화면에 "로그아웃"이 새로 나타나면 로그인된 것으로 보고 사용자가 완료를 누른 것처럼 이어 간다.
+// 화면에 보이는 "로그아웃" 단추·링크 유무만 보며(이름·번호 등 내용은 읽지 않는다), 시작할 때 이미 보이던 탭은 새 신호가 아니므로 제외한다.
+function loginProbe() {   // 페이지 안에서 실행된다(자체 완결)
+  const re = /^(로그\s*아웃|log\s*out|logout|sign\s*out)$/i;
+  for (const el of document.querySelectorAll('a,button,[role=button],input[type=button],input[type=submit]')) {
+    const t = (el.tagName === 'INPUT' ? el.value : el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (t.length > 12 || !re.test(t)) continue;
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    if (r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none') return true;
+  }
+  return false;
+}
+async function loggedInTabs() {
+  const ids = new Set([state.tabId, ...(state.family || [])].filter((x) => x != null)), out = new Set();
+  for (const id of ids) {
+    try { const rs = await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, func: loginProbe }); if (rs.some((r) => r && r.result === true)) out.add(id); } catch { /* 닫혔거나 읽을 수 없는 탭 */ }
+  }
+  return out;
+}
+function watchLogin(waiter) {
+  let base = null, hits = 0, stop = false;
+  (async () => {
+    base = await loggedInTabs();
+    while (!stop && state.waiter === waiter && !state.abort) {
+      await wait(1500);
+      if (stop || state.waiter !== waiter) break;
+      const now = await loggedInTabs();
+      const fresh = [...now].some((id) => !base.has(id));
+      hits = fresh ? hits + 1 : 0;
+      if (hits >= 2 && state.waiter === waiter) { say({ type: 'prompt', kind: 'info', text: '로그인을 확인했습니다. 이어서 진행합니다.' }); const w = state.waiter; state.waiter = null; w(true); break; }   // 두 번 연속 확인되면 진행
+    }
+  })().catch(() => {});
+  return () => { stop = true; };
+}
+function ask(kind, text) {
+  say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text);
+  return new Promise((res) => {
+    let unwatch = null;
+    const w = (ok, v) => { if (unwatch) unwatch(); overlay('busy', ''); res(v === '__say' ? 'say' : ok); };
+    state.waiter = w;
+    if (kind === 'handoff' && /로그인/.test(String(text || '')) && !/회원\s*가입|결제|납부|인증서\s*비밀번호/.test(String(text || ''))) unwatch = watchLogin(w);
+  });
+}
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
 async function stopCurrent() {
