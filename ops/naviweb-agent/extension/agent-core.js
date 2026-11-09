@@ -46,6 +46,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
     // 작업 중에 나비웹이 알려 준 추가 정보(예: 법인 이름)를 마지막 사용자 메시지에 덧붙인다.
     const more = host.inbox && host.inbox();
     if (more) { const last = messages[messages.length - 1]; const blk = { type: 'text', text: '[추가 정보] ' + more }; if (last && last.role === 'user' && Array.isArray(last.content)) last.content.push(blk); else messages.push({ role: 'user', content: [blk] }); }
+    if (host.progress) host.progress(`AI가 다음 단계를 정하는 중입니다 (${step + 1}단계)`);   // 멈춘 것처럼 보이지 않게 지금 하는 일을 띠에 알린다
     const resp = await host.callModel({ system, messages, tools: TOOLS, max_tokens: 1500 });
     messages.push({ role: 'assistant', content: resp.content });
     const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
@@ -59,6 +60,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
       try {
         const info = (await host.describe(u.name, u.input)) || {};
         const verdict = classify(u.name, u.input, info, extra, { fetchJob: !!(host.fetchJob && host.fetchJob()) });
+        if (host.progress && verdict.act === 'auto') host.progress(`화면을 조작하는 중입니다 (${step + 1}단계 · ${({ click: '누르기', type: '입력', navigate: '이동', read_page: '화면 읽기', find: '찾기', screenshot: '화면 보기' })[u.name] || u.name})`);
         host.log({ kind: 'tool', name: u.name, input: u.input, act: verdict.act });
         if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
         else if (verdict.act === 'handoff') { await host.handoff(verdict.reason); say('사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
