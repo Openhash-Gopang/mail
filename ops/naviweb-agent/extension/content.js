@@ -93,13 +93,20 @@
     curHost = document.createElement('div'); curHost.style.cssText = 'all:initial;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:2147483646;pointer-events:none';
     curRoot = curHost.attachShadow({ mode: 'closed' });
     const st = document.createElement('style');
-    st.textContent = '.p{position:fixed;left:0;top:0;width:24px;height:24px;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));transition:opacity .4s}.ring{position:fixed;border:2px solid #2f5bd8;border-radius:6px;box-shadow:0 0 0 3px rgba(47,91,216,.25);pointer-events:none}.rip{position:fixed;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:rgba(47,91,216,.35);border:2px solid #2f5bd8;pointer-events:none}';
+    st.textContent = '.tg{position:absolute;left:22px;top:20px;padding:1px 6px;border-radius:8px;background:#2f5bd8;color:#fff;font:600 11px/16px system-ui,sans-serif;white-space:nowrap}.p{position:fixed;left:0;top:0;width:28px;height:28px;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));transition:opacity .4s}.ring{position:fixed;border:2px solid #2f5bd8;border-radius:6px;box-shadow:0 0 0 3px rgba(47,91,216,.25);pointer-events:none}.rip{position:fixed;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:rgba(47,91,216,.35);border:2px solid #2f5bd8;pointer-events:none}';
     curEl = document.createElement('div'); curEl.className = 'p'; curEl.style.opacity = '0';
-    curEl.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#2f5bd8" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+    const NS = 'http://www.w3.org/2000/svg', sv = document.createElementNS(NS, 'svg'), pa = document.createElementNS(NS, 'path');   // innerHTML 은 Trusted Types 를 쓰는 사이트에서 막히므로 직접 만든다
+    sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('width', '28'); sv.setAttribute('height', '28');
+    pa.setAttribute('d', 'M3 2l7.5 19 2.6-7.9L21 10.5z'); pa.setAttribute('fill', '#2f5bd8'); pa.setAttribute('stroke', '#fff'); pa.setAttribute('stroke-width', '1.6'); pa.setAttribute('stroke-linejoin', 'round');
+    sv.appendChild(pa); curEl.appendChild(sv);
+    const tag = document.createElement('span'); tag.className = 'tg'; tag.textContent = '도우미'; curEl.appendChild(tag);
     curRoot.append(st, curEl); document.documentElement.appendChild(curHost);
     curX = Math.round(innerWidth * 0.55); curY = Math.round(innerHeight * 0.35); curEl.style.transform = `translate(${curX}px,${curY}px)`;
   }
-  function curHide() { clearTimeout(curTimer); if (curEl) curEl.style.opacity = '0'; }
+  let curBusy = false;
+  function curHide() { clearTimeout(curTimer); curBusy = false; if (curEl) curEl.style.opacity = '0'; }
+  // 도우미가 작업하는 동안에는 클릭·입력 사이에도 커서를 계속 보인다(생각하는 시간에 사라져 안 보인다는 지적). 끝나거나 사용자 차례가 되면 숨긴다.
+  function curShow() { try { curEnsure(); curBusy = true; clearTimeout(curTimer); curEl.style.opacity = '1'; } catch (e) { /* 부가 기능 */ } }
   async function glide(el, click) {
     try {
       curEnsure(); const r = el.getBoundingClientRect(); if (!r.width && !r.height) return;
@@ -113,13 +120,14 @@
       curX = tx; curY = ty; curEl.style.transform = `translate(${tx}px,${ty}px)`;
       if (click) { const rip = document.createElement('div'); rip.className = 'rip'; rip.style.cssText = `left:${tx}px;top:${ty}px`; curRoot.appendChild(rip); rip.animate([{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.8)', opacity: 0 }], { duration: 380 }).finished.then(() => rip.remove(), () => rip.remove()); await new Promise((res) => setTimeout(res, 140)); }
       setTimeout(() => ring.remove(), 700);
-      curTimer = setTimeout(curHide, 3500);
+      if (!curBusy) curTimer = setTimeout(curHide, 3500);
     } catch (e) { /* 그림은 부가 기능이라 실패해도 조작은 계속한다 */ }
   }
   // 작업 중인 탭 위쪽에 안내 띠를 띄운다(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
   let ovHost = null, ovRoot = null, ovLast = null, ovWd = null;
   function overlay(mode, text, options) {
-    if (mode === 'off' || mode === 'done' || mode === 'error') curHide();
+    if (mode === 'off' || mode === 'done' || mode === 'error' || mode === 'confirm' || mode === 'handoff' || mode === 'choice' || mode === 'input') curHide();
+    if (mode === 'busy' && window === window.top) curShow();
     if (window !== window.top) return;
     if (mode === 'off') { ovLast = null; if (ovWd) { clearInterval(ovWd); ovWd = null; } if (ovHost) { ovHost.remove(); ovHost = null; ovRoot = null; } return; }
     ovLast = { mode, text, options };
