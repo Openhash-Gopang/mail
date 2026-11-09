@@ -226,6 +226,12 @@
     if (!S.mounted) return;
     ensureLoaded(); S.open = true; S.badge = false; storeSet(true); layout(); paint();
   }
+  /** 패널을 열지 않고 대화 화면만 불러 둔다 + 아이콘에 점으로 알린다(새 소식을 보려면 사용자가 아이콘을 누른다). */
+  function load() { if (!S.mounted) return; ensureLoaded(); }
+  function notify() { if (!S.mounted || S.open) return; S.badge = true; paint(); }
+  function ready(ms) {   // 대화 화면이 불러와질 때까지(최대 ms) 기다린다 — 패널을 열지 않고 말을 전할 때 쓴다
+    return new Promise(function (res) { var t0 = Date.now(); (function chk() { if (S.loadedOnce || Date.now() - t0 > (ms || 6000)) res(!!S.loadedOnce); else setTimeout(chk, 150); })(); });
+  }
   function close() { S.open = false; storeSet(false); paint(); }   // 숨기기만 — 페이지는 살려 둬 상대의 대화 요청을 계속 받는다
   function toggle() { if (S.open) close(); else open(); }
   function popup() {
@@ -285,7 +291,7 @@
   }
 
   var API = {
-    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, post: post, frameWindow: frameWindow, setSp: setSp, say: say, busy: busy, idle: idle,
+    mount: mount, open: open, close: close, toggle: toggle, isOpen: function () { return S.open; }, load: load, notify: notify, ready: ready, post: post, frameWindow: frameWindow, setSp: setSp, say: say, busy: busy, idle: idle,
     _pure: { clampGeo: clampGeo, resizeGeo: resizeGeo, panelBox: panelBox, isIncomingMessage: isIncomingMessage, originOf: originOf, testIdFromToken: testIdFromToken, panelUrl: panelUrl },
     _state: S,
   };
