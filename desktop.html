@@ -2630,7 +2630,8 @@ function _cmpExClose() {
   p.classList.remove('settled', 'open'); p.setAttribute('aria-hidden', 'true'); b && b.setAttribute('aria-expanded', 'false');
 }
 // 2026-11-10: 서류 작성 모드(서류를 아직 고르지 않았을 때)에는 패널과 서류 메뉴를 항상 펼쳐 둔다. 모드·.doc-live 가 바뀌거나 항목을 골라 패널이 접히면 다시 맞춘다.
-function _cmpDocInlineWant() { const t = document.getElementById('tab-compose'); return !!t && t.getAttribute('data-mode') === 'doc' && !t.classList.contains('doc-live'); }
+let _docInlinePicked = false;   // 서류 종류(법률 서류 등)를 목록에서 골랐으면 true — 고른 뒤에는 메뉴를 다시 펼치지 않는다. 서류 모드를 떠나면 false.
+function _cmpDocInlineWant() { const t = document.getElementById('tab-compose'); return !!t && t.getAttribute('data-mode') === 'doc' && !t.classList.contains('doc-live') && !_docInlinePicked; }
 function _cmpDocInlineSync() {
   const pop = document.getElementById('cmp-doc-combo-pop'); if (!pop) return;
   if (_cmpDocInlineWant()) {
@@ -2733,6 +2734,7 @@ function _cmpDocComboPick(b) {
   if (b.getAttribute('data-foi')) { _cmpDocComboClose(); _cmpFoiPick(); return; }   // 정보 공개 청구
     const site = b.getAttribute('data-site'), title = b.getAttribute('data-title') || '';
   _cmpDocComboClose();
+  _docInlinePicked = site !== 'all';
   const sel = _cmpDocSelInit();
   if (sel.value !== site) { sel.value = site; _cmpDocSelChange(sel); }
   else if (_cmpMode !== 'doc') _cmpDocSelChange(sel);
@@ -7550,6 +7552,7 @@ function _cmpSetMode(mode, opts) {
   _docHostMode(mode === 'doc');
   if (mode !== 'doc' && _docHost.loaded) { _docHost.confirmed = false; _docHost.writing = false; _docHost.title = ''; _docHostPost({ type: 'navi-doc-input', text: '' }); _docLockSync(); }   // 서류 화면을 떠나면(홈) 다음에 새 서류를 처음부터 고르게 한다
   if (mode !== 'org' && _org) _orgLeave();
+  if (mode !== 'doc') _docInlinePicked = false;
   if (mode !== 'doc') _submitGuideEnd();
   if (mode !== 'doc') _docChatLeave();
   if (mode !== 'doc') { _scrDocForget(); _scrHashSync(); }   // 서류를 떠나면 복원 기록·주소의 #doc 를 지운다
