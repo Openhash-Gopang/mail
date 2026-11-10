@@ -22,15 +22,24 @@
     if ($('vd-assist-css')) return;
     var s = document.createElement('style'); s.id = 'vd-assist-css';
     s.textContent = '#tab-compose:not([data-mode="verdict"]) #vd-assist-row{display:none}' +
-      '#vd-assist-row{position:relative;margin:0 0 8px 2px}' +
-      '#vd-assist-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border:1px solid var(--pri,#3b82f6);border-radius:999px;background:var(--sur,#fff);color:var(--pri,#2563eb);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}' +
-      '#vd-assist-btn:hover{background:var(--pri-lt,#eff6ff)}#vd-assist-btn img{width:20px;height:20px;border-radius:5px;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.18)}' +
-      '#vd-assist-pop{margin-top:8px;padding:14px 16px;border:1px solid var(--line,#e5e7eb);border-radius:14px;background:var(--sur,#fff);font-size:13px;line-height:1.7;color:var(--txt,#374151);max-width:640px}' +
-      '#vd-assist-pop[hidden]{display:none}#vd-assist-pop p{margin:0 0 8px}#vd-assist-pop .vd-as-note{font-size:12px;color:var(--hint,#6b7280);margin:0 0 4px}' +
-      '#vd-assist-pop .vd-as-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 0}' +
-      '#vd-assist-pop input[type=text]{flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line,#d1d5db);border-radius:8px;font-size:14px;font-family:inherit}' +
-      '#vd-assist-go{padding:8px 16px;border:0;border-radius:8px;background:var(--pri,#2563eb);color:#fff;font-weight:700;cursor:pointer;font-family:inherit}' +
-      '#vd-assist-go:disabled{opacity:.5;cursor:default}#vd-assist-msg{margin:8px 0 0;font-size:12.5px;color:var(--hint,#6b7280)}#vd-assist-msg.err{color:#b91c1c}';
+      '#vd-assist-row{position:relative;margin:0 0 10px 2px;font-size:13px;line-height:1.6}' +
+      '#vd-assist-row *{font-size:13px;line-height:1.6;font-family:inherit;box-sizing:border-box}' +
+      '#vd-assist-btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 8px;border:1px solid #2563eb;border-radius:999px;background:#fff;color:#1d4ed8;font-weight:700;cursor:pointer;opacity:1}' +
+      '#vd-assist-btn:hover,#vd-assist-btn[aria-expanded="true"]{background:#eff6ff}' +
+      '#vd-assist-btn img{width:20px;height:20px;border-radius:5px;flex:none;margin:0;box-shadow:0 1px 3px rgba(0,0,0,.18)}' +
+      '#vd-assist-pop{margin-top:8px;padding:14px 16px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;color:#374151;max-width:640px}' +
+      '#vd-assist-pop[hidden]{display:none}' +
+      '#vd-assist-pop p{margin:0 0 10px;color:#374151}' +
+      '#vd-assist-pop ul{margin:0 0 12px;padding:10px 12px 10px 28px;background:#f9fafb;border-radius:8px;color:#6b7280}' +
+      '#vd-assist-pop li{margin:0 0 4px;color:#6b7280}#vd-assist-pop li:last-child{margin:0}' +
+      '#vd-assist-pop .vd-as-row{display:flex;gap:8px;align-items:center;margin:0 0 8px}' +
+      '#vd-assist-no{flex:1;min-width:0;height:36px;padding:0 10px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#111827}' +
+      '#vd-assist-go{flex:none;height:36px;padding:0 16px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;opacity:1}' +
+      '#vd-assist-go:hover{background:#1d4ed8}#vd-assist-go:disabled{background:#93c5fd;cursor:default}' +
+      '#vd-assist-pick{display:inline-flex;align-items:center;height:30px;padding:0 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;cursor:pointer}' +
+      '#vd-assist-pick:hover{background:#f3f4f6}#vd-assist-files{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}' +
+      '#vd-assist-fhint{color:#6b7280}' +
+      '#vd-assist-msg{margin:0;min-height:0;color:#6b7280}#vd-assist-msg:empty{display:none}#vd-assist-msg.err{color:#b91c1c}';
     document.head.appendChild(s);
   }
 
@@ -42,11 +51,13 @@
     row.innerHTML =
       '<button type="button" id="vd-assist-btn" aria-expanded="false" aria-controls="vd-assist-pop"><img src="icons/navi-icon-96.png" alt="" width="20" height="20"><span>나비웹 도우미가 진행하기</span></button>' +
       '<div id="vd-assist-pop" hidden>' +
-      '<p>대법원 사건번호만 입력하면 도우미가 판결문을 가져와 <b>익명화 → 통합 판결문 → 가상 판결문 → 일치도 평가 → 방법론 갱신 제안</b>까지 진행하고, 진행 상황과 만든 문서의 링크를 알려 드립니다. K-Law 창이 새로 열리며, 지금 로그인한 계정으로 들어가므로 다시 인증하지 않아도 됩니다.</p>' +
-      '<p class="vd-as-note">판결문은 매번 새로 익명화한 뒤 가상 판결문을 생성합니다. 같은 판례를 여러 사용자가 같은 AI로 생성하더라도, AI가 그 사건을 기억하고 있는지와 관계없이 입력에는 원래 사건을 알아볼 단서가 없어 판결문 생성에 영향을 주지 않도록 했습니다.</p>' +
-      '<p class="vd-as-note">원심 판결문이 일부(예: 1심) 없어도 판결문 생성은 가능하지만, 1~3심 판결문을 모두 반영한 경우보다 가상 판결문의 일치도가 떨어질 수 있습니다. 가상 판결문 생성에는 사용량만큼 GDC가 차감됩니다.</p>' +
+      '<p>대법원 사건번호를 입력하면 도우미가 판결문을 가져와 <b>익명화 → 통합 판결문 → 가상 판결문 → 일치도 평가 → 방법론 갱신 제안</b>까지 진행하고, 진행 상황과 문서 링크를 알려 드립니다. K-Law 창이 새로 열리며, 지금 로그인한 계정으로 들어가므로 다시 인증하지 않아도 됩니다.</p>' +
+      '<ul>' +
+      '<li>판결문은 매번 새로 익명화한 뒤 생성합니다. AI가 그 사건을 기억하고 있어도 입력에는 사건을 알아볼 단서가 없어 생성에 영향을 주지 않습니다.</li>' +
+      '<li>원심 판결문이 일부(예: 1심) 없어도 생성은 가능하지만, 1~3심을 모두 반영한 경우보다 일치도가 떨어질 수 있습니다.</li>' +
+      '<li>가상 판결문 생성에는 사용량만큼 GDC가 차감됩니다.</li></ul>' +
       '<div class="vd-as-row"><input type="text" id="vd-assist-no" placeholder="대법원 사건번호 예: 2024도7082" aria-label="대법원 사건번호" autocomplete="off" inputmode="text"><button type="button" id="vd-assist-go">도우미 시작</button></div>' +
-      '<div class="vd-as-row"><label class="vd-as-note" style="margin:0">판결문을 직접 갖고 있다면(선택, txt·md) 파일 이름에 대법원·2심·1심을 넣어 첨부하세요: <input type="file" id="vd-assist-files" accept=".txt,.md,text/plain" multiple></label></div>' +
+      '<div class="vd-as-row"><label id="vd-assist-pick" for="vd-assist-files">판결문 파일 첨부(선택)</label><input type="file" id="vd-assist-files" accept=".txt,.md,text/plain" multiple><span id="vd-assist-fhint">txt·md, 파일 이름에 대법원·2심·1심 표기</span></div>' +
       '<div id="vd-assist-msg" role="status" aria-live="polite"></div></div>';
     anchor.parentNode.insertBefore(row, anchor);
     $('vd-assist-btn').onclick = toggle;
@@ -87,7 +98,7 @@
     var m = e.data;
     if (e.origin !== KLAW_ORIGIN || !win || e.source !== win || !m || m.type !== 'klaw-assist-ready' || !job) return;
     if (!loggedIn()) return;
-    var exp = readExp(), tok = KAuth.getToken();
+    var tok = KAuth.getToken(), exp = readExp(); if (!(exp > Date.now() + 60000)) exp = Date.now() + 30 * 60000; // 쿠키를 못 읽어도 토큰 자체는 서버가 검증한다
     try { win.postMessage({ type: 'klaw-assist-start', token: tok, exp: exp, caseNo: job.caseNo, files: job.files }, KLAW_ORIGIN); } catch (er) { /* 창이 닫힘 */ }
   });
 
