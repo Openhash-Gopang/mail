@@ -1513,7 +1513,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
             </td>
             <td>
             <div class="doc-combo" id="cmp-exp-combo">
-              <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">보조 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">전문직 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
               <div class="doc-combo-pop" id="cmp-exp-combo-pop" hidden>
                 <input type="search" id="cmp-exp-q" class="doc-combo-q" placeholder="전문가 검색 (예: 변호사, 세무사)" autocomplete="off" aria-label="전문가 검색" oninput="_cmpExpFilter()" onkeydown="_cmpExpKey(event)">
                 <div class="doc-combo-list" id="cmp-exp-list" role="listbox" aria-label="전문가"></div>
@@ -3254,7 +3254,7 @@ function _orgActivate(o, greeting) {
   const ol = document.getElementById('cmp-org-combo-label'), el = document.getElementById('cmp-exp-combo-label');
   const gl = document.getElementById('cmp-gov-combo-label'), grp = o.expert ? 'exp' : (o.group || 'org');
   { const dl = document.getElementById('cmp-doc-combo-label'); if (dl && o.foi) dl.textContent = o.label; }   // 정보 공개 청구는 '서류 작성' 메뉴 안에 있으니, 고르면 그 버튼에 이름이 뜬다
-  if (ol) ol.textContent = grp === 'org' ? o.label : '인프라 AI'; if (el) el.textContent = grp === 'exp' ? o.label : '보조 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
+  if (ol) ol.textContent = grp === 'org' ? o.label : '인프라 AI'; if (el) el.textContent = grp === 'exp' ? o.label : '전문직 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
   if (window.HondiChat) { if (o.local) HondiChat.setSp(null); else HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined }); }
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
@@ -3305,7 +3305,7 @@ function _orgLeave() {
   { const nb = document.getElementById('cmp-nabi-btn'); if (nb) nb.setAttribute('aria-pressed', 'false'); }
   { const gn = document.getElementById('tab-btn-guidenav'); if (gn && gn.classList.contains('active')) { gn.classList.remove('active'); const hb = document.getElementById('tab-btn-home'); if (hb) hb.classList.add('active'); } }
   const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '인프라 AI';
-  const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '보조 AI';
+  const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문직 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
   if (typeof _cmpDocComboSync === 'function') _cmpDocComboSync();   // '서류 작성' 버튼 이름을 원래대로
   const input = document.getElementById('cmp-input'); if (input) input.disabled = false;
