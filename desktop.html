@@ -65,6 +65,7 @@ const _LIBS = {
   pdf:     { src: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', ok: () => typeof pdfjsLib !== 'undefined' },
   mammoth: { src: 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.12.2/mammoth.browser.min.js', ok: () => typeof mammoth !== 'undefined' },
   xlsx:    { src: 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js', ok: () => typeof XLSX !== 'undefined' },
+  ocr:     { src: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js', ok: () => typeof Tesseract !== 'undefined' },   // 2026-11-10: 이미지 글자 읽기(브라우저 안에서만 — 이미지는 서버로 보내지 않는다). 첨부할 때만 받는다
   quill:   { src: 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js', css: 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css', ok: () => typeof Quill !== 'undefined' },
 };
 const _libP = {};
@@ -84,7 +85,7 @@ function _ensureLib(name) {
 }
 window.addEventListener('load', () => {
   const idle = window.requestIdleCallback || (f => setTimeout(f, 1));
-  setTimeout(() => idle(() => { Object.keys(_LIBS).forEach(k => { _ensureLib(k).catch(() => {}); }); }, { timeout: 8000 }), 3000);
+  setTimeout(() => idle(() => { Object.keys(_LIBS).forEach(k => { if (k !== 'ocr') _ensureLib(k).catch(() => {}); }); }, { timeout: 8000 }), 3000);
 });
 </script>
 <!-- 2026-09-11 신설 — "메일" 탭 편지쓰기용 리치 텍스트 편집기. Quill은
@@ -713,7 +714,7 @@ body:has(#tab-myforms.active .mfb-root:not([hidden])) #hchat-fab,body:has(#tab-m
 /* 아이콘(첨부·메일)은 접힌다 — 서류 드롭다운 행은 이 모드에서 숨겨진다 */
 #cmp-attach-btn,#cmp-mail-btn{overflow:hidden;transition:max-width .4s cubic-bezier(.2,.8,.2,1),opacity .25s,padding .4s,margin .4s,border-width .4s,visibility 0s}
 #cmp-attach-btn,#cmp-mail-btn{max-width:44px}
-#tab-compose[data-mode="verdict"] #cmp-attach-btn,#tab-compose[data-mode="verdict"] #cmp-mail-btn{max-width:0;opacity:0;padding-left:0;padding-right:0;margin-left:0;margin-right:-10px;border-width:0;visibility:hidden;transition:max-width .4s cubic-bezier(.2,.8,.2,1),opacity .25s,padding .4s,margin .4s,border-width .4s,visibility 0s .4s}
+#tab-compose[data-mode="verdict"] #cmp-mail-btn{max-width:0;opacity:0;padding-left:0;padding-right:0;margin-left:0;margin-right:-10px;border-width:0;visibility:hidden;transition:max-width .4s cubic-bezier(.2,.8,.2,1),opacity .25s,padding .4s,margin .4s,border-width .4s,visibility 0s .4s}
 /* 처음 입력하는 동안은 입력칸이 넉넉히 커진다(쓰고 나면 일반 대화 크기로) */
 .chat-inputbar{transition:border-color .12s,border-radius .4s cubic-bezier(.2,.8,.2,1)}
 .chat-textarea{transition:min-height .45s cubic-bezier(.2,.8,.2,1)}
@@ -1455,6 +1456,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="chat-inputbar">
           <input type="file" id="cmp-file" style="display:none">
           <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
+          <input type="file" id="cmp-vfile" multiple accept="image/*,text/*,.txt,.md,.csv,.json,.html,.pdf,.docx,.xlsx" style="display:none">
           <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
@@ -2493,6 +2495,7 @@ async function _docAttach(d, src, origin) {
 function _cmpAttachMenu(ev) {
   ev.stopPropagation();
   if (_cmpMode === 'doc') { document.getElementById('doc-host-file').click(); return; }
+  if (_cmpMode === 'verdict') { if (!document.getElementById('cmp-input').disabled) document.getElementById('cmp-vfile').click(); return; }   // 가상 판결: 글·이미지를 읽어 입력란에 넣는다
   const old = document.getElementById('cmp-attach-menu');
   if (old) { old.remove(); return; }
   const m = document.createElement('div');
@@ -6876,7 +6879,16 @@ async function _extractXlsxText(file) {
 // 확장자로 방식을 고른다 — content_type은 브라우저·OS마다 들쭉날쭉해서
 // (예: .xlsx가 application/octet-stream으로 오는 경우가 흔함) 파일명
 // 확장자가 더 안정적이다.
-async function _extractAttachmentText(file) {
+const _TEXT_EXT_RE = /\.(txt|md|markdown|json|html?|xml|log|rtf|tsv|ya?ml)$/i;
+function _isPlainTextFile(file) { return (file.type || '').indexOf('text/') === 0 || _TEXT_EXT_RE.test(file.name || ''); }
+// 이미지 속 글자를 브라우저에서 읽는다(Tesseract, 한글+영문). 이미지는 서버로 보내지 않는다. 처음 한 번 OCR 데이터를 내려받는다.
+async function _extractImageText(file) {
+  await _ensureLib('ocr');
+  const w = await Tesseract.createWorker('kor+eng');
+  try { const r = await w.recognize(file); return ((r && r.data && r.data.text) || '').replace(/[ \t]+\n/g, '\n').trim(); }
+  finally { try { await w.terminate(); } catch (e) { /* noop */ } }
+}
+async function _extractAttachmentText(file, opts) {
   const name = (file.name || '').toLowerCase();
   try {
     if (name.endsWith('.pdf')) return { text: await _extractPdfText(file) };
@@ -6885,6 +6897,8 @@ async function _extractAttachmentText(file) {
     // 가능. 지어내지 않고 정직하게 "못 읽었다"고 표시한다.
     if (name.endsWith('.doc')) return { text: '', unsupported: true };
     if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) return { text: await _extractXlsxText(file) };
+    if (_isPlainTextFile(file)) return { text: (await file.text()).trim() };   // 2026-11-10: .txt·.md·.json·.html 등 글 파일은 그대로 읽는다
+    if (opts && opts.ocr && (file.type || '').indexOf('image/') === 0) return { text: await _extractImageText(file) };   // 가상 판결 입력란: 이미지의 글자를 브라우저에서 읽는다
     return null; // 이미지 등 — 텍스트 추출 대상 아님, 파일명만 전달
   } catch (e) {
     return { text: '', error: e.message };
@@ -6960,6 +6974,48 @@ async function _cmpHandleFileSelect() {
   }
 }
 document.getElementById('cmp-file').addEventListener('change', _cmpHandleFileSelect);
+
+// ── 가상 판결 입력란 첨부(2026-11-10): 글 파일·문서·이미지를 읽어 사건 개요 입력란에 덧붙인다 ──
+// 서버에 올리지 않는다 — 글 파일·PDF·Word·엑셀은 브라우저에서 읽고, 이미지는 브라우저 OCR 로 글자만 뽑는다. 뽑은 글은 입력란에 들어가므로 보내기 전에 고칠 수 있다.
+const _CMP_VERDICT_ATTACH_MAX = 30000;   // 입력란에 덧붙이는 글의 합계 상한(자)
+let _cmpVAtt = [];   // { name, status: 'reading'|'done'|'empty'|'error'|'cut', block }
+function _cmpVRender() {
+  const el = document.getElementById('cmp-attach-list'); if (!el) return;
+  el.innerHTML = _cmpVAtt.map((a, i) => {
+    const note = a.status === 'reading' ? ' (읽는 중…)' : a.status === 'done' ? ' (내용 읽음 ✓)' : a.status === 'cut' ? ' (내용 일부만 반영됨)' : a.status === 'empty' ? ' (읽을 글자가 없습니다)' : ' (읽지 못했습니다)';
+    return '<span class="chat-attach-chip' + (a.status === 'reading' ? ' uploading' : '') + '">📎 ' + escHtml(a.name) + note + '<button type="button" title="제거" onclick="_cmpVRemove(' + i + ')">✕</button></span>';
+  }).join('');
+}
+function _cmpVRemove(i) {
+  const a = _cmpVAtt[i]; if (!a) return;
+  if (a.block) { const inp = document.getElementById('cmp-input'); inp.value = inp.value.replace(a.block, '').replace(/\n{3,}/g, '\n\n').trim(); _kmailAutoResize(inp); _cmpChatUpdateSendState(); }
+  _cmpVAtt.splice(i, 1); _cmpVRender();
+}
+function _cmpVClear() { _cmpVAtt = []; _cmpRenderAttachList(); }
+async function _cmpVerdictFiles(files) {
+  const inp = document.getElementById('cmp-input');
+  for (const file of files) {
+    const a = { name: file.name, status: 'reading', block: '' }; _cmpVAtt.push(a); _cmpVRender();
+    try {
+      const ex = await _extractAttachmentText(file, { ocr: true });
+      if (!ex || ex.unsupported || ex.error) { a.status = 'error'; }
+      else {
+        let t = (ex.text || '').trim();
+        if (!t) a.status = 'empty';
+        else {
+          const room = Math.max(0, _CMP_VERDICT_ATTACH_MAX - inp.value.length - 40);
+          if (t.length > room) { t = t.slice(0, room); a.status = 'cut'; } else a.status = 'done';
+          if (t) { a.block = '[첨부: ' + file.name + ']\n' + t; inp.value = (inp.value.trim() ? inp.value.replace(/\s+$/, '') + '\n\n' : '') + a.block; _kmailAutoResize(inp); _cmpChatUpdateSendState(); }
+        }
+      }
+    } catch (e) { a.status = 'error'; }
+    _cmpVRender();
+  }
+}
+document.getElementById('cmp-vfile').addEventListener('change', function () {
+  const fs = Array.prototype.slice.call(this.files || []); this.value = '';
+  if (fs.length && _cmpMode === 'verdict') _cmpVerdictFiles(fs);
+});
 
 // ── 음성 입력 (입력창 왼쪽 마이크) ────────────────────────────
 // 브라우저 내장 Web Speech API 사용 — 별도 서버 호출 없이 실시간 인식.
@@ -7366,6 +7422,7 @@ function _cmpSetMode(mode, opts) {
   if (mode !== 'doc') _submitGuideEnd();
   if (mode !== 'doc') _docChatLeave();
   if (mode !== 'doc') { _scrDocForget(); _scrHashSync(); }   // 서류를 떠나면 복원 기록·주소의 #doc 를 지운다
+  if (_cmpVAtt.length) _cmpVClear();   // 가상 판결 첨부 표시는 모드를 바꾸면 지운다(입력란에 넣은 글은 그대로)
   if (window.VerdictHost) VerdictHost.onMode(mode === 'verdict');   // 판결 시뮬레이션은 들어올 때 준비하고 나갈 때 정리한다
   try { const _mh = { letter: '#letter', campaign: '#compose', verdict: '#verdict' }, _vh = location.hash || '', _want = _mh[mode] || ''; if (_vh !== _want && (!_vh || Object.keys(_mh).some(k => _mh[k] === _vh))) history.replaceState(null, '', location.pathname + location.search + _want); } catch (e) {}   // 2026-11-10: 모드(편지·캠페인·가상 판결)를 바꿔도 주소를 맞춘다
   if (carry && (carryText || carryAtt.length)) {
@@ -7710,7 +7767,7 @@ async function _navQuickDoc(text) {
 async function _cmpChatSend() {
   if (_cmpMode === 'org') { await _orgSend(); return; }
   if (_cmpMode === 'doc') { await _docHostSubmit(true); return; }   // Enter(또는 보내기) = 보이는 첫 후보로 바로 확정 — 두 번 누르게 하지 않는다
-  if (_cmpMode === 'verdict') { if (window.VerdictHost) await VerdictHost.submit(); return; }
+  if (_cmpMode === 'verdict') { if (_cmpVAtt.length && document.getElementById('cmp-input').value.trim().length >= 20) _cmpVClear(); if (window.VerdictHost) await VerdictHost.submit(); return; }   // 보내는 순간 첨부 표시는 지운다(글은 이미 입력란에 들어 있다)
   const input = document.getElementById('cmp-input');
   const text = input.value.trim();
   const attachments = _cmpPendingAttachments.filter(a => !a.uploading);
