@@ -11,7 +11,7 @@
   var TITLE_TEXT = '무엇을 도와드릴까요?';
   var TOTAL = 6200, S0 = 100, raf = 0, bf = null, lb = null, lf = null, started = false, running = false;
   var landT = Math.random(), startR = { x: Math.random(), y: Math.random() };
-  var phase = 0, rot = 0, el = 0, last = 0, px = null, py = null, fo = null, pts = null, S = 70;
+  var fromRight = false, phase = 0, rot = 0, el = 0, last = 0, px = null, py = null, fo = null, pts = null, S = 70;
   var mq = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)');
 
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -54,7 +54,7 @@
   function buildPath(g) {
     var W = window.innerWidth, topMin = 64, avail = Math.max(g.top - topMin - 30, 60);
     var sx = W * (0.12 + 0.76 * startR.x), sy = topMin + avail * (0.05 + 0.2 * startR.y);
-    var dir = sx < g.x ? -1 : 1, ex = g.x + dir * 130 * (S / S0), fr = [0.25, 0.1, 0.32, 0.18];
+    var dir = sx < g.x ? -1 : 1; fromRight = dir > 0; var  ex = g.x + dir * 130 * (S / S0), fr = [0.25, 0.1, 0.32, 0.18];
     pts = [{ x: sx, y: sy }];
     for (var i = 1; i <= 4; i++) pts.push({ x: lerp(sx, ex, i / 5), y: topMin + avail * fr[i - 1] });
     pts.push({ x: g.x + dir * 90 * (S / S0), y: g.y - 105 * (S / S0) });
@@ -67,12 +67,13 @@
     var a = pts[Math.max(i - 1, 0)], b = pts[i], c = pts[i + 1], d = pts[Math.min(i + 2, n)];
     return { x: cr(a.x, b.x, c.x, d.x, t), y: cr(a.y, b.y, c.y, d.y, t) };
   }
-  function pose(x, y, rotDeg, sc, o) {
+  function pose(x, y, rotDeg, sc, o, sx) {
+    sx = sx == null ? 1 : sx;
     var fo2 = clamp(o, 0, 1);
     lf.style.transform = 'rotate(' + lerp(15, -13, fo2).toFixed(2) + 'deg)';
     lb.style.transform = 'rotate(' + lerp(-22, 24, fo2).toFixed(2) + 'deg)';
     bf.style.width = bf.style.height = S + 'px';
-    bf.style.transform = 'translate3d(' + (x - S / 2).toFixed(2) + 'px,' + (y - S / 2).toFixed(2) + 'px,0) rotate(' + rotDeg.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+    bf.style.transform = 'translate3d(' + (x - S / 2).toFixed(2) + 'px,' + (y - S / 2).toFixed(2) + 'px,0) rotate(' + rotDeg.toFixed(2) + 'deg) scale(' + (sc * sx).toFixed(3) + ',' + sc.toFixed(3) + ')';
   }
 
   function frame(now) {
@@ -92,7 +93,9 @@
     phase += dt / 1000 * hz * Math.PI * 2;
     var o = clamp(mean + 0.5 * amp * (Math.sin(phase) - 0.12 * Math.sin(2 * phase)), 0, 1);
     fo = fo == null ? o : fo + (o - fo) * (1 - Math.exp(-dt / 45));
-    pose(x, y, rot, sc, fo);
+    // 오른쪽에서 출발하면 진행 방향(왼쪽)을 보도록 뒤집고, 앉기 직전에 천천히 원래 방향으로 돌아옴
+    var flip = fromRight ? 1 - 2 * (1 - smooth((el / TOTAL - 0.72) / 0.22)) : 1;
+    pose(x, y, rot, sc, fo, flip);
     bf.style.opacity = smooth(el / 900).toFixed(2);
     raf = requestAnimationFrame(frame);
   }
