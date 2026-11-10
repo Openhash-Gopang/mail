@@ -2767,6 +2767,11 @@ const _INFRA_UI = {   // [첫 화면 제목, 입력란 예시 문구]
   kestate:['어떤 부동산이 궁금하신가요?','예: 한림읍 단독주택 전세 시세가 궁금해요'], ksocial:['어떤 모임을 찾으세요?','예: 이번 주말 한림에서 함께 걷기 모임']
 };
 const _INFRA_EX = {
+  // 정부 AI: 기관별로 흔히 묻는 용무. 누르면 그대로 전송된다.
+  'gov:법원':['소장 접수 방법','사건 진행 확인','전자소송 이용 안내','소송비용 계산'],
+  'gov:국세청':['종합소득세 신고 방법','부가세 신고 일정','세금 환급 조회','사업자 등록 안내'],
+  'gov:도청':['민원 서류 발급','지원금 신청 안내','인허가 절차','도정 소식'],
+  'gov:시청':['전입신고 방법','주민등록등본 발급','민원 처리 현황','지원 사업 찾기'],
   // 보조 AI(직역): 해당 업무에서 흔히 묻는 질문. 누르면 그대로 전송된다.
   'exp:변호사':['계약서 위험 조항 검토','관련 판례 찾기','답변서 쟁점 정리','소멸시효 확인'],
   'exp:법무사':['등기 서류 점검','상속 등기 절차','법인 설립 서류','지급명령 신청서'],
@@ -2797,7 +2802,7 @@ const _INFRA_EX = {
   kestate:['매물 찾기','계약 서류','시세·감정','내 거래'], ksocial:['모임 찾기','내 모임','일정','대화']
 };
 let _infraKey = null;   // 메일 인프라를 고른 상태(메일은 기본·편지·캠페인 화면 그대로 쓴다). 그 밖의 인프라는 _org.key.
-function _infraCur() { return (_cmpMode === 'org' && _org && (_org.infra || _org.expert)) ? _org.key : _infraKey; }
+function _infraCur() { return (_cmpMode === 'org' && _org && (_org.infra || _org.expert || _org.group === 'gov')) ? _org.key : _infraKey; }
 function _cmpChipClear() { _infraKey = null; if (_cmpMode === 'default') _cmpSyncModeUi(); else _cmpSetMode('default'); }
 function _infraExSync() {
   const box = document.getElementById('cmp-infra-ex'), tab = document.getElementById('tab-compose'); if (!box) return;
@@ -2954,15 +2959,18 @@ function _govResolve(k, reg) {
     if (k === '도청' && reg && !isDo) label = sido + '청';
   } else if (k === '법원') { if (sido === '제주특별자치도') label = '제주지방법원'; else if (!reg) note = '거주지를 확인하지 못해 일반 안내로 도와드립니다.'; }
   else if (k === '국세청') { if (sido === '제주특별자치도') label = '제주 세무 관할(국세청)'; else if (!reg) note = '거주지를 확인하지 못해 일반 안내로 도와드립니다.'; }
-  return { key: 'gov:' + k, label, sp, context: ctx, group: 'gov', note };
+  return { key: 'gov:' + k, label, sp, context: ctx, group: 'gov', note, govName: k };
 }
+function _userIdLabel() { try { const c = document.querySelector('#hondi-user-badge .hub-chip'); return c ? (c.getAttribute('aria-label') || '').trim() : ''; } catch (x) { return ''; } }
 async function _cmpGovPick(k) {
   _cmpGovClose();
   if (k === '__more') { window.open(_GOV_URL, '_blank', 'noopener'); return; }
   if (!_GOV_ITEMS.includes(k)) return;
   const gl = document.getElementById('cmp-gov-combo-label'); if (gl) gl.textContent = k + ' …';
   const o = _govResolve(k, await _govRegion());
-  _orgActivate(o, '안녕하세요! 나비 ' + o.label + ' 서비스입니다.' + (o.context ? ' (' + o.context.replace('사용자 거주지: ', '').replace(/ \(출처.*$/, '') + ' 기준)' : '') + (o.note ? ' ' + o.note : '') + ' 원하시는 것을 말씀해 주세요.');
+  // 나비웹은 정부 기관이 아니다 — 환영 문구가 법원·국세청 등 기관 자신처럼 들리지 않게, 사용자의 용무를 돕는다고 말한다.
+  const uid = _userIdLabel();
+  _orgActivate(o, (uid ? uid + '님의 ' : '') + k + ' 용무를 도와드리겠습니다.' + (o.context ? ' (' + o.context.replace('사용자 거주지: ', '').replace(/ \(출처.*$/, '') + ' 기준)' : '') + (o.note ? ' ' + o.note : '') + ' 원하시는 것을 말씀해 주세요.');
 }
 // ── 서류 '제출'(2026-11-02): 관계 당국 제출용 dpaper API 가 아직 없다 → 혼디 대화창이 사용자에게 제출 절차를 하나씩 안내한다 ──
 let _submitGuideOn = false;
@@ -7336,8 +7344,9 @@ function _cmpSyncModeUi() {
   let chip = ui.chip;
   if (_cmpMode === 'org' && _org) chip = _org.label;
   if (_cmpMode === 'org' && _org && _org.expert) chip = _EXP_AREA[_org.label] || _org.label;   // 보조 AI: 직역 이름 대신 업무 영역 이름(예: 법률)
+  if (_cmpMode === 'org' && _org && _org.group === 'gov') chip = _org.govName || _org.label;   // 정부 AI: 기관 이름만(법원·국세청·도청·시청)
   if (_ik && !chip && _cmpMode === 'default') chip = '메일';
-  if (_ik && chip && !(_org && _org.expert) && _cmpMode !== 'letter' && _cmpMode !== 'campaign') chip = '인프라 · ' + chip;
+  if (_ik && chip && !(_org && (_org.expert || _org.group === 'gov')) && _cmpMode !== 'letter' && _cmpMode !== 'campaign') chip = '인프라 · ' + chip;
   if (_cmpMode === 'doc') { const o = sel && sel.options[sel.selectedIndex]; chip = (o && o.value) ? o.textContent : ui.chip; }
   const chipEl = document.getElementById('cmp-mode-chip');
   if (chipEl) { chipEl.hidden = !chip; document.getElementById('cmp-mode-chip-text').textContent = chip; }
