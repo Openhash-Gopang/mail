@@ -1513,7 +1513,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
             </td>
             <td>
             <div class="doc-combo" id="cmp-exp-combo">
-              <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">전문가 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button type="button" class="doc-combo-btn" id="cmp-exp-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpExpToggle(event)"><span id="cmp-exp-combo-label">전문직 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
               <div class="doc-combo-pop" id="cmp-exp-combo-pop" hidden>
                 <input type="search" id="cmp-exp-q" class="doc-combo-q" placeholder="전문가 검색 (예: 변호사, 세무사)" autocomplete="off" aria-label="전문가 검색" oninput="_cmpExpFilter()" onkeydown="_cmpExpKey(event)">
                 <div class="doc-combo-list" id="cmp-exp-list" role="listbox" aria-label="전문가"></div>
@@ -2765,6 +2765,20 @@ const _INFRA_UI = {   // [첫 화면 제목, 입력란 예시 문구]
   kestate:['어떤 부동산이 궁금하신가요?','예: 한림읍 단독주택 전세 시세가 궁금해요'], ksocial:['어떤 모임을 찾으세요?','예: 이번 주말 한림에서 함께 걷기 모임']
 };
 const _INFRA_EX = {
+  // 보조 AI(직역): 해당 업무에서 흔히 묻는 질문. 누르면 그대로 전송된다.
+  'exp:변호사':['계약서 위험 조항 검토','관련 판례 찾기','답변서 쟁점 정리','소멸시효 확인'],
+  'exp:법무사':['등기 서류 점검','상속 등기 절차','법인 설립 서류','지급명령 신청서'],
+  'exp:세무사':['종합소득세 공제 검토','부가세 신고 점검','양도세 절세 방안','세무조사 대응'],
+  'exp:회계사':['재무제표 이상 징후','감사 체크리스트','결산 일정 정리','계정과목 분류'],
+  'exp:변리사':['선행기술 조사','청구항 작성 검토','거절이유 대응','출원 절차 안내'],
+  'exp:감정평가사':['유사 거래사례 정리','평가 방법 검토','공시지가 확인','평가서 점검'],
+  'exp:공인중개사':['계약서 특약 검토','권리관계 확인','중개보수 계산','매물 설명 정리'],
+  'exp:행정사':['인허가 절차 안내','행정심판 청구서','필요 서류 목록','처리기한 확인'],
+  'exp:노무사':['해고 사유 검토','퇴직금 계산','근로계약서 점검','임금체불 대응'],
+  'exp:건축사':['건축법 적합성 검토','용적률·건폐율 계산','인허가 서류 목록','용도 변경 가능 여부'],
+  'exp:의사':['감별 진단 정리','검사 결과 해석','진료기록 요약','약물 상호작용 확인'],
+  'exp:약사':['복약 지도 문구','약물 상호작용 확인','대체 조제 가능 여부','부작용 정리'],
+  'exp:한의사':['증상별 처방 검토','한약 상호작용 확인','진료기록 요약','생활 지도 문구'],
   kmail:['편지 쓰기…>letter','캠페인…>campaign','Draft>mail:drafts','보낸메일함>mail:sent','받은메일함>mail:inbox','태그별 보관함>mail:tags'],
   k119:['긴급 신고','출동 현황','내 신고 내역','응급 연락처'], klaw:['사건 상담','가상 판결>verdict','서류 작성>doc','내 사건'],
   kpolice:['신고하기','처리 현황','내 신고','안전 정보'], ksecurity:['보안 점검','위협 알림','내 기기','조치 이력'],
@@ -2781,7 +2795,7 @@ const _INFRA_EX = {
   kestate:['매물 찾기','계약 서류','시세·감정','내 거래'], ksocial:['모임 찾기','내 모임','일정','대화']
 };
 let _infraKey = null;   // 메일 인프라를 고른 상태(메일은 기본·편지·캠페인 화면 그대로 쓴다). 그 밖의 인프라는 _org.key.
-function _infraCur() { return (_cmpMode === 'org' && _org && _org.infra) ? _org.key : _infraKey; }
+function _infraCur() { return (_cmpMode === 'org' && _org && (_org.infra || _org.expert)) ? _org.key : _infraKey; }
 function _cmpChipClear() { _infraKey = null; if (_cmpMode === 'default') _cmpSyncModeUi(); else _cmpSetMode('default'); }
 function _infraExSync() {
   const box = document.getElementById('cmp-infra-ex'), tab = document.getElementById('tab-compose'); if (!box) return;
@@ -2841,6 +2855,8 @@ function _cmpOrgKey(e) {
 const _EXP_URL = 'https://hondi.net/pages/expert-personas.html';
 const _EXP_SP = {'변호사':'SP_lawyer','법무사':'SP_judicial-scrivener','세무사':'SP_tax-accountant','회계사':'SP_accountant','변리사':'SP_patent-attorney','감정평가사':'SP_appraiser','공인중개사':'SP_real-estate-agent','행정사':'SP_administrative-scrivener','노무사':'SP_labor-attorney','건축사':'SP_architect','의사':'SP_physician','약사':'SP_pharmacist','한의사':'SP_traditional-medicine-doctor'};
 const _EXP_ITEMS = Object.keys(_EXP_SP);
+// 직역 이름 대신 업무 영역 이름으로 부른다("변호사 전문가 AI" → "법률 보조 AI"): AI 가 전문가를 대신하는 것이 아니라 돕는다는 뜻이 분명해야 한다.
+const _EXP_AREA = {'변호사':'법률','법무사':'법무','세무사':'세무','회계사':'회계','변리사':'특허','감정평가사':'감정평가','공인중개사':'중개','행정사':'행정','노무사':'노무','건축사':'건축','의사':'의료','약사':'약무','한의사':'한방'};
 let _expSel = -1;
 function _cmpExpFilter() {
   const q = _docNorm(document.getElementById('cmp-exp-q').value), list = document.getElementById('cmp-exp-list');
@@ -2869,7 +2885,7 @@ function _cmpExpPick(k) {
   _cmpExpClose();
   if (k === '__more') { window.open(_EXP_URL, '_blank', 'noopener'); return; }
   if (!_EXP_ITEMS.includes(k)) return;
-  _orgActivate({ key: 'exp:' + k, label: k, sp: _EXP_SP[k] || null, expert: true }, k + ' 전문가 AI입니다. 무엇이든 물어보십시오');   // 사용자는 그 분야의 인간 전문가 — AI 는 그의 업무(법리 검토·진단 등)를 보조한다
+  _orgActivate({ key: 'exp:' + k, label: k, sp: _EXP_SP[k] || null, expert: true }, (_EXP_AREA[k] || k) + ' 보조 AI입니다. ' + k + '님의 검토를 돕습니다. 무엇이든 물어보십시오.');   // 사용자는 그 분야의 인간 전문가 — AI 는 그의 업무(법리 검토·진단 등)를 보조한다
 }
 // ── 정부 AI(2026-11-02): '전문가 AI' 오른쪽 드롭다운. 검색 + 주요 기관 + 맨 끝 '더보기(...)'(K-정부 페이지). 기관별 SP 는 K-정부 페이지의 영역별 SP 와 같다.
 const _GOV_URL = 'https://hondi.net/pages/k-government.html';
@@ -3238,7 +3254,7 @@ function _orgActivate(o, greeting) {
   const ol = document.getElementById('cmp-org-combo-label'), el = document.getElementById('cmp-exp-combo-label');
   const gl = document.getElementById('cmp-gov-combo-label'), grp = o.expert ? 'exp' : (o.group || 'org');
   { const dl = document.getElementById('cmp-doc-combo-label'); if (dl && o.foi) dl.textContent = o.label; }   // 정보 공개 청구는 '서류 작성' 메뉴 안에 있으니, 고르면 그 버튼에 이름이 뜬다
-  if (ol) ol.textContent = grp === 'org' ? o.label : '인프라 AI'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
+  if (ol) ol.textContent = grp === 'org' ? o.label : '인프라 AI'; if (el) el.textContent = grp === 'exp' ? o.label : '전문직 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
   if (window.HondiChat) { if (o.local) HondiChat.setSp(null); else HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined }); }
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
@@ -3289,7 +3305,7 @@ function _orgLeave() {
   { const nb = document.getElementById('cmp-nabi-btn'); if (nb) nb.setAttribute('aria-pressed', 'false'); }
   { const gn = document.getElementById('tab-btn-guidenav'); if (gn && gn.classList.contains('active')) { gn.classList.remove('active'); const hb = document.getElementById('tab-btn-home'); if (hb) hb.classList.add('active'); } }
   const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '인프라 AI';
-  const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
+  const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문직 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
   if (typeof _cmpDocComboSync === 'function') _cmpDocComboSync();   // '서류 작성' 버튼 이름을 원래대로
   const input = document.getElementById('cmp-input'); if (input) input.disabled = false;
@@ -7317,8 +7333,9 @@ function _cmpSyncModeUi() {
   }
   let chip = ui.chip;
   if (_cmpMode === 'org' && _org) chip = _org.label;
+  if (_cmpMode === 'org' && _org && _org.expert) chip = _EXP_AREA[_org.label] || _org.label;   // 보조 AI: 직역 이름 대신 업무 영역 이름(예: 법률)
   if (_ik && !chip && _cmpMode === 'default') chip = '메일';
-  if (_ik && chip && _cmpMode !== 'letter' && _cmpMode !== 'campaign') chip = '인프라 · ' + chip;
+  if (_ik && chip && !(_org && _org.expert) && _cmpMode !== 'letter' && _cmpMode !== 'campaign') chip = '인프라 · ' + chip;
   if (_cmpMode === 'doc') { const o = sel && sel.options[sel.selectedIndex]; chip = (o && o.value) ? o.textContent : ui.chip; }
   const chipEl = document.getElementById('cmp-mode-chip');
   if (chipEl) { chipEl.hidden = !chip; document.getElementById('cmp-mode-chip-text').textContent = chip; }
