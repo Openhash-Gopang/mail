@@ -5083,8 +5083,8 @@ function _switchTab(name) {
   // 주소의 #해시를 지금 화면에 맞춘다 — 설정을 한 번 열면 #settings 가 남아, 다른 화면에서 새로고침해도 설정이 열리던 오류를 막는다.
   // 새로고침해도 돌아올 수 있는 화면만 해시로 남기고(홈·메일 묶음·가상 판결 등은 비운다) replaceState 라 뒤로 가기 기록은 늘지 않는다.
   try {
-    const _hk = name === 'gprog' ? 'guide-prog' : (_isCompose || name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
-    const _nh = name === 'verdict' ? '#verdict' : (_hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '');
+    const _hk = name === 'gprog' ? 'guide-prog' : (name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
+    const _nh = _isCompose ? ((name === 'home' || name === 'doc') ? '' : '#' + name) : (_hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '');   // 2026-11-10: 편지(#letter)·캠페인(#compose)·가상 판결(#verdict)도 주소에 남긴다(홈·서류는 비움 — 서류는 #doc/<번호>)
     if ((location.hash || '') !== _nh) history.replaceState(null, '', location.pathname + location.search + _nh);
   } catch (e) {}   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
@@ -7367,7 +7367,7 @@ function _cmpSetMode(mode, opts) {
   if (mode !== 'doc') _docChatLeave();
   if (mode !== 'doc') { _scrDocForget(); _scrHashSync(); }   // 서류를 떠나면 복원 기록·주소의 #doc 를 지운다
   if (window.VerdictHost) VerdictHost.onMode(mode === 'verdict');   // 판결 시뮬레이션은 들어올 때 준비하고 나갈 때 정리한다
-  try { const _vh = location.hash || ''; if (mode === 'verdict' && !_vh) history.replaceState(null, '', location.pathname + location.search + '#verdict'); else if (mode !== 'verdict' && _vh === '#verdict') history.replaceState(null, '', location.pathname + location.search); } catch (e) {}   // 2026-11-10: 가상 판결 화면의 주소(#verdict)
+  try { const _mh = { letter: '#letter', campaign: '#compose', verdict: '#verdict' }, _vh = location.hash || '', _want = _mh[mode] || ''; if (_vh !== _want && (!_vh || Object.keys(_mh).some(k => _mh[k] === _vh))) history.replaceState(null, '', location.pathname + location.search + _want); } catch (e) {}   // 2026-11-10: 모드(편지·캠페인·가상 판결)를 바꿔도 주소를 맞춘다
   if (carry && (carryText || carryAtt.length)) {
     input.value = carryText; _cmpPendingAttachments = carryAtt; _cmpRenderAttachList();
     _kmailAutoResize(input); _cmpChatUpdateSendState();
@@ -8656,9 +8656,8 @@ window.kmailOpenSettings = function (section) {
   if (h === 'foi') { _switchTab('home'); setTimeout(_cmpFoiPick, 0); return; }
   if (h === 'guide') { _switchTab('home'); setTimeout(_cmpGuidePick, 0); return; }
   if (h === 'guide-prog') { _switchTab('gprog'); return; }
-  if (h === 'verdict') { _switchTab('verdict'); return; }
   if (h === 'mail' || h === 'docs') { _notifyGo('mail'); return; }   // 푸시 알림(새 메일·서류 처리 결과)을 누르면 받은메일함으로
-  if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
+  if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc' || h === 'verdict') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
 window.addEventListener('hashchange', function () {
