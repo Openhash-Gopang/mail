@@ -344,6 +344,17 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-combo-it small{display:block;font-size:12px;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-combo-sec{font-size:12px;color:var(--hint);padding:6px 9px 2px}
 /* 예시 패널(2026-11-04): 입력 칸 왼쪽 "예시" 버튼을 누르면 입력창 아래로 예시 항목(한 행의 칸들)이 미끄러져 나오고, 하나를 고르면 다시 들어간다. */
+/* 인프라 AI(2026-11-10): 입력란 아래 가운데의 "예시" 줄 — 무엇을 말할 수 있는지 알려 주고, 누르면 바로 열리는 바로가기 */
+.cmp-infra-ex{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;max-width:880px;margin:12px auto 0}
+.cmp-infra-ex[hidden]{display:none}
+.cmp-infra-ex .ix-lab{font-size:13px;font-weight:700;color:var(--hint,#4B5563);margin-right:2px}
+.cmp-infra-ex .ix-chip{border:1px solid var(--bdr);border-radius:999px;background:var(--sur,#fff);color:var(--txt);font:inherit;font-size:14px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.cmp-infra-ex .ix-chip:hover{border-color:var(--pri,#2F64C8);color:var(--pri,#2F64C8)}
+.cmp-infra-ex .ix-chip.ix-fill{border-style:dashed}
+.cmp-infra-ex .ix-chip:disabled{opacity:.5;cursor:default}
+.cmp-infra-ex .ix-bd{min-width:18px;height:18px;border-radius:9px;background:#D93025;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;box-sizing:border-box}
+.cmp-infra-ex .ix-hint{flex:0 0 100%;text-align:center;font-size:12px;color:var(--hint,#6B7280);margin-top:2px}
+#tab-compose.infra-on .cmp-ex-btn{display:none!important}
 .cmp-inrow{display:flex;align-items:center;gap:8px}.cmp-inrow>.chat-inputbar{flex:1 1 auto;min-width:0}
 .cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:5px;height:38px;margin:0;padding:0 12px 0 15px;border:0;border-radius:999px;background:var(--pri);color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .08s}   /* 2026-11-04: 1.5배에서 축소(높이 38px·글자 15px), 배경은 입력(전송) 버튼과 같은 --pri 초록 */
 .cmp-ex-btn:hover{filter:brightness(.93);transform:scale(1.03)}
@@ -1466,7 +1477,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           <button type="button" class="chat-icon-btn" id="cmp-attach-btn" title="첨부" aria-haspopup="menu" onclick="_cmpAttachMenu(event)">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
-          <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpSetMode('default')">×</button></span>
+          <span class="cmp-mode-chip" id="cmp-mode-chip" role="status" hidden><span id="cmp-mode-chip-text"></span><button type="button" aria-label="모드 해제" title="모드 해제 (나만의 AI 비서로 돌아가기)" onclick="_cmpChipClear()">×</button></span>
           <textarea id="cmp-input" data-requires-login="메일 대화" class="chat-textarea" rows="1" placeholder="무엇이든 말씀해 주세요 — 서류 작성, 메일 발송, 전문가 상담까지 도와드립니다"></textarea>
           <button type="button" class="chat-icon-btn" id="cmp-mic-btn" title="음성 입력" onclick="_cmpToggleMic()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -1476,6 +1487,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           </button>
         </div>
       </div>
+      <div class="cmp-infra-ex" id="cmp-infra-ex" role="group" aria-label="예시" hidden></div>
       <div class="doc-host-row" id="cmp-doc-row">
         <div class="ex-panel" id="cmp-ex-panel" role="group" aria-label="예시" aria-hidden="true">
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
@@ -1492,9 +1504,9 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
             </td>
             <td>
             <div class="doc-combo" id="cmp-org-combo">
-              <button type="button" class="doc-combo-btn" id="cmp-org-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpOrgToggle(event)"><span id="cmp-org-combo-label">각종 기관</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button type="button" class="doc-combo-btn" id="cmp-org-combo-btn" aria-haspopup="listbox" aria-expanded="false" onclick="_cmpOrgToggle(event)"><span id="cmp-org-combo-label">인프라 AI</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
               <div class="doc-combo-pop" id="cmp-org-combo-pop" hidden>
-                <input type="search" id="cmp-org-q" class="doc-combo-q" placeholder="기관·서비스 검색 (예: 응급, 세무, 부동산)" autocomplete="off" aria-label="기관 검색" oninput="_cmpOrgFilter()" onkeydown="_cmpOrgKey(event)">
+                <input type="search" id="cmp-org-q" class="doc-combo-q" placeholder="인프라 검색 (예: 메일, 응급, 세무)" autocomplete="off" aria-label="인프라 검색" oninput="_cmpOrgFilter()" onkeydown="_cmpOrgKey(event)">
                 <div class="doc-combo-list" id="cmp-org-list" role="listbox" aria-label="기관"></div>
               </div>
             </div>
@@ -2731,7 +2743,75 @@ function _cmpDocComboPick(b) {
   _docHostInput(); _docHostSubmit(true);   // 서류 사이트가 준비되기 전이면 메시지는 준비될 때까지 대기한다
 }
 document.addEventListener('click', (e) => { const gv = e.target.closest && e.target.closest('#cmp-gov-list .doc-combo-it'); if (gv) { _cmpGovPick(gv.getAttribute('data-gov')); return; } if (!e.target.closest || !e.target.closest('#cmp-gov-combo')) _cmpGovClose(); const ex = e.target.closest && e.target.closest('#cmp-exp-list .doc-combo-it'); if (ex) { _cmpExpPick(ex.getAttribute('data-exp')); return; } if (!e.target.closest || !e.target.closest('#cmp-exp-combo')) _cmpExpClose(); const og = e.target.closest && e.target.closest('#cmp-org-list .doc-combo-it'); if (og) { _cmpOrgPick(og.getAttribute('data-org')); return; } if (!e.target.closest || !e.target.closest('#cmp-org-combo')) _cmpOrgClose(); const it = e.target.closest && e.target.closest('#cmp-doc-list .doc-combo-it'); if (it) { _cmpDocComboPick(it); return; } if (!e.target.closest || !e.target.closest('#cmp-doc-combo')) _cmpDocComboClose(); });
-// ── 각종 기관(2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
+// ── 인프라 AI "예시" 줄(2026-11-10) ─────────────────────────────────────────────
+// 인프라 AI 는 기존 사회 기관의 역할을 대신한다. 모든 기능은 입력란에 말로 시킬 수 있고, 입력란 아래의 "예시"는
+// ① 무엇을 시킬 수 있는지 알려 주며 ② 자주 쓰는 일을 한 번 눌러 바로 여는 바로가기다.
+// 칸 모양: 실선 = 누르면 바로 실행·이동, 점선 = 정보가 더 필요한 일이라 입력란에 이어 말하게 한다.
+// 항목 문자열: '이름' → 이름 그대로 인프라 AI 에 요청 / '이름>화면' → 그 화면으로 이동. 이름은 가칭이며 실제 기능에 맞춰 바꾼다.
+const _INFRA_UI = {   // [첫 화면 제목, 입력란 예시 문구]
+  kmail:['어떤 메일을 보낼까요?','예: 김 과장에게 내일 회의 시간이 오후 3시로 바뀌었다고 알려 주세요'],
+  k119:['어떤 응급 상황인가요?','예: 아버지가 갑자기 쓰러지셨어요'], klaw:['어떤 법률 문제인가요?','예: 임대차 보증금을 돌려받지 못하고 있어요'],
+  kpolice:['무엇을 신고할까요?','예: 우리 동네 골목에서 오토바이 소음이 심해요'], ksecurity:['무엇을 점검할까요?','예: 의심스러운 문자를 받았어요'],
+  khealth:['어디가 불편하신가요?','예: 이틀째 열이 나고 목이 아파요'], kschool:['무엇을 배우고 싶으신가요?','예: 중학교 1학년 수학 일차방정식이 어려워요'],
+  gdc:['어떤 금융 업무인가요?','예: 이번 달 카드값과 공과금을 정리해 주세요'], kstock:['어떤 투자가 궁금하신가요?','예: 배당 위주 포트폴리오를 어떻게 구성할까요?'],
+  kinsurance:['어떤 보험이 궁금하신가요?','예: 입원비는 내 보험에서 얼마나 나오나요?'], ktax:['어떤 세무 업무인가요?','예: 프리랜서 종합소득세 신고를 준비하려고 해요'],
+  kmarket:['무엇을 찾고 계세요?','예: 10만 원 이하 무선 청소기를 찾아 주세요'], ktraffic:['어디로 가시나요?','예: 내일 아침 제주공항에서 한림까지 가는 방법'],
+  klogistics:['어떤 배송 업무인가요?','예: 이 송장번호 택배가 지금 어디 있나요?'], kcleaner:['어떤 환경 문제인가요?','예: 폐가전은 어떻게 버려야 하나요?'],
+  kpublic:['어떤 행정 업무인가요?','예: 이사 후 전입신고를 하고 싶어요'], kdemocracy:['어떤 정책이 궁금하신가요?','예: 청년이 받을 수 있는 주거 지원을 알려 주세요'],
+  ktelecom:['어떤 통신 업무인가요?','예: 요금제를 줄여서 비용을 아끼고 싶어요'], ksearch:['무엇을 찾아 드릴까요?','예: 제주 한림읍 근처 소아과를 찾아 주세요'],
+  kbiz:['어떤 사업 업무인가요?','예: 개인사업자에서 법인으로 전환하려면?'], kplan:['어떤 목표를 세울까요?','예: 올해 안에 서비스 베타를 출시하고 싶어요'],
+  kwatch:['무엇을 신고할까요?','예: 도로에 큰 구멍이 생겨서 위험해요'], kjob:['어떤 일을 찾고 계세요?','예: 제주에서 원격으로 할 수 있는 개발 일자리'],
+  kjit:['어떤 공고를 찾으세요?','예: 이번 달 제주도 소프트웨어 개발 입찰'], kcity:['어떤 도시를 구상하세요?','예: 읍 단위 도시에 15분 생활권을 만들고 싶어요'],
+  kestate:['어떤 부동산이 궁금하신가요?','예: 한림읍 단독주택 전세 시세가 궁금해요'], ksocial:['어떤 모임을 찾으세요?','예: 이번 주말 한림에서 함께 걷기 모임']
+};
+const _INFRA_EX = {
+  kmail:['편지 쓰기…>letter','캠페인…>campaign','Draft>mail:drafts','보낸메일함>mail:sent','받은메일함>mail:inbox','태그별 보관함>mail:tags'],
+  k119:['긴급 신고','출동 현황','내 신고 내역','응급 연락처'], klaw:['사건 상담','가상 판결>verdict','서류 작성>doc','내 사건'],
+  kpolice:['신고하기','처리 현황','내 신고','안전 정보'], ksecurity:['보안 점검','위협 알림','내 기기','조치 이력'],
+  khealth:['증상 상담','진료 예약','진료 이력','내 건강 기록'], kschool:['학습 상담','내 수업','과제','학습 기록'],
+  gdc:['송금·결제','내 지갑(GDC)','거래 내역','청구서'], kstock:['종목 상담','관심 종목','내 포트폴리오','거래 내역'],
+  kinsurance:['보장 상담','내 보험','보험금 청구','청구 내역'], ktax:['세무 상담','신고서 작성','납부·환급','신고 이력'],
+  kmarket:['상품 찾기','장바구니','주문 내역','판매 관리'], ktraffic:['길 찾기','예약·결제','교통 정보','이동 기록'],
+  klogistics:['배송 조회','발송 접수','내 배송','반품·교환'], kcleaner:['분리배출 상담','민원 접수','환경 정보','내 활동'],
+  kpublic:['민원 상담','서류 발급·신청','처리 현황','내 민원'], kdemocracy:['정책 찾기','내게 맞는 지원','의견 제안','참여 현황'],
+  ktelecom:['요금 상담','회선 관리','이용 내역','장애 신고'], ksearch:['검색','저장한 결과','최근 검색'],
+  kbiz:['사업 상담','등록·변경','세금·4대보험','내 사업'], kplan:['계획 세우기','할 일','진행 현황','기록'],
+  kwatch:['신고 접수','처리 현황','내 신고','이력'], kjob:['일자리 찾기','지원 내역','이력서','면접 준비'],
+  kjit:['공고 찾기','입찰 준비','입찰 내역','계약 관리'], kcity:['구상','지도·부지','검토 의견','내 프로젝트'],
+  kestate:['매물 찾기','계약 서류','시세·감정','내 거래'], ksocial:['모임 찾기','내 모임','일정','대화']
+};
+let _infraKey = null;   // 메일 인프라를 고른 상태(메일은 기본·편지·캠페인 화면 그대로 쓴다). 그 밖의 인프라는 _org.key.
+function _infraCur() { return (_cmpMode === 'org' && _org && _org.infra) ? _org.key : _infraKey; }
+function _cmpChipClear() { _infraKey = null; if (_cmpMode === 'default') _cmpSyncModeUi(); else _cmpSetMode('default'); }
+function _infraExSync() {
+  const box = document.getElementById('cmp-infra-ex'), tab = document.getElementById('tab-compose'); if (!box) return;
+  const k = _infraCur(), items = k && _INFRA_EX[k];
+  if (!items) { box.hidden = true; box.innerHTML = ''; box.removeAttribute('data-k'); tab.classList.remove('infra-on'); return; }
+  const ib = document.querySelector('.unread-badge[data-for="inbox"]'), unread = ib && !ib.hidden ? (ib.textContent || '').trim() : '';
+  const sig = k + '|' + unread + '|' + (_org && _org.sp ? 1 : 0);
+  tab.classList.add('infra-on'); box.hidden = false;
+  if (box.getAttribute('data-k') === sig) return;
+  box.setAttribute('data-k', sig); box.innerHTML = '';
+  const lab = document.createElement('span'); lab.className = 'ix-lab'; lab.textContent = '예시'; box.appendChild(lab);
+  const off = k !== 'kmail' && !(_org && _org.sp);
+  items.forEach(raw => {
+    const i = raw.indexOf('>'), name = i < 0 ? raw : raw.slice(0, i), go = i < 0 ? '' : raw.slice(i + 1);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ix-chip' + (name.endsWith('…') ? ' ix-fill' : '');
+    b.textContent = name; b.disabled = off; if (off) b.title = '이 인프라의 대화 상담은 준비 중입니다.';
+    if (go === 'mail:inbox' && unread) { const bd = document.createElement('span'); bd.className = 'ix-bd'; bd.textContent = unread; b.appendChild(bd); }
+    b.onclick = () => _infraExGo(name, go);
+    box.appendChild(b);
+  });
+}
+function _infraExGo(name, go) {
+  if (go.indexOf('mail:') === 0) { _navMailSub(go.slice(5)); return; }
+  if (go === 'letter' || go === 'campaign') { const k = _infraKey; if (_cmpSetMode(go)) { _infraKey = k; _cmpSyncModeUi(); try { document.getElementById('cmp-input').focus(); } catch (x) {} } return; }
+  if (go === 'verdict' || go === 'doc') { _switchTab(go); return; }
+  const input = document.getElementById('cmp-input'); if (!input || input.disabled) return;
+  input.value = name; _kmailAutoResize(input); _cmpChatUpdateSendState(); _cmpChatSend();   // 이름 그대로 이 인프라에 시킨다
+}
+(function () { const ib = document.querySelector('.unread-badge[data-for="inbox"]'); if (ib && window.MutationObserver) new MutationObserver(() => _infraExSync()).observe(ib, { attributes: true, childList: true, characterData: true, subtree: true }); })();
+// ── 인프라 AI(구 각종 기관, 2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
 const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
 let _orgSel = -1;
 function _cmpOrgFilter() {
@@ -2757,7 +2837,7 @@ function _cmpOrgKey(e) {
     its.forEach((b, i) => b.classList.toggle('on', i === _orgSel)); its[_orgSel].scrollIntoView({ block: 'nearest' });
   } else if (e.key === 'Enter') { e.preventDefault(); const b = its[Math.max(_orgSel, 0)]; if (b) _cmpOrgPick(b.getAttribute('data-org')); }
 }
-// ── 전문가 AI(2026-11-02): '각종 기관' 오른쪽 드롭다운. 검색 + 대표 전문가 + 맨 끝 '더보기(...)'(전문가 페르소나 전체 목록 페이지를 연다).
+// ── 전문가 AI(2026-11-02): '인프라 AI' 오른쪽 드롭다운. 검색 + 대표 전문가 + 맨 끝 '더보기(...)'(전문가 페르소나 전체 목록 페이지를 연다).
 const _EXP_URL = 'https://hondi.net/pages/expert-personas.html';
 const _EXP_SP = {'변호사':'SP_lawyer','법무사':'SP_judicial-scrivener','세무사':'SP_tax-accountant','회계사':'SP_accountant','변리사':'SP_patent-attorney','감정평가사':'SP_appraiser','공인중개사':'SP_real-estate-agent','행정사':'SP_administrative-scrivener','노무사':'SP_labor-attorney','건축사':'SP_architect','의사':'SP_physician','약사':'SP_pharmacist','한의사':'SP_traditional-medicine-doctor'};
 const _EXP_ITEMS = Object.keys(_EXP_SP);
@@ -3139,13 +3219,16 @@ const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',kse
 const _ORG_DESC = {k119:'신고부터 출동·병원 연계까지, 응급 상황을 돕는 시스템입니다.',klaw:'분쟁을 정리하고 판결을 예측하는 법률 시스템입니다.',kpolice:'사건·사고 신고를 접수하고 처리하는 치안 시스템입니다.',ksecurity:'개인과 조직의 보안을 지키는 시스템입니다.',khealth:'증상 상담부터 진료 연계까지 돕는 의료 시스템입니다.',kschool:'수강·학적·학교 서류를 처리하는 교육 시스템입니다.',gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다.',kstock:'상장·공시·투자 정보를 다루는 투자 시스템입니다.',kinsurance:'보험 가입과 보험금 청구를 돕는 시스템입니다.',ktax:'세금 신고와 납부를 돕는 세무 시스템입니다.',kmarket:'상품을 사고팔고 주문을 처리하는 거래 시스템입니다.',ktraffic:'도로·대중교통·교통 민원을 다루는 교통 시스템입니다.',klogistics:'배송과 화물을 추적하고 연결하는 물류 시스템입니다.',kcleaner:'폐기물·재활용 등 환경 민원을 처리하는 시스템입니다.',kpublic:'증명서 발급과 각종 행정 민원을 처리하는 시스템입니다.',kdemocracy:'정책 제안과 참여를 돕는 시스템입니다.',ktelecom:'통신 서비스 가입과 문의를 돕는 시스템입니다.',ksearch:'원하는 정보를 찾아 정리해 주는 검색 시스템입니다.',kbiz:'사업자 등록과 운영을 돕는 시스템입니다.',kplan:'목표를 세우고 실행 계획을 짜는 시스템입니다.',kwatch:'위험과 이상 징후를 신고하고 살피는 시스템입니다.',kjob:'일자리를 찾고 지원하는 직업 시스템입니다.',kjit:'조달과 납품을 연결하는 시스템입니다.',kcity:'도시 계획과 설계를 돕는 시스템입니다.',kestate:'부동산 평가·매물 검색·등록을 돕는 시스템입니다.',ksocial:'관심사가 맞는 사람들과 모임을 잇는 시스템입니다.'};
 let _org = null;   // { key, label, sp, ready, queue }
 function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비 중입니다.'; }
-/** 각종 기관을 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 혼디 대화창이 그 기관 SP 로 전환된다. */
+/** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 혼디 대화창이 그 기관 SP 로 전환된다. */
 function _cmpOrgPick(key) {
   _cmpOrgClose();
   const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return;
-  if (key === 'kmail') { if (_cmpMode === 'org') _cmpSetMode('default'); return; }   // 메일은 이 화면이 곧 메일 비서
+  if (key === 'kmail') {   // 메일은 이 화면이 곧 메일 비서 — 화면은 그대로 두고 메일의 "예시" 줄을 보인다
+    if (_cmpMode !== 'default' && _cmpMode !== 'letter' && _cmpMode !== 'campaign') { if (!_cmpSetMode('default')) return; }
+    _infraKey = 'kmail'; _cmpSyncModeUi(); try { document.getElementById('cmp-input').focus(); } catch (x) {} return;
+  }
   const greeting = '안녕하세요! 나비 ' + item[1] + ' 서비스입니다. 원하시는 것을 말씀해 주세요.';
-  _orgActivate({ key, label: item[1], sp: _ORG_SP[key] || null }, greeting);
+  _infraKey = null; _orgActivate({ key, label: item[1], sp: _ORG_SP[key] || null, infra: true }, greeting);
 }
 /** 기관·전문가 공통: 입력창 모드를 'org' 로, 혼디 대화창을 그 SP 로 전환한다. */
 function _orgActivate(o, greeting) {
@@ -3155,7 +3238,7 @@ function _orgActivate(o, greeting) {
   const ol = document.getElementById('cmp-org-combo-label'), el = document.getElementById('cmp-exp-combo-label');
   const gl = document.getElementById('cmp-gov-combo-label'), grp = o.expert ? 'exp' : (o.group || 'org');
   { const dl = document.getElementById('cmp-doc-combo-label'); if (dl && o.foi) dl.textContent = o.label; }   // 정보 공개 청구는 '서류 작성' 메뉴 안에 있으니, 고르면 그 버튼에 이름이 뜬다
-  if (ol) ol.textContent = grp === 'org' ? o.label : '각종 기관'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
+  if (ol) ol.textContent = grp === 'org' ? o.label : '인프라 AI'; if (el) el.textContent = grp === 'exp' ? o.label : '전문가 AI'; if (gl) gl.textContent = grp === 'gov' ? o.label : '정부 AI';
   const text = _org.sp ? greeting : _orgNotice(o.label);
   if (window.HondiChat) { if (o.local) HondiChat.setSp(null); else HondiChat.setSp({ type: 'hondi-embed-sp', sp: _org.sp, label: o.label, greeting: text, role: o.expert ? 'expert' : '', context: o.context || '', spText: o.spText || undefined }); }
   const tab = document.getElementById('tab-compose'), input = document.getElementById('cmp-input');
@@ -3164,7 +3247,10 @@ function _orgActivate(o, greeting) {
   { const nb = document.getElementById('cmp-nabi-btn'); if (nb) nb.setAttribute('aria-pressed', o.key === 'nabicode' ? 'true' : 'false'); }
   tab.classList.toggle('guide-on', !!o.guide); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', o.guide ? 'true' : 'false'); } if (!o.guide) _guideReset();
   const go = () => { tab.classList.add('org-open'); setTimeout(() => { _orgNotice1(); _cmpAppendBubble('assistant', { md: text }); if (input && _org && _org.sp) { try { input.focus(); } catch (x) {} } }, was ? 0 : 180); };
-  if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
+  if (o.infra) {   // 인프라 AI: 첫 화면은 가운데 입력 필드 + 아래 "예시" 줄. 첫 말을 보내면 대화창이 열린다(_orgSend).
+    _org.greetText = text; tab.classList.remove('org-open'); _cmpSyncModeUi();
+    if (input && _org.sp) { try { input.focus(); } catch (x) {} }
+  } else if (was) go(); else requestAnimationFrame(() => requestAnimationFrame(go));
 }
 /** 기관·전문가 답변용 마크다운 → HTML(제목·번호/글머리 목록·표·구분선·굵게). 모든 글자는 먼저 이스케이프한다. */
 function _orgMd(md) {
@@ -3202,7 +3288,7 @@ function _orgLeave() {
   _guideReset(); { const gb = document.getElementById('cmp-guide-btn'); if (gb) gb.setAttribute('aria-pressed', 'false'); }
   { const nb = document.getElementById('cmp-nabi-btn'); if (nb) nb.setAttribute('aria-pressed', 'false'); }
   { const gn = document.getElementById('tab-btn-guidenav'); if (gn && gn.classList.contains('active')) { gn.classList.remove('active'); const hb = document.getElementById('tab-btn-home'); if (hb) hb.classList.add('active'); } }
-  const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '각종 기관';
+  const l =document.getElementById('cmp-org-combo-label'); if (l) l.textContent = '인프라 AI';
   const l2 = document.getElementById('cmp-exp-combo-label'); if (l2) l2.textContent = '전문가 AI';
   const l3 = document.getElementById('cmp-gov-combo-label'); if (l3) l3.textContent = '정부 AI';
   if (typeof _cmpDocComboSync === 'function') _cmpDocComboSync();   // '서류 작성' 버튼 이름을 원래대로
@@ -3755,6 +3841,7 @@ function _guideAttachNote(atts) {
 async function _orgSend() {
   const input = document.getElementById('cmp-input'), text = input.value.trim();
   if (!text || !_org || !_org.sp) return;
+  { const tb = document.getElementById('tab-compose'); if (_org.infra && !tb.classList.contains('org-open')) { tb.classList.add('org-open'); _orgNotice1(); _cmpAppendBubble('assistant', { md: _org.greetText || '' }); } }
   let atts = [], force = false;
   if (_org.guide) {
     // 나비 길잡이는 첨부파일 내용을 읽고 계획서 초안을 만든다
@@ -7214,6 +7301,10 @@ function _cmpHasWork() {
 // 칩·인사말·예시 문구·메일 아이콘·서류 드롭다운을 현재 모드에 맞춘다
 function _cmpSyncModeUi() {
   let ui = _CMP_MODE_UI[_cmpMode] || _CMP_MODE_UI.default;
+  if (_cmpMode !== 'default' && _cmpMode !== 'letter' && _cmpMode !== 'campaign') _infraKey = null;   // 메일 인프라 표시는 메일 화면(기본·편지·캠페인)에서만 유지
+  if (_cmpMode === 'org' && !(_org && _org.infra)) _infraKey = null;
+  const _ik = _infraCur(), _iu = _ik && _INFRA_UI[_ik];
+  if (_iu && (_cmpMode === 'default' || _cmpMode === 'org')) ui = Object.assign({}, ui, { title: _iu[0], ph: _iu[1], sub: '' });
   const sel = document.getElementById('cmp-doc-site');
   const t = document.querySelector('#cmp-landing .chat-landing-title');
   const s = document.querySelector('#cmp-landing .chat-landing-sub');
@@ -7226,10 +7317,13 @@ function _cmpSyncModeUi() {
   }
   let chip = ui.chip;
   if (_cmpMode === 'org' && _org) chip = _org.label;
+  if (_ik && !chip && _cmpMode === 'default') chip = '메일';
+  if (_ik && chip && _cmpMode !== 'letter' && _cmpMode !== 'campaign') chip = '인프라 · ' + chip;
   if (_cmpMode === 'doc') { const o = sel && sel.options[sel.selectedIndex]; chip = (o && o.value) ? o.textContent : ui.chip; }
   const chipEl = document.getElementById('cmp-mode-chip');
   if (chipEl) { chipEl.hidden = !chip; document.getElementById('cmp-mode-chip-text').textContent = chip; }
   if (typeof _cmpDocComboSync === 'function') _cmpDocComboSync();
+  _infraExSync();
   const mb = document.getElementById('cmp-mail-btn');
   if (mb) mb.setAttribute('aria-pressed', (_cmpMode === 'campaign' || _cmpMode === 'letter') ? 'true' : 'false');
   _topbarSyncPage();   // 상단 바 가운데의 현재 페이지 표시도 모드에 맞춘다
@@ -7358,7 +7452,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIs
   new MutationObserver(addPlan).observe(root, { childList: true, subtree: true }); addPlan();
 })();
 const _TOPBAR_HOME = '나만의 AI 비서, 나비';
-const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '각종 기관', verdict: '가상 판결' };
+const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '인프라 AI', verdict: '가상 판결' };
 function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => _i18nOrig(n)).join('').trim(); }   // 언어를 바꿔도 판단은 한국어 원문으로   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
 // ── 서류·메일 화면 위쪽 탭(2026-11-06) — 왼쪽 메뉴의 하위 메뉴를 옮겨 왔다 ──
 const _PG_TABS = {
