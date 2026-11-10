@@ -351,7 +351,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-ex-btn svg{width:14px;height:14px;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .cmp-ex-btn[aria-expanded=true]{box-shadow:0 0 0 3px var(--pri-bg)}
 .cmp-ex-btn[aria-expanded=true] svg{transform:rotate(180deg)}
-#tab-compose[data-mode="doc"] .cmp-ex-btn,#tab-compose[data-mode="default"] .cmp-ex-btn,#tab-compose[data-mode="org"] .cmp-ex-btn{display:inline-flex}   /* 2026-11-10: 가상 판결(K-Law)은 예시를 이미 골라 들어온 화면이라 "예시" 버튼을 숨긴다 */
+#tab-compose[data-mode="default"] .cmp-ex-btn,#tab-compose[data-mode="org"] .cmp-ex-btn{display:inline-flex}   /* 2026-11-10: 가상 판결(K-Law)은 예시를 이미 골라 들어온 화면이라 "예시" 버튼을 숨긴다 */
 .ex-panel{flex:1 0 100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:0;opacity:0;transform:translateY(-12px);overflow:hidden;visibility:hidden;pointer-events:none;transition:max-height .34s cubic-bezier(.2,.8,.2,1),opacity .22s ease,transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s linear .34s}
 .ex-panel.open{max-height:240px;opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}
 .ex-panel.open.settled{overflow:visible}   /* 다 열린 뒤에는 서류·기관 목록 팝업이 잘리지 않게 */
@@ -364,6 +364,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ex-table .doc-combo-btn:hover{background:var(--pri-bg);color:var(--pri)}
 .ex-table .doc-combo{position:relative}
 .ex-table td:nth-child(n+5) .doc-combo-pop{left:auto;right:0}   /* 오른쪽 칸의 목록은 왼쪽으로 펼쳐 화면 밖으로 나가지 않게 */
+/* 2026-11-10 — 서류 작성 메뉴: "예시" 없이, 입력란 아래에 서류 메뉴(검색·양식 업로드·서류 종류)가 항상 펼쳐져 있다. 기관·전문가·정부 AI·가상 판결·길잡이·숫자 코드는 각자의 SP 를 부르는 것이라 서류 작성에서는 보이지 않는다. 서류를 고르면(.doc-live) 원래대로 접힌다. */
+#tab-compose[data-mode="doc"]:not(.doc-live) .ex-panel.open{max-height:520px}
+#tab-compose[data-mode="doc"]:not(.doc-live) .ex-table td:not(:first-child){display:none}
+#tab-compose[data-mode="doc"]:not(.doc-live) .ex-table td:first-child{text-align:left;padding:8px}
+#tab-compose[data-mode="doc"]:not(.doc-live) #cmp-doc-combo-btn{display:none}
+#tab-compose[data-mode="doc"]:not(.doc-live) #cmp-doc-combo-pop{position:static;width:100%;box-shadow:none;border:0;padding:0;background:transparent}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (max-width:700px){.ex-table,.ex-table tbody{display:block}.ex-table tr{display:flex;flex-wrap:wrap}.ex-table td{flex:1 1 auto;border-left:0}}   /* 좁은 화면: 칸이 줄을 바꿈 */
 @media (prefers-reduced-motion:reduce){.ex-panel,.ex-table td,.cmp-ex-btn svg{transition-duration:.01ms!important;transition-delay:0s!important}}
@@ -2611,11 +2617,25 @@ function _cmpExClose() {
   p.querySelectorAll('[aria-haspopup]').forEach(x => x.setAttribute('aria-expanded', 'false'));
   p.classList.remove('settled', 'open'); p.setAttribute('aria-hidden', 'true'); b && b.setAttribute('aria-expanded', 'false');
 }
+// 2026-11-10: 서류 작성 모드(서류를 아직 고르지 않았을 때)에는 패널과 서류 메뉴를 항상 펼쳐 둔다. 모드·.doc-live 가 바뀌거나 항목을 골라 패널이 접히면 다시 맞춘다.
+function _cmpDocInlineWant() { const t = document.getElementById('tab-compose'); return !!t && t.getAttribute('data-mode') === 'doc' && !t.classList.contains('doc-live'); }
+function _cmpDocInlineSync() {
+  const pop = document.getElementById('cmp-doc-combo-pop'); if (!pop) return;
+  if (_cmpDocInlineWant()) {
+    if (pop.hidden) { pop.hidden = false; const b = document.getElementById('cmp-doc-combo-btn'); b && b.setAttribute('aria-expanded', 'true'); try { _cmpDocSelInit(); _cmpDocComboFilter(); _docIndexLoad().then(() => { if (_cmpDocInlineWant()) _cmpDocComboFilter(); }); } catch (e) {} }
+    if (!_cmpExIsOpen()) _cmpExOpen();
+  } else if (pop.dataset.inline === '1') { pop.dataset.inline = ''; _cmpExClose(); }
+  if (_cmpDocInlineWant()) pop.dataset.inline = '1';
+}
+(function () {
+  const t = document.getElementById('tab-compose'); if (!t) return;
+  new MutationObserver(() => setTimeout(_cmpDocInlineSync, 0)).observe(t, { attributes: true, attributeFilter: ['class', 'data-mode'] });
+})();
 function _cmpExToggle(e) { if (e) e.stopPropagation(); if (_docLocked()) { _drToast(_DOC_LOCK_MSG); return; } _cmpExIsOpen() ? _cmpExClose() : _cmpExOpen(); }
 (function () {
   const p = _cmpExPanel(); if (!p) return;
   // 항목을 고르면(단추형 예시·목록의 항목·양식 업로드) 패널이 다시 들어간다. 항목 처리가 끝난 다음에 접는다.
-  p.addEventListener('click', e => { if (e.target.closest('.ex-verdict,.ex-guide,.ex-nabicode,.doc-combo-it,.doc-combo-up')) setTimeout(_cmpExClose, 0); }, true);
+  p.addEventListener('click', e => { if (e.target.closest('.ex-verdict,.ex-guide,.ex-nabicode,.doc-combo-it,.doc-combo-up')) { setTimeout(_cmpExClose, 0); setTimeout(_cmpDocInlineSync, 30); } }, true);
   p.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('doc-combo-q') && e.target.closest('.doc-combo-pop').querySelector('.doc-combo-it.on')) setTimeout(_cmpExClose, 0);
     if (e.key === 'Escape' && !p.querySelector('.doc-combo-pop:not([hidden])')) { _cmpExClose(); const b = document.getElementById('cmp-ex-btn'); b && b.focus(); }
