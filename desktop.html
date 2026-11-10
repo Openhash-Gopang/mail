@@ -2954,15 +2954,16 @@ function _govResolve(k, reg) {
   const ctx = reg ? '사용자 거주지: ' + sido + (sgg ? ' ' + sgg : '') + ' (출처: ' + reg.src + ')' : '';
   let label = k, sp = _GOV_SP[k], note = '';
   if (k === '도청' || k === '시청') {
-    if (!reg) note = '거주지를 확인하지 못해 일반 행정 안내로 도와드립니다.';
+    if (!reg) note = '지역을 알려 주시면 관할에 맞춰 안내합니다.';
     else if (k === '도청') { label = isDo ? sido + '청' : sido + '청'; if (sido === '제주특별자치도') sp = _GOV_PATH.dojeju; }
     else { label = sgg ? sgg + '청' : (isDo ? '시·군청' : sido + '청'); if (sgg === '제주시') sp = _GOV_PATH.jejusi; }
     if (k === '도청' && reg && !isDo) label = sido + '청';
-  } else if (k === '법원') { if (sido === '제주특별자치도') label = '제주지방법원'; else if (!reg) note = '거주지를 확인하지 못해 일반 안내로 도와드립니다.'; }
-  else if (k === '국세청') { if (sido === '제주특별자치도') label = '제주 세무 관할(국세청)'; else if (!reg) note = '거주지를 확인하지 못해 일반 안내로 도와드립니다.'; }
+  } else if (k === '법원') { if (sido === '제주특별자치도') label = '제주지방법원'; else if (!reg) note = '지역을 알려 주시면 관할에 맞춰 안내합니다.'; }
+  else if (k === '국세청') { if (sido === '제주특별자치도') label = '제주 세무 관할(국세청)'; else if (!reg) note = '지역을 알려 주시면 관할에 맞춰 안내합니다.'; }
   return { key: 'gov:' + k, label, sp, context: ctx, group: 'gov', note, govName: k };
 }
-function _userIdLabel() { try { const c = document.querySelector('#hondi-user-badge .hub-chip'); return c ? (c.getAttribute('aria-label') || '').trim() : ''; } catch (x) { return ''; } }
+// 로그인한 사용자의 실제 아이디만 돌려준다. 배지 칩의 aria-label 은 로그아웃 상태에서 '로그인하지 않았습니다'라서 읽으면 그 문구가 이름 자리에 들어간다.
+function _userIdLabel() { try { if (!(window.HondiAuth && HondiAuth.isLoggedIn())) return ''; return String(HondiAuth.getUserLabel() || '').trim(); } catch (x) { return ''; } }
 async function _cmpGovPick(k) {
   _cmpGovClose();
   if (k === '__more') { window.open(_GOV_URL, '_blank', 'noopener'); return; }
