@@ -5201,7 +5201,7 @@ function _switchTab(name) {
     } catch (e) {}
   }
   if (_isCompose) {
-    if (name === 'home') { if (_wasComposeActive) _cmpSetMode('default'); }
+    if (name === 'home') { _infraKey = null; if (_wasComposeActive || _cmpMode === 'org') _cmpSetMode('default'); else _cmpSyncModeUi(); }   // 홈(로고)은 고른 인프라(메일 등)에서도 나가 처음 화면으로 돌아간다
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
   const _navBtn = document.getElementById('tab-btn-' + (name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
