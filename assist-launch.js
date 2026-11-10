@@ -29,6 +29,10 @@
       '#vd-assist-btn img{width:20px;height:20px;border-radius:5px;flex:none;margin:0;box-shadow:0 1px 3px rgba(0,0,0,.18)}' +
       '#vd-assist-pop{margin:8px auto 0;padding:18px 22px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;color:#374151;width:100%}' +
       '#vd-assist-pop[hidden]{display:none}' +
+      '#vd-assist-help{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}#vd-assist-help.open{grid-template-rows:1fr}' +
+      '#vd-assist-help .vd-as-help-in{overflow:hidden;min-height:0}#vd-assist-help.open .vd-as-help-in{padding-bottom:2px}' +
+      '#vd-assist-q{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid #d1d5db;background:#fff;color:#4b5563;font-weight:700;cursor:pointer;padding:0}' +
+      '#vd-assist-q:hover,#vd-assist-q[aria-expanded="true"]{background:#eff6ff;border-color:#2563eb;color:#1d4ed8}' +
       '#vd-assist-pop p{margin:0 0 10px;color:#374151}' +
       '#vd-assist-pop ul{margin:0 0 12px;padding:10px 12px 10px 28px;background:#f9fafb;border-radius:8px;color:#6b7280}' +
       '#vd-assist-pop li{margin:0 0 4px;color:#6b7280}#vd-assist-pop li:last-child{margin:0}' +
@@ -51,17 +55,20 @@
     row.innerHTML =
       '<button type="button" id="vd-assist-btn" aria-expanded="false" aria-controls="vd-assist-pop"><img src="icons/navi-icon-96.png" alt="" width="20" height="20"><span>나비웹 도우미가 진행하기</span></button>' +
       '<div id="vd-assist-pop" hidden>' +
+      '<div id="vd-assist-help"><div class="vd-as-help-in">' +
       '<p>대법원 사건번호를 입력하면 도우미가 판결문을 가져와 <b>익명화 → 통합 판결문 → 가상 판결문 → 일치도 평가 → 방법론 갱신 제안</b>까지 진행하고, 진행 상황과 문서 링크를 알려 드립니다. K-Law 창이 새로 열리며, 지금 로그인한 계정으로 들어가므로 다시 인증하지 않아도 됩니다.</p>' +
       '<ul>' +
       '<li>판결문은 매번 새로 익명화한 뒤 생성합니다. AI가 그 사건을 기억하고 있어도 입력에는 사건을 알아볼 단서가 없어 생성에 영향을 주지 않습니다.</li>' +
       '<li>원심 판결문이 일부(예: 1심) 없어도 생성은 가능하지만, 1~3심을 모두 반영한 경우보다 일치도가 떨어질 수 있습니다.</li>' +
       '<li>가상 판결문 생성에는 사용량만큼 GDC가 차감됩니다.</li></ul>' +
-      '<div class="vd-as-row"><input type="text" id="vd-assist-no" placeholder="대법원 사건번호 예: 2024도7082" aria-label="대법원 사건번호" autocomplete="off" inputmode="text"><button type="button" id="vd-assist-go">도우미 시작</button></div>' +
+      '</div></div>' +
+      '<div class="vd-as-row"><button type="button" id="vd-assist-q" aria-expanded="false" aria-controls="vd-assist-help" title="안내 보기" aria-label="안내 보기">?</button><input type="text" id="vd-assist-no" placeholder="대법원 사건번호 예: 2024도7082" aria-label="대법원 사건번호" autocomplete="off" inputmode="text"><button type="button" id="vd-assist-go">도우미 시작</button></div>' +
       '<div class="vd-as-row"><label id="vd-assist-pick" for="vd-assist-files">판결문 파일 첨부(선택)</label><input type="file" id="vd-assist-files" accept=".txt,.md,text/plain" multiple><span id="vd-assist-fhint">txt·md, 파일 이름에 대법원·2심·1심 표기</span></div>' +
       '<div id="vd-assist-msg" role="status" aria-live="polite"></div></div>';
     anchor.parentNode.insertBefore(row, anchor);
     $('vd-assist-btn').onclick = toggle;
     $('vd-assist-go').onclick = go;
+    $('vd-assist-q').onclick = function () { var h = $('vd-assist-help'), o = !h.classList.contains('open'); h.classList.toggle('open', o); this.setAttribute('aria-expanded', String(o)); };
     $('vd-assist-no').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } });
     $('vd-assist-files').onchange = readFiles;
     return true;
