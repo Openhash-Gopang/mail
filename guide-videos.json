@@ -20,10 +20,40 @@
       "d": "나비웹은 글로벌 적용을 상정한 설계입니다. 한국의 온라인 정부를 구비하지 못한 각국에는 입법, 사법, 행정부 기능 그 자체를 제공합니다. K-Law는 이들 국가에 사법부 기능을 제공할 목적이며, 2026년 11월 현재, 자체 추정으로 K-Law가 생…"
     },
     {
+      "id": "N-hjOIljChA",
+      "t": "navi 04 - 사법부 보조 AI 시스템 [1|5]",
+      "len": "",
+      "d": "K-Law의 개요를 설명합니다. https://klaw.hondi.net/desktop.html"
+    },
+    {
       "id": "z30aiUDXHLA",
       "t": "navi 004 - 행정부 AI",
       "len": "",
       "d": "한국의 AI 전자 소송 시스템이 없는 국가들에게 K-Law로서 사법 체제의 대안을 제공하듯, 한국의 정부24와 문서24 시스템을 구축하지 못한 국가들에게 행정부 자체를 AI 시스템으로 구현 및 제공합니다. K-Goverment https://hond…"
+    },
+    {
+      "id": "FIR06RMLM5s",
+      "t": "navi 05 - 사법부 보조 AI 시스템 [2/5]",
+      "len": "",
+      "d": "K-Law 가상 판결문의 구성 https://klaw.hondi.net/desktop.html"
+    },
+    {
+      "id": "wEIX332Av-M",
+      "t": "navi 06 - 사법부 보조 AI 시스템 [3/5]",
+      "len": "",
+      "d": "K-Law 가상 판결문 생성 방식 - 수동 https://klaw.hondi.net/desktop.html"
+    },
+    {
+      "id": "gmGVc3FQQzY",
+      "t": "navi 07 - 사법부 보조 AI 시스템 [4/5]",
+      "len": "",
+      "d": "K-Law 가상 판결문 생성 방식 - 자동 https://klaw.hondi.net/desktop.html"
+    },
+    {
+      "id": "0_mJ-HJ6B54",
+      "t": "navi 08 - 사법부 보조 AI 시스템 [5/5]",
+      "len": "",
+      "d": "연역적 방법 vs. 귀납적 방법 K-Law의 개발 취지 https://klaw.hondi.net/desktop.html"
     }
   ]
 }
