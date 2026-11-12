@@ -376,6 +376,11 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ex-table .doc-combo-btn:hover{background:var(--pri-bg);color:var(--pri)}
 .ex-table .doc-combo{position:relative}
 .ex-table td:nth-child(n+5) .doc-combo-pop{left:auto;right:0}   /* 오른쪽 칸의 목록은 왼쪽으로 펼쳐 화면 밖으로 나가지 않게 */
+/* 2026-11-12 — 예시 줄과 좌측 메뉴의 중복 정리(주피터 지시): 좌측 메뉴(서류·나비 길잡이)가 맡는 항목은 예시 줄에서 뺀다.
+   서류 작성 칸은 좌측 "서류"를 눌렀을 때(data-mode="doc") 서류 선택 목록으로 쓰이므로 그 화면에서만 보이고, 나머지 화면에서는 숨긴다.
+   나비 길잡이 칸은 나비 길잡이 화면이 대화 입력을 함께 품게 되어(진행 중 화면) 예시 줄에서 뺀다. 모바일(webapp.html)은 다른 화면이라 해당 없음. */
+#tab-compose:not([data-mode="doc"]) .ex-table td:first-child{display:none}
+.ex-table td:has(#cmp-guide-btn){display:none}
 /* 2026-11-10 — 서류 작성 메뉴: "예시" 없이, 입력란 아래에 서류 메뉴(검색·양식 업로드·서류 종류)가 항상 펼쳐져 있다. 기관·전문가·정부 AI·가상 판결·길잡이·숫자 코드는 각자의 SP 를 부르는 것이라 서류 작성에서는 보이지 않는다. 서류를 고르면(.doc-live) 원래대로 접힌다. */
 #tab-compose[data-mode="doc"]:not(.doc-live) .ex-panel.open{max-height:520px}
 #tab-compose[data-mode="doc"]:not(.doc-live) .ex-table td:not(:first-child){display:none}
