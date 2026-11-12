@@ -85,6 +85,10 @@ export default {
     if (url.hostname === 'www.naviweb.kr') return Response.redirect('https://naviweb.kr' + url.pathname + url.search, 301);
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method Not Allowed', { status: 405 });
     const phone = isPhone(url, request.headers);
+    if (url.pathname === '/__whoami') {   // 진단: 이 요청을 폰/PC 어느 쪽으로 판별했고 어디서 받는지(주소창이 바뀌는 원인 추적용)
+      const r = phoneRoute(url), d = route(url);
+      return new Response(JSON.stringify({ phone, target: (phone ? r : d).target, secChUaMobile: request.headers.get('sec-ch-ua-mobile'), viewCookie: viewCookie(request.headers), ua: request.headers.get('user-agent') }, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+    }
     const { target, hondi } = phone ? phoneRoute(url) : route(url);
     const headers = new Headers(request.headers);
     headers.delete('cookie'); headers.delete('host');
