@@ -112,7 +112,7 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js"></script>
+<script src="agent-bridge.js?v=20261112"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
 <script src="manual-chat.js?v=20261106a"></script>
@@ -2313,9 +2313,17 @@ async function _agentInit() {
   });
   if (_agentInfo) _agentBadge('나비웹 도우미 ' + _agentInfo.version);
   else {
-    _agentBadge(_agentSeen() ? '나비웹 도우미 연결 확인 중 — 확장을 새로고침했다면 이 페이지도 새로고침해 주세요' : '나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
-    const _bt = document.querySelector('#agent-badge .ab-t'); if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
-    if (!_agentSeen()) setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800);   // 한 번도 연결된 적이 없으면 화면을 열 때마다 설치 안내를 보여 준다(2026-11-07). 전에 연결된 적이 있으면 일시적인 끊김일 수 있어 띄우지 않는다.
+    // 이미 설치된 확장(전에 연결된 적이 있거나 확장이 남긴 표지가 있음)이면 응답이 늦거나 끊긴 것이므로 설치를 권하지 않는다(2026-11-12).
+    const _installed = _agentSeen() || (NaviAgent.installedMark && !!NaviAgent.installedMark());
+    const _bt = document.querySelector('#agent-badge .ab-t');
+    if (_installed) {
+      _agentBadge('나비웹 도우미 연결 확인 중 — 계속 안 되면 이 페이지를 새로고침해 주세요');
+      if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => location.reload(); _bt.onkeydown = (e) => { if (e.key === 'Enter') location.reload(); }; }
+    } else {
+      _agentBadge('나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
+      if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
+      setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800);   // 한 번도 연결된 적이 없고 설치 표지도 없을 때만 설치 안내를 연다
+    }
   }
   if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
   if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
@@ -2457,6 +2465,16 @@ async function _agentHandOff(btn) {
 }
 document.addEventListener('DOMContentLoaded', () => { setTimeout(_agentInit, 600); });
 /* 나비웹 도우미는 늦게 켜지거나 나중에 켤 수 있으므로 열 때 한 번만 확인하지 않고 계속 확인한다(연결 여부·버전이 바뀌면 화면을 다시 맞춘다). */
+/* 설치 직후 1회성 안내(2026-11-12): 확장이 처음 설치된 뒤 첫 연결 때만 "나비웹 도우미가 설치되었습니다."를 위쪽에 잠깐 보인다. */
+window.addEventListener('navi-agent-welcome', () => {
+  if (document.getElementById('agent-welcome')) return;
+  const w = document.createElement('div'); w.id = 'agent-welcome'; w.setAttribute('role', 'status'); w.setAttribute('aria-live', 'polite');
+  w.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:10020;background:#1f7a4d;color:#fff;border-radius:999px;padding:10px 14px 10px 20px;font-size:14.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px)';
+  w.innerHTML = '<span>나비웹 도우미가 설치되었습니다.</span><button type="button" aria-label="닫기" style="border:0;background:rgba(255,255,255,.2);color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font:inherit;line-height:1">×</button>';
+  const close = () => { if (w.parentNode) w.remove(); };
+  w.querySelector('button').onclick = close; document.body.appendChild(w); setTimeout(close, 8000);
+  if (window._agentGuideClose) window._agentGuideClose();
+});
 let _agentWatchBusy = false, _agentMiss = 0;
 async function _agentWatchTick() {
   if (_agentWatchBusy || document.hidden || !window.NaviAgent) return;

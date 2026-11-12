@@ -5,6 +5,8 @@
   // 확장을 새로고침(↻)하면 이미 열려 있던 탭의 옛 다리는 연결이 끊긴 채 남는다. 예전에는 '이미 있다'며 새 다리를 막아 확장이 계속 안 보였다.
   // 이제는 새 다리가 자리를 이어받고, 옛 다리는 자기 번호가 다르면 아무 것도 하지 않는다(같은 확장이 두 번 주입돼도 한 번만 답한다).
   const myId = Math.random().toString(36).slice(2); window.__naviBridgeId = myId;
+  // 페이지가 "확장이 설치돼 있는지"만이라도 알 수 있게 표지를 남긴다(응답이 늦거나 서비스 워커가 깨어나는 중이어도 설치 안내를 다시 띄우지 않도록).
+  try { document.documentElement.setAttribute('data-navi-agent', chrome.runtime.getManifest().version); } catch (e) { /* 무효화된 확장 */ }
   const live = () => window.__naviBridgeId === myId;
   // 확장(서비스 워커)이 받아 온 파일을 나비웹 화면으로 넘긴다. 같은 출처로만 보내고, 넣을지는 화면이 사용자에게 묻는다.
   chrome.runtime.onMessage.addListener((m) => {
