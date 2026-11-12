@@ -1,7 +1,7 @@
 /**
  * naviweb-proxy — naviweb.kr 주소로 나비웹(mail.hondi.net 의 GitHub Pages)을 그대로 보여 주는 Cloudflare Worker.
  *
- *   naviweb.kr/            → mail.hondi.net/desktop.html  (폰이면 hondi.net/webapp.html 로 이동 — isPhone 참조)
+ *   naviweb.kr/            → mail.hondi.net/desktop.html  (폰이면 hondi.net/webapp.html 을 같은 주소 naviweb.kr 아래에서 그대로 제공 — isPhone·phoneRoute 참조)
  *   naviweb.kr/<파일>      → mail.hondi.net/<파일>
  *   naviweb.kr/_h/<경로>   → hondi.net/<경로>   (PDV·GDC·기능 개선 제안 등 끼워 넣는 hondi.net 페이지를 같은 출처로 만든다)
  *   naviweb.kr/src|auth|lib/… → hondi.net/… (hondi.net 페이지가 절대경로로 부르는 공용 스크립트)
@@ -13,15 +13,20 @@ const APP_ORIGIN = 'https://mail.hondi.net';
 const HONDI_ORIGIN = 'https://hondi.net';
 const HONDI_PREFIXES = ['/src/', '/auth/', '/lib/'];
 
-// 폰 접속은 hondi.net/webapp.html(나비 앱 화면)을 그대로 쓴다.
-// 이 화면은 hondi.net 출처에서 로그인·PDV 저장소·루트 경로 요청을 직접 쓰므로, naviweb.kr 안으로 중계하지 않고 이동시킨다.
+// 폰 접속은 hondi.net/webapp.html(나비 앱 화면)을 쓴다. 2026-11-12(주피터 지시)부터는 이동(302)시키지 않고,
+// 폰으로 판별된 요청은 모든 경로를 hondi.net 에서 받아 naviweb.kr 주소 그대로 보여 준다(주소창이 hondi.net 으로 바뀌지 않는다).
+// 폰 요청만 hondi.net 으로 보내므로 PC 요청과 엣지 캐시 키(원본 주소)가 섞이지 않는다.
 const PHONE_URL = 'https://hondi.net/webapp.html';
 const PHONE_UA = /iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|IEMobile|Opera Mini|webOS/i;
 
 // 단말 판별 순서: ① ?view=mobile|desktop ② Sec-CH-UA-Mobile(Chrome·Android) ③ User-Agent.
 // iPad·안드로이드 태블릿은 PC 화면(②가 ?0 이거나 ③에 안 걸린다).
+export function viewCookie(headers) {
+  const m = /(?:^|;\s*)navi_view=(mobile|desktop)/.exec(headers.get('cookie') || '');
+  return m ? m[1] : null;
+}
 export function isPhone(url, headers) {
-  const view = url.searchParams.get('view');
+  const view = url.searchParams.get('view') || viewCookie(headers);   // ?view= 가 우선, 없으면 직전에 고른 값(쿠키) — 하위 파일 요청에도 같은 화면을 유지한다
   if (view === 'mobile') return true;
   if (view === 'desktop') return false;
   const hint = headers.get('sec-ch-ua-mobile');
@@ -67,14 +72,20 @@ export function route(url) {
   return { target: APP_ORIGIN + (p === '/' ? '/desktop.html' : p) + url.search, hondi: false };
 }
 
+/** 순수 함수 — 폰 요청: '/' 는 hondi.net/webapp.html, 그 밖의 경로는 모두 hondi.net 의 같은 경로(/_h/ 는 기존 규칙). */
+export function phoneRoute(url) {
+  const p = url.pathname;
+  if (p.startsWith('/_h/')) return route(url);
+  return { target: HONDI_ORIGIN + (p === '/' ? '/webapp.html' : p) + url.search, hondi: false, phone: true };
+}
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
     if (url.hostname === 'www.naviweb.kr') return Response.redirect('https://naviweb.kr' + url.pathname + url.search, 301);
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method Not Allowed', { status: 405 });
-    const entry = url.pathname === '/' || url.pathname === '/webapp.html';
-    if (entry && isPhone(url, request.headers)) return phoneRedirect(url);
-    const { target, hondi } = route(url);
+    const phone = isPhone(url, request.headers);
+    const { target, hondi } = phone ? phoneRoute(url) : route(url);
     const headers = new Headers(request.headers);
     headers.delete('cookie'); headers.delete('host');
     // 원본(GitHub Pages)까지 매번 다녀오면 파일마다 0.4~2초가 걸린다. Cloudflare 엣지에 잠깐 캐시한다(사진·글꼴은 길게, 나머지는 2분).
@@ -87,8 +98,12 @@ export default {
     }
     const out = new Headers(res.headers);
     out.delete('set-cookie');
-    // 폰은 위에서 이동시키므로 여기까지 온 '/' 는 모두 PC 화면이다. 짧게만 브라우저에 둔다.
-    if (url.pathname === '/') { out.set('Vary', 'User-Agent, Sec-CH-UA-Mobile'); out.set('Cache-Control', 'public, max-age=60'); }
+    // ?view=mobile|desktop 로 고른 화면은 쿠키로 기억해 하위 파일 요청에도 같은 쪽(hondi.net / mail.hondi.net)을 쓰게 한다.
+    const _pick = url.searchParams.get('view');
+    if (_pick === 'mobile' || _pick === 'desktop') out.append('Set-Cookie', `navi_view=${_pick}; Path=/; Max-Age=86400; Secure; SameSite=Lax`);
+    if (phone) out.set('Vary', 'User-Agent, Sec-CH-UA-Mobile, Cookie');
+    // '/' 는 폰이면 hondi.net 화면, 아니면 PC 화면이라 단말에 따라 달라진다(Vary). 짧게만 브라우저에 둔다.
+    if (url.pathname === '/') { out.set('Vary', 'User-Agent, Sec-CH-UA-Mobile, Cookie'); out.set('Cache-Control', 'public, max-age=60'); }
     const loc = out.get('location');
     if (loc) out.set('location', loc.replace(APP_ORIGIN, '').replace(HONDI_ORIGIN, '/_h'));
     const ct = out.get('content-type') || '';
@@ -97,7 +112,7 @@ export default {
       const fix = (attr) => ({ element(el) { const v = el.getAttribute(attr); if (v && v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/_h/') && !HONDI_PREFIXES.some(x => v.startsWith(x))) el.setAttribute(attr, '/_h' + v); } });
       return new HTMLRewriter().on('script[src]', fix('src')).on('link[href]', fix('href')).on('a[href]', fix('href')).on('img[src]', fix('src')).transform(new Response(res.body, { status: res.status, headers: out }));
     }
-    if (!hondi && ct.includes('text/html') && res.status === 200) {
+    if (!hondi && !phone && ct.includes('text/html') && res.status === 200) {
       // 앱 페이지 안의 상대 경로 스크립트·이미지·아이콘은 mail.hondi.net 에서 직접 받게 한다(위 directAsset 설명 참조).
       const pagePath = target.slice(APP_ORIGIN.length).split('?')[0] || '/';
       const fix = (attr) => ({ element(el) { const d = directAsset(el.getAttribute(attr), pagePath, APP_ORIGIN); if (d) el.setAttribute(attr, d); } });
