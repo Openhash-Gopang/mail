@@ -432,11 +432,39 @@ async function injectBridgeIntoOpenTabs() {
   }
   return n;
 }
-chrome.runtime.onInstalled.addListener(() => { injectBridgeIntoOpenTabs(); });
+// 처음 설치한 직후(2026-11-12): chrome://extensions·웹 스토어 화면에 남아 있지 말고 나비웹(naviweb.kr) 탭을 앞으로 보여 준다.
+// 열려 있는 나비웹 탭이 있으면 그 탭을, 없으면 naviweb.kr 을 새로 연다. "설치되었습니다" 안내는 나비웹 화면이 한 번만 보이도록 welcome 표시를 남긴다(info 응답이 한 번 전하고 지운다).
+async function showNaviwebAfterInstall() {
+  try { await chrome.storage.local.set({ welcomePending: Date.now() }); } catch { /* 저장 불가 */ }
+  let tab = null;
+  try {
+    const tabs = await chrome.tabs.query({ url: ['https://naviweb.kr/*', 'https://*.naviweb.kr/*'] });
+    tab = tabs.find(t => t.active) || tabs[0] || null;
+  } catch { /* 탭 목록을 못 읽으면 새로 연다 */ }
+  try {
+    if (tab) { await chrome.tabs.update(tab.id, { active: true }); await chrome.windows.update(tab.windowId, { focused: true }); }
+    else await chrome.tabs.create({ url: 'https://naviweb.kr/', active: true });
+  } catch { /* 창을 앞으로 못 가져와도 설치 자체에는 영향 없다 */ }
+}
+chrome.runtime.onInstalled.addListener(async (d) => {
+  await injectBridgeIntoOpenTabs();
+  if (d && d.reason === 'install') showNaviwebAfterInstall();
+});
 chrome.runtime.onStartup.addListener(() => { injectBridgeIntoOpenTabs(); });
 chrome.runtime.onMessage.addListener((m, sender, send) => {
   if (m && m.type === 'deliver-file' && sender.id === chrome.runtime.id && !sender.tab) { deliverToNavi(m).then(() => send({ ok: true }), (e) => send({ ok: false, error: e.message })); return true; }
-  if (m && m.type === 'info') { send({ version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) }); return; }
+  if (m && m.type === 'info') {
+    const base = { version: chrome.runtime.getManifest().version, playbooks: Object.entries(PLAYBOOKS).map(([id, p]) => ({ id, title: p.title })) };
+    // 설치 직후 첫 확인에서만 welcome:true 를 알리고 바로 지운다(안내 문구는 1회성).
+    const fromNaviTab = (() => { try { const h = new URL(sender.url || sender.tab?.url || '').hostname; return h === 'naviweb.kr' || h.endsWith('.naviweb.kr'); } catch { return false; } })();
+    if (!fromNaviTab) { send(base); return; }
+    chrome.storage.local.get('welcomePending').then(async (r) => {
+      const w = !!(r && r.welcomePending);
+      if (w) { try { await chrome.storage.local.remove('welcomePending'); } catch { /* 다음에 다시 */ } }
+      send(w ? { ...base, welcome: true } : base);
+    }, () => send(base));
+    return true;
+  }
   if (m && m.type === 'queue') {
     const j = m.job || {};
     if (j.playbook && !PLAYBOOKS[j.playbook]) { send({ ok: false, error: '알 수 없는 절차' }); return; }

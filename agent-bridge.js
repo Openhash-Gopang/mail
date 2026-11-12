@@ -60,7 +60,16 @@
       var f = pending[m.id]; delete pending[m.id]; f(m);
     });
   }
-  function detect() { return call('agent-ping', {}, 1200).then(function (m) { return m && m.ok ? { version: m.version, playbooks: m.playbooks || [] } : null; }); }
+  function detect() {
+    return call('agent-ping', {}, 1200).then(function (m) {
+      if (!(m && m.ok)) return null;
+      // 설치 직후 첫 응답에만 welcome 이 실려 온다 — 어느 확인이 받든 안내가 한 번 뜨도록 여기서 이벤트로 알린다.
+      if (m.welcome && typeof window !== 'undefined' && window.dispatchEvent) { try { window.dispatchEvent(new CustomEvent('navi-agent-welcome', { detail: { version: m.version } })); } catch (e) { /* 안내만 빠진다 */ } }
+      return { version: m.version, playbooks: m.playbooks || [] };
+    });
+  }
+  // 확장이 설치돼 있다는 표지(bridge.js 가 남긴다). 연결 응답이 늦을 때 "설치 안내"를 다시 띄우지 않는 근거로만 쓴다.
+  function installedMark() { try { return document.documentElement.getAttribute('data-navi-agent') || ''; } catch (e) { return ''; } }
   function queue(job) { job = Object.assign({}, job, { autostart: true }); try { if (!job.token && window.KAuth && KAuth.getToken) job = Object.assign({}, job, { token: KAuth.getToken() || '' }); } catch (e) { /* 로그인 전 */ } return call('agent-queue', { job: job }, 3000).then(function (m) { return !!(m && m.ok); }); }
   // 이미 시작한 작업에 나중에 알게 된 정보(예: 법인 이름)를 전한다.
   function update(slot, text) { return call('agent-queue', { job: { update: true, slot: String(slot || ''), text: String(text || '') } }, 3000).then(function (m) { return !!(m && m.ok); }); }
@@ -84,7 +93,7 @@
       cb({ label: String(m.label || ''), state: String(m.state || ''), note: String(m.note || '') });
     });
   }
-  var api = { onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
+  var api = { installedMark: installedMark, onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);
