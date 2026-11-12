@@ -32,7 +32,11 @@ if (location.hostname === 'mail.hondi.net') {
   var view = new URLSearchParams(location.search).get('view');
   if (view === 'desktop') isMobile = false;
   if (view === 'mobile') isMobile = true;
-  if (isMobile) location.replace('https://hondi.net/webapp.html' + location.search + location.hash);
+  // 주소창이 hondi.net 으로 바뀌지 않게 같은 호스트의 ?view=mobile 로 보낸다(naviweb.kr Worker 가 폰 화면을 같은 주소 아래에서 제공).
+  if (isMobile && view !== 'mobile') {
+    var q = new URLSearchParams(location.search); q.set('view', 'mobile');
+    location.replace(location.pathname === '/desktop.html' ? '/?' + q : location.pathname + '?' + q + location.hash);
+  }
 })();
 </script>
 <title>나비웹</title>

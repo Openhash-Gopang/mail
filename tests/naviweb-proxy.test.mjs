@@ -70,9 +70,10 @@ test('phoneRoute: / → hondi.net/webapp.html, 나머지는 같은 경로, /_h/ 
   assert.equal(r('/pdv-store.js?x=1'), 'https://hondi.net/pdv-store.js?x=1');
   assert.equal(r('/_h/pdv.html'), 'https://hondi.net/pdv.html');
 });
-test('desktop.html 의 안전망 분기는 hondi.net/webapp.html 로 보낸다', () => {
+test('desktop.html 의 안전망 분기는 주소창을 바꾸지 않고 같은 호스트의 ?view=mobile 로 보낸다', () => {
   const s = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(s.includes("location.replace('https://hondi.net/webapp.html'"));
+  assert.ok(s.includes("q.set('view', 'mobile')"));
+  assert.ok(!s.includes("location.replace('https://hondi.net/webapp.html'"));
 });
 
 // 나비 숫자 코드 칩: desktop.html 의 변환 함수가 hondi-digit-code.js 규칙과 같은 결과를 낸다.
