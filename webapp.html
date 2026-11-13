@@ -247,7 +247,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-approve-row{display:flex;gap:8px;margin:2px 0 10px 0}
 .cmp-approve-btn{background:var(--teal,#3B7DDD);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:15px;font-weight:600;cursor:pointer}
 .cmp-approve-btn:disabled{opacity:.5;cursor:default}
-.kmail-sched-toast{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:#2F64C8;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
+.kmail-sched-toast{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:#323232;color:#fff;padding:12px 16px;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
 .chat-send-btn{flex-shrink:0;width:36px;height:36px;border-radius:50%;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .08s}
 .chat-send-btn:disabled{opacity:.35;cursor:not-allowed}
 .chat-send-btn:not(:disabled):hover{transform:scale(1.06)}
@@ -2754,8 +2754,8 @@ function _ctEdit(contactId) {
     : `<input type="${type}" id="ct-edit-${k}" style="width:100%" value="${escHtml(c[k] || '')}">`}</div>`;
   const m = document.createElement('div');
   m.id = 'ct-edit-modal';
-  m.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px');
-  m.innerHTML = `<div role="dialog" aria-modal="true" aria-label="연락처 수정" style="background:var(--card,#fff);color:var(--text,#111);border-radius:var(--r,12px);max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+  m.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px');
+  m.innerHTML = `<div role="dialog" aria-modal="true" aria-label="연락처 수정" style="background:var(--card,#fff);color:var(--text,#111);border-radius:4px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14),0 9px 46px 8px rgba(0,0,0,.12)">
     <h2 style="margin:0 0 4px">연락처 수정</h2>
     <div class="sub" style="margin-bottom:12px">이메일 <b>${escHtml(c.email || '')}</b>은(는) 바꿀 수 없습니다. 다른 이메일이 필요하면 새로 등록하세요.</div>
     ${_CT_EDIT_FIELDS.map(fld).join('')}

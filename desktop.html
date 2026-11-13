@@ -332,7 +332,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .ex-verdict svg{width:16px;height:16px;flex:none}.ex-verdict[aria-pressed=true]{border-color:var(--pri);color:var(--pri);font-weight:700}
 .doc-combo-up{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:6px 0 2px;padding:9px 12px;border:1px dashed var(--pri);border-radius:10px;background:var(--sur);color:var(--pri);font:inherit;font-size:13px;cursor:pointer;text-align:left}.doc-combo-up small{font-size:11.5px;color:var(--hint)}.doc-combo-up:hover{background:var(--bg)}
 .doc-combo-btn{display:inline-flex;align-items:center;gap:8px;min-height:32px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 10px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);cursor:pointer}
-.doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:8px}
+.doc-combo-pop{position:absolute;left:0;top:36px;z-index:60;width:min(420px,86vw);background:var(--sur);border:0;border-radius:4px;box-shadow:0 5px 5px -3px rgba(0,0,0,.2),0 8px 10px 1px rgba(0,0,0,.14),0 3px 14px 2px rgba(0,0,0,.12);padding:8px}
 .doc-combo-pop[hidden]{display:none}
 /* 나비 숫자 코드(2026-11-03): 전화번호 → 10칸 숫자 코드, 프로필 → 웹 페이지 → 일련번호 */
 .nc-cells{display:flex;gap:4px;margin:8px 0 4px;flex-wrap:wrap}
@@ -481,7 +481,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-approve-row{display:flex;gap:8px;margin:2px 0 10px 0}
 .cmp-approve-btn{background:var(--teal,#0d9488);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:15px;font-weight:600;cursor:pointer}
 .cmp-approve-btn:disabled{opacity:.5;cursor:default}
-.kmail-sched-toast{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:#0f766e;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
+.kmail-sched-toast{position:fixed;right:18px;bottom:18px;z-index:9999;max-width:340px;background:#323232;color:#fff;padding:12px 16px;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
 .chat-send-btn{flex-shrink:0;width:36px;height:36px;border-radius:50%;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .08s}
 .chat-send-btn:disabled{opacity:.35;cursor:not-allowed}
 .chat-send-btn:not(:disabled):hover{transform:scale(1.06)}
@@ -715,7 +715,7 @@ body:has(#tab-myforms.active .mfb-root:not([hidden])) #hchat-fab,body:has(#tab-m
   .mfb-chat{right:8px;left:8px;bottom:84px;width:auto;height:min(70vh,560px)}
 }
 
-#dr-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;background:#111827;color:#fff;font-size:13px;padding:9px 16px;border-radius:999px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#dr-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;background:#323232;color:#fff;font-size:14px;padding:12px 16px;border-radius:4px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-docs{background:var(--pri-bg);color:var(--pri)}
 .side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-guidenav{background:var(--pri-bg);color:var(--pri)}
 /* 나비 길잡이 과제 목록(진행 중·완료한 과제) */
@@ -1022,18 +1022,18 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   .side-nav .nav-btn{white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){.side-nav{transition:none}}
-#cmp-attach-menu{position:fixed;z-index:90;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;min-width:176px}
+#cmp-attach-menu{position:fixed;z-index:90;background:var(--sur);border:0;border-radius:4px;box-shadow:0 5px 5px -3px rgba(0,0,0,.2),0 8px 10px 1px rgba(0,0,0,.14),0 3px 14px 2px rgba(0,0,0,.12);padding:6px;min-width:176px}
 #cmp-attach-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 12px;font:inherit;font-size:14.5px;font-weight:600;color:var(--sub);cursor:pointer}
 #cmp-attach-menu button:hover{background:var(--bg);color:var(--txt)}
 #cmp-attach-menu svg{width:17px;height:17px;flex-shrink:0;color:var(--hint)}
-#cmp-mail-menu{position:fixed;z-index:90;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;min-width:230px}
+#cmp-mail-menu{position:fixed;z-index:90;background:var(--sur);border:0;border-radius:4px;box-shadow:0 5px 5px -3px rgba(0,0,0,.2),0 8px 10px 1px rgba(0,0,0,.14),0 3px 14px 2px rgba(0,0,0,.12);padding:6px;min-width:230px}
 #cmp-mail-menu button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 12px;font:inherit;cursor:pointer;color:var(--txt)}
 #cmp-mail-menu button:hover,#cmp-mail-menu button[aria-current="true"]{background:var(--pri-bg)}
 #cmp-mail-menu b{display:block;font-size:14.5px;font-weight:700}
 #cmp-mail-menu small{display:block;font-size:12.5px;color:var(--hint);margin-top:1px}
 #doc-modal{display:none;margin-top:14px}
 #doc-modal.open{display:block}
-#doc-modal .dm-box{position:relative;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
+#doc-modal .dm-box{position:relative;background:var(--sur);border:1px solid var(--bdr);border-radius:4px;overflow:hidden;box-shadow:var(--sh)}
 #doc-modal .dm-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 52px 10px 14px;border-bottom:1px solid var(--bdr)}
 #doc-modal iframe{display:block;border:0;width:100%;height:max(680px,calc(100vh - 170px))}
 #doc-modal .dm-x{position:absolute;top:8px;right:8px;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--sub);font-size:18px;line-height:1;cursor:pointer}
@@ -8551,8 +8551,8 @@ function _ctEdit(contactId) {
     : `<input type="${type}" id="ct-edit-${k}" style="width:100%" value="${escHtml(c[k] || '')}">`}</div>`;
   const m = document.createElement('div');
   m.id = 'ct-edit-modal';
-  m.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px');
-  m.innerHTML = `<div role="dialog" aria-modal="true" aria-label="연락처 수정" style="background:var(--card,#fff);color:var(--text,#111);border-radius:var(--r,12px);max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+  m.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px');
+  m.innerHTML = `<div role="dialog" aria-modal="true" aria-label="연락처 수정" style="background:var(--card,#fff);color:var(--text,#111);border-radius:4px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14),0 9px 46px 8px rgba(0,0,0,.12)">
     <h2 style="margin:0 0 4px">연락처 수정</h2>
     <div class="sub" style="margin-bottom:12px">이메일 <b>${escHtml(c.email || '')}</b>은(는) 바꿀 수 없습니다. 다른 이메일이 필요하면 새로 등록하세요.</div>
     ${_CT_EDIT_FIELDS.map(fld).join('')}
@@ -9049,10 +9049,10 @@ function _agentGuideOpen() {
   if (_agentInfo || document.getElementById('agent-guide')) return;
   var store = (window.NaviAgent && NaviAgent.STORE_URL) || '';
   var o = document.createElement('div'); o.id = 'agent-guide'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', '나비웹 도우미 설치 안내');
-  o.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+  o.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px';
   var inst = store ? '<a id="agent-guide-go" href="' + store + '" target="_blank" rel="noopener"' : '<a id="agent-guide-go" href="agent/naviweb-agent-extension.zip" download';
-  inst += ' style="display:inline-block;background:#2f66c9;color:#fff;text-decoration:none;border-radius:10px;padding:11px 26px;font-weight:700;font-size:15.5px">설치하기</a>';
-  o.innerHTML = '<div style="background:#fff;color:#1b2733;max-width:520px;width:100%;max-height:92vh;overflow:auto;border-radius:14px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-size:14.5px;line-height:1.65">' +
+  inst += ' style="display:inline-block;background:#00796B;color:#fff;text-decoration:none;border-radius:4px;padding:12px 26px;font-weight:600;letter-spacing:.04em;font-size:15.5px">설치하기</a>';
+  o.innerHTML = '<div style="background:#fff;color:#1b2733;max-width:520px;width:100%;max-height:92vh;overflow:auto;border-radius:4px;padding:24px;box-shadow:0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14),0 9px 46px 8px rgba(0,0,0,.12);font-size:14.5px;line-height:1.65">' +
     '<h2 style="margin:0 0 8px;font-size:19px">나비웹 도우미를 설치해 주세요</h2>' +
     '<p style="margin:0 0 8px"><b>왜 필요한가요?</b> 나비웹 도우미는 Chrome 확장 프로그램(익스텐션)으로, 사용자가 작성 중인 서류에 필요한 <b>첨부서류(등본·대장·확인서 등)를 정부·기관 등 관련 사이트에서 발급받아 자동으로 첨부</b>합니다. 사용자는 관련 사이트에 로그인만 하면 됩니다.</p>' +
     '<ul style="margin:0 0 8px;padding-left:20px"><li>도우미는 비밀번호·인증서·주민등록번호를 수집하거나 저장하지 않습니다.</li><li>설치는 1분이면 끝나고, 한 번만 하면 됩니다.</li></ul>' +
