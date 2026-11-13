@@ -1,22 +1,22 @@
 /**
- * naviweb-proxy — naviweb.kr 주소로 나비웹(mail.hondi.net 의 GitHub Pages)을 그대로 보여 주는 Cloudflare Worker.
+ * naviweb-proxy — naviweb.kr 주소로 나비웹(원본: mail.naviweb.kr, Cloudflare Pages)을 그대로 보여 주는 Cloudflare Worker.
  *
- *   naviweb.kr/            → mail.hondi.net/desktop.html  (폰이면 hondi.net/webapp.html 을 같은 주소 naviweb.kr 아래에서 그대로 제공 — isPhone·phoneRoute 참조)
- *   naviweb.kr/<파일>      → mail.hondi.net/<파일>
- *   naviweb.kr/_h/<경로>   → hondi.net/<경로>   (PDV·GDC·기능 개선 제안 등 끼워 넣는 hondi.net 페이지를 같은 출처로 만든다)
- *   naviweb.kr/src|auth|lib/… → hondi.net/… (hondi.net 페이지가 절대경로로 부르는 공용 스크립트)
+ *   naviweb.kr/            → mail.naviweb.kr/desktop.html  (폰이면 app.naviweb.kr/webapp.html 을 같은 주소 naviweb.kr 아래에서 그대로 제공 — isPhone·phoneRoute 참조)
+ *   naviweb.kr/<파일>      → mail.naviweb.kr/<파일>
+ *   naviweb.kr/_h/<경로>   → app.naviweb.kr/<경로>   (PDV·GDC·기능 개선 제안 등 끼워 넣는 hondi.net 페이지를 같은 출처로 만든다)
+ *   naviweb.kr/src|auth|lib/… → app.naviweb.kr/… (hondi.net 페이지가 절대경로로 부르는 공용 스크립트)
  *
  * 쿠키는 전달하지 않는다(정적 파일이라 필요 없고, 로그인 쿠키가 원본 서버로 새지 않게 한다).
- * mail.hondi.net 은 이 Worker 의 원본 서버로 계속 남겨 둔다(리다이렉트로 바꾸면 순환한다).
+ * 원본 서버(mail.naviweb.kr, app.naviweb.kr)는 리다이렉트로 바꾸면 순환한다.
  */
-const APP_ORIGIN = 'https://mail.hondi.net';
-const HONDI_ORIGIN = 'https://hondi.net';
+const APP_ORIGIN = 'https://mail.naviweb.kr';   // 2026-11-13 hondi.net 종료 대비 — 원본을 naviweb.kr 아래 Pages 로 옮겼다(구 mail.hondi.net)
+const HONDI_ORIGIN = 'https://app.naviweb.kr';   // 구 hondi.net(나비 앱 화면·공용 스크립트) 원본
 const HONDI_PREFIXES = ['/src/', '/auth/', '/lib/'];
 
 // 폰 접속은 hondi.net/webapp.html(나비 앱 화면)을 쓴다. 2026-11-12(주피터 지시)부터는 이동(302)시키지 않고,
 // 폰으로 판별된 요청은 모든 경로를 hondi.net 에서 받아 naviweb.kr 주소 그대로 보여 준다(주소창이 hondi.net 으로 바뀌지 않는다).
 // 폰 요청만 hondi.net 으로 보내므로 PC 요청과 엣지 캐시 키(원본 주소)가 섞이지 않는다.
-const PHONE_URL = 'https://hondi.net/webapp.html';
+const PHONE_URL = 'https://app.naviweb.kr/webapp.html';
 const PHONE_UA = /iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|IEMobile|Opera Mini|webOS/i;
 
 // 단말 판별 순서: ① ?view=mobile|desktop ② Sec-CH-UA-Mobile(Chrome·Android) ③ User-Agent.

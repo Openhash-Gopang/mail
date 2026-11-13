@@ -4,11 +4,11 @@ import { route, isPhone, phoneRoute } from '../ops/naviweb-proxy/worker.js';
 import worker from '../ops/naviweb-proxy/worker.js';
 const r = (p) => route(new URL('https://naviweb.kr' + p));
 test('naviweb-proxy 라우팅', () => {
-  assert.equal(r('/').target, 'https://mail.hondi.net/desktop.html');
-  assert.equal(r('/manual.html?embed=mail').target, 'https://mail.hondi.net/manual.html?embed=mail');
-  assert.deepEqual(r('/_h/pdv.html?embed=mail'), { target: 'https://hondi.net/pdv.html?embed=mail', hondi: true });
-  assert.equal(r('/src/gopang/services/push.js').target, 'https://hondi.net/src/gopang/services/push.js');
-  assert.equal(r('/icons/a.png').target, 'https://mail.hondi.net/icons/a.png');
+  assert.equal(r('/').target, 'https://mail.naviweb.kr/desktop.html');
+  assert.equal(r('/manual.html?embed=mail').target, 'https://mail.naviweb.kr/manual.html?embed=mail');
+  assert.deepEqual(r('/_h/pdv.html?embed=mail'), { target: 'https://app.naviweb.kr/pdv.html?embed=mail', hondi: true });
+  assert.equal(r('/src/gopang/services/push.js').target, 'https://app.naviweb.kr/src/gopang/services/push.js');
+  assert.equal(r('/icons/a.png').target, 'https://mail.naviweb.kr/icons/a.png');
 });
 
 import { readFileSync as _rf } from 'node:fs';
@@ -46,15 +46,15 @@ test('폰이 / 또는 /webapp.html 을 열면 이동 없이 hondi.net/webapp.htm
       const res = await worker.fetch(new Request('https://naviweb.kr' + path, { headers: { 'user-agent': IPHONE } }));
       assert.equal(res.status, 200, path);
       assert.equal(res.headers.get('location'), null, path);
-      assert.equal(calls[0], 'https://hondi.net/webapp.html', path);
+      assert.equal(calls[0], 'https://app.naviweb.kr/webapp.html', path);
       assert.match(res.headers.get('vary'), /User-Agent/);
     }
     calls.length = 0;
     await worker.fetch(new Request('https://naviweb.kr/manifest.json', { headers: { 'user-agent': IPHONE } }));
-    assert.equal(calls[0], 'https://hondi.net/manifest.json');   // 폰은 하위 파일도 hondi.net 에서
+    assert.equal(calls[0], 'https://app.naviweb.kr/manifest.json');   // 폰은 하위 파일도 hondi.net 에서
     calls.length = 0;
     await worker.fetch(new Request('https://naviweb.kr/manifest.json', { headers: { 'user-agent': WIN } }));
-    assert.equal(calls[0], 'https://mail.hondi.net/manifest.json');   // PC 는 기존 그대로
+    assert.equal(calls[0], 'https://mail.naviweb.kr/manifest.json');   // PC 는 기존 그대로
     const pv = await worker.fetch(new Request('https://naviweb.kr/?view=mobile', { headers: { 'user-agent': WIN } }));
     assert.match(pv.headers.get('set-cookie'), /navi_view=mobile/);
   } finally { globalThis.fetch = realFetch; }
@@ -66,9 +66,9 @@ test('쿠키 navi_view 는 ?view= 가 없을 때 하위 파일 요청의 화면�
 });
 test('phoneRoute: / → hondi.net/webapp.html, 나머지는 같은 경로, /_h/ 는 기존 규칙', () => {
   const r = (p) => phoneRoute(new URL('https://naviweb.kr' + p)).target;
-  assert.equal(r('/'), 'https://hondi.net/webapp.html');
-  assert.equal(r('/pdv-store.js?x=1'), 'https://hondi.net/pdv-store.js?x=1');
-  assert.equal(r('/_h/pdv.html'), 'https://hondi.net/pdv.html');
+  assert.equal(r('/'), 'https://app.naviweb.kr/webapp.html');
+  assert.equal(r('/pdv-store.js?x=1'), 'https://app.naviweb.kr/pdv-store.js?x=1');
+  assert.equal(r('/_h/pdv.html'), 'https://app.naviweb.kr/pdv.html');
 });
 test('desktop.html 의 안전망 분기는 주소창을 바꾸지 않고 같은 호스트의 ?view=mobile 로 보낸다', () => {
   const s = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
@@ -104,10 +104,10 @@ test('엣지 캐시 시간: 이미지·글꼴은 길게, 나머지는 짧게', (
 
 import { directAsset as _direct, etagMatches as _etm } from '../ops/naviweb-proxy/worker.js';
 test('정적 파일 직접 주소: 상대 경로만 원본으로, 절대 주소·#·data 는 그대로', () => {
-  const O = 'https://mail.hondi.net';
-  assert.equal(_direct('guide.js?v=1', '/desktop.html', O), 'https://mail.hondi.net/guide.js?v=1');
-  assert.equal(_direct('/icons/a.png', '/desktop.html', O), 'https://mail.hondi.net/icons/a.png');
-  assert.equal(_direct('icons/a.png', '/x/y.html', O), 'https://mail.hondi.net/x/icons/a.png');
+  const O = 'https://mail.naviweb.kr';
+  assert.equal(_direct('guide.js?v=1', '/desktop.html', O), 'https://mail.naviweb.kr/guide.js?v=1');
+  assert.equal(_direct('/icons/a.png', '/desktop.html', O), 'https://mail.naviweb.kr/icons/a.png');
+  assert.equal(_direct('icons/a.png', '/x/y.html', O), 'https://mail.naviweb.kr/x/icons/a.png');
   assert.equal(_direct('https://hondi.net/lib/a.js', '/', O), null);
   assert.equal(_direct('//cdn.example.com/a.js', '/', O), null);
   assert.equal(_direct('data:image/png;base64,AAA', '/', O), null);
