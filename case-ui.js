@@ -276,7 +276,7 @@
     } else if (act === 'tr') {
       var evn = t.getAttribute('data-ev'), ctx = { side: m.side }, entry = {};
       if (evn === 'close_self' || evn === 'request_close') {
-        var o = (typeof prompt === 'function') ? prompt('결과를 한 줄로 기록하세요 (예: 승소 / 완치 / 취하)') : null;
+        var o = (typeof prompt === 'function') ? await (window.mpPrompt||prompt)('결과를 한 줄로 기록하세요 (예: 승소 / 완치 / 취하)') : null;
         if (!o) return; ctx.outcome = o; entry.payload = { outcome: o };
       }
       if (['request_close', 'close_agree', 'close_self'].indexOf(evn) >= 0) {
@@ -317,7 +317,7 @@
       var cd2 = await s.getCase(id), ix = parseInt(t.getAttribute('data-i'), 10), arr = (cd2.deadlines || []).slice(); arr.splice(ix, 1); await s.patchCase(id, { deadlines: arr }); await openCase(name, id);
     } else if (act === 'send-invite') {
       var H4 = host(); if (!H4) return;
-      if (typeof confirm === 'function' && !confirm('초대 메일을 ' + (((await s.getCase(id)).invitation || {}).invitee_email || '') + ' 주소로 보냅니다. 보낼까요?')) return;
+      if (typeof confirm === 'function' && !(await (window.mpConfirm||confirm)('초대 메일을 ' + (((await s.getCase(id)).invitation || {}).invitee_email || '') + ' 주소로 보냅니다. 보낼까요?'))) return;
       var sr = await H4.sendInviteMail(id); cur['inv-msg'] = sr.ok ? '' : '초대 메일을 보내지 못했습니다(' + errText(sr) + ')';
       await openCase(name, id);
     } else if (act === 'reg-invite') {

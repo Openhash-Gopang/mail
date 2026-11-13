@@ -4,6 +4,7 @@
      스크립트는 그대로이고, 사이드바 셸·PC 레이아웃 CSS·_switchTab만 다르다.
      공통 기능을 고칠 때는 webapp.html과 이 파일 양쪽을 함께 고칠 것(K-Law의 desktop/webapp과 같은 구조). -->
 <head>
+<script src="https://app.naviweb.kr/assets/material-dialog.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="assets/i18n.js"></script>
@@ -3597,8 +3598,8 @@ function _guideSave() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([p.text], { type: 'text/plain;charset=utf-8' })); a.download = '과제계획서_' + p.title.replace(/[\\/:*?"<>|]/g, '').slice(0, 30) + '.txt';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
-function _guideDelete() {
-  const p = _guideCur(); if (!p || !confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return;
+async function _guideDelete() {
+  const p = _guideCur(); if (!p || !await (window.mpConfirm||confirm)('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return;
   delete _guide.plans[p.id]; _guide.cur = null; _guideStore(); _guideRender();
 }
 // ── 과제 계획서의 PDV 보관 (2026-11-03) ──
@@ -3870,8 +3871,8 @@ function _guideRenderList(kind) {
     }
     return '<div class="list-item" data-id="' + escHtml(p.id) + '"><div class="li-main"><div class="li-title">' + escHtml(p.title || '제목 없는 과제') + pill + '</div><div class="gl-li-sub">' + sub + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
   }).join('');
-  _drBindRows(box, (id, act) => {
-    if (act === 'del') { const p = _guide.plans[id]; if (!p || !confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return; delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; _guideStore(); _guideRenderList(kind); return; }
+  _drBindRows(box, async (id, act) => {
+    if (act === 'del') { const p = _guide.plans[id]; if (!p || !await (window.mpConfirm||confirm)('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return; delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; _guideStore(); _guideRenderList(kind); return; }
     _guideOpen(id);
   });
 }
@@ -4799,9 +4800,9 @@ function _mfbOpen(form, id, site) {
   if (!window._mfbAskHook) _mfbSpOpen();
   if (!id) _mfbChat(true);   // 새로 만들 때는 대화창을 열어 둔다: 말로 설명하면 초안이 나온다
 }
-function _mfbClose(force) {
+async function _mfbClose(force) {
   const root = _mfbRoot(); if (!root || root.hidden) return;
-  if (!force && _MFB.dirty && _mfbHasContent() && !confirm('작성 중인 내용이 사라집니다. 목록으로 돌아갈까요?')) return;
+  if (!force && _MFB.dirty && _mfbHasContent() && !await (window.mpConfirm||confirm)('작성 중인 내용이 사라집니다. 목록으로 돌아갈까요?')) return;
   _mfbSpClose(); root.hidden = true; root.innerHTML = ''; _MFB.dirty = false; _MFB.chat = false; root.classList.remove('chat-open');
   const card = root.closest('.card'); if (card) card.classList.remove('mfb-page');
   const o = _MFB.opener; _MFB.opener = null; if (o && o.focus) try { o.focus(); } catch (e) {}
@@ -4811,7 +4812,7 @@ async function _mfbSave() {
   if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
   const id = _MFB.id || 'form-mine-' + _mfHash(r.form.title);
   try {
-    if (!_MFB.id) { let ex = null; try { ex = (await _drCall('get', { id })).item; } catch (e) {} if (ex && !confirm('같은 이름의 양식이 이미 있습니다. 덮어쓸까요?')) return; }
+    if (!_MFB.id) { let ex = null; try { ex = (await _drCall('get', { id })).item; } catch (e) {} if (ex && !await (window.mpConfirm||confirm)('같은 이름의 양식이 이미 있습니다. 덮어쓸까요?')) return; }
     await _drCall('put', { item: { id: id, kind: 'form', box: 'mine', site: _MFB.site || _docHost.id || 'all', title: r.form.title, body: JSON.stringify(r.form) } });
     _mfbClose(true); _drToast('내 서류함에 저장했습니다'); _mfRender();
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
@@ -4853,7 +4854,7 @@ function _mfbBind(root) {
     const x = selField(); if (!x) return; x.t = el.value; x.w = 0; x.r = 0; if (x.t === 'amount' && !x.un) x.un = '원'; _mfbDirty();
     _mfbRenderCanvas(); const sel = _mfbQ('.mfb-insp [data-k="t"]'); if (sel) sel.focus();
   });
-  root.addEventListener('click', ev => {
+  root.addEventListener('click', async ev => {
     const b = ev.target.closest('[data-a]');
     if (!b) { const c = ev.target.closest('[data-f]'); if (c && ev.target === c) c.focus(); return; }
     if (!root.contains(b)) return;
@@ -4868,7 +4869,7 @@ function _mfbBind(root) {
     if (a === 'addf') return _mfbAddField(si, 0);
     if (a === 'adds') { if (_MFB.secs.length >= 8) return; const n = _mfbField(); _MFB.secs.push({ h: '', f: [n] }); _MFB.sel = n.id; _mfbDirty(); return _mfbRenderCanvas('[data-f="' + n.id + '"] [data-k="l"]'); }
     if (a === 'delsec') {
-      const s = _MFB.secs[si]; if (!s) return; if (s.f.some(y => String(y.l).trim()) && !confirm('이 묶음과 안의 항목을 모두 지울까요?')) return;
+      const s = _MFB.secs[si]; if (!s) return; if (s.f.some(y => String(y.l).trim()) && !await (window.mpConfirm||confirm)('이 묶음과 안의 항목을 모두 지울까요?')) return;
       _MFB.secs.splice(si, 1); if (!_mfbFind(_MFB.sel)) _MFB.sel = 0; _mfbDirty(); return _mfbRenderCanvas();
     }
     if (a === 'start') return _mfbStart(+b.getAttribute('data-i'));
@@ -4996,7 +4997,7 @@ async function _mfRender() {
           return;
         }
         const id = row.getAttribute('data-id');
-        if (act === 'edit') await _mfEdit(id); else if (act === 'del') { if (!confirm('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
+        if (act === 'edit') await _mfEdit(id); else if (act === 'del') { if (!await (window.mpConfirm||confirm)('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
       } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
     }));
   } catch (e) {
@@ -5045,7 +5046,7 @@ async function _drRenderDocList(status) {
 }
 async function _drDocAction(id, act, status) {
   try {
-    if (act === 'del') { if (!confirm('이 항목을 삭제할까요?')) return; await _drCall('delete', { id }); _drRenderDocList(status); return; }
+    if (act === 'del') { if (!await (window.mpConfirm||confirm)('이 항목을 삭제할까요?')) return; await _drCall('delete', { id }); _drRenderDocList(status); return; }
     if (act === 'done') { await _drCall('done', { id }); _drToast('작성한 서류로 옮겼습니다'); _drRenderDocList(status); return; }
     const it = (await _drCall('get', { id })).item;
     if (act === 'dl') { if (it.fileData || (it.extras || []).length) await _drDownload(it); return; }
@@ -6062,8 +6063,8 @@ function _profVisPaint(btn, f) {
   btn.setAttribute('aria-pressed', f.pub ? 'true' : 'false'); btn.textContent = f.pub ? '공개' : '비공개';
   btn.title = f.pub ? '이 항목은 페이지에 나옵니다. 누르면 비공개로 바꿉니다.' : '이 항목은 페이지에 나오지 않습니다. 누르면 공개로 바꿉니다.';
 }
-function _profToggleVis(f, btn) {
-  if (!f.pub && f.sens && !confirm('“' + f.label + '” 항목은 이 페이지를 보는 누구에게나 보입니다. 공개할까요?')) return;
+async function _profToggleVis(f, btn) {
+  if (!f.pub && f.sens && !await (window.mpConfirm||confirm)('“' + f.label + '” 항목은 이 페이지를 보는 누구에게나 보입니다. 공개할까요?')) return;
   f.pub = !f.pub; _profVisPaint(btn, f); _profRefresh();
 }
 function _profRenderRows() {
@@ -6135,8 +6136,8 @@ function _profDownload() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([_profPage()], { type: 'text/html;charset=utf-8' }));   // 공개 항목만 들어간다
   a.download = '내 프로필.html'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
-function _profReset() {
-  if (!confirm('채운 항목·상품·서비스와 대화를 모두 지우고 기본 상태(개인 정보는 이름만 공개)로 되돌릴까요?')) return;
+async function _profReset() {
+  if (!await (window.mpConfirm||confirm)('채운 항목·상품·서비스와 대화를 모두 지우고 기본 상태(개인 정보는 이름만 공개)로 되돌릴까요?')) return;
   _prof.fields = _profTplFields(); _prof.offers = []; _prof.firstSent = false; _prof.pending = {}; _prof.busy = false; clearTimeout(_prof.timer);
   try { localStorage.removeItem(_profStoreKey()); } catch (x) {}
   _pfEl('pf-thread').innerHTML = ''; _pfEl('pf-box').classList.remove('pf-started'); _pfEl('pf-live').hidden = true;
@@ -6906,7 +6907,7 @@ async function _mailMarkRead(mid) {
 async function _mailMarkAllRead() {
   const ids = (_mailInboxCache || []).filter(_mailIsUnread).map(m => m.id);
   if (!ids.length) { alert('안 읽은 메일이 없습니다.'); return; }
-  if (!confirm('안 읽은 메일 ' + ids.length + '통을 모두 읽음으로 표시할까요?')) return;
+  if (!await (window.mpConfirm||confirm)('안 읽은 메일 ' + ids.length + '통을 모두 읽음으로 표시할까요?')) return;
   const btn = document.getElementById('mail-inbox-markall');
   if (btn) { btn.disabled = true; btn.textContent = '처리 중…'; }
   let failed = 0;
@@ -7765,7 +7766,7 @@ async function _cmpChatSendText(text, attachments) {
       // 2026-09-12 신설 — K-Mail이 "메일 ID를 아직 안 정했다"고 판단해
       // 낸 신호(SP §2-14). 실제 저장은 안 하고 화면 전환만 한다 — 사용자가
       // 설정 > 계정에서 직접 자동생성/수동지정을 고른다.
-      if (confirm('아직 메일 ID를 설정하지 않으셨어요. 지금 설정 화면으로 이동할까요?')) {
+      if (await (window.mpConfirm||confirm)('아직 메일 ID를 설정하지 않으셨어요. 지금 설정 화면으로 이동할까요?')) {
         kmailOpenSettings('account');
       }
     }
