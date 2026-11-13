@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script src="https://app.naviweb.kr/assets/material-dialog.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
 <script>
@@ -1640,7 +1641,7 @@ async function _mailMarkRead(mid) {
 async function _mailMarkAllRead() {
   const ids = (_mailInboxCache || []).filter(_mailIsUnread).map(m => m.id);
   if (!ids.length) { alert('안 읽은 메일이 없습니다.'); return; }
-  if (!confirm('안 읽은 메일 ' + ids.length + '통을 모두 읽음으로 표시할까요?')) return;
+  if (!await (window.mpConfirm||confirm)('안 읽은 메일 ' + ids.length + '통을 모두 읽음으로 표시할까요?')) return;
   const btn = document.getElementById('mail-inbox-markall');
   if (btn) { btn.disabled = true; btn.textContent = '처리 중…'; }
   let failed = 0;
@@ -2138,7 +2139,7 @@ async function _cmpChatSendText(text, attachments) {
       // 2026-09-12 신설 — K-Mail이 "메일 ID를 아직 안 정했다"고 판단해
       // 낸 신호(SP §2-14). 실제 저장은 안 하고 화면 전환만 한다 — 사용자가
       // "메일" 탭의 "내 메일 ID"에서 직접 자동생성/수동지정을 고른다.
-      if (confirm('아직 메일 ID를 설정하지 않으셨어요. 지금 설정 화면으로 이동할까요?')) {
+      if (await (window.mpConfirm||confirm)('아직 메일 ID를 설정하지 않으셨어요. 지금 설정 화면으로 이동할까요?')) {
         _switchTab('mail');
         _mailSwitchSub('idsettings');
       }

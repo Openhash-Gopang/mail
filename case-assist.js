@@ -38,7 +38,7 @@
     var extra = g.result === 'ADVISE_HUMAN' ? '나비웹은 특정 전문가를 추천하지 않습니다. 나비웹이나 인터넷에서 직접 찾아보실 수 있습니다.' : '';
     var rem = (g.violations || []).map(function (v) { return v.remedy; }).filter(Boolean).slice(0, 2).join(' ');
     var doc = typeof document !== 'undefined' ? document : null;
-    if (!doc || !doc.body) return Promise.resolve(typeof confirm === 'function' ? confirm(notice.text + (rem ? '\n\n' + rem : '') + (extra ? '\n\n' + extra : '') + '\n\n그래도 진행할까요? (선택은 기록됩니다)') : false);
+    if (!doc || !doc.body) return Promise.resolve(typeof confirm === 'function' ? (window.mpConfirm||confirm)(notice.text + (rem ? '\n\n' + rem : '') + (extra ? '\n\n' + extra : '') + '\n\n그래도 진행할까요? (선택은 기록됩니다)') : false);
     return new Promise(function (resolve) {
       var ov = doc.createElement('div'); ov.className = 'cs-ask'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
       ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:16px';
