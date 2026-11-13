@@ -2111,6 +2111,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button type="button" role="tab" class="wp-tab" id="xk-tab-wp" aria-selected="false" onclick="_xkSwitch('wp')">Whitepaper</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-oh" aria-selected="false" onclick="_xkSwitch('oh')">OpenHash</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-ma" aria-selected="false" onclick="_xkSwitch('ma')">서버리스 메일 설계</button>
+      <button type="button" role="tab" class="wp-tab" id="xk-tab-gd" aria-selected="false" onclick="_xkSwitch('gd')">나비웹 안내</button>
       <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
     <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
@@ -7463,7 +7464,7 @@ window.addEventListener('scroll', () => {
   }, 200);
 }, { passive: true });
 const _XK_V = String(Math.floor(Date.now() / 60000));   // 1분마다 바뀌는 값 — Cloudflare(max-age 4시간)·브라우저가 옛 문서를 붙들지 않게 한다
-const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V, wp: 'manual.html?embed=mail&v=' + _XK_V, oh: 'openhash.html?embed=mail&v=' + _XK_V, ma: 'mail-architecture.html?embed=mail&v=' + _XK_V };
+const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V, wp: 'manual.html?embed=mail&v=' + _XK_V, oh: 'openhash.html?embed=mail&v=' + _XK_V, ma: 'mail-architecture.html?embed=mail&v=' + _XK_V, gd: 'naviweb-guide.html?embed=mail&v=' + _XK_V };
 function _xkSwitch(k) {
   const f = document.getElementById('xokorea-frame');
   _subSet('xk', k);
@@ -7471,7 +7472,7 @@ function _xkSwitch(k) {
     // 안쪽 문서가 높이를 알려 오지 않으면(옛 문서·로딩 실패) 안쪽 스크롤을 되살려 내용이 잘리지 않게 한다
     setTimeout(() => { if (f.getAttribute('data-k') === k && !f.getAttribute('data-sized')) f.setAttribute('scrolling', 'auto'); }, 3000);
   }
-  ['xo', 'history', 'wp', 'oh', 'ma'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
+  ['xo', 'history', 'wp', 'oh', 'ma', 'gd'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
 }
 window.addEventListener('message', (e) => {
   const f = document.getElementById('xokorea-frame'); if (!f || e.source !== f.contentWindow || !e.data) return;
