@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나비웹 서버리스 메일 아키텍처 설계 v0.1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#fafaf7;--fg:#1f2328;--mut:#5b6470;--line:#dcdfe4;--acc:#1a56db;--accbg:#eaf1ff;--ok:#0f7b4a;--okbg:#e6f6ee;--warn:#9a5b00;--warnbg:#fff4e0;--bad:#b42318;--badbg:#fdecea;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Noto Sans KR",system-ui,sans-serif}
+main{max-width:920px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:26px;margin:0 0 6px;line-height:1.3}
+h2{font-size:20px;margin:44px 0 10px;padding-top:14px;border-top:2px solid var(--fg)}
+h3{font-size:16px;margin:24px 0 6px}
+p{margin:8px 0}
+.meta{color:var(--mut);font-size:13px}
+.sum{background:var(--accbg);border-left:4px solid var(--acc);padding:14px 18px;border-radius:6px;margin:18px 0}
+.sum ul{margin:6px 0 0;padding-left:20px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px;background:var(--card)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f1f3f6;font-weight:700}
+code{background:#eef0f3;padding:1px 5px;border-radius:4px;font-size:13px;font-family:ui-monospace,Consolas,monospace}
+pre{background:#14181f;color:#e8ebf0;padding:14px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.55}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:10px;margin-right:4px;font-weight:700}
+.t-ok{background:var(--okbg);color:var(--ok)}.t-new{background:var(--accbg);color:var(--acc)}.t-warn{background:var(--warnbg);color:var(--warn)}
+.box{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:12px 16px;margin:12px 0}
+.warn{background:var(--warnbg);border-left:4px solid var(--warn);padding:12px 16px;border-radius:6px;margin:14px 0}
+.fig{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;margin:14px 0;overflow-x:auto}
+.fig svg{min-width:720px;width:100%;height:auto}
+.fig figcaption{font-size:13px;color:var(--mut);padding:4px 6px}
+ol,ul{padding-left:22px}
+li{margin:3px 0}
+.q{background:var(--badbg);border-left:4px solid var(--bad);padding:10px 16px;border-radius:6px;margin:10px 0}
+@media(max-width:600px){main{padding:20px 14px 60px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<main>
+<h1>나비웹 서버리스 메일 아키텍처 설계</h1>
+<div class="meta">v0.1 설계안 · 2026-11-13 · 대상: <code>naviweb.kr</code> 메일(<code>ceo@naviweb.kr</code> 포함) · 근거: <code>Openhash-Gopang/hondi</code>, <code>Openhash-Gopang/mail</code> 저장소 코드·문서 읽기(운영 서버·Cloudflare 설정은 직접 확인하지 못한 부분을 §12에 적음)</div>
+
+<div class="sum">
+<b>한 줄 요약</b> — 메일을 "서버에 쌓인 편지"가 아니라 <b>나비 채팅과 같은 봉투(서명·해시체인·수신확인)에 담은 AI 간 메시지</b>로 보고, 저장은 사용자별 사서함(Durable Object)과 암호화된 객체 저장소(R2)가 맡고, L1~L5 원장에는 <b>해시만</b> 앵커링한다.
+<ul>
+<li><b>서버 없음</b>: 메일 경로에 상시 서버가 없다. Cloudflare 수신 → 워커 → 사서함 DO → R2. L1 PocketBase는 메일 저장소가 아니라 <b>원장 노드</b>로만 남는다(내려가도 메일은 흐른다).</li>
+<li><b>두 통로</b>: 나비웹 ↔ 나비웹은 <b>SMTP 없이</b> 채팅과 같은 전달 계층으로 직통(네이티브 레인), 외부 인터넷 메일과는 <b>브리지 레인</b>으로만 연결한다.</li>
+<li><b>OpenHash 연동</b>: 사서함마다 해시체인 <code>h_i = SHA-256(h_{i-1} ‖ data_i ‖ height_i)</code>, 메일 중요도에 따라 PLSM이 앵커링 계층(L1~L5)을 고른다. 보냄·도착·읽음이 원장 항목이 된다.</li>
+<li><b>솔직한 한계</b>: 외부에서 SMTP로 들어오는 메일은 워커에 도착하는 순간 평문이다. 즉시 봉인(암호화)하고 평문은 보관하지 않지만, "수신 순간까지 E2E"는 불가능하다(§6).</li>
+<li><b>다음 한 걸음</b>(§11 Phase 0): <code>naviweb.kr</code>에 Email Routing catch-all을 켜 기존 워커(<code>naviweb.kr</code> 수신 코드는 이미 있음)에 연결. 설계 확정과 무관하게 바로 할 수 있다.</li>
+</ul>
+</div>
+
+<h2>1. 현재 상태 (저장소 코드 기준)</h2>
+<table>
+<tr><th>영역</th><th>지금 구조</th><th>근거</th></tr>
+<tr><td>주소·도메인</td><td>보내는 주소 <code>&lt;메일아이디&gt;@naviweb.kr</code>, 받을 때는 <code>naviweb.kr</code>과 옛 <code>hondi.kr</code> 모두 K-Mail로 처리. 로컬파트는 ① <code>kmail-&lt;캠페인&gt;</code> ② guid(콜론→하이픈) ③ 메일 아이디</td><td><code>src/worker/kmail-address.js</code></td></tr>
+<tr><td>수신</td><td>Cloudflare Email Routing → 워커 <code>email()</code> → <code>_handleKmailInboundEmail</code> → 소유자 조회 → <code>ai_messages</code>에 평문 저장</td><td><code>worker.js</code></td></tr>
+<tr><td>저장소</td><td>L1 PocketBase(<code>l1-hanlim</code>): <code>ai_messages</code>(<code>kmail_inbound/outbound/…</code>), <code>kmail_user_settings</code>(메일 아이디·서명), 캠페인·연락처·차단 목록 등 마이그레이션 31개. 첨부는 R2 <code>KMAIL_ATTACHMENTS</code></td><td><code>pb_migrations/*kmail*</code>, <code>wrangler.toml</code></td></tr>
+<tr><td>발송</td><td><code>send_email</code> 바인딩(<code>env.EMAIL</code>)</td><td><code>wrangler.toml</code></td></tr>
+<tr><td>원장</td><td>사용자 해시체인(<code>src/openhash/hashChain.js</code>), PLSM 계층 선택(<code>plsm.js</code>, <code>tiers.js</code>), 머클 앵커링(<code>anchor_records</code>, <code>pdv_merkle_anchors</code>), <b>서버에는 해시만</b>(PR #461 "해시전용")</td><td><code>docs/openhash_integrated_v1.md</code>, <code>pdv-hashchain-design-v3.md</code></td></tr>
+<tr><td>채팅</td><td>개인 AI ↔ 개인 AI 호출·고지·3단계 수신확인(<code>PERSONAL-AC-CALL-PROTOCOL</code>), 푸시(<code>_sendPushToGuid</code>), 실시간 신호(<code>webrtc_signals</code>, TTL 60초), 로그인 증명(<code>signal-auth.js</code>)</td><td><code>docs/PERSONAL-AC-CALL-PROTOCOL_*.md</code>, <code>src/gopang/p2p/</code></td></tr>
+<tr><td>PDV</td><td>원문은 기기 IndexedDB, 서버는 해시. 클라우드 백업은 <b>클라이언트 암호화 사본만</b>(<code>pdv_backups</code>, 복구 문구로 키 개방)</td><td><code>PDV_STORAGE_SURVEY_20261107.html</code>, <code>pdv-backup-handler.js</code></td></tr>
+</table>
+<div class="warn"><b>문제 진단</b> — 메일은 이미 서버리스에 가깝게 <b>수신·발송</b>은 Cloudflare 엣지에서 하지만, <b>저장·소유자 조회·상태</b>가 전부 L1 PocketBase 한 대(Oracle 춘천)에 평문으로 모인다. 이 서버가 멈추면 메일이 유실되거나 반송되고, 서버 관리자는 모든 메일을 읽을 수 있다. 이는 "서버는 평문을 못 읽는다"는 PDV 원칙과도 충돌한다.</div>
+
+<h2>2. 설계 원칙 — OpenHash와 채팅에서 가져온 것</h2>
+<table>
+<tr><th>#</th><th>원칙</th><th>출처</th></tr>
+<tr><td>P1</td><td><b>감사 가능한 무결성</b>이 목표다. "서버를 못 믿어도 된다"가 아니라, 위·변조를 사후에 반드시 들킨다.</td><td>OpenHash §2 위협모델</td></tr>
+<tr><td>P2</td><td>원장에는 <b>해시만</b>. 본문·제목·주소 평문은 원장에 오르지 않는다.</td><td>PR #461, PDV v3</td></tr>
+<tr><td>P3</td><td>메일은 사람↔사람이 아니라 <b>개인 AI ↔ 개인 AI</b> 메시지다. 응답이 없거나 사람 개입이 필요하면 양쪽 AI가 각자 사람에게 고지한다(대칭 고지).</td><td>PERSONAL-AC-CALL 원칙 3</td></tr>
+<tr><td>P4</td><td>새 동의·고지 장치를 만들지 않고 기존 것(푸시, <code>sent→delivered→acknowledged</code>)을 재사용한다.</td><td>PERSONAL-AC-CALL 원칙 5</td></tr>
+<tr><td>P5</td><td>혼디는 <b>기록자이지 집행자가 아니다</b>. 메일 원장은 "그 시각에 이 내용이 존재했고 이렇게 전달됐다"의 증거까지만.</td><td>PERSONAL-LEDGER 원칙 1</td></tr>
+<tr><td>P6</td><td>단일 정의 소스 + 같은 체인 포맷을 양쪽(브라우저·서버)이 공유한다.</td><td>1to6 통합 설계 §1</td></tr>
+<tr><td>P7</td><td>서버가 맡는 건 <b>암호문 보관과 순서 보장</b>뿐이다. 복호화 키는 사용자 쪽(지갑 키 유도)에 있다.</td><td>PDV 백업 방식 C</td></tr>
+</table>
+
+<h2>3. 전체 구조</h2>
+<figure class="fig">
+<svg viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans KR,system-ui,sans-serif" font-size="13">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b6470"/></marker></defs>
+<rect x="10" y="20" width="150" height="70" rx="8" fill="#fff" stroke="#9aa3af"/><text x="85" y="50" text-anchor="middle" font-weight="700">외부 메일 서버</text><text x="85" y="70" text-anchor="middle" fill="#5b6470">Gmail · 기관 등 (SMTP)</text>
+<rect x="10" y="190" width="150" height="70" rx="8" fill="#fff" stroke="#9aa3af"/><text x="85" y="220" text-anchor="middle" font-weight="700">나비웹 사용자 A</text><text x="85" y="240" text-anchor="middle" fill="#5b6470">기기 + 지갑 키 + 개인 AI</text>
+<rect x="10" y="360" width="150" height="70" rx="8" fill="#fff" stroke="#9aa3af"/><text x="85" y="390" text-anchor="middle" font-weight="700">나비웹 사용자 B</text><text x="85" y="410" text-anchor="middle" fill="#5b6470">기기 + 지갑 키 + 개인 AI</text>
+
+<rect x="230" y="20" width="170" height="70" rx="8" fill="#eaf1ff" stroke="#1a56db"/><text x="315" y="48" text-anchor="middle" font-weight="700">브리지 레인</text><text x="315" y="68" text-anchor="middle" fill="#1a56db">Email Routing 수신 · 발송</text>
+<rect x="230" y="190" width="170" height="70" rx="8" fill="#eaf1ff" stroke="#1a56db"/><text x="315" y="218" text-anchor="middle" font-weight="700">메일 게이트웨이 워커</text><text x="315" y="238" text-anchor="middle" fill="#1a56db">서명 검증 · 봉인 · 라우팅</text>
+<rect x="230" y="360" width="170" height="70" rx="8" fill="#eaf1ff" stroke="#1a56db"/><text x="315" y="388" text-anchor="middle" font-weight="700">네이티브 레인</text><text x="315" y="408" text-anchor="middle" fill="#1a56db">채팅과 같은 전달 계층</text>
+
+<rect x="470" y="150" width="190" height="150" rx="8" fill="#e6f6ee" stroke="#0f7b4a"/><text x="565" y="178" text-anchor="middle" font-weight="700">사서함 Durable Object</text><text x="565" y="196" text-anchor="middle" fill="#0f7b4a">(사용자 guid 하나당 하나)</text>
+<text x="565" y="222" text-anchor="middle">· 받은/보낸 순서 직렬화</text><text x="565" y="242" text-anchor="middle">· 해시체인 머리(head)</text><text x="565" y="262" text-anchor="middle">· 색인·상태(SQLite)</text><text x="565" y="282" text-anchor="middle">· 앵커 대기열</text>
+
+<rect x="470" y="20" width="190" height="70" rx="8" fill="#e6f6ee" stroke="#0f7b4a"/><text x="565" y="48" text-anchor="middle" font-weight="700">메일 아이디 등록부 DO</text><text x="565" y="68" text-anchor="middle" fill="#0f7b4a">아이디 → guid 유일성 보장</text>
+<rect x="470" y="360" width="190" height="70" rx="8" fill="#e6f6ee" stroke="#0f7b4a"/><text x="565" y="388" text-anchor="middle" font-weight="700">R2 (봉인된 객체)</text><text x="565" y="408" text-anchor="middle" fill="#0f7b4a">본문·첨부 암호문만</text>
+
+<rect x="730" y="20" width="160" height="150" rx="8" fill="#fff" stroke="#b8a46a"/><text x="810" y="48" text-anchor="middle" font-weight="700">OpenHash 원장</text><text x="810" y="70" text-anchor="middle" fill="#9a5b00">해시만</text>
+<text x="810" y="95" text-anchor="middle">L1 노드(PocketBase)</text><text x="810" y="115" text-anchor="middle">→ L2 → L3 → L4 → L5</text><text x="810" y="140" text-anchor="middle" fill="#5b6470">머클 루트 앵커링</text>
+<rect x="730" y="250" width="160" height="100" rx="8" fill="#fff" stroke="#9aa3af"/><text x="810" y="278" text-anchor="middle" font-weight="700">알림 계층</text><text x="810" y="300" text-anchor="middle" fill="#5b6470">Web Push · 실시간 연결</text><text x="810" y="320" text-anchor="middle" fill="#5b6470">(기존 채팅과 공용)</text>
+
+<path d="M160 55H228" stroke="#5b6470" marker-end="url(#a)" marker-start="url(#a)"/>
+<path d="M315 90V188" stroke="#5b6470" marker-end="url(#a)"/>
+<path d="M160 225H228" stroke="#5b6470" marker-end="url(#a)" marker-start="url(#a)"/>
+<path d="M400 225H468" stroke="#5b6470" marker-end="url(#a)" marker-start="url(#a)"/>
+<path d="M160 395H228" stroke="#5b6470" marker-end="url(#a)" marker-start="url(#a)"/>
+<path d="M400 395L468 262" stroke="#5b6470" marker-end="url(#a)"/>
+<path d="M565 300V358" stroke="#5b6470" marker-end="url(#a)"/>
+<path d="M565 150V92" stroke="#5b6470" marker-end="url(#a)" marker-start="url(#a)"/>
+<path d="M660 190L730 120" stroke="#b8a46a" stroke-dasharray="5 4" marker-end="url(#a)"/>
+<path d="M660 260L730 290" stroke="#5b6470" marker-end="url(#a)"/>
+<text x="700" y="165" fill="#9a5b00" font-size="12">비동기</text>
+</svg>
+<figcaption>그림 1. 구성 요소. 굵은 실선은 메일 경로, 점선은 비동기 원장 앵커링. 메일 경로에는 상시 서버가 없다.</figcaption>
+</figure>
+
+<h3>구성 요소와 책임</h3>
+<table>
+<tr><th>요소</th><th>역할</th><th>상태</th></tr>
+<tr><td>브리지 레인</td><td>외부 SMTP ↔ 나비웹. 수신은 Email Routing → 워커 <code>email()</code>, 발송은 <code>send_email</code>. 외부 메일이 닿는 <b>유일한 곳</b></td><td><span class="tag t-ok">있음</span>수신 코드·발송 바인딩</td></tr>
+<tr><td>메일 게이트웨이 워커</td><td>수신 메일 파싱, 수신자 해석(<code>classifyInboundLocalPart</code> 재사용), <b>즉시 봉인</b>, 사서함 DO로 전달. 발신 서명 검증, 속도 제한</td><td><span class="tag t-ok">있음</span>확장 필요</td></tr>
+<tr><td>사서함 DO</td><td>사용자 guid당 1개. 같은 사서함에 대한 쓰기를 자동 직렬화 → 락 없이 <code>seq</code>·<code>prev_hash</code> 경합을 막는다(<code>LedgerWriter</code> DO와 같은 이유)</td><td><span class="tag t-new">신설</span></td></tr>
+<tr><td>메일 아이디 등록부 DO</td><td>"한 아이디는 한 사람" 유일성. 현재 <code>kmail_user_settings.mail_id</code>(PocketBase)가 하는 일</td><td><span class="tag t-new">신설</span></td></tr>
+<tr><td>R2</td><td>봉인된 본문·첨부(암호문). 키는 <code>mail/&lt;guid&gt;/&lt;msgId&gt;</code></td><td><span class="tag t-ok">있음</span>버킷 <code>KMAIL_ATTACHMENTS</code> 재사용</td></tr>
+<tr><td>네이티브 레인</td><td>나비웹 ↔ 나비웹 직통. 채팅의 서명 증명(<code>signal-auth.js</code>), 푸시, 호출·응답 프로토콜을 그대로 사용. SMTP를 타지 않는다</td><td><span class="tag t-ok">있음</span>메일용 확장</td></tr>
+<tr><td>OpenHash 원장</td><td>해시체인 머리·머클 루트 앵커링. 메일 경로와 <b>분리</b>(비동기)</td><td><span class="tag t-ok">있음</span></td></tr>
+</table>
+
+<h2>4. 두 개의 통로</h2>
+<h3>4.1 네이티브 레인 — 나비웹 ↔ 나비웹 (SMTP 없음)</h3>
+<ol>
+<li>A의 개인 AI가 <b>메시지 봉투</b>를 만든다(§5). 수신자 <code>bob@naviweb.kr</code>는 등록부 DO에서 B의 guid로 해석.</li>
+<li>A의 지갑 키로 서명 → 게이트웨이 워커가 서명 검증(채팅 <code>/signal/*</code>와 같은 방식, 쿠키 또는 <code>auth/issue</code> 토큰).</li>
+<li>B의 사서함 DO가 순서를 매겨 봉인된 본문을 R2에 두고, 해시체인 머리를 갱신. A의 보낸 사서함에도 같은 해시로 기록.</li>
+<li>B가 접속 중이면 실시간 연결로, 아니면 Web Push로 알림(채팅과 동일 계층). B가 열면 <code>delivered → acknowledged</code> 영수가 A의 사서함에 쌓인다.</li>
+<li>외부 인터넷을 전혀 거치지 않으므로 스푸핑·평문 노출 구간이 없다. 본문은 A 기기에서 B의 공개키로 봉인된 채 B 기기에서 열린다(<b>진짜 E2E</b>).</li>
+</ol>
+<h3>4.2 브리지 레인 — 외부 메일</h3>
+<p><b>수신</b>: 외부 → Email Routing → 게이트웨이 워커 → (SPF/DKIM/DMARC 결과·차단 목록·속도 제한 확인) → <b>즉시 사용자 공개키로 봉인</b>하고 평문은 버린다 → 사서함 DO. 수신자 AI가 의도(intent)를 추출해야 하는 경우만 §8의 위임 복호화를 쓴다.</p>
+<p><b>발신</b>: 사용자 서명 확인 → 게이트웨이가 <code>send_email</code>로 발송(주소 <code>&lt;아이디&gt;@naviweb.kr</code>, DKIM 서명) → 보낸 사서함에 해시 기록. 외부 수신 서버가 읽는 순간부터는 나비웹의 통제 밖이다.</p>
+<div class="warn"><b>브리지는 신뢰 경계다</b> — 같은 도메인 <code>naviweb.kr</code>이라도 "서명된 네이티브 메시지"와 "외부에서 온 메일"을 UI에서 구분해 표시한다(스푸핑 방지). 네이티브 메시지는 지갑 서명 검증을 통과한 것만 그렇게 보인다.</div>
+
+<h2>5. 메시지 봉투 — 채팅과 메일은 같은 봉투의 두 가지 배달 방식</h2>
+<p>채팅과 메일을 별개 시스템으로 두지 않는다. 지금 <code>ai_messages</code>가 이미 <code>session_id</code>, <code>sender_guid</code>, <code>receiver_guid</code>, <code>content_type</code>으로 둘 다 담는다. 이를 서명된 봉투로 승격한다.</p>
+<pre>envelope = {
+  v: 1,
+  id:        "&lt;UUIDv7&gt;",                 // 시간순 정렬 가능
+  thread:    "&lt;session_id&gt;",             // 채팅·메일 공용 스레드
+  from:      "&lt;guid&gt;",   to: ["&lt;guid&gt;" | "ext:&lt;이메일&gt;"],
+  kind:      "mail" | "chat" | "call" | "receipt" | "digest",
+  intent:    { type, params, deadline? },  // 개인 AI가 읽는 구조화 부분(선택)
+  body_ct:   "&lt;봉인된 본문 → R2 참조&gt;",   // 사람이 읽는 부분(암호문)
+  atts:      [{ r2, ct_hash, size }],
+  prev:      "&lt;보낸 사람 체인 직전 해시&gt;",
+  importance: 0..100,                      // §7 PLSM 입력
+  ts, sig:   Ed25519(sender, hash(envelope without sig))
+}</pre>
+<table>
+<tr><th></th><th>채팅</th><th>메일</th></tr>
+<tr><td>배달</td><td>수신자 온라인 → 실시간</td><td>수신자 오프라인 → 사서함에 보관 후 푸시</td></tr>
+<tr><td>보관</td><td>짧게(신호는 TTL 60초)</td><td>보존 기간 동안(저장 과금 <code>storage_next_billing_at</code> 기존 필드 활용)</td></tr>
+<tr><td>영수</td><td><code>sent → delivered → acknowledged</code></td><td>동일</td></tr>
+<tr><td>사람 개입</td><td>실시간 확인</td><td>AI 위임 범위(§8) 안이면 자율, 밖이면 고지</td></tr>
+</table>
+<p>스레드가 같으므로 사용자는 한 대화 안에서 채팅과 메일을 이어 본다(<code>kmail:&lt;campaignId&gt;</code> 같은 기존 세션 규칙 유지). 외부 수신자(<code>ext:</code>)에게는 평문 MIME으로 변환해 브리지로 나간다.</p>
+
+<h2>6. 암호화와 키</h2>
+<table>
+<tr><th>구간</th><th>방식</th><th>서버가 평문을 보는가</th></tr>
+<tr><td>네이티브 ↔ 네이티브</td><td>보낸 기기가 수신자 공개키(X25519)로 봉인(sealed box). 서명은 Ed25519</td><td><b>아니오</b></td></tr>
+<tr><td>외부 → 나비웹 (수신)</td><td>워커가 도착 즉시 수신자 공개키로 봉인, 평문 폐기</td><td><b>수신 순간 메모리에서만</b>(보관 안 함)</td></tr>
+<tr><td>나비웹 → 외부 (발신)</td><td>사용자 서명 후 워커가 MIME 변환·발송</td><td>발송 순간 메모리에서만</td></tr>
+<tr><td>보관(R2·DO)</td><td>암호문과 해시, 최소 메타(수신자 guid, 시각, 크기, 상태)</td><td>아니오</td></tr>
+</table>
+<h3>키 구조</h3>
+<ul>
+<li>지갑 Ed25519(서명)와 <b>별도의 X25519 암호화 공개키</b>를 사서함 DO에 등록한다(서명키를 재사용하지 않는다). 개인키는 기기 IDV 볼트.</li>
+<li>PDV 백업 방식 C와 동일: 복구 문구로 열리는 DEK에서 HKDF로 메일 키를 유도 → 폰을 잃어도 복구 가능, 복구 문구를 잃으면 <b>복구 불가</b>(PDV 조사서의 미결정 항목과 같은 정책 결정 필요).</li>
+<li>PC는 영구 키를 갖지 않고, 폰 승인 후 세션 동안만 복호화(PC 로그인 ≠ PDV 접근 원칙과 일치).</li>
+</ul>
+<div class="warn"><b>한계 (숨기지 않는다)</b> ① 외부 SMTP 메일은 도착 순간 워커에서 평문이며, 이는 어떤 메일 서비스도 같다. ② 메타데이터(누가·언제·크기)는 라우팅에 필요해 서버가 안다. ③ 봉인된 메일은 서버 쪽 검색·AI 요약이 불가능하다 → 검색 색인은 기기에서 만들어 암호화 백업하거나 위임 복호화(§8)를 쓴다.</div>
+
+<h2>7. OpenHash 연동 — 해시체인, 계층 앵커링, 수신확인</h2>
+<figure class="fig">
+<svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans KR,system-ui,sans-serif" font-size="13">
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b6470"/></marker></defs>
+<text x="10" y="22" font-weight="700">사서함 해시체인 (사용자별, 사서함 DO가 직렬화)</text>
+<rect x="10" y="36" width="190" height="64" rx="6" fill="#e6f6ee" stroke="#0f7b4a"/><text x="105" y="60" text-anchor="middle" font-weight="700">h(i-1)</text><text x="105" y="80" text-anchor="middle" fill="#5b6470">직전 메일의 해시</text>
+<rect x="250" y="36" width="260" height="64" rx="6" fill="#e6f6ee" stroke="#0f7b4a"/><text x="380" y="58" text-anchor="middle" font-weight="700">h(i) = SHA-256( h(i-1) ‖ data(i) ‖ height(i) )</text><text x="380" y="80" text-anchor="middle" fill="#5b6470">data(i) = 봉투 해시 + 암호문 해시 + 첨부 해시</text>
+<rect x="560" y="36" width="190" height="64" rx="6" fill="#e6f6ee" stroke="#0f7b4a"/><text x="655" y="60" text-anchor="middle" font-weight="700">h(i+1)</text><text x="655" y="80" text-anchor="middle" fill="#5b6470">height가 논스(재생 방지)</text>
+<path d="M200 68H248" stroke="#5b6470" marker-end="url(#b)"/><path d="M510 68H558" stroke="#5b6470" marker-end="url(#b)"/>
+<text x="10" y="132" font-weight="700">서명: 사용자 + 사서함 노드(엣지 서명 키) — 이중 서명 후에만 머리 갱신 (OpenHash §1.3)</text>
+<rect x="10" y="150" width="880" height="44" rx="6" fill="#fff" stroke="#b8a46a"/><text x="450" y="177" text-anchor="middle">PLSM: h1 = SHA-256(H_doc ‖ ts),  r = SHA-256(h1) mod 1000  →  (LCAT, 중요도)별 표에서 앵커링 계층 L1~L5 선택</text>
+<g font-size="12">
+<rect x="10" y="226" width="160" height="56" rx="6" fill="#fff" stroke="#9aa3af"/><text x="90" y="250" text-anchor="middle" font-weight="700">저중요도 (&lt;25)</text><text x="90" y="268" text-anchor="middle" fill="#5b6470">뉴스레터 · 알림</text>
+<rect x="190" y="226" width="160" height="56" rx="6" fill="#fff" stroke="#9aa3af"/><text x="270" y="250" text-anchor="middle" font-weight="700">보통 (25~60)</text><text x="270" y="268" text-anchor="middle" fill="#5b6470">일반 업무 메일</text>
+<rect x="370" y="226" width="160" height="56" rx="6" fill="#fff" stroke="#9aa3af"/><text x="450" y="250" text-anchor="middle" font-weight="700">고중요도 (≥60)</text><text x="450" y="268" text-anchor="middle" fill="#5b6470">공문 · 계약 · 통지</text>
+<rect x="560" y="226" width="330" height="56" rx="6" fill="#eaf1ff" stroke="#1a56db"/><text x="725" y="248" text-anchor="middle" font-weight="700">머클 배치 → 선택된 계층에 루트 앵커링</text><text x="725" y="268" text-anchor="middle" fill="#1a56db">기존 anchorL1MerkleRoot 예약 작업 재사용</text>
+</g>
+<path d="M530 254H558" stroke="#5b6470" marker-end="url(#b)"/>
+<text x="10" y="322" fill="#5b6470">원장에 오르는 것: 체인 머리 해시, 영수(보냄·도착·읽음) 해시, 머클 루트. 오르지 않는 것: 본문·제목·주소 평문.</text>
+</svg>
+<figcaption>그림 2. 해시체인과 중요도별 계층 앵커링. 중요도 점수는 메일에 맞게 재정의(아래).</figcaption>
+</figure>
+<h3>메일용 중요도 점수 (제안)</h3>
+<p>OpenHash 원안은 <code>score = w1·금액 + w2·유형 + w3·계약</code>이다. 메일은 금액이 없으므로 다음으로 대체하되 <b>값은 사용자 선택이 아니라 서버가 정한 규칙</b>이다(<code>tiers.js</code>·<code>plsm.js</code>는 그대로 두고 입력만 바꾼다).</p>
+<table>
+<tr><th>요소</th><th>예</th><th>가중(제안)</th></tr>
+<tr><td>발신 신분</td><td>기관 인증 발신(<code>official_access_cert</code> 계열) / 개인 / 미확인 외부</td><td>0.4</td></tr>
+<tr><td>문서 유형</td><td>공문·통지·계약 / 일반 서신 / 자동 알림</td><td>0.4</td></tr>
+<tr><td>회신·기한 요구</td><td>기한 있는 요청, 다단계 합의</td><td>0.2</td></tr>
+</table>
+<p>LCAT(발신자와 수신자의 최하위 공통 계층)은 두 사람의 L1 노드 소속으로 계산한다. 같은 읍면동이면 L1~L2에서 끝나고, 타 지역·외국이면 상위 계층에 앵커링된다. 표 값(%)은 <code>openhash_integrated_v1.md</code> §3.1의 표1을 그대로 쓴다.</p>
+<h3>원장 항목 (영수 포함)</h3>
+<table>
+<tr><th>항목</th><th>기록 시점</th><th>내용(해시만)</th></tr>
+<tr><td><code>MAIL_SENT</code></td><td>사서함 DO가 발신 확정</td><td>봉투 해시, 암호문 해시, 보낸 체인 높이</td></tr>
+<tr><td><code>MAIL_DELIVERED</code></td><td>수신 사서함 DO에 저장</td><td>같은 봉투 해시, 수신 체인 높이, 시각</td></tr>
+<tr><td><code>MAIL_ACK</code></td><td>수신자 기기가 열어 서명</td><td>봉투 해시, 수신자 서명</td></tr>
+<tr><td><code>MAIL_EXPIRED</code></td><td>기한 내 미응답</td><td>양쪽 AI가 각자 사람에게 고지했다는 기록(대칭 고지, P3)</td></tr>
+</table>
+<p>세 항목이 같은 봉투 해시로 이어지므로 "보냈다 / 도착했다 / 열었다"를 제3자가 검증할 수 있다. 어디까지나 <b>존재·전달 증거</b>이며 법적 효력(예: 내용증명 대체 여부)은 별도 법률 검토 사항이다(저는 법률가가 아니다).</p>
+
+<h2>8. 개인 AI의 자율 처리와 동의</h2>
+<p>K-Plan↔K-Mail 설계(<code>KPLAN_KMAIL_AGENT_TO_AGENT_ARCHITECTURE</code>)의 3단계 처리를 그대로 쓴다. 메일 한 통이 오면 <b>메일의 성격 × 지금 상태</b>로 등급이 정해진다.</p>
+<table>
+<tr><th>단계</th><th>정의</th><th>보고</th><th>복호화</th></tr>
+<tr><td>1 즉결</td><td>스팸 삭제 등 되돌릴 필요 없는 일</td><td>로그만</td><td>필요 없음(발신 신뢰도·헤더만 사용)</td></tr>
+<tr><td>2 위임 범위 내 실행</td><td>사전 위임 조건 안</td><td>AI 비서(K-Plan)</td><td><b>위임 복호화</b></td></tr>
+<tr><td>3 신규 판단</td><td>전례·위임 밖</td><td>AI 비서 + 사람</td><td>사용자 기기에서만</td></tr>
+</table>
+<div class="box"><b>위임 복호화(선택 기능)</b> — 사용자가 "자동 응답·분류를 서버 쪽 AI가 해 달라"고 명시적으로 켠 경우에만, 사용자가 서명한 <b>범위·기간이 있는 위임 토큰</b>으로 게이트웨이 워커가 해당 메일을 메모리에서만 복호화해 의도를 추출한다. 위임·사용은 모두 원장에 해시로 남고(<code>DELEGATED_READ</code>), 언제든 철회할 수 있다. 끄면 E2E가 유지되고 자율 처리는 기기가 켜져 있을 때만 동작한다. 기본값은 <b>꺼짐</b>이다.</div>
+<p>응답이 없거나 사람 개입이 필요하면 양쪽 AI가 각자 사람에게 고지한다(P3). 고지는 기존 <code>_sendPushToGuid</code>를 쓰고 <code>request_id</code>를 태그에 싣는다.</p>
+
+<h2>9. 신뢰성·남용 방어·운영</h2>
+<table>
+<tr><th>문제</th><th>대응</th></tr>
+<tr><td>L1 서버 중단</td><td>메일 경로는 L1을 쓰지 않는다. 앵커링은 <b>사서함 DO의 대기열</b>에 쌓았다가 복구 후 일괄 전송(수신 시 "L1 조회 실패 → 반송" 경로 제거)</td></tr>
+<tr><td>사서함 쓰기 경합</td><td>DO가 같은 guid 요청을 자동 직렬화 → <code>seq</code>·<code>prev_hash</code> 충돌 없음</td></tr>
+<tr><td>없는 주소</td><td>등록부 DO 조회 후 SMTP 단계에서 <b>즉시 거부</b>(현재 <code>_kmailRejectUnknownRecipient</code> 동작과 동일). 바운스 폭탄(backscatter) 방지</td></tr>
+<tr><td>스팸·폭주</td><td>발신자·IP 속도 제한, 기존 <code>kmail_blocklist</code> 규칙을 사서함 DO 설정으로 이관, SPF/DKIM/DMARC 결과를 점수화</td></tr>
+<tr><td>스푸핑</td><td>네이티브는 서명 검증, 외부는 "외부" 배지. 같은 <code>naviweb.kr</code> 주소를 사칭한 외부 메일은 DKIM·서명 불일치로 격하</td></tr>
+<tr><td>메일 아이디 변경</td><td>옛 아이디 예약 기간 정책 필요(현재 코드 주석에도 "상용 개시 전에 다시 정할 것"으로 남아 있음)</td></tr>
+<tr><td>보존·삭제</td><td>보존 기간 지나면 R2 객체와 DO 색인 삭제, <b>해시와 영수는 원장에 남는다</b>(내용은 복원 불가, 존재 증거만 유지)</td></tr>
+<tr><td>비용</td><td>DO·R2는 사용량 과금. 저장 과금은 기존 <code>storage_next_billing_at</code>·GDC 과금 체계와 연결</td></tr>
+</table>
+
+<h2>10. 사서함 데이터 모델 (DO 내부 SQLite, 제안)</h2>
+<pre>messages(
+  seq INTEGER PRIMARY KEY,          -- 사서함 안 순번 (직렬화됨)
+  id TEXT UNIQUE, thread TEXT,
+  dir TEXT,                         -- in | out
+  lane TEXT,                        -- native | bridge
+  peer TEXT,                        -- guid 또는 ext:이메일 해시(원문 주소는 봉인 영역)
+  kind TEXT, importance INTEGER,
+  state TEXT,                       -- sent | delivered | acknowledged | expired | blocked
+  body_ref TEXT, size INTEGER,      -- R2 키 / 암호문 크기
+  env_hash TEXT, h_prev TEXT, h_self TEXT, height INTEGER,
+  ts INTEGER
+)
+anchors(batch_id, from_seq, to_seq, merkle_root, tier, status)   -- 앵커 대기열·결과
+receipts(env_hash, kind, sig, ts)                                -- 영수 해시
+prefs(delegation, auto_reply, blocklist, retention_days, ...)     -- 현재 kmail_user_settings 이관
+keys(enc_pub_x25519, node_sig_key_id)                              -- 공개키만</pre>
+
+<h2>11. 이행 단계</h2>
+<p>"기존 사용자는 새로 시작"이 확정돼 있으므로 옛 메일 이관은 필요 없다. 단계마다 되돌릴 수 있게 둔다.</p>
+<table>
+<tr><th>단계</th><th>내용</th><th>검증</th><th>위험</th></tr>
+<tr><td><b>0</b></td><td><code>naviweb.kr</code> Email Routing 활성화, catch-all → 기존 워커. <b>코드 변경 없이</b> 외부 메일 수신 시작(저장은 지금의 L1 PocketBase). <code>ceo@</code>는 K-Mail 아이디로 소유자가 다시 가입해 받는다</td><td>테스트 메일 도착 확인</td><td>낮음</td></tr>
+<tr><td><b>1</b></td><td>사서함 DO + 메일 아이디 등록부 DO 도입, <b>write-through</b>(DO와 PocketBase 양쪽에 기록). 읽기는 DO 우선</td><td>두 저장소 불일치 점검</td><td>중간</td></tr>
+<tr><td><b>2</b></td><td>X25519 키 등록·봉인(R2 암호문). 수신 즉시 봉인. 기기 복호화. 복구 문구 연계</td><td>기기별 열람, 복구 시험</td><td>높음(키 분실=영구 소실 정책 결정 필요)</td></tr>
+<tr><td><b>3</b></td><td>네이티브 레인(SMTP 없는 직통) + 영수 + 푸시</td><td>두 계정 왕복, 오프라인 수신</td><td>낮음</td></tr>
+<tr><td><b>4</b></td><td>사서함 해시체인, 중요도·PLSM 앵커링, 영수 원장 항목</td><td>체인 검증기(브라우저·서버 공용)</td><td>중간</td></tr>
+<tr><td><b>5</b></td><td>PocketBase 메일 테이블 읽기 전용화 → 폐기. L1은 앵커 전용</td><td>메일 경로에서 L1 호출 0건</td><td>낮음</td></tr>
+</table>
+<h3><code>ceo@naviweb.kr</code>의 위치</h3>
+<p>L1 서버에서 확인한 결과, 메일 아이디 <code>ceo</code>는 <code>kmail_user_settings</code>에 소유자 guid와 함께 있고(서명 "도 영민(주피터)") 외부 메일함 주소는 없다. 소유자의 <code>profiles</code> 레코드는 현재 조회되지 않는다. guid가 전화번호에서 결정적으로 계산된다는 문서(<code>GDUDA_P2P_Design_v2.md</code>) 기준이 지금도 맞다면, <b>같은 전화번호로 다시 가입하면 같은 guid가 되어 <code>ceo</code> 아이디를 이어받을 가능성이 높다</b>(코드로 재확인 필요). 단계 0만으로 <code>ceo@naviweb.kr</code>는 이 K-Mail 사서함으로 들어온다. 외부 Gmail로 전달은 하지 않는다(선택 2번).</p>
+
+<h2>12. 결정이 필요한 것과 확인하지 못한 것</h2>
+<div class="q"><b>결정 1 — E2E와 AI 자율의 우선순위</b>: 기본은 E2E(위임 복호화 꺼짐)로 두는 안을 제안한다. 켜면 K-Mail이 기기 밖에서도 자동 응답하지만 서버가 그 순간 평문을 본다.</div>
+<div class="q"><b>결정 2 — 키 복구 정책</b>: 복구 문구를 잃으면 메일은 영구 소실. PDV 백업과 같은 정책으로 갈지, 별도 위탁 복구(예: 신뢰하는 두 사람의 분산 보관)를 둘지.</div>
+<div class="q"><b>결정 3 — 기관 메일의 앵커링 계층</b>: 공문 등 고중요도 메일을 L4(국가 기관)까지 올릴지는 L4 노드 운영 주체와의 약정에 달려 있다. 현재는 L1~L3까지만 실사용 가능한지 확인이 필요하다.</div>
+<div class="q"><b>결정 4 — 외부 발신 한도·과금</b>: 무료 가입 보너스 안에서 외부 발송 몇 통까지 허용할지(스팸 오용 방지, 도메인 평판 보호).</div>
+<h3>이 설계에서 직접 확인하지 못한 것</h3>
+<ul>
+<li><code>naviweb.kr</code>의 Cloudflare Email Routing 현재 상태(수신 규칙·MX). 이전 세션에서 발송용 바운스 MX가 있음은 보았으나 수신 규칙은 확인하지 않았다.</li>
+<li><code>send_email</code> 바인딩의 외부 수신자 발송 허용 범위와 Cloudflare 수신 메일 크기·속도 한도(공식 문서로 재확인 필요).</li>
+<li>Durable Object 저장 한도·비용 단가, 사서함 수가 수만 이상일 때의 운영 비용(추정하지 않았다).</li>
+<li>L1~L5 실제 노드의 이중 서명·앵커링 경로가 메일 규모를 받을 수 있는지(OpenHash 문서는 실험 수치만 있다).</li>
+<li>X25519 암호화 키를 지갑 키에서 유도할지 별도 생성할지(지갑 코드 <code>gopang-wallet.js</code> 점검 필요).</li>
+</ul>
+<p class="meta">작성: Claude · 저장소 읽기 기준. 코드를 바꾸지 않았다. 이 문서의 경로·함수명은 2026-11-13 main 기준.</p>
+</main>
+<script>
+(function(){ if (window.parent === window || !/[?&]embed=mail/.test(location.search)) return;
+  function send(){ try{ parent.postMessage({type:'xokorea-height', h: document.documentElement.scrollHeight}, '*'); }catch(e){} }
+  addEventListener('load', send); addEventListener('resize', send); setTimeout(send, 600);
+  if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
+})();
+</script>
+</body>
+</html>
