@@ -7457,14 +7457,14 @@ const _YT_LIST = [
   { id: 'yv0THEXTF58', t: 'navi 003 - 한국 vs 글로벌(K-Law 대법원 판결문 예상 시뮬레이션)', len: '23:13', d: '나비웹의 글로벌 적용 구상과, K-Law가 만든 대법원 예상 판결문과 실제 판결문의 일치도(자체 추정 약 90%)를 공개합니다.' }
 ];
 // guide-videos.json 은 GitHub Actions(guide-videos.yml)가 재생목록에서 30분마다 갱신한다. 못 읽으면 위의 기본 목록을 쓴다.
-async function _ytLoad() {
+async function _ytLoad(file, fallback) {
   try {
-    const r = await fetch('guide-videos.json', { cache: 'no-cache' });
+    const r = await fetch(file || 'guide-videos.json', { cache: 'no-cache' });
     if (r.ok) { const j = await r.json(), a = (j && Array.isArray(j.videos) ? j.videos : []).filter(v => v && /^[\w-]{11}$/.test(v.id) && typeof v.t === 'string'); if (a.length) return a; }
   } catch (e) {}
-  return _YT_LIST;
+  return fallback || _YT_LIST;
 }
-const _YT_HOWTO = [];   // 나비웹 사용법 영상 — 링크를 받으면 { id: '유튜브 11자리', t: '제목', len: '7:06', d: '설명' } 형태로 채운다
+// 나비웹 사용법 영상은 guide-howto.json(재생목록 PLVk7oB1w5pLE, GitHub Actions 가 30분마다 갱신)에서 읽는다. 아직 영상이 없으면 '준비 중' 문구.
 function _ytRow(v, i) {
   const li = document.createElement('li'); li.className = 'yt-card';
   const m = /^\s*(navi\s*\d+)\s*[-–—]\s*(.+)$/i.exec(v.t || '');
@@ -7490,9 +7490,12 @@ function _ytRow(v, i) {
 }
 async function _ytRender() {
   const hw = document.getElementById('yt-howto');
-  if (hw && !hw.childElementCount) {
-    if (_YT_HOWTO.length) _YT_HOWTO.forEach((v, i) => hw.appendChild(_ytRow(v, i)));
-    else hw.innerHTML = '<li class="yt-empty">나비웹 사용법 영상을 준비하고 있습니다. 곧 이곳에 올라옵니다.</li>';
+  if (hw && !hw.childElementCount && !hw.dataset.busy) {
+    hw.dataset.busy = '1'; const hl = await _ytLoad('guide-howto.json', []); delete hw.dataset.busy;
+    if (!hw.childElementCount) {
+      if (hl.length) hl.forEach((v, i) => hw.appendChild(_ytRow(v, i)));
+      else hw.innerHTML = '<li class="yt-empty">나비웹 사용법 영상을 준비하고 있습니다. 곧 이곳에 올라옵니다.</li>';
+    }
   }
   const ol = document.getElementById('yt-grid'); if (!ol || ol.childElementCount || ol.dataset.busy) return;
   ol.dataset.busy = '1'; const list = await _ytLoad(); delete ol.dataset.busy; if (ol.childElementCount) return;

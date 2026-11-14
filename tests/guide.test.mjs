@@ -484,7 +484,17 @@ test('안내 영상: 재생목록(YouTube)을 자동으로 따라간다 — 동�
   const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
   assert.ok(wf.includes('cron:') && wf.includes('guide-videos-sync.mjs PLExMxaYxMDPE') && wf.includes('contents: write'));
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes("fetch('guide-videos.json'") && h.includes('return _YT_LIST;'));
+  assert.ok(h.includes("fetch(file || 'guide-videos.json'") && h.includes('return fallback || _YT_LIST;'));
   const j = JSON.parse(readFileSync(new URL('../guide-videos.json', import.meta.url), 'utf8'));
   assert.ok(j.list === 'PLExMxaYxMDPE' && j.videos.length >= 3 && j.videos.every(v => /^[\w-]{11}$/.test(v.id)));
+});
+
+test('나비웹 사용법: 맨 위 섹션, 별도 재생목록(PLVk7oB1w5pLE)을 guide-howto.json 으로 30분마다 따라가며, 실패해도 안내 영상 동기화는 영향 없음', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.indexOf('id="yt-howto"') > 0 && h.indexOf('id="yt-howto"') < h.indexOf('id="yt-grid"'), '나비웹 사용법이 안내 영상 위');
+  assert.ok(h.includes("_ytLoad('guide-howto.json', [])") && h.includes('영상을 준비하고 있습니다'));
+  const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
+  assert.ok(wf.includes('guide-videos-sync.mjs PLVk7oB1w5pLE guide-howto.json') && wf.includes('continue-on-error: true') && wf.includes('git add guide-videos.json guide-howto.json'));
+  const j = JSON.parse(readFileSync(new URL('../guide-howto.json', import.meta.url), 'utf8'));
+  assert.equal(j.list, 'PLVk7oB1w5pLE'); assert.ok(Array.isArray(j.videos));
 });
