@@ -37,22 +37,6 @@ body, .mn-page {
 a { color: inherit; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 20px 110px; }
 
-/* ── 단계(초·중·고급) 카드 ── */
-.tier-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 20px 0 26px; }
-.tier-card { position: relative; overflow: hidden; text-align: left; font-family: inherit; cursor: pointer; background: var(--tc); color: #fff; border: 0; border-radius: 4px; padding: 16px 20px 18px; min-height: 96px; box-shadow: 0 2px 4px rgba(15,23,42,.22), 0 1px 10px rgba(15,23,42,.14), 0 4px 5px rgba(15,23,42,.16); transition: box-shadow .2s cubic-bezier(.4,0,.2,1); min-width: 0; -webkit-tap-highlight-color: transparent; }
-.tier-card::before { content: ''; position: absolute; inset: 0; background: #fff; opacity: 0; transition: opacity .2s; pointer-events: none; }
-.tier-card:hover::before { opacity: .12; }
-.tier-card:active::before { opacity: .24; }
-.tier-card:hover { box-shadow: 0 4px 6px rgba(15,23,42,.24), 0 2px 16px rgba(15,23,42,.16), 0 6px 8px rgba(15,23,42,.18); }
-.tier-card:focus-visible { outline: 3px solid var(--on-primary-container); outline-offset: 3px; }
-.tier-card.active { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--tc), 0 6px 10px rgba(15,23,42,.28); }
-.tc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; position: relative; }
-.tc-name { font-size: 16px; font-weight: 700; letter-spacing: .08em; }
-.tc-gdc { font-size: 12px; font-weight: 700; color: #fff; opacity: .92; }
-.tc-count { font-size: 12.5px; color: #fff; opacity: .92; margin: 3px 0 12px; position: relative; }
-.tc-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.32); overflow: hidden; position: relative; }
-.tc-bar i { display: block; height: 100%; background: #fff; border-radius: 3px; transition: width .3s; }
-
 /* ── 장 목록 머리말 + 세그먼트 버튼 ── */
 .sec-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
 .sec-head h2 { font-size: 19px; font-weight: 700; color: var(--navy); flex: 1 1 160px; }
@@ -74,7 +58,7 @@ a { color: inherit; }
 .ch-card.active .cc-chip { background: #fff; color: var(--on-primary-container); }
 .ch-card.completed .cc-chip { background: var(--tertiary-container); color: var(--on-tertiary-container); }
 .cc-title { word-break: keep-all; font-size: 15.5px; font-weight: 700; line-height: 1.5; }
-@media (max-width: 720px) { .ch-content { padding: 24px 18px; } .tier-cards { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .ch-content { padding: 24px 18px; } }
 
 
 /* ── 본문 카드 ── */
@@ -279,7 +263,6 @@ a { color: inherit; }
 
 <div class="wrap">
   <div class="cns-banner" id="cnsBanner" role="status"><span id="cnsBannerText"></span><button type="button" id="cnsBannerBtn">인증서 발급받기</button></div>
-  <div class="tier-cards" id="tierCards"></div>
   <div class="sec-head"><h2 id="gridTitle">초급</h2><div class="seg" id="tierSeg" role="group" aria-label="단계 선택"></div></div>
   <div class="ch-cards" id="chTabs"></div>
   <div class="ch-content" id="chContent"></div>
@@ -406,23 +389,16 @@ function renderHeader() {
 function selectTier(tier) { currentTier = tier; currentChapterId = chaptersByTier(tier)[0].id; renderAll(); }
 
 function renderTierTabs() {
-  var cards = DOC.getElementById('tierCards'), seg = DOC.getElementById('tierSeg');
-  cards.innerHTML = ''; seg.innerHTML = '';
+  var seg = DOC.getElementById('tierSeg');
+  seg.innerHTML = '';
   TIER_ORDER.forEach(function (tier) {
-    var chs = chaptersByTier(tier), done = tierCompletedCount(tier);
-    var card = document.createElement('button');
-    card.type = 'button'; card.className = 'tier-card' + (tier === currentTier ? ' active' : '');
-    card.style.setProperty('--tc', TIER_COLORS[tier]);
-    card.innerHTML = '<div class="tc-head"><span class="tc-name">' + TIER_LABELS[tier] + '</span><span class="tc-gdc">GDC ' + TIER_REWARDS[tier].toLocaleString() + 'T</span></div>' +
-      '<div class="tc-count">' + done + ' / ' + chs.length + '장 완료</div><div class="tc-bar"><i style="width:' + Math.round(done / chs.length * 100) + '%"></i></div>';
-    card.addEventListener('click', function () { selectTier(tier); });
-    cards.appendChild(card);
     var sb = document.createElement('button');
     sb.type = 'button'; sb.className = tier === currentTier ? 'active' : ''; sb.textContent = TIER_LABELS[tier];
     sb.addEventListener('click', function () { selectTier(tier); });
     seg.appendChild(sb);
   });
-  DOC.getElementById('gridTitle').textContent = TIER_LABELS[currentTier] + ' · ' + chaptersByTier(currentTier).length + '장';
+  var n = chaptersByTier(currentTier).length;
+  DOC.getElementById('gridTitle').textContent = TIER_LABELS[currentTier] + ' · ' + tierCompletedCount(currentTier) + '/' + n + '장 완료 · GDC ' + TIER_REWARDS[currentTier].toLocaleString() + 'T';
 }
 
 function renderChapterTabs() {
