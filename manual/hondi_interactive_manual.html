@@ -263,6 +263,25 @@ a { color: inherit; }
   .kgov-group-body { padding-left: 8px; }
 }
 
+
+.cns-banner { display:none; margin: 12px auto 0; max-width: 960px; padding: 14px 18px; border-radius: 14px; background: linear-gradient(135deg,#fff7e0,#ffe9b0); border: 1px solid #f59e0b; color:#5b3b00; font-weight:600; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.cns-banner.show { display:flex; }
+.cns-banner button, .cns-modal button.cns-go { border:0; background:#b45309; color:#fff; border-radius:999px; padding:9px 18px; font:inherit; font-weight:700; cursor:pointer; }
+.cns-modal { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px; overflow:auto; }
+.cns-modal.show { display:flex; }
+.cns-box { background:#fff; color:#1b2733; max-width:760px; width:100%; border-radius:16px; padding:24px; }
+.cns-box h2 { font-size:20px; margin-bottom:8px; }
+.cns-box input { width:100%; padding:11px 12px; border:1px solid #c5cbd3; border-radius:8px; font:inherit; margin:8px 0 12px; }
+.cns-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap; }
+.cns-actions button.cns-sub { border:1px solid #c5cbd3; background:#fff; color:#1b2733; border-radius:999px; padding:9px 18px; font:inherit; cursor:pointer; }
+.cns-cert { border:6px double #b8860b; border-radius:6px; padding:34px 28px; text-align:center; background:#fffdf5; }
+.cns-cert .c-ko { font-size:30px; font-weight:800; letter-spacing:.06em; color:#7a4f00; }
+.cns-cert .c-en { font-size:15px; letter-spacing:.14em; color:#9a6a00; margin:4px 0 22px; }
+.cns-cert .c-name { font-size:28px; font-weight:800; margin:6px 0 14px; border-bottom:2px solid #b8860b; display:inline-block; padding:0 28px 4px; }
+.cns-cert p { line-height:1.8; font-size:15px; }
+.cns-cert .c-meta { margin-top:22px; font-size:13.5px; color:#5b6b7a; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+.cns-cert .c-foot { margin-top:14px; font-size:12px; color:#8a97a5; }
+@media print { body > *:not(#cnsModal) { display:none !important; } #cnsModal { position:static; background:none; padding:0; display:block !important; } .cns-box { box-shadow:none; padding:0; max-width:none; } .cns-box > :not(#cnsCertWrap) { display:none !important; } .cns-actions { display:none !important; } @page { size: A4 landscape; margin: 14mm; } }
 </style>
 </head>
 <body>
@@ -285,10 +304,16 @@ a { color: inherit; }
     </div>
   </div>
 
+  <div class="cns-banner" id="cnsBanner" role="status"><span id="cnsBannerText"></span><button type="button" id="cnsBannerBtn">인증서 발급받기</button></div>
   <div class="md-tabs" id="tierTabs"><div class="md-tab-indicator" id="tierIndicator"></div></div>
   <div class="ch-cards" id="chTabs"></div>
   <div class="ch-content" id="chContent"></div>
   <div class="tier-reward-banner" id="tierRewardBanner"></div>
+  <div class="cns-modal" id="cnsModal" role="dialog" aria-modal="true" aria-label="나비웹 전문가 인증서"><div class="cns-box">
+    <div id="cnsForm"><h2>나비웹 전문가 인증서(CNS) 발급</h2><p>인증서에 넣을 <b>이름</b>을 입력해 주세요. 발급하면 이름과 발급일은 바꿀 수 없습니다.</p><input type="text" id="cnsName" maxlength="30" placeholder="이름" autocomplete="name"><div class="cns-actions"><button type="button" class="cns-sub" id="cnsCancel">취소</button><button type="button" class="cns-go" id="cnsIssue">발급하기</button></div></div>
+    <div id="cnsCertWrap" style="display:none"></div>
+    <div class="cns-actions" id="cnsCertActions" style="display:none"><button type="button" class="cns-sub" id="cnsClose">닫기</button><button type="button" class="cns-go" id="cnsPrint">PDF로 저장 · 인쇄</button></div>
+  </div></div>
 </div>
 
 <button class="fab" id="nextFab" title="다음 장">
@@ -316,6 +341,79 @@ function isCompleted(id) { return progress.completed.indexOf(id) !== -1; }
 function tierCompletedCount(tier) { return chaptersByTier(tier).filter(function (c) { return isCompleted(c.id); }).length; }
 function tierFullyDone(tier) { var chs = chaptersByTier(tier); return chs.length > 0 && chs.every(function (c) { return isCompleted(c.id); }); }
 
+/* 나비 온도(2026-11-14) — 초급·중급·고급 단계별 구간으로 올라간다: 시작 36.5° → 초급 완료 60° → 중급 완료 80° → 고급 완료 100°.
+   각 단계 안에서는 완료한 장 수에 비례한다. 같은 사이트의 '사용법 강의'(기본10·활용10·고급5쪽) 진행도 같은 단계로 세어, 단계마다 둘 중 많이 마친 쪽을 쓴다.
+   95° 이상이 되면 나비웹 전문가 인증서(Chartered Naviweb Specialist, CNS)를 발급받을 수 있다. */
+var TEMP_BASE = 36.5, TEMP_SPAN = {beginner: 23.5, intermediate: 20, advanced: 20}, CNS_AT = 95, CNS_KEY = 'naviweb_cns_v1';
+function courseFractions() {
+  try {
+    var v = localStorage.getItem('kmail_guide_done'); if (v === null) return null;
+    var d = parseInt(v, 10) || 0;
+    return {beginner: Math.min(d, 10) / 10, intermediate: Math.max(0, Math.min(d - 10, 10)) / 10, advanced: Math.max(0, Math.min(d - 20, 5)) / 5};
+  } catch (e) { return null; }
+}
+function naviTemp() {
+  var cf = courseFractions(), t = TEMP_BASE, mf = {};
+  TIER_ORDER.forEach(function (k) {
+    var chs = chaptersByTier(k), f = chs.length ? tierCompletedCount(k) / chs.length : 0;
+    mf[k] = f;   // 사용법 화면(guide.js)이 같은 온도를 계산하도록 이 매뉴얼의 단계별 진행률을 남겨 둔다
+    if (cf) f = Math.max(f, cf[k]);
+    t += TEMP_SPAN[k] * f;
+  });
+  try { localStorage.setItem('naviweb_manual_frac_v1', JSON.stringify(mf)); } catch (e) { /* 저장 불가 */ }
+  return Math.min(100, Math.round(t * 10) / 10);
+}
+function loadCns() { try { return JSON.parse(localStorage.getItem(CNS_KEY)) || null; } catch (e) { return null; } }
+function cnsNumber(name, ymd) {   // 이름·발급일로 만든 8자리 번호(FNV-1a)
+  var h = 0x811c9dc5, s = name + '|' + ymd;
+  for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return 'CNS-' + ymd.replace(/-/g, '') + '-' + h.toString(36).toUpperCase().padStart(7, '0').slice(-7);
+}
+function cnsEsc(x) { return String(x).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function renderCnsBanner(temp) {
+  var b = document.getElementById('cnsBanner'), c = loadCns();
+  if (!c && temp < CNS_AT) { b.classList.remove('show'); return; }
+  document.getElementById('cnsBannerText').textContent = c ? '🎓 나비웹 전문가 인증서(CNS)가 발급되었습니다 — ' + c.no : '🎓 나비 온도 ' + temp.toFixed(1) + '° — 나비웹 전문가 인증서(CNS)를 발급받을 수 있습니다!';
+  document.getElementById('cnsBannerBtn').textContent = c ? '인증서 보기' : '인증서 발급받기';
+  b.classList.add('show');
+}
+function showCert(c) {
+  document.getElementById('cnsForm').style.display = 'none';
+  var w = document.getElementById('cnsCertWrap'); w.style.display = 'block';
+  w.innerHTML = '<div class="cns-cert"><div class="c-ko">나비웹 전문가 인증서</div><div class="c-en">CHARTERED NAVIWEB SPECIALIST · CNS</div>' +
+    '<p>성명</p><div class="c-name">' + cnsEsc(c.name) + '</div>' +
+    '<p>위 사람은 나비 사용자 매뉴얼과 사용법의 초급·중급·고급 과정을 이수하여<br>나비 온도 <b>' + cnsEsc(c.temp) + '°</b>에 도달하였으므로<br>나비웹 전문가(Chartered Naviweb Specialist)로 인증합니다.</p>' +
+    '<div class="c-meta"><span>발급일 ' + cnsEsc(c.date) + '</span><span>인증번호 ' + cnsEsc(c.no) + '</span></div>' +
+    '<p style="margin-top:18px;font-weight:700">AI City Inc. · 나비웹 naviweb.kr</p><div class="c-foot">이 인증서는 학습 이수 기록을 바탕으로 이 화면에서 발급되었습니다. 인증번호 조회 서비스는 준비 중입니다.</div></div>';
+  document.getElementById('cnsCertActions').style.display = 'flex';
+}
+function openCns() {
+  var m = document.getElementById('cnsModal'), c = loadCns();
+  if (!c && naviTemp() < CNS_AT) return;
+  m.classList.add('show');
+  if (c) showCert(c);
+  else { document.getElementById('cnsForm').style.display = 'block'; document.getElementById('cnsCertWrap').style.display = 'none'; document.getElementById('cnsCertActions').style.display = 'none'; document.getElementById('cnsName').focus(); }
+}
+function closeCns() { document.getElementById('cnsModal').classList.remove('show'); }
+document.getElementById('cnsBannerBtn').addEventListener('click', openCns);
+document.getElementById('cnsCancel').addEventListener('click', closeCns);
+document.getElementById('cnsClose').addEventListener('click', closeCns);
+document.getElementById('cnsPrint').addEventListener('click', function () { window.print(); });
+document.getElementById('cnsIssue').addEventListener('click', function () {
+  var name = document.getElementById('cnsName').value.trim();
+  if (!name) { document.getElementById('cnsName').focus(); return; }
+  var t = naviTemp(); if (t < CNS_AT) return;
+  var d = new Date(), ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  var c = {name: name, date: ymd, no: cnsNumber(name, ymd), temp: t.toFixed(1)};
+  try { localStorage.setItem(CNS_KEY, JSON.stringify(c)); } catch (e) { /* 저장 불가여도 화면에는 보인다 */ }
+  showCert(c); renderCnsBanner(t);
+});
+window.addEventListener('message', function (e) {
+  if (e.origin !== location.origin || !e.data) return;
+  if (e.data.type === 'cns-refresh') renderHeader();   // 사용법 강의를 더 마치고 돌아왔을 때 온도를 다시 맞춘다
+  if (e.data.type === 'cns-open') { renderHeader(); openCns(); }
+});   // 사용법 화면에서 발급 단추를 누르면 연다
+
 function renderHeader() {
   var total = CHAPTERS.length, done = progress.completed.length;
   document.getElementById('progressLabel').textContent = done + '/' + total;
@@ -323,11 +421,10 @@ function renderHeader() {
   document.getElementById('progressSub').textContent =
     done === 0 ? '아직 시작 전입니다 — 첫 장부터 시작해 보세요.' :
     done === total ? '모든 과정을 완료했습니다! 🎉' : done + '개 장을 완료했습니다. 계속해 보세요.';
-  var tempBonus = 0;
-  TIER_ORDER.forEach(function (t) { if (tierFullyDone(t)) tempBonus += {beginner:10, intermediate:15, advanced:25}[t]; });
-  var temp = Math.min(99, 36.5 + tempBonus);
+  var temp = naviTemp();
   document.getElementById('tempValue').textContent = temp.toFixed(1) + '°';
-  document.getElementById('tempFill').style.width = Math.min(100, temp / 99 * 100) + '%';
+  document.getElementById('tempFill').style.width = Math.min(100, temp) + '%';
+  renderCnsBanner(temp);
 }
 
 function renderTierTabs() {
