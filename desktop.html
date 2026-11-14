@@ -1148,7 +1148,9 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .gd-mode:hover{color:var(--pri)}.gd-mode.on{color:var(--pri);border-bottom-color:var(--pri)}
 .gd-temp{margin-left:auto;align-self:center;font-size:13px;color:var(--sub);white-space:nowrap;padding-right:4px}.gd-temp b{color:var(--pri)}
 .gd-cns{margin-left:6px;border:0;background:#b45309;color:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-weight:700;cursor:pointer}
-.gd-manual{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;border-radius:12px;background:#fff}
+.gd-manual{display:block;width:100%;border-radius:12px;background:#eef1f6}
+.gd-manual-wait{padding:48px 16px;text-align:center;color:#5b6472;font-size:14px}
+@media print{body.mn-printing *{visibility:hidden!important}body.mn-printing #navi-manual-host{visibility:visible!important;position:fixed;inset:0;background:#fff;z-index:2147483647;overflow:visible}body.mn-printing{overflow:hidden;height:100vh}}
 /* 사용법 > 질문·답변(게시판) — qna-ui.js */
 .qn{max-width:860px}
 .qn-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
