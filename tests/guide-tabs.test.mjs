@@ -35,7 +35,9 @@ test('사용법 위쪽 탭: 나비 사용자 매뉴얼이 맨 앞, 다음 사용
   const g = R('guide.js');
   const i = g.indexOf('data-m="manual">나비 사용자 매뉴얼'), j = g.indexOf('data-m="course">사용법 강의'), k = g.indexOf('data-m="qna">질문·답변');
   assert.ok(i > 0 && i < j && j < k, '탭 순서');
-  assert.match(g, /S\.mn\.src = 'manual\/hondi_interactive_manual\.html'/);
+  assert.match(g, /fetch\('manual\/hondi_interactive_manual\.html'/);
+  assert.match(g, /attachShadow\(\{ mode: 'open' \}\)/);
+  assert.ok(!/createElement\('iframe'\)/.test(g), 'iframe 없이 직접 붙인다');
   assert.match(g, /if \(S\.mode === 'manual'\) \{ renderManual\(el\); return; \}/);
   assert.match(g, /if \(S\.mode === 'course'\) attachChat\(\)/);
   assert.match(R('desktop.html'), /\.gd-manual\{/);
