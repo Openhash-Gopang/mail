@@ -70,6 +70,11 @@ a { color: inherit; }
 .ch-content h3 { font-size: 15px; font-weight: 700; color: var(--on-surface); margin: 26px 0 14px; }
 .ch-content p { color: var(--on-surface-variant); margin-bottom: 12px; }
 .ch-illust { margin: 8px 0 20px; }
+.howto { margin: 0 0 22px; }
+.howto-cap { font-size: 12px; font-weight: 700; letter-spacing: .5px; color: var(--primary); margin-bottom: 8px; }
+.howto-frame { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: #000; box-shadow: var(--el-1); }
+.howto-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.howto-wait { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 96px; border: 1.5px dashed var(--outline); border-radius: var(--radius); background: var(--surface-container); color: var(--on-surface-variant); font-size: 13.5px; }
 .ch-shot { margin: 12px auto 20px; text-align: center; }
 .ch-shot img { width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 12px; display: block; }
 .ch-shot figcaption { margin-top: 6px; font-size: 13px; color: #64748b; }
@@ -438,11 +443,40 @@ function renderQuiz(chapter) {
   return html;
 }
 
+/* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록)의 순서대로 한 장에 한 편씩 맨 위에 넣는다 */
+var HOWTO_CHAPTERS = ['ch1', 'ch_pclogin', 'ch_agent'];
+var howtoP = null;
+function loadHowto() {
+  if (!howtoP) howtoP = fetch(EMBED ? 'guide-howto.json' : 'https://naviweb.kr/guide-howto.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : { videos: [] }; })
+    .then(function (j) { return (j && Array.isArray(j.videos) ? j.videos : []).filter(function (v) { return v && /^[\w-]{11}$/.test(v.id); }); })
+    .catch(function () { howtoP = null; return []; });
+  return howtoP;
+}
+function howtoSlot(chId) {
+  var n = HOWTO_CHAPTERS.indexOf(chId);
+  return n < 0 ? '' : '<div class="howto" data-n="' + n + '"><div class="howto-cap">나비웹 사용법 영상 ' + (n + 1) + '</div><div class="howto-wait">▶ 영상을 준비하고 있습니다</div></div>';
+}
+function fillHowto(el) {
+  var box = el.querySelector('.howto'); if (!box) return;
+  var n = Number(box.getAttribute('data-n'));
+  loadHowto().then(function (list) {
+    var v = list[n]; if (!v || !box.isConnected) return;
+    var cap = box.querySelector('.howto-cap'); cap.textContent = '나비웹 사용법 영상 ' + (n + 1) + ' · ' + v.t;
+    var frame = document.createElement('div'); frame.className = 'howto-frame';
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0'; f.title = v.t; f.loading = 'lazy';
+    f.allow = 'accelerometer; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true;
+    frame.appendChild(f); box.replaceChild(frame, box.querySelector('.howto-wait'));
+  });
+}
+
 function renderContent() {
   var chapter = CHAPTERS.find(function (c) { return c.id === currentChapterId; });
   var el = DOC.getElementById('chContent');
   var upd = chapter.updated ? '<div class="ch-updated is-new">마지막 갱신 ' + chapter.updated + '</div>' : '<div class="ch-updated">마지막 갱신일 기록 전</div>';
-  el.innerHTML = upd + (ASSET_BASE ? chapter.body.replace(/src="manual-img\//g, 'src="' + ASSET_BASE + 'manual-img/') : chapter.body) + (chapter.placeholder ? '' : renderQuiz(chapter));
+  el.innerHTML = upd + howtoSlot(chapter.id) + (ASSET_BASE ? chapter.body.replace(/src="manual-img\//g, 'src="' + ASSET_BASE + 'manual-img/') : chapter.body) + (chapter.placeholder ? '' : renderQuiz(chapter));
+  fillHowto(el);
   if (chapter.id === 'ch_kgov' && !chapter.placeholder) kgovBuildApp(DOC.getElementById('kgov-app'));
   if (chapter.placeholder) return;
   var selections = {}; var submitted = false;
