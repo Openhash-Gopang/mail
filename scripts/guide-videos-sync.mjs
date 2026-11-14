@@ -30,7 +30,12 @@ export function merge(fresh, prev) {
 
 async function main() {
   const [, , listId = 'PLExMxaYxMDPE', outFile = 'guide-videos.json'] = process.argv;
-  const res = await fetch('https://www.youtube.com/feeds/videos.xml?playlist_id=' + encodeURIComponent(listId), { headers: { 'user-agent': 'naviweb-guide-sync' } });
+  let res;
+  for (let t = 0; t < 4; t++) {   // 피드가 간헐적으로 404를 돌려주므로 몇 번 다시 시도한다
+    res = await fetch('https://www.youtube.com/feeds/videos.xml?playlist_id=' + encodeURIComponent(listId), { headers: { 'user-agent': 'naviweb-guide-sync' } });
+    if (res.ok) break;
+    await new Promise(r => setTimeout(r, 3000 * (t + 1)));
+  }
   if (!res.ok) throw new Error('재생목록 피드를 받지 못했습니다: HTTP ' + res.status);
   const fresh = parseFeed(await res.text());
   if (!fresh.length) throw new Error('피드에 영상이 없습니다 — 기존 파일을 그대로 둡니다');
