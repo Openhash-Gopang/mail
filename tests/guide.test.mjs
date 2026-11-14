@@ -9,67 +9,6 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { _pure: G } = require('../guide.js');
 
-test('콘텐츠 무결성: 페이지마다 본문·퀴즈 2개 이상, 정답 index 유효, 보기 3개 이상, 중복 없음', () => {
-  assert.ok(G.PAGES.length >= 10);
-  for (const p of G.PAGES) {
-    assert.ok(p.title && p.body.length >= 3, p.title);
-    assert.ok(['기본', '활용', '고급'].includes(p.level), p.title);
-    assert.ok(p.quiz.length >= 2, p.title);
-    for (const q of p.quiz) {
-      assert.ok(q.q && q.hint, p.title);
-      assert.ok(q.opts.length >= 3, q.q);
-      assert.equal(new Set(q.opts).size, q.opts.length, q.q);
-      assert.ok(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.opts.length, q.q);
-    }
-  }
-});
-
-test('정답 위치가 한쪽에 쏠리지 않음(찍기 방지): 모든 위치가 한 번 이상 쓰임, 한 위치가 60% 초과 금지', () => {
-  const cnt = [0, 0, 0]; let n = 0;
-  for (const p of G.PAGES) for (const q of p.quiz) { cnt[q.answer]++; n++; }
-  assert.ok(cnt.every(c => c > 0), JSON.stringify(cnt));
-  assert.ok(Math.max(...cnt) / n <= 0.6, JSON.stringify(cnt));
-});
-
-test('채점: 모두 맞아야 all=true, 하나라도 틀리거나 비우면 false', () => {
-  const p = G.PAGES[0];
-  const right = p.quiz.map(q => q.answer);
-  const n = right.length, allTrue = Array(n).fill(true);
-  assert.deepEqual(G.grade(p, right), { ok: allTrue, all: true });
-  const wrong = right.slice(); wrong[1] = (wrong[1] + 1) % p.quiz[1].opts.length;
-  const r = G.grade(p, wrong);
-  assert.equal(r.all, false);
-  assert.deepEqual(r.ok, allTrue.map((_, i) => i !== 1));
-  assert.equal(G.grade(p, right.map((a, i) => (i === 1 ? null : a))).all, false);
-  assert.equal(G.grade(p, {}).all, false);
-});
-
-test('페이지 목록: 업무(Case) 페이지는 기능 플래그가 켜졌을 때만 포함, 항상 마지막', () => {
-  const off = G.pages(false), on = G.pages(true);
-  assert.equal(on.length, off.length + 1);
-  assert.ok(on[on.length - 1].flag === 'case');
-  assert.ok(off.every(p => !p.flag));
-});
-
-test('잠금: 완료한 단계 + 바로 다음 단계까지만 열림, 건너뛰기 불가', () => {
-  assert.equal(G.canOpen(0, 0, 10), true);
-  assert.equal(G.canOpen(0, 1, 10), false);
-  assert.equal(G.canOpen(3, 3, 10), true);
-  assert.equal(G.canOpen(3, 4, 10), false);
-  assert.equal(G.canOpen(3, 0, 10), true);
-  assert.equal(G.canOpen(3, -1, 10), false);
-  assert.equal(G.canOpen(10, 9, 10), true);
-  assert.equal(G.canOpen(10, 10, 10), false);
-});
-
-test('진행 값 보정과 다음 페이지', () => {
-  assert.equal(G.clampDone('abc', 10), 0);
-  assert.equal(G.clampDone(-3, 10), 0);
-  assert.equal(G.clampDone(99, 10), 10);
-  assert.equal(G.clampDone('4', 10), 4);
-  assert.equal(G.nextAfterPass(0, 10), 1);
-  assert.equal(G.nextAfterPass(9, 10), -1);
-});
 test('desktop.html: 서류 화면의 혼디 대화 질문은 서류 사이트 SP 로 보낸다(navi-doc-ask)', async () => {
   const { readFileSync } = await import('node:fs');
   const s = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
@@ -286,45 +225,6 @@ test('설명서·사용법: 장 안의 화면 이미지는 없다(영상으로 �
   }
   assert.ok(!existsSync(new URL('../manual-img', import.meta.url)));
 });
-test('유튜브 영상 자리: 장 번호 1~25 와 같은 일련번호, 주소를 넣으면 영상이 된다', async () => {
-  const V = (await import('../manual-videos.js')).default;
-  assert.deepEqual(Object.keys(V.VIDEOS).map(Number), Array.from({ length: 25 }, (_, i) => i + 1));
-  assert.match(V.slot(7), /영상 07/); assert.ok(!V.slot(7).includes('<iframe'));
-  assert.equal(V.idOf('https://youtu.be/dQw4w9WgXcQ?t=3'), 'dQw4w9WgXcQ');
-  assert.equal(V.idOf('https://evil.example/watch?v=dQw4w9WgXcQ'), '');
-  V.VIDEOS[7] = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-  assert.match(V.slot(7), /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/); V.VIDEOS[7] = '';
-  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8'), m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
-  assert.match(g, /<\/h2>' \+ videoSlot\(S\.idx \+ 1\) \+ '<ul class="gd-body">/, '사용법: 제목 바로 아래');
-  assert.match(m, /h\.insertAdjacentHTML\('afterend', '<div class="nv-slot" data-vid="'/, '설명서: 제목 바로 아래');
-  assert.match(readFileSync(new URL('../desktop.html', import.meta.url), 'utf8'), /manual-videos\.js[^>]*><\/script>\s*<script src="guide\.js/);
-});
-test('사용법 갱신: 비서와 전문가 AI의 차이, 화면마다 달라지는 💬 담당 AI 를 설명한다', () => {
-  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8'), m = readFileSync(new URL('../manual.html', import.meta.url), 'utf8');
-  for (const t of [g, m]) {
-    assert.ok(t.includes('전문가 페르소나') && t.includes('나만의 AI 비서'));
-    assert.ok(t.includes('화면') && t.includes('서류 비서') && t.includes('제출 안내 AI') && t.includes('양식 작성 AI') && t.includes('프로필 작성 AI'));
-    assert.ok(t.includes('언어·지역') && t.includes('문제 알리기') && t.includes('스킨'));
-  }
-});
-
-test('사용법 코스(guide.js): 기본 1~10 구성 항목 · 활용 11~20 실습 · 고급 21~(업무 Case는 항상 마지막)', () => {
-  const P = G.PAGES;
-  assert.ok(P.length >= 21);
-  P.slice(0, 10).forEach(p => assert.equal(p.level, '기본', p.title));
-  P.slice(10, 20).forEach(p => assert.equal(p.level, '활용', p.title));
-  P.slice(20).forEach(p => assert.equal(p.level, '고급', p.title));
-  P.slice(10, 19).forEach(p => assert.ok(p.title.startsWith('실습'), p.title));
-  assert.ok(P[19].title.startsWith('종합 실습'));
-  assert.equal(P[20].title, '내 양식 만들기'); assert.equal(P[21].title, 'PDV 구성하기');
-  assert.equal(P.filter(p => p.flag).length, 1); assert.equal(P[P.length - 1].flag, 'case');
-});
-
-test('사용법 코스: 임시로 모든 페이지로 이동할 수 있다(OPEN_ALL)', () => {
-  const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
-  assert.match(g, /var OPEN_ALL = true;/);
-});
-
 test('나비웹 홈페이지 링크는 Whitepaper 탭·사용법에 있고, 상단 막대는 숨기고 언어·국가 버튼은 오른쪽 위 줄에 둔다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /<a class="wp-site" href="https:\/\/hondi\.net"[^>]*>나비웹 홈페이지 ↗<\/a>/);
@@ -451,14 +351,6 @@ test('예시 버튼: 축소(높이 38px·글자 15px), 배경은 전송 버튼�
 test('사용법 3장(왼쪽 메뉴): 옛 방식의 화면 이미지를 싣지 않는다', () => {
   const g = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
   assert.ok(!g.includes('ui-sidemenu'));
-});
-
-test('사용법: 퀴즈를 통과해 다음 장으로 넘어가면 새 장의 맨 위를 보여 준다(스크롤 위치를 남기지 않음)', () => {
-  const js = readFileSync(new URL('../guide.js', import.meta.url), 'utf8');
-  assert.match(js, /function toTop\(\)/);
-  assert.match(js, /S\.idx = n; render\(\); toTop\(\);/, '통과 후 자동 이동');
-  assert.match(js, /S\.result = null; render\(\); toTop\(\); \}/, '번호·이전·다음 이동');
-  assert.match(js, /act === 'restart'\) \{ S\.idx = 0; S\.answers = \{\}; S\.result = null; render\(\); toTop\(\); \}/, '처음부터 다시');
 });
 
 test('안내 영상: 왼쪽 메뉴 "나비 길잡이" 아래, YouTube 아이콘 이미지, 영상 3개(navi 01·02·003)를 번호 순으로, 카드에 설명', () => {

@@ -21,9 +21,9 @@ async function call(env, method, path, { body, tok, admin, fetch, origin } = {})
   return { status: res.status, j: await res.json().catch(() => null), res };
 }
 
-test('digest 는 guide.js 와 같다(사용법 장을 고치면 build-manual-digest 를 다시 실행)', () => {
+test('digest 는 매뉴얼과 같다(매뉴얼 장을 고치면 build-manual-digest 를 다시 실행)', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(DIGEST)), build());
-  assert.ok(DIGEST.length >= 25);
+  assert.ok(DIGEST.length >= 70);
 });
 test('SP 본문: 핵심 규칙이 들어 있다', () => {
   for (const s of ['지어내지', '관리자에게 질의', '주민등록번호', '지시가 아니다', '약속하지', '자체 실험', '준비 중', '119', '정답을 그대로']) assert.ok(SP_TEXT.includes(s), s);

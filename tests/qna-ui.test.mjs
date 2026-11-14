@@ -40,8 +40,8 @@ test('listHtml: 빈 목록 안내와 행', () => {
   assert.ok(Q.listHtml([], 'mine').includes('질문하기')); assert.ok(Q.listHtml([{ id: 'a', title: 't', status: 'escalated', updated: '2026-11-06T04:00:00Z' }], 'mine').includes('관리자 확인 중'));
   assert.ok(!Q.listHtml([{ id: 'a', title: 't', status: 'answered', updated: '2026-11-06T04:00:00Z' }], 'pub').includes('qn-st'));
 });
-test('연결: guide.js 탭(사용법 강의 | 질문·답변), desktop.html 스크립트 순서, admin.html 사용법 질의 섹션', () => {
-  const g = read('guide.js'); assert.ok(g.includes('data-m="qna"')); assert.ok(g.includes("S.mode === 'qna'")); assert.ok(g.includes('QnaUI.mount'));
+test('연결: guide.js 탭(나비 사용자 매뉴얼 | 질문·답변), desktop.html 스크립트 순서, admin.html 사용법 질의 섹션', () => {
+  const g = read('guide.js'); assert.ok(g.includes("['qna', '질문·답변']")); assert.ok(g.includes("S.mode === 'qna'")); assert.ok(g.includes('QnaUI.mount'));
   const d = read('desktop.html'); assert.ok(d.indexOf('qna-ui.js') > 0 && d.indexOf('qna-ui.js') < d.indexOf('guide.js?v='));
   const a = read('admin.html'); assert.ok(a.includes('id="qna"') && a.includes('사용법 질의')); assert.ok(a.includes('#qna=')); assert.ok(a.includes('Bearer')); assert.ok(a.includes('[hidden]{display:none}'));
   assert.ok(!a.includes("ADMIN_TOKEN'") || a.includes('sessionStorage'));   // 토큰은 sessionStorage 에만 둔다
