@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 const unesc = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&');
-const num = (t) => { const m = /navi\s*0*(\d+)/i.exec(t || ''); return m ? parseInt(m[1], 10) : 1e9; };
+const num = (t) => { const m = /(?:navi|사용법)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; };
 const oneLine = (s, n) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
 const hms = (sec) => { sec = Math.round(+sec); if (!(sec > 0)) return ''; const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); };
 
@@ -20,7 +20,7 @@ export function parseFeed(xml) {
   }
   return out;
 }
-// 번호(navi 01, navi 003 …) 순. 번호가 없으면 목록 순서대로 뒤에.
+// 번호(navi 01, 나비웹 사용법 03 …) 순. 번호가 없으면 목록 순서대로 뒤에.
 export function sortByNumber(list) { return list.map((v, i) => [v, i]).sort((a, b) => num(a[0].t) - num(b[0].t) || a[1] - b[1]).map((x) => x[0]); }
 // 이전 파일 내용과 합친다: 길이·설명을 이번에 못 얻었으면 이전 값을 유지한다.
 export function merge(fresh, prev) {
