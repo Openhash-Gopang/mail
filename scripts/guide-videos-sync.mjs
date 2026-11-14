@@ -25,7 +25,13 @@ export function sortByNumber(list) { return list.map((v, i) => [v, i]).sort((a, 
 // 이전 파일 내용과 합친다: 길이·설명을 이번에 못 얻었으면 이전 값을 유지한다.
 export function merge(fresh, prev) {
   const old = new Map((prev || []).map((v) => [v.id, v]));
-  return sortByNumber(fresh).map((v) => { const o = old.get(v.id) || {}; return { id: v.id, t: v.t, len: v.len || o.len || '', d: v.d || o.d || '' }; });
+  // 번호가 없는 영상은 번호 있는 것들 뒤에: 이미 목록에 있던 것은 그 자리를 지키고, 새로 올라온 것은 맨 뒤(피드가 최신순이므로 뒤집어서 오래된 것 먼저)에 붙인다.
+  const prevIdx = new Map((prev || []).map((v, i) => [v.id, i]));
+  const numbered = sortByNumber(fresh.filter((v) => num(v.t) < 1e9));
+  const rest = fresh.filter((v) => num(v.t) >= 1e9);
+  const known = rest.filter((v) => prevIdx.has(v.id)).sort((a, b) => prevIdx.get(a.id) - prevIdx.get(b.id));
+  const added = rest.filter((v) => !prevIdx.has(v.id)).reverse();
+  return [...numbered, ...known, ...added].map((v) => { const o = old.get(v.id) || {}; return { id: v.id, t: v.t, len: v.len || o.len || '', d: v.d || o.d || '' }; });
 }
 
 async function main() {
