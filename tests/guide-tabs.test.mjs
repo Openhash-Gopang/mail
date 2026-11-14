@@ -30,3 +30,14 @@ test('나 홀로 페이지는 진행 중·완료 탭으로 흡수: 목록은 두
   assert.match(c, /name === 'casesolo' \? \(state === 'closed' \|\| state === 'archived' \? 'gdone' : 'gprog'\) : name/);
   assert.ok(c.includes("if (name === 'casesolo') { if (typeof root._switchTab === 'function') root._switchTab('gprog'); return; }"));
 });
+
+test('사용법 위쪽 탭: 나비 사용자 매뉴얼이 맨 앞, 다음 사용법 강의 · 질문·답변', () => {
+  const g = R('guide.js');
+  const i = g.indexOf('data-m="manual">나비 사용자 매뉴얼'), j = g.indexOf('data-m="course">사용법 강의'), k = g.indexOf('data-m="qna">질문·답변');
+  assert.ok(i > 0 && i < j && j < k, '탭 순서');
+  assert.match(g, /S\.mn\.src = 'manual\/hondi_interactive_manual\.html'/);
+  assert.match(g, /if \(S\.mode === 'manual'\) \{ renderManual\(el\); return; \}/);
+  assert.match(g, /if \(S\.mode === 'course'\) attachChat\(\)/);
+  assert.match(R('desktop.html'), /\.gd-manual\{/);
+  assert.ok(R('manual/hondi_interactive_manual.html').includes('var CHAPTERS'));
+});
