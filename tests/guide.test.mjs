@@ -498,3 +498,9 @@ test('나비웹 사용법: 맨 위 섹션, 별도 재생목록(PLVk7oB1w5pLE)을
   const j = JSON.parse(readFileSync(new URL('../guide-howto.json', import.meta.url), 'utf8'));
   assert.equal(j.list, 'PLVk7oB1w5pLE'); assert.ok(Array.isArray(j.videos));
 });
+
+test('영상 동기화: 번호(나비웹 사용법 NN·navi N)순, 번호 없는 새 영상은 맨 뒤에 업로드 순으로 붙는다', async () => {
+  const { merge } = await import('../scripts/guide-videos-sync.mjs');
+  const feed = [{ id: 'e', t: '새 영상 B' }, { id: 'd', t: '새 영상 A' }, { id: 'c', t: '나비웹 사용법 04 - x' }, { id: 'b', t: '나비웹 사용법 02' }, { id: 'a', t: '나비웹 사용법 01' }].map(v => ({ ...v, t: v.t.normalize('NFD') }));
+  assert.equal(merge(feed, [{ id: 'a' }, { id: 'b' }]).map(v => v.id).join(''), 'abcde');
+});
