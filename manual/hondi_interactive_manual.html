@@ -72,8 +72,22 @@ a { color: inherit; }
 .ch-illust { margin: 8px 0 20px; }
 .howto { margin: 0 0 22px; }
 .howto-cap { font-size: 12px; font-weight: 700; letter-spacing: .5px; color: var(--primary); margin-bottom: 8px; }
-.howto-frame { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: #000; box-shadow: var(--el-1); }
-.howto-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.howto-card { display: flex; align-items: center; gap: 16px; width: 100%; padding: 10px; border: 0; border-radius: var(--radius); background: var(--surface, #fff); box-shadow: var(--el-1); cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.howto-card:hover { box-shadow: var(--el-2, 0 2px 8px rgba(0,0,0,.18)); }
+.howto-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.howto-thumb { position: relative; flex: 0 0 240px; max-width: 45%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000; }
+.howto-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.howto-play { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(0,0,0,.62); }
+.howto-play::after { content: ''; position: absolute; left: 20px; top: 15px; border-left: 17px solid #fff; border-top: 11px solid transparent; border-bottom: 11px solid transparent; }
+.howto-t { font-size: 16px; font-weight: 700; line-height: 1.4; }
+.howto-hint { margin-top: 4px; font-size: 12px; color: var(--on-surface-variant, #666); }
+.howto-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.78); }
+.howto-modal-box { position: relative; width: min(1100px, 100%); }
+.howto-modal-frame { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; }
+.howto-modal-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.howto-modal-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #fff; font-weight: 700; }
+.howto-close { border: 0; border-radius: 50%; width: 36px; height: 36px; font-size: 20px; line-height: 1; cursor: pointer; background: rgba(255,255,255,.18); color: #fff; }
+.howto-close:hover { background: rgba(255,255,255,.3); }
 .howto-wait { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 96px; border: 1.5px dashed var(--outline); border-radius: var(--radius); background: var(--surface-container); color: var(--on-surface-variant); font-size: 13.5px; }
 .ch-shot { margin: 12px auto 20px; text-align: center; }
 .ch-shot img { width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 12px; display: block; }
@@ -446,28 +460,55 @@ function renderQuiz(chapter) {
 /* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록)의 순서대로 한 장에 한 편씩 맨 위에 넣는다 */
 var HOWTO_CHAPTERS = ['ch1', 'ch_pclogin', 'ch_agent'];
 var howtoP = null;
+function howtoNum(t) { var m = /(?:navi|사용법)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
 function loadHowto() {
   if (!howtoP) howtoP = fetch(EMBED ? 'guide-howto.json' : 'https://naviweb.kr/guide-howto.json', { cache: 'no-cache' })
     .then(function (r) { return r.ok ? r.json() : { videos: [] }; })
-    .then(function (j) { return (j && Array.isArray(j.videos) ? j.videos : []).filter(function (v) { return v && /^[\w-]{11}$/.test(v.id); }); })
+    .then(function (j) {
+      var l = (j && Array.isArray(j.videos) ? j.videos : []).filter(function (v) { return v && /^[\w-]{11}$/.test(v.id); });
+      return l.map(function (v, i) { return [v, i]; }).sort(function (a, b) { return howtoNum(a[0].t) - howtoNum(b[0].t) || a[1] - b[1]; }).map(function (x) { return x[0]; });   // 제목 번호(01·02·03)순 — 목록 파일 순서와 무관하게 장에 맞춘다
+    })
     .catch(function () { howtoP = null; return []; });
   return howtoP;
 }
 function howtoSlot(chId) {
   var n = HOWTO_CHAPTERS.indexOf(chId);
-  return n < 0 ? '' : '<div class="howto" data-n="' + n + '"><div class="howto-cap">나비웹 사용법 영상 ' + (n + 1) + '</div><div class="howto-wait">▶ 영상을 준비하고 있습니다</div></div>';
+  return n < 0 ? '' : '<div class="howto" data-n="' + n + '"><div class="howto-wait">▶ 영상을 준비하고 있습니다</div></div>';
+}
+function howtoOpen(v) {   // 큰 화면: 화면 가운데에 크게 띄워 바로 재생한다(바깥·닫기·Esc 로 닫는다)
+  var old = DOC.querySelector('.howto-modal'); if (old) old.remove();
+  var m = document.createElement('div'); m.className = 'howto-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+  var box = document.createElement('div'); box.className = 'howto-modal-box';
+  var top = document.createElement('div'); top.className = 'howto-modal-top';
+  var ti = document.createElement('span'); ti.textContent = v.t.normalize('NFC');
+  var x = document.createElement('button'); x.type = 'button'; x.className = 'howto-close'; x.setAttribute('aria-label', '닫기'); x.textContent = '×';
+  top.appendChild(ti); top.appendChild(x);
+  var fr = document.createElement('div'); fr.className = 'howto-modal-frame';
+  var f = document.createElement('iframe');
+  f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0&autoplay=1'; f.title = v.t;
+  f.allow = 'autoplay; accelerometer; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true;
+  fr.appendChild(f); box.appendChild(top); box.appendChild(fr); m.appendChild(box);
+  function close() { m.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  x.addEventListener('click', close); m.addEventListener('click', function (e) { if (e.target === m) close(); });
+  document.addEventListener('keydown', onKey);
+  (DOC.host ? DOC : document.body).appendChild(m); x.focus();
 }
 function fillHowto(el) {
   var box = el.querySelector('.howto'); if (!box) return;
   var n = Number(box.getAttribute('data-n'));
   loadHowto().then(function (list) {
     var v = list[n]; if (!v || !box.isConnected) return;
-    var cap = box.querySelector('.howto-cap'); cap.textContent = '나비웹 사용법 영상 ' + (n + 1) + ' · ' + v.t;
-    var frame = document.createElement('div'); frame.className = 'howto-frame';
-    var f = document.createElement('iframe');
-    f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0'; f.title = v.t; f.loading = 'lazy';
-    f.allow = 'accelerometer; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true;
-    frame.appendChild(f); box.replaceChild(frame, box.querySelector('.howto-wait'));
+    var card = document.createElement('button'); card.type = 'button'; card.className = 'howto-card';
+    var th = document.createElement('span'); th.className = 'howto-thumb';
+    var im = document.createElement('img'); im.src = 'https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg'; im.alt = ''; im.loading = 'lazy';
+    var pl = document.createElement('span'); pl.className = 'howto-play'; th.appendChild(im); th.appendChild(pl);
+    var tx = document.createElement('span');
+    var t = document.createElement('div'); t.className = 'howto-t'; t.textContent = v.t.normalize('NFC');
+    var h = document.createElement('div'); h.className = 'howto-hint'; h.textContent = '눌러서 큰 화면으로 보기';
+    tx.appendChild(t); tx.appendChild(h); card.appendChild(th); card.appendChild(tx);
+    card.addEventListener('click', function () { howtoOpen(v); });
+    box.replaceChild(card, box.querySelector('.howto-wait'));
   });
 }
 
