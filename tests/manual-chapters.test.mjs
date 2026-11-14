@@ -23,3 +23,12 @@ test('옛 강의 표현(이 코스·실습 ①)이 남지 않는다', () => {
 test('장에 쓴 그림 파일이 manual-img 에 있다', () => {
   for (const c of C) for (const m of c.body.matchAll(/src="manual-img\/([^"]+)"/g)) assert.ok(existsSync(new URL('../manual/manual-img/' + m[1], import.meta.url)), c.id + ' ' + m[1]);
 });
+
+test('본문의 장 참조는 링크이고 가리키는 장이 있다', () => {
+  const ids = new Set(C.map((c) => c.id));
+  for (const c of C) {
+    for (const m of c.body.matchAll(/data-goto="([^"]+)"/g)) assert.ok(ids.has(m[1]), `${c.id} → ${m[1]} 없음`);
+    const plain = c.body.replace(/<[^>]+>/g, ' ');
+    assert.ok(!/(?<![\d/])\d{1,3}장(?!\s*완료)/.test(plain.replace(/\d+\s*\/\s*\d+장/g, '')), `${c.id}: 링크 아닌 "N장" 표기가 남음`);
+  }
+});
