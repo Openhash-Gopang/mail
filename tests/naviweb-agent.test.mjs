@@ -565,10 +565,12 @@ test('0.6.20: 작업 탭 묶음·띠 되살리기·사용자 말하기·가입 �
   assert.equal(classify('handoff_to_user', { reason: '약관 동의와 아이디 만들기는 직접 해 주세요' }, {}).act, 'handoff');
 });
 
-test('확장 새로고침 직후 설치 안내가 뜨지 않게: 연결된 적 있으면 재확인·자동 안내 생략, 연속 2회 미응답만 끊김', () => {
+test('도우미 삭제·새로고침: 연결된 적 있으면 재확인하고, 화면에 확장 표지가 없으면(삭제·꺼짐) 설치 안내를 연다. 나중에는 하루 미룬다', () => {
   const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(d, /_agentDetectPatient/); assert.match(d, /if \(!_agentSeen\(\)\) setTimeout\(\(\) => window\._agentGuideOpen/);
-  assert.match(d, /_agentMiss/);
+  assert.match(d, /_agentDetectPatient/); assert.match(d, /_agentMiss/);
+  assert.match(d, /const _installed = !!\(NaviAgent\.installedMark/);
+  assert.match(d, /if \(!_agentGuideSnoozed\(\)\) window\._agentGuideOpen/);
+  assert.match(d, /id="set-agent-row"/); assert.match(d, /hub-agent/);
 });
 
 test('0.6.21: 클릭·입력 전에 도우미 커서가 움직인다(닫힌 shadow DOM, 움직임 줄이기 존중)', () => {

@@ -1888,6 +1888,13 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <!-- 계정 -->
     <section id="set-sec-account" class="set-sec active">
+      <div class="set-row" id="set-agent-row">
+        <div class="set-lbl">나비웹 도우미</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="sa-state">확인 중…</span><button type="button" class="sa-btn" onclick="window._agentGuideOpen &amp;&amp; window._agentGuideOpen()" style="border:1px solid #00796B;background:#00796B;color:#fff;border-radius:6px;padding:6px 16px;font:inherit;cursor:pointer">설치하기</button></div>
+          <div class="set-hint">정부24 등 기관 사이트에서 첨부서류를 대신 발급받아 오는 Chrome 확장 프로그램입니다. PC의 Chrome에서만 설치할 수 있습니다.</div>
+        </div>
+      </div>
       <div id="mail-id-content" style="display:none">
         <div class="set-row">
           <div class="set-lbl">내 메일 주소</div>
@@ -2309,6 +2316,7 @@ async function _agentDetectPatient(tries) {
 async function _agentInit() {
   if (!window.NaviAgent) return;
   _agentInfo = await _agentDetectPatient(_agentSeen() ? 4 : 1);
+  try { window._agentEntryRefresh && window._agentEntryRefresh(); } catch (e) { /* 표시만 빠진다 */ }
   _agentBars().forEach(bar => {
     if (!_agentInfo) { bar.hidden = true; return; }
     const sel = bar.querySelector('select'); sel.innerHTML = '';
@@ -2322,7 +2330,7 @@ async function _agentInit() {
   if (_agentInfo) _agentBadge('나비웹 도우미 ' + _agentInfo.version);
   else {
     // 이미 설치된 확장(전에 연결된 적이 있거나 확장이 남긴 표지가 있음)이면 응답이 늦거나 끊긴 것이므로 설치를 권하지 않는다(2026-11-12).
-    const _installed = _agentSeen() || (NaviAgent.installedMark && !!NaviAgent.installedMark());
+    const _installed = !!(NaviAgent.installedMark && NaviAgent.installedMark());   // 2026-11-14: 전에 연결된 적이 있어도 이 화면에 확장의 표지가 없으면 삭제·꺼짐으로 보고 설치를 권한다
     const _bt = document.querySelector('#agent-badge .ab-t');
     if (_installed) {
       _agentBadge('나비웹 도우미 연결 확인 중 — 계속 안 되면 이 페이지를 새로고침해 주세요');
@@ -2330,7 +2338,7 @@ async function _agentInit() {
     } else {
       _agentBadge('나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
       if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
-      setTimeout(() => window._agentGuideOpen && window._agentGuideOpen(), 800);   // 한 번도 연결된 적이 없고 설치 표지도 없을 때만 설치 안내를 연다
+      setTimeout(() => { if (!_agentGuideSnoozed()) window._agentGuideOpen && window._agentGuideOpen(); }, 800);   // 설치 표지가 없으면 설치 안내를 연다('나중에'를 누르면 하루 동안은 저절로 열지 않는다)
     }
   }
   if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
@@ -7508,6 +7516,11 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIs
       const b = document.createElement('button'); b.type = 'button'; b.className = 'hub-btn hub-text hub-plan'; b.textContent = '플랜 업그레이드';
       b.addEventListener('click', () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.body.click(); } catch (e) {} _switchTab('pricing'); });
       out.parentNode.insertBefore(b, out);
+      if (!_agentInfo && window.NaviAgent && NaviAgent.STORE_URL && !menu.querySelector('.hub-agent')) {   // 도우미가 없을 때만 "도우미 설치" 줄을 끼워 넣는다
+        const g = document.createElement('button'); g.type = 'button'; g.className = 'hub-btn hub-text hub-agent'; g.textContent = '나비웹 도우미 설치';
+        g.addEventListener('click', () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.body.click(); } catch (e) {} window._agentGuideOpen && window._agentGuideOpen(); });
+        out.parentNode.insertBefore(g, out);
+      }
     });
   }
   new MutationObserver(addPlan).observe(root, { childList: true, subtree: true }); addPlan();
@@ -9045,6 +9058,9 @@ window.addEventListener('message', async (e) => {
 })();
 
 /* ── 나비웹 도우미(확장 프로그램) 설치 안내: 이 PC 의 Chrome 에 확장이 없을 때 보인다 ── */
+const _AG_SNOOZE = 'navi_agent_guide_snooze_v1';
+function _agentGuideSnoozed() { try { return Number(localStorage.getItem(_AG_SNOOZE) || 0) > Date.now(); } catch (e) { return false; } }
+function _agentGuideSnooze() { try { localStorage.setItem(_AG_SNOOZE, String(Date.now() + 24 * 3600 * 1000)); } catch (e) { /* 저장 불가 */ } }
 function _agentGuideClose() { var g = document.getElementById('agent-guide'); if (g) g.remove(); }
 function _agentGuideOpen() {
   if (_agentInfo || document.getElementById('agent-guide')) return;
@@ -9054,16 +9070,25 @@ function _agentGuideOpen() {
   var inst = store ? '<a id="agent-guide-go" href="' + store + '" target="_blank" rel="noopener"' : '<a id="agent-guide-go" href="agent/naviweb-agent-extension.zip" download';
   inst += ' style="display:inline-block;background:#00796B;color:#fff;text-decoration:none;border-radius:4px;padding:12px 26px;font-weight:600;letter-spacing:.04em;font-size:15.5px">설치하기</a>';
   o.innerHTML = '<div style="background:#fff;color:#1b2733;max-width:520px;width:100%;max-height:92vh;overflow:auto;border-radius:4px;padding:24px;box-shadow:0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14),0 9px 46px 8px rgba(0,0,0,.12);font-size:14.5px;line-height:1.65">' +
-    '<h2 style="margin:0 0 8px;font-size:19px">나비웹 도우미를 설치해 주세요</h2>' +
+    '<h2 style="margin:0 0 8px;font-size:19px">' + (_agentSeen() ? '나비웹 도우미가 보이지 않습니다' : '나비웹 도우미를 설치해 주세요') + '</h2>' + (_agentSeen() ? '<p style="margin:0 0 8px;color:#5b6b7a">전에 쓰시던 도우미가 삭제되었거나 꺼져 있는 것 같습니다. 아래 단추로 다시 설치하거나, 주소창 오른쪽 퍼즐 아이콘 → 확장 프로그램 관리에서 켜 주세요.</p>' : '') +
     '<p style="margin:0 0 8px"><b>왜 필요한가요?</b> 나비웹 도우미는 Chrome 확장 프로그램(익스텐션)으로, 사용자가 작성 중인 서류에 필요한 <b>첨부서류(등본·대장·확인서 등)를 정부·기관 등 관련 사이트에서 발급받아 자동으로 첨부</b>합니다. 사용자는 관련 사이트에 로그인만 하면 됩니다.</p>' +
     '<ul style="margin:0 0 8px;padding-left:20px"><li>도우미는 비밀번호·인증서·주민등록번호를 수집하거나 저장하지 않습니다.</li><li>설치는 1분이면 끝나고, 한 번만 하면 됩니다.</li></ul>' +
     '<div style="text-align:center;margin:12px 0">' + inst + '</div>' +
     '<p style="margin:0 0 6px">이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</p>' +
     '<div style="text-align:right;margin-top:6px"><button type="button" id="agent-guide-x" style="border:1px solid #c5d3ee;background:#fff;color:#2f66c9;border-radius:8px;padding:7px 16px;font:inherit;cursor:pointer">나중에</button></div></div>';
-  o.addEventListener('click', function (e) { if (e.target === o || e.target.id === 'agent-guide-x') _agentGuideClose(); });
+  o.addEventListener('click', function (e) { if (e.target === o || e.target.id === 'agent-guide-x') { if (e.target.id === 'agent-guide-x') _agentGuideSnooze(); _agentGuideClose(); } });
   document.body.appendChild(o);
 }
 window._agentGuideOpen = _agentGuideOpen;
+/* 자발적 설치(2026-11-14): 사용자 팝업(ceo ⌄)과 설정>계정에서 언제든 설치 안내를 연다. 설치돼 있으면 상태만 보인다. */
+function _agentEntryRefresh() {
+  const on = !!_agentInfo;
+  const row = document.getElementById('set-agent-row'); if (!row) return;
+  const st = row.querySelector('.sa-state'), btn = row.querySelector('.sa-btn');
+  st.textContent = on ? '설치됨 (버전 ' + _agentInfo.version + ')' : '설치되어 있지 않습니다';
+  btn.textContent = on ? '확인됨' : '설치하기'; btn.disabled = on;
+}
+window._agentEntryRefresh = _agentEntryRefresh;
 </script>
 <script src="hondi-chat.js?v=20261107b"></script>
 <script>
