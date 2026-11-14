@@ -35,9 +35,25 @@ test('사용법 위쪽 탭: 나비 사용자 매뉴얼이 맨 앞, 다음 사용
   const g = R('guide.js');
   const i = g.indexOf('data-m="manual">나비 사용자 매뉴얼'), j = g.indexOf('data-m="course">사용법 강의'), k = g.indexOf('data-m="qna">질문·답변');
   assert.ok(i > 0 && i < j && j < k, '탭 순서');
-  assert.match(g, /S\.mn\.src = 'manual\/hondi_interactive_manual\.html'/);
+  assert.match(g, /fetch\('manual\/hondi_interactive_manual\.html'/);
+  assert.match(g, /attachShadow\(\{ mode: 'open' \}\)/);
+  assert.ok(!/createElement\('iframe'\)/.test(g), 'iframe 없이 직접 붙인다');
   assert.match(g, /if \(S\.mode === 'manual'\) \{ renderManual\(el\); return; \}/);
   assert.match(g, /if \(S\.mode === 'course'\) attachChat\(\)/);
   assert.match(R('desktop.html'), /\.gd-manual\{/);
   assert.ok(R('manual/hondi_interactive_manual.html').includes('var CHAPTERS'));
+});
+
+test('나비 온도: 36.5에서 시작, 초급 60 · 중급 80 · 고급 100 구간, 95° 이상 CNS', async () => {
+  const G = (await import('../guide.js')).default;
+  const T = G._pure.naviTemp;
+  assert.equal(T(0, null), 36.5);
+  assert.equal(T(10, null), 60);            // 기본(초급) 10쪽 완료
+  assert.equal(T(20, null), 80);            // 활용(중급)까지
+  assert.equal(T(25, null), 100);           // 고급까지 모두
+  assert.ok(T(23, null) < G._pure.CNS_AT && T(24, null) >= G._pure.CNS_AT);   // 고급 5쪽 중 4쪽부터 95° 이상
+  assert.equal(T(0, [1, 1, 0.75]), 95);     // 매뉴얼에서 초·중급 완료 + 고급 75%
+  assert.equal(T(10, [0.5, 0, 0]), 60);     // 단계마다 많이 마친 쪽을 쓴다
+  assert.match(R('manual/hondi_interactive_manual.html'), /function naviTemp\(\)/);
+  assert.match(R('guide.js'), /data-act="cns"/);
 });

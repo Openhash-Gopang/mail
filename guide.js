@@ -307,6 +307,16 @@
   })();
 
   // ── 순수 함수 ───────────────────────────────────────────
+  // 나비 온도(2026-11-14): 초급·중급·고급 단계별 구간 36.5 → 60 → 80 → 100. 사용법 강의(기본10·활용10·고급5쪽)와 나비 사용자 매뉴얼(manual/, 단계별 진행률을 localStorage 에 남김) 중 단계마다 많이 마친 쪽을 쓴다. 95° 이상이면 나비웹 전문가 인증서(CNS).
+  var TEMP_SPAN = [23.5, 20, 20], CNS_AT = 95;
+  function courseFr(d) { return [Math.min(d, 10) / 10, Math.max(0, Math.min(d - 10, 10)) / 10, Math.max(0, Math.min(d - 20, 5)) / 5]; }
+  function naviTemp(done, manualFr) {
+    var cf = courseFr(done || 0), t = 36.5;
+    for (var i = 0; i < 3; i++) t += TEMP_SPAN[i] * Math.max(cf[i], (manualFr && +manualFr[i]) || 0);
+    return Math.min(100, Math.round(t * 10) / 10);
+  }
+  function manualFr() { try { var m = JSON.parse(localStorage.getItem('naviweb_manual_frac_v1')); return m ? [m.beginner, m.intermediate, m.advanced] : null; } catch (_) { return null; } }
+  function tempNow() { return naviTemp(Math.max(S.done || 0, load()), manualFr()); }
   function pages(caseOn) { return PAGES.filter(function (p) { return !p.flag || (p.flag === 'case' && caseOn); }); }
   // answers: 문항별 선택 index(없으면 null). 반환 { ok:[bool], all:boolean }
   function grade(page, answers) {
@@ -332,13 +342,55 @@
   function modesHtml() {
     return '<div class="gd-modes" role="tablist" aria-label="사용법"><button type="button" role="tab" class="gd-mode' + (S.mode === 'manual' ? ' on' : '') + '" aria-selected="' + (S.mode === 'manual') + '" data-act="mode" data-m="manual">나비 사용자 매뉴얼</button>' +
       '<button type="button" role="tab" class="gd-mode' + (S.mode === 'course' ? ' on' : '') + '" aria-selected="' + (S.mode === 'course') + '" data-act="mode" data-m="course">사용법 강의</button>' +
-      '<button type="button" role="tab" class="gd-mode' + (S.mode === 'qna' ? ' on' : '') + '" aria-selected="' + (S.mode === 'qna') + '" data-act="mode" data-m="qna">질문·답변</button></div>';
+      '<button type="button" role="tab" class="gd-mode' + (S.mode === 'qna' ? ' on' : '') + '" aria-selected="' + (S.mode === 'qna') + '" data-act="mode" data-m="qna">질문·답변</button>' + tempHtml() + '</div>';
   }
   // 나비 사용자 매뉴얼(2026-11-14): 같은 사이트의 manual/ 아래 매뉴얼을 틀 안에 넣는다. 한 번 만들어 두고 탭을 오가도 읽던 자리를 유지한다.
+  function tempHtml() {
+    var t = tempNow(), cns = t >= CNS_AT;
+    return '<span class="gd-temp" title="초급·중급·고급을 마칠수록 36.5°에서 100°까지 올라갑니다. 95° 이상이면 나비웹 전문가 인증서(CNS)를 발급합니다.">🌡 나비 온도 <b>' + t.toFixed(1) + '°</b>' +
+      (cns ? ' <button type="button" class="gd-cns" data-act="cns">인증서 발급</button>' : '') + '</span>';
+  }
+  // iframe 없이 같은 페이지 안에 직접 붙인다: 매뉴얼 HTML을 한 번만 받아 shadow root 안에서 실행한다(스타일 격리).
+  function mountManual() {
+    if (S.mnP) return S.mnP;
+    var host = document.createElement('div');
+    host.id = 'navi-manual-host'; host.className = 'gd-manual';
+    host.innerHTML = '<div class="gd-manual-wait">매뉴얼을 불러오는 중…</div>';
+    S.mn = host;
+    S.mnP = fetch('manual/hondi_interactive_manual.html', { credentials: 'same-origin' }).then(function (r) {
+      if (!r.ok) throw new Error('manual ' + r.status);
+      return r.text();
+    }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var root = host.attachShadow({ mode: 'open' });
+      Array.prototype.forEach.call(doc.head.querySelectorAll('style, link[rel=stylesheet]'), function (n) { root.appendChild(n.cloneNode(true)); });
+      var script = doc.body.querySelector('script');
+      var code = script ? script.textContent : '';
+      if (script) script.remove();
+      var page = document.createElement('div');
+      page.className = 'mn-page';
+      page.innerHTML = doc.body.innerHTML;
+      root.appendChild(page);
+      host.querySelector('.gd-manual-wait') && host.querySelector('.gd-manual-wait').remove();
+      window.__naviManualRoot = root; window.__naviManualBase = 'manual/';
+      try {
+        var sc = document.createElement('script');
+        sc.textContent = '(function(){' + code + '\n})();';
+        root.appendChild(sc);
+      } finally { delete window.__naviManualRoot; delete window.__naviManualBase; }
+      return window.NaviManual || null;
+    }).catch(function (err) {
+      host.innerHTML = '<div class="gd-manual-wait">매뉴얼을 불러오지 못했습니다. 새로고침해 주세요.</div>';
+      S.mnP = null;
+      throw err;
+    });
+    return S.mnP;
+  }
   function renderManual(el) {
     el.innerHTML = modesHtml();
-    if (!S.mn) { S.mn = document.createElement('iframe'); S.mn.className = 'gd-manual'; S.mn.title = '나비 사용자 매뉴얼'; S.mn.src = 'manual/hondi_interactive_manual.html'; S.mn.setAttribute('loading', 'lazy'); }
+    var p = mountManual();
     el.appendChild(S.mn);
+    p.then(function (api) { if (api) api.refresh(); }).catch(function () { /* 안내문이 이미 표시됨 */ });
   }
   function renderQna(el) {
     el.innerHTML = modesHtml();
@@ -451,6 +503,10 @@
       if (S.result.all) { clearTimeout(S.timer); S.timer = setTimeout(passAndAdvance, 1600); }
     }
     else if (act === 'advance') { if (S.result && S.result.all) passAndAdvance(); else if (S.idx < S.done) go(S.idx + 1); }
+    else if (act === 'cns') {
+      S.mode = 'manual'; S.open = false; render();
+      mountManual().then(function (api) { if (api) api.openCns(); }).catch(function () { /* 못 열면 매뉴얼 안의 배너로 발급 */ });
+    }
     else if (act === 'mode') { var m = t.getAttribute('data-m'); S.mode = m === 'qna' ? 'qna' : m === 'manual' ? 'manual' : 'course'; S.open = false; render(); }
     else if (act === 'toggle-list') { S.open = !S.open; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); }
     else if (act === 'go') go(+t.getAttribute('data-i'));
@@ -472,6 +528,6 @@
     render();
   }
 
-  root.GuideUI = { show: show, _pure: { PAGES: PAGES, pages: pages, grade: grade, canOpen: canOpen, clampDone: clampDone, nextAfterPass: nextAfterPass }, _state: S };
+  root.GuideUI = { show: show, _pure: { naviTemp: naviTemp, CNS_AT: CNS_AT, PAGES: PAGES, pages: pages, grade: grade, canOpen: canOpen, clampDone: clampDone, nextAfterPass: nextAfterPass }, _state: S };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.GuideUI;
 })(typeof window !== 'undefined' ? window : globalThis);
