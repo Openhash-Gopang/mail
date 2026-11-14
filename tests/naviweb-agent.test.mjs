@@ -571,6 +571,7 @@ test('도우미 삭제·새로고침: 연결된 적 있으면 재확인하고, �
   assert.match(d, /const _installed = !!\(NaviAgent\.installedMark/);
   assert.match(d, /if \(!_agentGuideSnoozed\(\)\) window\._agentGuideOpen/);
   assert.match(d, /id="set-agent-row"/); assert.match(d, /hub-agent/);
+  assert.match(d, /if \(_agentInfo\) \{ try \{ window\._agentGuideClose/); assert.match(d, /_agentAfterInstallReturn/);
 });
 
 test('0.6.21: 클릭·입력 전에 도우미 커서가 움직인다(닫힌 shadow DOM, 움직임 줄이기 존중)', () => {
