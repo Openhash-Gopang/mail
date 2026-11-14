@@ -45,6 +45,26 @@ a { color: inherit; }
 .seg button:first-child { border-left: 0; }
 .seg button.active { background: var(--primary-container); color: var(--on-primary-container); font-weight: 700; }
 
+/* ── 단계별 진행 막대 + 오른쪽 슬라이드 장 목록(2026-11-15) ── */
+.tier-prog { margin: 0 0 18px; }
+.tier-prog .tp-bar { height: 8px; border-radius: 4px; background: var(--outline-variant); overflow: hidden; }
+.tier-prog .tp-bar i { display: block; height: 100%; width: 0; background: var(--primary); border-radius: 4px; transition: width .3s; }
+.tier-prog .tp-sum { margin-top: 6px; font-size: 12.5px; color: var(--on-surface-variant); }
+.mn-page .wrap { position: relative; }
+.ch-scrim { position: absolute; left: 0; right: 0; bottom: 0; top: var(--cp-top, 120px); z-index: 40; background: rgba(0,0,0,.28); opacity: 0; pointer-events: none; transition: opacity .25s; }
+.ch-scrim.open { opacity: 1; pointer-events: auto; }
+.ch-panel { position: absolute; top: var(--cp-top, 120px); right: 0; height: min(72vh, 600px); z-index: 41; width: min(340px, 92vw); border-radius: 0 0 0 var(--radius); display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--outline); box-shadow: -8px 0 24px rgba(0,0,0,.12); transform: translateX(100%); visibility: hidden; transition: transform .28s ease, visibility 0s .28s; }
+.ch-panel.open { transform: none; visibility: visible; transition: transform .28s ease; }
+.ch-panel .cp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 10px; border-bottom: 1px solid var(--outline-variant); font-weight: 700; font-size: 15px; color: var(--navy); }
+.ch-panel .cp-x { height: 32px; width: 32px; border: 0; border-radius: 50%; background: transparent; font-size: 18px; cursor: pointer; color: var(--on-surface-variant); }
+.ch-panel .cp-x:hover { background: var(--surface-container); }
+.ch-panel .ch-cards { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 12px; overflow-y: auto; flex: 1; }
+.ch-panel .ch-card { flex: none; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; min-height: 0; padding: 10px 12px; box-shadow: 0 0 0 1px var(--outline-variant); }
+.ch-panel .ch-card:hover { transform: none; box-shadow: 0 0 0 1px var(--outline); }
+.ch-panel .ch-card.active { box-shadow: 0 0 0 2px var(--primary); }
+.ch-panel .cc-top { display: contents; }
+.ch-panel .cc-chip { order: 3; white-space: nowrap; }
+.ch-panel .ch-card > span:last-child { font-size: 13.5px; line-height: 1.4; }
 /* ── 장(chapter) 카드 격자 ── */
 .ch-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-bottom: 26px; }
 .ch-card { display: flex; flex-direction: column; gap: 12px; min-height: 124px; text-align: left; font-family: inherit; cursor: pointer; background: var(--surface); border: 0; border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--el-1); color: var(--on-surface); transition: box-shadow .15s, transform .15s; }
@@ -283,8 +303,10 @@ a { color: inherit; }
 <div class="wrap">
   <div class="cns-banner" id="cnsBanner" role="status"><span id="cnsBannerText"></span><button type="button" id="cnsBannerBtn">인증서 발급받기</button></div>
   <div class="sec-head"><h2 id="gridTitle">초급</h2><div class="seg" id="tierSeg" role="group" aria-label="단계 선택"></div></div>
-  <div class="ch-cards" id="chTabs"></div>
+  <div class="tier-prog" id="tierProg"><div class="tp-bar" role="progressbar" aria-label="단계 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="tpFill"></i></div><div class="tp-sum" id="tpSum"></div></div>
   <div class="ch-content" id="chContent"></div>
+  <div class="ch-scrim" id="chScrim"></div>
+  <aside class="ch-panel" id="chPanel" aria-label="장 목록"><div class="cp-head"><span id="cpTitle"></span><button type="button" class="cp-x" id="cpClose" aria-label="장 목록 닫기">✕</button></div><div class="ch-cards" id="chTabs"></div></aside>
   <div class="tier-reward-banner" id="tierRewardBanner"></div>
   <div class="cns-modal" id="cnsModal" role="dialog" aria-modal="true" aria-label="나비웹 전문가 인증서"><div class="cns-box">
     <div id="cnsForm"><h2>나비웹 전문가 인증서(CNS) 발급</h2><p>인증서에 넣을 <b>이름</b>을 입력해 주세요. 발급하면 이름과 발급일은 바꿀 수 없습니다.</p><input type="text" id="cnsName" maxlength="30" placeholder="이름" autocomplete="name"><div class="cns-actions"><button type="button" class="cns-sub" id="cnsCancel">취소</button><button type="button" class="cns-go" id="cnsIssue">발급하기</button></div></div>
@@ -397,18 +419,41 @@ function renderHeader() {
   renderCnsBanner(naviTemp());   // 나비 온도(36.5→100)는 계속 계산·저장하고, 95° 이상이면 인증서 배너를 띄운다
 }
 
-function selectTier(tier) { currentTier = tier; currentChapterId = chaptersByTier(tier)[0].id; renderAll(); }
+var panelOpen = false, lastByTier = {};
+function setPanel(o) {
+  panelOpen = !!o;
+  var pr = DOC.getElementById('tierProg'), wp = DOC.getElementById('chPanel').parentNode;   // 머리말·진행 막대는 가리지 않고 그 아래에서만 연다
+  if (pr && wp) wp.style.setProperty('--cp-top', (pr.offsetTop + pr.offsetHeight + 6) + 'px');
+  ['chPanel', 'chScrim'].forEach(function (id) { var e = DOC.getElementById(id); if (e) e.classList.toggle('open', panelOpen); });
+  renderTierTabs();
+}
+/* 단계 버튼: 목록(슬라이드 패널)은 평소 닫혀 있고, 버튼을 누르면 그 단계의 장 목록이 열린다. 같은 버튼을 다시 누르면 닫힌다. */
+function selectTier(tier) {
+  if (panelOpen && tier === currentTier) { setPanel(false); return; }
+  if (tier !== currentTier) {
+    lastByTier[currentTier] = currentChapterId;
+    currentTier = tier;
+    var l = chaptersByTier(tier), keep = l.filter(function (c) { return c.id === lastByTier[tier]; })[0];
+    currentChapterId = (keep || l.filter(function (c) { return !isCompleted(c.id); })[0] || l[0]).id;
+  }
+  renderAll(); setPanel(true);
+}
 
 function renderTierTabs() {
   var seg = DOC.getElementById('tierSeg');
   seg.innerHTML = '';
   TIER_ORDER.forEach(function (tier) {
     var sb = document.createElement('button');
-    sb.type = 'button'; sb.className = tier === currentTier ? 'active' : ''; sb.textContent = TIER_LABELS[tier];
+    sb.type = 'button'; sb.className = tier === currentTier ? 'active' : ''; sb.setAttribute('aria-expanded', panelOpen && tier === currentTier ? 'true' : 'false'); sb.textContent = TIER_LABELS[tier];
     sb.addEventListener('click', function () { selectTier(tier); });
     seg.appendChild(sb);
   });
   var n = chaptersByTier(currentTier).length;
+  var dn = tierCompletedCount(currentTier), pct = n ? Math.round(dn / n * 100) : 0;
+  DOC.getElementById('tpFill').style.width = pct + '%';
+  DOC.getElementById('tpFill').parentNode.setAttribute('aria-valuenow', pct);
+  DOC.getElementById('tpSum').textContent = TIER_LABELS[currentTier] + ' 진행 ' + dn + ' / ' + n + '장 · ' + pct + '%';
+  DOC.getElementById('cpTitle').textContent = TIER_LABELS[currentTier] + ' · ' + dn + '/' + n + '장 완료';
   DOC.getElementById('gridTitle').textContent = TIER_LABELS[currentTier] + ' · ' + tierCompletedCount(currentTier) + '/' + n + '장 완료 · GDC ' + TIER_REWARDS[currentTier].toLocaleString() + 'T';
 }
 
@@ -421,7 +466,7 @@ function renderChapterTabs() {
     btn.type = 'button';
     btn.className = 'ch-card' + (cur ? ' active' : '') + (done ? ' completed' : '');
     btn.innerHTML = '<span class="cc-top"><span class="cc-num">' + (done ? '✓' : (idx + 1)) + '</span><span class="cc-chip">' + (done ? '완료' : cur ? '읽는 중' : '시작 전') + '</span></span><span class="cc-title">' + ch.title + '</span>';
-    btn.addEventListener('click', function () { currentChapterId = ch.id; renderAll(); scrollToContent(); });
+    btn.addEventListener('click', function () { currentChapterId = ch.id; panelOpen = false; renderAll(); setPanel(false); scrollToContent(); });
     wrap.appendChild(btn);
   });
 }
@@ -898,6 +943,9 @@ function kgovBuildApp(root) {
 }
 function renderAll() { renderHeader(); renderTierTabs(); renderChapterTabs(); renderContent(); }
 renderAll();
+DOC.getElementById('chScrim').addEventListener('click', function () { setPanel(false); });
+DOC.getElementById('cpClose').addEventListener('click', function () { setPanel(false); });
+DOC.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panelOpen) setPanel(false); });
 
 window.NaviManual = { current: function () { var i = -1; CHAPTERS.forEach(function (c, k) { if (c.id === currentChapterId) i = k; }); return i < 0 ? null : { n: i + 1, title: CHAPTERS[i].title, id: CHAPTERS[i].id }; }, refresh: function () { renderHeader(); }, openCns: function () { renderHeader(); openCns(); } };
 </script>
