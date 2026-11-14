@@ -331,7 +331,7 @@
   function nextAfterPass(idx, total) { return idx + 1 < total ? idx + 1 : -1; }   // -1 = 마지막(완료 화면)
 
   // ── 화면 ───────────────────────────────────────────────
-  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'course', mn: null, qn: null, mc: null, mcApi: null };   // idx null = 아직 화면을 연 적 없음
+  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'manual', mn: null, qn: null, mc: null, mcApi: null };   // idx null = 아직 화면을 연 적 없음
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
   function caseOn() { try { return !!(root.CaseUI && root.CaseUI.enabled()); } catch (_) { return false; } }
