@@ -1,4 +1,4 @@
-# 안내 영상 재생목록(YouTube) → guide-videos.json 자동 동기화 — 30분마다 확인해서 바뀌었을 때만 main 에 커밋한다.
+# 안내 영상 재생목록(YouTube) → guide-videos.json, 나비웹 사용법 재생목록 → guide-howto.json 자동 동기화 — 30분마다 확인해서 바뀌었을 때만 main 에 커밋한다.
 name: guide-videos
 on:
   schedule:
@@ -19,10 +19,13 @@ jobs:
           node-version: '20'
       - name: 재생목록 동기화
         run: node scripts/guide-videos-sync.mjs PLExMxaYxMDPE guide-videos.json
+      - name: 나비웹 사용법 재생목록 동기화
+        continue-on-error: true   # 이 재생목록이 비공개이거나 비어 있어도 위의 안내 영상 동기화는 영향받지 않게 한다
+        run: node scripts/guide-videos-sync.mjs PLVk7oB1w5pLE guide-howto.json
       - name: 바뀌었으면 커밋
         run: |
-          if git diff --quiet -- guide-videos.json; then echo "변경 없음"; exit 0; fi
+          if git diff --quiet -- guide-videos.json guide-howto.json; then echo "변경 없음"; exit 0; fi
           git config user.name "naviweb-bot"; git config user.email "actions@users.noreply.github.com"
-          git add guide-videos.json
-          git commit -m "chore: 안내 영상 목록 자동 갱신"
+          git add guide-videos.json guide-howto.json
+          git commit -m "chore: 안내 영상·나비웹 사용법 목록 자동 갱신"
           git pull --rebase origin main && git push origin HEAD:main
