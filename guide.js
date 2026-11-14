@@ -321,7 +321,7 @@
   function nextAfterPass(idx, total) { return idx + 1 < total ? idx + 1 : -1; }   // -1 = 마지막(완료 화면)
 
   // ── 화면 ───────────────────────────────────────────────
-  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'course', qn: null, mc: null, mcApi: null };   // idx null = 아직 화면을 연 적 없음
+  var S = { idx: null, done: 0, answers: {}, result: null, timer: null, open: false, mode: 'course', mn: null, qn: null, mc: null, mcApi: null };   // idx null = 아직 화면을 연 적 없음
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
   function caseOn() { try { return !!(root.CaseUI && root.CaseUI.enabled()); } catch (_) { return false; } }
@@ -330,8 +330,15 @@
 
   // 사용법 위쪽 탭: 강의(단계별 퀴즈) | 질문·답변(게시판, qna-ui.js). 게시판 화면은 한 번 만들어 두고 탭을 오가도 상태를 유지한다.
   function modesHtml() {
-    return '<div class="gd-modes" role="tablist" aria-label="사용법"><button type="button" role="tab" class="gd-mode' + (S.mode === 'course' ? ' on' : '') + '" aria-selected="' + (S.mode === 'course') + '" data-act="mode" data-m="course">사용법 강의</button>' +
+    return '<div class="gd-modes" role="tablist" aria-label="사용법"><button type="button" role="tab" class="gd-mode' + (S.mode === 'manual' ? ' on' : '') + '" aria-selected="' + (S.mode === 'manual') + '" data-act="mode" data-m="manual">나비 사용자 매뉴얼</button>' +
+      '<button type="button" role="tab" class="gd-mode' + (S.mode === 'course' ? ' on' : '') + '" aria-selected="' + (S.mode === 'course') + '" data-act="mode" data-m="course">사용법 강의</button>' +
       '<button type="button" role="tab" class="gd-mode' + (S.mode === 'qna' ? ' on' : '') + '" aria-selected="' + (S.mode === 'qna') + '" data-act="mode" data-m="qna">질문·답변</button></div>';
+  }
+  // 나비 사용자 매뉴얼(2026-11-14): 같은 사이트의 manual/ 아래 매뉴얼을 틀 안에 넣는다. 한 번 만들어 두고 탭을 오가도 읽던 자리를 유지한다.
+  function renderManual(el) {
+    el.innerHTML = modesHtml();
+    if (!S.mn) { S.mn = document.createElement('iframe'); S.mn.className = 'gd-manual'; S.mn.title = '나비 사용자 매뉴얼'; S.mn.src = 'manual/hondi_interactive_manual.html'; S.mn.setAttribute('loading', 'lazy'); }
+    el.appendChild(S.mn);
   }
   function renderQna(el) {
     el.innerHTML = modesHtml();
@@ -348,9 +355,10 @@
     }
     el.appendChild(S.mc); if (S.mcApi) S.mcApi.refresh();
   }
-  function render() { renderInner(); if (S.mode !== 'qna') attachChat(); }
+  function render() { renderInner(); if (S.mode === 'course') attachChat(); }
   function renderInner() {
     var el = $('tab-guide'); if (!el) return;
+    if (S.mode === 'manual') { renderManual(el); return; }
     if (S.mode === 'qna') { renderQna(el); return; }
     var list = pages(caseOn()), total = list.length;
     S.done = clampDone(Math.max(S.done, load()), total);
@@ -430,7 +438,7 @@
   function onClick(ev) {
     var t = ev.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act'), list = pages(caseOn()), p = list[S.idx];
-    if (S.mode === 'qna' && act !== 'mode') return;   // 게시판의 버튼은 qna-ui.js 가 처리한다
+    if ((S.mode === 'qna' || S.mode === 'manual') && act !== 'mode') return;   // 게시판의 버튼은 qna-ui.js 가 처리한다
     if (act === 'pick') {   // 전체를 다시 그리지 않는다 — 키보드(화살표) 선택이 끊기지 않게 필요한 부분만 갱신
       S.answers[+t.getAttribute('data-q')] = +t.value; S.result = null;
       el0().querySelectorAll('fieldset.gd-q').forEach(function (f) { f.className = 'gd-q'; var fb = f.querySelector('.gd-fb'); if (fb) fb.remove(); });   // 결과 표시는 한꺼번에 지운다
@@ -443,7 +451,7 @@
       if (S.result.all) { clearTimeout(S.timer); S.timer = setTimeout(passAndAdvance, 1600); }
     }
     else if (act === 'advance') { if (S.result && S.result.all) passAndAdvance(); else if (S.idx < S.done) go(S.idx + 1); }
-    else if (act === 'mode') { S.mode = t.getAttribute('data-m') === 'qna' ? 'qna' : 'course'; S.open = false; render(); }
+    else if (act === 'mode') { var m = t.getAttribute('data-m'); S.mode = m === 'qna' ? 'qna' : m === 'manual' ? 'manual' : 'course'; S.open = false; render(); }
     else if (act === 'toggle-list') { S.open = !S.open; render(); var tg = el0().querySelector('[data-act=toggle-list]'); if (tg) tg.focus(); }
     else if (act === 'go') go(+t.getAttribute('data-i'));
     else if (act === 'restart') { S.idx = 0; S.answers = {}; S.result = null; render(); toTop(); }
