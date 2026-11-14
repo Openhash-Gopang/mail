@@ -357,7 +357,7 @@
     host.id = 'navi-manual-host'; host.className = 'gd-manual';
     host.innerHTML = '<div class="gd-manual-wait">매뉴얼을 불러오는 중…</div>';
     S.mn = host;
-    S.mnP = fetch('manual/hondi_interactive_manual.html', { credentials: 'same-origin' }).then(function (r) {
+    S.mnP = fetch('manual/hondi_interactive_manual.html', { credentials: 'same-origin', cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('manual ' + r.status);
       return r.text();
     }).then(function (html) {
