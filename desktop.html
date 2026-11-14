@@ -2317,6 +2317,7 @@ async function _agentInit() {
   if (!window.NaviAgent) return;
   _agentInfo = await _agentDetectPatient(_agentSeen() ? 4 : 1);
   try { window._agentEntryRefresh && window._agentEntryRefresh(); } catch (e) { /* 표시만 빠진다 */ }
+  if (_agentInfo) { try { window._agentGuideClose && window._agentGuideClose(); sessionStorage.removeItem('navi_agent_installing'); } catch (e) { /* 안내창만 남는다 */ } }   // 2026-11-14: 설치돼 연결되면 안내창은 반드시 사라진다
   _agentBars().forEach(bar => {
     if (!_agentInfo) { bar.hidden = true; return; }
     const sel = bar.querySelector('select'); sel.innerHTML = '';
@@ -2503,6 +2504,24 @@ async function _agentWatchTick() {
   } catch (e) { /* 다음 확인에서 다시 */ } finally { _agentWatchBusy = false; }
 }
 setInterval(_agentWatchTick, 4000);
+/* 설치하기를 누르고 스토어에서 설치한 뒤 이 탭으로 돌아오면: 설치 전에 열려 있던 탭은 확장과 이어져 있지 않으므로(확장 버전에 따라 자동으로 이어지지 않음)
+   잠시 기다려 보고 그래도 연결이 없으면 한 번만 새로고침해 연결한다. 설치 안 하고 돌아온 경우에도 한 번만 새로고침하고 끝난다(반복 없음). */
+let _agentReturnBusy = false;
+async function _agentAfterInstallReturn() {
+  if (_agentReturnBusy || document.hidden || _agentInfo) return;
+  let t = 0; try { t = Number(sessionStorage.getItem('navi_agent_installing') || 0); } catch (e) { return; }
+  if (!t || Date.now() - t > 30 * 60 * 1000) return;
+  _agentReturnBusy = true;
+  try {
+    await new Promise(r => setTimeout(r, 2500));
+    const info = window.NaviAgent ? await NaviAgent.detect() : null;
+    if (info) { await _agentInit(); return; }
+    try { sessionStorage.removeItem('navi_agent_installing'); } catch (e) { /* 저장 불가 */ }
+    location.reload();
+  } catch (e) { /* 다음에 다시 */ } finally { _agentReturnBusy = false; }
+}
+window.addEventListener('focus', _agentAfterInstallReturn);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) _agentAfterInstallReturn(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) _agentWatchTick(); });
 window.addEventListener('focus', _agentWatchTick);
 function _docBase64(buf) {
@@ -9076,6 +9095,7 @@ function _agentGuideOpen() {
     '<div style="text-align:center;margin:12px 0">' + inst + '</div>' +
     '<p style="margin:0 0 6px">이 화면으로 돌아오면 자동으로 연결됩니다(안 되면 새로고침).</p>' +
     '<div style="text-align:right;margin-top:6px"><button type="button" id="agent-guide-x" style="border:1px solid #c5d3ee;background:#fff;color:#2f66c9;border-radius:8px;padding:7px 16px;font:inherit;cursor:pointer">나중에</button></div></div>';
+  var go = o.querySelector('#agent-guide-go'); if (go) go.addEventListener('click', function () { try { sessionStorage.setItem('navi_agent_installing', String(Date.now())); } catch (e) { /* 저장 불가 */ } });
   o.addEventListener('click', function (e) { if (e.target === o || e.target.id === 'agent-guide-x') { if (e.target.id === 'agent-guide-x') _agentGuideSnooze(); _agentGuideClose(); } });
   document.body.appendChild(o);
 }
