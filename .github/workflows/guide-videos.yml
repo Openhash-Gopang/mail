@@ -18,6 +18,7 @@ jobs:
         with:
           node-version: '20'
       - name: 재생목록 동기화
+        continue-on-error: true   # 한쪽 재생목록이 실패해도 다른 쪽 동기화와 커밋은 계속한다
         run: node scripts/guide-videos-sync.mjs PLExMxaYxMDPE guide-videos.json
       - name: 나비웹 사용법 재생목록 동기화
         continue-on-error: true   # 이 재생목록이 비공개이거나 비어 있어도 위의 안내 영상 동기화는 영향받지 않게 한다
