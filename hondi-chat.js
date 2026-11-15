@@ -13,7 +13,9 @@
  */
 (function (root) {
   'use strict';
-  var URL_DEFAULT = 'https://hondi.net/webapp.html';
+  // 2026-11-16(주피터 지시) — 나비웹 주소(naviweb.kr, mail.naviweb.kr …)에서 열린 화면은 대화창도 naviweb.kr/webapp 으로 띄운다.
+  // 옛 주소(hondi.net)는 다른 사이트라 이 화면의 로그인(브라우저 저장소)을 보지 못해, 이미 로그인했는데도 대화창이 로그인 창을 보였다.
+  var URL_DEFAULT = (function () { try { return /(^|\.)naviweb\.kr$/.test(root.location.hostname) ? 'https://naviweb.kr/webapp' : 'https://hondi.net/webapp.html'; } catch (e) { return 'https://hondi.net/webapp.html'; } })();
   var KEY_OPEN = 'kmail_hchat_open';
   var KEY_GEO = 'kmail_hchat_geo';
   var MIN_W = 300, MIN_H = 280;
