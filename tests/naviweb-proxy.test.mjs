@@ -138,5 +138,12 @@ test('주소창에 쓴 /webapp.html·/desktop.html 은 기기와 상관없이 �
 });
 test('desktop.html 안전망은 /desktop.html 직접 열람을 되돌리지 않는다', () => {
   const s = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(s.includes("location.pathname !== '/desktop.html'"));
+  assert.ok(s.includes("location.pathname !== '/desktop.html'") && s.includes("location.pathname !== '/desktop'"));
+});
+test('확장자 없는 /webapp·/desktop 도 같은 규칙(Pages 가 .html 을 떼고 넘기는 경우)', () => {
+  const pp = (path, h) => pagePhone(new URL('https://naviweb.kr' + path), new Headers(h));
+  assert.equal(pp('/webapp', { 'user-agent': WIN }), true);
+  assert.equal(pp('/desktop', { 'user-agent': IPHONE }), false);
+  assert.equal(pp('/webapp/', { 'user-agent': WIN }), true);
+  assert.equal(pp('/webapp-x', { 'user-agent': WIN }), false);
 });

@@ -41,16 +41,16 @@ export function isPhone(url, headers) {
  * (PC 에서 webapp.html, 폰에서 desktop.html). 기기별 분기는 '/' 와 그 밖의 경로에만 적용한다.
  * 그 화면이 부르는 하위 파일(같은 출처 fetch 등)은 Referer 가 그 두 파일이면 같은 쪽 원본을 쓰게 한다.
  */
+const _pageKind = (p) => (/^\/webapp(\.html)?\/?$/.test(p) ? 'webapp' : /^\/desktop(\.html)?\/?$/.test(p) ? 'desktop' : null);   // Pages 는 .html 을 떼고 /webapp 으로 한 번 넘기므로 둘 다
 export function pagePhone(url, headers) {
-  const p = url.pathname;
-  if (p === '/webapp.html') return true;
-  if (p === '/desktop.html') return false;
+  const k0 = _pageKind(url.pathname);
+  if (k0) return k0 === 'webapp';
   const dest = headers.get('sec-fetch-dest');
   if (dest && dest !== 'document' && dest !== 'iframe') {
     try {
       const rp = new URL(headers.get('referer') || '').pathname;
-      if (rp === '/webapp.html') return true;
-      if (rp === '/desktop.html') return false;
+      const k = _pageKind(rp);
+      if (k) return k === 'webapp';
     } catch (e) { /* Referer 없음·형식 오류 → 기기 판별 */ }
   }
   return isPhone(url, headers);
