@@ -58,3 +58,10 @@ test('나비 온도: 36.5에서 시작, 초급 60 · 중급 80 · 고급 100 구
   assert.match(R('manual/hondi_interactive_manual.html'), /function naviTemp\(\)/);
   assert.match(R('guide.js'), /data-act="cns"/);
 });
+
+test('Openhash·Navi Pro 탭은 준비 중 자리가 아니라 안내 화면이다', () => {
+  const g = R('guide.js');
+  assert.ok(!g.includes('renderSoon'));
+  assert.ok(g.includes('function renderOpenhash') && g.includes('function renderNaviPro'));
+  for (const d of ['law', 'ip', 'appraiser', 'doctor', 'tax', 'school']) assert.ok(g.includes("'" + d + "'"), d);
+});

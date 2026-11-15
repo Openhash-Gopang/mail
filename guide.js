@@ -1,7 +1,7 @@
 /* ═════════════════════════════════════════════════
    guide.js — 사용법(desktop.html 왼쪽 메뉴 "사용법")
    2026-11-15 개편: 예전 25쪽 퀴즈 강의를 없애고 나비 사용자 매뉴얼(manual/) 한 곳으로 합쳤다.
-   탭: 나비 사용자 매뉴얼 | 질문·답변 | Openhash | Navi Pro(두 탭은 준비 중 자리). 매뉴얼 장 아래에 사용법 도우미(manual-chat.js)가 붙어 현재 장을 안다.
+   탭: 나비 사용자 매뉴얼 | 질문·답변 | Openhash | Navi Pro(두 탭은 매뉴얼 요약 안내). 매뉴얼 장 아래에 사용법 도우미(manual-chat.js)가 붙어 현재 장을 안다.
    나비 온도는 매뉴얼 진행률(localStorage naviweb_manual_frac_v1)만으로 계산한다. 순수 함수(_pure)는 DOM 없이 Node 에서 테스트한다.
    ═════════════════════════════════════════════════ */
 (function (root) {
@@ -83,8 +83,30 @@
     if (!S.qn) { S.qn = document.createElement('div'); S.qn.className = 'qn-host'; root.QnaUI.mount(S.qn); }
     el.appendChild(S.qn);
   }
-  function renderSoon(el, name) {
-    el.innerHTML = modesHtml() + '<div class="gd-card"><h2 class="gd-h">' + esc(name) + '</h2><p>이 안내는 준비 중입니다. 곧 이 자리에서 만나 보실 수 있습니다.</p></div>';
+  // Openhash · Navi Pro 탭(2026-11-15): 매뉴얼에 이미 실린 내용만 요약한다. 숫자는 2026-11-15 화면 기준이며 날마다 늘어난다.
+  var PRO_SITES = [
+    ['나비로', 'law', '법원·등기소·관공서에 내는 법률 서류', 11289],
+    ['나비 특허', 'ip', '특허·상표 출원과 심사 대응 서류', 162],
+    ['나비감정', 'appraiser', '감정평가 서류', 75],
+    ['병원 & 의원', 'doctor', '진단서·소견서 같은 병원·의원 서류', 112],
+    ['세무 & 회계', 'tax', '세무서·국세청에 내는 세무·회계 서류', 44],
+    ['나비 스쿨', 'school', '결석계 같은 학교 서류', 146]
+  ];
+  function goChapterLink(id, label) { return '<button type="button" class="gd-cns" data-act="chapter" data-id="' + id + '">' + esc(label) + '</button>'; }
+  function renderOpenhash(el) {
+    el.innerHTML = modesHtml() + '<div class="gd-card"><h2 class="gd-h">Openhash — 서버 없는 인증</h2>' +
+      '<p>중앙 서버 하나에 기대지 않고 기록이 바뀌지 않았음을 확인하는 기술입니다. 나비는 이 위에서 내 데이터 금고(PDV)의 기록과 재무제표를 믿고 쓸 수 있게 합니다.</p>' +
+      '<ul class="gd-body"><li><b>분산 기록</b> — 기록이 한 서버가 아니라 여러 지점에 나뉘어 저장됩니다.</li><li><b>위변조 방지</b> — 한 곳의 기록만 몰래 바꿔서는 전체를 속일 수 없는 구조입니다.</li><li><b>쓰이는 곳</b> — 재무제표의 해시 기록, K-Law 시뮬레이션 기록(위변조 방지를 목표로 설계)처럼 나비 안의 기록에 쓰입니다.</li></ul>' +
+      '<p>자세한 설명은 ' + goChapterLink('ch29', '「Openhash — 서버 없는 인증」장') + '과 ' + goChapterLink('ch_fsverify', '「재무제표 무결성 검증」장') + '을 보세요. 이 탭은 앞으로 더 채워 갑니다.</p></div>';
+  }
+  function renderNaviPro(el) {
+    var rows = PRO_SITES.map(function (r) {
+      return '<li><b>' + esc(r[0]) + '</b> — ' + esc(r[2]) + ' · 서류 ' + r[3].toLocaleString('ko-KR') + '건 · <a href="https://' + r[1] + '.naviweb.kr" target="_blank" rel="noopener">' + r[1] + '.naviweb.kr</a></li>';
+    }).join('');
+    el.innerHTML = modesHtml() + '<div class="gd-card"><h2 class="gd-h">Navi Pro — 직역별 서류 사이트</h2>' +
+      '<p>직역마다 따로 열려 있지만 화면과 쓰는 법은 같습니다. 서류 이름을 입력하면 서식이 펼쳐지고, 쓰는 내용은 초안에 자동 저장됩니다. 나비웹에 로그인한 채로 쓰세요.</p>' +
+      '<ul class="gd-body">' + rows + '</ul>' +
+      '<p>서류 수는 2026년 11월 15일 화면 기준이며 날마다 늘어납니다. 사이트별 사용법은 매뉴얼 고급 단계의 직역 사이트 장에 있습니다. 전문가 인증과 구독은 준비 중입니다.</p></div>';
   }
   // 매뉴얼 장 아래에 사용법 도우미 대화창(manual-chat.js)을 붙인다. 한 번 만들어 두고 장을 옮겨도 대화가 이어진다. 현재 장은 매뉴얼(NaviManual.current)에서 읽는다.
   function attachChat(el) {
@@ -100,7 +122,8 @@
     var el = $('tab-guide'); if (!el) return;
     if (S.mode === 'manual') renderManual(el);
     else if (S.mode === 'qna') renderQna(el);
-    else renderSoon(el, S.mode === 'openhash' ? 'Openhash' : 'Navi Pro');
+    else if (S.mode === 'openhash') renderOpenhash(el);
+    else renderNaviPro(el);
   }
   function onClick(ev) {
     var t = ev.target.closest && ev.target.closest('[data-act]'); if (!t) return;
@@ -108,6 +131,9 @@
     if (act === 'cns') {
       S.mode = 'manual'; render();
       mountManual().then(function (api) { if (api) api.openCns(); }).catch(function () { /* 못 열면 매뉴얼 안의 배너로 발급 */ });
+    } else if (act === 'chapter') {
+      var id = t.getAttribute('data-id'); S.mode = 'manual'; render();
+      mountManual().then(function (api) { if (api && api.goChapter) api.goChapter(id); }).catch(function () { /* 매뉴얼을 못 열면 그대로 둠 */ });
     } else if (act === 'mode') {
       var m = t.getAttribute('data-m'); S.mode = TABS.some(function (x) { return x[0] === m; }) ? m : 'manual'; render();
     }
