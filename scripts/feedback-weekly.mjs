@@ -1,5 +1,5 @@
 // 사용자 제보 주간 자동 집계. 사용: USER_FEEDBACK_EXPORT_TOKEN=… node scripts/feedback-weekly.mjs [--days 7] [--min 3] [--out report.md] [--endpoint <주소>]
-// 혼디 제보 창구의 GET /user-feedback/export 로 최근 제보를 받아 feedback-digest 로 집계해 보고서를 쓴다. 제보가 없으면 보고서 첫 줄이 "(새 제보 없음)".
+// 나비웹 제보 창구의 GET /user-feedback/export 로 최근 제보를 받아 feedback-digest 로 집계해 보고서를 쓴다. 제보가 없으면 보고서 첫 줄이 "(새 제보 없음)".
 // 종료 코드: 0 성공 · 2 토큰 없음 · 3 내려받기 실패. (GitHub Actions 주간 실행: .github/workflows/feedback-digest.yml)
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
