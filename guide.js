@@ -2,11 +2,11 @@
    guide.js — 사용법(desktop.html 왼쪽 메뉴 "사용법")
    2026-11-15 개편: 예전 25쪽 퀴즈 강의를 없애고 나비 사용자 매뉴얼(manual/) 한 곳으로 합쳤다.
    탭: 나비 사용자 매뉴얼 | 질문·답변 | Openhash | Navi Pro(두 탭은 매뉴얼 요약 안내). 매뉴얼 장 아래에 사용법 도우미(manual-chat.js)가 붙어 현재 장을 안다.
-   나비 온도는 매뉴얼 진행률(localStorage naviweb_manual_frac_v1)만으로 계산한다. 순수 함수(_pure)는 DOM 없이 Node 에서 테스트한다.
+   나비 지식 온도는 매뉴얼 진행률(localStorage naviweb_manual_frac_v1)만으로 계산한다. 순수 함수(_pure)는 DOM 없이 Node 에서 테스트한다.
    ═════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
-  // 나비 온도: 초급·중급·고급 단계별 구간 36.5 → 60 → 80 → 100. 단계마다 매뉴얼 진행률(0~1)만큼 오른다.
+  // 나비 지식 온도: 초급·중급·고급 단계별 구간 36.5 → 60 → 80 → 100. 단계마다 매뉴얼 진행률(0~1)만큼 오른다.
   var TEMP_SPAN = [23.5, 20, 20], CNS_AT = 95;
   function naviTemp(manualFr) {
     var t = 36.5;
@@ -28,7 +28,7 @@
   }
   function tempHtml() {
     var t = tempNow(), cns = t >= CNS_AT;
-    return '<span class="gd-temp" title="초급·중급·고급을 마칠수록 36.5°에서 100°까지 올라갑니다. 95° 이상이면 나비웹 전문가 인증서(CNS)를 발급합니다.">🌡 나비 온도 <b>' + t.toFixed(1) + '°</b>' +
+    return '<span class="gd-temp" title="초급·중급·고급을 마칠수록 36.5°에서 100°까지 올라갑니다. 95° 이상이면 나비웹 전문가 인증서(CNS)를 발급합니다.">🌡 나비 지식 온도 <b>' + t.toFixed(1) + '°</b>' +
       (cns ? ' <button type="button" class="gd-cns" data-act="cns">인증서 발급</button>' : '') + '</span>';
   }
 
