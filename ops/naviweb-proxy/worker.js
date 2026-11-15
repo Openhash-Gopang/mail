@@ -143,9 +143,7 @@ export default {
       // 지금까지는 파일마다 이 Worker(LA 경유, 파일당 0.4초+)를 거쳐 첫 화면이 느렸다. manifest·서비스워커는 같은 출처에 남긴다.
       const pagePath = target.slice(HONDI_ORIGIN.length).split('?')[0] || '/';
       const fix = (attr) => ({ element(el) { const d = directAsset(el.getAttribute(attr), pagePath, HONDI_ORIGIN); if (d) el.setAttribute(attr, d); } });
-      // 2026-11-16 — 스크립트(script[src])는 직접 받게 하지 않는다. 직접 받으면 gopang-app.js 의 모듈 그래프는 app.naviweb.kr 에, 화면 안쪽 코드의 import('./src/…')는 naviweb.kr 에 따로 생겨
-      // state.js 같은 모듈이 두 벌이 되어(한쪽 _USER 는 비어 있다) 호출·검색이 어긋났다. 같은 출처로 받아 한 벌만 쓴다.
-      return new HTMLRewriter().on('img[src]', fix('src')).on('link[rel~="stylesheet"]', fix('href')).on('link[rel~="icon"]', fix('href')).on('link[rel="apple-touch-icon"]', fix('href')).transform(new Response(res.body, { status: res.status, headers: out }));
+      return new HTMLRewriter().on('script[src]', fix('src')).on('img[src]', fix('src')).on('link[rel~="stylesheet"]', fix('href')).on('link[rel~="icon"]', fix('href')).on('link[rel="apple-touch-icon"]', fix('href')).transform(new Response(res.body, { status: res.status, headers: out }));
     }
     if (!hondi && !phone && ct.includes('text/html') && res.status === 200) {
       // 앱 페이지 안의 상대 경로 스크립트·이미지·아이콘은 mail.hondi.net 에서 직접 받게 한다(위 directAsset 설명 참조).
