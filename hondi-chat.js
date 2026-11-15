@@ -120,6 +120,7 @@
       '#hchat-busy .bar::after{content:"";position:absolute;top:0;bottom:0;width:38%;border-radius:2px;background:var(--pri,#3B7DDD);animation:hchat-bar 1.2s ease-in-out infinite}',
       '@keyframes hchat-bar{0%{left:-40%}100%{left:102%}}',
       '@media (prefers-reduced-motion:reduce){#hchat-busy .bar::after{animation:none;width:100%;opacity:.5}}',
+      '#hchat-note:empty{display:none}',
       '#hchat-note{padding:6px 10px;font-size:12px;color:#5b6676;background:#f4f7f9;border-top:1px solid #e3e8ee}',
     ].join('');
     doc.head.appendChild(st);
@@ -174,7 +175,7 @@
     var n = S.els && S.els.panel.querySelector('#hchat-note'); if (!n) return;
     n.textContent = id ? 'K-Mail 아이디 “' + id + '”로 혼디에 연결했습니다. 대화 상대는 혼디 앱 안에서 찾으세요.'
                 : real ? 'K-Mail에 로그인한 계정으로 혼디에 연결합니다. 대화 상대는 혼디 앱 안에서 찾으세요.'
-                       : 'K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.';
+                       : '';   // 2026-11-16 기본 안내 문구 삭제(주피터 지시). 비면 줄도 숨긴다(#hchat-note:empty).
   }
   /** 패널 안 혼디 페이지에 "이 화면의 기본 SP 로 AI 입력을 넘겨 달라"고 알린다(embed-delegate.js 규약). 페이지가 그 규약을 모르면 아무 일도 없다. */
   function post(msg) {
@@ -256,7 +257,7 @@
       '<button type="button" data-hchat="close" title="닫기(대화는 계속 받습니다)">닫기</button></div>' +
       '<iframe id="hchat-frame" title="혼디 대화" allow="microphone; camera; clipboard-write; clipboard-read; notifications; autoplay; fullscreen"></iframe>' +
       '<div id="hchat-busy" role="status" aria-live="polite"><span class="msg"></span><div class="bar" aria-hidden="true"></div></div>' +
-      '<div id="hchat-note">K-Mail과 별개로 혼디 앱(hondi.net)이 동작합니다. 혼디 계정으로 로그인하세요.</div>';
+      '<div id="hchat-note"></div>';
     doc.body.appendChild(fab); doc.body.appendChild(panel);
     if (typeof window !== 'undefined' && typeof window._agentBadgePlace === 'function') window._agentBadgePlace();   // "나비웹 도우미 0.x.x" 는 대화창 상단 중앙에 둔다
     S.els = { fab: fab, panel: panel, frame: panel.querySelector('#hchat-frame') };
