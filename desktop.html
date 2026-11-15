@@ -34,7 +34,8 @@ if (location.hostname === 'mail.hondi.net') {
   if (view === 'desktop') isMobile = false;
   if (view === 'mobile') isMobile = true;
   // 주소창이 hondi.net 으로 바뀌지 않게 같은 호스트의 ?view=mobile 로 보낸다(naviweb.kr Worker 가 폰 화면을 같은 주소 아래에서 제공).
-  if (isMobile && view !== 'mobile') {
+  // 주소창·링크로 /desktop.html 을 직접 연 경우는 폰이어도 그대로 보여 준다(2026-11-16). 기기별 분기는 '/' 로 들어온 경우에만.
+  if (isMobile && view !== 'mobile' && location.pathname !== '/desktop.html') {
     var q = new URLSearchParams(location.search); q.set('view', 'mobile');
     location.replace(location.pathname === '/desktop.html' ? '/?' + q : location.pathname + '?' + q + location.hash);
   }
