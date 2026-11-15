@@ -43,6 +43,8 @@ a { color: inherit; }
 .seg { display: flex; border: 1px solid var(--outline); border-radius: var(--radius-full); overflow: hidden; background: var(--surface); }
 .seg button { height: 40px; padding: 0 20px; border: 0; border-left: 1px solid var(--outline); background: var(--surface); color: var(--on-surface-variant); font: 600 13.5px/1 inherit; font-family: inherit; cursor: pointer; }
 .seg button:first-child { border-left: 0; }
+.seg button .chev { display: inline-block; width: 7px; height: 7px; margin: -3px 0 0 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .2s; vertical-align: middle; }
+.seg button[aria-expanded="true"] .chev { transform: rotate(-135deg); margin-top: 3px; }
 .seg button.active { background: var(--primary-container); color: var(--on-primary-container); font-weight: 700; }
 
 /* ── 단계별 진행 막대 + 오른쪽 슬라이드 장 목록(2026-11-15) ── */
@@ -445,7 +447,7 @@ function renderTierTabs() {
   seg.innerHTML = '';
   TIER_ORDER.forEach(function (tier) {
     var sb = document.createElement('button');
-    sb.type = 'button'; sb.className = tier === currentTier ? 'active' : ''; sb.setAttribute('aria-expanded', panelOpen && tier === currentTier ? 'true' : 'false'); sb.textContent = TIER_LABELS[tier];
+    sb.type = 'button'; sb.className = tier === currentTier ? 'active' : ''; sb.setAttribute('aria-expanded', panelOpen && tier === currentTier ? 'true' : 'false'); sb.setAttribute('aria-controls', 'chPanel'); sb.title = TIER_LABELS[tier] + ' 장 목록 펼치기'; sb.innerHTML = TIER_LABELS[tier] + '<span class="chev" aria-hidden="true"></span>';
     sb.addEventListener('click', function () { selectTier(tier); });
     seg.appendChild(sb);
   });
