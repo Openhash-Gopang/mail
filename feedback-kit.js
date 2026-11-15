@@ -1,5 +1,5 @@
 /* 사용자 제보 도구 — 서류 화면의 "문제 알리기"(⚑)·서류 요청·오류 신고를 한 곳에서 받는다.
- * 보내는 곳은 기존 혼디 제보 창구(POST /user-feedback/submit — 익명 허용). 받은 제보는 scripts/feedback-digest.mjs 로 묶어 카탈로그·서식 개선에 쓴다.
+ * 보내는 곳은 기존 나비웹 제보 창구(POST /user-feedback/submit — 익명 허용). 받은 제보는 scripts/feedback-digest.mjs 로 묶어 카탈로그·서식 개선에 쓴다.
  * 원칙: 사용자가 쓴 글과 서류 이름만 보낸다. 주민번호·전화·이메일·긴 숫자는 보내기 전에 지운다. 하루 보낼 수 있는 건수를 제한한다.
  */
 (function (root) {

@@ -1,5 +1,5 @@
 // 사용자 제보 집계. 사용: node scripts/feedback-digest.mjs <제보.json> [--min 3] [--out report.md]
-// 입력: 혼디 제보 창구(user_feedback)에서 내려받은 기록 — 배열이거나 { items:[…] } (PocketBase 목록 응답). 각 기록의 raw_text 첫머리가 "[naviweb:<종류>]" 인 것만 쓴다.
+// 입력: 나비웹 제보 창구(user_feedback)에서 내려받은 기록 — 배열이거나 { items:[…] } (PocketBase 목록 응답). 각 기록의 raw_text 첫머리가 "[naviweb:<종류>]" 인 것만 쓴다.
 //   attach  첨부서류 문제(기관이 달라요·가져오지 못해요·직접 준비 서류예요·버튼이 없어요)  → 카탈로그 규칙 수정 후보
 //   newdoc  찾는 서류가 없어요                                                        → 새 서류 양식 추가 후보(요청 많은 순)
 //   report  서류 화면의 "오류 신고와 제안" 버튼(유형 bug|idea)                              → 오류 목록 / 제안 목록

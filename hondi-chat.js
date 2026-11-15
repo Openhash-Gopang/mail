@@ -1,12 +1,12 @@
 /**
- * hondi-chat.js — K-Mail 화면 우측 하단 "혼디 대화" 떠 있는 버튼 + 패널 (2026-10-28, 주피터 지시)
+ * hondi-chat.js — K-Mail 화면 우측 하단 "나비웹 대화" 떠 있는 버튼 + 패널 (2026-10-28, 주피터 지시)
  *
- * 혼디의 1:1 대화(WebRTC P2P)는 https://hondi.net/webapp.html 이 이미 갖고 있다. 그 대화를 코드 수정 없이 그대로 쓰기 위해
- * K-Mail 화면 위에 그 페이지를 떠 있는 패널(iframe)로 띄운다. K-Mail 과는 별개로 동작하며, 로그인·지갑·상대 찾기·연결은 전부 혼디 앱의 것이다.
+ * 나비웹의 1:1 대화(WebRTC P2P)는 https://hondi.net/webapp.html 이 이미 갖고 있다. 그 대화를 코드 수정 없이 그대로 쓰기 위해
+ * K-Mail 화면 위에 그 페이지를 떠 있는 패널(iframe)로 띄운다. K-Mail 과는 별개로 동작하며, 로그인·지갑·상대 찾기·연결은 전부 나비웹 앱의 것이다.
  *
  *  - 버튼을 처음 누를 때 페이지를 불러온다(평소에는 아무것도 받지 않는다). 한 번 열면 닫아도 패널을 숨기기만 하고 살려 둬서,
  *    통화 신호(상대의 대화 요청)를 계속 받을 수 있다.
- *  - 혼디 앱이 window.parent.postMessage({ type: 'hondi:incoming' }, '*') 를 보내 주면(선택) 패널을 자동으로 열고 버튼에 표시한다.
+ *  - 나비웹 앱이 window.parent.postMessage({ type: 'hondi:incoming' }, '*') 를 보내 주면(선택) 패널을 자동으로 열고 버튼에 표시한다.
  *  - iframe 으로 열리지 않는 환경(보안 헤더 등)이면 "새 창" 버튼으로 같은 페이지를 팝업으로 연다.
  *
  * 전역: window.HondiChat = { mount, open, close, toggle, isOpen, _pure }
@@ -43,7 +43,7 @@
     if (h < MIN_H) { if (dir.indexOf('n') >= 0) t -= (MIN_H - h); h = MIN_H; }
     return { left: l, top: t, width: w, height: h };
   }
-  /** 순수 함수 — 메시지 출처가 혼디 앱이고 "수신 대화 요청" 알림인지. */
+  /** 순수 함수 — 메시지 출처가 나비웹 앱이고 "수신 대화 요청" 알림인지. */
   function isIncomingMessage(ev, allowedOrigin) {
     if (!ev || !ev.data || typeof ev.data !== 'object') return false;
     if (ev.origin !== allowedOrigin) return false;
@@ -51,7 +51,7 @@
   }
   /**
    * 순수 함수 — 공유 로그인 쿠키(hondi_pvt)에서 K-Mail 로그인 아이디 뽑기.
-   * 혼디 앱은 같은 쿠키를 쓰는 서비스끼리 로그인을 공유한다. 테스트 기간 아이디 로그인의 토큰 형식은 'tid-<아이디>:<만료>.<서명>'.
+   * 나비웹 앱은 같은 쿠키를 쓰는 서비스끼리 로그인을 공유한다. 테스트 기간 아이디 로그인의 토큰 형식은 'tid-<아이디>:<만료>.<서명>'.
    * 전화 인증 토큰(tid- 로 시작하지 않음)이면 아이디를 알 수 없으므로 ''.
    */
   function testIdFromToken(token) {
@@ -60,7 +60,7 @@
     var end = t.indexOf(':'); var id = (end < 0 ? t.slice(4) : t.slice(4, end)).trim();
     return /^[A-Za-z0-9가-힣_-]{2,20}$/.test(id) ? id : '';
   }
-  /** 순수 함수 — 패널 주소. 아이디를 알면 ?testid= 로 혼디 앱이 그 아이디로 입장하게 한다(혼디 앱이 이미 지원하는 전환 주소). */
+  /** 순수 함수 — 패널 주소. 아이디를 알면 ?testid= 로 나비웹 앱이 그 아이디로 입장하게 한다(나비웹 앱이 이미 지원하는 전환 주소). */
   function panelUrl(base, id) {
     if (!id) return base;
     return base + (base.indexOf('?') < 0 ? '?' : '&') + 'testid=' + encodeURIComponent(id);
@@ -69,7 +69,7 @@
     try { var m = root.document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; }
   }
   function currentLoginId() { return testIdFromToken(readCookie('hondi_pvt')); }
-  /** 전화 인증으로 로그인한 경우(tid- 가 아닌 토큰) — 혼디 앱이 공유 쿠키로 그 계정을 이어받는다. */
+  /** 전화 인증으로 로그인한 경우(tid- 가 아닌 토큰) — 나비웹 앱이 공유 쿠키로 그 계정을 이어받는다. */
   function hasRealLogin() { var t = readCookie('hondi_pvt'); return !!t && t.indexOf('tid-') !== 0; }
   function originOf(url) { try { return new URL(url).origin; } catch (e) { return ''; } }
 
@@ -169,20 +169,20 @@
     S.els.panel.classList.toggle('open', S.open);
     S.els.fab.classList.toggle('badge', S.badge && !S.open);
     S.els.fab.setAttribute('aria-expanded', String(S.open));
-    S.els.fab.title = S.open ? '혼디 대화 닫기' : '혼디 대화';
+    S.els.fab.title = S.open ? '나비웹 대화 닫기' : '나비웹 대화';
   }
   function setNote(id, real) {
     var n = S.els && S.els.panel.querySelector('#hchat-note'); if (!n) return;
-    n.textContent = id ? 'K-Mail 아이디 “' + id + '”로 혼디에 연결했습니다. 대화 상대는 혼디 앱 안에서 찾으세요.'
-                : real ? 'K-Mail에 로그인한 계정으로 혼디에 연결합니다. 대화 상대는 혼디 앱 안에서 찾으세요.'
+    n.textContent = id ? 'K-Mail 아이디 “' + id + '”로 나비웹에 연결했습니다. 대화 상대는 나비웹 앱 안에서 찾으세요.'
+                : real ? 'K-Mail에 로그인한 계정으로 나비웹에 연결합니다. 대화 상대는 나비웹 앱 안에서 찾으세요.'
                        : '';   // 2026-11-16 기본 안내 문구 삭제(주피터 지시). 비면 줄도 숨긴다(#hchat-note:empty).
   }
-  /** 패널 안 혼디 페이지에 "이 화면의 기본 SP 로 AI 입력을 넘겨 달라"고 알린다(embed-delegate.js 규약). 페이지가 그 규약을 모르면 아무 일도 없다. */
+  /** 패널 안 나비웹 페이지에 "이 화면의 기본 SP 로 AI 입력을 넘겨 달라"고 알린다(embed-delegate.js 규약). 페이지가 그 규약을 모르면 아무 일도 없다. */
   function post(msg) {
     var f = S.els && S.els.frame; if (!f || !f.contentWindow) return false;
     try { f.contentWindow.postMessage(msg, originOf(S.url)); return true; } catch (e) { return false; }
   }
-  /** 전화 인증으로 로그인한 경우 — 혼디 앱(hondi.net)은 다른 사이트라 이 사이트의 로그인 쿠키를 읽지 못한다. 그래서 토큰을 혼디 앱 창에만(출처를 지정해서) 넘긴다. 테스트 아이디(tid-)는 ?testid= 로 이미 전달된다. */
+  /** 전화 인증으로 로그인한 경우 — 나비웹 앱(hondi.net)은 다른 사이트라 이 사이트의 로그인 쿠키를 읽지 못한다. 그래서 토큰을 나비웹 앱 창에만(출처를 지정해서) 넘긴다. 테스트 아이디(tid-)는 ?testid= 로 이미 전달된다. */
   function postAuth() {
     var t = readCookie('hondi_pvt'), e = Number(readCookie('hondi_pvt_exp') || 0);
     if (!t || t.indexOf('tid-') === 0 || !e || Date.now() > e - 30000) return false;
@@ -247,15 +247,15 @@
     if (opts.url) S.url = opts.url;
     injectStyle(doc);
     var fab = doc.createElement('button');
-    fab.id = 'hchat-fab'; fab.type = 'button'; fab.setAttribute('aria-label', '혼디 대화'); fab.setAttribute('aria-controls', 'hchat-panel');
+    fab.id = 'hchat-fab'; fab.type = 'button'; fab.setAttribute('aria-label', '나비웹 대화'); fab.setAttribute('aria-controls', 'hchat-panel');
     fab.innerHTML = '<span aria-hidden="true">💬</span><span class="hchat-dot"></span>';
     var panel = doc.createElement('div');
-    panel.id = 'hchat-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '혼디 대화');
+    panel.id = 'hchat-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '나비웹 대화');
     panel.innerHTML =
       '<div id="hchat-head"><span class="sp"></span><span id="hchat-agent"></span><span class="sp"></span>' +
       '<button type="button" data-hchat="popup" title="새 창으로 열기">↗ 새 창</button>' +
       '<button type="button" data-hchat="close" title="닫기(대화는 계속 받습니다)">닫기</button></div>' +
-      '<iframe id="hchat-frame" title="혼디 대화" allow="microphone; camera; clipboard-write; clipboard-read; notifications; autoplay; fullscreen"></iframe>' +
+      '<iframe id="hchat-frame" title="나비웹 대화" allow="microphone; camera; clipboard-write; clipboard-read; notifications; autoplay; fullscreen"></iframe>' +
       '<div id="hchat-busy" role="status" aria-live="polite"><span class="msg"></span><div class="bar" aria-hidden="true"></div></div>' +
       '<div id="hchat-note"></div>';
     doc.body.appendChild(fab); doc.body.appendChild(panel);
@@ -272,12 +272,12 @@
       if (!isIncomingMessage(ev, originOf(S.url))) return;
       S.badge = true; if (!S.open) open(); else paint();   // 상대의 대화 요청 — 패널을 열어 수락 창이 보이게 한다
     });
-    root.addEventListener('message', function (ev) {   // 혼디 앱이 "로그인을 알려 달라"고 하면(요청만 오고 비밀값은 없다) 이 패널의 창에서 온 것일 때만 답한다
+    root.addEventListener('message', function (ev) {   // 나비웹 앱이 "로그인을 알려 달라"고 하면(요청만 오고 비밀값은 없다) 이 패널의 창에서 온 것일 때만 답한다
       var d = ev && ev.data;
       if (!d || typeof d !== 'object' || d.type !== 'hondi-embed-auth-request' || ev.origin !== originOf(S.url) || ev.source !== frameWindow()) return;
       postAuth();
     });
-    root.addEventListener('message', function (ev) {   // 혼디 페이지가 직접 답하는 동안(서류 SP 등 ai:self)에도 진행 막대를 켜고 끈다
+    root.addEventListener('message', function (ev) {   // 나비웹 페이지가 직접 답하는 동안(서류 SP 등 ai:self)에도 진행 막대를 켜고 끈다
       var d = ev && ev.data;
       if (!d || typeof d !== 'object' || d.type !== 'hondi-embed-busy' || ev.origin !== originOf(S.url) || ev.source !== frameWindow()) return;
       if (d.on) busy('잠시 기다려 주십시오…', 120000); else idle();

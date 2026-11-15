@@ -482,7 +482,7 @@ document.addEventListener('click', async function (e) {
 });
 $('qna-st').addEventListener('change', loadQna);
 window.addEventListener('hashchange', function () { var id = qnaIdFromHash(); if (id) openQna(id); });
-/* ── 제보 보고함 — 혼디 제보 창구의 GET /user-feedback/export (운영자 전용) ─────────────
+/* ── 제보 보고함 — 나비웹 제보 창구의 GET /user-feedback/export (운영자 전용) ─────────────
    토큰(USER_FEEDBACK_EXPORT_TOKEN)은 이 탭의 sessionStorage 에만 둔다. 이 주소가 admin.html 의 출처를 허용(CORS)해야 불러올 수 있다.
    불러오지 못해도 주간 집계 이슈(GitHub, scripts/feedback-weekly.mjs)로 같은 내용을 볼 수 있다. */
 function ibBase() { return window.NAVI_FEEDBACK_API || 'https://hondi-proxy.tensor-city.workers.dev'; }

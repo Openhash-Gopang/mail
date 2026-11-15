@@ -237,7 +237,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-agent select,.doc-agent input{min-height:34px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 8px;font:inherit;background:var(--sur);color:inherit}
 .doc-agent input{flex:1 1 200px}
 /* 도우미 지시창 모드: 메인 입력창이 도우미에게 시키는 칸이 되므로 이 줄은 연결 상태만 보인다 */
-/* 서류를 작성하는 동안(2026-11-04): 입력창은 서류 이름만 보여 주고 잠근다 — 글자를 바꾸면 작성 중인 서류가 바뀌어 버리기 때문. 다른 말은 혼디 대화창이, 새 서류는 "Draft 저장 후 새 서류"가 맡는다. */
+/* 서류를 작성하는 동안(2026-11-04): 입력창은 서류 이름만 보여 주고 잠근다 — 글자를 바꾸면 작성 중인 서류가 바뀌어 버리기 때문. 다른 말은 나비웹 대화창이, 새 서류는 "Draft 저장 후 새 서류"가 맡는다. */
 #tab-compose[data-docwrite="1"] #cmp-input{cursor:not-allowed;font-weight:600}
 #tab-compose[data-docwrite="1"] #cmp-ex-btn,#tab-compose[data-docwrite="1"] #cmp-mic-btn{opacity:.4;pointer-events:none}
 .doc-agent .da-new{display:none}
@@ -413,7 +413,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-compose.active[data-mode="doc"].doc-live{display:flex;flex-direction:column;height:calc(100vh - 46px - var(--hd,54px));min-height:420px}
 #tab-compose[data-mode="doc"].doc-live .chat-landing,#tab-compose[data-mode="doc"].doc-live .chat-thread-header{display:none!important}
 #tab-compose[data-mode="doc"].doc-live .chat-composer{order:1;flex:none;position:static;padding-bottom:10px;border-bottom:2px solid var(--bdr);box-shadow:0 8px 10px -9px rgba(0,0,0,.35);background:var(--bg,#fff);z-index:6}
-#tab-compose[data-mode="doc"].doc-live .chat-thread{display:none}   /* 대화는 혼디 대화창이 맡는다 */
+#tab-compose[data-mode="doc"].doc-live .chat-thread{display:none}   /* 대화는 나비웹 대화창이 맡는다 */
 #tab-compose[data-mode="doc"].doc-live #cmp-loading,#tab-compose[data-mode="doc"].doc-live #cmp-err{order:2;flex:none}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{order:3;flex:1 1 0;min-height:0;height:auto!important;margin-top:0}
 /* 작업 화면(서류 확정 후)에서는 서류 칸이 문서 높이만큼 커지고 화면 전체가 스크롤된다 — 칸 안쪽 스크롤바를 두지 않는다 */
@@ -1081,7 +1081,7 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 
 
-/* ── 혼디 글꼴 정책(2026-09-21): 예외 없이 Pretendard ─────────────────────────
+/* ── 나비웹 글꼴 정책(2026-09-21): 예외 없이 Pretendard ─────────────────────────
    입력창·placeholder·버튼·코드·외부 라이브러리(Quill 등) 포함 모든 글자에 적용한다.
    글꼴 스택은 --font(Pretendard 우선, 로딩 실패 시에만 시스템 글꼴)이다. */
 *,*::before,*::after,::placeholder{font-family:var(--font)!important}
@@ -1983,7 +1983,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="set-row">
           <div class="set-lbl">서명</div>
           <div>
-            <textarea id="set-sig-input" maxlength="1000" placeholder="비워 두면 Signed by 내 이름 이 붙습니다. 예: 혼디 개발 총괄 {이름} 드림" oninput="_sigDirty()"></textarea>
+            <textarea id="set-sig-input" maxlength="1000" placeholder="비워 두면 Signed by 내 이름 이 붙습니다. 예: 나비웹 개발 총괄 {이름} 드림" oninput="_sigDirty()"></textarea>
             <div class="set-hint">내가 보내는 메일의 <b>본문 끝</b>에 한 줄을 띄우고 자동으로 붙습니다(글자만, 1000자까지). <b>비워 두면 “Signed by 내 이름”</b>(보내는 이름, 없으면 메일 아이디)이 붙고, 글 안의 <code>{이름}</code>은 보내는 이름으로 바뀝니다. 서명을 아예 붙이지 않으려면 <code>-</code> 한 글자만 적으세요. 저장한 뒤 <b>보내는 메일부터</b> 적용됩니다.</div>
             <div id="set-sig-err" class="errbox" style="display:none"></div>
             <div id="set-sig-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
@@ -2303,7 +2303,7 @@ function _docLoad(id) { _docCurrent = id; _docLoadInto(id, { frame: 'doc-frame',
 // 확장 프로그램이 있으면 줄이 나타나고, 서류에 맞는 절차를 골라 "맡기기"를 누르면 확장 쪽 사이드 패널에 채워진다.
 // 시작·로그인·결제는 사용자가 직접 한다. 확장 프로그램이 없으면 줄을 보이지 않는다.
 let _agentInfo = null;
-/** "나비웹 도우미 0.x.x" 는 혼디 대화창 상단 중앙에 둔다. 확장이 없어 "Chrome에 추가" 링크가 필요할 때(또는 대화창이 아직 없을 때)는 맨 위 오른쪽에 둔다. */
+/** "나비웹 도우미 0.x.x" 는 나비웹 대화창 상단 중앙에 둔다. 확장이 없어 "Chrome에 추가" 링크가 필요할 때(또는 대화창이 아직 없을 때)는 맨 위 오른쪽에 둔다. */
 const _agentBadgeHome = (() => { const b = document.getElementById('agent-badge'); return b ? { parent: b.parentNode, next: b.nextSibling } : null; })();
 function _agentBadgePlace() {
   const b = document.getElementById('agent-badge'), slot = document.getElementById('hchat-agent'); if (!b || !_agentBadgeHome) return;
@@ -2915,7 +2915,7 @@ function _infraExGo(name, go) {
   input.value = name; _kmailAutoResize(input); _cmpChatUpdateSendState(); _cmpChatSend();   // 이름 그대로 이 인프라에 시킨다
 }
 (function () { const ib = document.querySelector('.unread-badge[data-for="inbox"]'); if (ib && window.MutationObserver) new MutationObserver(() => _infraExSync()).observe(ib, { attributes: true, childList: true, characterData: true, subtree: true }); })();
-// ── 인프라 AI(구 각종 기관, 2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 혼디의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
+// ── 인프라 AI(구 각종 기관, 2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 나비웹의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
 const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
 let _orgSel = -1;
 function _cmpOrgFilter() {
@@ -3056,7 +3056,7 @@ async function _cmpGovPick(k) {
   const uid = _userIdLabel();
   _orgActivate(o, (uid ? uid + '님의 ' : '') + k + ' 용무를 도와드리겠습니다.' + (o.context ? ' (' + o.context.replace('사용자 거주지: ', '').replace(/ \(출처.*$/, '') + ' 기준)' : '') + (o.note ? ' ' + o.note : '') + ' 원하시는 것을 말씀해 주세요.');
 }
-// ── 서류 '제출'(2026-11-02): 관계 당국 제출용 dpaper API 가 아직 없다 → 혼디 대화창이 사용자에게 제출 절차를 하나씩 안내한다 ──
+// ── 서류 '제출'(2026-11-02): 관계 당국 제출용 dpaper API 가 아직 없다 → 나비웹 대화창이 사용자에게 제출 절차를 하나씩 안내한다 ──
 let _submitGuideOn = false;
 const _SUBMIT_DPAPER = '아직 한국 정부로부터 dpaper API를 발급받지 못했으므로, 사용자가 직접 제출해야 합니다. 절차를 안내하겠습니다. 먼저, 공동인증서를 준비해 주십시오.';
 function _submitGuideSp(title, blank, text) {
@@ -3086,7 +3086,7 @@ function _submitGuideStart(title, blank, text, proceed) {
   HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:submit:' + Date.now(), spText: _submitGuideSp(title, blank, String(text || '').slice(0, 5000)), label: '서류 제출 안내', greeting: greet, autoAsk: '서류 내용을 검토하고 제출 기관을 알려 주세요.' });
   HondiChat.open();
 }
-/** 혼디 대화창의 말이 제출 흐름에 걸리면 처리하고 답을 돌려준다(null 이면 걸리지 않음 → 서류 SP 가 일반 대화로 처리). */
+/** 나비웹 대화창의 말이 제출 흐름에 걸리면 처리하고 답을 돌려준다(null 이면 걸리지 않음 → 서류 SP 가 일반 대화로 처리). */
 async function _submitFlowTurn(text) {
   if (!_submitFlow) return null;
   const t = String(text || '').trim();
@@ -3100,7 +3100,7 @@ async function _submitFlowTurn(text) {
   }
   return null;
 }
-/* 2026-11-04 — 화면 동기화: '서류 작성' 화면(서류 사이트 iframe)과 혼디 대화창을 항상 같은 서류에 묶는다.
+/* 2026-11-04 — 화면 동기화: '서류 작성' 화면(서류 사이트 iframe)과 나비웹 대화창을 항상 같은 서류에 묶는다.
  * 서류 화면이 열리면 대화창 SP 를 "서류 작성 안내"(inline:doc:<사이트>)로 바꾸고, 화면 상태(서류 제목·항목)는 SP 본문에 박지 않고
  * hondi-embed-ctx 로 수시로 알린다(3초마다 + 대화창이 전송 직전에 hondi-embed-ctx-request 로 새로 요청). 화면이 바뀌면 SP 는 원래대로 돌아간다. */
 /* 2026-11-04 — 서류 작성 도우미 인계: 서류 화면이 열리는 순간 대화창 주도권을 AC-PRO-CORE 에서 이 SP 로 넘기고, 작성이 끝나면(작성 완료 저장 · 사용자 취소 · [DOC_HANDBACK]) 되찾는다.
@@ -3302,7 +3302,7 @@ async function _docChatAgentTask(d) {
                       : '“' + r.label.slice(0, 40) + '” 항목을 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
   _docChatPush();
 }
-window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 낸 태그 — 혼디 대화창(hondi.net)에서만, 도우미 세션 중일 때만 받는다
+window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 낸 태그 — 나비웹 대화창(hondi.net)에서만, 도우미 세션 중일 때만 받는다
   const d = e.data; if (!d || typeof d !== 'object' || (d.type !== 'hondi-embed-agent-task' && d.type !== 'hondi-embed-doc-handback' && d.type !== 'hondi-embed-feedback')) return;
   const f = document.getElementById('hchat-frame');
   if (!f || e.source !== f.contentWindow || e.origin !== 'https://hondi.net') return;
@@ -3324,12 +3324,12 @@ window.addEventListener('message', function (e) {   // 대화창이 전송 직�
   _docChatPush();
 });
 function _submitGuideEnd() { _submitFlow = null; if (!_submitGuideOn) return; _submitGuideOn = false; if (window.HondiChat && !_org) HondiChat.setSp(null); if (_cmpMode === 'doc') setTimeout(function () { _docChatEnsure(true); }, 0); }
-// 기관별 SP 키(혼디 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
+// 기관별 SP 키(나비웹 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
 const _ORG_DESC = {k119:'신고부터 출동·병원 연계까지, 응급 상황을 돕는 시스템입니다.',klaw:'분쟁을 정리하고 판결을 예측하는 법률 시스템입니다.',kpolice:'사건·사고 신고를 접수하고 처리하는 치안 시스템입니다.',ksecurity:'개인과 조직의 보안을 지키는 시스템입니다.',khealth:'증상 상담부터 진료 연계까지 돕는 의료 시스템입니다.',kschool:'수강·학적·학교 서류를 처리하는 교육 시스템입니다.',gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다.',kstock:'상장·공시·투자 정보를 다루는 투자 시스템입니다.',kinsurance:'보험 가입과 보험금 청구를 돕는 시스템입니다.',ktax:'세금 신고와 납부를 돕는 세무 시스템입니다.',kmarket:'상품을 사고팔고 주문을 처리하는 거래 시스템입니다.',ktraffic:'도로·대중교통·교통 민원을 다루는 교통 시스템입니다.',klogistics:'배송과 화물을 추적하고 연결하는 물류 시스템입니다.',kcleaner:'폐기물·재활용 등 환경 민원을 처리하는 시스템입니다.',kpublic:'증명서 발급과 각종 행정 민원을 처리하는 시스템입니다.',kdemocracy:'정책 제안과 참여를 돕는 시스템입니다.',ktelecom:'통신 서비스 가입과 문의를 돕는 시스템입니다.',ksearch:'원하는 정보를 찾아 정리해 주는 검색 시스템입니다.',kbiz:'사업자 등록과 운영을 돕는 시스템입니다.',kplan:'목표를 세우고 실행 계획을 짜는 시스템입니다.',kwatch:'위험과 이상 징후를 신고하고 살피는 시스템입니다.',kjob:'일자리를 찾고 지원하는 직업 시스템입니다.',kjit:'조달과 납품을 연결하는 시스템입니다.',kcity:'도시 계획과 설계를 돕는 시스템입니다.',kestate:'부동산 평가·매물 검색·등록을 돕는 시스템입니다.',ksocial:'관심사가 맞는 사람들과 모임을 잇는 시스템입니다.'};
 let _org = null;   // { key, label, sp, ready, queue }
 function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비 중입니다.'; }
-/** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 혼디 대화창이 그 기관 SP 로 전환된다. */
+/** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 나비웹 대화창이 그 기관 SP 로 전환된다. */
 function _cmpOrgPick(key) {
   _cmpOrgClose();
   const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return;
@@ -3340,7 +3340,7 @@ function _cmpOrgPick(key) {
   const greeting = '안녕하세요! 나비 ' + item[1] + ' 서비스입니다. 원하시는 것을 말씀해 주세요.';
   _infraKey = null; _orgActivate({ key, label: item[1], sp: _ORG_SP[key] || null, infra: true }, greeting);
 }
-/** 기관·전문가 공통: 입력창 모드를 'org' 로, 혼디 대화창을 그 SP 로 전환한다. */
+/** 기관·전문가 공통: 입력창 모드를 'org' 로, 나비웹 대화창을 그 SP 로 전환한다. */
 function _orgActivate(o, greeting) {
   _org = Object.assign({ ready: false, queue: [], pending: null }, o);
   const was = _cmpMode === 'org';
@@ -3843,7 +3843,7 @@ function _mailNotifyCheck() {
 
 // ── 서버 알림(탭을 닫아도) (2026-11-03) ──
 // 켜면 앞으로 30일치 알림 문구(마감·기한, sev 2 이상)를 서버에 맡기고, 서버가 매일 한국 시각 오전 9시 이후 한 번 푸시한다.
-// 서버가 가지는 것은 문구뿐이다(계획서 본문은 아니다). 푸시는 혼디 앱(hondi.net)에서 알림을 허용한 기기로 간다.
+// 서버가 가지는 것은 문구뿐이다(계획서 본문은 아니다). 푸시는 나비웹 앱(hondi.net)에서 알림을 허용한 기기로 간다.
 const _GS_ON = 'navi_guide_server_on', _gs = { sig: '', at: 0, err: '' };
 function _guideServerOn() { try { return localStorage.getItem(_GS_ON) === '1'; } catch (e) { return false; } }
 function _guideDigest() {
@@ -3858,8 +3858,8 @@ function _guideServerStatus() {
   const b = document.getElementById('gl-server-btn'), st = document.getElementById('gl-server-st'); if (!b || !st) return;
   const on = _guideServerOn();
   b.textContent = on ? '서버 알림 끄기' : '서버 알림 켜기';
-  st.textContent = on ? (_gs.err ? '켜짐 — 서버에 맡기지 못했습니다(' + _gs.err + '). 잠시 뒤 다시 시도합니다.' : '켜짐 — 탭을 닫아도 매일 오전 9시 이후 한 번, 혼디 앱에서 알림을 허용한 기기(휴대폰 등)로 보냅니다.')
-    : '꺼짐 — 켜면 탭을 닫아 둔 동안에도 마감·기한을 푸시로 보냅니다(알림 문구만 서버에 맡기며, 혼디 앱 알림이 허용된 기기로 갑니다).';
+  st.textContent = on ? (_gs.err ? '켜짐 — 서버에 맡기지 못했습니다(' + _gs.err + '). 잠시 뒤 다시 시도합니다.' : '켜짐 — 탭을 닫아도 매일 오전 9시 이후 한 번, 나비웹 앱에서 알림을 허용한 기기(휴대폰 등)로 보냅니다.')
+    : '꺼짐 — 켜면 탭을 닫아 둔 동안에도 마감·기한을 푸시로 보냅니다(알림 문구만 서버에 맡기며, 나비웹 앱 알림이 허용된 기기로 갑니다).';
 }
 async function _guideServerSync(force) {
   if (!_guideServerOn()) return;
@@ -4038,7 +4038,7 @@ function _docHostInput() {
   if (_cmpMode !== 'doc') return;
   if (_docLocked()) { _docLockSync(); return; }
   const t = document.getElementById('cmp-input').value;
-  // 입력창은 서류 검색·선택만 맡는다. 서류를 확정한(Enter) 뒤 글자를 지워도 작성 중인 서류는 사라지지 않는다(대화는 혼디 대화창이 맡는다).
+  // 입력창은 서류 검색·선택만 맡는다. 서류를 확정한(Enter) 뒤 글자를 지워도 작성 중인 서류는 사라지지 않는다(대화는 나비웹 대화창이 맡는다).
   if (!t.trim() && _docHost.confirmed && document.getElementById('tab-compose').classList.contains('doc-live')) return;
   if (_docHost.confirmed && _docHost.title && document.getElementById('tab-compose').classList.contains('doc-live')) return;   // 작성 중인 서류는 입력창을 건드려도 서류 선택 화면으로 돌아가지 않는다
   document.getElementById('tab-compose').classList.toggle('doc-live', !!t.trim());
@@ -4052,7 +4052,7 @@ async function _docHostSubmit(pick, resume) {
   _docHost.typed = t;   // 후보가 여럿이라 서류 쪽이 되돌리면(navi-doc-pending) 입력창 글자를 사용자가 친 그대로 되돌린다
   _docHost.confirmed = true; _docHelperSync(); _docLockOn();
   _docHostPost({ type: 'navi-doc-submit', text: t, pick: !!pick, resume: !!resume });
-  try { _scrDocSave(); } catch (e) {}   // 열자마자 화면·서류를 기록한다(입력 전에 새로 고쳐도 돌아온다)   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 혼디 대화창이 서류 SP 로 처리한다
+  try { _scrDocSave(); } catch (e) {}   // 열자마자 화면·서류를 기록한다(입력 전에 새로 고쳐도 돌아온다)   // 입력창 = 서류 검색·선택. 서류에 대한 질문·지시는 나비웹 대화창이 서류 SP 로 처리한다
 }
 // ── 열린 서류를 대화로 고치기(2026-11-01) ─────────────────────────────
 // 서류가 다 만들어져 있고(서류 사이트 v3) 수정 가능하면, 입력은 먼저 기본 SP(AC-PRO-CORE, /kmail/assist)가 본다.
@@ -4088,7 +4088,7 @@ async function _docEditTurn(text, fromPanel) {
   _cmpAppendBubble('user', { text });
   _docHost.msgs = msgs.concat(reply ? [{ role: 'assistant', content: reply }] : []).slice(-8);
   if (reply) _docBubble(reply);
-  if (!fromPanel) { const input = document.getElementById('cmp-input'); input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput(); }   // 혼디 대화창에서 온 말이면 입력창(서류 이름)은 그대로 둔다
+  if (!fromPanel) { const input = document.getElementById('cmp-input'); input.value = ''; _kmailAutoResize(input); _cmpChatUpdateSendState(); _docHostInput(); }   // 나비웹 대화창에서 온 말이면 입력창(서류 이름)은 그대로 둔다
   if (route.type === 'doc_edit') {
     const id = 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
     const card = document.createElement('div'); card.className = 'nav-ask doc-edit-card'; card.textContent = '서류를 고치는 중입니다…';
@@ -4212,7 +4212,7 @@ function _docHostMessage(d, e) {
       _docBar(Number(d.pct)); if (Number(d.pct) >= 0) document.getElementById('cmp-doc-count').textContent = String(d.msg || '첨부 자료를 읽는 중…').slice(0, 120);
       return;
     }
-    if (_embedAttachPending && d.status !== 'progress') {   // 혼디 대화창에서 첨부한 자료의 처리 결과를 대화창에 알린다
+    if (_embedAttachPending && d.status !== 'progress') {   // 나비웹 대화창에서 첨부한 자료의 처리 결과를 대화창에 알린다
       _embedAttachPending = false;
       _embedNote(true, d.status === 'filled' ? msg + ' 서류 화면에서 검토하고 고쳐 주세요(말씀하셔도 고칩니다).' : msg);
     }
@@ -7856,7 +7856,7 @@ async function _cmpChatSendText(text, attachments) {
   }
 }
 
-/* sp-route — 2026-10-31: 메인 화면 기본 SP는 "혼디 나만의 AI 비서"(AC-PRO-CORE). 입력 내용에 따라 K-Mail · 전문가 · 서류 작성 · 그대로 답변으로 보낸다. */
+/* sp-route — 2026-10-31: 메인 화면 기본 SP는 "나비웹 나만의 AI 비서"(AC-PRO-CORE). 입력 내용에 따라 K-Mail · 전문가 · 서류 작성 · 그대로 답변으로 보낸다. */
 const NAVI_ASSIST_URL = PROXY + '/kmail/assist';
 const NAVI_HONDI_ORIGIN = 'https://hondi.net';
 const _NAV_EXPERT_LABEL = { physician: '의사', lawyer: '변호사', 'tax-accounting': '세무사', accountant: '세무사' };
@@ -9009,7 +9009,7 @@ window.addEventListener('hashchange', function () {
 })();
 </script>
 <script>
-/* 혼디 대화 패널(hondi.net 페이지, iframe)이 AI 입력을 이 화면의 기본 SP 로 넘겨 온다(2026-11-01, 규약은 hondi 저장소 embed-delegate.js).
+/* 나비웹 대화 패널(hondi.net 페이지, iframe)이 AI 입력을 이 화면의 기본 SP 로 넘겨 온다(2026-11-01, 규약은 hondi 저장소 embed-delegate.js).
  * 원칙: 입력 필드와 패널이 한 화면에 있으면 패널의 SP 는 입력 필드의 SP 다. 입력창에 쓴 것과 똑같이 처리하고, 결과 요약을 패널 말풍선으로 돌려준다. */
 let _docAskWait = null;
 function _embedLooksLikeQuestion(t) { if (/(바꿔|고쳐|수정|변경|써\s?줘|작성해|채워|삭제)/.test(t)) return false; return /[?？]\s*$/.test(t) || /(뭐|무엇|어떤|어느|왜|어떻게|알려|설명|인가요|입니까|나요)/.test(t); }
@@ -9030,7 +9030,7 @@ window.addEventListener('message', (e) => {
   else if (d.type === 'navi-doc-answer') { clearTimeout(w.t0); clearTimeout(w.t1); _docAskWait = null; w.resolve(String(d.text || '').slice(0, 1800)); }
 });
 let _embedCap = null, _embedBusy = false, _embedAttachPending = false;
-/** 혼디 대화창이 보낸 첨부(name,mime,isImage,text,dataUrl)를 검증·정리한다 — 최대 4개, 이름·종류·크기 제한. */
+/** 나비웹 대화창이 보낸 첨부(name,mime,isImage,text,dataUrl)를 검증·정리한다 — 최대 4개, 이름·종류·크기 제한. */
 function _embedFiles(a) {
   const out = []; if (!Array.isArray(a)) return out;
   for (const f of a) {
@@ -9068,7 +9068,7 @@ window.addEventListener('message', async (e) => {
   /* 어떤 말이든 먼저 "잠시 기다려 주십시오" 한 줄을 답하고 진행 막대를 켠다 — 본 답이 늦어도 사용자가 멈춘 것으로 오해하지 않게(끝나면 finally 에서 끈다). */
   try { HondiChat.say('잠시 기다려 주십시오.'); HondiChat.busy('잠시 기다려 주십시오…', 120000); } catch (x) {}
   try {
-    /* 서류가 화면에 떠 있으면 혼디 대화창은 그 서류의 SP(서류 사이트의 AI)와 대화한다 — 작성 상황을 알고 답하고, 서류를 직접 고친다.
+    /* 서류가 화면에 떠 있으면 나비웹 대화창은 그 서류의 SP(서류 사이트의 AI)와 대화한다 — 작성 상황을 알고 답하고, 서류를 직접 고친다.
        말은 곧바로 서류 SP 에 보낸다(navi-doc-ask): 서류 SP 가 현재 서류를 보고 짧게 답하고, 수정·기입 지시는 되묻지 않고 화면 칸에 바로 쓴다. (기본 SP 경유는 길게 되묻기만 해서 쓰지 않는다)
        입력창은 서류 검색·선택만 맡으므로 대화 내용은 입력창에 넣지 않는다. 서류가 아직 없으면 예전처럼 입력창에 넣어 서류를 찾는다. */
     if (_cmpMode === 'doc' && _docHost.loaded && document.getElementById('tab-compose').classList.contains('doc-live')) {
