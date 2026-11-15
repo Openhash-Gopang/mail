@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { route, isPhone, phoneRoute } from '../ops/naviweb-proxy/worker.js';
+import { route, isPhone, phoneRoute, pagePhone } from '../ops/naviweb-proxy/worker.js';
 import worker from '../ops/naviweb-proxy/worker.js';
 const r = (p) => route(new URL('https://naviweb.kr' + p));
 test('naviweb-proxy 라우팅', () => {
@@ -123,4 +123,20 @@ test('ETag 비교: 약한 표시 무시, 목록·* 허용, 없으면 false', () 
   assert.equal(_etm('"x"', '"abc"'), false);
   assert.equal(_etm('', '"abc"'), false);
   assert.equal(_etm('"abc"', null), false);
+});
+
+test('주소창에 쓴 /webapp.html·/desktop.html 은 기기와 상관없이 그 파일을 보여 준다', () => {
+  const pp = (path, h) => pagePhone(new URL('https://naviweb.kr' + path), new Headers(h));
+  assert.equal(pp('/webapp.html', { 'user-agent': WIN }), true);                 // PC 에서 webapp.html
+  assert.equal(pp('/desktop.html', { 'user-agent': IPHONE }), false);            // 폰에서 desktop.html
+  assert.equal(pp('/webapp.html?view=desktop', { 'user-agent': WIN }), true);
+  assert.equal(pp('/', { 'user-agent': WIN }), false);                           // '/' 는 기존 기기별 분기
+  assert.equal(pp('/', { 'user-agent': IPHONE }), true);
+  assert.equal(pp('/x.json', { 'user-agent': WIN, 'sec-fetch-dest': 'empty', referer: 'https://naviweb.kr/webapp.html' }), true);
+  assert.equal(pp('/x.json', { 'user-agent': IPHONE, 'sec-fetch-dest': 'empty', referer: 'https://naviweb.kr/desktop.html' }), false);
+  assert.equal(pp('/other.html', { 'user-agent': WIN, 'sec-fetch-dest': 'document', referer: 'https://naviweb.kr/webapp.html' }), false);   // 링크 이동(문서)은 따라가지 않는다
+});
+test('desktop.html 안전망은 /desktop.html 직접 열람을 되돌리지 않는다', () => {
+  const s = _rf(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(s.includes("location.pathname !== '/desktop.html'"));
 });

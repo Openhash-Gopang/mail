@@ -35,6 +35,27 @@ export function isPhone(url, headers) {
   return PHONE_UA.test(headers.get('user-agent') || '');
 }
 
+/**
+ * 순수 함수 — 이 요청을 폰 화면(hondi 쪽)으로 줄지 판별한다(2026-11-16, 주피터 지시).
+ * 주소창에 /webapp.html 이나 /desktop.html 을 직접 쓰거나 링크로 열면 기기와 상관없이 그 파일을 그대로 보여 준다
+ * (PC 에서 webapp.html, 폰에서 desktop.html). 기기별 분기는 '/' 와 그 밖의 경로에만 적용한다.
+ * 그 화면이 부르는 하위 파일(같은 출처 fetch 등)은 Referer 가 그 두 파일이면 같은 쪽 원본을 쓰게 한다.
+ */
+export function pagePhone(url, headers) {
+  const p = url.pathname;
+  if (p === '/webapp.html') return true;
+  if (p === '/desktop.html') return false;
+  const dest = headers.get('sec-fetch-dest');
+  if (dest && dest !== 'document' && dest !== 'iframe') {
+    try {
+      const rp = new URL(headers.get('referer') || '').pathname;
+      if (rp === '/webapp.html') return true;
+      if (rp === '/desktop.html') return false;
+    } catch (e) { /* Referer 없음·형식 오류 → 기기 판별 */ }
+  }
+  return isPhone(url, headers);
+}
+
 export function phoneRedirect(url) {
   const to = PHONE_URL + (url.searchParams.get('view') === 'mobile' ? '?view=mobile' : '');
   return new Response(null, {
@@ -84,7 +105,7 @@ export default {
     const url = new URL(request.url);
     if (url.hostname === 'www.naviweb.kr') return Response.redirect('https://naviweb.kr' + url.pathname + url.search, 301);
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method Not Allowed', { status: 405 });
-    const phone = isPhone(url, request.headers);
+    const phone = pagePhone(url, request.headers);
     if (url.pathname === '/__whoami') {   // 진단: 이 요청을 폰/PC 어느 쪽으로 판별했고 어디서 받는지(주소창이 바뀌는 원인 추적용)
       const r = phoneRoute(url), d = route(url);
       return new Response(JSON.stringify({ phone, target: (phone ? r : d).target, secChUaMobile: request.headers.get('sec-ch-ua-mobile'), viewCookie: viewCookie(request.headers), ua: request.headers.get('user-agent') }, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
