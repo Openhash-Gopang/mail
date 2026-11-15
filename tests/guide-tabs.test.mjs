@@ -46,7 +46,7 @@ test('사용법 위쪽 탭: 나비 사용자 매뉴얼 · 질문·답변 · Open
   assert.match(R('manual/hondi_interactive_manual.html'), /current: function \(\) \{ var i = -1;/);
 });
 
-test('나비 온도: 36.5에서 시작, 초급 60 · 중급 80 · 고급 100 구간(매뉴얼 진행률만), 95° 이상 CNS', async () => {
+test('나비 지식 온도: 36.5에서 시작, 초급 60 · 중급 80 · 고급 100 구간(매뉴얼 진행률만), 95° 이상 CNS', async () => {
   const G = (await import('../guide.js')).default;
   const T = G._pure.naviTemp;
   assert.equal(T(null), 36.5);
