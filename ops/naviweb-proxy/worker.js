@@ -162,9 +162,10 @@ export default {
     if (phone && !hondi && ct.includes('text/html') && res.status === 200) {
       // 폰 화면(hondi.net/webapp.html)의 스크립트·스타일·이미지는 주소창과 무관하므로 hondi.net 에서 직접 받게 한다.
       // 지금까지는 파일마다 이 Worker(LA 경유, 파일당 0.4초+)를 거쳐 첫 화면이 느렸다. manifest·서비스워커는 같은 출처에 남긴다.
+      // 2026-11-16 — 스크립트(script[src])는 직접 받게 하지 않는다: 경로 기준 원본 선택(originFor)으로 같은 출처에서 정확히 받고, 모듈 그래프를 한 벌만 쓴다.
       const pagePath = target.slice(HONDI_ORIGIN.length).split('?')[0] || '/';
       const fix = (attr) => ({ element(el) { const d = directAsset(el.getAttribute(attr), pagePath, HONDI_ORIGIN); if (d) el.setAttribute(attr, d); } });
-      return new HTMLRewriter().on('script[src]', fix('src')).on('img[src]', fix('src')).on('link[rel~="stylesheet"]', fix('href')).on('link[rel~="icon"]', fix('href')).on('link[rel="apple-touch-icon"]', fix('href')).transform(new Response(res.body, { status: res.status, headers: out }));
+      return new HTMLRewriter().on('img[src]', fix('src')).on('link[rel~="stylesheet"]', fix('href')).on('link[rel~="icon"]', fix('href')).on('link[rel="apple-touch-icon"]', fix('href')).transform(new Response(res.body, { status: res.status, headers: out }));
     }
     if (!hondi && !phone && ct.includes('text/html') && res.status === 200) {
       // 앱 페이지 안의 상대 경로 스크립트·이미지·아이콘은 mail.hondi.net 에서 직접 받게 한다(위 directAsset 설명 참조).
