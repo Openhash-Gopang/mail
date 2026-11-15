@@ -54,7 +54,7 @@ test('폰이 / 또는 /webapp.html 을 열면 이동 없이 hondi.net/webapp.htm
     assert.equal(calls[0], 'https://app.naviweb.kr/manifest.json');   // 폰은 하위 파일도 hondi.net 에서
     calls.length = 0;
     await worker.fetch(new Request('https://naviweb.kr/manifest.json', { headers: { 'user-agent': WIN } }));
-    assert.equal(calls[0], 'https://mail.naviweb.kr/manifest.json');   // PC 는 기존 그대로
+    assert.equal(calls[0], 'https://app.naviweb.kr/manifest.json');   // 2026-11-16: 파일 소유 기준 — mail 저장소에 없는 파일은 PC 도 app
     const pv = await worker.fetch(new Request('https://naviweb.kr/?view=mobile', { headers: { 'user-agent': WIN } }));
     assert.match(pv.headers.get('set-cookie'), /navi_view=mobile/);
   } finally { globalThis.fetch = realFetch; }
@@ -146,4 +146,26 @@ test('확장자 없는 /webapp·/desktop 도 같은 규칙(Pages 가 .html 을 �
   assert.equal(pp('/desktop', { 'user-agent': IPHONE }), false);
   assert.equal(pp('/webapp/', { 'user-agent': WIN }), true);
   assert.equal(pp('/webapp-x', { 'user-agent': WIN }), false);
+});
+
+// ── 2026-11-16 경로 기준 원본 선택 ──
+import { originFor, isMailPath } from '../ops/naviweb-proxy/worker.js';
+import { MAIL_FILES } from '../ops/naviweb-proxy/mail-paths.js';
+import { execSync } from 'node:child_process';
+test('originFor: /webapp 은 app, /desktop 은 mail, mail 파일은 mail, 나머지는 app(기기와 무관)', () => {
+  const o = (path, h = {}) => originFor(new URL('https://naviweb.kr' + path), new Headers(h));
+  assert.equal(o('/webapp'), 'app'); assert.equal(o('/webapp.html'), 'app');
+  assert.equal(o('/desktop'), 'mail'); assert.equal(o('/desktop.html'), 'mail');
+  assert.equal(o('/gopang-app.js'), 'app'); assert.equal(o('/src/gopang/core/state.js'), 'app');
+  assert.equal(o('/assets/hondi-skin.js'), 'app'); assert.equal(o('/assets/i18n.js'), 'mail');
+  assert.equal(o('/case-core.js'), 'mail'); assert.equal(o('/manual'), 'mail'); assert.equal(o('/manual/manual-img/x.webp'), 'mail');
+  assert.equal(o('/i18n/en.js'), 'mail');
+  assert.equal(o('/gopang-app.js', { 'sec-ch-ua-mobile': '?0', 'user-agent': 'Windows' }), 'app', 'PC 에서도 app 파일은 app');
+  assert.equal(o('/', { 'sec-ch-ua-mobile': '?1' }), 'app'); assert.equal(o('/', { 'sec-ch-ua-mobile': '?0' }), 'mail');
+});
+test('mail-paths.js 가 저장소 파일 목록과 같다(파일을 바꿨으면 gen-mail-paths.mjs 를 다시 실행)', () => {
+  const SKIP = /^(tests|docs|ops|scripts|\.github|node_modules)\//;
+  const DIRS = ['manual/', 'i18n/', 'agent/', 'assets/guide/'];
+  const exact = execSync('git ls-files', { encoding: 'utf8' }).split('\n').filter(Boolean).filter(f => !SKIP.test(f) && f !== 'CNAME' && f !== 'webapp.html' && !f.startsWith('.')).filter(f => !DIRS.some(d => f.startsWith(d)));
+  assert.deepEqual([...MAIL_FILES].sort(), exact.sort());
 });

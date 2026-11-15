@@ -9,6 +9,8 @@
  * 쿠키는 전달하지 않는다(정적 파일이라 필요 없고, 로그인 쿠키가 원본 서버로 새지 않게 한다).
  * 원본 서버(mail.naviweb.kr, app.naviweb.kr)는 리다이렉트로 바꾸면 순환한다.
  */
+import { MAIL_DIRS, MAIL_FILES } from './mail-paths.js';
+
 const APP_ORIGIN = 'https://mail.naviweb.kr';   // 2026-11-13 hondi.net 종료 대비 — 원본을 naviweb.kr 아래 Pages 로 옮겼다(구 mail.hondi.net)
 const HONDI_ORIGIN = 'https://app.naviweb.kr';   // 구 hondi.net(나비 앱 화면·공용 스크립트) 원본
 const HONDI_PREFIXES = ['/src/', '/auth/', '/lib/'];
@@ -93,6 +95,25 @@ export function route(url) {
   return { target: APP_ORIGIN + (p === '/' ? '/desktop.html' : p) + url.search, hondi: false };
 }
 
+/**
+ * 순수 함수 — 이 요청을 어느 원본이 맡는지('app' = app.naviweb.kr, 'mail' = mail.naviweb.kr) 경로 기준으로 정한다(2026-11-16, 두 주소 통합).
+ * 기기·Referer 추측 대신 파일 소유로 정한다: '/' 만 기기별(PC=mail 의 desktop, 폰=app 의 webapp), /webapp·/desktop 은 이름대로,
+ * mail 저장소에 있는 파일(mail-paths.js, gen-mail-paths.mjs 로 생성)은 mail, 그 밖의 모든 경로는 app 이다.
+ */
+export function isMailPath(p) {
+  if (MAIL_DIRS.some(d => p.startsWith('/' + d))) return true;
+  const f = p.replace(/^\/+/, '').replace(/\/+$/, '');
+  return MAIL_FILES.has(f) || MAIL_FILES.has(f + '.html');
+}
+export function originFor(url, headers) {
+  const p = url.pathname;
+  if (p.startsWith('/_h/')) return 'mail';   // 기존 규칙(route 가 app 으로 보낸다)
+  if (p === '/') return pagePhone(url, headers) ? 'app' : 'mail';
+  const k = _pageKind(p);
+  if (k) return k === 'webapp' ? 'app' : 'mail';
+  return isMailPath(p) ? 'mail' : 'app';
+}
+
 /** 순수 함수 — 폰 요청: '/' 는 hondi.net/webapp.html, 그 밖의 경로는 모두 hondi.net 의 같은 경로(/_h/ 는 기존 규칙). */
 export function phoneRoute(url) {
   const p = url.pathname;
@@ -105,7 +126,7 @@ export default {
     const url = new URL(request.url);
     if (url.hostname === 'www.naviweb.kr') return Response.redirect('https://naviweb.kr' + url.pathname + url.search, 301);
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method Not Allowed', { status: 405 });
-    const phone = pagePhone(url, request.headers);
+    const phone = originFor(url, request.headers) === 'app';
     if (url.pathname === '/__whoami') {   // 진단: 이 요청을 폰/PC 어느 쪽으로 판별했고 어디서 받는지(주소창이 바뀌는 원인 추적용)
       const r = phoneRoute(url), d = route(url);
       return new Response(JSON.stringify({ phone, target: (phone ? r : d).target, secChUaMobile: request.headers.get('sec-ch-ua-mobile'), viewCookie: viewCookie(request.headers), ua: request.headers.get('user-agent') }, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
