@@ -113,6 +113,7 @@ export default {
     const { target, hondi } = phone ? phoneRoute(url) : route(url);
     const headers = new Headers(request.headers);
     headers.delete('cookie'); headers.delete('host');
+    headers.set('x-navi-proxy', '1');   // 2026-11-16 원본(app./mail.naviweb.kr)에 직접 들어온 페이지 요청은 naviweb.kr 로 이동시키는 Cloudflare 규칙이 있다. 이 헤더가 있는 프록시 요청은 이동시키지 않는다(순환 방지).
     // 원본(GitHub Pages)까지 매번 다녀오면 파일마다 0.4~2초가 걸린다. Cloudflare 엣지에 잠깐 캐시한다(사진·글꼴은 길게, 나머지는 2분).
     headers.delete('if-none-match'); headers.delete('if-modified-since'); headers.delete('range');
     const res = await fetch(target, { method: request.method, headers, redirect: 'manual', cf: { cacheEverything: true, cacheTtl: edgeTtl(url.pathname), cacheTtlByStatus: { '200-299': edgeTtl(url.pathname), '300-399': 0, '400-599': 0 } } });
