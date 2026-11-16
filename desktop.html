@@ -4,7 +4,7 @@
      스크립트는 그대로이고, 사이드바 셸·PC 레이아웃 CSS·_switchTab만 다르다.
      공통 기능을 고칠 때는 webapp.html과 이 파일 양쪽을 함께 고칠 것(K-Law의 desktop/webapp과 같은 구조). -->
 <head>
-<script src="https://app.naviweb.kr/assets/material-dialog.js"></script>
+<script src="https://naviweb.kr/assets/material-dialog.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="assets/i18n.js"></script>
@@ -55,7 +55,7 @@ if (location.hostname === 'mail.hondi.net') {
 <script>
 window.K_AUTH_CONFIG = { serviceLabel: 'naviweb' };
 </script>
-<script src="https://app.naviweb.kr/auth/k-service-auth-client.js?v=20261114b"></script>
+<script src="https://naviweb.kr/auth/k-service-auth-client.js?v=20261114b"></script>
 <!-- 2026-09-10 신설 — 첨부파일(PDF·DOC·XLS) 텍스트 추출용. K-Mail이
      쓰는 deepseek-v4-flash는 텍스트 전용(이미지·문서 첨부 입력 자체를
      지원 안 함 — 실사용 중 "PDF를 못 읽는다" 문의로 확인됨)이라,
@@ -8977,7 +8977,7 @@ window.addEventListener('hashchange', function () {
   else if (h === 'mail' || h === 'docs') _notifyGo('mail');   // 이미 열려 있는 탭에서 푸시 알림을 눌렀을 때
 });
 </script>
-<script src="https://app.naviweb.kr/auth/user-badge.js?v=20261106b" defer></script>
+<script src="https://naviweb.kr/auth/user-badge.js?v=20261106b" defer></script>
 <script>
 /* 2026-10-27 — 입력을 시작하면 예시 문구(placeholder)를 숨긴다(한글 입력기 조합 중 포함). 문서 전체에서 이벤트를 받으므로
    나중에 생기는 입력창에도 적용된다. 키를 누르거나(조합 시작 키 포함) 조합을 시작하거나 붙여 넣거나 값이 생기면 .ph-typing을 붙이고,
@@ -9177,6 +9177,6 @@ window._agentEntryRefresh = _agentEntryRefresh;
 })();
 </script>
 <script src="butterfly-landing.js?v=20261111b"></script>
-<script src="https://app.naviweb.kr/navi-home.js" defer></script>
+<script src="https://naviweb.kr/navi-home.js" defer></script>
 </body>
 </html>
