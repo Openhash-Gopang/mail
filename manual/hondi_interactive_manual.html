@@ -964,6 +964,6 @@ DOC.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panelOp
 
 window.NaviManual = { goChapter: function (id) { goChapter(id); }, current: function () { var i = -1; CHAPTERS.forEach(function (c, k) { if (c.id === currentChapterId) i = k; }); return i < 0 ? null : { n: i + 1, title: CHAPTERS[i].title, id: CHAPTERS[i].id }; }, refresh: function () { renderHeader(); }, openCns: function () { renderHeader(); openCns(); } };
 </script>
-<script src="https://app.naviweb.kr/navi-home.js" defer></script>
+<script src="https://naviweb.kr/navi-home.js" defer></script>
 </body>
 </html>
