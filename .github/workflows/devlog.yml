@@ -1,0 +1,39 @@
+# 개발 현황(desktop.html '개발 현황') 자동 갱신 — hondi·mail 저장소의 git 기록을 일자별로 묶어 devlog.json 으로 쓴다.
+# 3시간마다 확인해서 내용이 바뀌었을 때만 main 에 커밋한다(guide-videos 와 같은 방식).
+name: devlog
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: devlog
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: Openhash-Gopang/hondi
+          path: _src/hondi
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 일자별 기록 생성
+        run: node scripts/devlog-sync.mjs devlog.json hondi=_src/hondi mail=.
+      - name: 바뀌었으면 커밋
+        run: |
+          if git diff -U0 -- devlog.json | grep '^[+-]' | grep -v '^+++\|^---' | grep -qv '"updated"'; then
+            git config user.name "naviweb-bot"; git config user.email "actions@users.noreply.github.com"
+            git add devlog.json
+            git commit -m "chore: 개발 현황 자동 갱신"
+            git pull --rebase origin main && git push origin HEAD:main
+          else
+            echo "변경 없음"
+          fi
