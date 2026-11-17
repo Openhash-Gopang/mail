@@ -8,18 +8,18 @@
   var root = null;
 
 
-  var APP_URL = 'https://appdistribution.firebase.dev/i/295c33fac1876871';
+  var APP_URL = 'https://naviweb.kr/install.html';
   function installHtml() {   // 안드로이드 앱 설치 안내 — 개발 현황 화면 맨 위
     return '<section class="dl-inst" aria-label="나비웹 안드로이드 앱 설치">' +
-      '<div class="dl-inst-qr"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZYAAAGWAQAAAABzg5g7AAABgklEQVR42u2cQa6DMAwFo3KAHImrcyQOECkFGhM7dMOm7asmm6/+aLqoRtbDcUj19ioJBgYGBuYrzJr6mrZP82tvse9z2/teeaT7Cwbmk8zL69k8P7w+9e5/2lrxGkbK61aMzeS4F2THaxhFr1s+yVsO8bLjNYx4vR7TNl7D6Ofr44GxDF6Tr2EEvX5boce0TT8ERsrr69r+n61sz5feIL8bjEwOKbEm+7QdIzhewwjlkKbw3ghp/ZBaveXHytRrGLV6nV0AOSv00e6b7PSR50YYuXzd6nXqZduafzw3woh63ULG2Ko2rzN9PhjZ/vXi0rZrY8eogtcwmv3rvlcsX6/kEBjZPl98fKzjtAjn6DBy8yGTn1O1VBKa2vT5YITPG69Tq77rh9cwuvMhMXlEvfEaRvO+zFy97F1o5kNgtOev4ylNHBrBaxjZewWTH+vrbRG8hpG+B+aaJEsaUglew0jel/GvYXBj2HgNo37eOL5ugXk+mD+4L8P7hGBgYGB+jXkCaPm4hb/38NIAAAAASUVORK5CYII=" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
+      '<div class="dl-inst-qr"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUoAAAFKAQAAAABTUiuoAAACk0lEQVR4Xu1bQW7jMAwc1gb2KAN5QJ7i/Gy/Zj2lP7COAWRwQVJS7B66uUkIyEOhQj6wpIYajlhivGnx680PAfinHgGPwBeQqNgDANEC6ApRVsVmB8wIEZA0TFlrHCHdMiMRGDhkY85YN9lKtxF8dWxZBIgUPSGD6M6MuEz1PhPkKdQ8WKNF4CDeEhHWb0neD/Oj3T0Cl6ykG9MpRWG/5Ku7r+6ARYCZ5e4KT+INExMtgjLdCsxl5cHqHgEwNwSt+8Q/fxSbmLfuvroDs6CnFbwnId4zON6fVhLPvbMHq3sEBFsNUcyGLcWb1kTd5U3LYXdf3YFTJeQtWON1ShRWzpZQz9YADN4IBotJn2xgKitlHqi/OraGAHdSFn+Q1j96hCdh3Q96tcgFdF6IukegwEqvLGPrQVdZyiFglVBvMMdW/2zV45JmuZ4OQoGaMo/KFW3V/WS5AzOQFiHqGYSwM637QoW3h1yUjviYPFuDRKAxQf4m0nKIuCjK/lQZQz/xo909Ao0TNv4nl9dL3yg3mN9bQ2DLWEah8doYN1qhDF5YhnXMzjKGwNZJyyiZKUpv67ycE5qNUwmVvBctQ0lg1eWFwbvyNEy2FELCLUyDN1XjJUlpdXSdcAhsiQafTWpnpIM4LtJc2UOkDGykG8hW3euAO3B53zJiWHV5lQi1Jvq9NUgllPNaat1J1ZV+qz6biPzkWsYYlfAy86SThfdKNUTpJZLpJ3mh9Eo4WgSMahyiwZcRUJV26a9jawxsXWeeRDFMi87OGO+wpxQZCx3tZP1uH01Iam/FMu4kQ9VEhEizzFh7JWw2xBmQ60nSY48lMrBrw7n65q8ds24M4eub9qG+1teR/5v/R9CnnoEPPdrd/6x/VWSY6JtG4mQAAAAASUVORK5CYII=" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
       '<div class="dl-inst-txt"><h3>나비웹 안드로이드 앱 <span>테스트 버전</span></h3>' +
-      '<p>나비웹을 앱처럼 쓸 수 있습니다. 안드로이드 폰으로 왼쪽 QR 코드를 촬영하면 설치 화면으로 연결됩니다. 현재는 테스트 중인 버전이며, 아이폰은 지원하지 않습니다.</p>' +
+      '<p>나비웹을 앱처럼 쓸 수 있습니다. 안드로이드 폰으로 왼쪽 QR 코드를 촬영하면 설치 안내와 내려받기 버튼이 바로 나타납니다(로그인·메일 불필요). 현재는 테스트 중인 버전이며, 아이폰은 지원하지 않습니다.</p>' +
       '<p class="dl-inst-os">나비웹은 누구나 만들고 고칠 수 있는 <b>오픈소스 프로젝트</b>입니다.</p>' +
-      '<ol><li>안드로이드 폰의 카메라(또는 QR 앱)로 QR 코드를 촬영하고, 나타난 링크를 엽니다.</li>' +
-      '<li>구글(Gmail) 계정으로 로그인하고 <b>초대 수락</b>(Accept invitation)을 누릅니다.</li>' +
-      '<li>안내에 따라 <b>나비웹 앱을 다운로드</b>합니다. 처음에는 \"알 수 없는 앱 설치 허용\"이 필요할 수 있습니다.</li>' +
+      '<ol><li>안드로이드 폰의 카메라(또는 QR 앱)로 QR 코드를 촬영하고, 나타난 링크를 엽니다. 설치 안내 화면이 바로 열립니다.</li><li>화면의 <b>앱 내려받기</b> 버튼을 누릅니다.</li>' +
+      '<li>내려받기가 끝나면 파일을 열어 <b>설치</b>를 누릅니다. \"알 수 없는 앱 설치 허용\"이 나오면 허용해 주세요.</li>' +
+      '<li>\"유해한 앱 차단됨\"(Play 프로텍트) 안내가 나오면 <b>자세히 → 무시하고 설치하기</b>를 누릅니다. 아직 구글 플레이에 등록 전이라 나오는 안내입니다.</li>' +
       '<li>앱을 열고 <b>알림 허용</b>을 눌러 주세요.</li></ol>' +
-      '<p class="dl-inst-sub">폰에서 이 페이지를 보고 있다면 <a href="' + APP_URL + '" target="_blank" rel="noopener">여기를 눌러 바로 설치</a>하세요. 오류나 불편한 점은 알려 주시면 반영하겠습니다.</p></div></section>';
+      '<p class="dl-inst-sub">폰에서 이 페이지를 보고 있다면 <a href="' + APP_URL + '" target="_blank" rel="noopener">여기를 눌러 설치 안내를 여세요</a>. 예전 시험 버전이 설치돼 있으면 먼저 삭제해 주세요. 오류나 불편한 점은 알려 주시면 반영하겠습니다.</p></div></section>';
   }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
