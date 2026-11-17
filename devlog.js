@@ -11,7 +11,7 @@
   var APP_URL = 'https://appdistribution.firebase.dev/i/295c33fac1876871';
   function installHtml() {   // 안드로이드 앱 설치 안내 — 개발 현황 화면 맨 위
     return '<section class="dl-inst" aria-label="나비웹 안드로이드 앱 설치">' +
-      '<div class="dl-inst-qr"><img src="https://mail.naviweb.kr/assets/naviweb-app-qr.png" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
+      '<div class="dl-inst-qr"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZYAAAGWAQAAAABzg5g7AAABgklEQVR42u2cQa6DMAwFo3KAHImrcyQOECkFGhM7dMOm7asmm6/+aLqoRtbDcUj19ioJBgYGBuYrzJr6mrZP82tvse9z2/teeaT7Cwbmk8zL69k8P7w+9e5/2lrxGkbK61aMzeS4F2THaxhFr1s+yVsO8bLjNYx4vR7TNl7D6Ofr44GxDF6Tr2EEvX5boce0TT8ERsrr69r+n61sz5feIL8bjEwOKbEm+7QdIzhewwjlkKbw3ghp/ZBaveXHytRrGLV6nV0AOSv00e6b7PSR50YYuXzd6nXqZduafzw3woh63ULG2Ko2rzN9PhjZ/vXi0rZrY8eogtcwmv3rvlcsX6/kEBjZPl98fKzjtAjn6DBy8yGTn1O1VBKa2vT5YITPG69Tq77rh9cwuvMhMXlEvfEaRvO+zFy97F1o5kNgtOev4ylNHBrBaxjZewWTH+vrbRG8hpG+B+aaJEsaUglew0jel/GvYXBj2HgNo37eOL5ugXk+mD+4L8P7hGBgYGB+jXkCaPm4hb/38NIAAAAASUVORK5CYII=" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
       '<div class="dl-inst-txt"><h3>나비웹 안드로이드 앱 <span>테스트 버전</span></h3>' +
       '<p>나비웹을 앱처럼 쓸 수 있습니다. 안드로이드 폰으로 왼쪽 QR 코드를 촬영하면 설치 화면으로 연결됩니다. 현재는 테스트 중인 버전이며, 아이폰은 지원하지 않습니다.</p>' +
       '<p class="dl-inst-os">나비웹은 누구나 만들고 고칠 수 있는 <b>오픈소스 프로젝트</b>입니다.</p>' +
