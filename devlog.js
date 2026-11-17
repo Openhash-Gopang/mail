@@ -11,9 +11,10 @@
   var APP_URL = 'https://appdistribution.firebase.dev/i/295c33fac1876871';
   function installHtml() {   // 안드로이드 앱 설치 안내 — 개발 현황 화면 맨 위
     return '<section class="dl-inst" aria-label="나비웹 안드로이드 앱 설치">' +
-      '<div class="dl-inst-qr"><img src="assets/naviweb-app-qr.svg" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
+      '<div class="dl-inst-qr"><img src="assets/naviweb-app-qr.png" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
       '<div class="dl-inst-txt"><h3>나비웹 안드로이드 앱 <span>테스트 버전</span></h3>' +
       '<p>나비웹을 앱처럼 쓸 수 있습니다. 안드로이드 폰으로 왼쪽 QR 코드를 촬영하면 설치 화면으로 연결됩니다. 현재는 테스트 중인 버전이며, 아이폰은 지원하지 않습니다.</p>' +
+      '<p class="dl-inst-os">나비웹은 누구나 만들고 고칠 수 있는 <b>오픈소스 프로젝트</b>입니다.</p>' +
       '<ol><li>안드로이드 폰의 카메라(또는 QR 앱)로 QR 코드를 촬영하고, 나타난 링크를 엽니다.</li>' +
       '<li>구글(Gmail) 계정으로 로그인하고 <b>초대 수락</b>(Accept invitation)을 누릅니다.</li>' +
       '<li>안내에 따라 <b>나비웹 앱을 다운로드</b>합니다. 처음에는 \"알 수 없는 앱 설치 허용\"이 필요할 수 있습니다.</li>' +
