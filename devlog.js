@@ -7,6 +7,20 @@
   var S = { data: null, loading: false, month: null, q: '', repo: 'hondi', open: false };
   var root = null;
 
+
+  var APP_URL = 'https://appdistribution.firebase.dev/i/295c33fac1876871';
+  function installHtml() {   // 안드로이드 앱 설치 안내 — 개발 현황 화면 맨 위
+    return '<section class="dl-inst" aria-label="나비웹 안드로이드 앱 설치">' +
+      '<div class="dl-inst-qr"><img src="assets/naviweb-app-qr.svg" width="168" height="168" alt="나비웹 안드로이드 앱 설치 QR 코드"><small>폰 카메라로 촬영하세요</small></div>' +
+      '<div class="dl-inst-txt"><h3>나비웹 안드로이드 앱 <span>테스트 버전</span></h3>' +
+      '<p>나비웹을 앱처럼 쓸 수 있습니다. 안드로이드 폰으로 왼쪽 QR 코드를 촬영하면 설치 화면으로 연결됩니다. 현재는 테스트 중인 버전이며, 아이폰은 지원하지 않습니다.</p>' +
+      '<ol><li>안드로이드 폰의 카메라(또는 QR 앱)로 QR 코드를 촬영하고, 나타난 링크를 엽니다.</li>' +
+      '<li>구글(Gmail) 계정으로 로그인하고 <b>초대 수락</b>(Accept invitation)을 누릅니다.</li>' +
+      '<li>안내에 따라 <b>나비웹 앱을 다운로드</b>합니다. 처음에는 \"알 수 없는 앱 설치 허용\"이 필요할 수 있습니다.</li>' +
+      '<li>앱을 열고 <b>알림 허용</b>을 눌러 주세요.</li></ol>' +
+      '<p class="dl-inst-sub">폰에서 이 페이지를 보고 있다면 <a href="' + APP_URL + '" target="_blank" rel="noopener">여기를 눌러 바로 설치</a>하세요. 오류나 불편한 점은 알려 주시면 반영하겠습니다.</p></div></section>';
+  }
+
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function wd(d) { var p = d.split('-'); return WD[new Date(+p[0], +p[1] - 1, +p[2]).getDay()]; }
   function mlabel(m) { return m.slice(0, 4) + '년 ' + (+m.slice(5)) + '월'; }
@@ -64,10 +78,10 @@
   function render() {
     if (!root) return;
     var d = S.data;
-    if (!d) { root.innerHTML = '<div class="dl-note" role="status">불러오는 중…</div>'; return; }
+    if (!d) { root.innerHTML = installHtml() + '<div class="dl-note" role="status">불러오는 중…</div>'; return; }
     var os = opts(), cur = os.filter(function (o) { return o[0] === S.month; })[0] || os[0];
     var repoBtns = [['hondi', 'hondi'], ['mail', 'mail'], ['all', '전체 저장소']].map(function (r) { return '<button type="button" class="dl-chip" data-dl-repo="' + r[0] + '" aria-pressed="' + (S.repo === r[0]) + '">' + r[1] + '</button>'; }).join('');
-    root.innerHTML =
+    root.innerHTML = installHtml() +
       '<div class="dl-head"><h2>개발 현황</h2><p>Openhash-Gopang 저장소의 일자별 진행 내역 — hondi 저장소 중심 · 자동 갱신 ' + esc((d.updated || '').slice(0, 16).replace('T', ' ')) + '</p></div>' +
       '<div class="dl-bar"><label class="dl-search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><input type="search" id="dl-q" value="' + esc(S.q) + '" placeholder="작업 내용 검색" aria-label="개발 현황 검색" autocomplete="off"></label>' +
       '<div class="dl-dd"><button type="button" class="dl-dd-btn" id="dl-dd-btn" aria-haspopup="listbox" aria-expanded="' + S.open + '" aria-label="기간 선택"><span>' + esc(cur[1]) + '</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
