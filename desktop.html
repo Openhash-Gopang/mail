@@ -100,6 +100,8 @@ window.addEventListener('load', () => {
      성능이 우수한 오픈소스로 적용"). 공식 CDN(jsdelivr) 안내를 그대로
      따름. -->
 <script src="orgtree.js"></script>
+<link rel="stylesheet" href="devlog.css?v=20261117a">
+<script src="devlog.js?v=20261117a"></script>
 <script src="case-core.js?v=20261101b"></script>
 <script src="case-invite.js?v=20261101d"></script>
 <script src="case-store.js?v=20261101b"></script>
@@ -1458,6 +1460,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button id="tab-btn-feedback" class="nav-btn" data-label="기능 개선 제안" onclick="_switchTab('feedback')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 8v4M12 15h.01"/></svg>
         기능 개선 제안</button>
       <button id="tab-btn-guide" class="nav-btn" data-label="사용법" onclick="_switchTab('guide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>사용법</button>
+      <button id="tab-btn-devlog" class="nav-btn" data-label="개발 현황" onclick="_switchTab('devlog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 2 5-6"/></svg>개발 현황</button>
       <button id="tab-btn-settings" class="nav-btn" data-label="설정" onclick="_switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.53 4.81 L9.92 2.22 L14.08 2.22 L14.47 4.81 A7.6 7.6 0 0 1 16.99 6.26 L19.43 5.31 L21.51 8.91 L19.46 10.55 A7.6 7.6 0 0 1 19.46 13.45 L21.51 15.09 L19.43 18.69 L16.99 17.74 A7.6 7.6 0 0 1 14.47 19.19 L14.08 21.78 L9.92 21.78 L9.53 19.19 A7.6 7.6 0 0 1 7.01 17.74 L4.57 18.69 L2.49 15.09 L4.54 13.45 A7.6 7.6 0 0 1 4.54 10.55 L2.49 8.91 L4.57 5.31 L7.01 6.26 A7.6 7.6 0 0 1 9.53 4.81 Z"/><circle cx="12" cy="12" r="3.1"/></svg>설정</button>
     </div>
   </nav>
@@ -2155,6 +2158,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <ol class="yt-list" id="yt-grid"></ol>
     </section>
   </div>
+  <div id="tab-devlog" class="tab-panel"></div>
   <div id="tab-feedback" class="tab-panel"><iframe id="feedback-frame" title="기능 개선 제안" allow="clipboard-write"></iframe></div>
   <div id="tab-caseprov" class="tab-panel cs-panel"></div>
   <div id="tab-casecons" class="tab-panel cs-panel"></div>
@@ -5320,6 +5324,7 @@ function _switchTab(name) {
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'youtube') _ytRender();
+  if (name === 'devlog' && window.DevLog) DevLog.show();   // 개발 현황 — devlog.js
   if (name === 'settings') _settingsInit();
   if (name !== 'settings') _profLeave();
   if (name === 'whitepaper') _wpSwitch(_subGet('wp') || (document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi'));
