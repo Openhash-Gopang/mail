@@ -1098,15 +1098,18 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 /* 서류·메일 하위 메뉴는 위쪽 탭으로 옮겼다(2026-11-06): 왼쪽 메뉴의 펼침 단추와 하위 항목, 메일 화면 안의 옛 탭 줄은 숨긴다 */
 #nav-group-docs .nav-toggle,#nav-group-mail .nav-toggle,#nav-group-docs .nav-sub,#nav-group-mail .nav-sub,#tab-mail .mail-subnav{display:none!important}
 #tab-compose:not([data-mode=doc]):not([data-mode=campaign]) > .pg-bar{display:none}
-/* 2026-11-18 — 새 캠페인: 메일 위쪽 탭 아래에 입력 필드를 맨 위로 두고, 대화(캠페인 설계 과정)는 그 아래에 쌓는다 */
+/* 2026-11-18 — 캠페인 페이지: 위쪽 '캠페인' 탭 아래에 하위 탭(새 캠페인 | 내 캠페인). 새 캠페인은 입력 필드를 맨 위에 두고 대화는 그 아래에 쌓는다 */
+.camp-subbar{margin:0 0 14px}.camp-subbar .cs-modes{margin:0}.camp-subbar .cs-mode{font-size:14px}
+#tab-compose .camp-subbar{display:none}
+#tab-compose[data-mode="campaign"] .camp-subbar{display:block;order:1}
 #tab-compose.active[data-mode="campaign"]{display:flex;flex-direction:column}
 #tab-compose[data-mode="campaign"] > .pg-bar{order:0}
-#tab-compose[data-mode="campaign"] .chat-landing{order:1;padding-top:8px}
+#tab-compose[data-mode="campaign"] .chat-landing{order:2;padding-top:8px}
 #tab-compose[data-mode="campaign"] .chat-landing-title{font-size:24px;margin-bottom:14px}
-#tab-compose[data-mode="campaign"] .chat-composer{order:2;position:static;padding-bottom:10px}
-#tab-compose[data-mode="campaign"] .chat-thread-header{order:3}
-#tab-compose[data-mode="campaign"] .chat-thread{order:4}
-#tab-compose[data-mode="campaign"] #cmp-loading{order:5}
+#tab-compose[data-mode="campaign"] .chat-composer{order:3;position:static;padding-bottom:10px}
+#tab-compose[data-mode="campaign"] .chat-thread-header{order:4}
+#tab-compose[data-mode="campaign"] .chat-thread{order:5}
+#tab-compose[data-mode="campaign"] #cmp-loading{order:6}
 
 .cs-modes{display:flex;gap:4px;border-bottom:1px solid var(--bdr);margin:-6px 0 16px}
 .cs-mode{border:0;background:transparent;padding:9px 16px;font-size:15px;font-weight:700;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;font-family:inherit}
@@ -1496,6 +1499,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-compose" class="tab-panel active" data-mode="default">
     <div class="pg-bar" data-pgbar="doc"></div>
+    <div class="camp-subbar" data-campbar></div>
     <div class="chat-landing" id="cmp-landing">
       <div class="chat-landing-title">무엇을 도와드릴까요?</div>
       <div class="chat-landing-sub">누구에게 무엇을 보낼지 말씀해 주세요. 발송 전에 반드시 확인받습니다.</div>
@@ -1699,6 +1703,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-campaigns" class="tab-panel">
     <div class="pg-bar" data-pgbar="mail"></div>
+    <div class="camp-subbar" data-campbar></div>
     <div class="card" id="camp-list-card">
       <h2>내 캠페인</h2>
       <div class="sub">캠페인을 제목으로 검색하고, 항목을 눌러 상세를 확인합니다.</div>
@@ -7631,22 +7636,33 @@ function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, 
 // ── 서류·메일 화면 위쪽 탭(2026-11-06) — 왼쪽 메뉴의 하위 메뉴를 옮겨 왔다 ──
 const _PG_TABS = {
   doc: [['doc', '서류 작성'], ['docdrafts', 'Draft'], ['docdone', '작성한 서류'], ['myforms', '내 서류함']],
-  mail: [['quicksend', '빠른 발송'], ['campaigns', '내 캠페인'], ['newcamp', '새 캠페인'], ['contacts', '주소록'], ['m:compose', '편지쓰기'], ['m:drafts', 'Draft'], ['m:sent', '보낸메일함'], ['m:inbox', '받은메일함'], ['m:tags', '태그별 보관함']],
+  mail: [['quicksend', '빠른 발송'], ['campaigns', '캠페인'], ['contacts', '주소록'], ['m:compose', '편지쓰기'], ['m:drafts', 'Draft'], ['m:sent', '보낸메일함'], ['m:inbox', '받은메일함'], ['m:tags', '태그별 보관함']],
 };
 function _pgActive(kind) {
   const on = document.querySelector('.tab-panel.active'); if (!on) return '';
-  if (on.id === 'tab-compose') return kind === 'doc' && _cmpMode === 'doc' ? 'doc' : kind === 'mail' && _cmpMode === 'campaign' ? 'newcamp' : '';
+  if (on.id === 'tab-compose') return kind === 'doc' && _cmpMode === 'doc' ? 'doc' : kind === 'mail' && _cmpMode === 'campaign' ? 'campaigns' : '';
   if (on.id === 'tab-mail') { const a = document.querySelector('.mail-subnav button.active'); return kind === 'mail' ? 'm:' + (a ? a.id.replace('mail-subnav-', '') : 'compose') : ''; }
   return on.id.replace('tab-', '');
 }
 function _pgGo(key) {
   if (key.indexOf('m:') === 0) return _navMailSub(key.slice(2));
-  if (key === 'campaigns') return _campNavClick();
-  if (key === 'newcamp') return _switchTab('compose');   // 새 캠페인 — 입력창(compose) 화면의 '메일 · 캠페인' 모드(/kmail/chat, K-Mail 캠페인 SP). 이미 캠페인을 쓰는 중이면 그대로 둔다
+  if (key === 'campaigns') return _campSubGo('new');   // 위쪽 '캠페인' 탭 = 캠페인 페이지의 기본 화면 '새 캠페인'
   if (key === 'contacts') return _ctNavClick();
   _switchTab(key);
 }
+// ── 캠페인 페이지 하위 탭(2026-11-18, 주피터 지시): 새 캠페인(기본) | 내 캠페인 ──
+//  새 캠페인 = 입력창(compose) 화면의 '메일 · 캠페인' 모드(/kmail/chat, K-Mail 캠페인 SP — 입력 필드가 맨 위), 내 캠페인 = 지난 캠페인 목록(tab-campaigns).
+function _campSubFill() {
+  const compose = document.getElementById('tab-compose');
+  const act = compose && compose.classList.contains('active') && _cmpMode === 'campaign' ? 'new' : 'mine';
+  document.querySelectorAll('[data-campbar]').forEach(box => {
+    box.innerHTML = '<div class="cs-modes cs-sub" role="tablist" aria-label="' + _i18nEsc(_T('캠페인')) + '">' + [['new', '새 캠페인'], ['mine', '내 캠페인']].map(x =>
+      '<button type="button" role="tab" class="cs-mode' + (x[0] === act ? ' on' : '') + '" aria-selected="' + (x[0] === act) + '" onclick="_campSubGo(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) + '</button>').join('') + '</div>';
+  });
+}
+function _campSubGo(k) { if (k === 'new') _switchTab('compose'); else _campNavClick(); }
 function _pgTabsFill() {
+  _campSubFill();
   const srcBadge = document.querySelector('#nav-sub-mail .unread-badge[data-for="inbox"]');
   const bn = srcBadge && !srcBadge.hidden ? srcBadge.textContent : '';
   document.querySelectorAll('[data-pgbar]').forEach(box => {
