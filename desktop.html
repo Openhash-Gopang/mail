@@ -5307,6 +5307,15 @@ async function _navDocClick() {
     if (ok) { _scrDocForget(); _scrHashSync(); _switchTab('doc'); }
   } finally { _navDocBusy = false; }
 }
+// 나비 로고(navi-home.js 의 떠 있는 원형 로고)를 누르면 PC 화면은 'navi-home-desktop' 을 먼저 보낸다. 이 페이지가 받아서 처리하지 않으면 로고 쪽이 페이지를 새로고침하고,
+// 새로고침 복원이 마지막 화면(메일 등)을 그대로 다시 열었다 — 로고는 나비웹 메인(홈)으로 가야 한다(2026-11-18, 주피터 지시).
+window.addEventListener('navi-home-desktop', function (ev) {
+  ev.preventDefault();   // 새로고침하지 않고 이 페이지가 직접 홈으로 간다
+  try {
+    _switchTab('home');   // 서류 작성 중이면 Draft 저장 후 새 입력 필드로(그 경로는 비동기로 기본 모드까지 돌려놓는다)
+    if (_cmpMode !== 'default' && !_docLocked()) _cmpSetMode('default', { force: true });   // 메일 화면에서 오면 직전 모드(캠페인·편지 등)가 남아 있을 수 있다
+  } catch (e) { try { location.assign(location.pathname); } catch (x) {} }
+});
 function _switchTab(name) {
   if (!_scrRestoring) _scrUserNav = true;   // 사용자가 직접 화면을 옮겼다 — 늦게 도착한 새로 고침 복원이 이를 덮어쓰지 않게
   if (name === 'whitepaper') { _subSet('xk', _subGet('wp') === 'openhash' ? 'oh' : 'wp'); name = 'xokorea'; }   // Whitepaper 는 XO Korea 화면의 탭으로 옮겼다
