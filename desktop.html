@@ -240,7 +240,9 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .doc-agent input{flex:1 1 200px}
 /* 도우미 지시창 모드: 메인 입력창이 도우미에게 시키는 칸이 되므로 이 줄은 연결 상태만 보인다 */
 /* 서류를 작성하는 동안(2026-11-04): 입력창은 서류 이름만 보여 주고 잠근다 — 글자를 바꾸면 작성 중인 서류가 바뀌어 버리기 때문. 다른 말은 나비웹 대화창이, 새 서류는 "Draft 저장 후 새 서류"가 맡는다. */
-#tab-compose[data-docwrite="1"] #cmp-input{cursor:not-allowed;font-weight:600}
+#tab-compose[data-docwrite="1"] #cmp-input{font-weight:600}
+/* 2026-11-18: 금지 커서는 입력창이 실제로 읽기 전용일 때만 — 잠금 표시가 남아 있어도 입력할 수 있으면 일반 커서 */
+#tab-compose[data-docwrite="1"] #cmp-input:read-only{cursor:not-allowed}
 #tab-compose[data-docwrite="1"] #cmp-ex-btn,#tab-compose[data-docwrite="1"] #cmp-mic-btn{opacity:.4;pointer-events:none}
 .doc-agent .da-new{display:none}
 #tab-compose[data-docwrite="1"] .doc-agent .da-new{display:inline-flex}
