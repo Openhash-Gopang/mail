@@ -3151,12 +3151,13 @@ function _docLockOn() { _docHost.writing = true; _docLockSync(); }
 function _docLockOff() { if (!_docHost.writing) return; _docHost.writing = false; _docLockSync(); }
 const _DOC_LOCK_MSG = '서류를 작성하는 동안에는 서류 이름을 바꿀 수 없습니다. 다른 서류는 “Draft 저장 후 새 서류”로 시작해 주세요.';
 /** 작성 중인 서류를 Draft 로 저장하고(작성본 Word 파일 포함) 잠금을 풀어 새 서류를 시작한다. 저장하지 못하면 서류를 그대로 둔다. */
-async function _docNewAfterSave(btn, reason) {
+async function _docNewAfterSave(btn, reason, opts) {
   if (!_docLocked()) return false;
+  const noSave = !!(opts && opts.noSave);   // 서류에 입력한 것이 없을 때(왼쪽 메뉴 서류) — Draft 로 저장하지 않고 초기 화면으로만 돌아간다
   if (btn) btn.disabled = true;
   try {
-    if (!_drAutoSave('new-doc')) { _drToast('Draft 를 저장하지 못해 서류를 그대로 두었습니다. (PDV 연결 확인)'); return false; }
-    for (let i = 0; i < 40 && _dr.capture; i++) await new Promise(r => setTimeout(r, 100));   // 서류 페이지가 작성본을 보내 줄 때까지(최대 4초) 기다린 뒤 비운다
+    if (!noSave && !_drAutoSave('new-doc')) { _drToast('Draft 를 저장하지 못해 서류를 그대로 두었습니다. (PDV 연결 확인)'); return false; }
+    for (let i = 0; i < 40 && _dr.capture && !noSave; i++) await new Promise(r => setTimeout(r, 100));   // 서류 페이지가 작성본을 보내 줄 때까지(최대 4초) 기다린 뒤 비운다
     _docChatHandBack(reason || 'cancel');
     _docHost.confirmed = false; _docHost.writing = false; _docHost.title = '';
     const input = document.getElementById('cmp-input');
@@ -3165,7 +3166,7 @@ async function _docNewAfterSave(btn, reason) {
     _docHostPost({ type: 'navi-doc-input', text: '' });
     _docHelperSync(); _docLockSync();
     _cmpChat.draftId = null;   // 다음 서류는 새 Draft 로
-    _drToast('작성 중이던 서류를 Draft 로 저장했습니다. 새 서류를 입력하세요.');
+    _drToast(noSave ? '새 서류를 입력하세요.' : '작성 중이던 서류를 Draft 로 저장했습니다. 새 서류를 입력하세요.');
     try { input.focus(); } catch (e) {}
     return true;
   } finally { if (btn) btn.disabled = false; }
@@ -5271,14 +5272,23 @@ document.addEventListener('DOMContentLoaded', () => { _scrBoot(); });
 setInterval(() => { try { _drAutoSave('tick'); } catch (e) {} }, 4000);
 window.addEventListener('pagehide', () => { try { _drAutoSave('hide'); } catch (e) {} });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { _drAutoSave('hide'); } catch (e) {} } });
-// 서류를 작성하는 중에 왼쪽 메뉴의 서류 아이콘을 누르면 같은 서류를 다시 여는 대신(아무 일도 없어 보였다) "Draft 저장 후 새 서류"와 같이 동작한다 (2026-11-18, 주피터 지시).
-// 작성 중이 아니거나 저장하지 못하면 예전처럼 _switchTab('doc') 만 한다(저장 실패 시 _docNewAfterSave 가 안내를 띄우고 서류를 그대로 둔다).
-function _navDocClick() {
-  if (_docLocked() && document.getElementById('tab-compose').classList.contains('active')) {
-    _docNewAfterSave(null).then(ok => { if (ok) { _scrDocForget(); _scrHashSync(); _switchTab('doc'); } });
-    return;
-  }
-  _switchTab('doc');
+// 서류를 작성하는 중에 왼쪽 메뉴의 서류를 누르면(2026-11-18, 주피터 지시) 서류 초기 화면으로 돌아간다.
+//  · 서류에 입력한 것이 없으면(칸이 모두 empty·pdv 일 때) 저장 없이 초기 화면으로,
+//  · 무엇이든 입력했으면(칸 상태 user·ai) Draft 로 저장한 뒤 초기 화면으로.
+// 서류 쪽이 칸 상태를 알려 주지 못하면(v3 아님·응답 지연) 입력 여부를 알 수 없으니 잃지 않도록 입력이 있는 것으로 본다. Draft 저장에 실패하면 서류를 그대로 둔다.
+// 작성 중이 아니면 예전처럼 _switchTab('doc') 만 한다.
+let _navDocBusy = false;
+async function _navDocClick() {
+  if (!(_docLocked() && document.getElementById('tab-compose').classList.contains('active'))) { _switchTab('doc'); return; }
+  if (_navDocBusy) return;
+  _navDocBusy = true;
+  try {
+    const snap = await _docSnapshot();
+    const known = !!(snap && snap.ok && !snap.busy && Array.isArray(snap.fields));
+    const hasInput = !known || snap.fields.some(f => f && (f.state === 'user' || f.state === 'ai'));
+    const ok = await _docNewAfterSave(null, undefined, { noSave: !hasInput });
+    if (ok) { _scrDocForget(); _scrHashSync(); _switchTab('doc'); }
+  } finally { _navDocBusy = false; }
 }
 function _switchTab(name) {
   if (!_scrRestoring) _scrUserNav = true;   // 사용자가 직접 화면을 옮겼다 — 늦게 도착한 새로 고침 복원이 이를 덮어쓰지 않게
