@@ -24,7 +24,7 @@
   function modesHtml() {
     return '<div class="gd-modes" role="tablist" aria-label="사용법">' + TABS.map(function (t) {
       return '<button type="button" role="tab" class="gd-mode' + (S.mode === t[0] ? ' on' : '') + '" aria-selected="' + (S.mode === t[0]) + '" data-act="mode" data-m="' + t[0] + '">' + t[1] + '</button>';
-    }).join('') + tempHtml() + '</div>';
+    }).join('') + (S.mode === 'manual' ? '' : tempHtml()) + '</div>';   // 매뉴얼 탭에서는 지식 온도를 매뉴얼 머리줄 가운데에 보여 준다
   }
   function tempHtml() {
     var t = tempNow(), cns = t >= CNS_AT;

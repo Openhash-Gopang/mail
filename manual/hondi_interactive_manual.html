@@ -38,7 +38,11 @@ a { color: inherit; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 20px 110px; }
 
 /* ── 장 목록 머리말 + 세그먼트 버튼 ── */
-.sec-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.sec-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin-bottom: 14px; }
+.sec-head .seg { justify-self: end; }
+.sec-head .temp-chip { font-size: 13px; color: var(--on-surface-variant); white-space: nowrap; text-align: center; }
+.sec-head .temp-chip b { color: var(--primary); }
+@media (max-width: 640px) { .sec-head { grid-template-columns: 1fr; } .sec-head .temp-chip, .sec-head .seg { justify-self: start; text-align: left; } }
 .sec-head h2 { font-size: 16px; font-weight: 700; color: var(--navy); flex: 1 1 160px; }
 .seg { display: flex; border: 1px solid var(--outline); border-radius: var(--radius-full); overflow: hidden; background: var(--surface); }
 .seg button { height: 34px; padding: 0 16px; border: 0; border-left: 1px solid var(--outline); background: var(--surface); color: var(--on-surface-variant); font: 600 12px/1 inherit; font-family: inherit; cursor: pointer; }
@@ -305,7 +309,7 @@ a { color: inherit; }
 
 <div class="wrap">
   <div class="cns-banner" id="cnsBanner" role="status"><span id="cnsBannerText"></span><button type="button" id="cnsBannerBtn">인증서 발급받기</button></div>
-  <div class="sec-head"><h2 id="gridTitle">초급</h2><div class="seg" id="tierSeg" role="group" aria-label="단계 선택"></div></div>
+  <div class="sec-head"><h2 id="gridTitle">초급</h2><span class="temp-chip" id="tempChip"></span><div class="seg" id="tierSeg" role="group" aria-label="단계 선택"></div></div>
   <div class="ch-content" id="chContent"></div>
   <div class="ch-scrim" id="chScrim"></div>
   <aside class="ch-panel" id="chPanel" aria-label="장 목록"><div class="cp-head"><span id="cpTitle"></span><button type="button" class="cp-x" id="cpClose" aria-label="장 목록 닫기">✕</button></div><div class="ch-cards" id="chTabs"></div></aside>
@@ -418,6 +422,7 @@ window.addEventListener('message', function (e) {
 
 var TIER_COLORS = {"beginner": "#0c6cc3", "intermediate": "#00796b", "advanced": "#c25e00"};
 function renderHeader() {
+  var tc = DOC.getElementById('tempChip'); if (tc) tc.innerHTML = '🌡 나비 지식 온도 <b>' + naviTemp().toFixed(1) + '°</b>';
   renderCnsBanner(naviTemp());   // 나비 지식 온도(36.5→100)는 계속 계산·저장하고, 95° 이상이면 인증서 배너를 띄운다
 }
 
