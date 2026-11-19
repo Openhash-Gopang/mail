@@ -5309,6 +5309,10 @@ function _scrDocSave() {
     sessionStorage.setItem(_SCR_DOC, JSON.stringify({ site: _docHost.id || '', title, text: t, confirmed, t: Date.now() }));
     // 홈 화면의 '서류 작성' 목록·예시 버튼으로 연 서류는 _switchTab 을 거치지 않아 화면 이름이 기록되지 않았다 → 새로 고침하면 홈으로 갔다.
     // 서류 모드인 동안은 여기서도 화면 이름을 'doc' 으로 기록한다. 같은 내용을 localStorage 에도 남겨 탭 복원·새 탭에서도 24시간 이어 열 수 있게 한다.
+    // 서류 화면이 실제로 보이는 동안에만 화면 이름을 'doc' 으로 기록한다. 서류 모드는 다른 메뉴로 옮겨 가도 메모리에 남아 있어,
+    // 입력·자동 저장 때마다 이 함수가 불리면 설정·메일 등 다른 화면에서 새로 고침해도 서류 작성 화면으로 돌아가던 오류가 있었다.
+    const _tc = document.getElementById('tab-compose');
+    if (!_tc || !_tc.classList.contains('active')) return;
     sessionStorage.setItem(_SCR_KEY, JSON.stringify({ n: 'doc', sub: '', t: Date.now() }));
     _scrHashSync();
   } catch (e) {}

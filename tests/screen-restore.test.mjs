@@ -27,3 +27,10 @@ test('새로 고침만 복원 · 서류는 주소(#doc/<Draft 번호>)에 담고
   assert.match(h, /if \(mode !== 'doc'\) \{ _scrDocForget\(\); _scrHashSync\(\); \}/);
   assert.match(h, /_drCall\('get', \{ id: want \}/);   // #doc/<id> 는 Draft 에서 같은 서류를 연다
 });
+
+test('서류 모드가 메모리에 남아 있어도, 서류 화면이 안 보이면 화면 이름을 doc 으로 덮어쓰지 않는다', () => {
+  const i = h.indexOf('function _scrDocSave()'), j = h.indexOf('function _scrHashSync()');
+  const body = h.slice(i, j);
+  assert.match(body, /getElementById\('tab-compose'\)[\s\S]*classList\.contains\('active'\)\) return;/);
+  assert.ok(body.indexOf("classList.contains('active')) return;") < body.indexOf("setItem(_SCR_KEY"), '활성 확인이 화면 이름 기록보다 앞서야 한다');
+});
