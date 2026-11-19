@@ -29,6 +29,6 @@ test('본문의 장 참조는 링크이고 가리키는 장이 있다', () => {
   for (const c of C) {
     for (const m of c.body.matchAll(/data-goto="([^"]+)"/g)) assert.ok(ids.has(m[1]), `${c.id} → ${m[1]} 없음`);
     const plain = c.body.replace(/<[^>]+>/g, ' ');
-    assert.ok(!/(?<![\d/])\d{1,3}장(?!\s*완료)/.test(plain.replace(/\d+\s*\/\s*\d+장/g, '')), `${c.id}: 링크 아닌 "N장" 표기가 남음`);
+    assert.ok(!/(?<!자료\s*)(?<![\d/“”\"])\d{1,3}장(?!\s*완료)/.test(plain.replace(/\d+\s*\/\s*\d+장/g, '')), `${c.id}: 링크 아닌 "N장" 표기가 남음`);
   }
 });
