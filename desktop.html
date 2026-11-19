@@ -1161,10 +1161,10 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .gd-n:hover:not(:disabled){border-color:var(--pri);color:var(--pri)}
 .gd-n.done{background:var(--pri);border-color:var(--pri);color:#fff}.gd-n.cur{border:2px solid var(--pri);color:var(--pri)}.gd-n.done.cur{color:#fff;box-shadow:0 0 0 2px #fff inset}
 .gd-n:disabled{color:#aab;cursor:not-allowed;border-color:#e1e4e9}
-.gd-modes{display:flex;gap:6px;margin:0 0 10px;border-bottom:1px solid var(--bdr)}
-.gd-mode{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:8px 14px;font:inherit;font-weight:700;color:var(--sub);cursor:pointer}
+.gd-modes{display:flex;gap:6px;margin:0 0 10px}   /* 탭은 맨 위 줄(기능 개선 제안과 같은 높이)로 올린다 */
+.gd-mode{position:relative;z-index:31;transform:translateY(calc(-1 * (var(--ur,48px) / 2 + 39px)));background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:8px 14px;font:inherit;font-weight:700;color:var(--sub);cursor:pointer}
 .gd-mode:hover{color:var(--pri)}.gd-mode.on{color:var(--pri);border-bottom-color:var(--pri)}
-.gd-temp{margin-left:auto;align-self:center;font-size:13px;color:var(--sub);white-space:nowrap;padding-right:4px}.gd-temp b{color:var(--pri)}
+.gd-temp{margin-left:auto;align-self:center;font-size:13px;color:var(--sub);white-space:nowrap;padding-right:4px;position:relative;top:-8px}.gd-temp b{color:var(--pri)}
 .gd-cns{margin-left:6px;border:0;background:#b45309;color:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-weight:700;cursor:pointer}
 .gd-manual{display:block;width:100%;border-radius:12px;background:#eef1f6}
 .gd-manual-wait{padding:48px 16px;text-align:center;color:#5b6472;font-size:14px}

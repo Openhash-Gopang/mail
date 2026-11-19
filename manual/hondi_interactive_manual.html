@@ -39,7 +39,7 @@ a { color: inherit; }
 
 /* ── 장 목록 머리말 + 세그먼트 버튼 ── */
 .sec-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
-.sec-head h2 { font-size: 19px; font-weight: 700; color: var(--navy); flex: 1 1 160px; }
+.sec-head h2 { font-size: 16px; font-weight: 700; color: var(--navy); flex: 1 1 160px; }
 .seg { display: flex; border: 1px solid var(--outline); border-radius: var(--radius-full); overflow: hidden; background: var(--surface); }
 .seg button { height: 40px; padding: 0 20px; border: 0; border-left: 1px solid var(--outline); background: var(--surface); color: var(--on-surface-variant); font: 600 13.5px/1 inherit; font-family: inherit; cursor: pointer; }
 .seg button:first-child { border-left: 0; }
@@ -189,13 +189,13 @@ a { color: inherit; }
 
 /* ── FAB(다음 장) ── */
 .fab {
-  position: fixed; bottom: 26px; right: 26px; height: 56px; padding: 0 24px 0 20px; border-radius: 16px;
-  background: var(--primary); color: #fff; border: none; cursor: pointer; font: 700 15px inherit; font-family: inherit;
-  display: flex; align-items: center; gap: 12px; box-shadow: var(--el-3);
+  position: fixed; bottom: 26px; right: 88px; height: 44px; padding: 0 16px 0 14px; border-radius: 14px;
+  background: var(--primary); color: #fff; border: none; cursor: pointer; font: 700 13.5px inherit; font-family: inherit;
+  display: flex; align-items: center; gap: 8px; box-shadow: var(--el-3);
   transition: box-shadow 0.15s, transform 0.15s;
 }
 .fab:hover { box-shadow: var(--el-4); transform: translateY(-2px); }
-.fab svg { width: 24px; height: 24px; }
+.fab svg { width: 20px; height: 20px; }
 
 /* ── K-정부 챕터 전용 UI (2026-08-29 신설) ── */
 .kgov-app { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
@@ -306,7 +306,6 @@ a { color: inherit; }
 <div class="wrap">
   <div class="cns-banner" id="cnsBanner" role="status"><span id="cnsBannerText"></span><button type="button" id="cnsBannerBtn">인증서 발급받기</button></div>
   <div class="sec-head"><h2 id="gridTitle">초급</h2><div class="seg" id="tierSeg" role="group" aria-label="단계 선택"></div></div>
-  <div class="tier-prog" id="tierProg"><div class="tp-bar" role="progressbar" aria-label="단계 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="tpFill"></i></div><div class="tp-sum" id="tpSum"></div></div>
   <div class="ch-content" id="chContent"></div>
   <div class="ch-scrim" id="chScrim"></div>
   <aside class="ch-panel" id="chPanel" aria-label="장 목록"><div class="cp-head"><span id="cpTitle"></span><button type="button" class="cp-x" id="cpClose" aria-label="장 목록 닫기">✕</button></div><div class="ch-cards" id="chTabs"></div></aside>
@@ -425,8 +424,8 @@ function renderHeader() {
 var panelOpen = false, lastByTier = {};
 function setPanel(o) {
   panelOpen = !!o;
-  var pr = DOC.getElementById('tierProg'), wp = DOC.getElementById('chPanel').parentNode;   // 머리말·진행 막대는 가리지 않고 그 아래에서만 연다
-  if (pr && wp) wp.style.setProperty('--cp-top', (pr.offsetTop + pr.offsetHeight + 6) + 'px');
+  var th = DOC.getElementById('gridTitle'), wp = DOC.getElementById('chPanel').parentNode;   // 머리말은 가리지 않고 그 아래에서만 연다
+  if (th && wp) wp.style.setProperty('--cp-top', (th.parentNode.offsetTop + th.parentNode.offsetHeight + 6) + 'px');
   ['chPanel', 'chScrim'].forEach(function (id) { var e = DOC.getElementById(id); if (e) e.classList.toggle('open', panelOpen); });
   renderTierTabs();
 }
@@ -453,9 +452,6 @@ function renderTierTabs() {
   });
   var n = chaptersByTier(currentTier).length;
   var dn = tierCompletedCount(currentTier), pct = n ? Math.round(dn / n * 100) : 0;
-  DOC.getElementById('tpFill').style.width = pct + '%';
-  DOC.getElementById('tpFill').parentNode.setAttribute('aria-valuenow', pct);
-  DOC.getElementById('tpSum').textContent = TIER_LABELS[currentTier] + ' 진행 ' + dn + ' / ' + n + '장 · ' + pct + '%';
   DOC.getElementById('cpTitle').textContent = TIER_LABELS[currentTier] + ' · ' + dn + '/' + n + '장 완료';
   DOC.getElementById('gridTitle').textContent = TIER_LABELS[currentTier] + ' · ' + tierCompletedCount(currentTier) + '/' + n + '장 완료 · GDC ' + TIER_REWARDS[currentTier].toLocaleString() + 'T';
 }
