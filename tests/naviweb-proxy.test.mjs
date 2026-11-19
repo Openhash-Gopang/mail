@@ -86,8 +86,8 @@ test('desktop.html 에 나비 숫자 코드 칩이 있고 전화번호 변환이
   assert.equal(f('064-980-1234').digits, '0649801234');
   assert.ok(f('02-123-4567').err); // 모듈 규칙: 지역번호+가입자번호 9~10자리
   assert.equal(f('02-1234-5678').digits, '0212345678');
-  assert.equal(f('010-1234-5678').digits, '0012345678');
-  assert.equal(f('+82 10 1234 5678').digits, '0012345678');
+  assert.equal(f('010-1234-5678').digits, '1012345678');   // 2026-11-15 규칙: 010에서 앞의 0만 뺀 "10"+8자리
+  assert.equal(f('+82 10 1234 5678').digits, '1012345678');
   assert.ok(f('099-123-4567').err);
   assert.ok(f('064-980').err);
   assert.ok(f('abc').err);
