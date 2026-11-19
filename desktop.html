@@ -3568,7 +3568,7 @@ document.addEventListener('change', (e) => {
 function _guideShow(on) { const d = document.getElementById('cmp-guide-doc'); if (d) d.hidden = !on; }
 function _guideReset() { _guideShow(false); const ta = document.getElementById('cmp-guide-text'), v = document.getElementById('cmp-guide-view'), eb = document.getElementById('cmp-guide-edit'); if (ta) ta.hidden = true; if (v) v.hidden = false; if (eb) eb.setAttribute('aria-pressed', 'false'); }
 // ── 나비 숫자 코드(2026-11-03): 전화번호 → 10칸 코드. hondi-digit-code.js phoneToDigits 와 같은 규칙 ──
-// 휴대폰 010-XXXX-XXXX → '00'+8자리 / 유선 → 앞의 0을 뺀 지역번호+가입자번호(9~10자리), 9자리면 앞에 '0'을 채운다.
+// 휴대폰 010-XXXX-XXXX → '10'+8자리(010에서 앞의 0만 뺌, 2026-11-15 규칙 — 옛 '00'+8자리는 읽기만 지원) / 유선 → 앞의 0을 뺀 지역번호+가입자번호(9~10자리), 9자리면 앞에 '0'을 채운다.
 const _NC_AREA = ['2','31','32','33','41','42','43','44','51','52','53','54','55','61','62','63','64'];
 function _ncPhoneToDigits(raw) {
   let t = String(raw || '').replace(/[\s\-().]/g, '');
@@ -3578,7 +3578,7 @@ function _ncPhoneToDigits(raw) {
   if (/^010/.test(t)) {
     if (t.length < 11) return { err: '휴대폰 번호가 짧습니다(010 + 8자리).' };
     if (t.length > 11) return { err: '휴대폰 번호가 깁니다(010 + 8자리).' };
-    return { digits: '00' + t.slice(3), kind: '휴대폰' };
+    return { digits: '10' + t.slice(3), kind: '휴대폰' };
   }
   if (t[0] !== '0') return { err: '지역번호(예: 064)부터 입력해 주세요.' };
   const r = t.slice(1);
@@ -3619,8 +3619,8 @@ function _ncFlow(text) {
     const body = stripped.slice(1), mob = /^010/.test(stripped);
     const lines = mob
       ? ['번호 확인: <b>' + escHtml(raw.trim()) + '</b> — 휴대폰(010)',
-         '010을 떼고 가입자번호 8자리만 남깁니다: <code>' + escHtml(stripped.slice(3)) + '</code>',
-         '앞에 00을 붙여 10칸을 맞춥니다: <code>' + r.digits + '</code>']
+         '맨 앞의 0만 떼고 “10”과 가입자번호 8자리를 잇습니다: <code>' + escHtml(stripped.slice(3)) + '</code>',
+         '10칸이 됩니다: <code>' + r.digits + '</code>']
       : ['번호 확인: <b>' + escHtml(raw.trim()) + '</b> — ' + escHtml(r.kind) + ' 번호',
          '앞의 0을 뺍니다: <code>' + escHtml(body) + '</code> (' + body.length + '자리)',
          body.length === 9 ? '10칸에 모자라 앞에 0을 채웁니다: <code>' + r.digits + '</code>' : '이미 10자리라 그대로 씁니다: <code>' + r.digits + '</code>'];
