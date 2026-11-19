@@ -408,6 +408,17 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-mode-chip button{border:0;background:none;color:inherit;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;opacity:.7;padding:0}
 .cmp-mode-chip button:hover{opacity:1;background:rgba(0,0,0,.07)}
 #tab-compose[data-mode="campaign"] #cmp-mail-btn,#tab-compose[data-mode="letter"] #cmp-mail-btn{background:var(--pri-bg);color:var(--pri)}
+/* 폰으로 촬영한 자료(2026-11-20) — 같은 계정의 폰이 PC 의 눈이 된다. 체크한 사진만 서류 쪽(AI)에 넘긴다 */
+#doc-phone-panel{display:none;margin:8px 6px 0;padding:10px 12px;border:1px solid #bfe3c9;background:#f0faf3;border-radius:12px;font-size:13px;color:#14532d}
+#doc-phone-panel.on{display:block}#doc-phone-panel .pp-h{font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#doc-phone-panel .pp-r{display:flex;align-items:center;gap:8px;margin:5px 0}#doc-phone-panel .pp-r img{width:44px;height:44px;object-fit:cover;border-radius:6px;flex:none}
+#doc-phone-panel .pp-r input[type=text]{flex:1;min-width:0;border:1px solid var(--bdr);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px}
+#doc-phone-panel button{font:inherit;font-size:13px;border-radius:8px;border:1px solid #188038;background:#fff;color:#188038;padding:5px 10px;cursor:pointer}
+#doc-phone-panel button.pp-go{background:#188038;color:#fff}#doc-phone-panel .pp-x{border:none;background:transparent;color:var(--hint);font-size:16px;padding:0 4px}
+#doc-phone-panel .pp-n{font-size:12px;opacity:.85;margin-top:6px}
+#doc-attach-pop{position:fixed;z-index:9999;background:#fff;border:1px solid var(--bdr);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:6px;min-width:190px}
+#doc-attach-pop button{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;padding:10px 12px;font:inherit;font-size:14px;text-align:left;cursor:pointer;border-radius:8px;color:var(--txt)}
+#doc-attach-pop button:hover{background:rgba(12,108,195,.08)}
 #doc-host-frame{display:none;width:100%;height:max(640px,calc(100vh - 230px));border:0;background:transparent;margin-top:8px}
 #tab-compose[data-mode="doc"].doc-live #doc-host-frame{display:block}
 /* 서류 페이지가 navi-doc-size 로 문서 높이를 알려 주면 iframe 이 그 높이로 늘어나 이중 스크롤이 없어진다(높이는 스크립트가 style 로 지정). 길어진 서류를 내려도 입력창은 위에 붙어 있다 */
@@ -2616,7 +2627,7 @@ async function _docAttach(d, src, origin) {
 // 편지 작성(AI) 첨부(+) 버튼: 카메라 / 내 컴퓨터 / 문서 작성
 function _cmpAttachMenu(ev) {
   ev.stopPropagation();
-  if (_cmpMode === 'doc') { document.getElementById('doc-host-file').click(); return; }
+  if (_cmpMode === 'doc') { _docAttachChoose(ev); return; }
   if (_cmpMode === 'verdict') { if (!document.getElementById('cmp-input').disabled) document.getElementById('cmp-vfile').click(); return; }   // 가상 판결: 글·이미지를 읽어 입력란에 넣는다
   const old = document.getElementById('cmp-attach-menu');
   if (old) { old.remove(); return; }
@@ -4294,6 +4305,86 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// ── 폰으로 촬영(2026-11-20) ──────────────────────────────────────────────
+// 같은 계정으로 로그인한 폰이 PC 의 눈이 된다. 폰 카메라는 폰에서 알림을 눌러야 켜진다.
+// 도착한 사진은 먼저 '후보'로 쌓이고, 이름을 확인해 체크한 것만 서류 쪽(AI)에 넘긴다 — 올리는 길은 '내 컴퓨터' 파일과 같다(navi-doc-template).
+// 사진 전달·암호화는 https://naviweb.kr/assets/capture-link.js (서버: /capture/*)
+let _phoneCap = null, _phoneItems = [];
+function _docAttachChoose(ev) {
+  const old = document.getElementById('doc-attach-pop'); if (old) { old.remove(); return; }
+  const m = document.createElement('div'); m.id = 'doc-attach-pop'; m.setAttribute('role', 'menu');
+  m.innerHTML = '<button type="button" role="menuitem" data-k="pc">내 컴퓨터 파일</button><button type="button" role="menuitem" data-k="phone">📱 ' + (_phoneCap ? '폰 촬영 끝내기' : '폰으로 촬영') + '</button>';
+  document.body.appendChild(m);
+  const r = ev.currentTarget.getBoundingClientRect();
+  m.style.left = Math.max(8, r.left) + 'px'; m.style.top = Math.max(8, r.top - m.offsetHeight - 8) + 'px';
+  const close = () => { m.remove(); document.removeEventListener('click', close); };
+  m.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); close(); if (b.dataset.k === 'pc') document.getElementById('doc-host-file').click(); else _phoneCapToggle(); });
+  setTimeout(() => document.addEventListener('click', close), 0);
+}
+function _phoneCapLoad() {
+  if (window.NaviCapture) return Promise.resolve();
+  return new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://naviweb.kr/assets/capture-link.js?v=20261120'; sc.onload = ok; sc.onerror = () => no(new Error('LOAD_FAILED')); document.head.appendChild(sc); });
+}
+function _phoneCapCtx() { const sel = document.getElementById('cmp-doc-site'); return (sel && sel.selectedOptions && sel.selectedOptions[0] ? sel.selectedOptions[0].text : '') + ' ' + (document.getElementById('cmp-input') ? document.getElementById('cmp-input').value : ''); }
+function _phoneCapPanel() {
+  let p = document.getElementById('doc-phone-panel');
+  if (!p) { p = document.createElement('div'); p.id = 'doc-phone-panel'; const row = document.getElementById('cmp-doc-row'); (row || document.getElementById('tab-compose')).insertAdjacentElement('afterend', p); }
+  return p;
+}
+function _phoneCapRender() {
+  const p = _phoneCapPanel(); p.textContent = '';
+  if (!_phoneCap && !_phoneItems.length) { p.classList.remove('on'); return; }
+  p.classList.add('on');
+  const h = document.createElement('div'); h.className = 'pp-h';
+  h.appendChild(document.createTextNode(_phoneItems.length ? '📱 폰에서 온 자료 ' + _phoneItems.length + '장 — 이름을 확인하고 쓸 것만 체크하세요' : '📱 폰으로 촬영 중 — 폰에서 「서류 촬영 요청」 알림을 눌러 서류를 찍으세요'));
+  if (_phoneCap) { const e = document.createElement('button'); e.type = 'button'; e.textContent = '촬영 끝내기'; e.onclick = _phoneCapToggle; h.appendChild(e); }
+  p.appendChild(h);
+  _phoneItems.forEach(it => {
+    const r = document.createElement('div'); r.className = 'pp-r';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = it.on; cb.title = '이 자료를 서류에 사용'; cb.onchange = () => { it.on = cb.checked; };
+    const im = new Image(); im.src = it.url;
+    const tx = document.createElement('input'); tx.type = 'text'; tx.value = it.label; tx.maxLength = 30; tx.oninput = () => { it.label = tx.value; };
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'pp-x'; x.title = '버리기'; x.textContent = '×'; x.onclick = () => { _phoneItems = _phoneItems.filter(o => o !== it); _phoneCapRender(); };
+    r.append(cb, im, tx, x); p.appendChild(r);
+  });
+  if (_phoneItems.length) {
+    const g = document.createElement('div'); g.className = 'pp-r';
+    const go = document.createElement('button'); go.type = 'button'; go.className = 'pp-go'; go.textContent = '체크한 자료를 서류에 사용'; go.onclick = _phoneCapUse; g.appendChild(go); p.appendChild(g);
+    const n = document.createElement('div'); n.className = 'pp-n'; n.textContent = '체크한 사진만 AI에게 전달됩니다. 사진은 암호로 잠겨 전달되며, 받은 뒤 서버에서 지워집니다. 주민등록번호·계좌번호는 가리고 찍으세요.'; p.appendChild(n);
+  }
+}
+async function _phoneCapToggle() {
+  if (_phoneCap) { try { await _phoneCap.stop(); } catch (e) {} _phoneCap = null; _phoneCapRender(); _drToast('폰 촬영 연결을 끝냈습니다.'); return; }
+  try {
+    if (window.KAuth && KAuth.ensureLogin) await KAuth.ensureLogin();
+    await _phoneCapLoad();
+    _phoneCap = await window.NaviCapture.start({
+      label: _phoneCapCtx().trim().slice(0, 30),
+      onPhoto: (url, meta) => { _phoneItems.push({ id: meta.sha256 + ':' + meta.seq, url, on: true, label: window.NaviCapture.defaultLabel(_phoneCapCtx(), _phoneItems.length + 1) }); _phoneCapRender(); },
+      onState: (st) => { if (st.state === 'expired') { _phoneCap = null; _phoneCapRender(); _drToast('폰 촬영 연결이 끝났습니다. 다시 하려면 + 에서 「폰으로 촬영」을 고르세요.'); } else if (st.state === 'network') _drToast('폰과 연결이 불안정합니다. 인터넷 연결을 확인하세요.'); else if (st.state === 'bad-item') _drToast('폰에서 온 사진 1장이 손상되어 건너뛰었습니다. 다시 찍어 주세요.'); }
+    });
+    _phoneCapRender();
+    _drToast('같은 계정의 폰에 「서류 촬영 요청」 알림을 보냈습니다.');
+  } catch (e) {
+    _phoneCap = null; const c = String(e && e.message || e);
+    _drToast(/LOGIN|TOKEN|AUTH/.test(c) ? '로그인한 뒤 다시 눌러 주세요.' : '폰 촬영을 시작하지 못했습니다(' + c + ').');
+  }
+}
+async function _phoneCapUse() {
+  const on = _phoneItems.filter(o => o.on); if (!on.length) { _drToast('쓸 사진을 체크하세요.'); return; }
+  if (_cmpMode !== 'doc' && !_cmpSetMode('doc')) return;
+  const note = window.NaviCapture.buildNote(on, _phoneCapCtx());
+  const c = document.getElementById('cmp-doc-count'); if (c) c.textContent = '폰 사진 ' + on.length + '장을 서류에 넘기는 중…'; _docBar(3);
+  try {
+    for (let i = 0; i < on.length; i++) {
+      const buf = await fetch(on[i].url).then(r => r.arrayBuffer());
+      _docHostPost({ type: 'navi-doc-template', name: String(on[i].label || ('자료 ' + (i + 1))).slice(0, 120), mime: 'image/jpeg', data: buf });
+    }
+    _docHostPost({ type: 'navi-doc-attach', name: '폰 자료 목록·출처 표기 규칙', text: note.note });
+    _phoneItems = _phoneItems.filter(o => !o.on); _phoneCapRender();
+  } catch (e) { if (c) c.textContent = '사진을 넘기지 못했습니다: ' + (e.message || e); _docBar(-1); }
+}
 
 // 양식 파일(이미지·PDF)을 서류 화면에 넘겨 '양식'으로 읽게 한다 — 새로 올릴 때와 내 서류함에서 다시 열 때 같은 길을 쓴다
 function _docFeedTemplate(name, mime, buf) {
