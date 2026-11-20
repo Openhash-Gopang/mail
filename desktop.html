@@ -944,6 +944,12 @@ header.topbar:has(#agent-draft:not([hidden])) .topbar-page,header.topbar:has(#ag
 .set-tabs button:hover{color:var(--pri)}
 .set-tabs button.active{color:var(--pri);border-bottom-color:var(--pri)}
 .set-sec{display:none}
+/* 2026-11-21 — 설정: 폰 설정과 같은 항목 이름·순서로 맞추고, 폰에만 있는 항목은 PC에서 사용법을 설명한다 */
+.ps-banner{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--pri-bd);background:var(--pri-bg);border-radius:var(--r);padding:12px 14px;margin:8px 0 14px;font-size:14px;line-height:1.7;color:var(--txt)}
+.ps-banner b{color:var(--pri)}
+.ps-bread{font-size:13px;color:var(--sub);margin:6px 0 10px}.ps-bread b{color:var(--pri)}
+.ps-steps{margin:0 0 4px;padding-left:20px;font-size:14.5px;line-height:1.9}
+.ps-steps li{margin-bottom:2px}
 .set-sec.active{display:block}
 .set-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px 28px;padding:20px 0;border-bottom:1px solid var(--bdr)}
 .set-row:last-child{border-bottom:none}
@@ -1940,17 +1946,23 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="set-tabs" role="tablist" aria-label="설정 항목">
       <button type="button" role="tab" id="set-tab-account" class="active" aria-selected="true" onclick="_settingsSwitch('account')">계정</button>
       <button type="button" role="tab" id="set-tab-profile" aria-selected="false" onclick="_settingsSwitch('profile')">프로필</button>
-      <button type="button" role="tab" id="set-tab-pdv" aria-selected="false" onclick="_settingsSwitch('pdv')">내 데이터 금고</button>
-      <button type="button" role="tab" id="set-tab-gdc" aria-selected="false" onclick="_settingsSwitch('gdc')">GDC</button>
+      <button type="button" role="tab" id="set-tab-ai" aria-selected="false" onclick="_settingsSwitch('ai')">AI 비서</button>
+      <button type="button" role="tab" id="set-tab-gdc" aria-selected="false" onclick="_settingsSwitch('gdc')">GDC 지갑</button>
+      <button type="button" role="tab" id="set-tab-pdv" aria-selected="false" onclick="_settingsSwitch('pdv')">내 기록</button>
+      <button type="button" role="tab" id="set-tab-wallet" aria-selected="false" onclick="_settingsSwitch('wallet')">백업 키</button>
+      <button type="button" role="tab" id="set-tab-skin" aria-selected="false" onclick="_settingsSwitch('skin')">화면</button>
+      <button type="button" role="tab" id="set-tab-notify" aria-selected="false" onclick="_settingsSwitch('notify')">알림</button>
+      <button type="button" role="tab" id="set-tab-perm" aria-selected="false" onclick="_settingsSwitch('perm')">권한</button>
+      <button type="button" role="tab" id="set-tab-app" aria-selected="false" onclick="_settingsSwitch('app')">앱 관리</button>
       <button type="button" role="tab" id="set-tab-signature" aria-selected="false" onclick="_settingsSwitch('signature')">서명</button>
       <button type="button" role="tab" id="set-tab-autoreply" aria-selected="false" onclick="_settingsSwitch('autoreply')">부재중 자동응답</button>
-      <button type="button" role="tab" id="set-tab-skin" aria-selected="false" onclick="_settingsSwitch('skin')">화면(스킨)</button>
     </div>
 
     <div id="mail-id-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
 
     <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(개인 정보는 처음엔 이름만 공개, 상품·서비스는 공개) -->
     <section id="set-sec-profile" class="set-sec">
+      <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 프로필</b></div>
         <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우면 <b>나의 프로필 웹페이지</b>가 만들어집니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
           <div id="pf-thread" class="pf-thread" aria-live="polite"></div>
@@ -2001,11 +2013,13 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     
 <!-- PDV: hondi.net/pdv.html 을 그대로 끼워 보여 준다(한 곳만 고치면 되도록) -->
     <section id="set-sec-pdv" class="set-sec">
+      <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 기록</b></div>
       <iframe id="pdv-frame" title="PDV" allow="clipboard-write"></iframe>
     </section>
 
     <!-- GDC: hondi.net/usage.html 을 그대로 끼워 보여 준다(잔액·사용량 그래프) -->
     <section id="set-sec-gdc" class="set-sec">
+      <div class="ps-bread">폰에서는 <b>⚙ 설정 → GDC 지갑</b></div>
       <iframe id="gdc-frame" title="GDC 사용량" allow="clipboard-write"></iframe>
     </section>
 
@@ -2063,10 +2077,65 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           </div>
         </div>
       </div>
+    
+      <div class="ps-banner"><span>📱</span><div><b>아래는 폰 설정에만 있는 계정 항목</b>입니다. 폰 ⚙ 설정의 위쪽 바로가기와 맨 아래에 있습니다.</div></div>
+      <div class="set-row"><div class="set-lbl">나비코드<small>폰 전용</small></div><div>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b> → 위쪽 <b>나비코드</b>를 누릅니다.</li><li>내 나비 코드가 크게 나옵니다.</li></ol>
+      </div></div>
+      <div class="set-row"><div class="set-lbl">PC에서 이어서 하기<small>폰 전용 · 다른기기 연결</small></div><div>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b> → 위쪽 <b>다른기기 연결</b>(또는 <b>PC에서 이어서 하기</b>)을 누릅니다.</li><li>QR 코드가 나오면 PC에서 읽어 같은 계정으로 이어서 씁니다.</li></ol>
+      </div></div>
+      <div class="set-row"><div class="set-lbl">계정 삭제<small>폰 전용 · 위험 구역</small></div><div>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>을 맨 아래까지 내려 <b>위험 구역</b>의 <b>계정 삭제</b>를 누릅니다.</li><li><b>삭제는 되돌릴 수 없으니</b> 신중히 하세요.</li></ol>
+      </div></div>
     </section>
 
     <!-- 화면(스킨): 색·메뉴·밀도·단추·입력칸·카드 모양을 고른다. 로그인과 무관하게 이 브라우저에 저장된다. -->
+
+
+
+    <section id="set-sec-ai" class="set-sec">
+      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → AI 설정(AI 비서)</b></div></div>
+      <div class="set-row"><div class="set-lbl">AI 비서 · AI 설정</div><div>
+        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">폰의 AI 설정은 채팅창의 AI 비서를 어떻게 부릴지 확인하는 곳입니다.</p>
+        <ol class="ps-steps"><li>폰 화면 오른쪽 위 ⚙ <b>설정</b>을 누릅니다.</li><li>위쪽 바로가기의 <b>AI 설정</b>(또는 아래 <b>AI 비서</b> 칸)을 누릅니다.</li><li>기능 개선이나 추가하고 싶은 점은 설정이 아니라 <b>채팅창의 AI 비서에게 그대로 말하면</b> 됩니다.</li><li><b>시스템 프롬프트</b>는 PC에서 설정하고, 폰에서는 확인만 할 수 있습니다.</li></ol>
+      </div></div>
+    </section>
+
+    <section id="set-sec-wallet" class="set-sec">
+      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 백업 키 / Navi Wallet</b></div></div>
+      <div class="set-row"><div class="set-lbl">Navi Wallet · 백업 키</div><div>
+        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">백업 키는 새 폰·새 기기에서 지갑을 되살릴 때 쓰는 열쇠입니다. <b>서버에 사본이 없어 잃어버리면 되찾을 수 없습니다.</b> PC 설정에는 이 항목이 없으니 폰에서 확인하세요.</p>
+        <ol class="ps-steps"><li>폰 화면 오른쪽 위 ⚙ <b>설정</b>을 누릅니다.</li><li>위쪽 바로가기의 <b>백업 키</b>(또는 Navi Wallet 아래 백업 키)를 누릅니다.</li><li>나오는 키를 <b>안전한 곳</b>(종이, 비밀번호 관리자)에 보관합니다. 화면 캡처나 공유는 하지 않습니다.</li><li><b>재무제표</b>도 같은 Navi Wallet 아래에서 볼 수 있습니다.</li></ol><p class="set-hint">자세한 내용은 사용법의 「지갑과 백업 키 — 새 폰·새 기기에서 쓰기」 장을 보세요.</p>
+      </div></div>
+    </section>
+
+    <section id="set-sec-notify" class="set-sec">
+      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 알림</b></div></div>
+      <div class="set-row"><div class="set-lbl">알림</div><div>
+        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">폰에서 대화 요청·메일·촬영 요청 같은 알림을 받을 때 소리와 켜기/끄기를 정합니다.</p>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>을 열고 아래로 내려 <b>알림</b>을 찾습니다.</li><li><b>메시지 알림 소리</b>를 기본 · 벨 · 물방울 · 차임 · 없음 중에서 고르고 <b>미리듣기</b>로 들어 봅니다.</li><li><b>알림 끄기/켜기</b> 스위치로 알림을 켜고 끕니다.</li><li>“브라우저에서 알림이 차단돼 있습니다”가 나오면 주소창 왼쪽 아이콘 → 사이트 설정 → 알림을 <b>허용</b>으로 바꾼 뒤 다시 켭니다.</li></ol><p class="set-hint">폰으로 서류를 촬영해 PC로 보낼 때도 폰 알림이 켜져 있어야 촬영 요청이 도착합니다.</p>
+      </div></div>
+    </section>
+
+    <section id="set-sec-perm" class="set-sec">
+      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 권한 설정</b></div></div>
+      <div class="set-row"><div class="set-lbl">권한 설정</div><div>
+        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">카메라·마이크·위치는 폰 브라우저에서 허용해야 쓸 수 있습니다. 허용 방법은 기종마다 다릅니다.</p>
+        <ol class="ps-steps"><li><b>Android</b> 크롬 ⋮ → 사이트 설정 → 위치·카메라·마이크를 허용합니다.</li><li><b>iPhone</b> 주소창의 AA → 웹사이트 설정 → 위치·마이크를 허용합니다.</li><li>허용한 뒤 나비웹 화면을 새로고침합니다.</li></ol><p class="set-hint">폰으로 서류를 촬영해 PC로 보내려면 카메라 권한이 허용되어 있어야 합니다.</p>
+      </div></div>
+    </section>
+
+    <section id="set-sec-app" class="set-sec">
+      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 더 보기 → 앱 관리</b></div></div>
+      <div class="set-row"><div class="set-lbl">앱 관리</div><div>
+        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">나비웹을 폰 바탕화면에 두고 쓰거나, 새 버전이 안 보일 때 갱신하는 곳입니다.</p>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>에서 <b>더 보기</b>를 눌러 펼칩니다.</li><li><b>앱으로 설치(PWA)</b>를 누르면 폰 바탕화면에 나비웹 열기 아이콘이 추가됩니다.</li><li>새 기능이 안 보이면 <b>최신 버전으로 갱신</b>을 누릅니다.</li></ol>
+      </div></div>
+    </section>
+
     <section id="set-sec-skin" class="set-sec">
+      <div class="ps-bread">폰에서는 <b>⚙ 설정 → 화면</b>에서 글자 크기와 스킨을 고릅니다.</div>
       <div class="skin-grp"><h3>언어·지역</h3><p>화면 오른쪽 위의 지구본 버튼에서 언어와 국가를 바꿉니다. 처음에는 가입 때의 지역에 맞춰 자동으로 정해집니다.</p></div>
       <div class="skin-grp"><h3>색상</h3><p>강조색·활성 메뉴의 색입니다. 서류 작성 화면의 강조색도 함께 바뀝니다(파랑은 직역별 색 유지).</p><div class="skin-opts" data-skin="color"></div></div>
       <div class="skin-grp"><h3>왼쪽 메뉴</h3><p>레일은 평소에 아이콘만 보이다가 마우스를 올리면 펼쳐집니다.</p><div class="skin-opts" data-skin="menu"></div></div>
@@ -5911,7 +5980,7 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 // 서버(GET·POST /kmail/settings)가 전화 인증 토큰만으로 받는 항목에 맞춘다.
 // 진입: 왼쪽 맨 아래 '설정' · 공용 배지의 ⋮(window.kmailOpenSettings) · 주소의 #settings
 // ══════════════════════════════════════════════════════════════
-const _SET_SECTIONS = ['account', 'profile', 'pdv', 'gdc', 'signature', 'autoreply', 'skin'];
+const _SET_SECTIONS = ['account', 'profile', 'ai', 'gdc', 'pdv', 'wallet', 'skin', 'notify', 'perm', 'app', 'signature', 'autoreply'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
   if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프)
