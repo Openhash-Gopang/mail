@@ -296,7 +296,6 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-xokorea iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent;overflow:hidden}   /* 높이는 안쪽 문서가 알려 준 값으로 맞춘다(_xkSwitch 옆 message 처리) — 안쪽 스크롤 막대 없음 */
 #tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe,#tab-intro iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #tab-vault iframe{overflow:hidden}
-#gdc-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:0;background:transparent}
 #pdv-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:1px solid var(--bdr);border-radius:12px;background:#fff}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
@@ -1500,7 +1499,42 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 #tab-settings .set-actions{margin-top:16px;gap:8px}
 #tab-settings .errbox{border-radius:8px}
 /* 끼워 보여 주는 화면(GDC·PDV)은 안쪽 페이지가 같은 카드 시안(?embed=mail)이라 바깥 틀 없이 보여 준다 */
-#tab-settings #gdc-frame,#tab-settings #pdv-frame{border:0;border-radius:0;background:transparent;box-shadow:none;height:calc(100vh - 300px)}
+#tab-settings #pdv-frame{border:0;border-radius:0;background:transparent;box-shadow:none;height:calc(100vh - 300px)}
+/* GDC 지갑(2026-11-21): 끼움 화면(iframe) 없이 설정 안에 바로 그린다 — 다른 탭과 같은 카드·단추 */
+#tab-settings .gdc-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#tab-settings .gdc-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+#tab-settings .gdc-stat .set-lbl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:500;color:var(--m3-on-var);padding-bottom:8px;font-size:14px}
+#tab-settings .gdc-val{font-size:28px;font-weight:600;letter-spacing:-.5px;color:var(--txt);line-height:1.2}
+#tab-settings .gdc-unit{font-size:14px;font-weight:500;color:var(--m3-on-var);margin-left:6px}
+#tab-settings .gdc-bar{height:8px;border-radius:4px;background:#E4E8EE;overflow:hidden;margin:4px 0 10px}
+#tab-settings .gdc-bar>div{height:100%;border-radius:4px;background:var(--pri);transition:width .3s}
+#tab-settings .gdc-bar.warn>div{background:#B3261E}
+#tab-settings .gdc-qtext{font-size:14px;color:var(--txt)}
+#tab-settings .gdc-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+#tab-settings .gdc-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;background:none;border:0;padding:0;text-align:left;color:var(--txt);cursor:pointer}
+#tab-settings .gdc-chev{font-size:20px;color:var(--m3-on-var);transition:transform .2s}
+#tab-settings .gdc-toggle[aria-expanded=true] .gdc-chev{transform:rotate(180deg)}
+#tab-settings #gdc-hist-body{margin-top:12px}
+#tab-settings .gdc-crow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--m3-line);font-size:14px}
+#tab-settings .gdc-pill{display:inline-block;height:24px;line-height:24px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:600;background:#E4E8EE;color:var(--m3-on-var)}
+#tab-settings .gdc-pill.pending{background:#FFF1D6;color:#8A5300}#tab-settings .gdc-pill.matched{background:#E2F4EA;color:#1E7B46}
+#tab-settings .gdc-chart h4{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:600;margin-bottom:4px}
+#tab-settings .gdc-chart h4 span{font-weight:500;color:var(--m3-on-var)}
+#tab-settings .gdc-chart svg{display:block;width:100%;height:auto}
+#tab-settings .gdc-model{font-size:14px;font-weight:600;margin:20px 2px 8px}
+#tab-settings .gdc-table{width:100%;border-collapse:collapse;font-size:14px}
+#tab-settings .gdc-table th{text-align:left;font-size:12.5px;font-weight:600;color:var(--m3-on-var);padding:8px 12px;background:var(--bg)}
+#tab-settings .gdc-table td{padding:10px 12px;border-top:1px solid var(--m3-line)}
+#tab-settings .gdc-table .num{text-align:right;font-variant-numeric:tabular-nums}
+#tab-settings .gdc-empty{padding:24px 8px;text-align:center;color:var(--m3-on-var);font-size:14px}
+#tab-settings .gdc-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px}
+#tab-settings .gdc-scrim[hidden]{display:none}
+#tab-settings .gdc-dialog{background:var(--sur);border-radius:28px;padding:24px;width:min(520px,100%);max-height:90vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#tab-settings .gdc-dialog h3{font-size:22px;font-weight:600;margin-bottom:12px}
+#tab-settings .gdc-kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--m3-line);font-size:14px}
+#tab-settings .gdc-kv span{color:var(--m3-on-var)}
+#tab-settings .gdc-code{font-size:24px;font-weight:700;letter-spacing:.5px;color:var(--pri);margin:4px 0}
+@media (max-width:760px){#tab-settings .gdc-grid2,#tab-settings .gdc-grid3{grid-template-columns:1fr}}
 @media (max-width:640px){#tab-settings .set-row,#tab-settings .skin-grp,#tab-settings .pf-fields{padding:16px}#tab-settings .set-tabs button{padding:0 14px}}
 </style>
 <header class="topbar">
@@ -2067,11 +2101,52 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <iframe id="pdv-frame" title="PDV" allow="clipboard-write"></iframe>
     </section>
 
-    <!-- GDC: hondi.net/usage.html 을 그대로 끼워 보여 준다(잔액·사용량 그래프) -->
+    <!-- GDC 지갑: 끼움 화면 없이 직접 그린다(_gdcLoad, 잔액·무료 한도·사용량 그래프·충전 안내) -->
     <section id="set-sec-gdc" class="set-sec">
-      <div class="m3-head"><h3>GDC 지갑</h3><p>잔액과 사용량을 확인하고 충전합니다.</p></div>
-      <div class="ps-bread">폰에서는 <b>⚙ 설정 → GDC 지갑</b></div>
-      <iframe id="gdc-frame" title="GDC 사용량" allow="clipboard-write"></iframe>
+<div class="m3-head"><h3>GDC 지갑</h3><p>잔액과 사용량을 확인하고 충전합니다.</p></div>
+<div class="ps-bread">폰에서는 <b>⚙ 설정 → GDC 지갑</b></div>
+      <div id="gdc-state" class="set-hint" role="status"><span class="spinner"></span> 불러오는 중…</div>
+      <div id="gdc-content" style="display:none">
+        <div class="gdc-grid2">
+          <div class="set-row gdc-stat"><div class="set-lbl">GDC 잔액<button type="button" class="btn btn-primary btn-sm" id="gdc-topup" onclick="_gdcChargeOpen()">충전하기</button></div><div class="gdc-val" id="gdc-balance">—<span class="gdc-unit">GDC</span></div></div>
+          <div class="set-row gdc-stat"><div class="set-lbl">지금까지 쓴 금액</div><div class="gdc-val" id="gdc-spent">—<span class="gdc-unit">원</span></div></div>
+        </div>
+        <div class="set-row" id="gdc-quota" style="display:none"><div class="set-lbl">가입 무료 한도 사용 현황</div>
+          <div class="gdc-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="gdc-bar"><div id="gdc-bar-fill" style="width:0%"></div></div>
+          <div class="gdc-qtext" id="gdc-quota-text"></div><div class="set-hint" id="gdc-quota-est"></div></div>
+        <div class="set-row" id="gdc-hist" style="display:none">
+          <button type="button" class="gdc-toggle" id="gdc-hist-toggle" aria-expanded="false" aria-controls="gdc-hist-body" onclick="_gdcHistToggle()"><span><span class="set-lbl" style="padding:0">충전 내역</span><span class="set-hint" id="gdc-hist-sub" style="display:block;margin-top:2px">최근 20건 · 눌러서 펼치기</span></span><span class="gdc-chev" aria-hidden="true">⌄</span></button>
+          <div id="gdc-hist-body" hidden></div></div>
+        <div class="gdc-filters" id="gdc-filters" role="group" aria-label="기간"><button type="button" class="skin-opt" aria-pressed="true" data-r="today">오늘</button><button type="button" class="skin-opt" aria-pressed="false" data-r="7">최근 7일</button><button type="button" class="skin-opt" aria-pressed="false" data-r="30">최근 30일</button></div>
+        <div class="gdc-grid3">
+          <div class="set-row gdc-stat"><div class="set-lbl">청구액</div><div class="gdc-val" id="gdc-u-krw">—<span class="gdc-unit">원</span></div></div>
+          <div class="set-row gdc-stat"><div class="set-lbl">API 요청</div><div class="gdc-val" id="gdc-u-req">—</div></div>
+          <div class="set-row gdc-stat"><div class="set-lbl">토큰</div><div class="gdc-val" id="gdc-u-tok">—</div></div>
+        </div>
+        <div id="gdc-charts"></div>
+        <div class="set-row"><div class="set-lbl">모델별 사용 내역<small>최근 30일</small></div><div id="gdc-detail"></div></div>
+      </div>
+      <div id="gdc-err" class="errbox" style="display:none"></div>
+      <div class="set-actions" id="gdc-retry-row" style="display:none"><button type="button" class="btn btn-primary" onclick="_gdcLoad(true)">다시 시도</button></div>
+      <div id="gdc-dialog" class="gdc-scrim" hidden onclick="if(event.target===this)_gdcChargeClose()">
+        <div class="gdc-dialog" role="dialog" aria-modal="true" aria-labelledby="gdc-dlg-title">
+          <h3 id="gdc-dlg-title">GDC 충전</h3>
+          <div class="ps-banner" style="margin-bottom:12px"><span>ℹ️</span><div><b>나비는 정기 자동결제를 쓰지 않습니다.</b> 사용자가 직접 은행 앱에서 계좌이체를 할 때만 충전됩니다. 이체 뒤 추가로 자동 청구되는 금액은 없습니다.</div></div>
+          <div id="gdc-ci-loading" class="set-hint">불러오는 중…</div>
+          <div id="gdc-ci-err" class="errbox" style="display:none"></div>
+          <div id="gdc-ci-body" style="display:none">
+            <div class="gdc-kv"><span>입금 은행</span><b id="gdc-ci-bank"></b></div>
+            <div class="gdc-kv"><span>계좌번호</span><b><span id="gdc-ci-acct"></span> <button type="button" class="btn btn-outline btn-sm" id="gdc-ci-copy" onclick="_gdcCopyAcct()">복사</button></b></div>
+            <div class="gdc-kv"><span>예금주</span><b id="gdc-ci-holder"></b></div>
+            <div class="set-hint" style="margin-top:12px">보내는 분 표시에 아래 번호를 꼭 포함해 입금해 주세요</div>
+            <div class="gdc-code" id="gdc-ci-code"></div>
+            <div class="set-hint">본인 휴대폰 번호 뒷 8자리이며, 항상 같은 번호예요.</div>
+            <div class="ps-banner" style="margin-top:14px;display:block"><b>필드 테스트 기간(2026년 12월 말까지)</b><br>월 10,000원 입금 → 10,000T 충전 · 연 100,000원 입금 → 120,000T 충전<br><span class="set-hint">위 금액을 정확히 한 번에 입금할 때만 적용됩니다. 그 밖의 금액은 입금한 만큼(1원 = 1 GDC), 여러 번 나눠 입금하면 건별로 계산되며 합산되지 않습니다.</span></div>
+            <div class="set-hint" style="margin-top:10px">관리자가 입금을 확인하는 대로 GDC가 지급됩니다(보통 수 시간).</div>
+          </div>
+          <div class="set-actions" style="justify-content:flex-end"><button type="button" class="btn btn-primary" onclick="_gdcChargeClose()">확인했어요</button></div>
+        </div>
+      </div>
     </section>
 
     <!-- 계정 -->
@@ -6045,7 +6120,7 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 const _SET_SECTIONS = ['account', 'profile', 'ai', 'gdc', 'pdv', 'skin', 'phone', 'signature', 'autoreply'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
-  if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프)
+  if (name === 'gdc') _gdcLoad();   // GDC 잔액·사용량(그래프)
   if (name === 'pdv') { const f = document.getElementById('pdv-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // PDV 데이터(대화 이력·서류 Draft)를 새 탭 없이 설정 안에서 보여 준다
   if (name === 'profile') _profEnter(); else _profLeave();   // 프로필 탭에 있는 동안만 대화창이 프로필 작성 SP 로 바뀐다
   { const ts = document.getElementById('tab-settings'); if (ts) ts.setAttribute('data-sec', name); }
@@ -6124,6 +6199,120 @@ function _aiSpSave() {
   try { localStorage.setItem(_AI_SP_KEY, JSON.stringify(o)); } catch (e) { _setBox('ai-sp-err', '저장하지 못했습니다(브라우저 저장 공간이 막혀 있거나 가득 찼습니다).'); return; }
   _aiSpLoad(); _setBox('ai-sp-ok', '저장했습니다. 이제부터 내 AI 비서가 이 지시를 더해 일합니다.');
 }
+
+// ── GDC 지갑(설정 > GDC 지갑) — 2026-11-21: iframe(usage.html) 없이 이 화면에 바로 그린다(주피터 지시) ──
+// 자료: hondi-proxy 의 /biz/balance · /free-quota-status · /usage-log · /biz/charge-info · /biz/charge-status (guid 쿼리, 읽기 전용).
+// guid 는 usage.html 과 같이 이 브라우저에 저장된 gopang_user_v4 의 ipv6 를 쓴다(같은 출처일 때만 읽힘).
+let _gdcSeries = null, _gdcRange = 'today', _gdcAt = 0, _gdcAcctRaw = '';
+function _gdcGuid() {
+  try { const q = new URLSearchParams(location.search).get('guid'); if (q) return q; } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem('gopang_user_v4') || sessionStorage.getItem('gopang_user_v4') || '{}'); return (o && o.ipv6) || ''; } catch (e) { return ''; }
+}
+function _gdcFmt(n) { return Math.round(Number(n) || 0).toLocaleString('ko-KR'); }
+function _gdcShort(n) { n = Math.round(n); if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M'; if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + 'K'; return String(n); }
+function _gdcNiceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+function _gdcSet(id, html) { const e = document.getElementById(id); if (e) e.innerHTML = html; }
+function _gdcBar(vals, labels, color, fmtY, minMax) {
+  const W = 560, H = 190, L = 44, R = 8, T = 10, B = 24, max = Math.max(_gdcNiceMax(Math.max.apply(null, vals.concat([0]))), minMax || 0), iw = W - L - R, ih = H - T - B, n = vals.length, bw = Math.max(2, iw / n * .62);
+  let g = '';
+  for (let i = 0; i <= 2; i++) { const y = T + ih - ih * i / 2; g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="#D9DEE6"/><text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="10.5" fill="#6C757D">${_i18nEsc(fmtY(max * i / 2))}</text>`; }
+  vals.forEach((v, i) => { const h = ih * v / max, x = L + iw * (i + .5) / n - bw / 2; if (v > 0) g += `<rect x="${x.toFixed(1)}" y="${(T + ih - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" rx="2" fill="${color}"><title>${_i18nEsc(labels[i])}: ${_i18nEsc(fmtY(v))}</title></rect>`; });
+  const step = Math.ceil(n / 6);
+  labels.forEach((l, i) => { if (i % step === 0 || (i === n - 1 && n < 8)) g += `<text x="${(L + iw * (i + .5) / n).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="#6C757D">${_i18nEsc(l)}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="막대 그래프">${g}</svg>`;
+}
+function _gdcRender() {
+  const sr = _gdcSeries, el = document.getElementById('gdc-charts'); if (!el) return;
+  if (!sr) { el.innerHTML = ''; _gdcSet('gdc-u-krw', '—<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', '—'); _gdcSet('gdc-u-tok', '—'); return; }
+  const rows = _gdcRange === 'today' ? sr.hourly : sr.daily.slice(-Number(_gdcRange));
+  const lab = rows.map(r => _gdcRange === 'today' ? String(r.h).padStart(2, '0') + ':00' : r.d.slice(5));
+  const sum = (k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
+  _gdcSet('gdc-u-krw', _gdcFmt(sum('krw')) + '<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', _gdcFmt(sum('req'))); _gdcSet('gdc-u-tok', _gdcFmt(sum('tok')));
+  if (!sum('req')) { el.innerHTML = '<div class="set-row"><div class="gdc-empty">이 기간의 사용 내역이 없어요.</div></div>'; return; }
+  const num = (v) => v >= 100 ? _gdcFmt(v) : String(Math.round(v * 100) / 100);
+  let h = `<div class="set-row gdc-chart"><h4>청구액(원) <span>${_gdcFmt(sum('krw'))}원</span></h4>${_gdcBar(rows.map(r => r.krw), lab, 'var(--pri)', num)}</div>`;
+  const models = {}; rows.forEach(r => Object.keys(r.models || {}).forEach(m => { models[m] = 1; }));
+  Object.keys(models).forEach(m => {
+    if (!rows.some(r => ((r.models[m] || {}).req || 0) > 0)) return;
+    const rq = rows.map(r => (r.models[m] || {}).req || 0), tk = rows.map(r => (r.models[m] || {}).tok || 0);
+    h += `<div class="gdc-model">${_i18nEsc(m)}</div><div class="gdc-grid2"><div class="set-row gdc-chart"><h4>API 요청 <span>${_gdcFmt(rq.reduce((a, b) => a + b, 0))}</span></h4>${_gdcBar(rq, lab, 'var(--pri-lt)', _gdcShort, 2)}</div><div class="set-row gdc-chart"><h4>토큰 <span>${_gdcFmt(tk.reduce((a, b) => a + b, 0))}</span></h4>${_gdcBar(tk, lab, 'var(--pri-bd)', _gdcShort)}</div></div>`;
+  });
+  el.innerHTML = h;
+}
+function _gdcDetail(d) {
+  if (!d || !d.ok) { _gdcSet('gdc-detail', '<div class="gdc-empty">상세 내역을 불러오지 못했습니다.<br><span class="set-hint">서비스 도입 초기라 아직 기록이 없을 수 있어요.</span></div>'); return; }
+  if (!d.by_model || !d.by_model.length) { _gdcSet('gdc-detail', '<div class="gdc-empty">아직 사용 내역이 없어요.</div>'); return; }
+  _gdcSet('gdc-detail', '<table class="gdc-table"><thead><tr><th>모델</th><th class="num">요청 수</th><th class="num">토큰</th><th class="num">청구액</th></tr></thead><tbody>' +
+    d.by_model.map(m => `<tr><td>${_i18nEsc(m.model)}</td><td class="num">${_gdcFmt(m.requests)}</td><td class="num">${_gdcFmt((m.hit_tokens || 0) + (m.miss_tokens || 0) + (m.out_tokens || 0))}</td><td class="num">${_gdcFmt(m.billed_krw)}원</td></tr>`).join('') + '</tbody></table>');
+}
+async function _gdcLoad(force) {
+  if (!force && Date.now() - _gdcAt < 30000) return;
+  const st = document.getElementById('gdc-state'), ct = document.getElementById('gdc-content'), er = document.getElementById('gdc-err'), rr = document.getElementById('gdc-retry-row');
+  if (!st) return;
+  er.style.display = 'none'; rr.style.display = 'none';
+  const guid = _gdcGuid();
+  if (!guid) { st.style.display = 'none'; ct.style.display = 'none'; er.textContent = 'GDC 정보를 읽으려면 나비웹에서 로그인된 상태여야 합니다. 폰에서 나비웹에 로그인한 뒤 이 화면을 새로고침해 주세요.'; er.style.display = 'block'; rr.style.display = 'flex'; return; }
+  if (ct.style.display === 'none') st.style.display = '';
+  try {
+    const q = encodeURIComponent(guid), get = (p) => fetch(`${PROXY}${p}guid=${q}`).then(r => r.json());
+    const [b, qt, u] = await Promise.allSettled([get('/biz/balance?'), get('/free-quota-status?'), get('/usage-log?days=30&')]);
+    const bd = b.status === 'fulfilled' ? b.value : null, qd = qt.status === 'fulfilled' ? qt.value : null, ud = u.status === 'fulfilled' ? u.value : null;
+    _gdcSet('gdc-balance', (bd && bd.ok && typeof bd.balance === 'number' ? _gdcFmt(bd.balance) : '0') + '<span class="gdc-unit">GDC</span>');
+    const qc = document.getElementById('gdc-quota');
+    if (qd && qd.ok) {
+      _gdcSet('gdc-spent', _gdcFmt(qd.spent_krw) + '<span class="gdc-unit">원</span>');
+      qc.style.display = '';
+      const pct = Math.min(Math.round((qd.spent_krw / (qd.limit_krw || 1)) * 100), 100);
+      document.getElementById('gdc-bar-fill').style.width = pct + '%'; const bar = document.getElementById('gdc-bar'); bar.classList.toggle('warn', pct >= 90); bar.setAttribute('aria-valuenow', String(pct));
+      document.getElementById('gdc-quota-text').textContent = `${_gdcFmt(qd.spent_krw)}원 / ${_gdcFmt(qd.limit_krw)}원 (가입 무료 한도)`;
+      let msg;
+      if (qd.estimated_monthly_krw > 0) { msg = `지금 쓰시는 속도라면 한 달에 대략 <b>${_gdcFmt(qd.estimated_monthly_krw)}원</b> 정도예요.`; if (qd.projected_days_to_limit != null) msg += ` 이 속도라면 약 <b>${_i18nEsc(qd.projected_days_to_limit)}일</b> 후 무료 한도를 다 쓰게 돼요.`; } else msg = '아직 대화를 시작하기 전이에요.';
+      _gdcSet('gdc-quota-est', msg);
+    } else { _gdcSet('gdc-spent', '0<span class="gdc-unit">원</span>'); qc.style.display = 'none'; }
+    _gdcDetail(ud); _gdcSeries = ud && ud.ok && ud.series ? ud.series : null; _gdcRender();
+    st.style.display = 'none'; ct.style.display = ''; _gdcAt = Date.now();
+    _gdcHistLoad();
+  } catch (e) {
+    st.style.display = 'none'; er.textContent = 'GDC 정보를 불러오지 못했습니다: ' + (e.message || e); er.style.display = 'block'; rr.style.display = 'flex';
+  }
+}
+async function _gdcHistLoad() {
+  const guid = _gdcGuid(), box = document.getElementById('gdc-hist'); if (!guid || !box) return;
+  try {
+    const d = await fetch(`${PROXY}/biz/charge-status?guid=${encodeURIComponent(guid)}`).then(r => r.json());
+    if (!d.ok || !d.requests || !d.requests.length) { box.style.display = 'none'; return; }
+    const lab = { pending: '입금 대기', matched: '충전 완료', expired: '만료', cancelled: '취소' };
+    _gdcSet('gdc-hist-body', d.requests.map(r => `<div class="gdc-crow"><span>${_gdcFmt(r.requested_krw)}원 · ${_i18nEsc(r.match_code)}</span><span class="gdc-pill ${_i18nEsc(r.status)}">${lab[r.status] || _i18nEsc(r.status)}</span></div>`).join(''));
+    box.style.display = '';
+  } catch (e) { box.style.display = 'none'; }
+}
+function _gdcHistToggle() {
+  const b = document.getElementById('gdc-hist-toggle'), p = document.getElementById('gdc-hist-body'), open = b.getAttribute('aria-expanded') !== 'true';
+  b.setAttribute('aria-expanded', String(open)); p.hidden = !open; document.getElementById('gdc-hist-sub').textContent = open ? '최근 20건 · 눌러서 접기' : '최근 20건 · 눌러서 펼치기';
+}
+async function _gdcChargeOpen() {
+  const dlg = document.getElementById('gdc-dialog'), ld = document.getElementById('gdc-ci-loading'), bd = document.getElementById('gdc-ci-body'), er = document.getElementById('gdc-ci-err');
+  dlg.hidden = false; ld.style.display = ''; bd.style.display = 'none'; er.style.display = 'none';
+  try {
+    const res = await fetch(`${PROXY}/biz/charge-info?guid=${encodeURIComponent(_gdcGuid())}`), d = await res.json();
+    if (!res.ok || !d.ok) throw new Error(d.message || d.error || ('HTTP ' + res.status));
+    if (!d.match_code_is_phone) { ld.style.display = 'none'; er.textContent = '전화번호 인증이 필요합니다. 폰 설정에서 전화번호 인증을 먼저 완료해 주세요.'; er.style.display = 'block'; return; }
+    const i = d.bank_account_info;
+    document.getElementById('gdc-ci-bank').textContent = i.bank_name; document.getElementById('gdc-ci-acct').textContent = i.account_number_display;
+    document.getElementById('gdc-ci-holder').textContent = i.holder_name; document.getElementById('gdc-ci-code').textContent = d.match_code; _gdcAcctRaw = i.account_number || '';
+    ld.style.display = 'none'; bd.style.display = '';
+  } catch (e) { ld.style.display = 'none'; er.textContent = '계좌 정보를 불러오지 못했습니다: ' + e.message; er.style.display = 'block'; }
+}
+function _gdcChargeClose() { document.getElementById('gdc-dialog').hidden = true; _gdcHistLoad(); }
+function _gdcCopyAcct() {
+  const b = document.getElementById('gdc-ci-copy'); if (!_gdcAcctRaw) return;
+  (navigator.clipboard ? navigator.clipboard.writeText(_gdcAcctRaw) : Promise.reject()).then(() => { b.textContent = '복사됨'; setTimeout(() => { b.textContent = '복사'; }, 1500); }).catch(() => { b.textContent = _gdcAcctRaw; });
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('#gdc-filters .skin-opt'); if (!b) return;
+  _gdcRange = b.getAttribute('data-r'); document.querySelectorAll('#gdc-filters .skin-opt').forEach(c => c.setAttribute('aria-pressed', String(c === b))); _gdcRender();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const d = document.getElementById('gdc-dialog'); if (d && !d.hidden) _gdcChargeClose(); } });
 
 // ── 스킨(설정 > 화면) ──
 const _SKIN = {
