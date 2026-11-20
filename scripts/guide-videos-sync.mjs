@@ -31,7 +31,9 @@ export function merge(fresh, prev) {
   const rest = fresh.filter((v) => num(v.t) >= 1e9);
   const known = rest.filter((v) => prevIdx.has(v.id)).sort((a, b) => prevIdx.get(a.id) - prevIdx.get(b.id));
   const added = rest.filter((v) => !prevIdx.has(v.id)).reverse();
-  return [...numbered, ...known, ...added].map((v) => { const o = old.get(v.id) || {}; return { id: v.id, t: v.t, len: v.len || o.len || '', d: v.d || o.d || '' }; });
+  // YouTube RSS 는 재생목록에서 최근 15개까지만 준다 — 15개가 왔으면 목록이 더 길 수 있으니, 피드에 안 보이는 이전 영상은 지우지 않고 유지한다.
+  const keep = fresh.length >= 15 ? (prev || []).filter((v) => v && v.id && !fresh.some((f) => f.id === v.id)) : [];
+  return sortByNumber([...numbered, ...keep, ...known, ...added]).map((v) => { const o = old.get(v.id) || {}; return { id: v.id, t: v.t, len: v.len || o.len || '', d: v.d || o.d || '' }; });
 }
 
 async function main() {
