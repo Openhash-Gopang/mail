@@ -1451,6 +1451,57 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 .skin-sample .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}
 .skin-sample .field{margin:0;flex:1;min-width:200px}
 .skin-sample .card{margin:0;flex:1;min-width:200px}
+/* ══ 설정 페이지 — 2026-11-21 Material Design 3 단일 시안(주피터 지시) ══
+   모든 탭 공통: 탭 막대(Primary tabs) → 섹션 머리(제목·설명) → 개요선 카드(radius 12) 묶음. 카드 안: 제목 → 본문 → 도움말 → 단추(채움·윤곽).
+   색은 기존 팔레트(--pri 등)를 그대로 쓰므로 '화면 > 색상'을 바꾸면 함께 바뀐다. 단추·입력칸 모양은 설정 화면에서는 이 시안으로 고정한다. */
+#tab-settings{--m3-line:#D9DEE6;--m3-outline:#79808C;--m3-on-var:#49505A;--m3-tonal:var(--pri-bg)}
+#tab-settings .settings-head h2{font-size:24px;font-weight:600;letter-spacing:-.2px;margin-bottom:12px}
+#tab-settings .set-tabs{gap:0;border-bottom:1px solid var(--m3-line);margin-bottom:24px}
+#tab-settings .set-tabs button{height:48px;padding:0 20px;font-size:14px;font-weight:500;letter-spacing:.1px;color:var(--m3-on-var);border-bottom:3px solid transparent;border-radius:12px 12px 0 0;margin-bottom:-1px;transition:background .15s,color .15s}
+#tab-settings .set-tabs button:hover{background:color-mix(in srgb,var(--pri) 8%,transparent);color:var(--txt)}
+#tab-settings .set-tabs button.active{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+#tab-settings .set-tabs button:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+#tab-settings .m3-head{margin:0 0 20px}
+#tab-settings .m3-head h3{font-size:22px;font-weight:600;line-height:1.3;color:var(--txt)}
+#tab-settings .m3-head p{font-size:14px;line-height:1.6;color:var(--m3-on-var);margin-top:4px}
+#tab-settings .ps-bread{font-size:12.5px;color:var(--m3-on-var);margin:-10px 0 16px}
+/* 카드 */
+#tab-settings .set-row,#tab-settings .skin-grp,#tab-settings .pf-fields,#tab-settings .skin-sample{display:block;background:var(--sur);border:1px solid var(--m3-line);border-radius:12px;padding:20px 24px;margin:0 0 16px;box-shadow:none}
+#tab-settings .set-row:last-child{border:1px solid var(--m3-line)}
+#tab-settings .set-lbl{font-size:16px;font-weight:600;line-height:1.4;padding:0 0 12px;color:var(--txt)}
+#tab-settings .set-lbl small{display:inline;margin-left:8px;font-size:12px;font-weight:500;color:var(--m3-on-var)}
+#tab-settings .skin-grp h3{font-size:16px;font-weight:600;margin-bottom:4px}
+#tab-settings .skin-grp p{font-size:13px;color:var(--m3-on-var);margin-bottom:12px}
+#tab-settings .skin-sample{border-style:solid;background:var(--sur)}
+#tab-settings .set-hint,#tab-settings .pf-hint,#tab-settings .pf-sub,#tab-settings .pf-fields-note{font-size:12.5px;line-height:1.65;color:var(--m3-on-var)}
+#tab-settings .ps-steps{font-size:14px;line-height:1.8;color:var(--txt)}
+/* 안내 배너 = 톤 카드 */
+#tab-settings .ps-banner{border:0;background:var(--m3-tonal);border-radius:12px;padding:14px 18px;margin:0 0 16px;font-size:14px}
+/* 입력칸 = 윤곽선 */
+#tab-settings .set-row input[type=text],#tab-settings .set-row input[type=date],#tab-settings .set-row textarea,#tab-settings .pf-row input,#tab-settings .pf-row textarea,#tab-settings .pf-add input,#tab-settings .pf-add select,#tab-settings .pf-offer input,#tab-settings .pf-offer textarea,#tab-settings .pf-offer select,#tab-settings .skin-sample input{font-size:14.5px;padding:12px 16px;border:1px solid var(--m3-outline);border-radius:4px;background:var(--sur);color:var(--txt)}
+#tab-settings .set-row input:focus,#tab-settings .set-row textarea:focus,#tab-settings .pf-row input:focus,#tab-settings .pf-row textarea:focus,#tab-settings .pf-add input:focus,#tab-settings .pf-offer input:focus,#tab-settings .pf-offer textarea:focus,#tab-settings .skin-sample input:focus{outline:none;border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+#tab-settings .set-row textarea[readonly]{background:var(--bg);color:var(--txt)}
+#tab-settings .pf-box{border:1px solid var(--m3-line);border-radius:12px}
+#tab-settings .pf-box:focus-within{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+#tab-settings .pf-frame{border:1px solid var(--m3-line);border-radius:12px}
+#tab-settings .pf-offer{border:1px solid var(--m3-line);border-radius:12px}
+/* 단추 = 채움(주요) · 윤곽(보조), 높이 40 · 알약 */
+#tab-settings .btn,#tab-settings .pf-send{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 24px;border-radius:20px;font-size:14px;font-weight:500;letter-spacing:.1px;border:1px solid transparent;text-decoration:none;transition:background .15s,box-shadow .15s}
+#tab-settings .btn-sm{min-height:32px;padding:0 16px;font-size:13px}
+#tab-settings .btn-primary,#tab-settings .pf-send{background:var(--pri);color:#fff}
+#tab-settings .btn-primary:hover:not(:disabled),#tab-settings .pf-send:hover:not(:disabled){box-shadow:0 1px 3px rgba(0,0,0,.28)}
+#tab-settings .btn-outline{background:transparent;border-color:var(--m3-outline);color:var(--pri)}
+#tab-settings .btn-outline:hover{background:color-mix(in srgb,var(--pri) 8%,transparent);border-color:var(--m3-outline);color:var(--pri)}
+#tab-settings .btn:disabled,#tab-settings .pf-send:disabled{background:rgba(28,27,31,.12);border-color:transparent;color:rgba(28,27,31,.38);box-shadow:none;cursor:not-allowed}
+#tab-settings .btn:focus-visible,#tab-settings .pf-send:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+#tab-settings .skin-opt{border-radius:8px;border:1px solid var(--m3-outline);background:transparent;font-size:14px;font-weight:500;padding:8px 16px}
+#tab-settings .skin-opt:hover{background:color-mix(in srgb,var(--pri) 8%,transparent)}
+#tab-settings .skin-opt[aria-pressed=true]{background:var(--m3-tonal);border-color:var(--m3-tonal);box-shadow:none;color:var(--pri);font-weight:600}
+#tab-settings .set-actions{margin-top:16px;gap:8px}
+#tab-settings .errbox{border-radius:8px}
+/* 끼워 보여 주는 화면(GDC·PDV)도 같은 카드 모양 */
+#tab-settings #gdc-frame,#tab-settings #pdv-frame{border:1px solid var(--m3-line);border-radius:12px;background:var(--sur);box-shadow:none;height:calc(100vh - 300px)}
+@media (max-width:640px){#tab-settings .set-row,#tab-settings .skin-grp,#tab-settings .pf-fields{padding:16px}#tab-settings .set-tabs button{padding:0 14px}}
 </style>
 <header class="topbar">
   <a class="logo logo-help" id="logo-help" href="manual.html" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="tab-intro" title="나비와 나비웹 백서" onclick="_panelToggle('manual'); return false;"><span class="logo-txt">Navi Web</span><svg class="tp-chev" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></a>
@@ -1959,6 +2010,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <!-- 프로필: 나비 프로필 작성 도우미와 대화하거나 항목을 직접 채우면 내 웹페이지가 만들어진다. 공개 여부는 항목마다 사용자가 정한다(개인 정보는 처음엔 이름만 공개, 상품·서비스는 공개) -->
     <section id="set-sec-profile" class="set-sec">
+      <div class="m3-head"><h3>프로필</h3><p>나비와 대화하며 내 웹페이지를 만들고, 공개 범위를 정합니다.</p></div>
       <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 프로필</b></div>
         <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우면 <b>나의 프로필 웹페이지</b>가 만들어집니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
@@ -2010,22 +2062,25 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     
 <!-- PDV: hondi.net/pdv.html 을 그대로 끼워 보여 준다(한 곳만 고치면 되도록) -->
     <section id="set-sec-pdv" class="set-sec">
+      <div class="m3-head"><h3>내 기록</h3><p>내 데이터 금고(PDV)에 쌓인 기록을 봅니다.</p></div>
       <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 기록</b></div>
       <iframe id="pdv-frame" title="PDV" allow="clipboard-write"></iframe>
     </section>
 
     <!-- GDC: hondi.net/usage.html 을 그대로 끼워 보여 준다(잔액·사용량 그래프) -->
     <section id="set-sec-gdc" class="set-sec">
+      <div class="m3-head"><h3>GDC 지갑</h3><p>잔액과 사용량을 확인하고 충전합니다.</p></div>
       <div class="ps-bread">폰에서는 <b>⚙ 설정 → GDC 지갑</b></div>
       <iframe id="gdc-frame" title="GDC 사용량" allow="clipboard-write"></iframe>
     </section>
 
     <!-- 계정 -->
     <section id="set-sec-account" class="set-sec active">
+      <div class="m3-head"><h3>계정</h3><p>내 메일 아이디, 보내는 이름, 나비웹 도우미를 관리합니다.</p></div>
       <div class="set-row" id="set-agent-row">
         <div class="set-lbl">나비웹 도우미</div>
         <div>
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="sa-state">확인 중…</span><button type="button" class="sa-btn" onclick="window._agentGuideOpen &amp;&amp; window._agentGuideOpen()" style="border:1px solid #00796B;background:#00796B;color:#fff;border-radius:6px;padding:6px 16px;font:inherit;cursor:pointer">설치하기</button></div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="sa-state">확인 중…</span><button type="button" class="sa-btn btn btn-primary" onclick="window._agentGuideOpen &amp;&amp; window._agentGuideOpen()">설치하기</button></div>
           <div class="set-hint">정부24 등 기관 사이트에서 첨부서류를 대신 발급받아 오는 Chrome 확장 프로그램입니다. PC의 Chrome에서만 설치할 수 있습니다.</div>
         </div>
       </div>
@@ -2092,6 +2147,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
 
     <section id="set-sec-ai" class="set-sec">
+      <div class="m3-head"><h3>AI 비서</h3><p>내 비서가 어떻게 일할지 지시를 적습니다. 공용 규칙 위에 내 방식을 더합니다.</p></div>
       <div class="ps-banner"><span>🤖</span><div><b>내 AI 비서에게 일하는 방식을 알려 주는 곳</b>입니다. 모든 AI 비서는 <b>공용 시스템 프롬프트</b>를 따르고, 여기에 적은 내용은 그 위에 <b>내 방식</b>을 더합니다. 폰 채팅창의 AI 비서에도 같은 내용이 쓰입니다.</div></div>
       <div class="set-row"><div class="set-lbl">공용 시스템 프롬프트<small>(수정 불가)</small></div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">모든 나비(AI 비서)가 지키는 기본 규칙입니다. <b>사용자가 고칠 수 없습니다.</b> 내용은 언제든 읽어 볼 수 있습니다.</p>
@@ -2117,6 +2173,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </section>
 
     <section id="set-sec-phone" class="set-sec">
+      <div class="m3-head"><h3>폰 전용</h3><p>폰 설정에만 있는 항목의 사용법입니다.</p></div>
       <div class="ps-banner"><span>📱</span><div><b>폰 설정에만 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 한곳에 모아 설명합니다. 폰에서는 <b>⚙ 설정</b>에서 각 항목을 찾습니다.</div></div>
       <div class="set-row"><div class="set-lbl">Navi Wallet · 백업 키</div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">백업 키는 새 폰·새 기기에서 지갑을 되살릴 때 쓰는 열쇠입니다. <b>서버에 사본이 없어 잃어버리면 되찾을 수 없습니다.</b> PC 설정에는 이 항목이 없으니 폰에서 확인하세요.</p>
@@ -2137,6 +2194,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </section>
 
     <section id="set-sec-skin" class="set-sec">
+      <div class="m3-head"><h3>화면</h3><p>색과 모양을 골라 나에게 맞춥니다.</p></div>
       <div class="ps-bread">폰에서는 <b>⚙ 설정 → 화면</b>에서 글자 크기와 스킨을 고릅니다.</div>
       <div class="skin-grp"><h3>언어·지역</h3><p>화면 오른쪽 위의 지구본 버튼에서 언어와 국가를 바꿉니다. 처음에는 가입 때의 지역에 맞춰 자동으로 정해집니다.</p></div>
       <div class="skin-grp"><h3>색상</h3><p>강조색·활성 메뉴의 색입니다. 서류 작성 화면의 강조색도 함께 바뀝니다(파랑은 직역별 색 유지).</p><div class="skin-opts" data-skin="color"></div></div>
@@ -2156,6 +2214,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div id="set-extra" style="display:none">
       <!-- 서명 -->
       <section id="set-sec-signature" class="set-sec">
+        <div class="m3-head"><h3>서명</h3><p>내가 보내는 메일 끝에 붙는 글입니다.</p></div>
         <div class="set-row">
           <div class="set-lbl">서명</div>
           <div>
@@ -2172,6 +2231,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
       <!-- 부재중 자동응답 -->
       <section id="set-sec-autoreply" class="set-sec">
+        <div class="m3-head"><h3>부재중 자동응답</h3><p>외부에서 온 메일에 자동으로 회신합니다.</p></div>
         <div class="set-row">
           <div class="set-lbl">부재중 자동응답</div>
           <div>
