@@ -1949,11 +1949,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button type="button" role="tab" id="set-tab-ai" aria-selected="false" onclick="_settingsSwitch('ai')">AI 비서</button>
       <button type="button" role="tab" id="set-tab-gdc" aria-selected="false" onclick="_settingsSwitch('gdc')">GDC 지갑</button>
       <button type="button" role="tab" id="set-tab-pdv" aria-selected="false" onclick="_settingsSwitch('pdv')">내 기록</button>
-      <button type="button" role="tab" id="set-tab-wallet" aria-selected="false" onclick="_settingsSwitch('wallet')">백업 키</button>
       <button type="button" role="tab" id="set-tab-skin" aria-selected="false" onclick="_settingsSwitch('skin')">화면</button>
-      <button type="button" role="tab" id="set-tab-notify" aria-selected="false" onclick="_settingsSwitch('notify')">알림</button>
-      <button type="button" role="tab" id="set-tab-perm" aria-selected="false" onclick="_settingsSwitch('perm')">권한</button>
-      <button type="button" role="tab" id="set-tab-app" aria-selected="false" onclick="_settingsSwitch('app')">앱 관리</button>
+      <button type="button" role="tab" id="set-tab-phone" aria-selected="false" onclick="_settingsSwitch('phone')">폰 전용</button>
       <button type="button" role="tab" id="set-tab-signature" aria-selected="false" onclick="_settingsSwitch('signature')">서명</button>
       <button type="button" role="tab" id="set-tab-autoreply" aria-selected="false" onclick="_settingsSwitch('autoreply')">부재중 자동응답</button>
     </div>
@@ -2095,42 +2092,47 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
 
     <section id="set-sec-ai" class="set-sec">
-      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → AI 설정(AI 비서)</b></div></div>
-      <div class="set-row"><div class="set-lbl">AI 비서 · AI 설정</div><div>
-        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">폰의 AI 설정은 채팅창의 AI 비서를 어떻게 부릴지 확인하는 곳입니다.</p>
-        <ol class="ps-steps"><li>폰 화면 오른쪽 위 ⚙ <b>설정</b>을 누릅니다.</li><li>위쪽 바로가기의 <b>AI 설정</b>(또는 아래 <b>AI 비서</b> 칸)을 누릅니다.</li><li>기능 개선이나 추가하고 싶은 점은 설정이 아니라 <b>채팅창의 AI 비서에게 그대로 말하면</b> 됩니다.</li><li><b>시스템 프롬프트</b>는 PC에서 설정하고, 폰에서는 확인만 할 수 있습니다.</li></ol>
+      <div class="ps-banner"><span>🤖</span><div><b>내 AI 비서에게 일하는 방식을 알려 주는 곳</b>입니다. 모든 AI 비서는 <b>공용 시스템 프롬프트</b>를 따르고, 여기에 적은 내용은 그 위에 <b>내 방식</b>을 더합니다. 폰 채팅창의 AI 비서에도 같은 내용이 쓰입니다.</div></div>
+      <div class="set-row"><div class="set-lbl">공용 시스템 프롬프트<small>(수정 불가)</small></div><div>
+        <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">모든 나비(AI 비서)가 지키는 기본 규칙입니다. <b>사용자가 고칠 수 없습니다.</b> 내용은 언제든 읽어 볼 수 있습니다.</p>
+        <a class="btn btn-outline" id="ai-common-sp-link" href="https://github.com/Openhash-Gopang/hondi/blob/main/prompts/AC-PRO-CORE_v2_2.txt" target="_blank" rel="noopener noreferrer">공용 시스템 프롬프트 보기 ↗</a>
+        <div class="set-hint">내가 적은 지시가 공용 규칙과 어긋나면 <b>공용 규칙이 먼저</b>입니다(법령 준수·개인정보 보호 등).</div>
+      </div></div>
+      <div class="set-row"><div class="set-lbl">내 AI 비서 지시<small>(나만의 설정)</small></div><div>
+        <textarea id="ai-user-sp" maxlength="4000" rows="9" readonly placeholder="예: 존댓말로 짧게 답해 줘. 숫자는 항상 표로 정리해 줘. 메일 답장은 먼저 초안만 보여 주고 내가 확인한 뒤 보내. 우리 가게는 월요일 휴무야." oninput="_aiSpDirty()"></textarea>
+        <div class="set-hint"><span id="ai-sp-count">0</span> / 4000자. <b>편집</b>을 눌러야 고칠 수 있습니다. 이 브라우저에 저장됩니다.</div>
+        <div class="set-hint"><b>이렇게 적어 보세요</b> — “답변은 세 줄 이내로.” · “낯선 사람에게 온 메일은 먼저 알려 줘.” · “금액이 들어간 서류는 내가 확인하기 전에는 보내지 마.” · “외국어 메일은 한국어로 요약해 줘.” · “우리 식당 영업시간은 11시~21시, 월요일 휴무.”</div>
+        <div id="ai-sp-files" class="set-hint"></div>
+        <input type="file" id="ai-sp-file" multiple accept=".txt,.md,.csv,.json,text/*" style="display:none">
+        <div id="ai-sp-err" class="errbox" style="display:none"></div>
+        <div id="ai-sp-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
+        <div class="set-actions">
+          <button type="button" class="btn btn-outline" id="ai-sp-edit-btn" onclick="_aiSpEdit()">편집</button>
+          <button type="button" class="btn btn-outline" id="ai-sp-attach-btn" onclick="_aiSpAttach()" disabled>파일 첨부</button>
+          <button type="button" class="btn btn-primary" id="ai-sp-save-btn" onclick="_aiSpSave()" disabled>저장</button>
+          <button type="button" class="btn btn-outline" id="ai-sp-cancel-btn" onclick="_aiSpCancel()" style="display:none">취소</button>
+        </div>
+        <div class="set-hint">첨부는 글자 파일(.txt .md .csv .json)만 되고, 파일 하나 2만 자 · 최대 5개입니다. 개인정보(주민번호·계좌·비밀번호)는 적지 마세요.</div>
       </div></div>
     </section>
 
-    <section id="set-sec-wallet" class="set-sec">
-      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 백업 키 / Navi Wallet</b></div></div>
+    <section id="set-sec-phone" class="set-sec">
+      <div class="ps-banner"><span>📱</span><div><b>폰 설정에만 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 한곳에 모아 설명합니다. 폰에서는 <b>⚙ 설정</b>에서 각 항목을 찾습니다.</div></div>
       <div class="set-row"><div class="set-lbl">Navi Wallet · 백업 키</div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">백업 키는 새 폰·새 기기에서 지갑을 되살릴 때 쓰는 열쇠입니다. <b>서버에 사본이 없어 잃어버리면 되찾을 수 없습니다.</b> PC 설정에는 이 항목이 없으니 폰에서 확인하세요.</p>
-        <ol class="ps-steps"><li>폰 화면 오른쪽 위 ⚙ <b>설정</b>을 누릅니다.</li><li>위쪽 바로가기의 <b>백업 키</b>(또는 Navi Wallet 아래 백업 키)를 누릅니다.</li><li>나오는 키를 <b>안전한 곳</b>(종이, 비밀번호 관리자)에 보관합니다. 화면 캡처나 공유는 하지 않습니다.</li><li><b>재무제표</b>도 같은 Navi Wallet 아래에서 볼 수 있습니다.</li></ol><p class="set-hint">자세한 내용은 사용법의 「지갑과 백업 키 — 새 폰·새 기기에서 쓰기」 장을 보세요.</p>
+        <ol class="ps-steps"><li>폰 화면 오른쪽 위 ⚙ <b>설정</b>을 누릅니다.</li><li>위쪽 바로가기의 <b>백업 키</b>(또는 Navi Wallet 아래 백업 키)를 누릅니다.</li><li>나오는 키를 <b>안전한 곳</b>(종이, 비밀번호 관리자)에 보관합니다. 화면 캡처나 공유는 하지 않습니다.</li><li><b>재무제표</b>도 같은 Navi Wallet 아래에서 볼 수 있습니다.</li></ol><p class="set-hint">폰에서의 위치: <b>⚙ 설정 → 백업 키 / Navi Wallet</b></p><p class="set-hint">자세한 내용은 사용법의 「지갑과 백업 키 — 새 폰·새 기기에서 쓰기」 장을 보세요.</p>
       </div></div>
-    </section>
-
-    <section id="set-sec-notify" class="set-sec">
-      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 알림</b></div></div>
       <div class="set-row"><div class="set-lbl">알림</div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">폰에서 대화 요청·메일·촬영 요청 같은 알림을 받을 때 소리와 켜기/끄기를 정합니다.</p>
-        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>을 열고 아래로 내려 <b>알림</b>을 찾습니다.</li><li><b>메시지 알림 소리</b>를 기본 · 벨 · 물방울 · 차임 · 없음 중에서 고르고 <b>미리듣기</b>로 들어 봅니다.</li><li><b>알림 끄기/켜기</b> 스위치로 알림을 켜고 끕니다.</li><li>“브라우저에서 알림이 차단돼 있습니다”가 나오면 주소창 왼쪽 아이콘 → 사이트 설정 → 알림을 <b>허용</b>으로 바꾼 뒤 다시 켭니다.</li></ol><p class="set-hint">폰으로 서류를 촬영해 PC로 보낼 때도 폰 알림이 켜져 있어야 촬영 요청이 도착합니다.</p>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>을 열고 아래로 내려 <b>알림</b>을 찾습니다.</li><li><b>메시지 알림 소리</b>를 기본 · 벨 · 물방울 · 차임 · 없음 중에서 고르고 <b>미리듣기</b>로 들어 봅니다.</li><li><b>알림 끄기/켜기</b> 스위치로 알림을 켜고 끕니다.</li><li>“브라우저에서 알림이 차단돼 있습니다”가 나오면 주소창 왼쪽 아이콘 → 사이트 설정 → 알림을 <b>허용</b>으로 바꾼 뒤 다시 켭니다.</li></ol><p class="set-hint">폰에서의 위치: <b>⚙ 설정 → 알림</b></p><p class="set-hint">폰으로 서류를 촬영해 PC로 보낼 때도 폰 알림이 켜져 있어야 촬영 요청이 도착합니다.</p>
       </div></div>
-    </section>
-
-    <section id="set-sec-perm" class="set-sec">
-      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 권한 설정</b></div></div>
       <div class="set-row"><div class="set-lbl">권한 설정</div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">카메라·마이크·위치는 폰 브라우저에서 허용해야 쓸 수 있습니다. 허용 방법은 기종마다 다릅니다.</p>
-        <ol class="ps-steps"><li><b>Android</b> 크롬 ⋮ → 사이트 설정 → 위치·카메라·마이크를 허용합니다.</li><li><b>iPhone</b> 주소창의 AA → 웹사이트 설정 → 위치·마이크를 허용합니다.</li><li>허용한 뒤 나비웹 화면을 새로고침합니다.</li></ol><p class="set-hint">폰으로 서류를 촬영해 PC로 보내려면 카메라 권한이 허용되어 있어야 합니다.</p>
+        <ol class="ps-steps"><li><b>Android</b> 크롬 ⋮ → 사이트 설정 → 위치·카메라·마이크를 허용합니다.</li><li><b>iPhone</b> 주소창의 AA → 웹사이트 설정 → 위치·마이크를 허용합니다.</li><li>허용한 뒤 나비웹 화면을 새로고침합니다.</li></ol><p class="set-hint">폰에서의 위치: <b>⚙ 설정 → 권한 설정</b></p><p class="set-hint">폰으로 서류를 촬영해 PC로 보내려면 카메라 권한이 허용되어 있어야 합니다.</p>
       </div></div>
-    </section>
-
-    <section id="set-sec-app" class="set-sec">
-      <div class="ps-banner"><span>📱</span><div><b>폰 설정에 있는 항목</b>입니다. PC에는 같은 화면이 없어 사용법을 설명합니다. 폰에서의 위치: <b>⚙ 설정 → 더 보기 → 앱 관리</b></div></div>
       <div class="set-row"><div class="set-lbl">앱 관리</div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">나비웹을 폰 바탕화면에 두고 쓰거나, 새 버전이 안 보일 때 갱신하는 곳입니다.</p>
-        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>에서 <b>더 보기</b>를 눌러 펼칩니다.</li><li><b>앱으로 설치(PWA)</b>를 누르면 폰 바탕화면에 나비웹 열기 아이콘이 추가됩니다.</li><li>새 기능이 안 보이면 <b>최신 버전으로 갱신</b>을 누릅니다.</li></ol>
+        <ol class="ps-steps"><li>폰 ⚙ <b>설정</b>에서 <b>더 보기</b>를 눌러 펼칩니다.</li><li><b>앱으로 설치(PWA)</b>를 누르면 폰 바탕화면에 나비웹 열기 아이콘이 추가됩니다.</li><li>새 기능이 안 보이면 <b>최신 버전으로 갱신</b>을 누릅니다.</li></ol><p class="set-hint">폰에서의 위치: <b>⚙ 설정 → 더 보기 → 앱 관리</b></p>
       </div></div>
     </section>
 
@@ -4253,7 +4255,7 @@ async function _docEditTurn(text, fromPanel) {
   let data;
   try {
     const doc = { ok: true, busy: false, rev: snap.rev | 0, title: snap.title, fields: snap.fields.slice(0, 60) };
-    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, doc, assist_lines: (window.CaseAssist ? await CaseAssist.lines() : []) }) });
+    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, doc, user_instructions: _aiSpPayload(), assist_lines: (window.CaseAssist ? await CaseAssist.lines() : []) }) });
     data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) return false;
   } catch (e) { return false; }
@@ -5980,7 +5982,7 @@ async function _senderNameClear() { await _senderNameApply('', `저장했습니�
 // 서버(GET·POST /kmail/settings)가 전화 인증 토큰만으로 받는 항목에 맞춘다.
 // 진입: 왼쪽 맨 아래 '설정' · 공용 배지의 ⋮(window.kmailOpenSettings) · 주소의 #settings
 // ══════════════════════════════════════════════════════════════
-const _SET_SECTIONS = ['account', 'profile', 'ai', 'gdc', 'pdv', 'wallet', 'skin', 'notify', 'perm', 'app', 'signature', 'autoreply'];
+const _SET_SECTIONS = ['account', 'profile', 'ai', 'gdc', 'pdv', 'skin', 'phone', 'signature', 'autoreply'];
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
   if (name === 'gdc') { const f = document.getElementById('gdc-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/usage.html?embed=mail'); }   // GDC 잔액·사용량(그래프)
@@ -5992,6 +5994,75 @@ function _settingsSwitch(name) {
     if (sec) sec.classList.toggle('active', n === name);
     if (tab) { tab.classList.toggle('active', n === name); tab.setAttribute('aria-selected', n === name ? 'true' : 'false'); }
   });
+}
+
+// ── AI 비서 설정(설정 > AI 비서) — 2026-11-21 개편(주피터 지시) ──
+// 공용 SP(AC-PRO-CORE)는 읽기 전용 링크로만 연다. 사용자가 쓰는 건 그 위에 더하는 "내 지시" 텍스트 + 글자 파일 첨부.
+// 저장: 이 브라우저(localStorage 'naviweb_ai_user_sp'). 채팅(/kmail/assist) 요청에 user_instructions 로 실어 보낸다 — 서버가 읽어 쓰는 부분은 별도 반영 필요.
+const _AI_SP_KEY = 'naviweb_ai_user_sp';
+let _aiSpSaved = { text: '', files: [] }, _aiSpDraftFiles = [], _aiSpEditing = false;
+function _aiUserSp() {
+  try { const o = JSON.parse(localStorage.getItem(_AI_SP_KEY) || 'null'); if (o && typeof o.text === 'string') return { text: o.text, files: Array.isArray(o.files) ? o.files : [] }; } catch (e) {}
+  return { text: '', files: [] };
+}
+function _aiSpPayload() { const o = _aiUserSp(); return (o.text.trim() || o.files.length) ? { text: o.text.trim(), files: o.files.map(f => ({ name: f.name, text: f.text })) } : null; }
+function _aiSpFilesPaint() {
+  const box = document.getElementById('ai-sp-files'); if (!box) return;
+  box.textContent = '';
+  const list = _aiSpEditing ? _aiSpDraftFiles : _aiSpSaved.files;
+  if (!list.length) return;
+  box.appendChild(document.createTextNode('첨부: '));
+  list.forEach((f, i) => {
+    const chip = document.createElement('span'); chip.style.cssText = 'display:inline-block;border:1px solid var(--bdr);border-radius:12px;padding:2px 10px;margin:2px 6px 2px 0';
+    chip.textContent = f.name + ' (' + f.text.length.toLocaleString() + '자)';
+    if (_aiSpEditing) { const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', f.name + ' 빼기'); x.style.cssText = 'border:0;background:none;cursor:pointer;margin-left:6px'; x.onclick = () => { _aiSpDraftFiles.splice(i, 1); _aiSpFilesPaint(); _aiSpDirty(); }; chip.appendChild(x); }
+    box.appendChild(chip);
+  });
+}
+function _aiSpDirty() {
+  const t = document.getElementById('ai-user-sp'); if (!t) return;
+  document.getElementById('ai-sp-count').textContent = t.value.length.toLocaleString();
+  _setBox('ai-sp-ok', ''); _setBox('ai-sp-err', '');
+  const changed = t.value !== _aiSpSaved.text || JSON.stringify(_aiSpDraftFiles) !== JSON.stringify(_aiSpSaved.files);
+  document.getElementById('ai-sp-save-btn').disabled = !_aiSpEditing || !changed;
+}
+function _aiSpMode(editing) {
+  _aiSpEditing = editing;
+  const t = document.getElementById('ai-user-sp'); t.readOnly = !editing;
+  document.getElementById('ai-sp-edit-btn').style.display = editing ? 'none' : '';
+  document.getElementById('ai-sp-cancel-btn').style.display = editing ? '' : 'none';
+  document.getElementById('ai-sp-attach-btn').disabled = !editing;
+  _aiSpFilesPaint(); _aiSpDirty();
+  if (editing) t.focus();
+}
+function _aiSpLoad() {
+  _aiSpSaved = _aiUserSp(); _aiSpDraftFiles = _aiSpSaved.files.slice();
+  const t = document.getElementById('ai-user-sp'); if (!t) return;
+  t.value = _aiSpSaved.text; _aiSpMode(false);
+}
+function _aiSpEdit() { _aiSpDraftFiles = _aiSpSaved.files.slice(); _aiSpMode(true); }
+function _aiSpCancel() { _aiSpLoad(); _setBox('ai-sp-ok', ''); _setBox('ai-sp-err', ''); }
+function _aiSpAttach() { document.getElementById('ai-sp-file').click(); }
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('ai-sp-file'); if (!inp) return;
+  inp.addEventListener('change', async () => {
+    _setBox('ai-sp-err', '');
+    for (const f of Array.from(inp.files || [])) {
+      if (_aiSpDraftFiles.length >= 5) { _setBox('ai-sp-err', '첨부는 최대 5개입니다.'); break; }
+      if (!/\.(txt|md|csv|json)$/i.test(f.name) && !/^text\//.test(f.type)) { _setBox('ai-sp-err', f.name + ': 글자 파일(.txt .md .csv .json)만 첨부할 수 있습니다.'); continue; }
+      let text = ''; try { text = await f.text(); } catch (e) { _setBox('ai-sp-err', f.name + ': 읽지 못했습니다.'); continue; }
+      if (text.length > 20000) { _setBox('ai-sp-err', f.name + ': 2만 자를 넘어 앞부분만 담았습니다.'); text = text.slice(0, 20000); }
+      _aiSpDraftFiles = _aiSpDraftFiles.filter(x => x.name !== f.name).concat([{ name: f.name, text }]);
+    }
+    inp.value = ''; _aiSpFilesPaint(); _aiSpDirty();
+  });
+  _aiSpLoad();
+});
+function _aiSpSave() {
+  const t = document.getElementById('ai-user-sp');
+  const o = { text: t.value.trim(), files: _aiSpDraftFiles };
+  try { localStorage.setItem(_AI_SP_KEY, JSON.stringify(o)); } catch (e) { _setBox('ai-sp-err', '저장하지 못했습니다(브라우저 저장 공간이 막혀 있거나 가득 찼습니다).'); return; }
+  _aiSpLoad(); _setBox('ai-sp-ok', '저장했습니다. 이제부터 내 AI 비서가 이 지시를 더해 일합니다.');
 }
 
 // ── 스킨(설정 > 화면) ──
@@ -8276,7 +8347,7 @@ async function _navAssistTurn(text, opt) {
   if (lbl) lbl.textContent = '확인하고 있습니다…';
   document.getElementById('cmp-send-btn').disabled = true; loading.style.display = 'flex';
   try {
-    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs, asked: _navRoute.asked, noQuick: _navRoute.stay, assist_lines: (window.CaseAssist ? await CaseAssist.lines() : []) }) });
+    const res = await KAuth.fetchWithAuth(NAVI_ASSIST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: _navRoute.msgs, asked: _navRoute.asked, noQuick: _navRoute.stay, user_instructions: _aiSpPayload(), assist_lines: (window.CaseAssist ? await CaseAssist.lines() : []) }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || ('HTTP ' + res.status));
     const route = data.route || { type: 'assistant' };
