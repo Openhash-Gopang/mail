@@ -1526,6 +1526,15 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 #tab-settings .gdc-table th{text-align:left;font-size:12.5px;font-weight:600;color:var(--m3-on-var);padding:8px 12px;background:var(--bg)}
 #tab-settings .gdc-table td{padding:10px 12px;border-top:1px solid var(--m3-line)}
 #tab-settings .gdc-table .num{text-align:right;font-variant-numeric:tabular-nums}
+#tab-settings .gdc-fields{display:grid;gap:14px;margin-top:14px}
+#tab-settings .gdc-field-top{display:flex;align-items:center;gap:8px;font-size:14px}
+#tab-settings .gdc-field-top b{font-weight:600}
+#tab-settings .gdc-field-v{margin-left:auto;color:var(--m3-on-var);font-variant-numeric:tabular-nums}
+#tab-settings .gdc-dot,#tab-settings .gdc-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none}
+#tab-settings .gdc-meter{height:8px;border-radius:4px;background:var(--m3-tonal);overflow:hidden;margin:6px 0 3px}
+#tab-settings .gdc-meter i{display:block;height:100%;border-radius:4px}
+#tab-settings .gdc-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--m3-on-var)}
+#tab-settings .gdc-legend span{display:inline-flex;align-items:center;gap:6px}
 #tab-settings .gdc-empty{padding:24px 8px;text-align:center;color:var(--m3-on-var);font-size:14px}
 #tab-settings .gdc-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px}
 #tab-settings .gdc-scrim[hidden]{display:none}
@@ -2103,7 +2112,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
     <!-- GDC 지갑: 끼움 화면 없이 직접 그린다(_gdcLoad, 잔액·무료 한도·사용량 그래프·충전 안내) -->
     <section id="set-sec-gdc" class="set-sec">
-<div class="m3-head"><h3>GDC 지갑</h3><p>잔액과 사용량을 확인하고 충전합니다.</p></div>
+<div class="m3-head"><h3>GDC 지갑</h3><p>잔액과 사용량을 한눈에 보고, 요금제와 입금 방법을 확인합니다.</p></div>
 <div class="ps-bread">폰에서는 <b>⚙ 설정 → GDC 지갑</b></div>
       <div id="gdc-state" class="set-hint" role="status"><span class="spinner"></span> 불러오는 중…</div>
       <div id="gdc-content" style="display:none">
@@ -2117,14 +2126,15 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="set-row" id="gdc-hist" style="display:none">
           <button type="button" class="gdc-toggle" id="gdc-hist-toggle" aria-expanded="false" aria-controls="gdc-hist-body" onclick="_gdcHistToggle()"><span><span class="set-lbl" style="padding:0">충전 내역</span><span class="set-hint" id="gdc-hist-sub" style="display:block;margin-top:2px">최근 20건 · 눌러서 펼치기</span></span><span class="gdc-chev" aria-hidden="true">⌄</span></button>
           <div id="gdc-hist-body" hidden></div></div>
-        <div class="gdc-filters" id="gdc-filters" role="group" aria-label="기간"><button type="button" class="skin-opt" aria-pressed="true" data-r="today">오늘</button><button type="button" class="skin-opt" aria-pressed="false" data-r="7">최근 7일</button><button type="button" class="skin-opt" aria-pressed="false" data-r="30">최근 30일</button></div>
+        <div class="gdc-filters" id="gdc-filters" role="group" aria-label="기간"><button type="button" class="skin-opt" aria-pressed="true" data-r="today">일일(오늘)</button><button type="button" class="skin-opt" aria-pressed="false" data-r="7">주간(7일)</button><button type="button" class="skin-opt" aria-pressed="false" data-r="30">월간(30일)</button><button type="button" class="skin-opt" aria-pressed="false" data-r="90">3개월(주별)</button></div>
         <div class="gdc-grid3">
           <div class="set-row gdc-stat"><div class="set-lbl">청구액</div><div class="gdc-val" id="gdc-u-krw">—<span class="gdc-unit">원</span></div></div>
           <div class="set-row gdc-stat"><div class="set-lbl">API 요청</div><div class="gdc-val" id="gdc-u-req">—</div></div>
           <div class="set-row gdc-stat"><div class="set-lbl">토큰</div><div class="gdc-val" id="gdc-u-tok">—</div></div>
         </div>
+        <div class="set-hint" id="gdc-delta" style="margin:-4px 2px 12px"></div>
         <div id="gdc-charts"></div>
-        <div class="set-row"><div class="set-lbl">모델별 사용 내역<small>최근 30일</small></div><div id="gdc-detail"></div></div>
+        <div class="set-row"><div class="set-lbl">모델별 사용 내역<small>최근 90일</small></div><div id="gdc-detail"></div></div>
       </div>
       <div id="gdc-err" class="errbox" style="display:none"></div>
       <div class="set-actions" id="gdc-retry-row" style="display:none"><button type="button" class="btn btn-primary" onclick="_gdcLoad(true)">다시 시도</button></div>
@@ -6219,16 +6229,62 @@ function _gdcBar(vals, labels, color, fmtY, minMax) {
   labels.forEach((l, i) => { if (i % step === 0 || (i === n - 1 && n < 8)) g += `<text x="${(L + iw * (i + .5) / n).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="#6C757D">${_i18nEsc(l)}</text>`; });
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="막대 그래프">${g}</svg>`;
 }
+const _GDC_SVC = { 'hondi-chat': '나비 대화·서류 작성·전문가 AI', klaw: 'K-Law(법률)', kplan: 'K-Plan(계획)', kjit: 'K-JIT', kcity: 'K-City', biz: '사업체 AI', gov: '정부 AI' };
+const _GDC_COL = ['#3B7DDD', '#0F8F7E', '#E8710A', '#7C4DDB', '#C2410C', '#4B5563', '#B45309', '#0E7490'];
+function _gdcSvcName(k) { return _GDC_SVC[k] || (/^kmail/.test(k) ? '메일' : k === '(unknown)' ? '기타' : k); }
+function _gdcMerge(list) {
+  const o = { req: 0, tok: 0, krw: 0, models: {}, svc: {} };
+  list.forEach(r => { o.req += r.req || 0; o.tok += r.tok || 0; o.krw += r.krw || 0; Object.keys(r.svc || {}).forEach(k => { const v = o.svc[k] || (o.svc[k] = { req: 0, tok: 0, krw: 0 }), x = r.svc[k]; v.req += x.req || 0; v.tok += x.tok || 0; v.krw += x.krw || 0; }); Object.keys(r.models || {}).forEach(m => { const v = o.models[m] || (o.models[m] = { req: 0, tok: 0 }); v.req += r.models[m].req || 0; v.tok += r.models[m].tok || 0; }); });
+  return o;
+}
+// 선택한 기간의 칸(rows)과 눈금(lab), 비교할 직전 기간 합계(prev)
+function _gdcRows() {
+  const sr = _gdcSeries, d = sr.daily;
+  if (_gdcRange === 'today') return { rows: sr.hourly, lab: sr.hourly.map(r => String(r.h).padStart(2, '0') + ':00'), prev: d.length > 1 ? d[d.length - 2] : null, prevName: '어제' };
+  const n = Number(_gdcRange), cur = d.slice(-n), before = d.slice(-2 * n, -n);
+  const prev = before.length === n ? _gdcMerge(before) : null;
+  if (_gdcRange === '90') {
+    const rows = [], lab = []; for (let i = 0; i < cur.length; i += 7) { const ch = cur.slice(i, i + 7); rows.push(_gdcMerge(ch)); lab.push(ch[0].d.slice(5)); }
+    return { rows, lab, prev: null, prevName: '' };
+  }
+  return { rows: cur, lab: cur.map(r => r.d.slice(5)), prev, prevName: n === 7 ? '직전 7일' : '직전 30일' };
+}
+function _gdcStack(rows, lab, keys, fmtY) {
+  const W = 560, H = 200, L = 44, R = 8, T = 10, B = 24, iw = W - L - R, ih = H - T - B, n = rows.length, bw = Math.max(2, iw / n * .62);
+  const tot = rows.map(r => keys.reduce((a, k) => a + ((r.svc[k] || {}).krw || 0), 0)), max = _gdcNiceMax(Math.max.apply(null, tot.concat([0])));
+  let g = '';
+  for (let i = 0; i <= 2; i++) { const y = T + ih - ih * i / 2; g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="#D9DEE6"/><text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="10.5" fill="#6C757D">${_i18nEsc(fmtY(max * i / 2))}</text>`; }
+  rows.forEach((r, i) => { let y0 = T + ih; const x = L + iw * (i + .5) / n - bw / 2;
+    keys.forEach((k, j) => { const v = (r.svc[k] || {}).krw || 0; if (v <= 0) return; const h = Math.max(ih * v / max, 1); y0 -= h; g += `<rect x="${x.toFixed(1)}" y="${y0.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${_GDC_COL[j % _GDC_COL.length]}"><title>${_i18nEsc(lab[i] + ' · ' + _gdcSvcName(k) + ' ' + fmtY(v) + '원')}</title></rect>`; }); });
+  const step = Math.ceil(n / 6);
+  lab.forEach((l, i) => { if (i % step === 0 || (i === n - 1 && n < 8)) g += `<text x="${(L + iw * (i + .5) / n).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="#6C757D">${_i18nEsc(l)}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="분야별 쌓은 막대 그래프">${g}</svg>`;
+}
 function _gdcRender() {
   const sr = _gdcSeries, el = document.getElementById('gdc-charts'); if (!el) return;
-  if (!sr) { el.innerHTML = ''; _gdcSet('gdc-u-krw', '—<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', '—'); _gdcSet('gdc-u-tok', '—'); return; }
-  const rows = _gdcRange === 'today' ? sr.hourly : sr.daily.slice(-Number(_gdcRange));
-  const lab = rows.map(r => _gdcRange === 'today' ? String(r.h).padStart(2, '0') + ':00' : r.d.slice(5));
+  if (!sr) { el.innerHTML = ''; _gdcSet('gdc-u-krw', '—<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', '—'); _gdcSet('gdc-u-tok', '—'); _gdcSet('gdc-delta', ''); return; }
+  const { rows, lab, prev, prevName } = _gdcRows();
   const sum = (k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
   _gdcSet('gdc-u-krw', _gdcFmt(sum('krw')) + '<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', _gdcFmt(sum('req'))); _gdcSet('gdc-u-tok', _gdcFmt(sum('tok')));
+  // 직전 기간과 비교
+  if (prev && sum('krw') + (prev.krw || 0) > 0) {
+    const a = sum('krw'), b = prev.krw || 0, diff = a - b;
+    _gdcSet('gdc-delta', b > 0 ? `${prevName}(${_gdcFmt(b)}원)보다 <b>${_gdcFmt(Math.abs(diff))}원 ${diff >= 0 ? '많이' : '적게'}</b> 썼어요 (${diff >= 0 ? '+' : '−'}${Math.abs(Math.round(diff / b * 100))}%).` : `${prevName}에는 사용 내역이 없었어요.`);
+  } else _gdcSet('gdc-delta', '');
   if (!sum('req')) { el.innerHTML = '<div class="set-row"><div class="gdc-empty">이 기간의 사용 내역이 없어요.</div></div>'; return; }
   const num = (v) => v >= 100 ? _gdcFmt(v) : String(Math.round(v * 100) / 100);
-  let h = `<div class="set-row gdc-chart"><h4>청구액(원) <span>${_gdcFmt(sum('krw'))}원</span></h4>${_gdcBar(rows.map(r => r.krw), lab, 'var(--pri)', num)}</div>`;
+  // ① 사용 분야별 — 어디에 썼는지
+  const tot = {}; rows.forEach(r => Object.keys(r.svc || {}).forEach(k => { const v = tot[k] || (tot[k] = { req: 0, tok: 0, krw: 0 }), x = r.svc[k]; v.req += x.req; v.tok += x.tok; v.krw += x.krw; }));
+  const keys = Object.keys(tot), byKrw = keys.some(k => tot[k].krw > 0), metric = byKrw ? 'krw' : 'req';
+  keys.sort((a, b) => tot[b][metric] - tot[a][metric]);
+  let h = '';
+  if (keys.length) {
+    const all = keys.reduce((a, k) => a + tot[k][metric], 0) || 1;
+    h += `<div class="set-row gdc-chart"><h4>어디에 썼나요? <span>사용 분야별 ${byKrw ? '청구액' : '요청 수'}</span></h4><div class="gdc-fields">` +
+      keys.map((k, j) => { const v = tot[k], pct = Math.round(v[metric] / all * 100); return `<div class="gdc-field"><div class="gdc-field-top"><span class="gdc-dot" style="background:${_GDC_COL[j % _GDC_COL.length]}"></span><b>${_i18nEsc(_gdcSvcName(k))}</b><span class="gdc-field-v">${byKrw ? _gdcFmt(v.krw) + '원' : _gdcFmt(v.req) + '회'} · ${pct}%</span></div><div class="gdc-meter" role="img" aria-label="${_i18nEsc(_gdcSvcName(k))} ${pct}%"><i style="width:${Math.max(pct, 1)}%;background:${_GDC_COL[j % _GDC_COL.length]}"></i></div><div class="set-hint">요청 ${_gdcFmt(v.req)}회 · 토큰 ${_gdcFmt(v.tok)}</div></div>`; }).join('') + '</div></div>';
+    if (byKrw) h += `<div class="set-row gdc-chart"><h4>분야별 사용 추이 <span>${_gdcRange === 'today' ? '시간별' : _gdcRange === '90' ? '주별' : '일별'} 청구액(원)</span></h4>${_gdcStack(rows, lab, keys, num)}<div class="gdc-legend">${keys.map((k, j) => `<span><i style="background:${_GDC_COL[j % _GDC_COL.length]}"></i>${_i18nEsc(_gdcSvcName(k))}</span>`).join('')}</div></div>`;
+  }
+  h += `<div class="set-row gdc-chart"><h4>청구액(원) <span>${_gdcFmt(sum('krw'))}원</span></h4>${_gdcBar(rows.map(r => r.krw), lab, 'var(--pri)', num)}</div>`;
   const models = {}; rows.forEach(r => Object.keys(r.models || {}).forEach(m => { models[m] = 1; }));
   Object.keys(models).forEach(m => {
     if (!rows.some(r => ((r.models[m] || {}).req || 0) > 0)) return;
@@ -6253,7 +6309,7 @@ async function _gdcLoad(force) {
   if (ct.style.display === 'none') st.style.display = '';
   try {
     const q = encodeURIComponent(guid), get = (p) => fetch(`${PROXY}${p}guid=${q}`).then(r => r.json());
-    const [b, qt, u] = await Promise.allSettled([get('/biz/balance?'), get('/free-quota-status?'), get('/usage-log?days=30&')]);
+    const [b, qt, u] = await Promise.allSettled([get('/biz/balance?'), get('/free-quota-status?'), get('/usage-log?days=90&')]);
     const bd = b.status === 'fulfilled' ? b.value : null, qd = qt.status === 'fulfilled' ? qt.value : null, ud = u.status === 'fulfilled' ? u.value : null;
     _gdcSet('gdc-balance', (bd && bd.ok && typeof bd.balance === 'number' ? _gdcFmt(bd.balance) : '0') + '<span class="gdc-unit">GDC</span>');
     const qc = document.getElementById('gdc-quota');
