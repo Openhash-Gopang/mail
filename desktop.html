@@ -6231,7 +6231,7 @@ function _gdcBar(vals, labels, color, fmtY, minMax) {
 }
 const _GDC_SVC = { 'hondi-chat': '나비 대화·서류 작성·전문가 AI', klaw: 'K-Law(법률)', kplan: 'K-Plan(계획)', kjit: 'K-JIT', kcity: 'K-City', biz: '사업체 AI', gov: '정부 AI' };
 const _GDC_COL = ['#3B7DDD', '#0F8F7E', '#E8710A', '#7C4DDB', '#C2410C', '#4B5563', '#B45309', '#0E7490'];
-function _gdcSvcName(k) { return _GDC_SVC[k] || (/^kmail/.test(k) ? '메일' : k === '(unknown)' ? '기타' : k); }
+function _gdcSvcName(k) { if (k.indexOf('f:') === 0) return k.slice(2); return _GDC_SVC[k] || (/^kmail/.test(k) ? '메일' : k === '(unknown)' ? '기타' : k); }
 function _gdcMerge(list) {
   const o = { req: 0, tok: 0, krw: 0, models: {}, svc: {} };
   list.forEach(r => { o.req += r.req || 0; o.tok += r.tok || 0; o.krw += r.krw || 0; Object.keys(r.svc || {}).forEach(k => { const v = o.svc[k] || (o.svc[k] = { req: 0, tok: 0, krw: 0 }), x = r.svc[k]; v.req += x.req || 0; v.tok += x.tok || 0; v.krw += x.krw || 0; }); Object.keys(r.models || {}).forEach(m => { const v = o.models[m] || (o.models[m] = { req: 0, tok: 0 }); v.req += r.models[m].req || 0; v.tok += r.models[m].tok || 0; }); });
@@ -6263,7 +6263,12 @@ function _gdcStack(rows, lab, keys, fmtY) {
 function _gdcRender() {
   const sr = _gdcSeries, el = document.getElementById('gdc-charts'); if (!el) return;
   if (!sr) { el.innerHTML = ''; _gdcSet('gdc-u-krw', '—<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', '—'); _gdcSet('gdc-u-tok', '—'); _gdcSet('gdc-delta', ''); return; }
-  const { rows, lab, prev, prevName } = _gdcRows();
+  let { rows, lab, prev, prevName } = _gdcRows();
+  // 분야가 많으면 상위 7개만 따로 보이고 나머지는 '기타'로 묶는다(색 구분이 되는 범위)
+  { const t = {}; rows.forEach(r => Object.keys(r.svc || {}).forEach(k => { t[k] = (t[k] || 0) + (r.svc[k].krw || 0) * 1e3 + (r.svc[k].req || 0); }));
+    const ks = Object.keys(t).sort((a, b) => t[b] - t[a]);
+    if (ks.length > 8) { const keep = new Set(ks.slice(0, 7));
+      rows = rows.map(r => { const o = {}; Object.keys(r.svc || {}).forEach(k => { const kk = keep.has(k) ? k : 'f:기타', v = o[kk] || (o[kk] = { req: 0, tok: 0, krw: 0 }); v.req += r.svc[k].req; v.tok += r.svc[k].tok; v.krw += r.svc[k].krw; }); return Object.assign({}, r, { svc: o }); }); } }
   const sum = (k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
   _gdcSet('gdc-u-krw', _gdcFmt(sum('krw')) + '<span class="gdc-unit">원</span>'); _gdcSet('gdc-u-req', _gdcFmt(sum('req'))); _gdcSet('gdc-u-tok', _gdcFmt(sum('tok')));
   // 직전 기간과 비교
