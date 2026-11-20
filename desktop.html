@@ -8688,6 +8688,14 @@ function _ctNavClick() {
 //     topic: '주제', event: { when: '일시', mode: 'online'|'offline'|'hybrid', place: '장소', url: '온라인 주소' },   // event 는 세미나·행사만
 //     attendees: [{ name, org, status: '참석'|'불참'|'미정' }], outreach: [{ org, result }],
 //     metrics: { sent, replied, confirmed, attended }, outcome: '성과 요약', followups: ['후속 조치', …] }
+// 참석자 이름은 메일 페이지에서 가운데 글자를 가려 보여 준다(주피터 지시 2026-11-20): 홍길동→홍*동, 이도→이*, 남궁민수→남**수, Kim→K*m.
+// 원본 명단은 L1 PocketBase 에 저장하는 것으로 정했다(저장 연결은 백엔드 작업). 이 화면·복사·파일 내보내기는 모두 가린 이름만 쓴다.
+function _chMaskName(n) {
+  const a = Array.from(String(n == null ? '' : n).trim());
+  if (a.length <= 1) return a.join('');
+  if (a.length === 2) return a[0] + '*';
+  return a[0] + '*'.repeat(a.length - 2) + a[a.length - 1];
+}
 var _chItems = [];     // 저장된 보고서(지금은 비어 있음)
 var _chCur = null;     // 지금 열어 본 보고서
 var _CH_KIND = { seminar: '세미나·행사', recruit: '모집·신청', outreach: '안내·홍보', other: '기타' };
@@ -8741,7 +8749,7 @@ function _chShow(r, isSample) {
   const sec = (t, inner) => '<div class="ch-sec"><h3>' + escHtml(t) + '</h3>' + inner + '</div>';
   let h = sec('1. 개요', '<p>' + escHtml(r.topic || '') + '</p>');
   if (e) h += sec('2. 모임 방식과 장소', '<p>' + escHtml((_CH_MODE[e.mode] || '') + ' · ' + (e.place || '')) + '\n' + escHtml(e.url || '') + '</p>');
-  if (r.attendees) h += sec((e ? '3' : '2') + '. 참석자 목록', '<table class="ch-tbl"><thead><tr><th>이름</th><th>소속</th><th>상태</th></tr></thead><tbody>' + r.attendees.map(a => '<tr><td>' + escHtml(a.name) + '</td><td>' + escHtml(a.org || '') + '</td><td>' + escHtml(a.status || '') + '</td></tr>').join('') + '</tbody></table>');
+  if (r.attendees) h += sec((e ? '3' : '2') + '. 참석자 목록', '<table class="ch-tbl"><thead><tr><th>이름</th><th>소속</th><th>상태</th></tr></thead><tbody>' + r.attendees.map(a => '<tr><td>' + escHtml(_chMaskName(a.name)) + '</td><td>' + escHtml(a.org || '') + '</td><td>' + escHtml(a.status || '') + '</td></tr>').join('') + '</tbody></table><div class="ch-sample" style="margin:8px 0 0">개인정보 보호를 위해 이름의 가운데 글자는 *로 가려 보여 줍니다.</div>');
   if (r.outreach) h += sec('관련 기관과의 소통', '<table class="ch-tbl"><thead><tr><th>기관</th><th>결과</th></tr></thead><tbody>' + r.outreach.map(o => '<tr><td>' + escHtml(o.org) + '</td><td>' + escHtml(o.result || '') + '</td></tr>').join('') + '</tbody></table>');
   h += sec('성과', '<p>' + escHtml(r.outcome || '') + '</p>');
   if (r.followups && r.followups.length) h += sec('후속 조치', '<p>' + r.followups.map(x => '· ' + escHtml(x)).join('\n') + '</p>');
@@ -8754,7 +8762,7 @@ function _chText() {
   const e = r.event, m = r.metrics || {}, L = [r.title + ' — 캠페인 성과 보고서', '', '[개요] ' + (r.topic || '')];
   if (e) L.push('[모임] ' + (_CH_MODE[e.mode] || '') + ' · ' + (e.when || '') + ' · ' + (e.place || ''));
   L.push('[수치] 보낸 메일 ' + (m.sent ?? '–') + ' · 회신 ' + (m.replied ?? '–') + ' · 참석 확정 ' + (m.confirmed ?? '–') + ' · 실제 참석 ' + (m.attended ?? '–'));
-  if (r.attendees) L.push('', '[참석자]', ...r.attendees.map(a => '- ' + a.name + ' (' + (a.org || '') + ') ' + (a.status || '')));
+  if (r.attendees) L.push('', '[참석자]', ...r.attendees.map(a => '- ' + _chMaskName(a.name) + ' (' + (a.org || '') + ') ' + (a.status || '')));
   if (r.outreach) L.push('', '[기관 소통]', ...r.outreach.map(o => '- ' + o.org + ': ' + (o.result || '')));
   L.push('', '[성과] ' + (r.outcome || ''));
   if (r.followups && r.followups.length) L.push('', '[후속 조치]', ...r.followups.map(x => '- ' + x));
