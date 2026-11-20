@@ -396,3 +396,11 @@ test('영상 동기화: 번호(나비웹 사용법 NN·navi N)순, 번호 없는
   const feed = [{ id: 'e', t: '새 영상 B' }, { id: 'd', t: '새 영상 A' }, { id: 'c', t: '나비웹 사용법 04 - x' }, { id: 'b', t: '나비웹 사용법 02' }, { id: 'a', t: '나비웹 사용법 01' }].map(v => ({ ...v, t: v.t.normalize('NFD') }));
   assert.equal(merge(feed, [{ id: 'a' }, { id: 'b' }]).map(v => v.id).join(''), 'abcde');
 });
+
+test('나비웹 사용법 영상: 제목 번호(사용법·매뉴얼·도우미 NN)로 정렬하고, 매뉴얼은 번호=장 번호로 영상을 맞춘다', async () => {
+  const { sortByNumber } = await import('../scripts/guide-videos-sync.mjs');
+  const t = ['나비웹 사용법 06 - 왼쪽 메뉴', '나비웹 도우미 09 - 사용자 검색과 대화', '나비웹 매뉴얼 10 - AI 비서 채팅 혹은 라우팅', '나비웹 사용법 01 - 가입하기', '나비웹 사용법 14 - PC와 폰 로그인', '나비웹 사용법 05 - 위쪽 메뉴'];
+  assert.deepEqual(sortByNumber(t.map((x, i) => ({ id: 'v' + i, t: x }))).map(v => v.t.match(/\d+/)[0]), ['01', '05', '06', '09', '10', '14']);
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  assert.ok(m.includes('howtoNum(x.t) === n') && m.includes('CHAPTERS.findIndex') && !m.includes('HOWTO_CHAPTERS'));
+});

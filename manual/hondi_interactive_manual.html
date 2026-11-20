@@ -510,10 +510,9 @@ function renderQuiz(chapter) {
   return html;
 }
 
-/* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록)의 순서대로 한 장에 한 편씩 맨 위에 넣는다 */
-var HOWTO_CHAPTERS = ['ch1', 'ch_pclogin', 'ch_agent'];
+/* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록). 제목 번호 = 장 번호 */
 var howtoP = null;
-function howtoNum(t) { var m = /(?:navi|사용법)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
+function howtoNum(t) { var m = /(?:navi|사용법|매뉴얼|도우미)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
 function loadHowto() {
   if (!howtoP) howtoP = fetch(EMBED ? 'guide-howto.json' : 'https://naviweb.kr/guide-howto.json', { cache: 'no-cache' })
     .then(function (r) { return r.ok ? r.json() : { videos: [] }; })
@@ -524,9 +523,9 @@ function loadHowto() {
     .catch(function () { howtoP = null; return []; });
   return howtoP;
 }
-function howtoSlot(chId) {
-  var n = HOWTO_CHAPTERS.indexOf(chId);
-  return n < 0 ? '' : '<div class="howto" data-n="' + n + '"><div class="howto-wait">▶ 영상을 준비하고 있습니다</div></div>';
+function howtoSlot(chId) {   // 영상 제목의 번호(01·02…)는 이 매뉴얼의 장 번호(목록 순서)와 같다 — 그 번호의 영상이 있는 장에만 맨 위에 넣는다
+  var n = CHAPTERS.findIndex(function (c) { return c.id === chId; }) + 1;
+  return n < 1 ? '' : '<div class="howto" data-n="' + n + '" hidden></div>';
 }
 function howtoOpen(v) {   // 큰 화면: 화면 가운데에 크게 띄워 바로 재생한다(바깥·닫기·Esc 로 닫는다)
   var old = DOC.querySelector('.howto-modal'); if (old) old.remove();
@@ -551,7 +550,7 @@ function fillHowto(el) {
   var box = el.querySelector('.howto'); if (!box) return;
   var n = Number(box.getAttribute('data-n'));
   loadHowto().then(function (list) {
-    var v = list[n]; if (!v || !box.isConnected) return;
+    var v = list.filter(function (x) { return howtoNum(x.t) === n; })[0]; if (!v || !box.isConnected) return;
     var card = document.createElement('button'); card.type = 'button'; card.className = 'howto-card';
     var th = document.createElement('span'); th.className = 'howto-thumb';
     var im = document.createElement('img'); im.src = 'https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg'; im.alt = ''; im.loading = 'lazy';
@@ -561,7 +560,7 @@ function fillHowto(el) {
     var h = document.createElement('div'); h.className = 'howto-hint'; h.textContent = '눌러서 큰 화면으로 보기';
     tx.appendChild(t); tx.appendChild(h); card.appendChild(th); card.appendChild(tx);
     card.addEventListener('click', function () { howtoOpen(v); });
-    box.replaceChild(card, box.querySelector('.howto-wait'));
+    box.appendChild(card); box.hidden = false;
   });
 }
 
