@@ -1499,8 +1499,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 #tab-settings .skin-opt[aria-pressed=true]{background:var(--m3-tonal);border-color:var(--m3-tonal);box-shadow:none;color:var(--pri);font-weight:600}
 #tab-settings .set-actions{margin-top:16px;gap:8px}
 #tab-settings .errbox{border-radius:8px}
-/* 끼워 보여 주는 화면(GDC·PDV)도 같은 카드 모양 */
-#tab-settings #gdc-frame,#tab-settings #pdv-frame{border:1px solid var(--m3-line);border-radius:12px;background:var(--sur);box-shadow:none;height:calc(100vh - 300px)}
+/* 끼워 보여 주는 화면(GDC·PDV)은 안쪽 페이지가 같은 카드 시안(?embed=mail)이라 바깥 틀 없이 보여 준다 */
+#tab-settings #gdc-frame,#tab-settings #pdv-frame{border:0;border-radius:0;background:transparent;box-shadow:none;height:calc(100vh - 300px)}
 @media (max-width:640px){#tab-settings .set-row,#tab-settings .skin-grp,#tab-settings .pf-fields{padding:16px}#tab-settings .set-tabs button{padding:0 14px}}
 </style>
 <header class="topbar">
@@ -2012,7 +2012,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <section id="set-sec-profile" class="set-sec">
       <div class="m3-head"><h3>프로필</h3><p>나비와 대화하며 내 웹페이지를 만들고, 공개 범위를 정합니다.</p></div>
       <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 프로필</b></div>
-        <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우면 <b>나의 프로필 웹페이지</b>가 만들어집니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
+        <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우고, 메뉴판·전단지 같은 파일이 있으면 말해 주세요. <b>나의 프로필 웹페이지</b>가 만들어지고 <b>내 나비가 24시간 상주</b>합니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
           <div id="pf-thread" class="pf-thread" aria-live="polite"></div>
           <div class="pf-bar">
@@ -2052,7 +2052,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
               <button type="button" class="btn btn-outline btn-sm" onclick="_profAddOffer('service')">＋ 서비스 추가</button>
             </div>
             <div class="pf-biz-title">주문·예약·배송·방문 안내</div>
-            <div class="pf-sub">이 페이지는 주문·결제를 직접 받지 않습니다. 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 적은 안내는 공개로 시작하지만, 위치가 드러날 수 있는 <b>찾아가는 길·지도 링크</b>는 비공개로 시작합니다. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
+            <div class="pf-sub">이 페이지는 손님(사람)과 손님의 나비(AI 비서)가 주문·예약·문의·리뷰로 내 나비를 만나는 곳입니다. 화면에서 결제를 바로 받는 기능은 준비 중이므로, 지금은 손님이 어떻게 주문·예약하는지 여기에 적거나 링크를 넣어 안내하세요. 적은 안내는 공개로 시작하지만, 위치가 드러날 수 있는 <b>찾아가는 길·지도 링크</b>는 비공개로 시작합니다. 소비자 평가는 직접 쓰는 항목이 아니며, 후기가 있는 곳의 주소를 <b>후기 보기 링크</b>에 적어 두세요.</div>
             <div id="pf-biz-rows"></div>
           </div>
           </div>
