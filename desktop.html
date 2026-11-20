@@ -2108,7 +2108,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div id="gdc-state" class="set-hint" role="status"><span class="spinner"></span> 불러오는 중…</div>
       <div id="gdc-content" style="display:none">
         <div class="gdc-grid2">
-          <div class="set-row gdc-stat"><div class="set-lbl">GDC 잔액<button type="button" class="btn btn-primary btn-sm" id="gdc-topup" onclick="_gdcChargeOpen()">충전하기</button></div><div class="gdc-val" id="gdc-balance">—<span class="gdc-unit">GDC</span></div></div>
+          <div class="set-row gdc-stat"><div class="set-lbl">GDC 잔액<button type="button" class="btn btn-primary btn-sm" id="gdc-topup" onclick="_gdcChargeOpen()">요금제·입금 안내</button></div><div class="gdc-val" id="gdc-balance">—<span class="gdc-unit">GDC</span></div></div>
           <div class="set-row gdc-stat"><div class="set-lbl">지금까지 쓴 금액</div><div class="gdc-val" id="gdc-spent">—<span class="gdc-unit">원</span></div></div>
         </div>
         <div class="set-row" id="gdc-quota" style="display:none"><div class="set-lbl">가입 무료 한도 사용 현황</div>
@@ -2130,21 +2130,19 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="set-actions" id="gdc-retry-row" style="display:none"><button type="button" class="btn btn-primary" onclick="_gdcLoad(true)">다시 시도</button></div>
       <div id="gdc-dialog" class="gdc-scrim" hidden onclick="if(event.target===this)_gdcChargeClose()">
         <div class="gdc-dialog" role="dialog" aria-modal="true" aria-labelledby="gdc-dlg-title">
-          <h3 id="gdc-dlg-title">GDC 충전</h3>
-          <div class="ps-banner" style="margin-bottom:12px"><span>ℹ️</span><div><b>나비는 정기 자동결제를 쓰지 않습니다.</b> 사용자가 직접 은행 앱에서 계좌이체를 할 때만 충전됩니다. 이체 뒤 추가로 자동 청구되는 금액은 없습니다.</div></div>
-          <div id="gdc-ci-loading" class="set-hint">불러오는 중…</div>
-          <div id="gdc-ci-err" class="errbox" style="display:none"></div>
-          <div id="gdc-ci-body" style="display:none">
-            <div class="gdc-kv"><span>입금 은행</span><b id="gdc-ci-bank"></b></div>
-            <div class="gdc-kv"><span>계좌번호</span><b><span id="gdc-ci-acct"></span> <button type="button" class="btn btn-outline btn-sm" id="gdc-ci-copy" onclick="_gdcCopyAcct()">복사</button></b></div>
-            <div class="gdc-kv"><span>예금주</span><b id="gdc-ci-holder"></b></div>
-            <div class="set-hint" style="margin-top:12px">보내는 분 표시에 아래 번호를 꼭 포함해 입금해 주세요</div>
-            <div class="gdc-code" id="gdc-ci-code"></div>
-            <div class="set-hint">본인 휴대폰 번호 뒷 8자리이며, 항상 같은 번호예요.</div>
-            <div class="ps-banner" style="margin-top:14px;display:block"><b>필드 테스트 기간(2026년 12월 말까지)</b><br>월 10,000원 입금 → 10,000T 충전 · 연 100,000원 입금 → 120,000T 충전<br><span class="set-hint">위 금액을 정확히 한 번에 입금할 때만 적용됩니다. 그 밖의 금액은 입금한 만큼(1원 = 1 GDC), 여러 번 나눠 입금하면 건별로 계산되며 합산되지 않습니다.</span></div>
-            <div class="set-hint" style="margin-top:10px">관리자가 입금을 확인하는 대로 GDC가 지급됩니다(보통 수 시간).</div>
-          </div>
-          <div class="set-actions" style="justify-content:flex-end"><button type="button" class="btn btn-primary" onclick="_gdcChargeClose()">확인했어요</button></div>
+          <h3 id="gdc-dlg-title">요금제와 입금 안내</h3>
+          <div class="ps-banner" style="margin-bottom:12px"><span>ℹ️</span><div><b>나비는 정기 자동결제를 쓰지 않습니다.</b> 사용자가 직접 은행 앱에서 계좌이체를 할 때만 적용됩니다. 이체 뒤 추가로 자동 청구되는 금액은 없습니다.</div></div>
+          <div class="gdc-kv"><span>무료</span><b>$0 · 전화번호 인증 후 24시간 넉넉히, 그 뒤에도 가볍게</b></div>
+          <div class="gdc-kv"><span>기본</span><b>$10 / 월</b></div>
+          <div class="gdc-kv"><span>서류</span><b>$100 / 월</b></div>
+          <div class="gdc-kv"><span>프로</span><b><span id="gdc-pl-pro">$200</span> / 월</b></div>
+          <div class="ps-banner" id="gdc-pl-beta" style="margin-top:12px;display:block"><b>베타 테스트 기간(2026년 12월 말까지)</b><br>유료 플랜은 어느 것을 고르셔도 $200 플랜을 90% 할인한 <b>$20</b>에 이용합니다.</div>
+          <div class="set-hint" style="margin:12px 0 6px">입금 계좌 (지정 계좌 입금만 가능)</div>
+          <div class="gdc-kv"><span>입금 은행</span><b id="gdc-ci-bank">중소기업은행</b></div>
+          <div class="gdc-kv"><span>계좌번호</span><b><span id="gdc-ci-acct">415-092028-04-011</span> <button type="button" class="btn btn-outline btn-sm" id="gdc-ci-copy" onclick="_gdcCopyAcct()">복사</button></b></div>
+          <div class="gdc-kv"><span>예금주</span><b id="gdc-ci-holder">에이아이시티주식회사</b></div>
+          <div class="set-hint" style="margin-top:12px">입금액은 <b>요금제 화면</b>에서 플랜을 고르면 그날 환율로 정해집니다. 입금자명은 나비웹에 가입한 이름과 같게 하세요. 입금자 이름·입금액·입금 날짜가 맞으면 본인 입금으로 확인되어 플랜이 적용됩니다(보통 몇 분). 플랜 이용료는 GDC로 충전되지 않습니다.</div>
+          <div class="set-actions" style="justify-content:flex-end"><button type="button" class="btn btn-outline" onclick="_gdcChargeClose()">닫기</button><button type="button" class="btn btn-primary" onclick="_gdcChargeClose();_switchTab('pricing')">요금제 열기</button></div>
         </div>
       </div>
     </section>
@@ -6203,7 +6201,7 @@ function _aiSpSave() {
 // ── GDC 지갑(설정 > GDC 지갑) — 2026-11-21: iframe(usage.html) 없이 이 화면에 바로 그린다(주피터 지시) ──
 // 자료: hondi-proxy 의 /biz/balance · /free-quota-status · /usage-log · /biz/charge-info · /biz/charge-status (guid 쿼리, 읽기 전용).
 // guid 는 usage.html 과 같이 이 브라우저에 저장된 gopang_user_v4 의 ipv6 를 쓴다(같은 출처일 때만 읽힘).
-let _gdcSeries = null, _gdcRange = 'today', _gdcAt = 0, _gdcAcctRaw = '';
+let _gdcSeries = null, _gdcRange = 'today', _gdcAt = 0, _gdcAcctRaw = '415-092028-04-011';
 function _gdcGuid() {
   try { const q = new URLSearchParams(location.search).get('guid'); if (q) return q; } catch (e) {}
   try { const o = JSON.parse(localStorage.getItem('gopang_user_v4') || sessionStorage.getItem('gopang_user_v4') || '{}'); return (o && o.ipv6) || ''; } catch (e) { return ''; }
@@ -6290,20 +6288,14 @@ function _gdcHistToggle() {
   const b = document.getElementById('gdc-hist-toggle'), p = document.getElementById('gdc-hist-body'), open = b.getAttribute('aria-expanded') !== 'true';
   b.setAttribute('aria-expanded', String(open)); p.hidden = !open; document.getElementById('gdc-hist-sub').textContent = open ? '최근 20건 · 눌러서 접기' : '최근 20건 · 눌러서 펼치기';
 }
-async function _gdcChargeOpen() {
-  const dlg = document.getElementById('gdc-dialog'), ld = document.getElementById('gdc-ci-loading'), bd = document.getElementById('gdc-ci-body'), er = document.getElementById('gdc-ci-err');
-  dlg.hidden = false; ld.style.display = ''; bd.style.display = 'none'; er.style.display = 'none';
-  try {
-    const res = await fetch(`${PROXY}/biz/charge-info?guid=${encodeURIComponent(_gdcGuid())}`), d = await res.json();
-    if (!res.ok || !d.ok) throw new Error(d.message || d.error || ('HTTP ' + res.status));
-    if (!d.match_code_is_phone) { ld.style.display = 'none'; er.textContent = '전화번호 인증이 필요합니다. 폰 설정에서 전화번호 인증을 먼저 완료해 주세요.'; er.style.display = 'block'; return; }
-    const i = d.bank_account_info;
-    document.getElementById('gdc-ci-bank').textContent = i.bank_name; document.getElementById('gdc-ci-acct').textContent = i.account_number_display;
-    document.getElementById('gdc-ci-holder').textContent = i.holder_name; document.getElementById('gdc-ci-code').textContent = d.match_code; _gdcAcctRaw = i.account_number || '';
-    ld.style.display = 'none'; bd.style.display = '';
-  } catch (e) { ld.style.display = 'none'; er.textContent = '계좌 정보를 불러오지 못했습니다: ' + e.message; er.style.display = 'block'; }
+function _gdcChargeOpen() {
+  // 요금제(pricing.html)와 같은 값: 유료 플랜은 베타(2026-12-31까지)에 $200 플랜을 90% 할인한 $20. 전화번호 매칭 코드는 쓰지 않는다(2026-11-07 폐지).
+  const beta = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()) <= '2026-12-31';
+  document.getElementById('gdc-pl-beta').style.display = beta ? 'block' : 'none';
+  document.getElementById('gdc-pl-pro').textContent = '$200';
+  document.getElementById('gdc-dialog').hidden = false;
 }
-function _gdcChargeClose() { document.getElementById('gdc-dialog').hidden = true; _gdcHistLoad(); }
+function _gdcChargeClose() { document.getElementById('gdc-dialog').hidden = true; }
 function _gdcCopyAcct() {
   const b = document.getElementById('gdc-ci-copy'); if (!_gdcAcctRaw) return;
   (navigator.clipboard ? navigator.clipboard.writeText(_gdcAcctRaw) : Promise.reject()).then(() => { b.textContent = '복사됨'; setTimeout(() => { b.textContent = '복사'; }, 1500); }).catch(() => { b.textContent = _gdcAcctRaw; });
