@@ -646,8 +646,8 @@ header a.back{color:#475569}header a.back:hover{color:#0f172a}
 
           <div class="field" style="margin-top:28px;padding-top:18px;border-top:1px solid var(--bdr,#ddd)">
             <label>보내는 사람 표시 (선택)</label>
-            <div class="sub" style="margin:2px 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@naviweb.kr&gt;</b>로 보입니다.</div>
-            <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 도 영민 (40자까지)" oninput="_senderNamePreview()">
+            <div class="sub" style="margin:2px 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>김 철수</b>이라고 적으면 <b>김 철수 &lt;ceo@naviweb.kr&gt;</b>로 보입니다.</div>
+            <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 김 철수 (40자까지)" oninput="_senderNamePreview()">
             <div class="sub" style="margin-top:10px">받는 사람에게 이렇게 보입니다</div>
             <div id="sender-name-preview" style="margin-top:2px;padding:10px 12px;border:1px solid var(--bdr,#ddd);border-radius:8px;background:var(--bg2,#f5f5f5);font-weight:700;font-size:16px;word-break:break-all"></div>
             <div id="sender-name-msg" style="font-size:14px;margin-top:6px;min-height:1.4em"></div>
@@ -940,7 +940,7 @@ let _mailIdCheckToken = 0; // 늦게 도착하는 과거 요청 응답을 무시
 
 // ══════════════════════════════════════════════════════════════
 // 보내는 사람 표시 — 2026-10-27 신설(주피터 지시). 받는 사람 화면에는 기본으로 주소(ceo@naviweb.kr)만 보이고,
-// 사용자가 이름을 정하면 "도 영민 <ceo@naviweb.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
+// 사용자가 이름을 정하면 "김 철수 <ceo@naviweb.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
 // 서버가 최종 판정자이고, 여기서는 미리 알려 주기만 한다.
 // ══════════════════════════════════════════════════════════════
 let _senderNameCurrent = '';
