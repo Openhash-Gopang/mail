@@ -296,7 +296,6 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-xokorea iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent;overflow:hidden}   /* 높이는 안쪽 문서가 알려 준 값으로 맞춘다(_xkSwitch 옆 message 처리) — 안쪽 스크롤 막대 없음 */
 #tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe,#tab-intro iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #tab-vault iframe{overflow:hidden}
-#pdv-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:480px;border:1px solid var(--bdr);border-radius:12px;background:#fff}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
 .doc-combo{position:relative}
@@ -1259,6 +1258,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .gd-end{text-align:center;padding:34px 18px}
 @media(max-width:760px){.gd-panel{padding:12px}.gd-pn{width:36px;height:36px}.gd-cur{height:36px;padding-left:12px}.gd-cur-t{font-size:14px}}
 </style>
+<link rel="stylesheet" href="pdv-panel.css?v=20261121">
+<script src="pdv-panel.js?v=20261121" defer></script>
 </head>
 <body>
 <button type="button" id="hd-pull" aria-label="상단 메뉴 막대 보이기 — 아래로 끌어 내리세요" title="아래로 끌어 내리면 상단 막대가 보입니다"></button>
@@ -1356,7 +1357,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .field input[type=text],.field input[type=email],.doc-bar select,.doc-agent select,.doc-agent input{border-radius:4px}
 .field input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(59,125,221,.18)}
 .errbox,.okbox,.org-notice{border-radius:4px}
-#doc-frame,#pdv-frame{border:0;border-radius:4px;box-shadow:var(--sh)}
+#doc-frame{border:0;border-radius:4px;box-shadow:var(--sh)}
 
 .side-brand{display:flex;align-items:center;flex:none;width:100%}
 .side-brand .side-logo{width:auto;flex:none}
@@ -1499,7 +1500,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 #tab-settings .set-actions{margin-top:16px;gap:8px}
 #tab-settings .errbox{border-radius:8px}
 /* 끼워 보여 주는 화면(GDC·PDV)은 안쪽 페이지가 같은 카드 시안(?embed=mail)이라 바깥 틀 없이 보여 준다 */
-#tab-settings #pdv-frame{border:0;border-radius:0;background:transparent;box-shadow:none;height:calc(100vh - 300px)}
 /* GDC 지갑(2026-11-21): 끼움 화면(iframe) 없이 설정 안에 바로 그린다 — 다른 탭과 같은 카드·단추 */
 #tab-settings .gdc-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 #tab-settings .gdc-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
@@ -2094,11 +2094,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       </section>
 
     
-<!-- PDV: hondi.net/pdv.html 을 그대로 끼워 보여 준다(한 곳만 고치면 되도록) -->
+<!-- PDV(내 기록): 끼움 화면 없이 pdv-panel.js 가 #pdv-root 에 직접 그린다 -->
     <section id="set-sec-pdv" class="set-sec">
-      <div class="m3-head"><h3>내 기록</h3><p>내 데이터 금고(PDV)에 쌓인 기록을 봅니다.</p></div>
-      <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 기록</b></div>
-      <iframe id="pdv-frame" title="PDV" allow="clipboard-write"></iframe>
+<div class="m3-head"><h3>내 기록</h3><p>내 데이터 금고(PDV)에 쌓인 기록을 봅니다.</p></div>
+<div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 기록</b></div>
+      <div id="pdv-root" class="pdvp"></div>
     </section>
 
     <!-- GDC 지갑: 끼움 화면 없이 직접 그린다(_gdcLoad, 잔액·무료 한도·사용량 그래프·충전 안내) -->
@@ -6121,7 +6121,7 @@ const _SET_SECTIONS = ['account', 'profile', 'ai', 'gdc', 'pdv', 'skin', 'phone'
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
   if (name === 'gdc') _gdcLoad();   // GDC 잔액·사용량(그래프)
-  if (name === 'pdv') { const f = document.getElementById('pdv-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // PDV 데이터(대화 이력·서류 Draft)를 새 탭 없이 설정 안에서 보여 준다
+  if (name === 'pdv' && window._pdvMount) window._pdvMount();   // 내 기록(PDV) — iframe 없이 직접 그린다(pdv-panel.js)
   if (name === 'profile') _profEnter(); else _profLeave();   // 프로필 탭에 있는 동안만 대화창이 프로필 작성 SP 로 바뀐다
   { const ts = document.getElementById('tab-settings'); if (ts) ts.setAttribute('data-sec', name); }
   _SET_SECTIONS.forEach(n => {
