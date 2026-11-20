@@ -1011,6 +1011,22 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .content > #tab-compose{max-width:880px}
 .content > #tab-quicksend{max-width:820px}
 .content > #tab-campaigns{max-width:960px}
+.content > #tab-camphist{max-width:960px}
+/* 2026-11-20 — 캠페인 이력: 끝난 캠페인의 성과 보고서를 모아 두는 화면(레이아웃) */
+.ch-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
+.ch-stat{border:1px solid var(--bdr);border-radius:var(--r);background:#fff;padding:12px 14px}
+.ch-stat b{display:block;font-size:22px;font-weight:800;color:var(--pri)}.ch-stat span{font-size:12.5px;color:var(--sub)}
+.ch-empty{border:1px dashed var(--bdr);border-radius:var(--r);padding:28px 18px;text-align:center;color:var(--sub);font-size:14px;line-height:1.8}
+.ch-empty b{color:inherit;display:block;font-size:15px;margin-bottom:4px}
+.ch-badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--pri-bg);color:var(--pri);border:1px solid var(--pri-bd);margin-left:6px}
+.ch-rep-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0 4px}
+.ch-rep-meta div{font-size:13px;color:var(--sub)}.ch-rep-meta b{display:block;font-size:14px;color:inherit;margin-top:2px}
+.ch-sec{border-top:1px solid var(--bdr);padding:16px 0 4px;margin-top:14px}
+.ch-sec h3{font-size:15px;font-weight:800;margin:0 0 8px}
+.ch-sec p{font-size:14px;line-height:1.8;margin:0 0 8px;white-space:pre-wrap}
+.ch-tbl{width:100%;border-collapse:collapse;font-size:13.5px}.ch-tbl th,.ch-tbl td{border-bottom:1px solid var(--bdr);padding:7px 8px;text-align:left}.ch-tbl th{color:var(--sub);font-weight:700;background:var(--pri-bg)}
+.ch-sample{font-size:12.5px;color:var(--hint);margin:0 0 10px}
+@media(max-width:720px){.ch-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .card{padding:24px 26px}
 .ql-editor{min-height:340px}
 
@@ -1462,6 +1478,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="nav-sub" id="nav-sub-mail" role="group" aria-label="메일 하위 메뉴">
           <button id="tab-btn-quicksend" class="nav-subitem nav-mv" data-tab="quicksend" data-label="빠른 발송" onclick="_switchTab('quicksend')">빠른 발송</button>
           <button id="tab-btn-campaigns" class="nav-subitem nav-mv" data-tab="campaigns" data-label="내 캠페인" onclick="_campNavClick()">내 캠페인</button>
+          <button id="tab-btn-camphist" class="nav-subitem nav-mv" data-tab="camphist" data-label="캠페인 이력" onclick="_switchTab('camphist')">캠페인 이력</button>
           <button id="tab-btn-contacts" class="nav-subitem nav-mv" data-tab="contacts" data-label="주소록" onclick="_ctNavClick()">주소록</button>
           <div class="nav-sep" role="separator"></div>
           <button type="button" class="nav-subitem" data-sub="compose" onclick="_navMailSub('compose')">편지쓰기</button>
@@ -1736,6 +1753,63 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <button class="btn btn-primary btn-sm" id="camp-resume-btn" style="display:none" onclick="_campResumeConversation()">🔄 이어서 대화하기</button>
       </div>
       <div class="hint">수신자별 현황·기관별 집계 등 세부 내용은 K-Mail에게 물어보세요. 초안은 “이어서 대화”로 계속할 수 있습니다.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       캠페인 이력 — 2026-11-20 신설(주피터 지시). 캠페인이 끝나면 성과를 정리한 보고서를 만들어 이곳에 저장한다.
+       예) 세미나: 주제 · 참석자 목록 · 모임 방식(온라인/오프라인)과 장소 · 성과 · 후속 조치.
+       지금은 화면 배치(레이아웃)만 있다 — 목록은 비어 있고, [예시 보고서 보기]로 배치를 미리 볼 수 있다.
+       보고서 자료 형태(_CH_SCHEMA)는 아래 스크립트 주석에 적어 두었고, 저장·불러오기는 백엔드가 정해지면 연결한다.
+       ══════════════════════════════════════════════════════════ -->
+  <div id="tab-camphist" class="tab-panel">
+    <div class="pg-bar" data-pgbar="mail"></div>
+    <div class="camp-subbar" data-campbar></div>
+    <div class="card" id="ch-list-card">
+      <h2>캠페인 이력</h2>
+      <div class="sub">끝난 캠페인의 <b>성과 보고서</b>가 저장됩니다. 항목을 눌러 보고서를 읽고, 복사하거나 파일로 받을 수 있습니다.</div>
+      <div class="ch-stats" id="ch-stats" aria-label="이력 요약">
+        <div class="ch-stat"><b id="ch-st-total">0</b><span>종료한 캠페인</span></div>
+        <div class="ch-stat"><b id="ch-st-sent">–</b><span>보낸 메일</span></div>
+        <div class="ch-stat"><b id="ch-st-reply">–</b><span>회신</span></div>
+        <div class="ch-stat"><b id="ch-st-attend">–</b><span>참석(확정)</span></div>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="ch-filter-q" placeholder="제목·주제로 검색" oninput="_chRender()">
+        <select id="ch-filter-kind" onchange="_chRender()" aria-label="유형">
+          <option value="">전체 유형</option>
+          <option value="seminar">세미나·행사</option>
+          <option value="recruit">모집·신청</option>
+          <option value="outreach">안내·홍보</option>
+          <option value="other">기타</option>
+        </select>
+        <select id="ch-filter-year" onchange="_chRender()" aria-label="기간">
+          <option value="">전체 기간</option>
+          <option value="2026">2026년</option>
+          <option value="2025">2025년</option>
+        </select>
+      </div>
+      <div id="ch-items"></div>
+      <div class="ch-empty" id="ch-empty">
+        <b>아직 저장된 보고서가 없습니다</b>
+        캠페인이 끝나면 성과를 정리한 보고서가 여기에 저장됩니다.<br>
+        <button type="button" class="btn btn-outline btn-sm" style="margin-top:10px" onclick="_chOpenSample()">예시 보고서 보기</button>
+      </div>
+    </div>
+
+    <div class="card" id="ch-detail-card" style="display:none">
+      <a onclick="_chBack()" style="font-size:13px;color:var(--pri);cursor:pointer;text-decoration:underline">← 목록으로</a>
+      <div class="ch-sample" id="ch-sample-note" style="display:none;margin-top:8px">※ 화면 배치를 보여 드리는 <b>예시</b>입니다. 실제 캠페인 자료가 아닙니다.</div>
+      <h2 id="ch-d-title" style="margin-top:10px"></h2>
+      <div class="ch-rep-meta" id="ch-d-meta"></div>
+      <div class="ch-stats" id="ch-d-stats" style="margin-top:14px"></div>
+      <div id="ch-d-body"></div>
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-primary btn-sm" onclick="_chCopy()">복사</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="_chSaveFile()">파일로 받기</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="_chAskChat()">💬 K-Mail에게 이 캠페인 이어서 묻기</button>
+      </div>
+      <div class="hint">보고서는 캠페인이 끝날 때 K-Mail이 정리해 저장합니다. 고칠 내용은 K-Mail에게 말로 요청하세요.</div>
     </div>
   </div>
 
@@ -5463,6 +5537,7 @@ function _switchTab(name) {
   if (_crumb) _crumb.textContent = name === 'verdict' ? '가상 판결' : name === 'feedback' ? '기능 개선 제안' : (_navBtn.getAttribute('data-label') || '');
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
   if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
+  if (name === 'camphist') { _chBack(); _chRender(); }
   if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
   if (name === 'youtube') _ytRender();
   if (name === 'devlog' && window.DevLog) DevLog.show();   // 개발 현황 — devlog.js
@@ -7746,6 +7821,7 @@ const _PG_TABS = {
 };
 function _pgActive(kind) {
   const on = document.querySelector('.tab-panel.active'); if (!on) return '';
+  if (on.id === 'tab-camphist') return kind === 'mail' ? 'campaigns' : '';
   if (on.id === 'tab-compose') return kind === 'doc' && _cmpMode === 'doc' ? 'doc' : kind === 'mail' && _cmpMode === 'campaign' ? 'campaigns' : '';
   if (on.id === 'tab-mail') { const a = document.querySelector('.mail-subnav button.active'); return kind === 'mail' ? 'm:' + (a ? a.id.replace('mail-subnav-', '') : 'compose') : ''; }
   return on.id.replace('tab-', '');
@@ -7760,13 +7836,14 @@ function _pgGo(key) {
 //  새 캠페인 = 입력창(compose) 화면의 '메일 · 캠페인' 모드(/kmail/chat, K-Mail 캠페인 SP — 입력 필드가 맨 위), 내 캠페인 = 지난 캠페인 목록(tab-campaigns).
 function _campSubFill() {
   const compose = document.getElementById('tab-compose');
-  const act = compose && compose.classList.contains('active') && _cmpMode === 'campaign' ? 'new' : 'mine';
+  const hist = document.getElementById('tab-camphist');
+  const act = hist && hist.classList.contains('active') ? 'hist' : compose && compose.classList.contains('active') && _cmpMode === 'campaign' ? 'new' : 'mine';
   document.querySelectorAll('[data-campbar]').forEach(box => {
-    box.innerHTML = '<div class="cs-modes cs-sub" role="tablist" aria-label="' + _i18nEsc(_T('캠페인')) + '">' + [['new', '새 캠페인'], ['mine', '내 캠페인']].map(x =>
+    box.innerHTML = '<div class="cs-modes cs-sub" role="tablist" aria-label="' + _i18nEsc(_T('캠페인')) + '">' + [['new', '새 캠페인'], ['mine', '내 캠페인'], ['hist', '캠페인 이력']].map(x =>
       '<button type="button" role="tab" class="cs-mode' + (x[0] === act ? ' on' : '') + '" aria-selected="' + (x[0] === act) + '" onclick="_campSubGo(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) + '</button>').join('') + '</div>';
   });
 }
-function _campSubGo(k) { if (k === 'new') _switchTab('compose'); else _campNavClick(); }
+function _campSubGo(k) { if (k === 'new') _switchTab('compose'); else if (k === 'hist') _switchTab('camphist'); else _campNavClick(); }
 function _pgTabsFill() {
   _campSubFill();
   const srcBadge = document.querySelector('#nav-sub-mail .unread-badge[data-for="inbox"]');
@@ -8605,6 +8682,91 @@ function _ctNavClick() {
   _switchTab('contacts');
   if (active || drilled) { if (q) q.value = ''; _ctShowCategories(); }
 }
+// ── 캠페인 이력(2026-11-20) — 끝난 캠페인의 성과 보고서 화면 ─────────────────────────────
+// 보고서 한 건의 자료 형태(_CH_SCHEMA). 저장·불러오기는 백엔드가 정해지면 _chLoad()에서 채운다.
+//   { id, campaign_id, title, kind: 'seminar'|'recruit'|'outreach'|'other', closed_at: ISO, period: {start, end},
+//     topic: '주제', event: { when: '일시', mode: 'online'|'offline'|'hybrid', place: '장소', url: '온라인 주소' },   // event 는 세미나·행사만
+//     attendees: [{ name, org, status: '참석'|'불참'|'미정' }], outreach: [{ org, result }],
+//     metrics: { sent, replied, confirmed, attended }, outcome: '성과 요약', followups: ['후속 조치', …] }
+var _chItems = [];     // 저장된 보고서(지금은 비어 있음)
+var _chCur = null;     // 지금 열어 본 보고서
+var _CH_KIND = { seminar: '세미나·행사', recruit: '모집·신청', outreach: '안내·홍보', other: '기타' };
+var _CH_MODE = { online: '온라인', offline: '오프라인', hybrid: '온라인+오프라인' };
+var _CH_SAMPLE = {
+  id: 'sample', title: '12월 ○○ 세미나', kind: 'seminar', closed_at: '2026-12-20T18:00:00+09:00',
+  period: { start: '2026-11-20', end: '2026-12-20' }, topic: '지역 AI 활용 사례와 시민 참여',
+  event: { when: '2026-12-15(화) 14:00~17:00', mode: 'hybrid', place: '제주시 ○○센터 3층 대강당', url: '온라인 중계 주소는 참석 확정자에게 별도 안내' },
+  attendees: [ { name: '홍길동', org: '○○시청', status: '참석' }, { name: '김나비', org: '△△연구원', status: '참석' }, { name: '이도영', org: '□□협회', status: '불참' }, { name: '박한림', org: '개인', status: '미정' } ],
+  outreach: [ { org: '○○시청', result: '장소 협조 및 홍보 지원 회신' }, { org: '△△연구원', result: '발표자 1명 추천' } ],
+  metrics: { sent: 120, replied: 64, confirmed: 41, attended: 37 },
+  outcome: '참석 확정 41명 중 37명이 참석했습니다(참석률 90%). 온라인 접속은 12명이었고, 만족도 조사 응답은 28건입니다.',
+  followups: ['발표 자료를 참석자 전원에게 메일로 공유', '협조 기관에 감사 메일 발송', '내년 상반기 후속 세미나 일정 논의']
+};
+function _chFiltered() {
+  const q = (document.getElementById('ch-filter-q').value || '').trim().toLowerCase();
+  const kind = document.getElementById('ch-filter-kind').value, yr = document.getElementById('ch-filter-year').value;
+  return _chItems.filter(r => (!q || (String(r.title) + ' ' + String(r.topic || '')).toLowerCase().includes(q)) && (!kind || r.kind === kind) && (!yr || String(r.closed_at || '').slice(0, 4) === yr));
+}
+function _chRender() {
+  const list = _chFiltered(), box = document.getElementById('ch-items'), empty = document.getElementById('ch-empty');
+  const sum = k => _chItems.reduce((a, r) => a + ((r.metrics && r.metrics[k]) || 0), 0);
+  document.getElementById('ch-st-total').textContent = _chItems.length;
+  document.getElementById('ch-st-sent').textContent = _chItems.length ? sum('sent') : '–';
+  document.getElementById('ch-st-reply').textContent = _chItems.length ? sum('replied') : '–';
+  document.getElementById('ch-st-attend').textContent = _chItems.length ? sum('confirmed') : '–';
+  empty.style.display = list.length ? 'none' : '';
+  if (!list.length && _chItems.length) empty.innerHTML = '<b>조건에 맞는 보고서가 없습니다</b>검색어나 유형을 바꿔 보세요.';
+  box.innerHTML = list.map((r, i) => `
+    <div class="list-item" onclick="_chOpen(${i})">
+      <div class="li-main">
+        <div class="li-title">${escHtml(r.title)}<span class="ch-badge">${escHtml(_CH_KIND[r.kind] || '기타')}</span></div>
+        <div class="li-sub">종료 ${escHtml(String(r.closed_at || '').slice(0, 10))} · 회신 ${(r.metrics && r.metrics.replied) || 0}건${r.attendees ? ' · 참석자 ' + r.attendees.filter(a => a.status === '참석').length + '명' : ''}</div>
+      </div>
+    </div>`).join('');
+}
+function _chOpen(i) { _chShow(_chFiltered()[i], false); }
+function _chOpenSample() { _chShow(_CH_SAMPLE, true); }
+function _chShow(r, isSample) {
+  if (!r) return; _chCur = r;
+  document.getElementById('ch-list-card').style.display = 'none';
+  document.getElementById('ch-detail-card').style.display = '';
+  document.getElementById('ch-sample-note').style.display = isSample ? '' : 'none';
+  document.getElementById('ch-d-title').innerHTML = escHtml(r.title) + '<span class="ch-badge">' + escHtml(_CH_KIND[r.kind] || '기타') + '</span>';
+  const e = r.event || null, m = r.metrics || {};
+  const meta = [['캠페인 기간', (r.period ? r.period.start + ' ~ ' + r.period.end : '–')], ['종료일', String(r.closed_at || '').slice(0, 10) || '–']];
+  if (e) meta.push(['모임 방식', _CH_MODE[e.mode] || '–'], ['일시', e.when || '–'], ['장소', e.place || '–']);
+  document.getElementById('ch-d-meta').innerHTML = meta.map(x => '<div>' + escHtml(x[0]) + '<b>' + escHtml(x[1]) + '</b></div>').join('');
+  const rate = m.sent ? Math.round((m.replied || 0) / m.sent * 100) + '%' : '–';
+  document.getElementById('ch-d-stats').innerHTML = [[m.sent, '보낸 메일'], [m.replied, '회신 · 회신율 ' + rate], [m.confirmed, '참석 확정'], [m.attended, '실제 참석']].map(x => '<div class="ch-stat"><b>' + (x[0] == null ? '–' : escHtml(String(x[0]))) + '</b><span>' + escHtml(x[1]) + '</span></div>').join('');
+  const sec = (t, inner) => '<div class="ch-sec"><h3>' + escHtml(t) + '</h3>' + inner + '</div>';
+  let h = sec('1. 개요', '<p>' + escHtml(r.topic || '') + '</p>');
+  if (e) h += sec('2. 모임 방식과 장소', '<p>' + escHtml((_CH_MODE[e.mode] || '') + ' · ' + (e.place || '')) + '\n' + escHtml(e.url || '') + '</p>');
+  if (r.attendees) h += sec((e ? '3' : '2') + '. 참석자 목록', '<table class="ch-tbl"><thead><tr><th>이름</th><th>소속</th><th>상태</th></tr></thead><tbody>' + r.attendees.map(a => '<tr><td>' + escHtml(a.name) + '</td><td>' + escHtml(a.org || '') + '</td><td>' + escHtml(a.status || '') + '</td></tr>').join('') + '</tbody></table>');
+  if (r.outreach) h += sec('관련 기관과의 소통', '<table class="ch-tbl"><thead><tr><th>기관</th><th>결과</th></tr></thead><tbody>' + r.outreach.map(o => '<tr><td>' + escHtml(o.org) + '</td><td>' + escHtml(o.result || '') + '</td></tr>').join('') + '</tbody></table>');
+  h += sec('성과', '<p>' + escHtml(r.outcome || '') + '</p>');
+  if (r.followups && r.followups.length) h += sec('후속 조치', '<p>' + r.followups.map(x => '· ' + escHtml(x)).join('\n') + '</p>');
+  document.getElementById('ch-d-body').innerHTML = h;
+  window.scrollTo(0, 0);
+}
+function _chBack() { document.getElementById('ch-detail-card').style.display = 'none'; document.getElementById('ch-list-card').style.display = ''; _chCur = null; }
+function _chText() {
+  const r = _chCur; if (!r) return '';
+  const e = r.event, m = r.metrics || {}, L = [r.title + ' — 캠페인 성과 보고서', '', '[개요] ' + (r.topic || '')];
+  if (e) L.push('[모임] ' + (_CH_MODE[e.mode] || '') + ' · ' + (e.when || '') + ' · ' + (e.place || ''));
+  L.push('[수치] 보낸 메일 ' + (m.sent ?? '–') + ' · 회신 ' + (m.replied ?? '–') + ' · 참석 확정 ' + (m.confirmed ?? '–') + ' · 실제 참석 ' + (m.attended ?? '–'));
+  if (r.attendees) L.push('', '[참석자]', ...r.attendees.map(a => '- ' + a.name + ' (' + (a.org || '') + ') ' + (a.status || '')));
+  if (r.outreach) L.push('', '[기관 소통]', ...r.outreach.map(o => '- ' + o.org + ': ' + (o.result || '')));
+  L.push('', '[성과] ' + (r.outcome || ''));
+  if (r.followups && r.followups.length) L.push('', '[후속 조치]', ...r.followups.map(x => '- ' + x));
+  return L.join('\n');
+}
+function _chCopy() { try { navigator.clipboard.writeText(_chText()); } catch (e) {} }
+function _chSaveFile() {
+  const t = _chText(); if (!t) return;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain;charset=utf-8' }));
+  a.download = (_chCur.title || '캠페인 보고서') + '.txt'; document.body.appendChild(a); a.click(); a.remove();
+}
+function _chAskChat() { _switchTab('compose'); }
 function _campNavClick() {
   const detail = document.getElementById('camp-detail-card');
   const inDetail = detail && detail.style.display !== 'none';
