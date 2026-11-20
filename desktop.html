@@ -1967,7 +1967,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div id="pf-box" class="pf-box">
           <div id="pf-thread" class="pf-thread" aria-live="polite"></div>
           <div class="pf-bar">
-            <textarea id="pf-input" maxlength="2000" rows="2" placeholder="예: 제주에서 사진을 찍는 도영민입니다. 프로필을 만들어 주세요." aria-label="프로필 작성 대화 입력" oninput="_profSyncBtn()" onkeydown="_profKey(event)"></textarea>
+            <textarea id="pf-input" maxlength="2000" rows="2" placeholder="예: 제주에서 사진을 찍는 김철수입니다. 프로필을 만들어 주세요." aria-label="프로필 작성 대화 입력" oninput="_profSyncBtn()" onkeydown="_profKey(event)"></textarea>
             <button type="button" id="pf-send" class="pf-send" onclick="_profSend()" disabled>보내기</button>
           </div>
         </div>
@@ -2062,8 +2062,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="set-row">
           <div class="set-lbl">보내는 사람 표시<small>(선택)</small></div>
           <div>
-            <div class="set-hint" style="margin:0 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>도 영민</b>이라고 적으면 <b>도 영민 &lt;ceo@naviweb.kr&gt;</b>로 보입니다. 받는 모든 사람에게 보이며, 이후에 보내는 메일부터 적용됩니다.</div>
-            <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 도 영민 (40자까지)" oninput="_senderNamePreview()">
+            <div class="set-hint" style="margin:0 0 8px">받는 사람의 메일 화면에 보이는 <b>이름</b>입니다. 비워 두면 <b>주소만</b> 보입니다. 예: <b>김 철수</b>이라고 적으면 <b>김 철수 &lt;ceo@naviweb.kr&gt;</b>로 보입니다. 받는 모든 사람에게 보이며, 이후에 보내는 메일부터 적용됩니다.</div>
+            <input type="text" id="sender-name-input" maxlength="40" autocomplete="off" placeholder="예: 김 철수 (40자까지)" oninput="_senderNamePreview()">
             <div class="set-hint" style="margin-top:10px">받는 사람에게 이렇게 보입니다</div>
             <div id="sender-name-preview" style="margin-top:2px;padding:10px 12px;border:1px solid var(--bdr,#ddd);border-radius:8px;background:var(--bg);font-weight:700;font-size:16px;word-break:break-all"></div>
             <div id="sender-name-msg" style="font-size:14px;margin-top:6px;min-height:1.4em"></div>
@@ -2146,7 +2146,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="skin-sample" aria-label="미리보기">
         <strong>미리보기</strong>
         <div class="row"><button type="button" class="btn btn-primary">주요 단추</button><button type="button" class="btn btn-outline">보조 단추</button></div>
-        <div class="row"><div class="field"><label for="skin-sample-in">입력칸</label><input type="text" id="skin-sample-in" placeholder="예: 도 영민"></div><div class="card"><strong>카드</strong><div style="font-size:13.5px;color:var(--sub);margin-top:4px">카드의 테두리와 그림자 모양입니다.</div></div></div>
+        <div class="row"><div class="field"><label for="skin-sample-in">입력칸</label><input type="text" id="skin-sample-in" placeholder="예: 김 철수"></div><div class="card"><strong>카드</strong><div style="font-size:13.5px;color:var(--sub);margin-top:4px">카드의 테두리와 그림자 모양입니다.</div></div></div>
       </div>
       <div style="margin-top:18px"><button type="button" class="btn btn-outline" onclick="_skinReset()">기본값(파랑·레일)으로 되돌리기</button></div>
     </section>
@@ -5925,7 +5925,7 @@ let _mailIdCheckToken = 0; // 늦게 도착하는 과거 요청 응답을 무시
 
 // ══════════════════════════════════════════════════════════════
 // 보내는 사람 표시 — 2026-10-27 신설(주피터 지시). 받는 사람 화면에는 기본으로 주소(ceo@naviweb.kr)만 보이고,
-// 사용자가 이름을 정하면 "도 영민 <ceo@naviweb.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
+// 사용자가 이름을 정하면 "김 철수 <ceo@naviweb.kr>" 형식으로 보인다. 검사 규칙은 서버(kmail-sender.js)와 같다 —
 // 서버가 최종 판정자이고, 여기서는 미리 알려 주기만 한다.
 // ══════════════════════════════════════════════════════════════
 let _senderNameCurrent = '';

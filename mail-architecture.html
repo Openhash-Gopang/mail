@@ -274,7 +274,7 @@ keys(enc_pub_x25519, node_sig_key_id)                              -- 공개키�
 <tr><td><b>5</b></td><td>PocketBase 메일 테이블 읽기 전용화 → 폐기. L1은 앵커 전용</td><td>메일 경로에서 L1 호출 0건</td><td>낮음</td></tr>
 </table>
 <h3><code>ceo@naviweb.kr</code>의 위치</h3>
-<p>L1 서버에서 확인한 결과, 메일 아이디 <code>ceo</code>는 <code>kmail_user_settings</code>에 소유자 guid와 함께 있고(서명 "도 영민(주피터)") 외부 메일함 주소는 없다. 소유자의 <code>profiles</code> 레코드는 현재 조회되지 않는다. guid가 전화번호에서 결정적으로 계산된다는 문서(<code>GDUDA_P2P_Design_v2.md</code>) 기준이 지금도 맞다면, <b>같은 전화번호로 다시 가입하면 같은 guid가 되어 <code>ceo</code> 아이디를 이어받을 가능성이 높다</b>(코드로 재확인 필요). 단계 0만으로 <code>ceo@naviweb.kr</code>는 이 K-Mail 사서함으로 들어온다. 외부 Gmail로 전달은 하지 않는다(선택 2번).</p>
+<p>L1 서버에서 확인한 결과, 메일 아이디 <code>ceo</code>는 <code>kmail_user_settings</code>에 소유자 guid와 함께 있고(서명 "김 철수(주피터)") 외부 메일함 주소는 없다. 소유자의 <code>profiles</code> 레코드는 현재 조회되지 않는다. guid가 전화번호에서 결정적으로 계산된다는 문서(<code>GDUDA_P2P_Design_v2.md</code>) 기준이 지금도 맞다면, <b>같은 전화번호로 다시 가입하면 같은 guid가 되어 <code>ceo</code> 아이디를 이어받을 가능성이 높다</b>(코드로 재확인 필요). 단계 0만으로 <code>ceo@naviweb.kr</code>는 이 K-Mail 사서함으로 들어온다. 외부 Gmail로 전달은 하지 않는다(선택 2번).</p>
 
 <h2>12. 결정이 필요한 것과 확인하지 못한 것</h2>
 <div class="q"><b>결정 1 — E2E와 AI 자율의 우선순위</b>: 기본은 E2E(위임 복호화 꺼짐)로 두는 안을 제안한다. 켜면 K-Mail이 기기 밖에서도 자동 응답하지만 서버가 그 순간 평문을 본다.</div>

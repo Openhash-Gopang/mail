@@ -617,7 +617,7 @@ test('로그인 감지: 로그아웃 단추(남은 시간 포함)와 "님의 MyG
   };
   assert.equal(mk(['로그아웃'], ''), true);
   assert.equal(mk(['로그아웃 (29:59)'], ''), true);
-  assert.equal(mk([], '도영민 님의 MyGOV 서비스 신청 내역'), true);
+  assert.equal(mk([], '김철수 님의 MyGOV 서비스 신청 내역'), true);
   assert.equal(mk(['로그인', '회원가입'], '로그인이 필요합니다'), false);
 });
 test('문서 보기 화면 PDF 가져오기: 같은 사이트의 PDF 만 받고, PDF 가 아니면 실패한다', async () => {
