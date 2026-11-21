@@ -1002,19 +1002,23 @@ function renderQuiz(chapter) {
 }
 
 /* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록). 제목 번호 = 장 번호 */
-var howtoP = null;
+var howtoP = {};   // 목록 파일별(초급 guide-howto.json · 중급 guide-howto-mid.json) 읽기 결과
+// 중급 장 ↔ 중급 영상 번호([중급] 나비웹 사용법 01~05). 초급 영상은 장 순서 번호와 같지만, 중급 영상은 이 다섯 장에만 붙는다.
+var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5 };
 function howtoNum(t) { var m = /(?:navi|사용법|매뉴얼|도우미)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
-function loadHowto() {
-  if (!howtoP) howtoP = fetch(EMBED ? 'guide-howto.json' : 'https://naviweb.kr/guide-howto.json', { cache: 'no-cache' })
+function loadHowto(name) {
+  name = name || 'guide-howto.json';
+  if (!howtoP[name]) howtoP[name] = fetch(EMBED ? name : 'https://naviweb.kr/' + name, { cache: 'no-cache' })
     .then(function (r) { return r.ok ? r.json() : { videos: [] }; })
     .then(function (j) {
       var l = (j && Array.isArray(j.videos) ? j.videos : []).filter(function (v) { return v && /^[\w-]{11}$/.test(v.id); });
       return l.map(function (v, i) { return [v, i]; }).sort(function (a, b) { return howtoNum(a[0].t) - howtoNum(b[0].t) || a[1] - b[1]; }).map(function (x) { return x[0]; });   // 제목 번호(01·02·03)순 — 목록 파일 순서와 무관하게 장에 맞춘다
     })
-    .catch(function () { howtoP = null; return []; });
-  return howtoP;
+    .catch(function () { howtoP[name] = null; return []; });
+  return howtoP[name];
 }
 function howtoSlot(chId) {   // 영상 제목의 번호(01·02…)는 이 매뉴얼의 장 번호(목록 순서)와 같다 — 그 번호의 영상이 있는 장에만 맨 위에 넣는다
+  if (MID_EP[chId]) return '<div class="howto" data-n="' + MID_EP[chId] + '" data-src="guide-howto-mid.json" hidden></div>';   // 중급 에피소드: 해당 장 맨 위
   var n = CHAPTERS.findIndex(function (c) { return c.id === chId; }) + 1;
   return n < 1 ? '' : '<div class="howto" data-n="' + n + '" hidden></div>';
 }
@@ -1040,7 +1044,7 @@ function howtoOpen(v) {   // 큰 화면: 화면 가운데에 크게 띄워 바�
 function fillHowto(el) {
   var box = el.querySelector('.howto'); if (!box) return;
   var n = Number(box.getAttribute('data-n'));
-  loadHowto().then(function (list) {
+  loadHowto(box.getAttribute('data-src') || 'guide-howto.json').then(function (list) {
     var v = list.filter(function (x) { return howtoNum(x.t) === n; })[0]; if (!v || !box.isConnected) return;
     var card = document.createElement('button'); card.type = 'button'; card.className = 'howto-card';
     var th = document.createElement('span'); th.className = 'howto-thumb';
