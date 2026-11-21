@@ -5232,7 +5232,8 @@ function _mfbSpClose() {
 function _mfbOnMessage(e) {
   if (!_MFB.frame || e.origin !== _MFB_HONDI || e.source !== _MFB.frame.contentWindow) return;
   const d = e.data || {};
-  if (d.type === 'expert-embed-ready') { _MFB.link = 'ok'; clearTimeout(_MFB.rdyT); if (_MFB.rdy) _MFB.rdy(); _mfbRenderChat(); }
+  if (d.type === 'expert-embed-ack' && _MFB.pend) { _MFB.pend.acked = true; }
+  else if (d.type === 'expert-embed-ready') { _MFB.ack = !!d.ack; _MFB.link = 'ok'; clearTimeout(_MFB.rdyT); if (_MFB.rdy) _MFB.rdy(); _mfbRenderChat(); }
   else if (d.type === 'expert-embed-reply' && _MFB.pend) { const p = _MFB.pend; _MFB.pend = null; clearTimeout(p.timer); p.res(String(d.text || '')); }
   else if (d.type === 'expert-embed-error' && _MFB.pend) { const p = _MFB.pend; _MFB.pend = null; clearTimeout(p.timer); p.rej(new Error(String(d.msg || 'error'))); }
 }
@@ -5243,6 +5244,7 @@ async function _mfbAsk(text) {
   return new Promise((res, rej) => {
     const p = { res: res, rej: rej, timer: setTimeout(() => { if (_MFB.pend === p) { _MFB.pend = null; rej(new Error('timeout')); } }, 90000) };
     _MFB.pend = p;
+    if (_MFB.ack) setTimeout(() => { if (_MFB.pend === p && !p.acked) { _MFB.pend = null; clearTimeout(p.timer); rej(new Error('noack')); } }, 10000);   // 새 hondi 는 받자마자 ack 를 보낸다 — 10초 안에 없으면 틀이 글을 못 받은 것(로그인·저장소 문제)
     try { _MFB.frame.contentWindow.postMessage({ type: 'expert-embed-send', text: text }, _MFB_HONDI); } catch (e) { _MFB.pend = null; clearTimeout(p.timer); rej(e); }
   });
 }
@@ -5281,7 +5283,7 @@ async function _mfbSend(text) {
       setTimeout(() => { _MFB.flash = {}; const cv = _mfbQ('.mfb-canvas'); if (cv) cv.querySelectorAll('.mfb-f.flash').forEach(c => c.classList.remove('flash')); }, 2200);
     } else _MFB.msgs.push({ r: 'sp', t: rep.text || '답변을 받지 못했습니다. 다시 말씀해 주세요.' });
   } catch (e) {
-    if (e && (e.message === 'connect' || e.message === 'timeout')) { _mfbSpClose(); _MFB.link = 'err'; }   // 늦게 오는 옛 답이 다음 요청의 답으로 섞이지 않게 연결을 새로 만든다
+    if (e && (e.message === 'connect' || e.message === 'noack' || e.message === 'timeout')) { _mfbSpClose(); _MFB.link = 'err'; }   // 늦게 오는 옛 답이 다음 요청의 답으로 섞이지 않게 연결을 새로 만든다
     _MFB.msgs.push({ r: 'sp', err: 1, t: e && e.message === 'timeout' ? '응답이 늦어지고 있습니다. 잠시 뒤 다시 보내 주세요. 직접 편집은 계속할 수 있습니다.' : '양식 작성 SP에 연결하지 못했습니다. 로그인 상태를 확인한 뒤 다시 시도해 주세요. 직접 편집은 계속할 수 있습니다.' });
   }
   _MFB.busy = false; _mfbRenderChat();
