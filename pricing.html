@@ -46,7 +46,10 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 .st3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}.st3>div{background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05);padding:12px 14px;font-size:var(--fs-md);line-height:1.6}.st3>div>b:first-child{display:block;margin-bottom:2px}.st3 .nu{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:var(--fs-xs);font-weight:700;align-items:center;justify-content:center;margin-right:6px}
 .cmp{width:100%;border-collapse:collapse;font-size:var(--fs-md);margin:8px 0}.cmp th,.cmp td{border-top:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}.cmp th{color:var(--sub);font-weight:600;width:22%}
 .inc{font-size:var(--fs-sm);color:var(--pri-t);font-weight:600;margin:2px 0 6px}
-@media (max-width:760px){.st3{grid-template-columns:1fr}}
+.fm{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:10px 0}.fm label{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);color:var(--sub)}.fm input,.fm select{font:inherit;font-size:var(--fs-md);color:var(--ink);padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:#fff}.fm .w2{grid-column:1/-1}.fm .ck{flex-direction:row;align-items:flex-start;gap:8px;color:var(--ink)}.fm .ck input{margin-top:3px}
+.bz{width:100%;border-collapse:collapse;font-size:var(--fs-md)}.bz th,.bz td{border-top:1px solid var(--line);padding:8px 10px;text-align:left}.bz th{color:var(--sub);font-weight:600;width:26%}
+.rf li{padding:4px 0;line-height:1.65}
+@media (max-width:760px){.st3,.fm{grid-template-columns:1fr}}
 .gs{list-style:none;padding:0;margin:8px 0;counter-reset:s}.gs li{counter-increment:s;display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:var(--fs-md);line-height:1.6}
 .gs li:before{content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:var(--fs-xs);font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
 @media (max-width:760px){.gu{grid-template-columns:1fr}}
@@ -97,13 +100,13 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <div class="k">
 <section class="card kp hl"><div class="l"><span>월 이용료</span><span class="bd" data-beta>베타</span></div><div class="v" data-b="usd">$20</div><div class="m"><span class="d" data-beta>−90%</span><span data-beta>$200 플랜 정가 <span data-b="list">$200</span> · 2026년 12월 말까지</span></div></section>
 <section class="card kp"><div class="l"><span>오늘의 환율</span><span class="bd s" data-b="rdate">—</span></div><div class="v"><span data-b="rate">—</span></div><div class="m">원/USD · <span data-b="rsrc"></span></div></section>
-<section class="card kp"><div class="l"><span>입금액</span><span class="bd">원화</span></div><div class="v" data-b="krw">—</div><div class="m">원 미만 올림</div></section>
+<section class="card kp"><div class="l"><span>입금액</span><span class="bd">원화</span></div><div class="v" data-b="krw">—</div><div class="m"><span data-b="krwm">공급가액 + 부가세 10%</span></div></section>
 </div>
 <div class="warn" id="rate-warn" hidden></div>
 <div class="warn" id="pay-msg" hidden></div><div class="warn" id="pay-ok" hidden style="background:var(--ok-bg);color:var(--ok-t)"></div>
 <div class="r">
 <section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 선택한 플랜이 바로 적용되고 30일간 이용할 수 있습니다. 플랜 이용료는 GDC로 충전되지 않습니다.</p></section>
-<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>위에서 플랜의 「입금 안내 보기」를 누르면 입금액이 정해집니다. 환율이 1,300원이면 $20는 26,000원입니다.</li><li>지정 계좌로 <b>그 금액 그대로</b> 입금합니다. 입금자명은 나비웹에 등록한 <b>실명</b>과 같게 합니다(띄어쓰기는 달라도 됩니다). 실명을 입력하지 않았다면 입금자를 확인할 수 없어 자동으로 처리되지 않으니, 설정에서 먼저 실명을 입력해 주세요. 입금자 이름과 입금액이 맞으면(금액의 아주 작은 차이는 인정) 본인 입금으로 확인합니다.</li><li>입금이 확인되면 플랜이 자동으로 적용됩니다. 보통 몇 분 안에 끝납니다. 금액이 다르면 자동으로 처리되지 않으니 운영자가 확인합니다.</li></ol></section>
+<section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>위에서 플랜의 「입금 안내 보기」를 누르면 입금액이 정해집니다. 환율이 1,300원이면 $20는 공급가액 26,000원에 부가세 2,600원을 더한 <b>28,600원</b>입니다(부가세 별도).</li><li>지정 계좌로 <b>그 금액 그대로</b> 입금합니다. 입금자명은 나비웹에 등록한 <b>실명</b>과 같게 합니다(띄어쓰기는 달라도 됩니다). 실명을 입력하지 않았다면 입금자를 확인할 수 없어 자동으로 처리되지 않으니, 설정에서 먼저 실명을 입력해 주세요. 입금자 이름과 입금액이 맞으면(금액의 아주 작은 차이는 인정) 본인 입금으로 확인합니다.</li><li>입금이 확인되면 플랜이 자동으로 적용됩니다. 보통 몇 분 안에 끝납니다. 금액이 다르면 자동으로 처리되지 않으니 운영자가 확인합니다.</li></ol></section>
 </div>
 <section class="card cb bt"><h2 class="ct">베타 테스트 안내 <span class="bd s">GDC 보상</span></h2>
 <p class="bp">베타 테스트 기간에는 언제든지 다양한 시스템 오류가 발생할 수 있습니다. 기능 개선을 제안하거나 오류(버그)를 신고해 주시면 중요도에 따라 GDC로 보상합니다. 예를 들어 현저한 개선 아이디어에는 100,000 GDC를 지급합니다.</p>
@@ -117,7 +120,9 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <details><summary>GDC는 어떻게 충전하나요?</summary><p>위쪽 「GDC」 탭을 열어 보세요. 플랜을 고르지 않아도 원하는 금액을 입금하면 입금액만큼(1원 = 1 GDC) 자동으로 충전됩니다. 플랜 이용료는 GDC로 내지 않고 계좌 입금으로 냅니다.</p></details>
 <details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 선택한 플랜의 정가(월 $10 · $100 · $200)가 적용됩니다.</p></details>
 <details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details>
-<details><summary>영수증·환불 등은 어디에 문의하나요?</summary><p>아래 「기능 개선 제안·오류 신고」로 남겨 주세요. 입금 일시와 금액, 입금자명을 함께 적어 주시면 빠르게 확인할 수 있습니다.</p></details>
+<details><summary>부가세는 어떻게 되나요?</summary><p>안내하는 플랜 금액은 <b>부가세 별도</b>입니다. 입금액은 공급가액(달러 가격×환율, 원 미만 올림)에 부가세 10%를 더한 금액이며, 「입금 안내 보기」에서 둘을 나누어 보여 드립니다.</p></details>
+<details><summary>환불은 어떻게 받나요?</summary><p>아래 「환불 규칙」을 확인해 주세요. 환불 신청은 「기능 개선 제안·오류 신고」로 남겨 주세요.</p></details>
+<details><summary>영수증·세금계산서는 어떻게 받나요?</summary><p>페이지 아래 「영수증·세금계산서 발행 요청」에서 신청해 주세요. 운영자가 확인한 뒤 홈택스에서 발행합니다.</p></details>
 </section>
 </div>
 <div id="pn-gdc" role="tabpanel" hidden>
@@ -129,6 +134,8 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <p>플랜을 고르지 않아도 됩니다. 원하는 금액을 입금하면 입금액만큼 GDC가 자동으로 충전됩니다(1원 = 1 GDC).</p>
 <ol class="gs"><li><span>나비웹 <b>설정 &gt; 프로필</b>에 <b>실명</b>이 등록되어 있는지 확인합니다.</span></li><li><span>아래 계좌로 <b>원하는 금액</b>을 입금합니다. 입금자명은 등록한 실명과 같게 합니다(띄어쓰기는 달라도 됩니다).</span></li><li><span>입금이 확인되면 GDC가 자동으로 들어옵니다. 보통 몇 분 안에 끝나며, 결과는 <b>설정 &gt; GDC 지갑</b>에서 볼 수 있습니다.</span></li></ol>
 <div class="warn"><b>실명을 입력하지 않으면 입금자를 확인할 수 없어 충전되지 않습니다.</b> 같은 이름의 가입자가 둘 이상이면 자동으로 처리되지 않고 운영자가 확인합니다.</div></section>
+<section class="card gx"><h2>충전 조건과 유효기간</h2>
+<ul class="rf"><li><b>최소 충전액</b>은 1원(1 GDC)입니다. 그 이상 원하는 금액을 입금할 수 있습니다.</li><li><b>유효기간</b>은 충전한 날부터 최장 3년입니다.</li><li>사용은 <b>선입선출</b>입니다. 먼저 충전한 GDC부터 차감됩니다.</li></ul></section>
 <section class="card gx"><h2>플랜 입금과 GDC 충전, 무엇이 다른가요?</h2>
 <table class="cmp"><tr><th></th><th>플랜 입금</th><th>GDC 충전</th></tr><tr><th>입금액</th><td>플랜 탭이 알려 준 금액 그대로</td><td>원하는 금액 (제한 없음)</td></tr><tr><th>결과</th><td>선택한 플랜이 30일 동안 적용됨</td><td>입금액만큼 GDC 잔액이 늘어남 (1원 = 1 GDC)</td></tr><tr><th>먼저 할 일</th><td>플랜 선택 → 「입금 안내 보기」</td><td>없음 (바로 입금)</td></tr><tr><th>입금자명</th><td colspan="2">두 경우 모두 <b>프로필에 등록한 실명</b>과 같게 (띄어쓰기는 달라도 됩니다)</td></tr></table>
 <p class="n">예: 30,000원을 입금하면 30,000 GDC가 충전됩니다. 입금 확인에는 보통 몇 분이 걸립니다.</p></section>
@@ -136,6 +143,29 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <ol class="gs"><li><span><b>실명 등록</b>을 확인하세요. 설정 &gt; 프로필에서 실명을 적어야 입금자를 확인할 수 있습니다.</span></li><li><span><b>입금자명</b>이 실명과 같은지 확인하세요. 다른 이름(가족·회사명 등)으로 입금하면 알아볼 수 없습니다.</span></li><li><span>몇 분 기다려도 안 들어오면 <b>설정 &gt; GDC 지갑</b>의 충전 내역을 새로고침해 보세요.</span></li><li><span>그래도 안 되면 「플랜」 탭 아래 <b>기능 개선 제안·오류 신고</b>로 입금 일시·금액·입금자명을 알려 주세요. 같은 이름의 가입자가 여럿이면 운영자가 직접 확인합니다.</span></li></ol></section>
 <section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct2"></div><p class="n">위 계좌로만 입금해 주세요. 계좌와 입금자명이 다르면 확인이 늦어지거나 자동 처리되지 않을 수 있습니다.</p></section>
 </div>
+<section class="card gx" id="rf-sec"><h2>환불 규칙</h2>
+<p><b>플랜</b>은 구독 해지와 같은 기준입니다.</p>
+<ul class="rf"><li>입금일부터 7일 이내이고 포함 사용량을 쓰지 않았다면 <b>전액 환불</b>합니다.</li><li>그 밖의 경우에는 사용한 AI 사용 원가와 이용한 기간(일할)을 뺀 금액을 환불합니다.</li><li>환불은 입금하신 계좌로 보내 드립니다. 송금 수수료는 환불 신청자가 부담합니다.</li></ul>
+<p><b>GDC</b>는 쓰지 않은 잔액에 한해 같은 기준으로 환불을 신청할 수 있습니다. 이미 사용했거나 나비웹 입점 사업자에게 결제한 GDC는 환불되지 않습니다.</p>
+<p class="n">이 안내는 일반적인 기준이며, 법률·세무 검토에 따라 달라질 수 있습니다. 환불 신청은 「기능 개선 제안·오류 신고」로 입금 일시·금액·입금자명을 적어 주세요.</p></section>
+<section class="card gx" id="bz-sec"><h2>사업자 정보</h2>
+<table class="bz"><tr><th>서비스</th><td>나비웹 (운영: AI City Inc.)</td></tr><tr><th>상호</th><td>에이아이시티주식회사 (AI City Inc.)</td></tr><tr><th>대표자</th><td>도영민</td></tr><tr><th>사업자등록번호</th><td>368-88-02993 · <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=3688802993" target="_blank" rel="noopener">공정위 사업자정보 확인</a></td></tr><tr><th>주소</th><td>제주특별자치도 제주시 한경면 판포중1길 20-1</td></tr><tr><th>이메일</th><td>ceo@naviweb.kr</td></tr></table></section>
+<section class="card gx" id="rc-sec"><h2>영수증·세금계산서 발행 요청</h2>
+<p>입금하신 건에 대해 현금영수증 또는 전자세금계산서를 신청할 수 있습니다. 운영자가 입금을 확인한 뒤 홈택스에서 발행하고, 입력하신 이메일로 알려 드립니다.</p>
+<button type="button" class="go2" id="rc-open">발행 요청하기</button>
+<form id="rc-form" hidden onsubmit="return false"><div class="fm">
+<label>구분<select id="rc-kind"><option value="cash_personal">현금영수증 · 개인 소득공제</option><option value="cash_biz">현금영수증 · 사업자 지출증빙</option><option value="tax_invoice">전자세금계산서</option></select></label>
+<label>대상<select id="rc-target"><option value="plan">플랜 입금</option><option value="gdc">GDC 충전(충전 확인서 기준)</option></select></label>
+<label>입금액(원)<input id="rc-amt" type="number" min="1" step="1" inputmode="numeric"></label>
+<label>입금일<input id="rc-date" type="date"></label>
+<label id="rc-l-phone">휴대폰 번호<input id="rc-phone" inputmode="tel" placeholder="010-0000-0000"></label>
+<label id="rc-l-biz" hidden>사업자등록번호<input id="rc-biz" inputmode="numeric" placeholder="000-00-00000"></label>
+<label id="rc-l-co" hidden>상호<input id="rc-co"></label>
+<label id="rc-l-rep" hidden>대표자<input id="rc-rep"></label>
+<label class="w2">수신 이메일<input id="rc-mail" type="email"></label>
+<label class="ck w2"><input id="rc-ok" type="checkbox"><span>발행에 필요한 개인정보(휴대폰 번호·사업자 정보·이메일)를 수집·이용하는 데 동의합니다. 발행 목적으로만 쓰고 관련 법령이 정한 기간 보관 후 파기합니다.</span></label>
+</div><button type="button" class="go" id="rc-send">요청 보내기</button> <span id="rc-msg" class="n"></span>
+<p class="n">발행 요건과 시기는 입금 확인 결과와 세무 검토에 따라 달라질 수 있습니다. 전화번호 인증을 마친 가입자만 신청할 수 있습니다.</p></form></section>
 </main>
 <script>
 var PRICE_LIST_USD=200,DISCOUNT=.9,PRICE_BETA_USD=Math.round(PRICE_LIST_USD*(1-DISCOUNT)),BETA_END='2026-12-31';
@@ -154,10 +184,11 @@ function renderAccount(){var a=PAY_ACCOUNT;['acct','acct2'].forEach(function(id)
  var b=el.querySelectorAll('b');b[0].textContent=a.bank;b[1].textContent=a.number;b[2].textContent=a.holder;
  var c=document.createElement('button');c.type='button';c.className='copy';c.textContent='복사';b[1].appendChild(c);
  c.onclick=function(){try{navigator.clipboard.writeText(a.number);c.textContent='복사됨';setTimeout(function(){c.textContent='복사'},1500)}catch(e){}}});}
-function renderRate(r,src){var krw=Math.ceil(window._usd*r.rate),d=new Date(r.at);
+function vatOf(sup){return Math.round(sup*.1)}
+function renderRate(r,src){var sup=Math.ceil(window._usd*r.rate),krw=sup+vatOf(sup),d=new Date(r.at);bind('krwm','공급가액 '+nf.format(sup)+'원 + 부가세 '+nf.format(vatOf(sup))+'원');
  bind('rate',nf.format(Math.round(r.rate*100)/100));bind('rdate',isNaN(d)?String(r.at):kst(d)+' 기준');bind('rsrc',src);
  bind('krw',nf.format(krw)+'원');var w=$('rate-warn');if(w)w.hidden=true}
-function renderFail(){bind('rate','—');bind('rdate','—');bind('rsrc','');bind('krw','—');
+function renderFail(){bind('krwm','');bind('rate','—');bind('rdate','—');bind('rsrc','');bind('krw','—');
  var w=$('rate-warn');if(w){w.hidden=false;w.textContent='환율을 불러오지 못했습니다. 잠시 뒤 다시 열어 주세요. 환율이 표시되지 않을 때는 입금액을 확인한 뒤에 입금해 주세요.'}}
 async function loadRate(){for(var i=0;i<RATE_SOURCES.length;i++){try{var c=new AbortController(),t=setTimeout(function(){c.abort()},8000);
  var res=await fetch(RATE_SOURCES[i].url,{signal:c.signal,cache:'no-store'});clearTimeout(t);if(!res.ok)throw 0;
@@ -198,8 +229,8 @@ document.querySelectorAll('.pay-go').forEach(function(b){b.onclick=function(){va
  $('pay-msg').hidden=false;$('pay-msg').textContent='입금액을 정하는 중입니다…';$('pay-ok').hidden=true;
  post('/biz/plan-request',{phone_verify_token:t,tier:tier}).then(function(x){var d=x.d;
   if(!d||!d.ok){$('pay-msg').textContent=(d&&d.message)||'입금 안내를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.';return}
-  bind('krw',nf.format(d.krw)+'원');bind('usd','$'+d.usd);bind('rate',nf.format(Math.round(d.rate*100)/100));
-  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명은 '+(d.depositor_name?'「'+d.depositor_name+'」(가입한 이름)':'가입한 이름')+'과 같게 해 주세요.';
+  bind('krw',nf.format(d.krw)+'원');if(d.supply_krw!=null)bind('krwm','공급가액 '+nf.format(d.supply_krw)+'원 + 부가세 '+nf.format(d.vat_krw)+'원'+(d.krw!==d.supply_krw+d.vat_krw?' (끝자리 구분 조정 포함)':''));bind('usd','$'+d.usd);bind('rate',nf.format(Math.round(d.rate*100)/100));
+  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원(부가세 포함)을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명은 '+(d.depositor_name?'「'+d.depositor_name+'」(가입한 이름)':'가입한 이름')+'과 같게 해 주세요.';
   startPoll(d.grant)},function(){$('pay-msg').textContent='연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'})}});
 $('x-save').onclick=function(){var t=ck('hondi_pvt');if(!t)return;var lim=Number($('x-lim').value||0),on=$('x-on').checked;
  if(on&&!(lim>0)){$('x-msg').textContent='추가 사용량을 켜려면 월 한도를 정해 주세요.';return}
@@ -208,6 +239,13 @@ $('x-save').onclick=function(){var t=ck('hondi_pvt');if(!t)return;var lim=Number
   if(x.d&&x.d.ok){$('x-msg').textContent='저장했습니다.';showExtra(x.d)}else $('x-msg').textContent=(x.d&&x.d.message)||'저장하지 못했습니다.'},function(){$('x-save').disabled=false;$('x-msg').textContent='네트워크 오류입니다.'})};
 loadPlan();
 $('go-fb').onclick=function(){try{if(parent!==window&&parent._switchTab)parent._switchTab('feedback');else location.href='desktop.html'}catch(e){location.href='desktop.html'}};
+function rcKind(){var k=$('rc-kind').value;$('rc-l-phone').hidden=k!=='cash_personal';$('rc-l-biz').hidden=k==='cash_personal';$('rc-l-co').hidden=k!=='tax_invoice';$('rc-l-rep').hidden=k!=='tax_invoice'}
+$('rc-kind').onchange=rcKind;rcKind();
+$('rc-open').onclick=function(){$('rc-form').hidden=!$('rc-form').hidden};
+$('rc-send').onclick=function(){var t=ck('hondi_pvt'),m=$('rc-msg');if(!t){m.textContent='전화번호 인증 후 신청할 수 있습니다.';return}
+ var b={phone_verify_token:t,kind:$('rc-kind').value,target:$('rc-target').value,amount_krw:Number($('rc-amt').value),deposited_on:$('rc-date').value,phone:$('rc-phone').value,biz_no:$('rc-biz').value,company:$('rc-co').value,rep:$('rc-rep').value,email:$('rc-mail').value,consent:$('rc-ok').checked};
+ m.textContent='보내는 중…';$('rc-send').disabled=true;
+ post('/biz/receipt-request',b).then(function(x){$('rc-send').disabled=false;m.textContent=(x.d&&x.d.ok)?'접수했습니다. 발행되면 이메일로 알려 드립니다.':((x.d&&x.d.message)||'접수하지 못했습니다.')},function(){$('rc-send').disabled=false;m.textContent='연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'})};
 function tab(n){['plan','gdc'].forEach(function(k){var b=$('tb-'+k),p=$('pn-'+k);b.setAttribute('aria-selected',k===n?'true':'false');p.hidden=k!==n});try{history.replaceState(null,'',n==='gdc'?'#gdc':location.pathname+location.search)}catch(e){}}
 $('tb-plan').onclick=function(){tab('plan')};$('tb-gdc').onclick=function(){tab('gdc')};
 if(location.hash==='#gdc'||new URLSearchParams(location.search).get('tab')==='gdc')tab('gdc');
