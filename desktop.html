@@ -8878,7 +8878,9 @@ async function _kaddrSend() {
 
   const err = document.getElementById('kaddr-err');
   err.style.display = 'none';
-  _kaddrChat.messages.push({ role: 'user', content: text });
+  const _kaddrUserMsg = { role: 'user', content: text };
+  let _kaddrAnswered = false;
+  _kaddrChat.messages.push(_kaddrUserMsg);
   _kaddrAppendBubble('user', { text });
 
   const loading = document.getElementById('kaddr-loading');
@@ -8893,6 +8895,7 @@ async function _kaddrSend() {
   requestAnimationFrame(() => loading.scrollIntoView({ behavior: 'smooth', block: 'end' }));
   try {
     const data = await _kaddrChatCall(_kaddrChat.messages);
+    _kaddrAnswered = true;
     _kaddrChat.messages.push({ role: 'assistant', content: data.reply });
     const badge = _badgeWithCount(_KADDR_ACTION_BADGE, data.action);
     _kaddrAppendBubble('assistant', { md: data.reply, badge });
@@ -8916,6 +8919,8 @@ async function _kaddrSend() {
     err.textContent = e.message || '오류가 발생했습니다. 다시 시도해 주세요.';
     err.style.display = '';
   } finally {
+    // 2026-11-21: 오류로 끝난 요청은 대화 기록에서 뺀다 — 남겨 두면 다음 요청 때 AI 가 밀린 요청까지 함께 실행한다(삭제가 딸려 실행된 실사고).
+    if (!_kaddrAnswered) { const i = _kaddrChat.messages.lastIndexOf(_kaddrUserMsg); if (i >= 0) _kaddrChat.messages.splice(i, 1); }
     loading.style.display = 'none';
     _kaddrUpdateSendState();
   }
