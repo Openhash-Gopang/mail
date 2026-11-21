@@ -308,6 +308,25 @@ test('desktop.html: 새 양식 만들기 — 왼쪽 캔버스 + 오른쪽 양식
   assert.deepEqual(m._mfbDiff(old, nw), { add: 1, del: 1, move: 1, mod: 1 });
 });
 
+test('새 양식 만들기: SP 답이 묶음 8개·항목 60개를 넘으면 넘는 줄은 건너뛰고(앞 묶음에 섞이지 않게) 몇 줄을 뺐는지 알린다', () => {
+  const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const a = html.indexOf('function _mfHash'), b = html.indexOf('function _mfNewOpen');
+  const c = html.indexOf('const _MFB = '), d = html.indexOf('// mfb:model-end');
+  const esc = 'const escHtml = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[ch]));';
+  const m = new Function(html.slice(a, b) + '\n' + esc + '\n' + html.slice(c, d) + '; return { _mfbParseDsl };')();
+  let t = '제목: 큰 양식\n';
+  for (let s = 1; s <= 10; s++) { t += '# 묶음' + s + '\n'; for (let i = 1; i <= 2; i++) t += '항목' + s + '-' + i + ' | 짧은글\n'; }
+  const r = m._mfbParseDsl(t);
+  assert.equal(r.secs.length, 8);
+  assert.deepEqual(r.secs[7].f.map(x => x.l), ['항목8-1', '항목8-2']);   // 9·10번째 묶음의 항목이 8번째에 섞이지 않는다
+  assert.equal(r.cut, 6);
+  let u = '제목: 많은 항목\n# 하나\n'; for (let i = 1; i <= 70; i++) u += '칸' + i + ' | 짧은글\n';
+  const r2 = m._mfbParseDsl(u);
+  assert.equal(r2.secs[0].f.length, 60); assert.equal(r2.cut, 10);
+  assert.equal(m._mfbParseDsl('제목: x\n# a\n성명 | 짧은글').cut, 0);
+  assert.match(html, /한도를 넘는 ' \+ rep\.form\.cut \+ '줄은 뺐습니다/);
+});
+
 test('도우미 SP: 정부24 개인 민원서류는 이름을 묻지 않고 바로 맡긴다', () => {
   assert.match(html, /3-1\. 정부24 등에서 발급하는 개인 민원서류[^\n]*이름·성명·주민등록번호·주소를 묻지 않고[^\n]*바로 \[AGENT_TASK\]로 맡긴다/);
 });
