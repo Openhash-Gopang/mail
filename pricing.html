@@ -43,6 +43,10 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 .tb button[aria-selected=true]{color:var(--pri-t);border-bottom-color:var(--pri)}
 .gx{padding:18px 20px;margin-bottom:12px}.gx h2{font-size:var(--fs-lg);margin:0 0 6px}.gx p{margin:0 0 10px;color:var(--ink);font-size:var(--fs-md);line-height:1.65}
 .gu{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}.gu>div{background:var(--bg);border-radius:6px;padding:12px 14px}.gu b{display:block;font-size:var(--fs-md);margin-bottom:4px}.gu span{color:var(--sub);font-size:var(--fs-sm)}
+.st3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}.st3>div{background:#fff;border-radius:6px;box-shadow:0 0 .875rem rgba(33,37,41,.05);padding:12px 14px;font-size:var(--fs-md);line-height:1.6}.st3 b{display:block;margin-bottom:2px}.st3 .nu{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:var(--fs-xs);font-weight:700;align-items:center;justify-content:center;margin-right:6px}
+.cmp{width:100%;border-collapse:collapse;font-size:var(--fs-md);margin:8px 0}.cmp th,.cmp td{border-top:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}.cmp th{color:var(--sub);font-weight:600;width:22%}
+.inc{font-size:var(--fs-sm);color:var(--pri-t);font-weight:600;margin:2px 0 6px}
+@media (max-width:760px){.st3{grid-template-columns:1fr}}
 .gs{list-style:none;padding:0;margin:8px 0;counter-reset:s}.gs li{counter-increment:s;display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:var(--fs-md);line-height:1.6}
 .gs li:before{content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:var(--fs-xs);font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
 @media (max-width:760px){.gu{grid-template-columns:1fr}}
@@ -53,28 +57,32 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <main class="w">
 <div class="tb" role="tablist"><button type="button" role="tab" id="tb-plan" aria-selected="true" aria-controls="pn-plan">플랜</button><button type="button" role="tab" id="tb-gdc" aria-selected="false" aria-controls="pn-gdc">GDC</button></div>
 <div id="pn-plan" role="tabpanel">
+<div class="st3"><div><b><span class="nu">1</span>플랜 고르기</b>아래에서 이용할 플랜의 「입금 안내 보기」를 누릅니다. 미리 <b>설정 &gt; 프로필</b>에 실명을 등록해 두세요.</div><div><b><span class="nu">2</span>입금 안내 확인</b>그날 환율로 계산한 <b>입금액</b>과 입금 계좌가 나옵니다. 입금액은 48시간 동안 유효합니다.</div><div><b><span class="nu">3</span>입금하기</b>안내 금액 그대로, 입금자명은 등록한 실명으로 입금하면 보통 몇 분 안에 자동으로 적용됩니다.</div></div>
 <div class="bn" data-beta><b>베타 테스트 기간(2026년 12월 말까지)</b> · 모든 유료 회원은 <b>$200 플랜</b>(가상 판결 포함)을 90% 할인한 <b data-b="usd">$20</b>에 이용합니다. 아래 어느 유료 플랜을 고르셔도 같습니다.</div>
 <div class="pl">
 <section class="card pc" id="plan-free"><h2>무료 <span class="bd s" id="cur-free" hidden>현재 플랜</span></h2>
 <div class="pv">$0<small> / 월</small></div>
-<ul><li>둘러보기: 로그인 없이 화면·사용법을 살펴봅니다.</li><li>전화번호 본인 인증 후 24시간 동안 넉넉히 무료로 사용합니다.</li><li>그 뒤에도 가볍게 이어서 쓸 수 있고, 많이 쓰면 잠시 쉬었다가 다시 쓸 수 있습니다.</li></ul>
+<ul><li>둘러보기: 로그인 없이 화면과 사용법을 살펴볼 수 있습니다.</li><li>전화번호 본인 인증 후, AI 사용 원가 <b>1,000원어치</b>까지 무료입니다.</li><li>인증 후 <b>30일</b>이 지나거나 1,000원을 다 쓰면, 둘 중 먼저 오는 때에 무료 이용이 끝납니다.</li><li>끝난 뒤에는 유료 플랜을 고르거나 GDC를 충전해서 이어 쓸 수 있습니다.</li></ul>
 <div class="st" id="free-st"></div>
 <button type="button" class="go2" id="pick-free">무료 플랜으로 사용하기</button></section>
 <section class="card pc" id="plan-p10" data-tier="p10"><h2>기본</h2>
 <div class="pv">$10<small> / 월</small></div>
 <ul><li>간단한 질문과 답변</li><li>메시징</li><li>메일 서비스</li></ul>
-<div class="st"><span data-beta>베타 기간에는 $200 플랜을 $20에 이용</span></div>
+<div class="inc">월 포함 사용량 5,000원 (AI 사용 원가 기준)</div>
+<div class="st"><span data-beta>베타 기간에는 어느 플랜을 고르셔도 프로(월 100,000원 포함)로 적용됩니다.</span></div>
 <button type="button" class="go2 pay-go">입금 안내 보기</button></section>
 <section class="card pc" id="plan-p100" data-tier="p100"><h2>서류</h2>
 <div class="pv">$100<small> / 월</small></div>
 <ul><li>기본 플랜의 모든 기능</li><li>서류 작성을 주로 쓰는 분께 맞는 사용량</li></ul>
-<div class="st"><span data-beta>베타 기간에는 $200 플랜을 $20에 이용</span></div>
+<div class="inc">월 포함 사용량 50,000원 (AI 사용 원가 기준)</div>
+<div class="st"><span data-beta>베타 기간에는 어느 플랜을 고르셔도 프로(월 100,000원 포함)로 적용됩니다.</span></div>
 <button type="button" class="go2 pay-go">입금 안내 보기</button></section>
 <section class="card pc" id="plan-p200" data-tier="p200" style="background:var(--pri-bg)"><h2>프로 <span class="bd" data-beta>베타 −90%</span></h2>
 <div class="pv old" data-beta><s data-b="list">$200</s><small> / 월</small></div>
 <div class="pv"><span data-b="usd">$20</span><small> / 월</small></div>
 <div class="st"><span data-beta>2026년 12월 말까지 베타 가격</span></div>
 <ul><li>서류 플랜의 모든 기능</li><li>가상 판결 기능을 자주 쓰는 분께 맞는 사용량</li></ul>
+<div class="inc">월 포함 사용량 100,000원 (AI 사용 원가 기준)</div>
 <button type="button" class="go pay-go">입금 안내 보기</button></section>
 </div>
 <section class="card cb" id="extra-sec" hidden style="margin-bottom:12px"><h2 class="ct">추가 사용량 <span class="bd s">종량제</span></h2>
@@ -100,7 +108,17 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <section class="card cb bt"><h2 class="ct">베타 테스트 안내 <span class="bd s">GDC 보상</span></h2>
 <p class="bp">베타 테스트 기간에는 언제든지 다양한 시스템 오류가 발생할 수 있습니다. 기능 개선을 제안하거나 오류(버그)를 신고해 주시면 중요도에 따라 GDC로 보상합니다. 예를 들어 현저한 개선 아이디어에는 100,000 GDC를 지급합니다.</p>
 <button type="button" class="go" id="go-fb">기능 개선 제안·오류 신고하기</button></section>
-<section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2><details><summary>환율은 언제 적용되나요?</summary><p>「입금 안내 보기」를 누른 때의 환율로 입금액이 정해집니다. 그 금액은 48시간 동안 유효합니다.</p></details><details><summary>입금했는데 적용이 안 돼요</summary><p>입금액이 안내 금액과 다르거나 입금자명이 가입한 이름과 다르면 플랜으로 자동 적용되지 않습니다(아주 작은 금액 차이는 무시합니다). 금액이 다르면 일반 GDC 충전으로 처리될 수 있습니다. 기능 개선 제안·오류 신고로 입금 사실을 알려 주시면 확인해 드립니다.</p></details><details><summary>추가 사용량은 어떻게 충전하나요?</summary><p>플랜 이용료와 별개입니다. 추가 사용량을 켜 두면 GDC 잔액에서 사용한 만큼 차감됩니다. GDC는 같은 계좌에 원하는 금액을 입금하면 충전됩니다. 입금자명을 가입한 이름과 같게 하면 서버가 이름으로 알아보고 입금액만큼(1원 = 1 GDC) 자동으로 충전합니다.</p></details><details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 선택한 플랜의 정가(월 $10 · $100 · $200)가 적용됩니다.</p></details><details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details></section>
+<section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2>
+<details><summary>환율은 언제 적용되나요?</summary><p>「입금 안내 보기」를 누른 때의 환율로 입금액이 정해지고, 그 금액은 48시간 동안 유효합니다. 48시간이 지나면 「입금 안내 보기」를 다시 눌러 새 금액을 확인해 주세요.</p></details>
+<details><summary>입금자명은 무엇으로 해야 하나요?</summary><p>나비웹 <b>설정 &gt; 프로필</b>의 실명과 같게 입금해 주세요. 띄어쓰기는 달라도 됩니다. 실명을 적어 두지 않았다면 입금자를 확인할 수 없어 자동으로 처리되지 않습니다. 기관·사업자는 프로필에 등록한 명칭으로 입금합니다.</p></details>
+<details><summary>입금했는데 적용이 안 돼요</summary><p>아래를 순서대로 확인해 주세요.</p><ol><li>입금액이 안내 금액과 같은가요? (아주 작은 금액 차이는 무시합니다.)</li><li>입금자명이 프로필의 실명과 같은가요?</li><li>안내를 받은 지 48시간이 지나지 않았나요?</li><li>같은 이름의 가입자가 더 있으면 자동으로 처리되지 않고 운영자가 확인합니다.</li></ol><p>금액이 다르면 플랜이 아니라 일반 GDC 충전으로 처리될 수 있습니다. 그래도 해결되지 않으면 아래 「기능 개선 제안·오류 신고」로 입금 일시·금액·입금자명을 알려 주세요. 확인해 드립니다.</p></details>
+<details><summary>플랜은 얼마 동안 쓰고, 자동으로 갱신되나요?</summary><p>입금이 확인된 날부터 30일 동안 이용합니다. 계좌 입금 방식이라 자동으로 결제되지 않습니다. 기간이 끝나면 다시 입금해 주세요.</p></details>
+<details><summary>포함 사용량을 다 쓰면 어떻게 되나요?</summary><p>플랜에 포함된 사용량은 30일마다 다시 채워집니다. 다 쓴 뒤에도 이어서 쓰려면 위 「추가 사용량」을 켜고 월 한도를 정해 두세요. 한도 안에서 GDC 잔액이 사용한 만큼만 차감됩니다. 꺼 두면 다시 채워질 때까지 멈춥니다.</p></details>
+<details><summary>GDC는 어떻게 충전하나요?</summary><p>위쪽 「GDC」 탭을 열어 보세요. 플랜을 고르지 않아도 원하는 금액을 입금하면 입금액만큼(1원 = 1 GDC) 자동으로 충전됩니다. 플랜 이용료는 GDC로 내지 않고 계좌 입금으로 냅니다.</p></details>
+<details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 선택한 플랜의 정가(월 $10 · $100 · $200)가 적용됩니다.</p></details>
+<details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details>
+<details><summary>영수증·환불 등은 어디에 문의하나요?</summary><p>아래 「기능 개선 제안·오류 신고」로 남겨 주세요. 입금 일시와 금액, 입금자명을 함께 적어 주시면 빠르게 확인할 수 있습니다.</p></details>
+</section>
 </div>
 <div id="pn-gdc" role="tabpanel" hidden>
 <section class="card gx"><h2>GDC는 나비웹의 결제 통화입니다</h2>
@@ -111,7 +129,12 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <p>플랜을 고르지 않아도 됩니다. 원하는 금액을 입금하면 입금액만큼 GDC가 자동으로 충전됩니다(1원 = 1 GDC).</p>
 <ol class="gs"><li><span>나비웹 <b>설정 &gt; 프로필</b>에 <b>실명</b>이 등록되어 있는지 확인합니다.</span></li><li><span>아래 계좌로 <b>원하는 금액</b>을 입금합니다. 입금자명은 등록한 실명과 같게 합니다(띄어쓰기는 달라도 됩니다).</span></li><li><span>입금이 확인되면 GDC가 자동으로 들어옵니다. 보통 몇 분 안에 끝나며, 결과는 <b>설정 &gt; GDC 지갑</b>에서 볼 수 있습니다.</span></li></ol>
 <div class="warn"><b>실명을 입력하지 않으면 입금자를 확인할 수 없어 충전되지 않습니다.</b> 같은 이름의 가입자가 둘 이상이면 자동으로 처리되지 않고 운영자가 확인합니다.</div></section>
-<section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct2"></div><p class="n">충전 금액에는 제한이 없습니다. 입금한 계좌와 입금자명이 다르면 확인이 늦어질 수 있습니다.</p></section>
+<section class="card gx"><h2>플랜 입금과 GDC 충전, 무엇이 다른가요?</h2>
+<table class="cmp"><tr><th></th><th>플랜 입금</th><th>GDC 충전</th></tr><tr><th>입금액</th><td>플랜 탭이 알려 준 금액 그대로</td><td>원하는 금액 (제한 없음)</td></tr><tr><th>결과</th><td>선택한 플랜이 30일 동안 적용됨</td><td>입금액만큼 GDC 잔액이 늘어남 (1원 = 1 GDC)</td></tr><tr><th>먼저 할 일</th><td>플랜 선택 → 「입금 안내 보기」</td><td>없음 (바로 입금)</td></tr><tr><th>입금자명</th><td colspan="2">두 경우 모두 <b>프로필에 등록한 실명</b>과 같게 (띄어쓰기는 달라도 됩니다)</td></tr></table>
+<p class="n">예: 30,000원을 입금하면 30,000 GDC가 충전됩니다. 입금 확인에는 보통 몇 분이 걸립니다.</p></section>
+<section class="card gx"><h2>충전이 안 되나요?</h2>
+<ol class="gs"><li><span><b>실명 등록</b>을 확인하세요. 설정 &gt; 프로필에서 실명을 적어야 입금자를 확인할 수 있습니다.</span></li><li><span><b>입금자명</b>이 실명과 같은지 확인하세요. 다른 이름(가족·회사명 등)으로 입금하면 알아볼 수 없습니다.</span></li><li><span>몇 분 기다려도 안 들어오면 <b>설정 &gt; GDC 지갑</b>의 충전 내역을 새로고침해 보세요.</span></li><li><span>그래도 안 되면 「플랜」 탭 아래 <b>기능 개선 제안·오류 신고</b>로 입금 일시·금액·입금자명을 알려 주세요. 같은 이름의 가입자가 여럿이면 운영자가 직접 확인합니다.</span></li></ol></section>
+<section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct2"></div><p class="n">위 계좌로만 입금해 주세요. 계좌와 입금자명이 다르면 확인이 늦어지거나 자동 처리되지 않을 수 있습니다.</p></section>
 </div>
 </main>
 <script>
