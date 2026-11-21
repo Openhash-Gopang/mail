@@ -5284,7 +5284,7 @@ async function _mfbSend(text) {
     } else _MFB.msgs.push({ r: 'sp', t: rep.text || '답변을 받지 못했습니다. 다시 말씀해 주세요.' });
   } catch (e) {
     if (e && (e.message === 'connect' || e.message === 'noack' || e.message === 'timeout')) { _mfbSpClose(); _MFB.link = 'err'; }   // 늦게 오는 옛 답이 다음 요청의 답으로 섞이지 않게 연결을 새로 만든다
-    _MFB.msgs.push({ r: 'sp', err: 1, t: e && e.message === 'timeout' ? '응답이 늦어지고 있습니다. 잠시 뒤 다시 보내 주세요. 직접 편집은 계속할 수 있습니다.' : '양식 작성 SP에 연결하지 못했습니다. 로그인 상태를 확인한 뒤 다시 시도해 주세요. 직접 편집은 계속할 수 있습니다.' });
+    _MFB.msgs.push({ r: 'sp', err: 1, t: e && e.message === 'timeout' ? '응답이 늦어지고 있습니다. 잠시 뒤 다시 보내 주세요. 직접 편집은 계속할 수 있습니다.' : e && /^응답 중 오류: /.test(e.message) ? e.message.replace(/^응답 중 오류: /, '') + ' 직접 편집은 계속할 수 있습니다.' : '양식 작성 SP에 연결하지 못했습니다. 로그인 상태를 확인한 뒤 다시 시도해 주세요. 직접 편집은 계속할 수 있습니다.' });
   }
   _MFB.busy = false; _mfbRenderChat();
 }
