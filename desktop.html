@@ -1738,6 +1738,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="foi-doc-bar"><strong id="cmp-foi-title">정보 공개 청구서</strong><span class="foi-doc-sp"></span>
         <button type="button" class="btn btn-sm" onclick="_foiDocCopy()">복사</button>
         <button type="button" class="btn btn-sm" onclick="_foiDocSave()">파일로 받기</button>
+        <button type="button" class="btn btn-sm" id="cmp-foi-agent" onclick="_foiDocAgent()" title="나비웹 도우미가 정보공개포털에 청구서 내용을 옮깁니다(로그인·제출 확인은 내가)">도우미에게 맡기기</button>
         <button type="button" class="btn btn-sm btn-primary" onclick="window.open('https://www.open.go.kr','_blank','noopener')">정보공개포털 열기</button>
       </div>
       <textarea id="cmp-foi-text" spellcheck="false" aria-label="정보 공개 청구서 본문(고쳐 쓸 수 있습니다)" placeholder="대화로 알려 주시면 청구서가 여기에 만들어집니다. 만들어진 청구서는 직접 고쳐 쓸 수 있습니다."></textarea>
@@ -3735,14 +3736,39 @@ function _orgLeave() {
 }
 // ── 정보 공개 청구(2026-11-03): 입력창이 정보 공개 청구 대화창이 되고, 대화로 알려 준 내용으로 아래에 청구서를 만든다 ──────────
 // 예전 "정보 공개 청구" 페이지는 없앴다. 대화 SP 는 인라인으로 두고(spText), 청구서는 답변 안의 ~~~foi 블록으로 받는다.
-const _FOI_SP = '당신은 나비웹의 "정보 공개 청구" 도우미다. 사용자가 알고 싶은 정보를 「공공기관의 정보공개에 관한 법률」에 따라 공공기관에 청구하는 정보공개 청구서를 대화로 만들어 준다.\n\n' +
-  '[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 인사말은 반복하지 않는다.\n\n' +
-  '[진행] ① 사용자가 알고 싶은 것을 파악해 청구 대상 기관과 청구할 정보(문서 이름·기간·범위)를 특정한다. 불분명하면 가장 중요한 것 하나만 묻는다. ② 정보가 충분하면 곧바로 청구서를 만들어 제시한다. ③ 이후 사용자의 수정 지시가 오면 청구서 전체를 고쳐 다시 제시한다.\n\n' +
-  '[청구서 출력 형식] 청구서를 만들거나 고칠 때마다, 답변 맨 끝에 다음 형식의 블록을 정확히 하나 쓴다(블록 밖에는 한두 문장의 안내만 쓴다).\n' +
-  '~~~foi\n정보공개 청구서\n\n1. 수신: ○○○(기관명)\n2. 청구인: [성명] / [주소] / [연락처]\n3. 청구 내용: (문서 이름·기간·범위를 특정해 번호로 나열)\n4. 공개 방법: 열람 / 사본 / 전자파일 중 선택(기본: 전자파일)\n5. 수령 방법: 정보공개시스템 전자 수령 / 우편 / 직접 방문 중 선택\n6. 청구 일자: (오늘 날짜)\n~~~\n' +
-  '청구인의 성명·주소·연락처는 대화에서 받지 말고 [대괄호] 칸으로 비워 둔다. 모르는 사실은 지어내지 말고 비워 둔다.\n\n' +
-  '[법령 안내(필요할 때만 한 줄)] 청구서는 기관이 청구를 받은 날부터 10일 이내에 공개 여부를 결정하고(부득이하면 10일 연장), 비공개·부분공개에 불복하면 통지를 받은 날부터 30일 이내에 이의신청을 하거나 행정심판을 청구할 수 있다. 법적 조언이 필요하면 전문가와 상의하라고 한 줄로 알린다.\n' +
-  '[금지] 이미 공개된 정보나 개인정보·비밀 정보를 청구서에 쓰지 않는다. 제출을 대신했다고 말하지 않는다(제출은 사용자가 정보공개포털 등에서 직접 한다).';
+const _FOI_SP = [
+  "당신은 나비웹의 \"정보 공개 청구\" 도우미다. 사용자가 알고 싶은 정보를 「공공기관의 정보공개에 관한 법률」에 따라 공공기관에 청구하는 정보공개 청구서를 대화로 만들어 준다.",
+  "",
+  "[말하기 규칙] 답은 짧게(2~4문장), 한 번에 질문은 하나만. 장황한 설명·면책 문구 금지. 인사말은 반복하지 않는다.",
+  "",
+  "[진행]",
+  "① 먼저 이미 공개된 정보인지 확인을 권한다. 공공기관은 일부 정보를 청구 없이 미리 공개(사전 공표)하므로, 기관 누리집의 정보공개 코너와 정보공개포털(open.go.kr)에서 먼저 찾아보게 안내한다. 공개 여부를 직접 확인하지 못했다면 \"확인하지 못했다\"고 말하고 지어내지 않는다. 이미 공개돼 있다고 사용자가 확인해 주면 청구서를 만들지 않는다.",
+  "② 청구 대상 기관과 청구할 정보(문서 이름·기간·범위)를 특정한다. 불분명하면 가장 중요한 것 하나만 묻는다. \"모든 지침\"처럼 넓으면 결정이 늦어지거나 보완 요구를 받을 수 있으니 \"최신 시행본\", \"2025년 1월 이후 개정본\"처럼 좁히도록 권한다.",
+  "③ 기관 하나에 청구하되 부서가 여럿이면 청구 내용에 부서별로 번호를 붙여 나눈다. 부서별 결정 통지가 따로 오는지, 어느 부서로 어떻게 넘겨지는지는 단정하지 않는다(일반적으로 접수 기관이 처리 부서에 넘기고, 다른 기관이 가진 정보면 이송하며 청구인에게 알린다).",
+  "④ 공개 방법(열람·사본·전자파일, 기본은 전자파일)과 수령 방법을 정한다. 청구 목적은 사용자가 말한 경우에만 청구 내용 아래에 \"청구 목적(선택)\" 한 줄로 적는다.",
+  "⑤ 정보가 충분하면 곧바로 청구서를 제시한다. 이후 수정 지시가 오면 청구서 전체를 고쳐 다시 제시한다. \"모호한 표현을 알려 줘\"라고 하면 청구서를 다시 읽고 모호한 표현을 짚어 고치는 안을 낸다.",
+  "",
+  "[청구서 출력 형식] 청구서를 만들거나 고칠 때마다, 답변 맨 끝에 다음 형식의 블록을 정확히 하나 쓴다(블록 밖에는 한두 문장의 안내만 쓴다).",
+  "~~~foi",
+  "정보공개 청구서",
+  "",
+  "1. 수신: ○○○(기관명)",
+  "2. 청구인: [성명] / [주소] / [연락처]",
+  "3. 청구 내용: (문서 이름·기간·범위를 특정해 번호로 나열, 부서가 여럿이면 부서별로)",
+  "4. 공개 방법: 열람 / 사본 / 전자파일 중 선택(기본: 전자파일)",
+  "5. 수령 방법: 정보공개시스템 전자 수령 / 우편 / 직접 방문 중 선택",
+  "6. 청구 일자: [청구 일자]",
+  "~~~",
+  "청구인의 성명·주소·연락처와 청구 일자는 대화에서 받지 말고 [대괄호] 칸으로 비워 둔다. 모르는 사실은 지어내지 않고 비워 둔다.",
+  "",
+  "[결정 통지를 받은 뒤] 사용자가 비공개·부분공개 결정을 알려 오면 결정의 뜻을 쉽게 설명하고(공개·부분공개·비공개), 이의가 있으면 이의신청서 초안을 같은 ~~~foi 블록으로 만든다. 제목은 \"이의신청서\", 항목은 1. 수신 2. 이의신청인 [성명]/[주소]/[연락처] 3. 결정 내용(통지일·결정 번호는 [대괄호]) 4. 이의 이유(사용자가 말한 것만) 5. 요청 사항 6. 일자 [일자]. 결정 내용을 사용자가 알려 주지 않았으면 지어내지 않는다.",
+  "",
+  "[법령 안내(필요할 때만 한 줄)] 기관은 청구를 받은 날부터 10일 이내에 공개 여부를 결정하고(부득이하면 10일 이내로 연장하며 사유를 알린다), 비공개·부분공개에 불복하면 결정 통지를 받은 날부터 30일 이내에 이의신청을 할 수 있다. 행정심판·행정소송은 별도 절차와 기한이 있으니 확인이 필요하다고 안내한다. 열람·사본·전자파일의 수수료는 포털 안내를 보게 하고 금액을 지어내지 않는다. 법적 조언이 필요하면 전문가와 상의하라고 한 줄로 알린다.",
+  "",
+  "[제출·도우미] 제출은 사용자가 정보공개포털 등에서 직접 한다. 사용자가 원하면 나비웹 도우미(Chrome 확장)에 옮기는 일을 맡길 수 있다고 알린다. 도우미는 로그인·본인확인·보안문자를 사용자에게 넘기고 제출 앞에서 확인을 받는다. 제출을 대신했다고 말하지 않는다.",
+  "",
+  "[금지] 이미 공개된 정보나 남의 개인정보·비밀 정보를 청구서에 쓰지 않는다. 확률·결과를 장담하지 않는다(공개 여부는 기관이 정한다)."
+].join('\n');
 function _cmpFoiPick() {
   _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
   _orgActivate({ key: 'kfoi', label: '정보 공개 청구', sp: 'inline:foi:v1', spText: _FOI_SP, group: 'foi', foi: true },
@@ -3759,6 +3785,17 @@ function _foiDocFromReply(t) {
   return rest || '청구서를 아래에 만들었습니다. 내용을 검토하고 고칠 곳을 말씀해 주세요.';
 }
 function _foiDocReset() { const ta = document.getElementById('cmp-foi-text'), d = document.getElementById('cmp-foi-doc'); if (ta) ta.value = ''; if (d) d.hidden = true; }
+/** 청구서를 나비웹 도우미에 맡긴다 — 도우미가 open.go.kr 에서 칸을 옮기고, 로그인·본인확인·제출 확인은 사용자가 한다. 확장이 없으면 설치 안내를 한다. */
+async function _foiDocAgent() {
+  const ta = document.getElementById('cmp-foi-text'); const txt = ta ? ta.value.trim() : '';
+  if (!txt) { _drToast('먼저 청구서를 만들어 주세요.'); return; }
+  if (!window.NaviAgent) { window.open('https://www.open.go.kr', '_blank', 'noopener'); return; }
+  let info = null; try { info = await NaviAgent.detect(); } catch (x) { info = null; }
+  if (!info) { _drToast('나비웹 도우미가 연결되어 있지 않습니다. 설치 후 다시 눌러 주세요. 지금은 정보공개포털을 엽니다.'); window.open('https://www.open.go.kr', '_blank', 'noopener'); return; }
+  const goal = '정보공개포털(open.go.kr)에서 아래 정보 공개 청구서대로 청구 화면의 칸을 채워 주세요. 로그인·본인확인·보안문자는 사용자가 하고, 제출 단추를 누르기 전에는 반드시 사용자 확인을 받아 주세요.\n\n' + txt.slice(0, 4000);
+  let ok = false; try { ok = await NaviAgent.queue({ playbook: 'open-go-kr-foi', goal: goal, title: '정보 공개 청구서 옮기기', slot: '정보 공개 청구서', url: 'https://www.open.go.kr' }); } catch (x) { ok = false; }
+  _drToast(ok ? '도우미에 맡겼습니다. 열린 포털 화면에서 로그인해 주세요.' : '도우미에 맡기지 못했습니다. 정보공개포털을 직접 열어 진행해 주세요.');
+}
 function _foiDocCopy() { const ta = document.getElementById('cmp-foi-text'); if (!ta || !ta.value.trim()) return; try { navigator.clipboard.writeText(ta.value).then(() => _drToast('청구서를 복사했습니다.')); } catch (e) { ta.select(); document.execCommand('copy'); } }
 function _foiDocSave() {
   const ta = document.getElementById('cmp-foi-text'); if (!ta || !ta.value.trim()) return;
@@ -4998,16 +5035,14 @@ function _mfbDsl(compact) {
   });
   return out.join('\n');
 }
-// SP 가 돌려준 ```form 블록 → {title, secs, cut}. 항목이 하나도 없으면 null (한도: 묶음 8개·항목 60개). cut = 한도를 넘어 뺀 줄 수
-// 9번째 이후 묶음의 항목은 앞 묶음에 섞이지 않게 다음 묶음 머리글까지 건너뛴다
+// SP 가 돌려준 ```form 블록 → {title, secs}. 항목이 하나도 없으면 null (한도: 묶음 8개·항목 60개)
 function _mfbParseDsl(text) {
-  let title = '', cur = null, n = 0, cut = 0, skip = false; const secs = [];
+  let title = '', cur = null, n = 0; const secs = [];
   String(text || '').split(/\r?\n/).forEach(line => {
     line = line.trim().replace(/^(?:[-•·]|\d+[.)])\s+(?=\S)/, ''); if (!line) return;
     let m = line.match(/^(?:제목|title)\s*[:：]\s*(.*)$/i); if (m) { title = m[1].trim().slice(0, 80); return; }
-    if (line[0] === '#') { if (secs.length >= 8) { skip = true; cut++; return; } skip = false; cur = { h: line.replace(/^#+\s*/, '').slice(0, 40), f: [] }; secs.push(cur); return; }
-    if (skip) { cut++; return; }
-    const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l) return; if (n >= 60) { cut++; return; }
+    if (line[0] === '#') { if (secs.length >= 8) return; cur = { h: line.replace(/^#+\s*/, '').slice(0, 40), f: [] }; secs.push(cur); return; }
+    const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l || n >= 60) return;
     const req = /[*＊]$/.test(l); if (req) l = l.replace(/[*＊]+$/, '').trim(); if (!l) return;
     const k = _mfKinds(p[1]), sz = String(p[3] || ''), w = parseInt((sz.match(/폭\s*(\d+)/) || [])[1], 10), r = parseInt((sz.match(/줄\s*(\d+)/) || [])[1], 10);
     if (!cur) { cur = { h: '', f: [] }; secs.push(cur); }
@@ -5016,7 +5051,7 @@ function _mfbParseDsl(text) {
     n++;
   });
   const ok = secs.filter(s => s.f.length);
-  return ok.length ? { title: title, secs: ok.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f })), cut: cut } : null;
+  return ok.length ? { title: title, secs: ok.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f })) } : null;
 }
 // 바뀐 내용 요약: 추가·삭제·이동(최소 이동 수)·수정
 function _mfbDiff(oldSecs, newSecs) {
@@ -5242,7 +5277,7 @@ async function _mfbSend(text) {
       const d = _mfbApply(rep.form);
       if (!d) { _MFB.msgs.push({ r: 'sp', t: (rep.text || '') + ' (바뀐 내용이 없습니다)' }); _MFB.busy = false; _mfbRenderChat(); return; }
       _mfbRenderCanvas();
-      _MFB.msgs.push({ r: 'sp', t: (rep.text || '양식을 바꿨습니다.') + (rep.form.cut ? ' (한도를 넘는 ' + rep.form.cut + '줄은 뺐습니다. 한 양식에는 묶음 8개, 항목 60개까지 넣을 수 있습니다.)' : ''), sum: _mfbDiffText(d), undo: 1 });
+      _MFB.msgs.push({ r: 'sp', t: rep.text || '양식을 바꿨습니다.', sum: _mfbDiffText(d), undo: 1 });
       setTimeout(() => { _MFB.flash = {}; const cv = _mfbQ('.mfb-canvas'); if (cv) cv.querySelectorAll('.mfb-f.flash').forEach(c => c.classList.remove('flash')); }, 2200);
     } else _MFB.msgs.push({ r: 'sp', t: rep.text || '답변을 받지 못했습니다. 다시 말씀해 주세요.' });
   } catch (e) {
