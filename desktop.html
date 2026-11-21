@@ -2068,18 +2068,43 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 #set-sec-profile .pf-head,#set-sec-profile .pf-hint,#set-sec-profile .pf-fields-note,#set-sec-profile .pf-sub,#set-sec-profile .pf-lab,#set-sec-profile .pf-count,#set-sec-profile .pf-live,#set-sec-profile .pf-vis,#set-sec-profile .pf-del,#set-sec-profile .pf-offer-chk,#set-sec-profile .pf-offers-empty,#set-sec-profile .pf-biz-title,#set-sec-profile .ps-bread,#set-sec-profile .pf-bar textarea,#set-sec-profile .pf-row input,#set-sec-profile .pf-row textarea,#set-sec-profile .pf-add input,#set-sec-profile .pf-add select,#set-sec-profile .pf-offer input,#set-sec-profile .pf-offer textarea,#set-sec-profile .pf-offer select,#set-sec-profile .pf-send{font-size:14px}
 #set-sec-profile .pf-prev-bar b,#set-sec-profile .pf-fields-head b{font-size:16px}
 </style>
-<style>#rn-box,#rn-box *{font-size:14px;line-height:1.6}#rn-box .pf-fields-head>b{font-size:16px}#rn-box b{font-weight:700}#rn-box .pf-count{font-weight:600}#rn-input{flex:none!important;width:14em;max-width:100%}</style>
-      <div class="pf-fields" id="rn-box" style="margin:10px 0">
-        <div class="pf-fields-head"><b>실명</b><span id="rn-state" class="pf-count"></span></div>
-        <div class="pf-fields-note">입금자를 확인하는 데 쓰입니다. 은행에 입금할 때의 입금자명과 같게 적어 주세요(띄어쓰기는 달라도 됩니다). <b>실명을 적지 않으면 입금자를 확인할 수 없어 유료 서비스(플랜·GDC 충전)를 이용할 수 없습니다.</b> 기관·사업자는 그 명칭을 적습니다.</div>
-        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input type="text" id="rn-input" maxlength="30" placeholder="실명 또는 기관명" aria-label="실명" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_rnSave()}"><button type="button" class="btn btn-primary btn-sm" id="rn-save" onclick="_rnSave()">저장</button></div>
-        <div id="rn-msg" class="pf-fields-note" style="min-height:16px"></div>
-        <div class="pf-fields-head" style="margin-top:10px"><b>계정 정보</b><span class="pf-count">전화번호와 이메일은 변경할 수 없습니다</span></div>
-        <div id="rn-acct" class="pf-fields-note" style="display:grid;grid-template-columns:72px 1fr;gap:4px 10px;margin-top:6px">
-          <span>아이디</span><b id="rn-id">—</b>
-          <span>이메일</span><b id="rn-mail">—</b>
-          <span>전화번호</span><b id="rn-phone">—</b>
+<style>
+/* 프로필 탭 글자 크기 통일: 본문·설명·입력·단추는 14px, 항목 제목만 16px */
+#set-sec-profile .pf-head,#set-sec-profile .pf-hint,#set-sec-profile .pf-fields-note,#set-sec-profile .pf-sub,#set-sec-profile .pf-lab,#set-sec-profile .pf-count,#set-sec-profile .pf-live,#set-sec-profile .pf-vis,#set-sec-profile .pf-del,#set-sec-profile .pf-offer-chk,#set-sec-profile .pf-offers-empty,#set-sec-profile .pf-biz-title,#set-sec-profile .ps-bread,#set-sec-profile .pf-bar textarea,#set-sec-profile .pf-row input,#set-sec-profile .pf-row textarea,#set-sec-profile .pf-add input,#set-sec-profile .pf-add select,#set-sec-profile .pf-offer input,#set-sec-profile .pf-offer textarea,#set-sec-profile .pf-offer select,#set-sec-profile .pf-send{font-size:14px}
+#set-sec-profile .pf-prev-bar b,#set-sec-profile .pf-fields-head b{font-size:16px}
+/* 계정 정보(Material Design 3 목록): 이름 · 값 · 수정 아이콘 */
+.md-card{background:#fff;border:1px solid var(--bdr);border-radius:12px;margin:10px 0;overflow:hidden}
+.md-card h4{margin:0;padding:14px 16px 4px;font-size:16px;font-weight:700}
+.md-item{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 8px 8px 16px;border-top:1px solid var(--bdr);font-size:14px}
+.md-item:first-of-type{border-top:0}
+.md-txt{flex:1;min-width:0}.md-lbl{font-size:12px;color:var(--sub);letter-spacing:.02em}.md-val{font-size:14px;color:var(--txt);font-weight:500;word-break:break-all}
+.md-val.warn{color:#b45309}
+.md-ic{flex:none;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--pri);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden}
+.md-ic:hover{background:var(--pri-bg)}.md-ic:focus-visible{outline:2px solid var(--pri)}
+.md-ic.lock{color:var(--hint,#9aa0a6);cursor:default}.md-ic.lock:hover{background:transparent}
+.md-edit{padding:10px 16px 12px;border-top:1px solid var(--bdr)}
+.md-field{position:relative;width:14em;max-width:100%}
+.md-field input{width:100%;box-sizing:border-box;font-size:14px;padding:16px 12px 6px;border:1px solid var(--sub);border-radius:4px;background:#fff;color:var(--txt)}
+.md-field input:focus{outline:none;border:2px solid var(--pri);padding:15px 11px 5px}
+.md-field label{position:absolute;left:12px;top:5px;font-size:11px;color:var(--pri);background:#fff;padding:0 4px;margin-left:-4px}
+.md-help{font-size:12px;color:var(--sub);margin:4px 0 0 12px;min-height:16px}.md-help.err{color:#b3261e}.md-help.ok{color:#0f7b4f}
+.md-act{display:flex;gap:8px;margin-top:6px}
+.md-btn{border:0;border-radius:20px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:var(--pri)}
+.md-btn:hover{background:var(--pri-bg)}.md-btn.fill{background:var(--pri);color:#fff}.md-btn.fill:hover{filter:brightness(.95)}.md-btn:disabled{opacity:.5;cursor:default}
+.md-note{font-size:13px;color:var(--sub);line-height:1.6;padding:8px 16px 14px}
+</style>
+      <div class="md-card" id="rn-box">
+        <h4>내 정보</h4>
+        <div class="md-item" id="rn-row"><div class="md-txt"><div class="md-lbl">실명</div><div class="md-val" id="rn-val">—</div></div><button type="button" class="md-ic" id="rn-edit" onclick="_rnEdit(true)" aria-label="실명 수정" title="실명 수정"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button></div>
+        <div class="md-edit" id="rn-editbox" hidden>
+          <div class="md-field"><input type="text" id="rn-input" maxlength="30" autocomplete="off" aria-label="실명" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_rnSave()}else if(event.key==='Escape'){_rnEdit(false)}"><label for="rn-input">실명 또는 기관명</label></div>
+          <div class="md-help" id="rn-msg"></div>
+          <div class="md-act"><button type="button" class="md-btn" onclick="_rnEdit(false)">취소</button><button type="button" class="md-btn fill" id="rn-save" onclick="_rnSave()">저장</button></div>
         </div>
+        <div class="md-item"><div class="md-txt"><div class="md-lbl">아이디</div><div class="md-val" id="rn-id">—</div></div><span class="md-ic lock" title="변경할 수 없습니다"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg></span></div>
+        <div class="md-item"><div class="md-txt"><div class="md-lbl">이메일</div><div class="md-val" id="rn-mail">—</div></div><span class="md-ic lock" title="변경할 수 없습니다"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg></span></div>
+        <div class="md-item"><div class="md-txt"><div class="md-lbl">전화번호</div><div class="md-val" id="rn-phone">—</div></div><span class="md-ic lock" title="변경할 수 없습니다"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg></span></div>
+        <div class="md-note">실명은 입금자를 확인하는 데 쓰입니다. 은행 입금자명과 같게 적어 주세요(띄어쓰기는 달라도 됩니다). 실명이 없으면 입금자를 확인할 수 없어 유료 서비스(플랜·GDC 충전)를 이용할 수 없습니다. 전화번호와 이메일은 변경할 수 없습니다.</div>
       </div>
         <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우고, 메뉴판·전단지 같은 파일이 있으면 말해 주세요. <b>나의 프로필 웹페이지</b>가 만들어지고 <b>내 나비가 24시간 상주</b>합니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
@@ -6240,12 +6265,12 @@ async function _rnCall(body) {
   return d;
 }
 function _rnShow(name) {
-  const st = document.getElementById('rn-state'), inp = document.getElementById('rn-input');
-  if (inp && name != null) inp.value = name;
-  if (st) { st.textContent = name ? '등록됨' : '미등록 — 입금자 확인 불가'; st.style.color = name ? '' : '#b45309'; }
+  const v = document.getElementById('rn-val'); if (!v) return;
+  v.textContent = name || '미등록 · 입금자 확인 불가'; v.classList.toggle('warn', !name);
+  v.dataset.name = name || '';
 }
 function _rnAcct(d) {
-  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v || '—'; };
+  const set = (id, x) => { const e = document.getElementById(id); if (e) e.textContent = x || '—'; };
   const id = String(d.mail_id || '').replace(/@.*$/, '');
   set('rn-id', id);
   set('rn-mail', id ? id + '@naviweb.kr' : '');
@@ -6253,21 +6278,27 @@ function _rnAcct(d) {
   const h = String(d.handle || '').replace(/^@/, '');   // 한국 번호는 가입 때 뒤 8자리가 핸들이 된다
   set('rn-phone', m ? '0' + m[1] + '-' + m[2] + '-' + m[3] : (e || (/^\d{8}$/.test(h) ? '010-' + h.slice(0, 4) + '-' + h.slice(4) : '')));
 }
+function _rnHelp(t, cls) { const m = document.getElementById('rn-msg'); if (m) { m.textContent = t || ''; m.className = 'md-help' + (cls ? ' ' + cls : ''); } }
+function _rnEdit(on) {
+  const box = document.getElementById('rn-editbox'), row = document.getElementById('rn-row'), inp = document.getElementById('rn-input');
+  if (!box) return;
+  box.hidden = !on; row.hidden = on; _rnHelp('');
+  if (on) { inp.value = (document.getElementById('rn-val').dataset.name || ''); inp.focus(); inp.select(); }
+}
 async function _rnLoad() {
-  const msg = document.getElementById('rn-msg'); if (msg) msg.textContent = '';
+  _rnEdit(false);
   try { const d = await _rnCall({ action: 'get' }); _rnShow(String(d.real_name || '')); _rnAcct(d); }
-  catch (e) { if (msg) msg.textContent = e.message; }
+  catch (e) { _rnShow(''); const v = document.getElementById('rn-val'); if (v) { v.textContent = e.message; v.classList.add('warn'); } }
 }
 async function _rnSave() {
-  const inp = document.getElementById('rn-input'), msg = document.getElementById('rn-msg'), b = document.getElementById('rn-save');
+  const inp = document.getElementById('rn-input'), b = document.getElementById('rn-save');
   const v = (inp.value || '').trim().replace(/\s+/g, ' ');
-  if (v.length < 2) { msg.style.color = '#dc2626'; msg.textContent = '실명을 2자 이상 입력해 주세요.'; return; }
+  if (v.length < 2) { _rnHelp('실명을 2자 이상 입력해 주세요.', 'err'); return; }
   b.disabled = true;
-  try { const d = await _rnCall({ action: 'set', real_name: v }); _rnShow(String(d.real_name || v)); msg.style.color = '#0f7b4f'; msg.textContent = '저장했습니다.'; }
-  catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
+  try { const d = await _rnCall({ action: 'set', real_name: v }); _rnShow(String(d.real_name || v)); _rnEdit(false); }
+  catch (e) { _rnHelp(e.message, 'err'); }
   b.disabled = false;
 }
-
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
   if (name === 'gdc') _gdcLoad();   // GDC 잔액·사용량(그래프)
