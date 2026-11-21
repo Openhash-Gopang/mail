@@ -2067,6 +2067,12 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="pf-fields-note">입금자를 확인하는 데 쓰입니다. 은행에 입금할 때의 입금자명과 같게 적어 주세요(띄어쓰기는 달라도 됩니다). <b>실명을 적지 않으면 입금자를 확인할 수 없어 유료 서비스(플랜·GDC 충전)를 이용할 수 없습니다.</b> 기관·사업자는 그 명칭을 적습니다.</div>
         <div style="display:flex;gap:6px;margin-top:6px"><input type="text" id="rn-input" maxlength="60" placeholder="실명 또는 기관명" aria-label="실명" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();_rnSave()}"><button type="button" class="btn btn-primary btn-sm" id="rn-save" onclick="_rnSave()">저장</button></div>
         <div id="rn-msg" class="pf-fields-note" style="min-height:16px"></div>
+        <div class="pf-fields-head" style="margin-top:10px"><b>계정 정보</b><span class="pf-count">전화번호와 이메일은 변경할 수 없습니다</span></div>
+        <div id="rn-acct" class="pf-fields-note" style="display:grid;grid-template-columns:72px 1fr;gap:4px 10px;margin-top:6px">
+          <span>아이디</span><b id="rn-id">—</b>
+          <span>이메일</span><b id="rn-mail">—</b>
+          <span>전화번호</span><b id="rn-phone">—</b>
+        </div>
       </div>
         <div class="pf-head">나비와 대화하거나 아래 <b>내 정보 항목</b>을 직접 채우고, 메뉴판·전단지 같은 파일이 있으면 말해 주세요. <b>나의 프로필 웹페이지</b>가 만들어지고 <b>내 나비가 24시간 상주</b>합니다. <b>공개</b>로 바꾼 항목만 페이지에 나옵니다.</div>
         <div id="pf-box" class="pf-box">
@@ -6223,9 +6229,17 @@ function _rnShow(name) {
   if (inp && name != null) inp.value = name;
   if (st) { st.textContent = name ? '등록됨' : '미등록 — 입금자 확인 불가'; st.style.color = name ? '' : '#b45309'; }
 }
+function _rnAcct(d) {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v || '—'; };
+  const id = String(d.mail_id || '').replace(/@.*$/, '');
+  set('rn-id', id);
+  set('rn-mail', id ? id + '@naviweb.kr' : '');
+  const e = String(d.e164 || ''), m = e.match(/^\+82\s*0?(10)(\d{4})(\d{4})$/);
+  set('rn-phone', m ? '0' + m[1] + '-' + m[2] + '-' + m[3] : e);
+}
 async function _rnLoad() {
   const msg = document.getElementById('rn-msg'); if (msg) msg.textContent = '';
-  try { const d = await _rnCall({ action: 'get' }); _rnShow(String(d.real_name || '')); }
+  try { const d = await _rnCall({ action: 'get' }); _rnShow(String(d.real_name || '')); _rnAcct(d); }
   catch (e) { if (msg) msg.textContent = e.message; }
 }
 async function _rnSave() {
