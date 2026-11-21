@@ -3225,6 +3225,7 @@ function _infraExSync() {
   box.setAttribute('data-k', sig); box.innerHTML = '';
   const lab = document.createElement('span'); lab.className = 'ix-lab'; lab.textContent = '예시'; box.appendChild(lab);
   const off = k !== 'kmail' && !(_org && _org.sp);
+  if (off) { const nt = document.createElement('span'); nt.className = 'ix-lab'; nt.textContent = ((_ORG_ITEMS.find(x => x[0] === k) || [])[1] || '이 인프라') + ' 서비스의 대화 상담은 준비 중입니다.'; box.appendChild(nt); }   // 잠긴 서비스: 버튼이 흐린 이유를 눈에 보이게 적는다(2026-11-21 라이브 스모크)
   items.forEach(raw => {
     const i = raw.indexOf('>'), name = i < 0 ? raw : raw.slice(0, i), go = i < 0 ? '' : raw.slice(i + 1);
     const b = document.createElement('button'); b.type = 'button'; b.className = 'ix-chip' + (name.endsWith('…') ? ' ix-fill' : '');
