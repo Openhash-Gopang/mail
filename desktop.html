@@ -8972,7 +8972,14 @@ async function _ctCsvFileSelected(event) {
   try {
     await _ensureLib('xlsx');
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: 'array' });
+    // 2026-11-21: 글자 파일(.csv)은 SheetJS 에 바이트 그대로 주면 BOM 없는 UTF-8 한글이 깨져 헤더를 못 찾는다(메모장 "UTF-8" 저장이 BOM 없음).
+    // 직접 해독한다 — UTF-8(엄격) 먼저, 안 되면 엑셀 CSV 의 기본인 한국어 CP949(EUC-KR). .xlsx/.xls 는 그대로.
+    let wb;
+    if (/\.csv$/i.test(file.name) || file.type === 'text/csv') {
+      let text;
+      try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (eU) { text = new TextDecoder('euc-kr').decode(buf); }
+      wb = XLSX.read(text.replace(/^\uFEFF/, ''), { type: 'string' });
+    } else wb = XLSX.read(buf, { type: 'array' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
     if (rows.length === 0) throw new Error('파일에 데이터 행이 없습니다.');
