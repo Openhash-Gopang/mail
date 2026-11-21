@@ -38,11 +38,21 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 .pc .st{font-size:var(--fs-xs);color:var(--sub);min-height:18px}
 .go2{font-size:var(--fs-md);font-weight:600;color:var(--pri-t);background:#fff;border:1px solid var(--pri);border-radius:4px;padding:8px 14px;cursor:pointer}.go2:hover{background:var(--pri-bg)}.go2[disabled]{opacity:.55;cursor:default}
 .sec{font-size:var(--fs-md);font-weight:600;margin:16px 2px 8px}
+.tb{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tb button{border:0;background:transparent;padding:10px 18px;font-size:var(--fs-md);font-weight:600;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tb button[aria-selected=true]{color:var(--pri-t);border-bottom-color:var(--pri)}
+.gx{padding:18px 20px;margin-bottom:12px}.gx h2{font-size:var(--fs-lg);margin:0 0 6px}.gx p{margin:0 0 10px;color:var(--ink);font-size:var(--fs-md);line-height:1.65}
+.gu{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}.gu>div{background:var(--bg);border-radius:6px;padding:12px 14px}.gu b{display:block;font-size:var(--fs-md);margin-bottom:4px}.gu span{color:var(--sub);font-size:var(--fs-sm)}
+.gs{list-style:none;padding:0;margin:8px 0;counter-reset:s}.gs li{counter-increment:s;display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:var(--fs-md);line-height:1.6}
+.gs li:before{content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:var(--fs-xs);font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+@media (max-width:760px){.gu{grid-template-columns:1fr}}
 @media (max-width:980px){.pl{grid-template-columns:1fr 1fr}}
 @media (max-width:760px){.k{grid-template-columns:1fr 1fr}.r,.pl{grid-template-columns:1fr}}
 
 </style></head><body>
 <main class="w">
+<div class="tb" role="tablist"><button type="button" role="tab" id="tb-plan" aria-selected="true" aria-controls="pn-plan">플랜</button><button type="button" role="tab" id="tb-gdc" aria-selected="false" aria-controls="pn-gdc">GDC</button></div>
+<div id="pn-plan" role="tabpanel">
 <div class="bn" data-beta><b>베타 테스트 기간(2026년 12월 말까지)</b> · 모든 유료 회원은 <b>$200 플랜</b>(가상 판결 포함)을 90% 할인한 <b data-b="usd">$20</b>에 이용합니다. 아래 어느 유료 플랜을 고르셔도 같습니다.</div>
 <div class="pl">
 <section class="card pc" id="plan-free"><h2>무료 <span class="bd s" id="cur-free" hidden>현재 플랜</span></h2>
@@ -87,11 +97,22 @@ details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;fo
 <section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct"></div><p class="n">베타 테스트 기간에는 지정 계좌 입금만 가능합니다. 입금이 확인되면 선택한 플랜이 바로 적용되고 30일간 이용할 수 있습니다. 플랜 이용료는 GDC로 충전되지 않습니다.</p></section>
 <section class="card cb"><h2 class="ct">입금 순서</h2><ol><li>위에서 플랜의 「입금 안내 보기」를 누르면 입금액이 정해집니다. 환율이 1,300원이면 $20는 26,000원입니다.</li><li>지정 계좌로 <b>그 금액 그대로</b> 입금합니다. 입금자명은 나비웹에 등록한 <b>실명</b>과 같게 합니다(띄어쓰기는 달라도 됩니다). 실명을 입력하지 않았다면 입금자를 확인할 수 없어 자동으로 처리되지 않으니, 설정에서 먼저 실명을 입력해 주세요. 입금자 이름과 입금액이 맞으면(금액의 아주 작은 차이는 인정) 본인 입금으로 확인합니다.</li><li>입금이 확인되면 플랜이 자동으로 적용됩니다. 보통 몇 분 안에 끝납니다. 금액이 다르면 자동으로 처리되지 않으니 운영자가 확인합니다.</li></ol></section>
 </div>
-<section class="card cb"><h2 class="ct">GDC 충전 <span class="bd s">임의 금액</span></h2><p class="n">플랜 이용료와 별개로, 플랜을 고르지 않고도 GDC를 충전할 수 있습니다. 위의 입금 계좌로 <b>원하는 금액</b>을 입금하면 됩니다.</p><ol><li>입금자명은 나비웹에 등록한 실명과 같게 합니다(띄어쓰기는 달라도 됩니다). <b>실명을 입력하지 않으면 입금자를 확인할 수 없어</b> 충전되지 않습니다.</li><li>입금이 확인되면 입금액만큼 GDC가 자동으로 충전됩니다(1원 = 1 GDC). 보통 몇 분 안에 끝납니다.</li><li>충전 결과와 내 입금자명은 설정 &gt; GDC 지갑에서 확인할 수 있습니다.</li></ol><p class="n">플랜 입금은 위에서 안내한 금액 그대로 입금해야 플랜이 적용되고, GDC 충전은 금액에 제한이 없습니다. 같은 이름의 가입자가 둘 이상이면 자동으로 처리되지 않으니 운영자가 확인합니다.</p></section>
 <section class="card cb bt"><h2 class="ct">베타 테스트 안내 <span class="bd s">GDC 보상</span></h2>
 <p class="bp">베타 테스트 기간에는 언제든지 다양한 시스템 오류가 발생할 수 있습니다. 기능 개선을 제안하거나 오류(버그)를 신고해 주시면 중요도에 따라 GDC로 보상합니다. 예를 들어 현저한 개선 아이디어에는 100,000 GDC를 지급합니다.</p>
 <button type="button" class="go" id="go-fb">기능 개선 제안·오류 신고하기</button></section>
 <section class="card cb" style="margin-top:12px"><h2 class="ct">자주 묻는 질문</h2><details><summary>환율은 언제 적용되나요?</summary><p>「입금 안내 보기」를 누른 때의 환율로 입금액이 정해집니다. 그 금액은 48시간 동안 유효합니다.</p></details><details><summary>입금했는데 적용이 안 돼요</summary><p>입금액이 안내 금액과 다르거나 입금자명이 가입한 이름과 다르면 플랜으로 자동 적용되지 않습니다(아주 작은 금액 차이는 무시합니다). 금액이 다르면 일반 GDC 충전으로 처리될 수 있습니다. 기능 개선 제안·오류 신고로 입금 사실을 알려 주시면 확인해 드립니다.</p></details><details><summary>추가 사용량은 어떻게 충전하나요?</summary><p>플랜 이용료와 별개입니다. 추가 사용량을 켜 두면 GDC 잔액에서 사용한 만큼 차감됩니다. GDC는 같은 계좌에 원하는 금액을 입금하면 충전됩니다. 입금자명을 가입한 이름과 같게 하면 서버가 이름으로 알아보고 입금액만큼(1원 = 1 GDC) 자동으로 충전합니다.</p></details><details><summary>베타 테스트가 끝나면요?</summary><p>이후에는 선택한 플랜의 정가(월 $10 · $100 · $200)가 적용됩니다.</p></details><details><summary>카드 결제는 안 되나요?</summary><p>베타 테스트 기간에는 계좌 입금만 지원합니다.</p></details></section>
+</div>
+<div id="pn-gdc" role="tabpanel" hidden>
+<section class="card gx"><h2>GDC는 나비웹의 결제 통화입니다</h2>
+<p>GDC는 나비웹 안에서 쓰는 돈입니다. 이용료를 내는 데에도 쓰고, 나비웹에 입점한 사업자의 상품과 서비스를 사고 결제하는 데에도 씁니다.</p>
+<div class="gu"><div><b>나비웹 이용료</b><span>플랜에 포함된 사용량을 넘어 AI를 쓰면 GDC에서 차감됩니다.</span></div><div><b>입점 사업자 결제</b><span>나비웹에 입점한 사업자로부터 상품과 서비스를 구매할 때 GDC로 결제합니다.</span></div></div>
+<p class="n">플랜 이용료($20)는 GDC로 내지 않고 위 「플랜」 탭의 안내대로 계좌 입금으로 냅니다.</p></section>
+<section class="card gx"><h2>GDC 충전 방법 <span class="bd s">임의 금액</span></h2>
+<p>플랜을 고르지 않아도 됩니다. 원하는 금액을 입금하면 입금액만큼 GDC가 자동으로 충전됩니다(1원 = 1 GDC).</p>
+<ol class="gs"><li><span>나비웹 <b>설정 &gt; 프로필</b>에 <b>실명</b>이 등록되어 있는지 확인합니다.</span></li><li><span>아래 계좌로 <b>원하는 금액</b>을 입금합니다. 입금자명은 등록한 실명과 같게 합니다(띄어쓰기는 달라도 됩니다).</span></li><li><span>입금이 확인되면 GDC가 자동으로 들어옵니다. 보통 몇 분 안에 끝나며, 결과는 <b>설정 &gt; GDC 지갑</b>에서 볼 수 있습니다.</span></li></ol>
+<div class="warn"><b>실명을 입력하지 않으면 입금자를 확인할 수 없어 충전되지 않습니다.</b> 같은 이름의 가입자가 둘 이상이면 자동으로 처리되지 않고 운영자가 확인합니다.</div></section>
+<section class="card cb"><h2 class="ct">입금 계좌 <span class="bd s">계좌 입금만 가능</span></h2><div id="acct2"></div><p class="n">충전 금액에는 제한이 없습니다. 입금한 계좌와 입금자명이 다르면 확인이 늦어질 수 있습니다.</p></section>
+</div>
 </main>
 <script>
 var PRICE_LIST_USD=200,DISCOUNT=.9,PRICE_BETA_USD=Math.round(PRICE_LIST_USD*(1-DISCOUNT)),BETA_END='2026-12-31';
@@ -105,11 +126,11 @@ function kst(d){return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',mo
 function renderPrice(){var today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),beta=today<=BETA_END;
  window._usd=beta?PRICE_BETA_USD:PRICE_LIST_USD;bind('usd','$'+window._usd);bind('list','$'+PRICE_LIST_USD);
  document.querySelectorAll('[data-beta]').forEach(function(e){e.hidden=!beta});}
-function renderAccount(){var a=PAY_ACCOUNT,el=$('acct');if(!el)return;
+function renderAccount(){var a=PAY_ACCOUNT;['acct','acct2'].forEach(function(id){var el=$(id);if(!el)return;
  el.innerHTML='<div class="ar"><span>은행</span><b></b></div><div class="ar"><span>계좌번호</span><b class="an"></b></div><div class="ar"><span>예금주</span><b></b></div>';
  var b=el.querySelectorAll('b');b[0].textContent=a.bank;b[1].textContent=a.number;b[2].textContent=a.holder;
  var c=document.createElement('button');c.type='button';c.className='copy';c.textContent='복사';b[1].appendChild(c);
- c.onclick=function(){try{navigator.clipboard.writeText(a.number);c.textContent='복사됨';setTimeout(function(){c.textContent='복사'},1500)}catch(e){}}}
+ c.onclick=function(){try{navigator.clipboard.writeText(a.number);c.textContent='복사됨';setTimeout(function(){c.textContent='복사'},1500)}catch(e){}}});}
 function renderRate(r,src){var krw=Math.ceil(window._usd*r.rate),d=new Date(r.at);
  bind('rate',nf.format(Math.round(r.rate*100)/100));bind('rdate',isNaN(d)?String(r.at):kst(d)+' 기준');bind('rsrc',src);
  bind('krw',nf.format(krw)+'원');var w=$('rate-warn');if(w)w.hidden=true}
@@ -164,6 +185,9 @@ $('x-save').onclick=function(){var t=ck('hondi_pvt');if(!t)return;var lim=Number
   if(x.d&&x.d.ok){$('x-msg').textContent='저장했습니다.';showExtra(x.d)}else $('x-msg').textContent=(x.d&&x.d.message)||'저장하지 못했습니다.'},function(){$('x-save').disabled=false;$('x-msg').textContent='네트워크 오류입니다.'})};
 loadPlan();
 $('go-fb').onclick=function(){try{if(parent!==window&&parent._switchTab)parent._switchTab('feedback');else location.href='desktop.html'}catch(e){location.href='desktop.html'}};
+function tab(n){['plan','gdc'].forEach(function(k){var b=$('tb-'+k),p=$('pn-'+k);b.setAttribute('aria-selected',k===n?'true':'false');p.hidden=k!==n});try{history.replaceState(null,'',n==='gdc'?'#gdc':location.pathname+location.search)}catch(e){}}
+$('tb-plan').onclick=function(){tab('plan')};$('tb-gdc').onclick=function(){tab('gdc')};
+if(location.hash==='#gdc'||new URLSearchParams(location.search).get('tab')==='gdc')tab('gdc');
 if(new URLSearchParams(location.search).get('embed'))document.body.style.background='transparent';
 </script><script src="https://naviweb.kr/navi-home.js" defer></script>
 </body></html>
