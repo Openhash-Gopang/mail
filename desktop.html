@@ -6499,7 +6499,7 @@ async function _gdcLoad(force) {
       document.getElementById('gdc-bar-fill').style.width = pct + '%'; const bar = document.getElementById('gdc-bar'); bar.classList.toggle('warn', pct >= 90); bar.setAttribute('aria-valuenow', String(pct));
       document.getElementById('gdc-quota-text').textContent = `${_gdcFmt(qd.spent_krw)}원 / ${_gdcFmt(qd.limit_krw)}원 (가입 무료 한도)`;
       let msg;
-      if (qd.estimated_monthly_krw > 0) { msg = `지금 쓰시는 속도라면 한 달에 대략 <b>${_gdcFmt(qd.estimated_monthly_krw)}원</b> 정도예요.`; if (qd.projected_days_to_limit != null) msg += ` 이 속도라면 약 <b>${_i18nEsc(qd.projected_days_to_limit)}일</b> 후 무료 한도를 다 쓰게 돼요.`; } else msg = '아직 대화를 시작하기 전이에요.';
+      if (qd.estimated_monthly_krw > 0) { msg = `지금 쓰시는 속도라면 한 달에 대략 <b>${_gdcFmt(qd.estimated_monthly_krw)}원</b> 정도예요.`; if (qd.remaining_krw <= 0) msg += ' 가입 무료 한도를 모두 사용했어요.'; else if (qd.projected_days_to_limit != null && qd.projected_days_to_limit > 0) msg += ` 이 속도라면 약 <b>${_i18nEsc(qd.projected_days_to_limit)}일</b> 후 무료 한도를 다 쓰게 돼요.`; } else msg = '아직 대화를 시작하기 전이에요.';
       _gdcSet('gdc-quota-est', msg);
     } else { _gdcSet('gdc-spent', '0<span class="gdc-unit">원</span>'); qc.style.display = 'none'; }
     _gdcDetail(ud); _gdcSeries = ud && ud.ok && ud.series ? ud.series : null; _gdcRender();
