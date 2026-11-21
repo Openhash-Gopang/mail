@@ -5222,7 +5222,7 @@ function _mfbStart(i) {
 function _mfbSpOpen() {
   if (_MFB.frame) return _MFB.readyP;
   const f = document.createElement('iframe'); f.title = '양식 작성 SP'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
-  f.src = _MFB_HONDI + '/pages/expert-chat.html?persona=form-builder&embed=1&quiet=1&label=' + encodeURIComponent('양식 작성');
+  f.src = _MFB_HONDI + '/pages/expert-chat.html?persona=form-builder&embed=1&quiet=1&label=' + encodeURIComponent('양식 작성') + '&cb=' + Math.floor(Date.now() / 3600000);   // 시간 단위로 주소를 바꿔, 브라우저에 남은 옛 틀(수정 전 expert-chat)이 계속 쓰이지 않게 한다
   _MFB.frame = f; _MFB.link = 'wait';
   _MFB.readyP = new Promise((res, rej) => { _MFB.rdy = res; _MFB.rdyT = setTimeout(() => { if (_MFB.link !== 'ok') { _MFB.link = 'err'; _mfbRenderChat(); rej(new Error('connect')); } }, 25000); });
   _MFB.readyP.catch(() => {}); document.body.appendChild(f); return _MFB.readyP;
