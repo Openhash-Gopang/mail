@@ -3508,7 +3508,7 @@ function _docHelperSend(text) {   // 대화창의 도우미 SP 에게 사용자 
   return true;
 }
 window.addEventListener('message', (e) => {   // 대화창이 말을 못 받았다는 답(처리 중·준비 중)이면 입력창에 되돌려 놓는다
-  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || e.origin !== 'https://hondi.net' || !_docHelper.sent[d.id]) return;
+  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || !_hcOrigin(e) || !_docHelper.sent[d.id]) return;
   const t = _docHelper.sent[d.id]; delete _docHelper.sent[d.id];
   try { if (window.HondiChat && HondiChat.idle) HondiChat.idle(); } catch (x) {}   // 답이 왔다 — 기다림 표시를 끈다
   try { if (window.HondiChat && HondiChat.notify) HondiChat.notify(); } catch (x) {}   // 대화창이 닫혀 있으면 아이콘에 점으로 알린다
@@ -3635,7 +3635,7 @@ async function _docChatAgentTask(d) {
 window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 낸 태그 — 나비웹 대화창(hondi.net)에서만, 도우미 세션 중일 때만 받는다
   const d = e.data; if (!d || typeof d !== 'object' || (d.type !== 'hondi-embed-agent-task' && d.type !== 'hondi-embed-doc-handback' && d.type !== 'hondi-embed-feedback')) return;
   const f = document.getElementById('hchat-frame');
-  if (!f || e.source !== f.contentWindow || e.origin !== 'https://hondi.net') return;
+  if (!f || e.source !== f.contentWindow || !_hcOrigin(e)) return;
   if (!_docChat.on) return;
   if (d.type === 'hondi-embed-agent-task') { _docChatAgentTask(d); return; }
   if (d.type === 'hondi-embed-feedback') { _fbOpen(['attach', 'newdoc', 'bug', 'report'].includes(d.kind) ? d.kind : 'bug', String(d.label || '').slice(0, 80), String(d.text || '').slice(0, 300), { problem: String(d.problem || ''), right: String(d.right || '').slice(0, 80) }); return; }   // 도우미 AI 가 사용자의 신고를 받아 미리 채운 제보 창 — 보내기는 사용자가 확인한 뒤
@@ -3650,13 +3650,15 @@ window.addEventListener('message', function (e) {   // 서류 도우미 SP 가 �
 window.addEventListener('message', function (e) {   // 대화창이 전송 직전에 "지금 화면"을 새로 요청한다
   const d = e.data; if (!d || d.type !== 'hondi-embed-ctx-request') return;
   const f = document.getElementById('hchat-frame');
-  if (!f || e.source !== f.contentWindow || e.origin !== 'https://hondi.net') return;
+  if (!f || e.source !== f.contentWindow || !_hcOrigin(e)) return;
   _docChatPush();
 });
 function _submitGuideEnd() { _submitFlow = null; if (!_submitGuideOn) return; _submitGuideOn = false; if (window.HondiChat && !_org) HondiChat.setSp(null); if (_cmpMode === 'doc') setTimeout(function () { _docChatEnsure(true); }, 0); }
 // 기관별 SP 키(나비웹 k-services SVC_CHAT 과 같다). null = 전용 SP 미등록(준비 중).
 const _ORG_SP = {k119:'SP-02_k119',klaw:'SP-01_klaw',kpolice:'SP-03_kpolice',ksecurity:null,khealth:'SP-04_khealth',kschool:'SP-09_kschool',gdc:'SP-08_gdc',kstock:'SP-11_kstock',kinsurance:'SP-16_kinsurance',ktax:'SP-07_ktax',kmarket:'SP-05_kmarket',ktraffic:'SP-06_ktraffic',klogistics:'SP-13_klogistics',kcleaner:'SP-14_kcleaner',kpublic:'SP-10_kpublic',kdemocracy:'SP-12_kdemocracy',ktelecom:'SP-23_ktelecom',ksearch:'SP-18_ksearch',kbiz:null,kplan:'k-plan',kwatch:'k-watch',kjob:'k-job',kjit:null,kcity:null,kestate:'SP-24_kestate',ksocial:null,kmail:'SP-25_kmail'};
 const _ORG_DESC = {k119:'신고부터 출동·병원 연계까지, 응급 상황을 돕는 시스템입니다.',klaw:'분쟁을 정리하고 판결을 예측하는 법률 시스템입니다.',kpolice:'사건·사고 신고를 접수하고 처리하는 치안 시스템입니다.',ksecurity:'개인과 조직의 보안을 지키는 시스템입니다.',khealth:'증상 상담부터 진료 연계까지 돕는 의료 시스템입니다.',kschool:'수강·학적·학교 서류를 처리하는 교육 시스템입니다.',gdc:'화폐, 은행, 보험, 및 증권의 통합 시스템입니다.',kstock:'상장·공시·투자 정보를 다루는 투자 시스템입니다.',kinsurance:'보험 가입과 보험금 청구를 돕는 시스템입니다.',ktax:'세금 신고와 납부를 돕는 세무 시스템입니다.',kmarket:'상품을 사고팔고 주문을 처리하는 거래 시스템입니다.',ktraffic:'도로·대중교통·교통 민원을 다루는 교통 시스템입니다.',klogistics:'배송과 화물을 추적하고 연결하는 물류 시스템입니다.',kcleaner:'폐기물·재활용 등 환경 민원을 처리하는 시스템입니다.',kpublic:'증명서 발급과 각종 행정 민원을 처리하는 시스템입니다.',kdemocracy:'정책 제안과 참여를 돕는 시스템입니다.',ktelecom:'통신 서비스 가입과 문의를 돕는 시스템입니다.',ksearch:'원하는 정보를 찾아 정리해 주는 검색 시스템입니다.',kbiz:'사업자 등록과 운영을 돕는 시스템입니다.',kplan:'목표를 세우고 실행 계획을 짜는 시스템입니다.',kwatch:'목격한 부당·불법 사건을 관련 기관에 신고하고 처리 경과를 살피는 시스템입니다.',kjob:'일자리를 찾고 지원하는 직업 시스템입니다.',kjit:'조달과 납품을 연결하는 시스템입니다.',kcity:'도시 계획과 설계를 돕는 시스템입니다.',kestate:'부동산 평가·매물 검색·등록을 돕는 시스템입니다.',ksocial:'관심사가 맞는 사람들과 모임을 잇는 시스템입니다.'};
+// 나비웹 대화창(#hchat-frame)의 출처 — 2026-11-16부터 naviweb.kr 화면은 대화창도 naviweb.kr/webapp 으로 열어서, 'https://hondi.net' 로 고정해 두면 준비 신호·답변이 모두 버려져 인프라·전문직·정부 AI 대화가 "답변 준비 중"에서 멈춘다(2026-11-21 라이브 스모크). 프레임 자신의 출처와 같을 때만 받는다.
+function _hcOrigin(e) { try { const f = document.getElementById('hchat-frame'); return !!f && !!f.src && e.origin === new URL(f.src, location.href).origin; } catch (x) { return false; } }
 let _org = null;   // { key, label, sp, ready, queue }
 function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비 중입니다.'; }
 /** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 나비웹 대화창이 그 기관 SP 로 전환된다. */
@@ -4336,7 +4338,7 @@ async function _orgSend() {
   if (_org.ready) HondiChat.post(m); else _org.queue.push(m);
 }
 window.addEventListener('message', (e) => {
-  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || e.origin !== 'https://hondi.net' || !_org || !_org.pending) return;
+  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-reply' || !_hcOrigin(e) || !_org || !_org.pending) return;
   const el = _org.pending[d.id]; if (!el) return; delete _org.pending[d.id];
   let reply = String(d.text || '');
   if (_org.foi) reply = _foiDocFromReply(reply);   // ~~~foi 블록은 말풍선이 아니라 아래 청구서 칸에 쓴다
@@ -4344,7 +4346,7 @@ window.addEventListener('message', (e) => {
   el.classList.add('org-md'); el.innerHTML = _orgMd(reply); const th = document.getElementById('cmp-thread'); th.scrollTop = th.scrollHeight;
 });
 window.addEventListener('message', (e) => {
-  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-ready' || e.origin !== 'https://hondi.net' || !_org) return;
+  const d = e.data; if (!d || d.type !== 'hondi-embed-sp-ready' || !_hcOrigin(e) || !_org) return;
   _org.ready = true; const q = _org.queue.splice(0); q.forEach(m => HondiChat.post(m));
 });
 function _cmpDocSelChange(sel) {
