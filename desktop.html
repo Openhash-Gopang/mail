@@ -294,6 +294,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .wp-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
 #tab-whitepaper iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
 #tab-xokorea iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent;overflow:hidden}   /* 높이는 안쪽 문서가 알려 준 값으로 맞춘다(_xkSwitch 옆 message 처리) — 안쪽 스크롤 막대 없음 */
+#tab-expert100k iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
 #tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe,#tab-intro iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #tab-vault iframe{overflow:hidden}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
@@ -1597,6 +1598,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideTabOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         나비 길잡이<span class="unread-badge" data-for="guide" hidden></span></button>
       <button id="tab-btn-youtube" class="nav-btn" data-label="안내 영상" onclick="_switchTab('youtube')"><img class="yt-ico" src="assets/youtube-icon.png" alt="" aria-hidden="true">안내 영상</button>
+      <button id="tab-btn-expert100k" class="nav-btn" data-label="10만 AI 전문가" onclick="_switchTab('expert100k')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c0-3.4 2.8-6 6.2-6s6.2 2.6 6.2 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.4 14.2c3 .2 4.8 2.4 4.8 5.3"/></svg>10만 AI 전문가</button>
     </div>
     <div class="side-group">
       <div class="side-label">도움말</div>
@@ -2480,6 +2482,13 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
     <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
+  </div>
+  <div id="tab-expert100k" class="tab-panel">
+    <!-- 위쪽 탭: 새 탭은 '개요' 오른쪽에 단추(id="ex-tab-<키>")를 더하고, 아래 스크립트의 _EX_URL 에 같은 키로 주소를 넣는다. 전환 코드는 .wp-tab 전체를 훑으므로 따로 고칠 곳이 없다. -->
+    <div class="wp-tabs" role="tablist" aria-label="10만 AI 전문가">
+      <button type="button" role="tab" class="wp-tab active" id="ex-tab-overview" aria-selected="true" onclick="_exSwitch('overview')">개요</button>
+    </div>
+    <iframe id="expert100k-frame" title="10만 AI 전문가" allow="clipboard-write"></iframe>
   </div>
   <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
@@ -5849,6 +5858,7 @@ function _switchTab(name) {
   if (name === 'whitepaper') _wpSwitch(_subGet('wp') || (document.getElementById('wp-tab-openhash').classList.contains('active') ? 'openhash' : 'navi'));
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
   if (name === 'xokorea') _xkSwitch(_subGet('xk') || (document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo'));   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
+  if (name === 'expert100k') _exSwitch(_subGet('ex') || 'overview');   // 10만 AI 전문가 — 위쪽 탭(개요 …)의 문서를 연다
   if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
@@ -8345,6 +8355,16 @@ window.addEventListener('message', (e) => {
   else if (e.data.type === 'xokorea-height' && e.data.h > 0) { f.style.height = e.data.h + 'px'; f.setAttribute('data-sized', '1'); if (_xkWantY && _xkWantY.k === f.getAttribute('data-k')) { const y = _xkWantY.y; _xkWantY = null; setTimeout(() => window.scrollTo(0, y), 50); } }   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
   else if (e.data.type === 'xokorea-scroll') window.scrollTo({ top: window.pageYOffset + f.getBoundingClientRect().top + e.data.y - 8, behavior: 'smooth' });
 });
+// 10만 AI 전문가 — 위쪽 탭과 각 탭이 여는 문서. 새 탭은 _EX_URL 에 항목을 더하고 패널의 .wp-tabs 에 단추(id ex-tab-<키>)만 더하면 된다.
+const _EX_V = String(Math.floor(Date.now() / 60000));   // 1분마다 바뀌는 값 — 캐시가 옛 문서를 붙들지 않게 한다
+const _EX_URL = { overview: 'expert100k-overview.html?embed=mail&v=' + _EX_V };
+function _exSwitch(k) {
+  if (!_EX_URL[k]) k = 'overview';
+  const f = document.getElementById('expert100k-frame');
+  _subSet('ex', k);
+  if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.setAttribute('src', _EX_URL[k]); }
+  document.querySelectorAll('#tab-expert100k .wp-tab').forEach(b => { const on = b.id === 'ex-tab-' + k; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+}
 function _wpSwitch(k) {
   const f = document.getElementById('whitepaper-frame');
   _subSet('wp', k);

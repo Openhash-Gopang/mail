@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10만 AI 전문가 — 개요 (초안 v0.1)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--pri:#1A73E8;--on:#202124;--on2:#5F6368;--line:#DADCE0;--bg:#fff;--soft:#F1F3F4}
+@media (prefers-color-scheme:dark){:root{--pri:#8AB4F8;--on:#E8EAED;--on2:#9AA0A6;--line:#3C4043;--bg:#202124;--soft:#2A2B2E}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',Roboto,-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--on);font-size:15px;line-height:1.75;word-break:keep-all;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:32px 24px 72px}
+body.embed .wrap{padding-top:20px}
+h1{font-size:28px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+h1 small{display:block;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--on2);margin-bottom:8px}
+.lead{margin-top:6px;color:var(--on2);font-size:16px}
+.meta{font-size:13px;color:var(--on2);margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 8px}
+.toc a{border:1px solid var(--line);color:var(--on);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;text-decoration:none}
+.toc a:hover{border-color:var(--pri);color:var(--pri)}
+section{margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
+h2{font-size:20px;line-height:1.4;font-weight:600;margin-bottom:12px}
+h2 .n{color:var(--pri);margin-right:10px}
+h3{font-size:16px;font-weight:600;margin:22px 0 6px}
+p{color:var(--on2);margin:0 0 12px}p b,li b,td b{color:var(--on);font-weight:600}
+ul,ol{margin:0 0 12px 22px;color:var(--on2)}li{margin:4px 0}
+a{color:var(--pri)}
+sup a{text-decoration:none;font-size:11px}
+.key{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.key div{border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--on2);font-size:13px;line-height:1.55}
+.key div b{display:block;color:var(--on);font-size:22px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:4px 12px 12px 4px;padding:12px 18px;margin:16px 0}
+.callout p{margin:0 0 8px}.callout p:last-child{margin:0}
+.tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 14px;text-align:left;vertical-align:top;color:var(--on2);border-top:1px solid var(--line)}
+tr:first-child th,tr:first-child td{border-top:0}
+th{color:var(--on);font-weight:600;background:var(--soft)}
+td.num,th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.num{color:var(--on);font-weight:500}
+tr.sub td{background:var(--soft);color:var(--on);font-weight:600}
+tr.tot td{color:var(--on);font-weight:700;border-top:2px solid var(--on2)}
+.tag{display:inline-block;font-size:11px;line-height:18px;padding:0 6px;border:1px solid var(--line);border-radius:4px;margin-right:6px;font-weight:500;white-space:nowrap;vertical-align:1px}
+.tag.s{color:var(--pri);border-color:var(--pri)}
+.bar{display:block;height:6px;border-radius:3px;background:var(--pri);opacity:.75;min-width:2px}
+td.bc{width:18%;min-width:90px;vertical-align:middle}
+.small{font-size:13px}
+.src li{font-size:13px;word-break:break-all}
+@media (max-width:700px){.key{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:24px}.wrap{padding:24px 16px 48px}}
+</style>
+</head>
+<body>
+<script>if (/[?&]embed=mail/.test(location.search)) document.body.classList.add('embed');</script>
+<div class="wrap">
+
+<h1><small>10만 AI 전문가 · 개요</small>L3 전문가 10만 명은 어디에 필요한가</h1>
+<p class="lead">한국 사회 인프라별 L3 인력 배분 사고 실험</p>
+<p class="meta">초안 v0.1 · 2026-11-21 · 사고 실험이며 확정안이 아닙니다</p>
+<div class="toc"><a href="#s0">요약</a><a href="#s1">전제</a><a href="#s2">사법 사례</a><a href="#s3">분야별 산식</a><a href="#s4">전체 배분</a><a href="#s5">누락 점검</a><a href="#s6">지역 원칙</a><a href="#s7">한계</a><a href="#s8">출처</a></div>
+
+<section id="s0">
+<h2><span class="n">0</span>요약</h2>
+<p>한국 인구 5,000만 명 가운데 10만 명(0.2%, 500명당 1명)이 L3 인증을 받아 사회 인프라를 운영한다고 가정했습니다. L3는 나비웹의 구성을 이해하고 AI와 OpenHash 기술을 각자 업무에 적용하는 분야별 전문가입니다. 여기서는 AI가 준비한 결과를 검토·승인하고 최종 책임을 지는 감독자로 계산했습니다.</p>
+<div class="key">
+<div><b>900명</b>사법 중재 전환(범위 400~1,400)<br>민사 1심의 38% 처리</div>
+<div><b>9,000명</b>의료 L3 의사<br>외래 업무의 30% 검토</div>
+<div><b>38.0%</b>사회서비스<br>의료·교육·복지 중심</div>
+<div><b>65%</b>아직 가정에 의존<br>산식 근거는 18%</div>
+</div>
+<div class="callout"><p>이 초안의 핵심 결과는 두 가지입니다. 사법·의료·교육은 업무량 자료로 산식을 세울 수 있었고, 국방·SOC·복지 같은 나머지 분야는 자료 없이 비중으로 배정했습니다. 다음 버전에서는 이 가정을 자료로 바꾸는 일이 우선입니다.</p></div>
+</section>
+
+<section id="s1">
+<h2><span class="n">1</span>전제와 산정 방식</h2>
+<ul>
+<li><b>인원 단위</b>: L3 1명이 이 업무에 쓰는 시간을 연 1,500시간으로 봅니다(근무 2,000시간에서 교육·감사·행정 25% 제외).</li>
+<li><b>산식</b>: 필요 인원 = 전환 업무량 × 건당 검토 시간 ÷ 1,500시간. 가정이 바뀌면 인원이 비례해 바뀝니다.</li>
+<li><b>근거 표기</b>: <span class="tag s">산식</span>업무량 자료로 계산 · <span class="tag">단위</span>기관 수 × 기관당 인원 · <span class="tag">가정</span>자료 없이 비중으로 배정.</li>
+<li><b>인간 최종 승인</b>: 강제력·생명·재산이 걸린 영역은 AI가 대체하지 않고 L3가 최종 판단합니다.</li>
+</ul>
+</section>
+
+<section id="s2">
+<h2><span class="n">2</span>사법: K-Law 중재 전환</h2>
+<p>기준 수치(2024년)입니다. 법원 소송사건 접수는 691만 5,400건이고<sup><a href="#r1">1</a></sup>, 민사 본안 1심 80만 5,366건 중 소액 50만 7,804건(63.1%), 단독 26만 8,655건, 합의부 2만 8,907건입니다<sup><a href="#r2">2</a></sup>. 민사 1심의 39.1%는 대리인 없이 제출됐고<sup><a href="#r2">2</a></sup>, 재판상 이혼 1심은 2만 6,849건입니다<sup><a href="#r1">1</a></sup>. 판사 정원은 2025년 1월부터 3,584명이고<sup><a href="#r1">1</a></sup>, 등록 변호사는 3만 8,234명(2026년 4월)입니다<sup><a href="#r3">3</a></sup>.</p>
+<div class="tbl"><table>
+<tr><th>전환 대상</th><th class="num">전환율</th><th class="num">전환 건수</th><th class="num">건당 L3 시간</th><th class="num">필요 인원</th></tr>
+<tr><td>소액 민사 1심</td><td class="num">50%</td><td class="num">약 25.4만</td><td class="num">1.5시간</td><td class="num">약 250명</td></tr>
+<tr><td>단독 민사 1심</td><td class="num">20%</td><td class="num">약 5.4만</td><td class="num">5시간</td><td class="num">약 180명</td></tr>
+<tr><td>이혼 1심(조정 우선)</td><td class="num">30%</td><td class="num">약 0.8만</td><td class="num">8시간</td><td class="num">약 40명</td></tr>
+<tr><td>이의 신청 심사(전환분의 15%, 3인 합의 3시간)</td><td class="num">—</td><td class="num">약 4.6만</td><td class="num">9인시간</td><td class="num">약 280명</td></tr>
+<tr><td>품질관리·방법론 갱신(+10%)</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">약 80명</td></tr>
+<tr class="tot"><td>합계</td><td class="num"></td><td class="num">약 30.8만(민사 1심의 38%)</td><td class="num"></td><td class="num">약 830명 → 900명</td></tr>
+</table></div>
+<ul>
+<li>900명은 등록 변호사의 약 2.4%이고 판사 정원의 약 25%입니다. 판사는 형사 등도 맡으므로 단순 비교는 곤란합니다.</li>
+<li>전환율을 25%/10%로 낮추면 약 400명, 80%/40%로 높이면 약 1,400명입니다.</li>
+<li>가장 민감한 가정은 이의율입니다. 15%는 현재 K-Law 수준보다 높은 품질을 전제하며, 30%로 올리면 이의 심사에 280명이 더 필요합니다.</li>
+<li>중재 전환은 당사자 합의와 집행력 같은 법적 근거가 있어야 성립하므로, 인원보다 제도가 먼저 풀려야 합니다.</li>
+</ul>
+</section>
+
+<section id="s3">
+<h2><span class="n">3</span>분야별 산식</h2>
+<h3>의료 — L3 의사 9,000명</h3>
+<p>임상 의사(한의사 포함)는 인구 1,000명당 2.66명(2023년)이므로<sup><a href="#r4">4</a></sup> 5,000만 명 기준 약 13.3만 명입니다. 1인당 외래 진료는 연 18회여서<sup><a href="#r5">5</a></sup> 연 약 9억 회입니다. 이 중 만성질환 재처방·경증 등 30%(2.7억 건)를 AI가 준비하고 L3 의사가 건당 3분(시간당 20건)씩 검토하면 연 1,350만 시간, 즉 9,000명입니다. 비중이 15%면 4,500명, 45%면 13,500명입니다.</p>
+<h3>교육 — L3 교사 8,500명(유·초·중·고)</h3>
+<p>유·초·중·고 학생은 555만 1,250명(2025년)이고<sup><a href="#r6">6</a></sup>, 초중고 정규교원은 36만 5,735명입니다<sup><a href="#r7">7</a></sup>. AI 튜터·교육과정 책임자를 학생 약 650명당 1명으로 두면 8,500명이며 교원의 2.3%입니다.</p>
+<h3>행정·입법·AI 인프라 — 기관 단위</h3>
+<ul>
+<li><b>지방 행정 7,700명</b>: 기초 226곳 × 25명 + 광역 17곳 × 120명 = 7,690명. 지자체 공무원 31만 3,924명<sup><a href="#r8">8</a></sup>의 약 2.5%입니다.</li>
+<li><b>국회 1,200명</b>: 의원 300명 × 2 + 상임위 17개 × 20 + 입법조사·예산 검증 260명.</li>
+<li><b>지방의회 1,000명</b>: 광역·기초 의회 243곳 × 4명(972명).</li>
+<li><b>AI 인프라·감사 3,500명</b>: 지자체 노드 243곳 × 10명 + 중앙 감사·방법론 1,070명.</li>
+<li><b>취약계층 접근 지원 3,000명</b>: 기초 226곳 × 13명(2,938명). 고령자·장애인·외국인·도서농어촌 현장 지원.</li>
+</ul>
+</section>
+
+<section id="s4">
+<h2><span class="n">4</span>전체 배분(합계 100,000명)</h2>
+<div class="tbl"><table id="alloc">
+<tr><th>항목</th><th class="num">인원</th><th>비중</th><th>근거</th></tr>
+
+<tr class="sub" data-sub="a"><td>국가 기능·민주</td><td class="num">20,500</td><td class="bc"></td><td></td></tr>
+<tr data-g="a" data-n="3500" data-b="가정"><td>일반 행정 · 중앙</td><td class="num">3,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>중앙부처 업무 파이프라인 책임자</td></tr>
+<tr data-g="a" data-n="7700" data-b="단위"><td>일반 행정 · 지방</td><td class="num">7,700</td><td class="bc"><span class="bar"></span></td><td><span class="tag">단위</span>기초 226 × 25 + 광역 17 × 120</td></tr>
+<tr data-g="a" data-n="1200" data-b="단위"><td>국회</td><td class="num">1,200</td><td class="bc"><span class="bar"></span></td><td><span class="tag">단위</span>의원실·상임위·입법조사</td></tr>
+<tr data-g="a" data-n="1000" data-b="단위"><td>지방의회</td><td class="num">1,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">단위</span>243곳 × 4명</td></tr>
+<tr data-g="a" data-n="900" data-b="산식"><td>사법 · 중재 전환</td><td class="num">900</td><td class="bc"><span class="bar"></span></td><td><span class="tag s">산식</span>2절 참조</td></tr>
+<tr data-g="a" data-n="2300" data-b="가정"><td>사법 · 법률 상담·ADR, 형사·수사 지원, 품질</td><td class="num">2,300</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>상담 1,200 + 형사 500 + 품질·윤리 600</td></tr>
+<tr data-g="a" data-n="600" data-b="가정"><td>준사법·분쟁조정</td><td class="num">600</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>행정심판·조세심판·노동위·조정위. 사법 산식 준용(물량 미확보)</td></tr>
+<tr data-g="a" data-n="400" data-b="가정"><td>교정·보호관찰</td><td class="num">400</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>기능 최소 인원</td></tr>
+<tr data-g="a" data-n="1200" data-b="가정"><td>감사·선거·헌법·반부패</td><td class="num">1,200</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>감시 대상과 분리된 독립 인력</td></tr>
+<tr data-g="a" data-n="1000" data-b="가정"><td>외교·통상·출입국</td><td class="num">1,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>본부·공관 합산</td></tr>
+<tr data-g="a" data-n="700" data-b="가정"><td>통계·공공데이터·지리정보</td><td class="num">700</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>AI 정부의 입력 데이터 책임</td></tr>
+
+<tr class="sub" data-sub="b"><td>안보·안전·디지털 방어</td><td class="num">11,500</td><td class="bc"></td><td></td></tr>
+<tr data-g="b" data-n="2500" data-b="가정"><td>국방</td><td class="num">2,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>군 인력 규모 미확인</td></tr>
+<tr data-g="b" data-n="4000" data-b="가정"><td>치안·소방·재난</td><td class="num">4,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>인간 최종 판단 영역</td></tr>
+<tr data-g="b" data-n="3500" data-b="단위"><td>AI 인프라·감사(OpenHash 포함)</td><td class="num">3,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">단위</span>노드 243 × 10 + 중앙 1,070</td></tr>
+<tr data-g="b" data-n="1500" data-b="가정"><td>사이버보안·개인정보</td><td class="num">1,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>국가 차원 방어</td></tr>
+
+<tr class="sub" data-sub="c"><td>사회서비스</td><td class="num">38,000</td><td class="bc"></td><td></td></tr>
+<tr data-g="c" data-n="9000" data-b="산식"><td>의료 · 의사</td><td class="num">9,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag s">산식</span>3절 참조</td></tr>
+<tr data-g="c" data-n="5000" data-b="가정"><td>의료 · 한의사·약사·간호</td><td class="num">5,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>한의사 1,000 + 약사 1,500 + 간호 2,500</td></tr>
+<tr data-g="c" data-n="2000" data-b="가정"><td>공중보건·식의약·환경·기후·기상</td><td class="num">2,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>규제·방역 기능</td></tr>
+<tr data-g="c" data-n="8500" data-b="산식"><td>교육 · 유·초·중·고</td><td class="num">8,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag s">산식</span>학생 약 650명당 1명</td></tr>
+<tr data-g="c" data-n="2500" data-b="가정"><td>교육 · 고등·평생교육·연구</td><td class="num">2,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span></td></tr>
+<tr data-g="c" data-n="6000" data-b="가정"><td>복지·돌봄·노동</td><td class="num">6,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>통합돌봄 수요</td></tr>
+<tr data-g="c" data-n="3000" data-b="단위"><td>취약계층 접근 지원</td><td class="num">3,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">단위</span>기초 226곳 × 13명</td></tr>
+<tr data-g="c" data-n="2000" data-b="가정"><td>미디어·정보 무결성·문화·체육·관광</td><td class="num">2,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span></td></tr>
+
+<tr class="sub" data-sub="d"><td>경제·산업</td><td class="num">27,000</td><td class="bc"></td><td></td></tr>
+<tr data-g="d" data-n="8000" data-b="가정"><td>회계·세무·금융·보험</td><td class="num">8,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>신고·감사 자동화 감독</td></tr>
+<tr data-g="d" data-n="4500" data-b="가정"><td>부동산·감정·건설·안전</td><td class="num">4,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span></td></tr>
+<tr data-g="d" data-n="3500" data-b="가정"><td>서류 직역(법무사·행정사·변리사)</td><td class="num">3,500</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>서류 작성 자동화</td></tr>
+<tr data-g="d" data-n="5000" data-b="가정"><td>산업·농수산·제조</td><td class="num">5,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span></td></tr>
+<tr data-g="d" data-n="4000" data-b="가정"><td>SOC(전력·통신·교통·상하수도·폐기물)</td><td class="num">4,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>실물 인프라 운영</td></tr>
+<tr data-g="d" data-n="2000" data-b="가정"><td>소상공인·창업 지원</td><td class="num">2,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span></td></tr>
+
+<tr class="sub" data-sub="e"><td>메타</td><td class="num">3,000</td><td class="bc"></td><td></td></tr>
+<tr data-g="e" data-n="1000" data-b="가정"><td>L3 양성·인증·윤리</td><td class="num">1,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>자격 유지·관리</td></tr>
+<tr data-g="e" data-n="2000" data-b="가정"><td>예비·갱신</td><td class="num">2,000</td><td class="bc"><span class="bar"></span></td><td><span class="tag">가정</span>결원·신규 수요</td></tr>
+
+<tr class="tot"><td>합계</td><td class="num" id="alloc-total">100,000</td><td class="bc"></td><td id="alloc-basis"><span class="tag s">산식</span>18.4% · <span class="tag">단위</span>16.4% · <span class="tag">가정</span>65.2%</td></tr>
+</table></div>
+</section>
+
+<section id="s5">
+<h2><span class="n">5</span>누락 점검과 조정</h2>
+<p>첫 배분(14개 항목)에는 국가 운영의 보이지 않는 기능이 빠져 있었습니다. 이번 판에서 13개 항목을 새로 두고, 합계를 10만 명으로 맞추기 위해 기존 항목을 줄였습니다.</p>
+<h3>신설(20,900명)</h3>
+<ul>
+<li>지방의회 1,000 · 준사법·분쟁조정 600 · 교정·보호관찰 400 · 감사·선거·헌법·반부패 1,200 · 외교·통상·출입국 1,000 · 통계·공공데이터·지리정보 700</li>
+<li>국방 2,500(치안·재난과 분리) · 사이버보안·개인정보 1,500(AI 인프라에서 분리) · 공중보건·식의약·환경·기후 2,000(의료에서 분리)</li>
+<li>취약계층 접근 지원 3,000 · 미디어·문화·체육·관광 2,000 · SOC 4,000(산업에서 분리) · L3 양성·인증·윤리 1,000</li>
+</ul>
+<h3>조정(-20,900명)</h3>
+<div class="tbl"><table>
+<tr><th>항목</th><th class="num">이전</th><th class="num">v0.1</th><th>이유</th></tr>
+<tr><td>일반 행정(중앙+지방)</td><td class="num">18,000</td><td class="num">11,200</td><td>중앙 일부가 감사·외교·통계로 이동, 지방은 기관 단위 산식으로 재산정</td></tr>
+<tr><td>산업·농수산·제조</td><td class="num">10,000</td><td class="num">5,000</td><td>에너지·물류를 SOC로 분리</td></tr>
+<tr><td>소상공인·창업</td><td class="num">4,000</td><td class="num">2,000</td><td>상담은 AI가 직접 처리하는 비중이 큼</td></tr>
+<tr><td>회계·세무·금융·보험</td><td class="num">9,000</td><td class="num">8,000</td><td>자동화 비중 상향</td></tr>
+<tr><td>교육·연구</td><td class="num">12,000</td><td class="num">11,000</td><td>유·초·중·고 산식 재산정</td></tr>
+<tr><td>의료·보건</td><td class="num">15,000</td><td class="num">14,000</td><td>공중보건·환경 2,000을 분리</td></tr>
+<tr><td>AI 인프라·감사</td><td class="num">5,000</td><td class="num">3,500</td><td>사이버·개인정보 1,500을 분리</td></tr>
+<tr><td>부동산·감정·건설 / 서류 직역</td><td class="num">5,000 / 4,000</td><td class="num">4,500 / 3,500</td><td>일괄 축소</td></tr>
+<tr><td>예비·갱신</td><td class="num">3,600</td><td class="num">2,000</td><td>신설 항목으로 흡수</td></tr>
+</table></div>
+</section>
+
+<section id="s6">
+<h2><span class="n">6</span>지역 배분 원칙</h2>
+<p>분야만 나누고 지역을 보지 않으면 L3가 수도권에 쏠립니다. 등록 변호사 3만 8,080명 중 2만 9,035명(76.2%)이 서울에 있고<sup><a href="#r9">9</a></sup>, 인구 1만 명당 변호사는 서울 25.6명, 지방 1.8명입니다<sup><a href="#r10">10</a></sup>. 광역 17곳마다 최소 비율(예: 1.5%)을 먼저 보장하면 17곳 합계 25,500명이 먼저 배정되고, 나머지 74,500명을 인구와 업무량으로 나눕니다.</p>
+</section>
+
+<section id="s7">
+<h2><span class="n">7</span>한계와 다음 단계</h2>
+<ul>
+<li>건당 시간, 전환율, AI 처리 비중은 모두 가정입니다. 전체 인원의 65.2%는 업무량 자료 없이 비중으로 배정했습니다.</li>
+<li>국방·SOC·환경·복지는 물량 자료를 확보하지 못했습니다. 중앙 공무원 수도 이번에 확인하지 못했습니다.</li>
+<li>중재 전환의 법적 근거(합의 요건, 집행력)와 K-Law의 판결 일치도가 이의율을 좌우합니다.</li>
+<li>L3를 기존 전문직에서 모집하면 본업이 비므로 단계적 도입 계획이 필요합니다.</li>
+<li>감사 기능은 감시 대상과 같은 인력이 맡으면 안 됩니다. 소속과 순환 규칙을 따로 정해야 합니다.</li>
+</ul>
+</section>
+
+<section id="s8">
+<h2><span class="n">8</span>출처</h2>
+<ol class="src">
+<li id="r1">법률신문, 「2025 사법연감 발간」 — <a href="https://www.lawtimes.co.kr/news/articleView.html?idxno=211723" target="_blank" rel="noopener">lawtimes.co.kr</a></li>
+<li id="r2">법률신문, 「2025 사법연감 주요 내용」 — <a href="https://www.lawtimes.co.kr/news/211755" target="_blank" rel="noopener">lawtimes.co.kr</a></li>
+<li id="r3">법률신문, 「변협, 법무부 앞 집회」 — <a href="https://www.lawtimes.co.kr/news/articleViewAmp.html?idxno=218945" target="_blank" rel="noopener">lawtimes.co.kr</a></li>
+<li id="r4">세계일보, 「두 번째로 적어… 오스트리아 1위」(OECD 보건통계 2025) — <a href="https://www.segye.com/newsView/20250730515782" target="_blank" rel="noopener">segye.com</a></li>
+<li id="r5">데일리팜, 「한국, 인구 1000명당 의사 2.7명…OECD 최하위권」 — <a href="https://www.dailypharm.com/user/news/3550" target="_blank" rel="noopener">dailypharm.com</a></li>
+<li id="r6">한국교육신문, 「초교 학급당 학생 수 첫 '10명대' 하락」(2025 교육기본통계) — <a href="https://www.hangyo.com/mobile/article.html?no=105223" target="_blank" rel="noopener">hangyo.com</a></li>
+<li id="r7">뉴시스, 「여전히 빽빽한 한국 교실」 — <a href="https://newsis.com/view/NISX20260304_0003534805" target="_blank" rel="noopener">newsis.com</a></li>
+<li id="r8">뉴시스, 「행안부, 2025년 지자체 공무원 인사 통계 발표」 — <a href="https://mobile.newsis.com/view/NISX20260602_0003654159" target="_blank" rel="noopener">newsis.com</a></li>
+<li id="r9">쿠키뉴스, 「월 1건 수임 '개업 변호사'의 냉혹한 현실」 — <a href="https://v.daum.net/v/20260202060250003" target="_blank" rel="noopener">daum.net</a></li>
+<li id="r10">법률신문, 「변호사 채용 공고 3년, 지원자 없어요」 — <a href="https://www.lawtimes.co.kr/news/articleViewAmp.html?idxno=215365" target="_blank" rel="noopener">lawtimes.co.kr</a></li>
+</ol>
+<p class="small">이 문서의 계산은 위 통계에 사고 실험용 가정을 더한 것으로, 정책 제안이나 예측이 아닙니다.</p>
+</section>
+
+</div>
+<script>
+/* 표의 막대 길이와 합계 표시는 각 줄의 data-n 으로 계산한다(숫자를 한 곳에서만 고치면 되도록). 계산이 어긋나면 합계 칸에 경고를 붙인다. */
+(function(){
+  var rows = document.querySelectorAll('#alloc tr[data-n]'), max = 0, total = 0, by = {}, g = {};
+  rows.forEach(function(r){ var n = +r.getAttribute('data-n'); total += n; if (n > max) max = n; by[r.getAttribute('data-b')] = (by[r.getAttribute('data-b')] || 0) + n; g[r.getAttribute('data-g')] = (g[r.getAttribute('data-g')] || 0) + n; });
+  rows.forEach(function(r){ var b = r.querySelector('.bar'); if (b) b.style.width = Math.max(2, Math.round(+r.getAttribute('data-n') / max * 100)) + '%'; });
+  var t = document.getElementById('alloc-total'); if (t) t.textContent = total.toLocaleString('en-US') + (total === 100000 ? '' : ' (경고: 10만 명이 아님)');
+  document.querySelectorAll('#alloc tr.sub').forEach(function(r){ var k = r.getAttribute('data-sub'); if (g[k] != null && !r.getAttribute('data-ok')) { var c = r.querySelectorAll('td')[1]; if (c && c.textContent.replace(/,/g, '') != String(g[k])) c.textContent = g[k].toLocaleString('en-US') + ' (경고)'; } });
+})();
+</script>
+<script src="https://naviweb.kr/navi-home.js" defer></script>
+</body>
+</html>
