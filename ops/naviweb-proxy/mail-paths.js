@@ -35,6 +35,7 @@ export const MAIL_FILES = new Set([
  "feedback-digest-core.js",
  "feedback-kit.js",
  "guide-howto.json",
+ "guide-howto-mid.json",
  "guide-videos.json",
  "guide.js",
  "hondi-chat.js",

@@ -23,10 +23,13 @@ jobs:
       - name: 나비웹 사용법 재생목록 동기화
         continue-on-error: true   # 이 재생목록이 비공개이거나 비어 있어도 위의 안내 영상 동기화는 영향받지 않게 한다
         run: node scripts/guide-videos-sync.mjs PLVk7oB1w5pLE guide-howto.json
+      - name: 나비웹 사용법(중급) 재생목록 동기화
+        continue-on-error: true
+        run: node scripts/guide-videos-sync.mjs PLaRjMKGRz50E guide-howto-mid.json
       - name: 바뀌었으면 커밋
         run: |
-          if git diff --quiet -- guide-videos.json guide-howto.json; then echo "변경 없음"; exit 0; fi
+          if git diff --quiet -- guide-videos.json guide-howto.json guide-howto-mid.json; then echo "변경 없음"; exit 0; fi
           git config user.name "naviweb-bot"; git config user.email "actions@users.noreply.github.com"
-          git add guide-videos.json guide-howto.json
+          git add guide-videos.json guide-howto.json guide-howto-mid.json
           git commit -m "chore: 안내 영상·나비웹 사용법 목록 자동 갱신"
           git pull --rebase origin main && git push origin HEAD:main

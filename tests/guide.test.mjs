@@ -404,3 +404,19 @@ test('나비웹 사용법 영상: 제목 번호(사용법·매뉴얼·도우미 
   const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
   assert.ok(m.includes('howtoNum(x.t) === n') && m.includes('CHAPTERS.findIndex') && !m.includes('HOWTO_CHAPTERS'));
 });
+
+test('나비웹 사용법 중급: 초급·중급 탭, 중급 목록(PLaRjMKGRz50E → guide-howto-mid.json)을 따라가고, 매뉴얼 중급 5개 장 맨 위에 1~5편이 붙는다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="yt-tab-basic"') && h.includes('id="yt-tab-mid"') && h.includes('id="yt-howto-mid"'));
+  assert.ok(h.includes("_ytLoad('guide-howto-mid.json', [])") && h.includes('.yt-list[hidden]{display:none}'));
+  const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
+  assert.ok(wf.includes('guide-videos-sync.mjs PLaRjMKGRz50E guide-howto-mid.json') && wf.includes('git add guide-videos.json guide-howto.json guide-howto-mid.json'));
+  const j = JSON.parse(readFileSync(new URL('../guide-howto-mid.json', import.meta.url), 'utf8'));
+  assert.equal(j.list, 'PLaRjMKGRz50E');
+  assert.deepEqual(j.videos.map(v => v.t.match(/사용법 (\d+)/)[1]), ['01', '02', '03', '04', '05']);
+  assert.ok(j.videos.every(v => /^[\w-]{11}$/.test(v.id)));
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  assert.ok(m.includes("var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5 };") && m.includes('guide-howto-mid.json'));
+  const p = readFileSync(new URL('../ops/naviweb-proxy/mail-paths.js', import.meta.url), 'utf8');
+  assert.ok(p.includes('"guide-howto-mid.json"'), '프록시가 이 파일을 내보낸다');
+});
