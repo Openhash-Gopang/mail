@@ -339,6 +339,76 @@ a { color: inherit; }
 @media (max-width:560px) { .st-row { grid-template-columns:1fr; gap:3px; } .st-tr { grid-template-columns:1fr 50px 60px 60px; } }
 @media print { .mn-page .wrap > *:not(#cnsModal), .mn-page .fab { display:none !important; } .mn-page { background:none; } body > *:not(#cnsModal) { display:none !important; } #cnsModal { position:static; background:none; padding:0; display:block !important; } .cns-box { box-shadow:none; padding:0; max-width:none; } .cns-box > :not(#cnsCertWrap) { display:none !important; } .cns-actions { display:none !important; } @page { size: A4 landscape; margin: 14mm; } }
 .ch-link{color:#1a5fd0;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* ── 인증 시험 페이지: Material 3 ── */
+#examPage { --md-state: color-mix(in srgb, var(--primary) 8%, transparent); --md-state-press: color-mix(in srgb, var(--primary) 12%, transparent); }
+#examPage .study-tabs { gap:0; border-bottom:1px solid var(--outline-variant); padding:0; margin-bottom:20px; }
+#examPage .study-tabs button { position:relative; border:0; border-radius:0; background:transparent; color:var(--on-surface-variant); padding:0 24px; height:48px; font:600 14px/1 inherit; font-family:inherit; letter-spacing:.1px; cursor:pointer; transition:background .15s, color .15s; }
+#examPage .study-tabs button:hover { background:var(--md-state); }
+#examPage .study-tabs button:active { background:var(--md-state-press); }
+#examPage .study-tabs button.on { background:transparent; color:var(--primary); font-weight:700; }
+#examPage .study-tabs button.on::after { content:''; position:absolute; left:12px; right:12px; bottom:0; height:3px; border-radius:3px 3px 0 0; background:var(--primary); }
+#examPage .study-tabs button:focus-visible { outline:2px solid var(--primary); outline-offset:-2px; }
+#examPage .st-h { font-size:20px; font-weight:700; color:var(--on-surface); margin:4px 0 6px; letter-spacing:-.2px; }
+#examPage .st-s { color:var(--on-surface-variant); font-size:14px; line-height:1.75; }
+/* 버튼: filled / outlined */
+#examPage .cns-go, #examPage .cns-sub { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 24px; border-radius:var(--radius-full); font:600 14px/1 inherit; font-family:inherit; letter-spacing:.1px; cursor:pointer; transition:box-shadow .15s, background .15s, filter .15s; }
+#examPage .cns-go { border:0; background:var(--primary); color:var(--on-primary); }
+#examPage .cns-go:hover { box-shadow:var(--el-1); filter:brightness(1.08); }
+#examPage .cns-go:active { filter:brightness(.94); box-shadow:none; }
+#examPage .cns-sub { border:1px solid var(--outline); background:transparent; color:var(--primary); }
+#examPage .cns-sub:hover { background:var(--md-state); }
+#examPage .cns-sub:active { background:var(--md-state-press); }
+#examPage .cns-go:focus-visible, #examPage .cns-sub:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+#examPage .st-act + .st-h { margin-top:32px; }
+#examPage .st-act { margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; }
+/* 카드 */
+#examPage .st-lv { border:0; border-radius:16px; padding:18px 20px; background:var(--surface-container); display:flex; flex-direction:column; }
+#examPage .st-lv .st-lv-top b { font-size:16px; color:var(--on-surface); }
+#examPage .ex-rounds { gap:16px; margin-top:16px; }
+#examPage .ex-rounds .st-lv { background:var(--surface); box-shadow:var(--el-1); transition:box-shadow .2s; }
+#examPage .ex-rounds .st-lv:hover { box-shadow:var(--el-3); }
+#examPage .ex-rounds .st-act { margin-top:auto; padding-top:16px; }
+/* 칩/태그 */
+#examPage .st-tag { height:28px; display:inline-flex; align-items:center; padding:0 12px; border-radius:8px; font-size:12.5px; font-weight:600; background:var(--surface-container-high); color:var(--on-surface-variant); }
+#examPage .st-tag.ok { background:var(--tertiary-container); color:var(--on-tertiary-container); }
+#examPage .st-tag.bad { background:var(--error-container); color:var(--on-error-container); }
+/* 안내 상자(배너) */
+#examPage .st-note { border-radius:12px; padding:14px 16px; margin:12px 0; background:var(--secondary-container); color:var(--on-secondary-container); font-size:14px; line-height:1.7; }
+#examPage .st-note.bad { background:var(--error-container); color:var(--on-error-container); }
+#examPage .st-result { border-radius:16px; padding:18px 20px; font-size:15px; font-weight:600; line-height:1.7; margin:12px 0; }
+#examPage .st-result.pass { background:var(--tertiary-container); color:var(--on-tertiary-container); }
+#examPage .st-result.fail { background:var(--error-container); color:var(--on-error-container); }
+/* 펼침 카드 */
+#examPage .ex-open { border:0; background:var(--surface-container); border-radius:16px; padding:0; margin:14px 0; overflow:hidden; }
+#examPage .ex-open summary { list-style:none; display:flex; align-items:center; gap:10px; min-height:52px; padding:0 20px; cursor:pointer; font-size:14px; transition:background .15s; }
+#examPage .ex-open summary::-webkit-details-marker { display:none; }
+#examPage .ex-open summary::after { content:''; margin-left:auto; width:8px; height:8px; border-right:2px solid var(--on-surface-variant); border-bottom:2px solid var(--on-surface-variant); transform:rotate(45deg); transition:transform .2s; }
+#examPage .ex-open[open] summary::after { transform:rotate(-135deg); }
+#examPage .ex-open summary:hover { background:var(--md-state); }
+#examPage .ex-open ul { margin:0; padding:4px 20px 16px 40px; }
+/* 문항 카드 */
+#examPage .ex-q { border:0; border-radius:16px; background:var(--surface); box-shadow:var(--el-1); padding:20px 22px; margin:14px 0; }
+#examPage .ex-q .ex-t { font-size:15px; font-weight:600; color:var(--on-surface); line-height:1.65; margin-bottom:10px; }
+#examPage .ex-q .ex-b { display:inline-flex; align-items:center; height:22px; padding:0 8px; margin-left:8px; border-radius:6px; background:var(--primary-container); color:var(--on-primary-container); font-size:11.5px; font-weight:600; vertical-align:2px; }
+/* 객관식 선택지 */
+#examPage .st-opt { display:flex; align-items:center; gap:12px; padding:10px 14px; margin:4px -6px; border-radius:12px; cursor:pointer; line-height:1.55; transition:background .15s; }
+#examPage .st-opt:hover { background:var(--md-state); }
+#examPage .st-opt input[type=radio] { width:20px; height:20px; accent-color:var(--primary); flex:none; margin:0; cursor:pointer; }
+#examPage .st-opt:has(input:checked) { background:var(--primary-container); color:var(--on-primary-container); font-weight:600; }
+/* 입력칸(outlined) */
+#examPage .ex-in, #examPage .ex-ta { border:1px solid var(--outline); border-radius:12px; background:var(--surface); color:var(--on-surface); padding:14px 16px; font:inherit; font-size:15px; line-height:1.7; transition:border-color .15s, box-shadow .15s; }
+#examPage .ex-in:hover, #examPage .ex-ta:hover { border-color:var(--on-surface-variant); }
+#examPage .ex-in:focus, #examPage .ex-ta:focus { outline:0; border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+#examPage .ex-cnt { margin-top:4px; padding-right:4px; }
+/* 서술형 채점 기준 */
+#examPage .ex-q .st-s { background:var(--surface-container); border-radius:12px; padding:12px 16px; margin:4px 0 12px !important; font-size:13.5px; }
+#examPage .ex-q .st-s ul { margin:6px 0 0; padding-left:18px; }
+/* 해설 */
+#examPage .ex-fb { border-radius:12px; padding:12px 16px; font-size:14px; line-height:1.75; background:var(--surface-container); }
+#examPage .ex-fb.ok { background:var(--tertiary-container); color:var(--on-tertiary-container); }
+#examPage .ex-fb.no { background:var(--error-container); color:var(--on-error-container); }
+@media (max-width:640px) { #examPage .study-tabs button { padding:0 16px; flex:1; } #examPage .ex-q { padding:16px; } }
+@media (prefers-reduced-motion: reduce) { #examPage * { transition:none !important; } }
 </style>
 </head>
 <body>
@@ -803,8 +873,8 @@ function exReview(R, rs) {
   R.questions.forEach(function (q, i) {
     var it = rs.items[q.id] || {}, mine = ex2.ans[q.id], t = cnsEsc(i + 1 + '. ' + q.q);
     h += '<div class="ex-q"><div class="ex-t">' + t + '</div>';
-    if (q.type === 'mc') h += '<div class="ex-fb ' + (it.ok ? 'ok' : 'no') + '">' + (it.ok ? '정답' : '오답') + ' — 정답: ' + cnsEsc(q.options[q.answer]) + (it.ok ? '' : '<br>' + cnsEsc(q.explain)) + '</div>';
-    else if (q.type === 'short') h += '<div class="ex-fb ' + (it.ok ? 'ok' : 'no') + '">' + (it.ok ? '정답' : '오답') + ' — 내 답: ' + cnsEsc(mine || '(무응답)') + ' · 모범 답: ' + cnsEsc(q.model) + (it.ok ? '' : '<br>' + cnsEsc(q.explain)) + '</div>';
+    if (q.type === 'mc') h += '<div class="ex-fb ' + (it.ok ? 'ok' : 'no') + '">' + (it.ok ? '✓ 맞았습니다' : '✗ 틀렸습니다') + ' — 정답: ' + cnsEsc(q.options[q.answer]) + (it.ok ? '' : '<br>' + cnsEsc(q.explain)) + '</div>';
+    else if (q.type === 'short') h += '<div class="ex-fb ' + (it.ok ? 'ok' : 'no') + '">' + (it.ok ? '✓ 맞았습니다' : '✗ 틀렸습니다') + ' — 내 답: ' + cnsEsc(mine || '(무응답)') + ' · 모범 답: ' + cnsEsc(q.model) + (it.ok ? '' : '<br>' + cnsEsc(q.explain)) + '</div>';
     else h += '<div class="ex-fb">' + (it.score != null ? '<b>' + it.score + ' / ' + q.max + '점</b>' : '') + (it.feedback ? '<br>' + cnsEsc(it.feedback) : '') + '<br><br><b>모범 답안</b><br>' + cnsEsc(q.model) + '</div>';
     h += '</div>';
   });
