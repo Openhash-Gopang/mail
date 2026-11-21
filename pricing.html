@@ -154,7 +154,7 @@ document.querySelectorAll('.pay-go').forEach(function(b){b.onclick=function(){va
  post('/biz/plan-request',{phone_verify_token:t,tier:tier}).then(function(x){var d=x.d;
   if(!d||!d.ok){$('pay-msg').textContent=(d&&d.message)||'입금 안내를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.';return}
   bind('krw',nf.format(d.krw)+'원');bind('usd','$'+d.usd);bind('rate',nf.format(Math.round(d.rate*100)/100));
-  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명은 가입한 이름과 같게 해 주세요.';
+  $('pay-msg').textContent=({p10:'기본',p100:'서류',p200:'프로'}[d.tier]||'')+' 플랜 · '+nf.format(d.krw)+'원을 '+hm(d.expires_at)+'까지 입금해 주세요. 입금자명은 '+(d.depositor_name?'「'+d.depositor_name+'」(가입한 이름)':'가입한 이름')+'과 같게 해 주세요.';
   startPoll(d.grant)},function(){$('pay-msg').textContent='연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'})}});
 $('x-save').onclick=function(){var t=ck('hondi_pvt');if(!t)return;var lim=Number($('x-lim').value||0),on=$('x-on').checked;
  if(on&&!(lim>0)){$('x-msg').textContent='추가 사용량을 켜려면 월 한도를 정해 주세요.';return}
