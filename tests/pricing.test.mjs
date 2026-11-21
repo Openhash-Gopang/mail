@@ -37,3 +37,10 @@ test('플랜 — 추가 사용량(종량제): 켜기·월 한도 입력, 서버 
   assert.match(p, /id="extra-sec"/); assert.match(p, /id="x-on"/); assert.match(p, /id="x-lim"/);
   assert.match(p, /\/auth\/extra-usage/); assert.match(p, /월 한도/);
 });
+
+test('부가세 별도·환불·유효기간·사업자 정보·발행 요청 양식이 안내된다', async () => {
+  const { readFileSync } = await import('node:fs');
+  const h = readFileSync(new URL('../pricing.html', import.meta.url), 'utf8');
+  for (const w of ['부가세', '환불 규칙', '최장 3년', '선입선출', '368-88-02993', '발행 요청하기', '/biz/receipt-request']) assert.ok(h.includes(w), w + ' 안내 누락');
+  assert.ok(!/혼디/.test(h), '"혼디" 표기 금지');
+});
