@@ -603,6 +603,12 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .mfb-sp{flex:1}
 .mfb-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mfb-cl{font-size:13px;color:var(--hint);margin-right:4px}
+.mfb-cat{min-width:64px;font-weight:700;color:var(--sub)}
+.mfb-body.has-ref{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.4fr);gap:16px;align-items:start}
+.mfb-ref{position:sticky;top:66px;max-height:calc(100vh - 90px);overflow:auto;background:#fff;border:1px solid var(--m-out-v);border-radius:16px;padding:12px}
+.mfb-ref h3{margin:0 0 4px;font-size:14px}.mfb-ref .mfb-refsub{font-size:12.5px;color:var(--sub);margin:0 0 8px;line-height:1.5}
+.mfb-ref img{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--bdr)}.mfb-ref iframe{display:block;width:100%;height:70vh;border:1px solid var(--bdr);border-radius:8px}
+@media(max-width:900px){.mfb-body.has-ref{grid-template-columns:1fr}.mfb-ref{position:static;max-height:none}}
 .mfb-chip{height:32px;padding:0 12px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--txt);font:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background-color .15s}
 .mfb-chip:hover{background:var(--pri-bg);border-color:var(--pri-bd)}
 .mfb-tf{position:relative;min-width:0}
@@ -4929,14 +4935,26 @@ function _mfNewOpen() { _mfbOpen(null); }
 //   이어서 항목 추가·삭제·이동·이름·종류·크기 변경 지시를 이행한다. SP 는 바뀐 뒤의 양식 전체(```form 블록)를 돌려주고 화면이 그대로 바꾼다.
 // · 사용자는 같은 캔버스에서 항목 이름을 눌러 바로 고치고, 모서리를 끌거나 키보드로 입력칸의 폭(12칸 격자)·줄 수를 정한다.
 // · 저장 형식(kind=form, box=mine, body=서식 JSON)은 그대로이고 칸마다 선택 값 w(폭 3~12)·r(긴글 줄 수 2~12)만 더해진다.
-const _MFB = { id: '', site: '', dirty: false, uid: 0, title: '', secs: [], sel: 0, hist: [], busy: false, chat: false, opener: null, frame: null, link: '', pend: null, msgs: [], flash: {} };
+const _MFB = { ref: null, id: '', site: '', dirty: false, uid: 0, title: '', secs: [], sel: 0, hist: [], busy: false, chat: false, opener: null, frame: null, link: '', pend: null, msgs: [], flash: {} };
 const _MFB_TYPES = [['short', '짧은글'], ['long', '긴글'], ['date', '날짜'], ['amount', '금액'], ['select', '선택']];
 const _MFB_DEFW = { short: 6, long: 12, date: 6, amount: 6, select: 6 };   // 나비 서식 표준: 2열 격자(긴글만 전체 폭)
 const _MFB_HONDI = 'https://hondi.net';
 const _MFB_START = [
-  ['신청서', '# 신청인\n성명* | 짧은글\n연락처 | 짧은글\n신청일 | 날짜\n# 내용\n요청 사유* | 긴글'],
-  ['점검표', '# 기본 사항\n점검일* | 날짜\n점검 장소* | 짧은글\n# 점검 결과\n이상 여부 | 선택:이상 없음/이상 있음\n특이사항 | 긴글'],
-  ['금액 확인서', '# 당사자\n성명* | 짧은글\n# 금액\n금액* | 금액:원\n지급일 | 날짜\n구분 | 선택:입금/출금\n비고 | 긴글']
+  ['신청서', '# 신청인\n성명* | 짧은글\n연락처 | 짧은글\n신청일 | 날짜\n# 내용\n요청 사유* | 긴글', '신청·민원'],
+  ['점검표', '# 기본 사항\n점검일* | 날짜\n점검 장소* | 짧은글\n# 점검 결과\n이상 여부 | 선택:이상 없음/이상 있음\n특이사항 | 긴글', '점검·보고'],
+  ['금액 확인서', '# 당사자\n성명* | 짧은글\n# 금액\n금액* | 금액:원\n지급일 | 날짜\n구분 | 선택:입금/출금\n비고 | 긴글', '금전·계약'],
+  ['위임장', '# 위임하는 사람\n성명* | 짧은글\n연락처 | 짧은글\n# 위임받는 사람\n성명* | 짧은글\n연락처 | 짧은글\n# 위임 내용\n위임 사항* | 긴글\n위임 기간 시작 | 날짜\n위임 기간 끝 | 날짜', '신청·민원'],
+  ['사실확인서', '# 확인하는 사람\n성명* | 짧은글\n연락처 | 짧은글\n# 확인 내용\n확인 대상* | 짧은글\n확인 일자 | 날짜\n확인 내용* | 긴글\n작성일 | 날짜', '신청·민원'],
+  ['민원 접수서', '# 민원인\n성명* | 짧은글\n연락처* | 짧은글\n# 민원\n민원 제목* | 짧은글\n민원 구분 | 선택:문의/불편/제안/신고\n민원 내용* | 긴글\n희망 처리일 | 날짜', '신청·민원'],
+  ['차용증', '# 당사자\n빌려주는 사람* | 짧은글\n빌리는 사람* | 짧은글\n# 조건\n빌린 금액* | 금액:원\n빌린 날짜* | 날짜\n갚을 날짜* | 날짜\n이자 | 짧은글\n특약 | 긴글', '금전·계약'],
+  ['견적서', '# 거래처\n받는 곳* | 짧은글\n담당자 | 짧은글\n# 견적\n품목* | 짧은글\n수량 | 짧은글\n단가 | 금액:원\n합계 | 금액:원\n유효 기간 | 날짜\n비고 | 긴글', '금전·계약'],
+  ['물품 인수증', '# 물품\n품명* | 짧은글\n수량* | 짧은글\n# 인수\n건네는 사람* | 짧은글\n받는 사람* | 짧은글\n인수일* | 날짜\n상태 | 선택:이상 없음/파손/일부 부족\n비고 | 긴글', '금전·계약'],
+  ['시설 점검표', '# 기본 사항\n점검일* | 날짜\n점검자* | 짧은글\n점검 장소* | 짧은글\n# 점검 항목\n소방 설비 | 선택:양호/불량\n전기 설비 | 선택:양호/불량\n비상구 | 선택:양호/불량\n청결 상태 | 선택:양호/불량\n# 조치\n불량 내용 | 긴글\n조치 계획 | 긴글', '점검·보고'],
+  ['회의록', '# 회의 정보\n회의 이름* | 짧은글\n회의 일자* | 날짜\n장소 | 짧은글\n참석자 | 짧은글\n# 내용\n안건* | 긴글\n논의 내용 | 긴글\n결정 사항 | 긴글\n다음 할 일 | 긴글', '점검·보고'],
+  ['업무 보고서', '# 기본 사항\n보고자* | 짧은글\n보고일* | 날짜\n# 보고\n진행 상황* | 긴글\n문제점 | 긴글\n요청 사항 | 긴글\n다음 계획 | 긴글', '점검·보고'],
+  ['연차 휴가 신청서', '# 신청인\n성명* | 짧은글\n소속 | 짧은글\n# 휴가\n구분 | 선택:연차/반차/병가/경조\n시작일* | 날짜\n종료일* | 날짜\n사유 | 긴글\n업무 인수인계 | 긴글', '인사·학교'],
+  ['출장 신청서', '# 신청인\n성명* | 짧은글\n소속 | 짧은글\n# 출장\n출장지* | 짧은글\n출장 기간 시작* | 날짜\n출장 기간 끝* | 날짜\n목적* | 긴글\n예상 비용 | 금액:원', '인사·학교'],
+  ['결석 사유서', '# 학생\n학생 이름* | 짧은글\n학년·반 | 짧은글\n# 결석\n결석 기간 시작* | 날짜\n결석 기간 끝* | 날짜\n사유 구분 | 선택:질병/경조사/가정 사정/기타\n사유 설명* | 긴글\n보호자 이름* | 짧은글', '인사·학교']
 ];
 const _MFB_SUGG = ['사무실 임대차 점검표', '연차 휴가 신청서', '물품 구매 요청서', '고객 상담 기록지'];
 // 선택지 문자열 → 배열 (쉼표·슬래시·줄바꿈으로 구분, 중복 제거, 최대 12개)
@@ -5045,7 +5063,7 @@ function _mfbCount() { return _MFB.secs.reduce((n, s) => n + s.f.length, 0); }
 function _mfbHasContent() { return !!(String(_MFB.title).trim() || _MFB.secs.some(s => s.f.some(x => String(x.l).trim()))); }
 function _mfbSnap() { return JSON.stringify({ t: _MFB.title, s: _MFB.secs }); }
 function _mfbLoad(form, id, site) {
-  _MFB.id = id || ''; _MFB.site = site || ''; _MFB.dirty = false; _MFB.hist = []; _MFB.msgs = []; _MFB.sel = 0; _MFB.title = form ? form.title : '';
+  _MFB.ref = null; _MFB.id = id || ''; _MFB.site = site || ''; _MFB.dirty = false; _MFB.hist = []; _MFB.msgs = []; _MFB.sel = 0; _MFB.title = form ? form.title : '';
   _MFB.secs = form
     ? form.sections.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f.map(f => ({ id: ++_MFB.uid, l: f.l, t: f.t, o: (f.o || []).join(', '), un: f.u || '', h: f.h || '', req: !!f.req, hs: !!f.h, w: f.w || 0, r: f.r || 0 })) }))
     : [{ h: '', f: [] }];
@@ -5072,8 +5090,11 @@ function _mfbCanvasHtml() {
   let h = '';
   const empty = !_MFB.id && !_mfbHasContent();
   h += '<div class="mfb-titlew"><input class="mfb-title" data-k="title" value="' + escHtml(_MFB.title) + '" placeholder="양식 이름" maxlength="80" autocomplete="off" aria-label="양식 이름"></div>';
-  if (empty) h += '<div class="mfb-start"><div class="mfb-startt">오른쪽 아래 대화 아이콘(💬)으로 양식 작성 SP를 불러 만들고 싶은 양식을 설명하면 초안을 만들어 드립니다. 직접 만들려면 항목을 추가하거나 예시로 시작하세요.</div><div class="mfb-chips"><span class="mfb-cl">예시로 시작</span>' +
-    _MFB_START.map((s, i) => '<button type="button" class="mfb-chip" data-a="start" data-i="' + i + '">' + s[0] + '</button>').join('') + '</div></div>';
+  if (empty) {
+    const cats = []; _MFB_START.forEach((t, i) => { let c = cats.find(x => x.n === t[2]); if (!c) cats.push(c = { n: t[2], l: [] }); c.l.push([t[0], i]); });
+    h += '<div class="mfb-start"><div class="mfb-startt">' + (_MFB.ref ? '왼쪽의 올려 둔 원본을 보면서, 오른쪽 아래 대화 아이콘(💬)으로 양식 작성 SP에게 “이름, 연락처, 주소 칸을 만들어 줘”처럼 항목을 말하세요. 비슷한 템플릿으로 시작해 고쳐도 됩니다.' : '오른쪽 아래 대화 아이콘(💬)으로 양식 작성 SP를 불러 만들고 싶은 양식을 설명하면 초안을 만들어 드립니다. 또는 아래 나비웹 양식 템플릿 중 하나로 시작해 구성과 모양을 고치세요.') + '</div>' +
+      cats.map(c => '<div class="mfb-chips"><span class="mfb-cl mfb-cat">' + c.n + '</span>' + c.l.map(x => '<button type="button" class="mfb-chip" data-a="start" data-i="' + x[1] + '">' + x[0] + '</button>').join('') + '</div>').join('') + '</div>';
+  }
   _MFB.secs.forEach((s, si) => {
     h += '<section class="mfb-sec" data-s="' + si + '"><div class="mfb-sech"><input class="mfb-secname" data-k="sh" value="' + escHtml(s.h) + '" placeholder="묶음 이름 (선택)" maxlength="40" aria-label="묶음 이름">' +
       (_MFB.secs.length > 1 ? _mfbIb('delsec', 'data-s="' + si + '"', '묶음 지우기', 'del') : '') + '</div>' +
@@ -5253,10 +5274,11 @@ function _mfbOpen(form, id, site) {
   if (!window._mfbAskHook) _mfbSpOpen();
   if (!id) _mfbChat(true);   // 새로 만들 때는 대화창을 열어 둔다: 말로 설명하면 초안이 나온다
 }
+function _mfbRefDrop() { if (_MFB.ref && _MFB.ref.url) { try { URL.revokeObjectURL(_MFB.ref.url); } catch (e) {} } _MFB.ref = null; }
 async function _mfbClose(force) {
   const root = _mfbRoot(); if (!root || root.hidden) return;
   if (!force && _MFB.dirty && _mfbHasContent() && !await (window.mpConfirm||confirm)('작성 중인 내용이 사라집니다. 목록으로 돌아갈까요?')) return;
-  _mfbSpClose(); root.hidden = true; root.innerHTML = ''; _MFB.dirty = false; _MFB.chat = false; root.classList.remove('chat-open');
+  _mfbSpClose(); _mfbRefDrop(); root.hidden = true; root.innerHTML = ''; _MFB.dirty = false; _MFB.chat = false; root.classList.remove('chat-open');
   const card = root.closest('.card'); if (card) card.classList.remove('mfb-page');
   const o = _MFB.opener; _MFB.opener = null; if (o && o.focus) try { o.focus(); } catch (e) {}
 }
@@ -5280,8 +5302,21 @@ async function _saveMyForm(form) {
     _drToast('내 서류함 ▸ 내가 만든 양식에 저장했습니다');
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
 }
+// 올려 둔 양식(이미지·PDF)을 고쳐 만든다 — 원본을 왼쪽에 띄워 두고, 오른쪽 편집기에서 항목·구성·모양을 새로 짜 '내가 만든 양식'으로 저장한다. 원본 파일은 그대로 남는다.
+async function _mfEditUpload(it) {
+  if (!it.fileData) { _drToast('올려 둔 파일을 읽지 못했습니다. 다시 올려 주세요.'); return; }
+  const mime = it.fileMime || (/\.pdf$/i.test(it.fileName || '') ? 'application/pdf' : 'image/png');
+  _mfbOpen({ title: it.title || '', sections: [{ h: '', f: [] }], attach: [] }, '', it.site);
+  const body = document.querySelector('#mf-new .mfb-body'); if (!body) return;
+  const url = URL.createObjectURL(new Blob([it.fileData], { type: mime })); _MFB.ref = { url: url };
+  const isPdf = /pdf/i.test(mime), aside = document.createElement('aside'); aside.className = 'mfb-ref';
+  aside.innerHTML = '<h3>올려 둔 원본</h3><p class="mfb-refsub">' + escHtml(it.fileName || '') + ' — 보면서 항목을 옮겨 만드세요. 원본 파일은 그대로 남습니다.</p>' + (isPdf ? '<iframe src="' + url + '" title="올려 둔 원본 양식"></iframe>' : '<img src="' + url + '" alt="올려 둔 원본 양식">');
+  body.classList.add('has-ref'); body.insertBefore(aside, body.firstChild); const h = document.getElementById('mfb-h'); if (h) h.textContent = '올려 둔 양식 고쳐 만들기';
+  _mfbRenderCanvas('[data-k="title"]');
+}
 async function _mfEdit(id) {
   const it = (await _drCall('get', { id })).item; if (!it) return;
+  if (it.box === 'upload') { await _mfEditUpload(it); return; }
   let form = null; try { form = JSON.parse(it.body || ''); } catch (e) {}
   if (!form || !form.sections) { _drToast('양식을 읽지 못했습니다.'); return; }
   _mfbOpen(form, id, it.site);
@@ -5436,7 +5471,7 @@ async function _mfRender() {
       if (!rows.length) return;
       html += '<div class="dr-sec">' + b[1] + '</div>' + rows.map(it => {
         const sub = (b[0] === 'upload' ? '파일 ' + (it.fileName || '') : _drSiteLabel(it.site)) + ' · ' + (it.uses ? '사용 ' + it.uses + '회 · ' : '') + fmtDt(it.lastUsed || it.updated);
-        return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button>' + (b[0] === 'mine' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit">수정</button>' : '') + '<button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
+        return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button>' + (b[0] === 'mine' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit">수정</button>' : b[0] === 'upload' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit" title="원본을 보면서 새 양식으로 고쳐 만들기">고쳐 만들기</button>' : '') + '<button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
       }).join('');
     });
     if (freq.length) html += '<div class="dr-sec">자주 쓴 서류 (작성한 서류 기준)</div>' + freq.map((x, i) => '<div class="list-item" data-freq="' + i + '"><div class="li-main"><div class="li-title">' + escHtml(x.title) + '</div><div class="li-sub">' + escHtml(_drSiteLabel(x.site) + ' · ' + x.n + '회 작성') + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="fav">★ 담기</button></div></div>').join('');
