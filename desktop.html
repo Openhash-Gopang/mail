@@ -4998,14 +4998,16 @@ function _mfbDsl(compact) {
   });
   return out.join('\n');
 }
-// SP 가 돌려준 ```form 블록 → {title, secs}. 항목이 하나도 없으면 null (한도: 묶음 8개·항목 60개)
+// SP 가 돌려준 ```form 블록 → {title, secs, cut}. 항목이 하나도 없으면 null (한도: 묶음 8개·항목 60개). cut = 한도를 넘어 뺀 줄 수
+// 9번째 이후 묶음의 항목은 앞 묶음에 섞이지 않게 다음 묶음 머리글까지 건너뛴다
 function _mfbParseDsl(text) {
-  let title = '', cur = null, n = 0; const secs = [];
+  let title = '', cur = null, n = 0, cut = 0, skip = false; const secs = [];
   String(text || '').split(/\r?\n/).forEach(line => {
     line = line.trim().replace(/^(?:[-•·]|\d+[.)])\s+(?=\S)/, ''); if (!line) return;
     let m = line.match(/^(?:제목|title)\s*[:：]\s*(.*)$/i); if (m) { title = m[1].trim().slice(0, 80); return; }
-    if (line[0] === '#') { if (secs.length >= 8) return; cur = { h: line.replace(/^#+\s*/, '').slice(0, 40), f: [] }; secs.push(cur); return; }
-    const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l || n >= 60) return;
+    if (line[0] === '#') { if (secs.length >= 8) { skip = true; cut++; return; } skip = false; cur = { h: line.replace(/^#+\s*/, '').slice(0, 40), f: [] }; secs.push(cur); return; }
+    if (skip) { cut++; return; }
+    const p = line.split('|').map(x => x.trim()); let l = p[0] || ''; if (!l) return; if (n >= 60) { cut++; return; }
     const req = /[*＊]$/.test(l); if (req) l = l.replace(/[*＊]+$/, '').trim(); if (!l) return;
     const k = _mfKinds(p[1]), sz = String(p[3] || ''), w = parseInt((sz.match(/폭\s*(\d+)/) || [])[1], 10), r = parseInt((sz.match(/줄\s*(\d+)/) || [])[1], 10);
     if (!cur) { cur = { h: '', f: [] }; secs.push(cur); }
@@ -5014,7 +5016,7 @@ function _mfbParseDsl(text) {
     n++;
   });
   const ok = secs.filter(s => s.f.length);
-  return ok.length ? { title: title, secs: ok.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f })) } : null;
+  return ok.length ? { title: title, secs: ok.map(s => ({ h: s.h === '내용' ? '' : s.h, f: s.f })), cut: cut } : null;
 }
 // 바뀐 내용 요약: 추가·삭제·이동(최소 이동 수)·수정
 function _mfbDiff(oldSecs, newSecs) {
@@ -5240,7 +5242,7 @@ async function _mfbSend(text) {
       const d = _mfbApply(rep.form);
       if (!d) { _MFB.msgs.push({ r: 'sp', t: (rep.text || '') + ' (바뀐 내용이 없습니다)' }); _MFB.busy = false; _mfbRenderChat(); return; }
       _mfbRenderCanvas();
-      _MFB.msgs.push({ r: 'sp', t: rep.text || '양식을 바꿨습니다.', sum: _mfbDiffText(d), undo: 1 });
+      _MFB.msgs.push({ r: 'sp', t: (rep.text || '양식을 바꿨습니다.') + (rep.form.cut ? ' (한도를 넘는 ' + rep.form.cut + '줄은 뺐습니다. 한 양식에는 묶음 8개, 항목 60개까지 넣을 수 있습니다.)' : ''), sum: _mfbDiffText(d), undo: 1 });
       setTimeout(() => { _MFB.flash = {}; const cv = _mfbQ('.mfb-canvas'); if (cv) cv.querySelectorAll('.mfb-f.flash').forEach(c => c.classList.remove('flash')); }, 2200);
     } else _MFB.msgs.push({ r: 'sp', t: rep.text || '답변을 받지 못했습니다. 다시 말씀해 주세요.' });
   } catch (e) {
