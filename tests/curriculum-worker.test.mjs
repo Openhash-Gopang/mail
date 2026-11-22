@@ -143,3 +143,14 @@ test('CORS: naviweb.kr 만 허용', async () => {
   assert.equal(bad.headers.get('Access-Control-Allow-Origin'), null);
 });
 test('curId 는 키마다 일정하다', async () => { assert.equal(await curId('a'), await curId('a')); assert.notEqual(await curId('a'), await curId('b')); assert.match(await curId('a'), /^c[0-9a-f]{12}$/); });
+
+test('LLM: ANTHROPIC_API_KEY 만 있으면 Claude Haiku(Messages API)로 만든다', async () => {
+  const { llmJSON, hasLLM } = await import('../ops/naviweb-qna/curriculum.js');
+  const env = { ANTHROPIC_API_KEY: 'k' }; assert.equal(hasLLM(env), true); assert.equal(hasLLM({}), false);
+  let seen; const fetch = async (u, init) => { seen = { u, init, body: JSON.parse(init.body) }; return new Response(JSON.stringify({ content: [{ type: 'text', text: '{"a":1}' }] })); };
+  const r = await llmJSON(env, [{ role: 'system', content: '규칙' }, { role: 'user', content: '질문' }], { fetch }, 100);
+  assert.deepEqual(r, { ok: true, json: { a: 1 } });
+  assert.equal(seen.u, 'https://api.anthropic.com/v1/messages'); assert.equal(seen.init.headers['x-api-key'], 'k');
+  assert.equal(seen.body.model, 'claude-haiku-5-5'); assert.equal(seen.body.system, '규칙'); assert.deepEqual(seen.body.messages, [{ role: 'user', content: '질문' }]);
+  assert.ok(!('temperature' in seen.body));
+});
