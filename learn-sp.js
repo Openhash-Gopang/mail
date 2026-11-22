@@ -12,8 +12,8 @@
   if (typeof module === 'object' && module.exports) module.exports = factory(); else root.LearnSP = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  var DOS = ['subjects', 'history', 'course', 'week', 'quiz', 'add', 'prof', 'endprof', 'report', 'career', 'submit'];
-  var MAX_WEEK = 40;
+  var DOS = ['subjects', 'history', 'course', 'week', 'quiz', 'add', 'prof', 'endprof', 'report', 'career', 'submit', 'plan', 'search'];
+  var MAX_WEEK = 52;
 
   var LEARN_SP = [
     '당신은 나비웹 "교육 SP"다. 나비웹 학습 포털(내 수업·과목 상세·주차 학습·확인 문제·학습 기록) 옆 대화창에서 학습자의 지시를 받아 화면을 옮기고, 학습 계획을 돕는다. 학습자는 초등학생부터 대학원생까지이며 과목도 다양하다. 말투는 존댓말로, 학습자의 수준에 맞춰 짧고 쉽게 쓴다.',
@@ -37,10 +37,15 @@
     '- endprof : 교수 호출 끝내고 교육 SP 로 돌아온다.',
     '- report : 학습 보고서 화면(과목별 평가). subject 는 생략 가능',
     '- career : 진로 추천 화면(진로 지도 교수가 제출된 보고서를 모아 추천한 결과)',
+    '- plan : 진행 현황 화면(표준 일정에 견준 진도를 분기·월·주·일 그래프로, 학부모·교사용)',
+    '- search : 과목·커리큘럼 검색. subject(검색어, 24자 이내). 학습 화면이 커리큘럼 DB 에서 찾고, 없으면 웹 자료로 새로 만들어 DB 에 저장한다(학습자가 결과 화면에서 "내 수업에 추가"를 누른다)',
     '- submit : 과목 보고서를 진로 지도 교수에게 제출. subject 를 생략하면 학습 기록이 있는 모든 과목을 제출한다.',
     'subject 는 [학습 화면]의 과목 목록에 있는 id 나 이름, 또는 사용자가 말한 과목 이름을 그대로 쓴다. 한 번에 블록은 하나만 낸다(여러 화면을 한꺼번에 열지 않는다).',
     '주차를 말하지 않고 "이어서 학습"이라고 하면, 보고 있는 과목의 다음 주차(주차별 단계가 연습 중이거나 시작 전인 첫 주차)로 week 를 낸다.',
     '과목이 둘 이상 가능하거나 주차·과목이 분명하지 않으면 블록 없이 짧게 되묻는다.',
+    '',
+    '[커리큘럼과 진도]',
+    '모든 과정은 Self-paced 다. [학습 화면]의 courses 에 과목별 plan(done 통과한 주, expected 표준 일정상 끝냈어야 할 주, status ahead·on·behind·done·none, std 표준 총 시간)이 있을 수 있다. 진도 이야기는 이 값만 근거로 하고 없으면 모른다고 한다. 늦었더라도 다그치지 않고, 다음에 할 한 걸음을 제안한다. "진행 현황 보여줘" → plan 블록, "거시경제학 커리큘럼 찾아줘" → search 블록. 커리큘럼 내용을 지어내지 않는다(검색 결과는 화면이 보여 준다).',
     '',
     '[교수 호출]',
     '"교수 불러줘" 하면 prof 블록을 낸다. [학습 화면]에 교수가 있으면 그 과목 교수로서 개념 설명·질문 답변·풀이 힌트·학습 계획 조언을 한다. 교수 모드에서도 "시험 보자", "3주차로 가자" 같은 이동 지시는 블록으로 처리한다. "교수님 그만", "처음으로" 하면 endprof 를 낸다.',
@@ -69,7 +74,9 @@
     '이어서 학습할래',
     '내 학습 보고서 보여줘',
     '수학 보고서 제출해줘',
-    '진로 추천해줘'
+    '진로 추천해줘',
+    '거시경제학 커리큘럼 찾아줘',
+    '진행 현황 보여줘'
   ];
 
   /** 순수 함수 — 답변에서 ~~~learn 블록을 떼어 낸다. 블록 속 JSON 이 깨졌으면 acts 는 비고 글만 남는다. */
@@ -90,7 +97,7 @@
     if (!x || typeof x !== 'object') return null;
     var d = str(x['do'], 12); if (DOS.indexOf(d) < 0) return null;
     var a = { 'do': d }, subj = str(x.subject, 24);
-    if (d === 'course' || d === 'week' || d === 'quiz' || d === 'prof' || d === 'add') { if (!subj) return null; a.subject = subj; }
+    if (d === 'course' || d === 'week' || d === 'quiz' || d === 'prof' || d === 'add' || d === 'search') { if (!subj) return null; a.subject = subj; }
     if (d === 'week' || d === 'quiz') {
       var w = typeof x.week === 'string' && /^\d{1,2}$/.test(x.week.trim()) ? Number(x.week) : x.week;
       if (typeof w !== 'number' || !isFinite(w) || Math.floor(w) !== w || w < 1 || w > MAX_WEEK) return null;
@@ -127,6 +134,7 @@
       if (subj && wk >= 1 && wk <= MAX_WEEK) return { 'do': /시험|문제|퀴즈|테스트|확인/.test(s) ? 'quiz' : 'week', subject: subj, week: wk };
     }
     if (/진로/.test(s) && /(추천|상담|알려|보여|분석|맞는|열어|가자)/.test(s)) return { 'do': 'career' };
+    if (/진행\s*(현황|상황)|진도\s*(현황|그래프|보여|보고\s*싶)|학부모|학습\s*계획\s*(보여|표)/.test(s)) return { 'do': 'plan' };
     if (/보고서|평가서/.test(s) && /(제출|보내)/.test(s)) {
       var sb = /([가-힣A-Za-z]{1,12}?)\s*(과목\s*)?(보고서|평가서)/.exec(s), sj = sb && sb[1].replace(/(의|을|를)$/, '');
       return cleanAct({ 'do': 'submit', subject: sj && !/^(내|제|나의|학습|모든|전체|전부|과목|과목별)$/.test(sj) ? sj : '' });
@@ -137,6 +145,8 @@
     var p = /([가-힣A-Za-z]{1,12}?)\s*교수(님|를|께)?\s*(불러|호출|연결|만나|와\s*대화|랑\s*대화|하고\s*대화)/.exec(s);
     if (p) return { 'do': 'prof', subject: p[1].replace(/(의|한테|에게)$/, '') };
     if (/교수(님)?\s*(그만|끝|종료)|교수\s*호출\s*(종료|끝)/.test(s)) return { 'do': 'endprof' };
+    var sm = /^(.{2,24}?)\s*(커리큘럼|과정|강의|강좌|과목)?\s*(을|를)?\s*(검색|찾아|만들어)/.exec(s);
+    if (sm && !/추가|등록|주\s*차/.test(s)) { var sq = sm[1].replace(/(을|를|좀|내가|나는)$/, '').trim(); if (sq.length >= 2 && !/^(내|제|나의|학습|과목|커리큘럼)$/.test(sq)) return cleanAct({ 'do': 'search', subject: sq }); }
     var a = /([가-힣A-Za-z]{1,12}?)\s*(과목\s*)?(추가|등록)/.exec(s);
     if (a && !/주\s*차/.test(s)) {
       var lv = (/(초등|중등|고등|대학원|대학)/.exec(s) || [])[1];
@@ -153,7 +163,7 @@
     var ctx = {
       view: str(st.view, 12) || 'subjects',
       current: st.cur ? { id: str(st.cur.id, 24), name: str(st.cur.name, 40), week: Number(st.cur.week) || undefined } : undefined,
-      courses: (Array.isArray(st.courses) ? st.courses : []).slice(0, 30).map(function (c) { return { id: str(c.id, 24), name: str(c.name, 40), subject: str(c.subj, 24), level: str(c.level, 24), weeks: Number(c.weeks) || 0, next: Number(c.next) || undefined }; }),
+      courses: (Array.isArray(st.courses) ? st.courses : []).slice(0, 30).map(function (c) { return { id: str(c.id, 24), name: str(c.name, 40), subject: str(c.subj, 24), level: str(c.level, 24), weeks: Number(c.weeks) || 0, next: Number(c.next) || undefined, plan: c.plan && typeof c.plan === 'object' ? { done: Number(c.plan.done) || 0, expected: numOrNull(c.plan.expected), status: str(c.plan.status, 8), stdHours: Number(c.plan.std) || undefined } : undefined }; }),
       professor: prof ? str(prof, 24) : undefined,
       reports: (Array.isArray(st.reports) ? st.reports : []).slice(0, 30).map(function (r) { return { id: str(r.id, 24), name: str(r.name, 40), score: numOrNull(r.score), progress: numOrNull(r.prog), avg: numOrNull(r.avg), firstPass: numOrNull(r.first), pace: numOrNull(r.pace), attempts: Number(r.attempts) || 0, submitted: !!r.submitted }; }),
       career: (Array.isArray(st.career) ? st.career : []).slice(0, 3).map(function (k) { return { name: str(k.name, 40), fit: numOrNull(k.fit) }; })
