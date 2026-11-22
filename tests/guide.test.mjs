@@ -481,3 +481,13 @@ test('매뉴얼: 중급에 「다른 사이트에 옮겨 적기」장이 내 양
   for (const id of ['ch_docmenu', 'ch_agent', 'ch5', 'ch_doc_write', 'ch_sites']) assert.ok(chs.find(c => c.id === id).body.includes('data-goto="ch_othersite"'), id);
   for (const c of chs) assert.match(String(c.updated || '2026-01-01'), /^\d{4}-\d{2}-\d{2}$/, c.id + ' updated');
 });
+
+test('매뉴얼: 정보 공개 청구서 장에 작성→도우미 입력→제출 확인까지의 따라 하기 예제가 있다', () => {
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  const i = m.indexOf('var CHAPTERS = ') + 'var CHAPTERS = '.length;
+  const chs = JSON.parse(m.slice(i, m.indexOf('];\nvar TIER_LABELS', i) + 1));
+  const c = chs.find(x => x.id === 'ch_foi');
+  assert.ok(c.body.includes('따라 해 보기 2') && c.body.includes('어린이 보호구역') && c.body.includes('이대로 제출할까요?'));
+  assert.ok(c.body.includes('내가 직접 로그인') && c.body.includes('도우미에게 맡기기') && c.body.includes('data-goto="ch_agent"'));
+  assert.ok(c.quiz.length >= 6 && /^\d{4}-\d{2}-\d{2}$/.test(c.updated));
+});
