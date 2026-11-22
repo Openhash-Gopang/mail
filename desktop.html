@@ -3638,6 +3638,14 @@ function _submitGuideStart(title, blank, text, proceed) {
     HondiChat.say(title + _koIga(title) + '. 아직 내용을 다 채우지 않으셨습니다. 제가 도와드릴까요?');
     return;
   }
+  if (_isFoiDocTitle(title)) {   // 정보 공개·행정심판 청구서: 안내가 아니라 도우미가 직접 포털에서 입력·제출한다
+    _submitFlow = null;
+    _foiSubmitViaHelper(title, text).then((ok) => { if (!ok) _submitGuideStartPlain(title, blank, text); });
+    return;
+  }
+  _submitGuideStartPlain(title, blank, text);
+}
+function _submitGuideStartPlain(title, blank, text) {
   _submitFlow = null; _submitGuideOn = true;
   const greet = title + _koIga(title) + '. ' + (blank > 0 ? '빈 칸이 남아 있지만 제출 절차를 안내하겠습니다.' : '내용이 적절한지 검토하겠습니다. 잠시 기다려주십시오.');
   HondiChat.setSp({ type: 'hondi-embed-sp', sp: 'inline:submit:' + Date.now(), spText: _submitGuideSp(title, blank, String(text || '').slice(0, 5000)), label: '서류 제출 안내', greeting: greet, autoAsk: '서류 내용을 검토하고 제출 기관을 알려 주세요.' });
@@ -4002,10 +4010,9 @@ const _FOI_SP = [
   "",
   "[금지] 이미 공개된 정보나 남의 개인정보·비밀 정보를 청구서에 쓰지 않는다. 확률·결과를 장담하지 않는다(공개 여부는 기관이 정한다)."
 ].join('\n');
+/** 정보 공개 청구는 다른 서류와 같은 서류 작성 화면(양식 + 서류 작성 SP 대화)으로 연다. 제출은 도우미가 포털에서 맡는다. */
 function _cmpFoiPick() {
-  _cmpOrgClose(); if (typeof _cmpExpClose === 'function') _cmpExpClose(); if (typeof _cmpGovClose === 'function') _cmpGovClose(); _cmpDocComboClose();
-  _orgActivate({ key: 'kfoi', label: '정보 공개 청구', sp: 'inline:foi:v1', spText: _FOI_SP, group: 'foi', foi: true },
-    '정보 공개 청구입니다. 어느 기관에서 어떤 정보를 알고 싶으신지 말씀해 주세요. 대화로 알려 주시면 아래에 청구서를 만들어 드립니다.');
+  _cmpDocComboPick({ getAttribute: (k) => (k === 'data-site' ? 'law' : k === 'data-title' ? '정보공개 청구서 · 이의신청서' : '') });
 }
 /** 답변에서 ~~~foi 블록을 떼어 청구서 칸에 쓰고, 말풍선에 남길 나머지 글을 돌려준다. */
 function _foiDocFromReply(t) {
@@ -4019,23 +4026,37 @@ function _foiDocFromReply(t) {
 }
 function _foiDocReset() { const ta = document.getElementById('cmp-foi-text'), d = document.getElementById('cmp-foi-doc'); if (ta) ta.value = ''; if (d) d.hidden = true; }
 /** 청구서를 나비웹 도우미에 맡긴다 — 도우미가 open.go.kr 에서 칸을 옮기고, 로그인·본인확인·제출 확인은 사용자가 한다. 확장이 없으면 설치 안내를 한다. */
-async function _foiDocAgent() {
-  const ta = document.getElementById('cmp-foi-text'); const txt = ta ? ta.value.trim() : '';
-  if (!txt) { _drToast('먼저 청구서를 만들어 주세요.'); return; }
-  const portal = /^\s*행정심판\s*청구서/.test(txt) ? 'https://www.simpan.go.kr' : 'https://www.open.go.kr';
-  if (!window.NaviAgent) { window.open(portal, '_blank', 'noopener'); return; }
+/** 정보 공개 청구서·행정심판 청구서를 도우미에게 맡긴다(서류 작성 화면의 제출, 옛 청구서 칸 모두 이 함수). 돌려주는 값: { ok, portal, msg } */
+async function _foiAgentSend(txt, title) {
+  txt = String(txt || '').trim();
+  const simpan = /행정\s*심판/.test(title ? String(title) : txt.split('\n').slice(0, 3).join(' '));
+  const portal = simpan ? 'https://www.simpan.go.kr' : 'https://www.open.go.kr';
+  if (!txt) return { ok: false, portal, msg: '먼저 청구서를 만들어 주세요.' };
+  if (!window.NaviAgent) return { ok: false, portal, msg: '나비웹 도우미를 쓸 수 없습니다.', open: true };
   let info = null; try { info = await NaviAgent.detect(); } catch (x) { info = null; }
-  if (!info) { _drToast('나비웹 도우미가 연결되어 있지 않습니다. 설치 후 다시 눌러 주세요. 지금은 포털을 엽니다.'); window.open(portal, '_blank', 'noopener'); return; }
+  if (!info) return { ok: false, portal, msg: '나비웹 도우미가 연결되어 있지 않습니다. 설치 후 다시 눌러 주세요.', open: true };
   // 설치된 확장이 이 절차를 모르면(옛 버전) 알 수 없는 절차로 거절되므로, 그때는 절차 없이 같은 지시를 목표 글에 풀어 써서 맡긴다.
   const known = !!(info.playbooks && info.playbooks.some(p => p && p.id === 'open-go-kr-foi'));
-  const simpan = /^\s*행정심판\s*청구서/.test(txt);
   const steps = simpan
-    ? '온라인행정심판(simpan.go.kr)에서 아래 행정심판 청구서대로 심판을 청구해 주세요. 순서: ① 로그인·본인확인·보안문자는 사용자가 직접 하도록 넘깁니다(비밀번호·주민등록번호는 입력하지 않습니다). ② 온라인 심판청구 화면에서 피청구인(처분 기관)에 맞는 행정심판위원회를 고르고, 청구인·피청구인·처분 내용·처분을 안 날·청구 취지·청구 이유·고지 여부 칸을 청구서대로 채웁니다. [대괄호]로 남은 칸은 사용자에게 직접 적게 합니다. ③ 제출 단추 앞에서 입력 내용을 보여 주고 확인을 받은 뒤 제출합니다. ④ 접수 번호를 알려 줍니다.\n\n'
-    : '정보공개포털(open.go.kr)에서 아래 정보 공개 청구서대로 청구해 주세요. 순서: ① 포털에서 같은 내용이 이미 공개돼 있는지 먼저 검색해 있으면 알리고 사용자 의견을 받습니다. ② 로그인·본인확인·보안문자는 사용자가 직접 하도록 넘깁니다(비밀번호·주민등록번호는 입력하지 않습니다). ③ 청구 화면의 수신 기관·제목·내용·공개 방법·수령 방법 칸을 청구서대로 채우고, [대괄호] 칸은 사용자에게 직접 적게 합니다. ④ 제출 단추 앞에서 입력 내용을 보여 주고 확인을 받은 뒤 제출합니다. ⑤ 접수 번호를 알려 줍니다.\n\n';
-  const goal = steps + txt.slice(0, 1500);
-  const site = simpan ? 'https://www.simpan.go.kr' : 'https://www.open.go.kr';
-  let ok = false; try { ok = await NaviAgent.queue({ playbook: (known && !simpan) ? 'open-go-kr-foi' : '', goal: goal, title: simpan ? '행정심판 청구서 옮기기' : '정보 공개 청구서 옮기기', slot: simpan ? '행정심판 청구서' : '정보 공개 청구서', url: site }); } catch (x) { ok = false; }
-  _drToast(ok ? '도우미에 맡겼습니다. 열린 포털 화면에서 로그인만 해 주세요.' : '도우미에 맡기지 못했습니다. 확장 프로그램을 새로 고침하거나 최신 버전으로 업데이트한 뒤 다시 눌러 주세요.');
+    ? '온라인행정심판(simpan.go.kr)에서 아래 행정심판 청구서대로 심판을 청구해 주세요. 순서: ① 로그인·본인확인·보안문자는 사용자가 직접 하도록 넘깁니다(비밀번호·주민등록번호는 입력하지 않습니다). ② 온라인 심판청구 화면에서 피청구인(처분 기관)에 맞는 행정심판위원회를 고르고, 청구인·피청구인·처분 내용·처분을 안 날·청구 취지·청구 이유·고지 여부 칸을 청구서대로 채웁니다. 비어 있는 칸은 사용자에게 직접 적게 합니다. ③ 제출 단추 앞에서 입력 내용을 보여 주고 확인을 받은 뒤 제출합니다. ④ 접수 번호를 알려 줍니다.\n\n'
+    : '정보공개포털(open.go.kr)에서 아래 정보 공개 청구서대로 청구해 주세요. 순서: ① 포털에서 같은 내용이 이미 공개돼 있는지 먼저 검색해 있으면 알리고 사용자 의견을 받습니다. ② 로그인·본인확인·보안문자는 사용자가 직접 하도록 넘깁니다(비밀번호·주민등록번호는 입력하지 않습니다). ③ 청구 화면의 수신 기관·제목·내용·공개 방법·수령 방법 칸을 청구서대로 채우고, 비어 있는 칸은 사용자에게 직접 적게 합니다. ④ 제출 단추 앞에서 입력 내용을 보여 주고 확인을 받은 뒤 제출합니다. ⑤ 접수 번호를 알려 줍니다.\n\n';
+  let ok = false; try { ok = await NaviAgent.queue({ playbook: (known && !simpan) ? 'open-go-kr-foi' : '', goal: steps + txt.slice(0, 1500), title: simpan ? '행정심판 청구서 옮기기' : '정보 공개 청구서 옮기기', slot: simpan ? '행정심판 청구서' : '정보 공개 청구서', url: portal }); } catch (x) { ok = false; }
+  return ok ? { ok: true, portal, msg: '도우미에 맡겼습니다. 열린 ' + (simpan ? '온라인행정심판' : '정보공개포털') + ' 화면에서 로그인만 해 주세요. 도우미가 입력하고, 제출 직전에 내용을 보여 드리며 확인을 받습니다.' }
+            : { ok: false, portal, msg: '도우미에 맡기지 못했습니다. 확장 프로그램을 새로 고침하거나 최신 버전으로 업데이트한 뒤 다시 눌러 주세요.' };
+}
+/** 서류 작성 화면에서 "제출"을 눌렀을 때: 정보 공개·행정심판 청구서는 도우미가 포털 입력부터 제출까지 맡는다. 맡기지 못하면 false(예전 제출 안내로 간다). */
+function _isFoiDocTitle(t) { return /정보\s*공개\s*청구|행정\s*심판\s*청구/.test(String(t || '')); }
+async function _foiSubmitViaHelper(title, text) {
+  const r = await _foiAgentSend(String(text || ''), title);
+  if (r.open) return false;
+  if (window.HondiChat) { HondiChat.say(r.msg); HondiChat.open(); } else _drToast(r.msg);
+  return r.ok;
+}
+async function _foiDocAgent() {
+  const ta = document.getElementById('cmp-foi-text'); const txt = ta ? ta.value.trim() : '';
+  const r = await _foiAgentSend(txt);
+  if (r.open) { _drToast(r.msg + ' 지금은 포털을 엽니다.'); window.open(r.portal, '_blank', 'noopener'); return; }
+  _drToast(r.msg);
 }
 function _foiDocCopy() { const ta = document.getElementById('cmp-foi-text'); if (!ta || !ta.value.trim()) return; try { navigator.clipboard.writeText(ta.value).then(() => _drToast('청구서를 복사했습니다.')); } catch (e) { ta.select(); document.execCommand('copy'); } }
 function _foiDocSave() {
