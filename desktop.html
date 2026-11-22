@@ -369,7 +369,8 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-addr-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:6px;height:38px;margin:0;padding:0 15px 0 12px;border:1px solid var(--bdr);border-radius:999px;background:#fff;color:var(--pri);font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:var(--sh);transition:box-shadow .15s,border-color .15s,transform .08s}
 .cmp-addr-btn:hover{border-color:var(--pri);transform:scale(1.03)}
 .cmp-addr-btn:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
-.cmp-addr-btn[aria-pressed=true]{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
+.cmp-addr-btn[aria-pressed=true]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 0 0 3px var(--pri-bg)}   /* 2026-11-23: 주소 검색이 켜지면 파란 배경·흰 글자(꺼지면 흰 배경) */
+.cmp-addr-btn[aria-pressed=true]:hover{filter:brightness(.93)}
 #tab-compose[data-mode="default"] .cmp-addr-btn,#tab-compose[data-mode="org"] .cmp-addr-btn{display:inline-flex}
 #tab-compose.infra-on .cmp-addr-btn{display:none!important}
 .cmp-addr-res{margin:10px 6px 0;background:#fff;border:1px solid var(--bdr);border-radius:16px;box-shadow:var(--sh);padding:12px 16px;font-size:14px;color:var(--txt)}
