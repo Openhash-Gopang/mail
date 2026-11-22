@@ -9,6 +9,7 @@
  */
 import { composeSP, LANG_NAME, SP_ID, SP_VERSION } from './SP-NAVIWEB-MANUAL.v2.js';
 import { DIGEST } from './manual-digest.js';
+import { handleCurriculum } from './curriculum.js';
 
 export const LIMITS = { title: 80, text: 1200, adminText: 4000, perDayThreads: 10, perDayMsgs: 60, perDayChat: 80, chatTurns: 12, listMax: 100, spTimeoutMs: 20000 };
 const ORIGINS = /^https?:\/\/([a-z0-9-]+\.)*(naviweb\.kr|hondi\.net)$|^http:\/\/localhost(:\d+)?$/i;
@@ -269,5 +270,6 @@ async function spRound(env, t, deps, iso, mid) {
   t.updated = iso;
 }
 
-export default { fetch: (request, env) => handle(request, env) };
+// /api/curriculum/* 는 커리큘럼 DB(curriculum.js), 나머지(/api/qna/*)는 사용법 게시판.
+export default { fetch: (request, env) => (/^\/api\/curriculum(\/|$)/.test(new URL(request.url).pathname) ? handleCurriculum(request, env, { admin: isAdmin(request, env) }) : handle(request, env)) };
 export const meta = { SP_ID, SP_VERSION };
