@@ -1,50 +1,46 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>10만 AI 전문가 — 분야별 재구성 (초안 v0.1)</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<style>
-:root{--pri:#1A73E8;--on:#202124;--on2:#5F6368;--line:#DADCE0;--bg:#fff;--soft:#F1F3F4}
-@media (prefers-color-scheme:dark){:root{--pri:#8AB4F8;--on:#E8EAED;--on2:#9AA0A6;--line:#3C4043;--bg:#202124;--soft:#2A2B2E}}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Pretendard',Roboto,-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--on);font-size:15px;line-height:1.75;word-break:keep-all;-webkit-font-smoothing:antialiased}
-.wrap{max-width:860px;margin:0 auto;padding:32px 24px 72px}
-body.embed .wrap{padding-top:20px}
-h1{font-size:28px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
-h1 small{display:block;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--on2);margin-bottom:8px}
-.lead{margin-top:6px;color:var(--on2);font-size:16px}
-.meta{font-size:13px;color:var(--on2);margin-top:12px}
-.toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 8px}
-.toc a{border:1px solid var(--line);color:var(--on);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;text-decoration:none}
-.toc a:hover{border-color:var(--pri);color:var(--pri)}
-section{margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
-h2{font-size:20px;line-height:1.4;font-weight:600;margin-bottom:12px}
-h2 .n{color:var(--pri);margin-right:10px}
-p{color:var(--on2);margin:0 0 12px}p b,li b,td b{color:var(--on);font-weight:600}
-ul,ol{margin:0 0 12px 22px;color:var(--on2)}li{margin:4px 0}
-.callout{border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:4px 12px 12px 4px;padding:12px 18px;margin:16px 0}
-.callout p{margin:0 0 8px}.callout p:last-child{margin:0}
-.tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:12px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:9px 14px;text-align:left;vertical-align:top;color:var(--on2);border-top:1px solid var(--line)}
-tr:first-child th,tr:first-child td{border-top:0}
-th{color:var(--on);font-weight:600;background:var(--soft);white-space:nowrap}
-td:first-child{color:var(--on);font-weight:600;white-space:nowrap}
-.pipe{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 4px;font-size:13px}
-.pipe span{border:1px solid var(--line);border-radius:8px;padding:3px 10px;color:var(--on)}
-.pipe i{color:var(--on2);font-style:normal}
-.small{font-size:13px}
-@media (max-width:700px){h1{font-size:24px}.wrap{padding:24px 16px 48px}}
-</style>
-</head>
-<body>
-<script>if (/[?&]embed=mail/.test(location.search)) document.body.classList.add('embed');</script>
-<div class="wrap" id="root"></div>
-<script>
-// 분야별 초안 — 새 분야는 F 에 항목을 더하고 desktop.html 의 위쪽 탭·_EX_URL 에 같은 키를 더한다.
-// 구조: def(재구성 한 줄) · pain(현재 문제) · layers(나비·전문가 AI·L3·OpenHash 역할) · flow(일상 흐름) · l3(L3의 역할) · gate(선결 과제) · ref(개요 배분 참조) · ask(전문가에게 묻는 질문)
+/* 10만 AI 전문가 — 문서 그리기(iframe 없이 화면에 바로 넣는다). Material Design 3 기준의 카드·칩·목록.
+ * window.ExDoc.show(키, 요소)  — 키: 'overview' 이면 expert100k-overview.html 의 본문을, 그 밖의 키는 아래 F 의 분야 초안을 그린다.
+ * 새 분야는 F 에 항목을 더하고 desktop.html 의 위쪽 탭·_EX_KEYS 에 같은 키를 더한다. */
+(function () {
+var CSS = `
+.exd{--exp:var(--pri,#1A73E8);--exs:#F3F6FC;--exc:#E8F0FE;--exo:#DADCE0;--ext:#202124;--ext2:#5F6368;font-family:'Pretendard',Roboto,-apple-system,'Noto Sans KR',sans-serif;color:var(--ext);font-size:14px;line-height:1.7;word-break:keep-all;max-width:880px;margin:0 auto;padding:24px 16px 72px}
+.exd h1{font-size:28px;line-height:36px;font-weight:400;letter-spacing:0;margin:0}
+.exd h1 small{display:block;font-size:12px;line-height:16px;font-weight:500;letter-spacing:.5px;color:var(--exp);margin-bottom:8px}
+.exd .lead{font-size:16px;line-height:24px;color:var(--ext2);margin:8px 0 0}
+.exd .meta{display:inline-flex;align-items:center;font-size:12px;line-height:16px;font-weight:500;color:var(--ext2);border:1px solid var(--exo);border-radius:8px;padding:6px 12px;margin-top:16px}
+.exd .toc{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px}
+.exd .toc a{display:inline-flex;align-items:center;height:32px;padding:0 16px;border:1px solid var(--exo);border-radius:8px;font-size:14px;font-weight:500;color:var(--ext);text-decoration:none;cursor:pointer}
+.exd .toc a:hover{background:var(--exc);border-color:var(--exc);color:var(--exp)}
+.exd section{background:#fff;border:1px solid var(--exo);border-radius:16px;padding:24px;margin-top:16px;scroll-margin-top:12px}
+.exd h2{display:flex;align-items:center;gap:12px;font-size:22px;line-height:28px;font-weight:400;margin:0 0 16px}
+.exd h2 .n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--exc);color:var(--exp);font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0}
+.exd h3{font-size:16px;line-height:24px;font-weight:500;margin:20px 0 4px}
+.exd p{color:var(--ext2);margin:0 0 12px}.exd p b,.exd li b,.exd td b{color:var(--ext);font-weight:600}
+.exd ul,.exd ol{margin:0 0 12px 20px;color:var(--ext2)}.exd li{margin:4px 0}
+.exd a{color:var(--exp)}.exd sup a{text-decoration:none;font-size:11px}
+.exd .callout{background:var(--exc);border:0;border-radius:12px;padding:16px 20px;margin:0 0 16px}.exd .callout p{color:var(--ext);margin:0 0 8px}.exd .callout p:last-child{margin:0}
+.exd .key{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.exd .key div{background:var(--exs);border-radius:12px;padding:16px;color:var(--ext2);font-size:12px;line-height:18px}
+.exd .key div b{display:block;color:var(--ext);font-size:24px;line-height:32px;font-weight:400}
+.exd .tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--exo);border-radius:12px}
+.exd table{width:100%;border-collapse:collapse;font-size:14px}
+.exd th,.exd td{padding:12px 16px;text-align:left;vertical-align:top;color:var(--ext2);border-top:1px solid var(--exo)}
+.exd tr:first-child th,.exd tr:first-child td{border-top:0}
+.exd th{color:var(--ext);font-weight:500;background:var(--exs)}
+.exd td.num,.exd th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.exd td.num{color:var(--ext);font-weight:500}
+.exd tr.sub td{background:var(--exs);color:var(--ext);font-weight:600}.exd tr.tot td{color:var(--ext);font-weight:700;border-top:2px solid var(--ext2)}
+.exd .tag{display:inline-block;font-size:11px;line-height:20px;padding:0 8px;border:1px solid var(--exo);border-radius:8px;margin-right:6px;font-weight:500;white-space:nowrap}.exd .tag.s{color:var(--exp);border-color:var(--exp)}
+.exd .bar{display:block;height:6px;border-radius:3px;background:var(--exp);opacity:.75;min-width:2px}.exd td.bc{width:18%;min-width:90px;vertical-align:middle}
+.exd .small{font-size:12px;line-height:18px}.exd .src li{font-size:12px;word-break:break-all}
+.exd .pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}.exd .pipe span{background:var(--exs);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;color:var(--ext)}.exd .pipe i{color:var(--ext2);font-style:normal}
+.exd .li{display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--exo)}.exd .li:first-child{border-top:0;padding-top:0}.exd .li:last-child{padding-bottom:0}
+.exd .li .ic{flex:none;width:40px;height:40px;border-radius:50%;background:var(--exc);color:var(--exp);font-weight:500;display:flex;align-items:center;justify-content:center}
+.exd .li b{display:block;font-size:16px;line-height:24px;font-weight:500;color:var(--ext)}.exd .li span{color:var(--ext2)}
+.exd ol.steps{list-style:none;margin:0;padding:0;counter-reset:st}.exd ol.steps li{counter-increment:st;display:flex;gap:16px;align-items:flex-start;margin:0;padding:10px 0;border-top:1px solid var(--exo);color:var(--ext2)}.exd ol.steps li:first-child{border-top:0;padding-top:0}
+.exd ol.steps li:before{content:counter(st);flex:none;width:28px;height:28px;border-radius:50%;background:var(--exp);color:#fff;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.exd .st-err{color:#B3261E}
+@media (max-width:700px){.exd .key{grid-template-columns:repeat(2,minmax(0,1fr))}.exd h1{font-size:24px;line-height:32px}.exd section{padding:16px}}
+`;
 var F = {
 law:{t:'법률',sub:'일상에 법치를 구현한다',
  def:'나만의 AI 비서(나비)가 사용자의 일상과 업무를 기록하다가 법적 다툼의 여지가 있는 대화나 문서를 발견하면, 행위 전에 변호사 AI를 호출해 법적 검토를 거치고, 필요하면 인간 변호사를 연결합니다. 나비웹을 쓰는 모든 개인과 조직이 법과 규정을 생활화하는 것이 목표입니다.',
@@ -155,23 +151,44 @@ living:{t:'의식주',sub:'생활의 기본을 점검한다',
  ref:'부동산·감정·건설·안전 4,500명(주), 식은 산업·농수산·제조 5,000명에 포함, 의(衣)는 별도 항목이 없습니다(가정). 다음 버전에서 분리 여부를 정해야 합니다.',
  ask:['주거 계약에서 사전 점검이 가장 큰 피해를 막는 항목은 무엇입니까?','식·의 분야의 L3 전문가는 어떤 자격으로 정의해야 합니까?']}
 };
-var K = (new URLSearchParams(location.search).get('f')) || 'law', D = F[K] || F.law;
-function ul(a, ol) { return '<' + (ol ? 'ol' : 'ul') + '>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</' + (ol ? 'ol' : 'ul') + '>'; }
-var h = '<h1><small>10만 AI 전문가 · ' + D.t + '</small>' + D.t + ' — ' + D.sub + '</h1>'
- + '<p class="lead">AI와 OpenHash 기반 재구성 초안</p><p class="meta">초안 v0.1 · 2026-11-22 · 해당 분야 전문가의 검토 전 사고 실험이며 확정안이 아닙니다</p>'
- + '<div class="toc"><a href="#a0">요약</a><a href="#a1">현재의 문제</a><a href="#a2">재구성 구조</a><a href="#a3">일상의 흐름</a><a href="#a4">L3의 역할</a><a href="#a5">선결 과제</a><a href="#a6">개요와의 연결</a><a href="#a7">전문가에게 묻는 질문</a></div>'
- + '<section id="a0"><h2><span class="n">0</span>요약</h2><div class="callout"><p>' + D.def + '</p></div>'
- + '<div class="pipe"><span>나만의 AI 비서(나비)</span><i>→</i><span>전문가 AI</span><i>→</i><span>L3 전문가</span><i>→</i><span>인간 전문가 연결</span><i>·</i><span>OpenHash 기록</span></div>'
- + '<p class="small">모든 분야에 같은 틀을 적용합니다. 원문 기록은 본인의 PDV에만 두고, 행위 전에 AI가 점검하며, 책임은 L3 전문가가 집니다.</p></section>'
- + '<section id="a1"><h2><span class="n">1</span>현재의 문제</h2>' + ul(D.pain) + '</section>'
- + '<section id="a2"><h2><span class="n">2</span>재구성 구조</h2><div class="tbl"><table><tr><th>단계</th><th>역할</th></tr>' + D.layers.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'; }).join('') + '</table></div></section>'
- + '<section id="a3"><h2><span class="n">3</span>일상의 흐름(예시)</h2>' + ul(D.flow, true) + '</section>'
- + '<section id="a4"><h2><span class="n">4</span>L3 전문가의 역할</h2>' + ul(D.l3) + '</section>'
- + '<section id="a5"><h2><span class="n">5</span>선결 과제와 위험</h2>' + ul(D.gate) + '<p class="small">제도·자격과 관련된 항목은 해당 분야의 법령과 담당 기관의 확인이 필요합니다.</p></section>'
- + '<section id="a6"><h2><span class="n">6</span>개요와의 연결</h2><p>' + D.ref + '</p><p class="small">숫자는 개요 문서의 배분을 그대로 가져온 것이며, 이 탭에서 새로 정한 인원이 아닙니다.</p></section>'
- + '<section id="a7"><h2><span class="n">7</span>전문가에게 묻는 질문</h2>' + ul(D.ask) + '</section>';
-document.getElementById('root').innerHTML = h;
-document.title = '10만 AI 전문가 — ' + D.t + ' (초안 v0.1)';
-</script>
-</body>
-</html>
+function ul(a, cls) { return '<' + (cls ? 'ol class="steps"' : 'ul') + '>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</' + (cls ? 'ol' : 'ul') + '>'; }
+function field(K) {
+  var D = F[K] || F.law;
+  var lay = D.layers.map(function (r, i) { return '<div class="li"><div class="ic">' + (i + 1) + '</div><div><b>' + r[0] + '</b><span>' + r[1] + '</span></div></div>'; }).join('');
+  return '<h1><small>10만 AI 전문가 · ' + D.t + '</small>' + D.t + ' — ' + D.sub + '</h1>'
+  + '<p class="lead">AI와 OpenHash 기반 재구성 초안</p><span class="meta">초안 v0.1 · 2026-11-22 · 전문가 검토 전 사고 실험이며 확정안이 아닙니다</span>'
+  + '<div class="toc"><a href="#a0">요약</a><a href="#a1">현재의 문제</a><a href="#a2">재구성 구조</a><a href="#a3">일상의 흐름</a><a href="#a4">L3의 역할</a><a href="#a5">선결 과제</a><a href="#a6">개요와의 연결</a><a href="#a7">전문가에게 묻는 질문</a></div>'
+  + '<section id="a0"><h2><span class="n">0</span>요약</h2><div class="callout"><p>' + D.def + '</p></div>'
+  + '<div class="pipe"><span>나만의 AI 비서(나비)</span><i>→</i><span>전문가 AI</span><i>→</i><span>L3 전문가</span><i>→</i><span>인간 전문가 연결</span><i>·</i><span>OpenHash 기록</span></div>'
+  + '<p class="small">모든 분야에 같은 틀을 적용합니다. 원문 기록은 본인의 PDV에만 두고, 행위 전에 AI가 점검하며, 책임은 L3 전문가가 집니다.</p></section>'
+  + '<section id="a1"><h2><span class="n">1</span>현재의 문제</h2>' + ul(D.pain) + '</section>'
+  + '<section id="a2"><h2><span class="n">2</span>재구성 구조</h2>' + lay + '</section>'
+  + '<section id="a3"><h2><span class="n">3</span>일상의 흐름(예시)</h2>' + ul(D.flow, 1) + '</section>'
+  + '<section id="a4"><h2><span class="n">4</span>L3 전문가의 역할</h2>' + ul(D.l3) + '</section>'
+  + '<section id="a5"><h2><span class="n">5</span>선결 과제와 위험</h2>' + ul(D.gate) + '<p class="small">제도·자격과 관련된 항목은 해당 분야의 법령과 담당 기관의 확인이 필요합니다.</p></section>'
+  + '<section id="a6"><h2><span class="n">6</span>개요와의 연결</h2><p>' + D.ref + '</p><p class="small">숫자는 개요 문서의 배분을 그대로 가져온 것이며, 이 탭에서 새로 정한 인원이 아닙니다.</p></section>'
+  + '<section id="a7"><h2><span class="n">7</span>전문가에게 묻는 질문</h2>' + ul(D.ask) + '</section>';
+}
+function style() { if (document.getElementById('exd-style')) return; var s = document.createElement('style'); s.id = 'exd-style'; s.textContent = CSS; document.head.appendChild(s); }
+function wire(host) {   // 문서 안의 #링크는 화면 안에서만 이동한다(주소의 #탭 이름을 바꾸지 않는다)
+  host.onclick = function (e) { var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return; var t = host.querySelector('[id="' + a.getAttribute('href').slice(1) + '"]'); e.preventDefault(); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+}
+var _ov = null;
+function overview(host) {
+  var p = _ov || (_ov = fetch('expert100k-overview.html?v=' + Date.now()).then(function (r) { if (!r.ok) throw 0; return r.text(); }));
+  return p.then(function (t) {
+    var d = new DOMParser().parseFromString(t, 'text/html'), w = d.querySelector('.wrap');
+    host.innerHTML = w ? w.innerHTML : '';
+    var sc = d.querySelectorAll('body > script:not([src])');   // 배분 합계·막대를 그리는 문서 안 스크립트
+    sc.forEach(function (x) { if (/alloc/.test(x.textContent)) { try { (new Function(x.textContent))(); } catch (e) {} } });
+  }, function () { _ov = null; host.innerHTML = '<p class="st-err">문서를 불러오지 못했습니다. 잠시 뒤 다시 열어 주세요.</p>'; });
+}
+window.ExDoc = {
+  fields: Object.keys(F),
+  show: function (k, host) {
+    style(); host.classList.add('exd'); wire(host);
+    if (k === 'overview') return overview(host);
+    host.innerHTML = field(k); return Promise.resolve();
+  }
+};
+})();
