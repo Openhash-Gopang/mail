@@ -13,7 +13,7 @@ var CSS = `
 .exd .toc a:hover{background:var(--exc);border-color:var(--exc);color:var(--exp)}
 .exd section{background:#fff;border:1px solid var(--exo);border-radius:16px;padding:24px;margin-top:16px;scroll-margin-top:12px}
 .exd h2{display:flex;align-items:center;gap:12px;font-size:22px;line-height:28px;font-weight:400;margin:0 0 16px}
-.exd h2 .n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--exc);color:var(--exp);font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0}
+.exd h2 .n{flex:none;min-width:32px;height:32px;padding:0 6px;border-radius:8px;background:var(--exp);color:#fff;font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0}
 .exd h3{font-size:16px;line-height:24px;font-weight:500;margin:20px 0 4px}
 .exd p{color:var(--ext2);margin:0 0 12px}.exd p b,.exd li b,.exd td b{color:var(--ext);font-weight:600}
 .exd ul,.exd ol{margin:0 0 12px 20px;color:var(--ext2)}.exd li{margin:4px 0}
@@ -33,11 +33,10 @@ var CSS = `
 .exd .bar{display:block;height:6px;border-radius:3px;background:var(--exp);opacity:.75;min-width:2px}.exd td.bc{width:18%;min-width:90px;vertical-align:middle}
 .exd .small{font-size:12px;line-height:18px}.exd .src li{font-size:12px;word-break:break-all}
 .exd .pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}.exd .pipe span{background:var(--exs);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;color:var(--ext)}.exd .pipe i{color:var(--ext2);font-style:normal}
-.exd .li{display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--exo)}.exd .li:first-child{border-top:0;padding-top:0}.exd .li:last-child{padding-bottom:0}
-.exd .li .ic{flex:none;width:40px;height:40px;border-radius:50%;background:var(--exc);color:var(--exp);font-weight:500;display:flex;align-items:center;justify-content:center}
+.exd .li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--exo)}.exd .li:first-child{border-top:0;padding-top:0}.exd .li:last-child{padding-bottom:0}
+.exd .sn{flex:none;min-width:32px;font-style:normal;font-size:13px;line-height:24px;font-weight:500;color:var(--exp);font-variant-numeric:tabular-nums}
 .exd .li b{display:block;font-size:16px;line-height:24px;font-weight:500;color:var(--ext)}.exd .li span{color:var(--ext2)}
-.exd ol.steps{list-style:none;margin:0;padding:0;counter-reset:st}.exd ol.steps li{counter-increment:st;display:flex;gap:16px;align-items:flex-start;margin:0;padding:10px 0;border-top:1px solid var(--exo);color:var(--ext2)}.exd ol.steps li:first-child{border-top:0;padding-top:0}
-.exd ol.steps li:before{content:counter(st);flex:none;width:28px;height:28px;border-radius:50%;background:var(--exp);color:#fff;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.exd ol.steps{list-style:none;margin:0;padding:0}.exd ol.steps li{display:flex;gap:12px;align-items:flex-start;margin:0;padding:10px 0;border-top:1px solid var(--exo);color:var(--ext2)}.exd ol.steps li:first-child{border-top:0;padding-top:0}
 .exd .st-err{color:#B3261E}
 @media (max-width:700px){.exd .key{grid-template-columns:repeat(2,minmax(0,1fr))}.exd h1{font-size:24px;line-height:32px}.exd section{padding:16px}}
 `;
@@ -151,10 +150,10 @@ living:{t:'의식주',sub:'생활의 기본을 점검한다',
  ref:'부동산·감정·건설·안전 4,500명(주), 식은 산업·농수산·제조 5,000명에 포함, 의(衣)는 별도 항목이 없습니다(가정). 다음 버전에서 분리 여부를 정해야 합니다.',
  ask:['주거 계약에서 사전 점검이 가장 큰 피해를 막는 항목은 무엇입니까?','식·의 분야의 L3 전문가는 어떤 자격으로 정의해야 합니까?']}
 };
-function ul(a, cls) { return '<' + (cls ? 'ol class="steps"' : 'ul') + '>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</' + (cls ? 'ol' : 'ul') + '>'; }
+function ul(a, sec) { return sec ? '<ol class="steps">' + a.map(function (x, i) { return '<li><em class="sn">' + sec + '.' + (i + 1) + '</em><span>' + x + '</span></li>'; }).join('') + '</ol>' : '<ul>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
 function field(K) {
   var D = F[K] || F.law;
-  var lay = D.layers.map(function (r, i) { return '<div class="li"><div class="ic">' + (i + 1) + '</div><div><b>' + r[0] + '</b><span>' + r[1] + '</span></div></div>'; }).join('');
+  var lay = D.layers.map(function (r, i) { return '<div class="li"><em class="sn">2.' + (i + 1) + '</em><div><b>' + r[0] + '</b><span>' + r[1] + '</span></div></div>'; }).join('');
   return '<h1><small>10만 AI 전문가 · ' + D.t + '</small>' + D.t + ' — ' + D.sub + '</h1>'
   + '<p class="lead">AI와 OpenHash 기반 재구성 초안</p><span class="meta">초안 v0.1 · 2026-11-22 · 전문가 검토 전 사고 실험이며 확정안이 아닙니다</span>'
   + '<div class="toc"><a href="#a0">요약</a><a href="#a1">현재의 문제</a><a href="#a2">재구성 구조</a><a href="#a3">일상의 흐름</a><a href="#a4">L3의 역할</a><a href="#a5">선결 과제</a><a href="#a6">개요와의 연결</a><a href="#a7">전문가에게 묻는 질문</a></div>'
@@ -163,7 +162,7 @@ function field(K) {
   + '<p class="small">모든 분야에 같은 틀을 적용합니다. 원문 기록은 본인의 PDV에만 두고, 행위 전에 AI가 점검하며, 책임은 L3 전문가가 집니다.</p></section>'
   + '<section id="a1"><h2><span class="n">1</span>현재의 문제</h2>' + ul(D.pain) + '</section>'
   + '<section id="a2"><h2><span class="n">2</span>재구성 구조</h2>' + lay + '</section>'
-  + '<section id="a3"><h2><span class="n">3</span>일상의 흐름(예시)</h2>' + ul(D.flow, 1) + '</section>'
+  + '<section id="a3"><h2><span class="n">3</span>일상의 흐름(예시)</h2>' + ul(D.flow, 3) + '</section>'
   + '<section id="a4"><h2><span class="n">4</span>L3 전문가의 역할</h2>' + ul(D.l3) + '</section>'
   + '<section id="a5"><h2><span class="n">5</span>선결 과제와 위험</h2>' + ul(D.gate) + '<p class="small">제도·자격과 관련된 항목은 해당 분야의 법령과 담당 기관의 확인이 필요합니다.</p></section>'
   + '<section id="a6"><h2><span class="n">6</span>개요와의 연결</h2><p>' + D.ref + '</p><p class="small">숫자는 개요 문서의 배분을 그대로 가져온 것이며, 이 탭에서 새로 정한 인원이 아닙니다.</p></section>'
