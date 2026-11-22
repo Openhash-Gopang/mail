@@ -15,6 +15,8 @@ export const MAIL_FILES = new Set([
  "assistant-rules.js",
  "assistant-runtime.js",
  "attach-catalog.js",
+ "bank-app.js",
+ "bank.css",
  "butterfly-landing.js",
  "case-assist.js",
  "case-core.js",
