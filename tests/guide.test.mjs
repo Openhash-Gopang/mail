@@ -429,3 +429,11 @@ test('새 양식 만들기: 캔버스의 템플릿 상자는 없고, 대화창 �
   assert.ok(h.includes("if (a === 'tplmore')") && h.includes("if (a === 'start') return _mfbStart("));
   assert.ok(h.includes('if (!id) _mfbChat(true);'), '새로 만들 때 대화창이 열려 있다');
 });
+
+test('새 양식 만들기: "내 문서 올려서 시작" 칩이 원본을 왼쪽에 띄우고, 매뉴얼이 이를 안내한다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('data-a="upref"') && h.includes("if (a === 'upref') return _mfbPickRef();"));
+  assert.ok(h.includes('function _mfbShowRef(') && h.includes('function _mfbPickRef('));
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  assert.ok(m.includes('내 문서 올려서 시작'));
+});

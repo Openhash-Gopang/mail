@@ -5223,7 +5223,7 @@ function _mfbMsgsHtml() {
     const all = _MFB_START.map((t, i) => [t[0], i]), shown = _MFB.tplMore ? all : all.filter(x => _MFB_TPL_FIRST.includes(x[0]));
     h += '<div class="mfb-chips mfb-sugg"><span class="mfb-sgl">템플릿으로 바로 시작</span>' + shown.map(x => '<button type="button" class="mfb-chip" data-a="start" data-i="' + x[1] + '">' + escHtml(x[0]) + '</button>').join('') +
       (_MFB.tplMore ? '' : '<button type="button" class="mfb-chip" data-a="tplmore">더 보기</button>') + '</div>' +
-      '<div class="mfb-chips mfb-sugg"><span class="mfb-sgl">말로 설명해서 만들기</span>' + _MFB_SUGG.map(s => '<button type="button" class="mfb-chip" data-a="sugg" data-t="' + escHtml(s + ' 양식을 만들어 줘') + '">' + escHtml(s) + '</button>').join('') + '</div>';
+      (_MFB.ref ? '' : '<div class="mfb-chips mfb-sugg"><span class="mfb-sgl">기존 문서로 시작</span><button type="button" class="mfb-chip" data-a="upref">내 문서 올려서 시작 (사진·PDF)</button></div>') + '<div class="mfb-chips mfb-sugg"><span class="mfb-sgl">말로 설명해서 만들기</span>' + _MFB_SUGG.map(s => '<button type="button" class="mfb-chip" data-a="sugg" data-t="' + escHtml(s + ' 양식을 만들어 줘') + '">' + escHtml(s) + '</button>').join('') + '</div>';
   }
   let lastSp = -1; _MFB.msgs.forEach((m, i) => { if (m.r === 'sp') lastSp = i; });
   _MFB.msgs.forEach((m, i) => {
@@ -5408,16 +5408,34 @@ async function _saveMyForm(form) {
     _drToast('내 서류함 ▸ 내가 만든 양식에 저장했습니다');
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
 }
+// 원본(이미지·PDF)을 왼쪽에 띄운다 — 서류함에 저장하지 않고 이 화면에서만 본다.
+function _mfbShowRef(url, name, mime, heading) {
+  const body = document.querySelector('#mf-new .mfb-body'); if (!body) return;
+  if (_MFB.ref && _MFB.ref.url) { try { URL.revokeObjectURL(_MFB.ref.url); } catch (e) {} const o = body.querySelector('.mfb-ref'); if (o) o.remove(); }
+  _MFB.ref = { url: url };
+  const isPdf = /pdf/i.test(mime), aside = document.createElement('aside'); aside.className = 'mfb-ref';
+  aside.innerHTML = '<h3>올려 둔 원본</h3><p class="mfb-refsub">' + escHtml(name || '') + ' — 보면서 항목을 옮겨 만드세요. 원본 파일은 그대로 남습니다.</p>' + (isPdf ? '<iframe src="' + url + '" title="올려 둔 원본 양식"></iframe>' : '<img src="' + url + '" alt="올려 둔 원본 양식">');
+  body.classList.add('has-ref'); body.insertBefore(aside, body.firstChild); const h = document.getElementById('mfb-h'); if (h && heading) h.textContent = heading;
+}
+function _mfbPickRef() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,application/pdf,.pdf'; inp.style.display = 'none';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0]; inp.remove(); if (!f) return;
+    if (f.size > 15 * 1024 * 1024) { _drToast('15MB 이하 파일만 올릴 수 있습니다.'); return; }
+    const mime = f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/png');
+    _mfbShowRef(URL.createObjectURL(f), f.name, mime, '올려 둔 양식 고쳐 만들기');
+    _MFB.msgs.push({ r: 'sp', t: '“' + f.name + '”을(를) 왼쪽에 띄웠습니다. 보면서 “이름, 연락처, 주소 칸을 만들어 줘”, “결석 기간은 시작일과 종료일로 나눠 줘”처럼 말씀해 주세요.' });
+    _mfbRenderChat(); _mfbRenderCanvas('[data-k="title"]');
+  };
+  document.body.appendChild(inp); inp.click();
+}
 // 올려 둔 양식(이미지·PDF)을 고쳐 만든다 — 원본을 왼쪽에 띄워 두고, 오른쪽 편집기에서 항목·구성·모양을 새로 짜 '내가 만든 양식'으로 저장한다. 원본 파일은 그대로 남는다.
 async function _mfEditUpload(it) {
   if (!it.fileData) { _drToast('올려 둔 파일을 읽지 못했습니다. 다시 올려 주세요.'); return; }
   const mime = it.fileMime || (/\.pdf$/i.test(it.fileName || '') ? 'application/pdf' : 'image/png');
   _mfbOpen({ title: it.title || '', sections: [{ h: '', f: [] }], attach: [] }, '', it.site);
   const body = document.querySelector('#mf-new .mfb-body'); if (!body) return;
-  const url = URL.createObjectURL(new Blob([it.fileData], { type: mime })); _MFB.ref = { url: url };
-  const isPdf = /pdf/i.test(mime), aside = document.createElement('aside'); aside.className = 'mfb-ref';
-  aside.innerHTML = '<h3>올려 둔 원본</h3><p class="mfb-refsub">' + escHtml(it.fileName || '') + ' — 보면서 항목을 옮겨 만드세요. 원본 파일은 그대로 남습니다.</p>' + (isPdf ? '<iframe src="' + url + '" title="올려 둔 원본 양식"></iframe>' : '<img src="' + url + '" alt="올려 둔 원본 양식">');
-  body.classList.add('has-ref'); body.insertBefore(aside, body.firstChild); const h = document.getElementById('mfb-h'); if (h) h.textContent = '올려 둔 양식 고쳐 만들기';
+  _mfbShowRef(URL.createObjectURL(new Blob([it.fileData], { type: mime })), it.fileName, mime, '올려 둔 양식 고쳐 만들기');
   _mfbRenderCanvas('[data-k="title"]');
 }
 async function _mfEdit(id) {
@@ -5466,6 +5484,7 @@ function _mfbBind(root) {
       const s = _MFB.secs[si]; if (!s) return; if (s.f.some(y => String(y.l).trim()) && !await (window.mpConfirm||confirm)('이 묶음과 안의 항목을 모두 지울까요?')) return;
       _MFB.secs.splice(si, 1); if (!_mfbFind(_MFB.sel)) _MFB.sel = 0; _mfbDirty(); return _mfbRenderCanvas();
     }
+    if (a === 'upref') return _mfbPickRef();
     if (a === 'tplmore') { _MFB.tplMore = true; return _mfbRenderChat(); }
     if (a === 'start') return _mfbStart(+b.getAttribute('data-i'));
     if (!x) return;
