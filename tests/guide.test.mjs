@@ -455,3 +455,11 @@ test('다른 사이트 입력 탭: 메뉴·위쪽 탭·화면·흐름이 연결�
   assert.ok(h.includes("['myforms', '내 서류함'], ['othersite', '다른 사이트 입력']"), '위쪽 탭');
   assert.ok(h.includes("if (name === 'othersite') _otsRender();") && h.includes('async function _otsGo(') && h.includes('_photoFillConfirm(all, url)'));
 });
+
+test('다른 사이트 입력 탭: 같은 계정의 폰으로 촬영해 PC로 받는다(NaviCapture 재사용)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="ots-phone-btn"') && h.includes('async function _otsPhoneToggle(') && h.includes("label: '다른 사이트 입력'"));
+  assert.ok(h.includes('const phoneOn = _otsPhotos.filter(o => o.on);') && h.includes('_otsPhotos = _otsPhotos.filter(o => !o.on)'));
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  assert.ok(m.includes('📱 폰으로 촬영</b>을 눌러'));
+});
