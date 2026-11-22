@@ -71,3 +71,42 @@ test('learn.html: 화면 조작(주차·시험)과 채점·단계 갱신', { ski
   const before = txt(); nav({ do: 'history' }, 'https://evil.example'); assert.equal(txt(), before, '다른 출처의 조작은 무시');
   nav({ do: 'add', subject: '영어', level: '고등' }); assert.match(out.pop().msg, /추가했습니다/);
 });
+
+test('localIntent·cleanAct: 보고서·제출·진로 명령', () => {
+  assert.deepEqual(L.localIntent('내 학습 보고서 보여줘'), { do: 'report' });
+  assert.deepEqual(L.localIntent('수학 보고서 제출해줘'), { do: 'submit', subject: '수학' });
+  assert.deepEqual(L.localIntent('내 보고서 제출해줘'), { do: 'submit' });
+  assert.deepEqual(L.localIntent('진로 추천해줘'), { do: 'career' });
+  assert.deepEqual(L.cleanAct({ do: 'career', subject: 'x' }), { do: 'career' });
+  assert.ok(L.LEARN_SP.includes('진로 지도 교수') && L.LEARN_SP.includes('reports'));
+  const a = L.buildAsk('진로 추천해줘', { reports: [{ id: 'econ', name: '경제학 입문', score: 90, prog: 12, avg: 92, first: 100, pace: 2, attempts: 4, submitted: true }], career: [{ name: '경제·금융·경영', fit: 90 }] }, '진로 지도 교수');
+  assert.match(a, /"reports":\[\{"id":"econ"/); assert.match(a, /"career":\[\{"name":"경제·금융·경영"/);
+});
+
+test('learn.html: 보고서 제출 → 진로 추천', { skip: !JSDOM && 'jsdom 없음' }, () => {
+  const html = readFileSync(new URL('../learn.html', import.meta.url), 'utf8');
+  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://naviweb.kr/learn.html?embed=mail', pretendToBeVisual: true });
+  const w = dom.window, doc = w.document; w.scrollTo = () => {};
+  const out = []; w.parent.postMessage = (m) => { if (m.type === 'navi-learn-result') out.push(m); };
+  const nav = (a) => w.dispatchEvent(new w.MessageEvent('message', { data: Object.assign({ type: 'navi-learn-nav' }, a), origin: 'https://naviweb.kr', source: w }));
+  const txt = () => doc.getElementById('root').textContent;
+  nav({ do: 'career' });
+  assert.match(txt(), /제출된 보고서가 없습니다/);
+  nav({ do: 'submit', subject: '경제학' });
+  assert.equal(out.pop().ok, false, '기록 없는 과목은 제출되지 않는다');
+  // 경제학 1주차 확인 문제를 통과한 뒤 보고서 제출
+  nav({ do: 'quiz', subject: '경제학', week: 1 });
+  [1, 0, 1, 0, 1].forEach((r, i) => doc.querySelectorAll('.q')[i].querySelectorAll('.opt')[r].click());
+  [...doc.querySelectorAll('button')].find((b) => b.textContent.startsWith('제출')).click();
+  nav({ do: 'report' });
+  assert.match(txt(), /경제학 입문 · 경제학 교수/); assert.match(txt(), /평균 100%/); assert.match(txt(), /주당|자료 부족/);
+  nav({ do: 'submit', subject: '경제학' });
+  assert.match(out.pop().msg, /제출했습니다/);
+  const sv = JSON.parse(w.localStorage.getItem('navi-learn-v1'));
+  assert.equal(sv.sub.econ.score >= 85, true); assert.equal(sv.prog.econ.log.length, 1);
+  nav({ do: 'career' });
+  assert.match(txt(), /경제·금융·경영/); assert.match(txt(), /신뢰도 낮음/);
+  assert.match(txt(), /반영한 보고서/);
+  // 점수 기록이 없는 예시 과목(미적분)은 단계 기록만으로 평가하되 근거를 밝힌다
+  nav({ do: 'report' }); assert.match(txt(), /주차 단계 기록만/);
+});
