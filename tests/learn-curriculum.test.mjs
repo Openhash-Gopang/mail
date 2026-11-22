@@ -112,3 +112,12 @@ test('저장값 검증: 깨진 커리큘럼·시작일은 버리고 화면은 �
   const p = page(server(), { added: [{ id: 'u1', name: '이상한 과목', subj: 'x', level: 'x', prof: 'x', seq: 'NNNN', goal: '', start: 'abc', cur: { w: [{ t: 1 }] }, cid: '<script>' }], prog: {} });
   p.nav({ do: 'plan' }); assert.match(p.txt(), /이상한 과목/); assert.match(p.txt(), /표준 일정 없음/);
 });
+test('검색: 돋보기 아이콘을 누르면 검색창이 열리고, 도움말은 처음 한 번만 보인다', { skip }, () => {
+  const p = page(server());
+  assert.equal(p.doc.getElementById('srch-in'), null); assert.ok(!/배우고 싶은 과목 검색/.test(p.txt()));
+  const ic = () => p.doc.querySelector('button[aria-label="과목 검색"]');
+  ic().click(); assert.ok(p.doc.getElementById('srch-in')); assert.match(p.txt(), /온라인 강좌가 다루는 어떤 과목이든/); assert.equal(p.w.localStorage.getItem('navi-learn-help-srch'), '1');
+  ic().click(); assert.equal(p.doc.getElementById('srch-in'), null);
+  ic().click(); assert.ok(p.doc.getElementById('srch-in')); assert.ok(!/온라인 강좌가 다루는 어떤 과목이든/.test(p.txt()), '두 번째부터는 도움말이 없다');
+  const q = page(server()); q.w.localStorage.setItem('navi-learn-help-srch', '1'); q.w.document.querySelector('button[aria-label="과목 검색"]').click(); assert.ok(!/온라인 강좌가 다루는 어떤 과목이든/.test(q.txt()));
+});
