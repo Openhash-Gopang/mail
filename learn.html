@@ -527,7 +527,7 @@ function viewPlan() {
 
 // ── 홈(내 수업) ──
 function viewSubjects() {
-  var nu = nextUp(), kids = head(null, '내 수업', '다음에 할 일부터 이어서 하세요. 주차 확인 문제를 통과하면 \'통과\', 며칠 뒤 다시 풀어서도 맞히면 \'숙달\'이 됩니다.');
+  var nu = nextUp(), kids = head(null, '내 수업');
   var hero = h('div', { class:'card hero col' });
   if (nu) {
     var c = nu.c, i = nu.i;
