@@ -2463,7 +2463,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card" style="max-width:760px;margin-left:auto;margin-right:auto">
       <div class="gl-head"><h2>어느 사이트에 입력할까요?</h2></div>
-      <div class="sub">종이 서류 사진이나 적어 둔 내용을, 다른 사이트의 입력 칸에 나비웹 도우미가 옮겨 적습니다. 로그인과 마지막 제출은 사용자가 직접 합니다.</div>
+      <div class="sub" id="ots-sub">종이 서류 사진이나 적어 둔 내용을, 다른 사이트의 입력 칸에 나비웹 도우미가 옮겨 적습니다. 로그인과 마지막 제출은 사용자가 직접 합니다.</div>
       <div id="ots-agent" class="hint" role="status" style="margin:10px 0"></div>
       <label for="ots-url" style="display:block;font-size:14px;font-weight:600;margin:12px 0 4px">사이트 주소</label>
       <input id="ots-url" type="url" inputmode="url" autocomplete="off" placeholder="https://  (이미 열어 둔 사이트면 비워 두세요)" style="width:100%;box-sizing:border-box;min-height:42px;border:1px solid var(--bdr);border-radius:var(--r);padding:0 12px;font:inherit;background:var(--sur);color:inherit">
@@ -2477,7 +2477,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div id="ots-phone" role="region" aria-label="폰에서 온 사진" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid #bfe3c9;background:#f0faf3;border-radius:12px;font-size:13px;color:#14532d"></div>
       <textarea id="ots-text" rows="5" placeholder="사진 대신 또는 사진에 더해, 옮겨 적을 내용을 직접 적어도 됩니다. 예) 환자 홍길동, 아목시실린 500mg 하루 3회 7일" style="width:100%;box-sizing:border-box;margin-top:8px;border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;font:inherit;background:var(--sur);color:inherit"></textarea>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" class="btn btn-primary" id="ots-go" onclick="_otsGo()">읽어서 확인하기</button></div>
-      <div class="hint" style="margin-top:10px">사진의 글자는 이 기기 안에서만 읽습니다. 확인 창에서 틀린 글자를 고친 뒤 도우미에 맡기며, 도우미는 제출·저장·결제 전에 멈춥니다.</div>
+      <div class="hint" id="ots-foot" style="margin-top:10px">사진의 글자는 이 기기 안에서만 읽습니다. 확인 창에서 틀린 글자를 고친 뒤 도우미에 맡기며, 도우미는 제출·저장·결제 전에 멈춥니다.</div>
     </div>
   </div>
   <div id="tab-myforms" class="tab-panel">
@@ -2803,14 +2803,28 @@ function _slotReset(label) {
   setTimeout(_docChatPush, 0);
 }
 /* 다른 사이트 입력 탭(2026-11-22): 사이트 주소 + 사진·글 → 브라우저 OCR → 확인 → 도우미 입력. 대화창의 "사진 → 사이트 입력"과 같은 흐름이다. */
+/* 1회성 안내(2026-11-22): 안내 문구 오른쪽의 ✕ 를 누르면 이 기기에서 다시 보이지 않는다. */
+const _HINT_KEY = 'navi_hints_off';
+function _hintOff(k) { try { return (JSON.parse(localStorage.getItem(_HINT_KEY) || '[]') || []).indexOf(k) >= 0; } catch (e) { return false; } }
+function _hintSet(k) { try { const a = JSON.parse(localStorage.getItem(_HINT_KEY) || '[]') || []; if (a.indexOf(k) < 0) a.push(k); localStorage.setItem(_HINT_KEY, JSON.stringify(a.slice(-60))); } catch (e) { /* 이번에만 닫힌다 */ } }
+function _hintAttach(el, k) {
+  if (!el) return; if (_hintOff(k)) { el.hidden = true; el.style.display = 'none'; return; }
+  el.hidden = false; el.style.display = ''; el.style.position = 'relative'; el.style.paddingRight = '30px';
+  const old = el.querySelector(':scope > .hint-x'); if (old) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'hint-x'; b.textContent = '✕'; b.title = '다시 보지 않기'; b.setAttribute('aria-label', '이 안내 다시 보지 않기');
+  b.style.cssText = 'position:absolute;top:0;right:0;border:0;background:transparent;color:inherit;opacity:.6;cursor:pointer;font:inherit;font-size:14px;line-height:1;padding:2px 6px';
+  b.onclick = (e) => { e.stopPropagation(); _hintSet(k); el.hidden = true; el.style.display = 'none'; };
+  el.appendChild(b);
+}
 const _OTS_KEY = 'navi_ots_recent'; let _otsFile = null;
 function _otsRecent() { try { const a = JSON.parse(localStorage.getItem(_OTS_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string').slice(0, 6) : []; } catch (e) { return []; } }
 function _otsRemember(u) { if (!u) return; try { localStorage.setItem(_OTS_KEY, JSON.stringify([u].concat(_otsRecent().filter(x => x !== u)).slice(0, 6))); } catch (e) { /* 기억만 빠진다 */ } }
 function _otsRender() {
   const st = document.getElementById('ots-agent'); if (!st) return;
   _otsPhoneRender();
-  if (_agentInfo) st.textContent = '나비웹 도우미 ' + _agentInfo.version + ' 연결됨';
-  else { st.innerHTML = '나비웹 도우미가 연결돼 있지 않습니다. <button type="button" class="btn btn-sm" id="ots-inst">설치·켜기 안내</button>'; const b = document.getElementById('ots-inst'); if (b) b.onclick = () => { if (window._agentGuideOpen) window._agentGuideOpen(); }; }
+  _hintAttach(document.getElementById('ots-sub'), 'ots-sub'); _hintAttach(document.getElementById('ots-foot'), 'ots-foot');
+  if (_agentInfo) { st.textContent = '나비웹 도우미 ' + _agentInfo.version + ' 연결됨'; _hintAttach(st, 'ots-conn'); }
+  else { st.hidden = false; st.style.display = ''; st.style.paddingRight = ''; st.innerHTML = '나비웹 도우미가 연결돼 있지 않습니다. <button type="button" class="btn btn-sm" id="ots-inst">설치·켜기 안내</button>'; const b = document.getElementById('ots-inst'); if (b) b.onclick = () => { if (window._agentGuideOpen) window._agentGuideOpen(); }; }
   const r = document.getElementById('ots-recent'), l = _otsRecent();
   r.innerHTML = l.length ? '<span class="hint" style="margin:0 4px 0 0;align-self:center">최근 사이트</span>' + l.map((u, i) => '<button type="button" class="btn btn-sm" data-i="' + i + '" title="' + escHtml(u) + '">' + escHtml(u.replace(/^https:\/\//, '').slice(0, 40)) + '</button>').join('') + '<button type="button" class="btn btn-sm" data-clear="1">목록 지우기</button>' : '';
   r.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.clear) { try { localStorage.removeItem(_OTS_KEY); } catch (x) {} _otsRender(); return; } const u = l[+b.dataset.i]; if (u) document.getElementById('ots-url').value = u; };
@@ -2834,7 +2848,7 @@ function _otsPhoneRender() {
     const x = document.createElement('button'); x.type = 'button'; x.title = '버리기'; x.setAttribute('aria-label', '사진 ' + (i + 1) + ' 버리기'); x.textContent = '×'; x.style.cssText = 'border:none;background:transparent;font-size:18px;cursor:pointer;color:inherit'; x.onclick = () => { _otsPhotos = _otsPhotos.filter(o => o !== it); _otsPhoneRender(); };
     r.append(cb, im, tx, x); p.appendChild(r);
   });
-  if (_otsPhotos.length) { const n = document.createElement('div'); n.style.cssText = 'font-size:12px;opacity:.85;margin-top:6px'; n.textContent = '사진은 암호로 잠겨 전달되며, 받은 뒤 서버에서 지워집니다. 주민등록번호·계좌번호는 가리고 찍으세요. 아래 「읽어서 확인하기」를 누르면 체크한 사진의 글자를 읽습니다.'; p.appendChild(n); }
+  if (_otsPhotos.length) { const n = document.createElement('div'); n.style.cssText = 'font-size:12px;opacity:.85;margin-top:6px'; n.textContent = '사진은 암호로 잠겨 전달되며, 받은 뒤 서버에서 지워집니다. 주민등록번호·계좌번호는 가리고 찍으세요. 아래 「읽어서 확인하기」를 누르면 체크한 사진의 글자를 읽습니다.'; p.appendChild(n); _hintAttach(n, 'ots-pnote'); }
 }
 async function _otsPhoneToggle() {
   if (_otsCap) { try { await _otsCap.stop(); } catch (e) { /* 이미 끝남 */ } _otsCap = null; _otsPhoneRender(); _drToast('폰 촬영 연결을 끝냈습니다.'); return; }
@@ -4888,7 +4902,7 @@ function _phoneCapRender() {
   if (_phoneItems.length) {
     const g = document.createElement('div'); g.className = 'pp-r';
     const go = document.createElement('button'); go.type = 'button'; go.className = 'pp-go'; go.textContent = '체크한 자료를 서류에 사용'; go.onclick = _phoneCapUse; g.appendChild(go); p.appendChild(g);
-    const n = document.createElement('div'); n.className = 'pp-n'; n.textContent = '체크한 사진만 AI에게 전달됩니다. 사진은 암호로 잠겨 전달되며, 받은 뒤 서버에서 지워집니다. 주민등록번호·계좌번호는 가리고 찍으세요.'; p.appendChild(n);
+    const n = document.createElement('div'); n.className = 'pp-n'; n.textContent = '체크한 사진만 AI에게 전달됩니다. 사진은 암호로 잠겨 전달되며, 받은 뒤 서버에서 지워집니다. 주민등록번호·계좌번호는 가리고 찍으세요.'; p.appendChild(n); _hintAttach(n, 'pp-note');
   }
 }
 async function _phoneCapToggle() {
