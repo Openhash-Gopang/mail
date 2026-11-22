@@ -448,3 +448,10 @@ test('서류 작성 대화창: 사진 → 다른 사이트 입력(OCR → 확인
   for (const t of ['이 처방전 내용을 열어 둔 사이트에 입력해 줘', '찍은 사진을 웹페이지에 옮겨 적어 줘', '이 종이 서류를 홈페이지에 입력해 주세요']) assert.ok(re.test(t), t);
   for (const t of ['서류를 작성해 줘', '이 사이트는 안전한가요?', '사진 첨부는 어떻게 하나요?']) assert.ok(!re.test(t), t);
 });
+
+test('다른 사이트 입력 탭: 메뉴·위쪽 탭·화면·흐름이 연결돼 있다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('id="tab-btn-othersite"') && h.includes('id="tab-othersite"'));
+  assert.ok(h.includes("['myforms', '내 서류함'], ['othersite', '다른 사이트 입력']"), '위쪽 탭');
+  assert.ok(h.includes("if (name === 'othersite') _otsRender();") && h.includes('async function _otsGo(') && h.includes('_photoFillConfirm(all, url)'));
+});
