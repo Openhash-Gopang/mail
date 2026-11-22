@@ -413,10 +413,19 @@ test('나비웹 사용법 중급: 초급·중급 탭, 중급 목록(PLaRjMKGRz50
   assert.ok(wf.includes('guide-videos-sync.mjs PLaRjMKGRz50E guide-howto-mid.json') && wf.includes('git add guide-videos.json guide-howto.json guide-howto-mid.json'));
   const j = JSON.parse(readFileSync(new URL('../guide-howto-mid.json', import.meta.url), 'utf8'));
   assert.equal(j.list, 'PLaRjMKGRz50E');
-  assert.deepEqual(j.videos.map(v => v.t.match(/사용법 (\d+)/)[1]), ['01', '02', '03', '04', '05']);
+  assert.deepEqual(j.videos.map(v => v.t.normalize('NFC').match(/사용법 (\d+)/)[1]), ['01', '02', '03', '04', '05']);
   assert.ok(j.videos.every(v => /^[\w-]{11}$/.test(v.id)));
   const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
   assert.ok(m.includes("var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5 };") && m.includes('guide-howto-mid.json'));
   const p = readFileSync(new URL('../ops/naviweb-proxy/mail-paths.js', import.meta.url), 'utf8');
   assert.ok(p.includes('"guide-howto-mid.json"'), '프록시가 이 파일을 내보낸다');
+});
+
+test('새 양식 만들기: 캔버스의 템플릿 상자는 없고, 대화창 추천에 템플릿 시작(8개 + 더 보기)과 말로 만들기가 있다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(!h.includes('class="mfb-start"') && !h.includes('mfb-startt'), '캔버스 템플릿 상자 없음');
+  assert.ok(h.includes('템플릿으로 바로 시작') && h.includes('말로 설명해서 만들기') && h.includes('data-a="tplmore"'));
+  assert.ok(h.includes("const _MFB_TPL_FIRST = ['신청서', '점검표', '회의록', '업무 보고서', '위임장', '차용증', '연차 휴가 신청서', '견적서']"));
+  assert.ok(h.includes("if (a === 'tplmore')") && h.includes("if (a === 'start') return _mfbStart("));
+  assert.ok(h.includes('if (!id) _mfbChat(true);'), '새로 만들 때 대화창이 열려 있다');
 });
