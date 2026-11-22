@@ -83,7 +83,7 @@
     return { text: text, acts: acts.slice(0, 1) };   // 한 번에 하나만 실행한다
   }
 
-  function str(v, n) { return typeof v === 'string' ? v.trim().replace(/[\r\n]+/g, ' ').slice(0, n) : ''; }
+  function numOrNull(v) { return typeof v === 'number' && isFinite(v) ? v : null; }  function str(v, n) { return typeof v === 'string' ? v.trim().replace(/[\r\n]+/g, ' ').slice(0, n) : ''; }
 
   /** 순수 함수 — 화면 조작 한 건을 검증해 정리한다. 허용되지 않으면 null. */
   function cleanAct(x) {
