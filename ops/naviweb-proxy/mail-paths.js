@@ -66,6 +66,8 @@ export const MAIL_FILES = new Set([
  "pdv-panel.js",
  "pricing.html",
  "qna-ui.js",
+ "stock-app.js",
+ "stock.css",
  "user-name.css",
  "verdict-host.js",
  "whitepaper.html",
