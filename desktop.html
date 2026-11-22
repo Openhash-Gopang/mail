@@ -2471,8 +2471,10 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <label style="display:block;font-size:14px;font-weight:600;margin:16px 0 4px">입력할 내용</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
         <button type="button" class="btn btn-sm" onclick="_otsPick()">📷 사진 촬영·선택</button>
+        <button type="button" class="btn btn-sm" id="ots-phone-btn" onclick="_otsPhoneToggle()" title="같은 계정으로 로그인한 폰의 카메라로 찍어 이 PC로 받습니다">📱 폰으로 촬영</button>
         <span id="ots-file" class="hint" style="margin:0">선택한 사진이 없습니다.</span>
       </div>
+      <div id="ots-phone" role="region" aria-label="폰에서 온 사진" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid #bfe3c9;background:#f0faf3;border-radius:12px;font-size:13px;color:#14532d"></div>
       <textarea id="ots-text" rows="5" placeholder="사진 대신 또는 사진에 더해, 옮겨 적을 내용을 직접 적어도 됩니다. 예) 환자 홍길동, 아목시실린 500mg 하루 3회 7일" style="width:100%;box-sizing:border-box;margin-top:8px;border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;font:inherit;background:var(--sur);color:inherit"></textarea>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" class="btn btn-primary" id="ots-go" onclick="_otsGo()">읽어서 확인하기</button></div>
       <div class="hint" style="margin-top:10px">사진의 글자는 이 기기 안에서만 읽습니다. 확인 창에서 틀린 글자를 고친 뒤 도우미에 맡기며, 도우미는 제출·저장·결제 전에 멈춥니다.</div>
@@ -2806,11 +2808,50 @@ function _otsRecent() { try { const a = JSON.parse(localStorage.getItem(_OTS_KEY
 function _otsRemember(u) { if (!u) return; try { localStorage.setItem(_OTS_KEY, JSON.stringify([u].concat(_otsRecent().filter(x => x !== u)).slice(0, 6))); } catch (e) { /* 기억만 빠진다 */ } }
 function _otsRender() {
   const st = document.getElementById('ots-agent'); if (!st) return;
+  _otsPhoneRender();
   if (_agentInfo) st.textContent = '나비웹 도우미 ' + _agentInfo.version + ' 연결됨';
   else { st.innerHTML = '나비웹 도우미가 연결돼 있지 않습니다. <button type="button" class="btn btn-sm" id="ots-inst">설치·켜기 안내</button>'; const b = document.getElementById('ots-inst'); if (b) b.onclick = () => { if (window._agentGuideOpen) window._agentGuideOpen(); }; }
   const r = document.getElementById('ots-recent'), l = _otsRecent();
   r.innerHTML = l.length ? '<span class="hint" style="margin:0 4px 0 0;align-self:center">최근 사이트</span>' + l.map((u, i) => '<button type="button" class="btn btn-sm" data-i="' + i + '" title="' + escHtml(u) + '">' + escHtml(u.replace(/^https:\/\//, '').slice(0, 40)) + '</button>').join('') + '<button type="button" class="btn btn-sm" data-clear="1">목록 지우기</button>' : '';
   r.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.clear) { try { localStorage.removeItem(_OTS_KEY); } catch (x) {} _otsRender(); return; } const u = l[+b.dataset.i]; if (u) document.getElementById('ots-url').value = u; };
+}
+let _otsCap = null, _otsPhotos = [];
+function _otsPhoneRender() {
+  const p = document.getElementById('ots-phone'), b = document.getElementById('ots-phone-btn'); if (!p) return;
+  if (b) b.textContent = _otsCap ? '📱 폰 촬영 끝내기' : '📱 폰으로 촬영';
+  p.textContent = '';
+  if (!_otsCap && !_otsPhotos.length) { p.style.display = 'none'; return; }
+  p.style.display = 'block';
+  const h = document.createElement('div'); h.style.cssText = 'font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px';
+  h.appendChild(document.createTextNode(_otsPhotos.length ? '📱 폰에서 온 사진 ' + _otsPhotos.length + '장 — 입력에 쓸 것만 체크하세요' : '📱 폰으로 촬영 중 — 폰에서 「서류 촬영 요청」 알림을 눌러 종이 서류를 찍으세요'));
+  if (_otsCap) { const e = document.createElement('button'); e.type = 'button'; e.className = 'btn btn-sm'; e.textContent = '촬영 끝내기'; e.onclick = _otsPhoneToggle; h.appendChild(e); }
+  p.appendChild(h);
+  _otsPhotos.forEach((it, i) => {
+    const r = document.createElement('div'); r.style.cssText = 'display:flex;align-items:center;gap:8px;margin:5px 0';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = it.on; cb.title = '이 사진을 입력에 사용'; cb.onchange = () => { it.on = cb.checked; };
+    const im = new Image(); im.src = it.url; im.alt = '폰에서 온 사진 ' + (i + 1); im.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:6px;flex:none';
+    const tx = document.createElement('span'); tx.style.flex = '1'; tx.textContent = '사진 ' + (i + 1);
+    const x = document.createElement('button'); x.type = 'button'; x.title = '버리기'; x.setAttribute('aria-label', '사진 ' + (i + 1) + ' 버리기'); x.textContent = '×'; x.style.cssText = 'border:none;background:transparent;font-size:18px;cursor:pointer;color:inherit'; x.onclick = () => { _otsPhotos = _otsPhotos.filter(o => o !== it); _otsPhoneRender(); };
+    r.append(cb, im, tx, x); p.appendChild(r);
+  });
+  if (_otsPhotos.length) { const n = document.createElement('div'); n.style.cssText = 'font-size:12px;opacity:.85;margin-top:6px'; n.textContent = '사진은 암호로 잠겨 전달되며, 받은 뒤 서버에서 지워집니다. 주민등록번호·계좌번호는 가리고 찍으세요. 아래 「읽어서 확인하기」를 누르면 체크한 사진의 글자를 읽습니다.'; p.appendChild(n); }
+}
+async function _otsPhoneToggle() {
+  if (_otsCap) { try { await _otsCap.stop(); } catch (e) { /* 이미 끝남 */ } _otsCap = null; _otsPhoneRender(); _drToast('폰 촬영 연결을 끝냈습니다.'); return; }
+  try {
+    if (window.KAuth && KAuth.ensureLogin) await KAuth.ensureLogin();
+    await _phoneCapLoad();
+    _otsCap = await window.NaviCapture.start({
+      label: '다른 사이트 입력',
+      onPhoto: (url, meta) => { _otsPhotos.push({ id: meta.sha256 + ':' + meta.seq, url: url, on: true }); _otsPhoneRender(); },
+      onState: (st) => { if (st.state === 'expired') { _otsCap = null; _otsPhoneRender(); _drToast('폰 촬영 연결이 끝났습니다. 다시 하려면 「폰으로 촬영」을 누르세요.'); } else if (st.state === 'network') _drToast('폰과 연결이 불안정합니다. 인터넷 연결을 확인하세요.'); else if (st.state === 'bad-item') _drToast('폰에서 온 사진 1장이 손상되어 건너뛰었습니다. 다시 찍어 주세요.'); }
+    });
+    _otsPhoneRender();
+    _drToast('같은 계정의 폰에 「서류 촬영 요청」 알림을 보냈습니다.');
+  } catch (e) {
+    _otsCap = null; const c = String(e && e.message || e);
+    _drToast(/LOGIN|TOKEN|AUTH/.test(c) ? '로그인한 뒤 다시 눌러 주세요.' : '폰 촬영을 시작하지 못했습니다(' + c + ').');
+  }
 }
 function _otsPick() {
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment'); inp.style.display = 'none';
@@ -2821,15 +2862,21 @@ async function _otsGo() {
   if (!_agentInfo) { _drToast('나비웹 도우미가 연결돼 있어야 합니다. 설치·켜기 안내를 확인해 주세요.'); return; }
   const urlEl = document.getElementById('ots-url'), url = urlEl.value.trim(), memo = document.getElementById('ots-text').value.trim();
   if (url && !/^https:\/\//i.test(url)) { _drToast('사이트 주소는 https:// 로 시작해야 합니다.'); urlEl.focus(); return; }
-  if (!_otsFile && !memo) { _drToast('사진을 선택하거나 입력할 내용을 적어 주세요.'); return; }
+  const phoneOn = _otsPhotos.filter(o => o.on);
+  if (!_otsFile && !memo && !phoneOn.length) { _drToast('사진을 선택하거나 입력할 내용을 적어 주세요.'); return; }
   const btn = document.getElementById('ots-go'); btn.disabled = true;
   try {
     let txt = '';
-    if (_otsFile) { _drToast('사진의 글자를 읽는 중입니다…'); try { txt = await _extractImageText(_otsFile); } catch (e) { _drToast('사진의 글자를 읽지 못했습니다. 더 밝고 평평하게 다시 촬영해 주세요.'); return; } }
+    const srcs = (_otsFile ? [_otsFile] : []).concat(phoneOn.map(o => o.url));
+    if (srcs.length) {
+      _drToast('사진의 글자를 읽는 중입니다…');
+      try { const parts = []; for (const sr of srcs) { const f = typeof sr === 'string' ? await fetch(sr).then(r => r.blob()) : sr; parts.push(await _extractImageText(f)); } txt = parts.filter(Boolean).join('\n\n'); }
+      catch (e) { _drToast('사진의 글자를 읽지 못했습니다. 더 밝고 평평하게 다시 촬영해 주세요.'); return; }
+    }
     const all = [txt, memo].filter(Boolean).join('\n');
-    if (_otsFile && txt.replace(/\s/g, '').length < 8 && !memo) { _drToast('사진에서 읽을 수 있는 글이 거의 없습니다. 서류 전체가 보이게 평평하게 다시 촬영해 주세요.'); return; }
+    if (srcs.length && txt.replace(/\s/g, '').length < 8 && !memo) { _drToast('사진에서 읽을 수 있는 글이 거의 없습니다. 서류 전체가 보이게 평평하게 다시 촬영해 주세요.'); return; }
     const ok = await _photoFillConfirm(all, url);
-    if (ok) { _otsRemember(urlEl.value.trim() || url); _otsFile = null; document.getElementById('ots-file').textContent = '선택한 사진이 없습니다.'; document.getElementById('ots-text').value = ''; _drToast('도우미에 맡겼습니다. 열린 사이트에서 로그인하시면 칸에 옮겨 적고, 제출 전에 멈춥니다.'); _otsRender(); }
+    if (ok) { _otsRemember(urlEl.value.trim() || url); _otsFile = null; _otsPhotos = _otsPhotos.filter(o => !o.on); _otsPhoneRender(); document.getElementById('ots-file').textContent = '선택한 사진이 없습니다.'; document.getElementById('ots-text').value = ''; _drToast('도우미에 맡겼습니다. 열린 사이트에서 로그인하시면 칸에 옮겨 적고, 제출 전에 멈춥니다.'); _otsRender(); }
   } finally { btn.disabled = false; }
 }
 /* 사진 → 임의 사이트 양식 입력(2026-11-22). 종이 서류(처방전·신청서 등)를 촬영한 사진의 글을 이 브라우저에서 읽고(OCR, 사진은 서버로 보내지 않는다),
