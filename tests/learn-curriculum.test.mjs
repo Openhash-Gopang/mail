@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { handleCurriculum } from '../ops/naviweb-qna/curriculum.js';
 let JSDOM = null; try { ({ JSDOM } = await import('jsdom')); } catch (e) { /* jsdom 이 없으면 건너뛴다 */ }
 const skip = !JSDOM && 'jsdom 없음';
-const html = readFileSync(new URL('../learn.html', import.meta.url), 'utf8');
+const app = readFileSync(new URL('../learn-app.js', import.meta.url), 'utf8');
 
 class KV {
   constructor() { this.m = new Map(); }
@@ -31,14 +31,15 @@ function server() {
   return { env, calls, fetch };
 }
 function page(srv, seed) {
-  const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://naviweb.kr/learn.html?embed=mail', pretendToBeVisual: true });
-  const w = dom.window; w.scrollTo = () => {}; w.fetch = srv.fetch;
+  const dom = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true });
+  const w = dom.window; w.fetch = srv.fetch;
   if (seed) w.localStorage.setItem('navi-learn-v1', JSON.stringify(seed));
-  w.eval(html.match(/<script>\n'use strict';([\s\S]*)<\/script>\n<\/body>/)[0].replace(/^<script>\n/, '').replace(/<\/script>\n<\/body>$/, ''));
+  w.eval(app);
   const doc = w.document, out = [];
-  w.parent.postMessage = (m) => { if (m.type === 'navi-learn-result') out.push(m); };
-  const nav = (a) => w.dispatchEvent(new w.MessageEvent('message', { data: Object.assign({ type: 'navi-learn-nav' }, a), origin: 'https://naviweb.kr', source: w }));
-  const txt = () => doc.getElementById('root').textContent;
+  w.NaviLearn.on('result', (m) => out.push(m));
+  w.NaviLearn.mount(doc.getElementById('m'));
+  const nav = (a) => w.NaviLearn.nav(a);
+  const txt = () => doc.getElementById('lrn-root').textContent;
   const btn = (t) => [...doc.querySelectorAll('button')].find((b) => b.textContent.trim().startsWith(t));
   const until = async (re, ms) => { const t0 = Date.now(); while (!re.test(txt())) { if (Date.now() - t0 > (ms || 3000)) throw new Error('기다리던 글이 없다: ' + re + '\n' + txt().slice(0, 400)); await new Promise((r) => setTimeout(r, 15)); } };
   return { w, doc, out, nav, txt, btn, until };
@@ -47,7 +48,7 @@ function page(srv, seed) {
 test('상단: 로고를 없앴다(이름만 남는다)', { skip }, () => {
   const p = page(server());
   assert.equal(p.doc.querySelector('.logo'), null); assert.match(p.doc.querySelector('.brand').textContent, /나비웹 학습/);
-  assert.ok(!/\.logo\{/.test(html));
+  assert.ok(!/\.logo\{/.test(readFileSync(new URL('../learn.css', import.meta.url), 'utf8')));
 });
 test('검색 → DB 에 없음 → 새로 만들기 → 내 수업에 추가 → 다른 학습자는 즉시 인출', { skip }, async () => {
   const srv = server(), a = page(srv);
@@ -114,10 +115,10 @@ test('저장값 검증: 깨진 커리큘럼·시작일은 버리고 화면은 �
 });
 test('검색: 돋보기 아이콘을 누르면 검색창이 열리고, 도움말은 처음 한 번만 보인다', { skip }, () => {
   const p = page(server());
-  assert.equal(p.doc.getElementById('srch-in'), null); assert.ok(!/배우고 싶은 과목 검색/.test(p.txt()));
+  assert.equal(p.doc.getElementById('lrn-srch-in'), null); assert.ok(!/배우고 싶은 과목 검색/.test(p.txt()));
   const ic = () => p.doc.querySelector('button[aria-label="과목 검색"]');
-  ic().click(); assert.ok(p.doc.getElementById('srch-in')); assert.match(p.txt(), /온라인 강좌가 다루는 어떤 과목이든/); assert.equal(p.w.localStorage.getItem('navi-learn-help-srch'), '1');
-  ic().click(); assert.equal(p.doc.getElementById('srch-in'), null);
-  ic().click(); assert.ok(p.doc.getElementById('srch-in')); assert.ok(!/온라인 강좌가 다루는 어떤 과목이든/.test(p.txt()), '두 번째부터는 도움말이 없다');
+  ic().click(); assert.ok(p.doc.getElementById('lrn-srch-in')); assert.match(p.txt(), /온라인 강좌가 다루는 어떤 과목이든/); assert.equal(p.w.localStorage.getItem('navi-learn-help-srch'), '1');
+  ic().click(); assert.equal(p.doc.getElementById('lrn-srch-in'), null);
+  ic().click(); assert.ok(p.doc.getElementById('lrn-srch-in')); assert.ok(!/온라인 강좌가 다루는 어떤 과목이든/.test(p.txt()), '두 번째부터는 도움말이 없다');
   const q = page(server()); q.w.localStorage.setItem('navi-learn-help-srch', '1'); q.w.document.querySelector('button[aria-label="과목 검색"]').click(); assert.ok(!/온라인 강좌가 다루는 어떤 과목이든/.test(q.txt()));
 });
