@@ -10,7 +10,7 @@
 // 마스터리: 주차 확인 문제를 통과하면 '통과', 며칠 뒤 다시 풀어서도 맞히면 '숙달'. 통과해야 다음 주차가 열린다(기준 80%·재확인 간격은 가칭).
 var KEY = 'navi-learn-v1', GATE = 80;
 var SUBJECTS = ['수학','물리','화학','생명과학','영어','국어','역사','코딩','경제학'];
-var LEVELS = ['초등','중등','고등','대학','대학원'];
+var LEVELS = ['초등','중등','고등','대학','대학원','성인'];
 var ST = { M:'숙달', P:'통과', L:'연습 중', N:'시작 전' };
 var EXAMPLE = [
   { id:'econ', name:'경제학 입문', subj:'경제학', level:'대학 · 교양', prof:'경제학 교수', seq:'N'.repeat(30), next:'1주차 · 희소성과 선택', example:true },
@@ -73,7 +73,7 @@ var QUIZ = {
 var WEEK_TOPICS = { econ:['희소성과 선택','수요와 공급','탄력성','소비자 이론'], calc:['극한','연속','미분 기초','미분 공식','합성함수 미분','음함수 미분','미분의 응용(1)','미분의 응용(2)','적분 맛보기'] };
 
 var UNIT = 4, DAY = 86400000;
-var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, goal:3, chk:{}, addSubj:'수학', addLevel:'중등', srch:{ q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:null, n:0, open:false }, grain:'month', qz:{}, qst:null };
+var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, goal:3, chk:{}, addSubj:'수학', addLevel:'중등', pf:{ q:'', field:'', st:'idle', err:'', list:null, total:0, res:null, sel:null, from:'', level:'', n:0, busy:false }, srch:{ q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:null, n:0, open:false }, grain:'month', qz:{}, qst:null };
 EXAMPLE[0].start = Date.now() - 3 * DAY; EXAMPLE[1].start = Date.now() - 58 * DAY;   // 예시 과목의 표준 일정 기준일(예시)
 try {
   var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -119,7 +119,7 @@ function cleanCur(x) {
 }
 function fixCourse(a) {
   if (a.cur) { var cc = cleanCur(a.cur); if (cc) a.cur = cc; else delete a.cur; }
-  a.start = isFinite(a.start) && a.start > 0 ? Number(a.start) : undefined; a.cid = /^c[0-9a-f]{12}$/.test(a.cid) ? a.cid : undefined;
+  a.pid = /^p[0-9a-f]{12}$/.test(a.pid) ? a.pid : undefined; a.start = isFinite(a.start) && a.start > 0 ? Number(a.start) : undefined; a.cid = /^c[0-9a-f]{12}$/.test(a.cid) ? a.cid : undefined;
   if (a.cur && !a.seq) a.seq = new Array(a.cur.w.length + 1).join('N');
   return a;
 }
@@ -393,7 +393,7 @@ function viewSubjects() {
     hero.appendChild(h('div', { class:'rowf', style:'margin-top:6px' }, [btn('학습 시작', 'white', function () { openWeek(c, i + 1, 'week'); }), btn('확인 문제 풀기', 'ghost', function () { openWeek(c, i + 1, 'quiz'); }), btn('교수에게 묻기', 'ghost', function () { ask(c.name + ' ' + (i + 1) + '주차에서 궁금한 점이 있어요'); })]));
   } else {
     hero.appendChild(h('div', { class:'big', text:'과목을 추가해 시작하세요' }));
-    hero.appendChild(h('div', { class:'sub', text:'과목과 수준을 고르면 교수가 맞춤 커리큘럼을 만들어 줍니다.' }));
+    hero.appendChild(h('div', { class:'sub', text:'배우고 싶은 과목을 입력하면 그 과목의 AI 교수를 불러와 맞춤 커리큘럼을 만들어 줍니다.' }));
     hero.appendChild(h('div', { class:'rowf' }, [btn('과목 추가', 'white', openAdd)]));
   }
   var wd = weekDone(), st = streak(), gc = h('div', { class:'card col' }, [
@@ -419,7 +419,7 @@ function viewSubjects() {
       c.review ? h('div', { class:'note', text:'복습 권장 · ' + c.review }) : null,
       h('div', { class:'rowf', style:'margin-top:auto;justify-content:space-between' }, [h('span', { class:'sub', text:'담당 · ' + c.prof }), btn(seq ? '이어서 학습 →' : '교수와 시작하기 →', 'sm', function () { go('course', c.id); })])]);
   });
-  cards.push(h('button', { class:'card add', onclick:openAdd }, [h('span', { text:'+ 과목 추가' }), h('span', { class:'sub', style:'font-weight:400', text:'수학·물리·영어 등 / 초등부터 대학원 수준까지' })]));
+  cards.push(h('button', { class:'card add', onclick:openAdd }, [h('span', { text:'+ 과목 추가' }), h('span', { class:'sub', style:'font-weight:400', text:'어떤 과목이든 · AI 교수 목록에서 찾거나 새로 만들어요' })]));
   kids.push(h('div', { class:'g3', style:'margin-top:12px' }, cards), h('div', { class:'foot', text:'경제학 입문·미적분 기초와 학습 기록은 예시 데이터입니다. 추가한 과목과 기록은 이 브라우저에만 저장됩니다.' }));
   return kids;
 }
@@ -711,30 +711,129 @@ function render() {
   postState();
 }
 
-// ── 과목 추가 ──
-function chipRow(list, key) {
-  return h('div', { class:'chips' }, list.map(function (n) { return h('button', { class:'chip', 'aria-pressed':String(S[key] === n), text:n, onclick:function () { S[key] = n; drawAdd(); } }); }));
+// ── 과목 추가 · AI 교수 찾기 ──
+// 과목마다 AI 교수는 한 명이다. 어떤 과목이든 입력하면 교수 목록(서버 DB)에서 찾아 불러오고, 없으면 새 교수를 만들어 목록에 올린다(모든 학습자가 같은 교수를 쓴다).
+// 목록에는 이름과 세부 내용(담당 범위·하위 분야·검색어)이 함께 있어 이름·분야·내용으로 찾을 수 있다. 교수를 고르면 수준·목표를 정해 그 과목의 커리큘럼을 불러오거나 만든다.
+var PERR = { short:'과목 이름을 두 글자 이상 써 주세요.', not_a_subject:'학습 과목으로 보기 어려워요. 배우고 싶은 과목이나 주제를 써 주세요.', unavailable:'새 교수를 만드는 서버가 아직 준비되지 않았어요. 목록에서 고르거나, 아래 \'그냥 추가\'로 시작할 수 있어요.', limit:'오늘 새로 만들 수 있는 교수 수를 넘었어요. 내일 다시 시도하거나 목록에서 골라 주세요.', busy:'지금 새 교수를 만드는 요청이 많아요. 잠시 뒤 다시 시도해 주세요.', llm_error:'교수를 만들지 못했어요. 다시 시도해 주세요.', bad_format:'교수를 만들었지만 형식이 맞지 않아 저장하지 않았어요. 다시 시도해 주세요.', network:'서버에 연결하지 못했어요. 잠시 뒤 다시 시도하거나, 아래 \'그냥 추가\'로 시작할 수 있어요.' };
+var FIELDS = ['인문', '사회과학', '자연과학', '공학·기술', '의학·보건', '예술·체육', '어학', '직업·자격', '기타'];
+function cleanProf(x) {
+  if (!x || typeof x !== 'object' || !/^p[0-9a-f]{12}$/.test(x.id) || typeof x.subject !== 'string' || !x.subject.trim()) return null;
+  var arr = function (v, n, m) { return (Array.isArray(v) ? v : []).filter(function (t) { return typeof t === 'string' && t.trim(); }).map(function (t) { return t.slice(0, m); }).slice(0, n); };
+  var lv = arr(x.levels, 6, 10).filter(function (l) { return LEVELS.indexOf(l) >= 0 || l === '성인'; });
+  return { id:x.id, subject:x.subject.slice(0, 20), name:(typeof x.name === 'string' && x.name.trim() ? x.name : x.subject + ' 교수').slice(0, 26), field:FIELDS.indexOf(x.field) >= 0 ? x.field : '기타', summary:String(x.summary || '').slice(0, 220), levels:lv.length ? lv : ['대학'], topics:arr(x.topics, 8, 24), keywords:arr(x.keywords, 10, 20), learners:isFinite(x.learners) ? Math.max(0, Math.floor(x.learners)) : 0 };
+}
+function pfLoad() {
+  var f = S.pf, my = ++f.n;
+  api('/prof/list?q=' + encodeURIComponent(f.q.trim().slice(0, 40)) + (f.field ? '&field=' + encodeURIComponent(f.field) : '')).then(function (j) {
+    if (my !== f.n && f.list !== null) return;
+    if (j.ok && Array.isArray(j.list)) { f.list = j.list.map(cleanProf).filter(Boolean); f.total = isFinite(j.total) ? j.total : f.list.length; } else if (f.list === null) f.list = [];
+    drawAdd();
+  });
+}
+function pfSelect(p, from) { var f = S.pf; f.sel = p; f.from = from; f.st = 'idle'; f.err = ''; f.level = p.levels.indexOf(f.level) >= 0 ? f.level : p.levels[0]; drawAdd(); }
+function pfSearch(q) {
+  var f = S.pf; q = String(q || '').trim().slice(0, 40); f.q = q;
+  if (q.replace(/\s/g, '').length < 2) { f.st = 'err'; f.err = PERR.short; return drawAdd(); }
+  f.st = 'search'; f.res = null; var my = ++f.n; drawAdd();
+  api('/prof/search?q=' + encodeURIComponent(q)).then(function (j) {
+    if (my !== f.n) return;
+    var p = j.ok && j.found ? cleanProf(j.professor) : null;
+    if (p) return pfSelect(p, 'db');
+    if (!j.ok) { f.st = 'err'; f.err = PERR[j.error] || PERR.network; } else { f.st = 'none'; f.res = { can:j.canBuild !== false, rel:(j.related || []).map(cleanProf).filter(Boolean).slice(0, 6) }; }
+    drawAdd();
+  });
+}
+function pfMake() {
+  var f = S.pf, q = f.q; f.st = 'make'; var my = ++f.n; drawAdd();
+  api('/prof/build', { q:q }, 90000).then(function (j) {
+    if (my !== f.n) return;
+    var p = j.ok ? cleanProf(j.professor) : null;
+    if (p) { f.list = null; return pfSelect(p, j.created ? 'new' : 'db'); }
+    f.st = 'err'; f.err = j.ok ? PERR.bad_format : (PERR[j.error] || PERR.network); drawAdd();
+  });
+}
+function addCourseFor(p, level, cur, goal) {
+  var c = { id:'u' + Date.now(), pid:p.id, name:cur ? cur.title : p.subject + ' · ' + level, subj:p.subject, level:level + ' · ' + p.subject, prof:p.name, seq:cur ? new Array(cur.w.length + 1).join('N') : '', goal:goal || '' };
+  if (cur) { c.cid = cur.id || undefined; c.cur = cur; c.start = Date.now(); }
+  S.added.push(c); save(); return c;
+}
+function pfStart() {
+  var f = S.pf, p = f.sel, lv = f.level; if (!p || f.busy) return;
+  var have = all().filter(function (c) { return c.pid === p.id && c.level.indexOf(lv + ' ·') === 0; })[0] || all().filter(function (c) { return !c.pid && c.subj === p.subject && c.level.indexOf(lv + ' ·') === 0; })[0];
+  if (have) { closeAdd(); return go('course', have.id); }
+  f.busy = true; drawAdd(); var goal = (S.goalDraft || '').trim();
+  api('/build', { q:p.subject + ' ' + lv, level:lv, pid:p.id }, 90000).then(function (j) {
+    f.busy = false; var cur = j.ok ? cleanCur(j.curriculum) : null, c;
+    api('/prof/' + p.id + '/use', {});
+    if (cur) { var ex = haveCur(cur.id); c = ex || addCourseFor(p, lv, cur, goal); if (ex && !ex.pid) { ex.pid = p.id; save(); } }
+    else c = addCourseFor(p, lv, null, goal);   // 커리큘럼 서버를 쓸 수 없을 때: 교수와 상담해 시작한다
+    closeAdd(); go('course', c.id);
+    if (!cur) ask(goal || (lv + ' ' + p.subject + ' 학습을 시작하고 싶어요'));
+  });
+}
+function pfPlain() {
+  var q = S.pf.q.trim().slice(0, 12); if (q.replace(/\s/g, '').length < 2) return;
+  var c = { id:'u' + Date.now(), name:q, subj:q, level:'수준 미정 · ' + q, prof:q + ' 교수', seq:'', goal:'' };
+  S.added.push(c); save(); closeAdd(); go('course', c.id); ask(q + ' 학습을 시작하고 싶어요');
+}
+function linkProf(c) {   // 말로 추가한 과목도 교수 목록과 이어 준다(있으면 불러오고, 없으면 만들어 올린다). 실패하면 그대로 둔다.
+  var done = function (j) { var p = j && j.ok ? cleanProf(j.professor) : null; if (p) { c.pid = p.id; c.prof = p.name; save(); if (S.view === 'subjects' || S.view === 'course') render(); api('/prof/' + p.id + '/use', {}); } return p; };
+  api('/prof/search?q=' + encodeURIComponent(c.subj)).then(function (j) { if (done(j)) return; if (j && j.ok && j.canBuild !== false) api('/prof/build', { q:c.subj }, 90000).then(done); });
+}
+function pcard(p, onpick) {
+  var sub = [p.levels.join('·')].concat(p.topics.slice(0, 3)).filter(Boolean).join(' · ');
+  return h('button', { class:'pcard', type:'button', onclick:onpick, 'aria-label':p.name + ' 열기' }, [
+    h('div', { class:'rowf', style:'flex-wrap:nowrap;justify-content:space-between;gap:8px' }, [h('b', { text:p.name }), pill(p.field)]),
+    h('div', { class:'sub ps', text:p.summary }), h('div', { class:'sub', style:'font-size:12.5px', text:sub + (p.learners ? ' · 학습자 ' + p.learners + '명' : '') })]);
 }
 function drawAdd() {
-  var d = $('lrn-dlg'); d.textContent = '';
-  var goal = h('textarea', { id:'lrn-goal', placeholder:'예: 중학교 1학년 수학 일차방정식이 어려워요', maxlength:'200', 'aria-label':'지금 어려운 점이나 목표' });
-  if (S.goalDraft) goal.value = S.goalDraft;
-  goal.oninput = function () { S.goalDraft = goal.value; };
-  [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { style:'font-size:20px', text:'과목 추가' }), h('button', { class:'btn quiet sm', 'aria-label':'닫기', text:'닫기', onclick:closeAdd })]),
-   h('div', { class:'lab', text:'1. 과목' }), chipRow(SUBJECTS, 'addSubj'),
-   h('div', { class:'lab', text:'2. 수준' }), chipRow(LEVELS, 'addLevel'),
-   h('div', { class:'lab', text:'3. 지금 어려운 점이나 목표 (선택)' }), goal,
-   h('div', { class:'note info', style:'margin-top:16px', text:S.addSubj + ' 교수가 담당합니다. 고른 수준(' + S.addLevel + ')과 목표에 맞춰 커리큘럼과 일정을 만들어 드려요.' }),
-   h('div', { class:'rowf', style:'justify-content:flex-end;margin-top:20px' }, [h('button', { class:'btn quiet', text:'취소', onclick:closeAdd }), h('button', { class:'btn fill', text:'과목 추가', onclick:commitAdd })])
-  ].forEach(function (x) { d.appendChild(x); });
+  var d = $('lrn-dlg'); if (!d) return; var f = S.pf; d.textContent = ''; d.className = 'dlg wide';
+  var kids = [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { style:'font-size:20px', text:f.sel ? '교수 선택' : '과목 추가 · AI 교수 찾기' }), h('button', { class:'btn quiet sm', 'aria-label':'닫기', text:'닫기', onclick:closeAdd })])];
+  if (f.sel) kids = kids.concat(drawSel(f)); else kids = kids.concat(drawFind(f));
+  kids.forEach(function (x) { if (x) d.appendChild(x); });
 }
-function openAdd() { S.goalDraft = ''; drawAdd(); $('lrn-ov').hidden = false; }
+function drawFind(f) {
+  var inp = h('input', { id:'lrn-pf-in', type:'search', placeholder:'배우고 싶은 과목 (예: 거시경제학, 파이썬, 한국사, 스페인어, 전기회로, 요리)', maxlength:'40', 'aria-label':'과목 검색', value:f.q });
+  inp.oninput = function () { f.q = inp.value; }; inp.onkeydown = function (e) { if (e.key === 'Enter') pfSearch(inp.value); };
+  var busy = f.st === 'search' || f.st === 'make', kids = [h('p', { class:'sub', style:'margin:6px 0 14px', text:'사회에 알려진 어떤 과목이든 입력하세요. 그 과목의 AI 교수가 이미 있으면 바로 불러오고, 없으면 새로 만들어 교수 목록에 올려요. 모든 학습자가 같은 교수에게 배워요.' }),
+    h('div', { class:'sh' }, [inp, h('button', { class:'btn fill', text:'교수 찾기', disabled:busy ? 'disabled' : false, onclick:function () { pfSearch(inp.value); } })])];
+  if (f.st === 'search') kids.push(h('div', { class:'rowf', role:'status', style:'margin-top:14px' }, [h('span', { class:'spin' }), h('span', { class:'sub', text:'교수 목록에서 찾는 중이에요…' })]));
+  else if (f.st === 'make') kids.push(h('div', { class:'card col', role:'status', style:'background:var(--bg);box-shadow:none;margin-top:14px' }, [h('div', { class:'rowf' }, [h('span', { class:'spin' }), h('b', { text:'“' + f.q + '” 교수를 만들고 있어요' })]), h('div', { class:'sub', text:'담당 범위와 하위 분야를 정리해 목록에 올리는 중이에요. 보통 10~30초쯤 걸려요.' })]));
+  else if (f.st === 'err') kids.push(h('div', { class:'note', role:'alert', style:'margin-top:14px', text:f.err }), (f.err === PERR.unavailable || f.err === PERR.network) && f.q.trim().length >= 2 ? h('div', { class:'rowf', style:'margin-top:10px' }, [btn('그냥 추가', '', pfPlain)]) : null);
+  else if (f.st === 'none' && f.res) {
+    var r = f.res, ck = [h('b', { text:'“' + f.q + '” 교수는 아직 목록에 없어요' })];
+    if (r.rel.length) { ck.push(h('div', { class:'sub', text:'비슷한 교수가 있어요. 찾던 분이면 골라 주세요.' }), h('div', { class:'pl' }, r.rel.map(function (p) { return pcard(p, function () { pfSelect(p, 'db'); }); }))); }
+    ck.push(h('div', { class:'sub', text:r.can ? '찾던 교수가 없다면 새로 만들어요. 만든 교수는 목록에 올라 다음 학습자도 바로 쓸 수 있어요.' : '새 교수를 만드는 서버가 아직 준비되지 않았어요.' }));
+    ck.push(h('div', { class:'rowf' }, [r.can ? btn('“' + f.q.slice(0, 14) + '” 교수 새로 만들기', 'fill', pfMake) : btn('그냥 추가', '', pfPlain)]));
+    kids.push(h('div', { class:'card col', style:'background:var(--bg);box-shadow:none;margin-top:14px;gap:12px' }, ck));
+  }
+  var fr = h('div', { class:'chips', style:'margin-top:18px' }, [['', '전체']].concat(FIELDS.map(function (x) { return [x, x]; })).map(function (x) { return h('button', { class:'chip', 'aria-pressed':String(f.field === x[0]), text:x[1], onclick:function () { f.field = x[0]; pfLoad(); } }); }));
+  kids.push(h('div', { class:'lab', text:'AI 교수 목록' + (f.list ? ' · ' + f.total + '명' : '') }), fr);
+  if (f.list === null) { kids.push(h('div', { class:'rowf', role:'status', style:'margin-top:12px' }, [h('span', { class:'spin' }), h('span', { class:'sub', text:'불러오는 중이에요…' })])); }
+  else if (!f.list.length) kids.push(h('div', { class:'sub', style:'margin-top:12px', text:'아직 등록된 교수가 없어요. 위에서 과목을 입력하면 그 과목의 첫 교수가 만들어져요.' }));
+  else kids.push(h('div', { class:'pl', style:'margin-top:12px' }, f.list.map(function (p) { return pcard(p, function () { pfSelect(p, 'db'); }); })));
+  return kids;
+}
+function drawSel(f) {
+  var p = f.sel, goal = h('textarea', { id:'lrn-goal', placeholder:'예: 중학교 1학년 수학 일차방정식이 어려워요', maxlength:'200', 'aria-label':'지금 어려운 점이나 목표' });
+  if (S.goalDraft) goal.value = S.goalDraft; goal.oninput = function () { S.goalDraft = goal.value; };
+  var chips = h('div', { class:'chips' }, p.levels.map(function (n) { return h('button', { class:'chip', 'aria-pressed':String(f.level === n), text:n, onclick:function () { f.level = n; drawAdd(); } }); }));
+  var have = all().filter(function (c) { return c.pid === p.id && c.level.indexOf(f.level + ' ·') === 0; })[0];
+  return [h('button', { class:'back', text:'← 교수 목록', onclick:function () { f.sel = null; f.st = 'idle'; drawAdd(); } }),
+    h('div', { class:'card col', style:'background:var(--bg);box-shadow:none;gap:10px' }, [
+      h('div', { class:'rowf' }, [pill(f.from === 'new' ? '방금 새로 만들었어요' : '교수 목록에서 불러왔어요', f.from === 'new' ? 'l' : 'm'), pill(p.field)]),
+      h('div', { style:'font-size:20px;font-weight:700', text:p.name }), h('div', { text:p.summary }),
+      p.topics.length ? h('div', { class:'chips' }, p.topics.map(function (t) { return h('span', { class:'pill', text:t }); })) : null,
+      p.keywords.length ? h('div', { class:'sub', text:'검색어 · ' + p.keywords.join(', ') }) : null,
+      h('div', { class:'sub', text:'지도 수준 ' + p.levels.join(' · ') + (p.learners ? ' · 학습자 ' + p.learners + '명' : '') + ' · 한 명의 AI 교수가 모든 학습자를 동시에 지도해요' })]),
+    h('div', { class:'lab', text:'1. 수준' }), chips,
+    h('div', { class:'lab', text:'2. 지금 어려운 점이나 목표 (선택)' }), goal,
+    h('div', { class:'note info', style:'margin-top:16px', text:have ? '이미 이 수준으로 배우고 있어요. 수업을 열어 이어서 학습해요.' : p.name + '가 담당해요. ' + f.level + ' 수준 ' + p.subject + ' 커리큘럼이 이미 있으면 바로 불러오고, 없으면 새로 만들어요.' }),
+    f.busy ? h('div', { class:'rowf', role:'status', style:'margin-top:16px' }, [h('span', { class:'spin' }), h('span', { class:'sub', text:'커리큘럼을 불러오거나 만드는 중이에요… (최대 1분)' })]) : null,
+    h('div', { class:'rowf', style:'justify-content:flex-end;margin-top:20px' }, [h('button', { class:'btn quiet', text:'취소', onclick:closeAdd }), h('button', { class:'btn fill', text:have ? '수업 열기' : '수업 시작', disabled:f.busy ? 'disabled' : false, onclick:pfStart })])];
+}
+function openAdd() { S.goalDraft = ''; var f = S.pf; f.sel = null; f.st = 'idle'; f.err = ''; f.res = null; f.busy = false; f.list = null; drawAdd(); $('lrn-ov').hidden = false; pfLoad(); setTimeout(function () { var i = $('lrn-pf-in'); if (i) try { i.focus(); } catch (e) {} }, 0); }
 function closeAdd() { var o = $('lrn-ov'); if (o) o.hidden = true; }
-function commitAdd() {
-  var c = { id:'u' + Date.now(), name:S.addSubj + ' · ' + S.addLevel, subj:S.addSubj, level:S.addLevel + ' · ' + S.addSubj, prof:S.addSubj + ' 교수', seq:'', goal:(S.goalDraft || '').trim() };
-  S.added.push(c); save(); closeAdd(); go('course', c.id);
-  ask(c.goal || (S.addLevel + ' ' + S.addSubj + ' 학습을 시작하고 싶어요'));
-}
 function postState() {
   var cur = find(S.cur);
   var st = { view:S.view, cur:(cur && (S.view === 'course' || S.view === 'week' || S.view === 'quiz')) ? { id:cur.id, name:cur.name, week:(S.view === 'course' ? undefined : S.week) } : null,
@@ -765,7 +864,7 @@ function nav(a) {
     var dup = all().filter(function (c) { return c.subj === nm && (!lv || c.level.indexOf(lv) === 0); })[0];
     if (dup) { go('course', dup.id); return reply(true, '이미 있는 과목이라 ' + dup.name + ' 화면을 열었습니다.'); }
     var c = { id:'u' + Date.now(), name:nm + (lv ? ' · ' + lv : ''), subj:nm, level:(lv || '수준 미정') + ' · ' + nm, prof:nm + ' 교수', seq:'', goal:'' };
-    S.added.push(c); save(); go('course', c.id); return reply(true, c.name + ' 과목을 추가했습니다. 교수와 상담해 커리큘럼을 만들 수 있습니다.');
+    S.added.push(c); save(); go('course', c.id); linkProf(c); return reply(true, c.name + ' 과목을 추가했습니다. 교수와 상담해 커리큘럼을 만들 수 있습니다.');
   }
   if (d !== 'course' && d !== 'week' && d !== 'quiz') return reply(false, '지원하지 않는 요청입니다.');
   var co = resolve(a.subject);
