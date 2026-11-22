@@ -97,8 +97,7 @@
       a.week = w;
     }
     if ((d === 'report' || d === 'submit') && subj) a.subject = subj;
-    if (d === 'add') {  function numOrNull(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
-  function str(v, n) { return typeof v === 'string' ? v.trim().replace(/[\r\n]+/g, ' ').slice(0, n) : ''; }
+    if (d === 'add') {
       if (subj.length > 12) return null;
       var lv = str(x.level, 6); if (['초등', '중등', '고등', '대학', '대학원'].indexOf(lv) >= 0) a.level = lv;
     }
