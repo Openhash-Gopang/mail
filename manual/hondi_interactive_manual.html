@@ -1003,9 +1003,9 @@ function renderQuiz(chapter) {
 
 /* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록). 제목 번호 = 장 번호 */
 var howtoP = {};   // 목록 파일별(초급 guide-howto.json · 중급 guide-howto-mid.json) 읽기 결과
-// 중급 장 ↔ 중급 영상 번호([중급] 나비웹 사용법 01~05). 초급 영상은 장 순서 번호와 같지만, 중급 영상은 이 다섯 장에만 붙는다.
-var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5 };
-function howtoNum(t) { var m = /(?:navi|사용법|매뉴얼|도우미)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
+// 중급 장 ↔ 중급 영상 번호([중급] 나비웹 사용법 01~09·12). 초급 영상은 장 순서 번호와 같지만, 중급 영상은 이 장들에만 붙는다(새 영상이 올라오면 여기에 장을 더한다).
+var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5, ch16: 6, ch_doc_write: 7, ch_myforms: 8, ch_othersite: 9, ch_learning: 12 };
+function howtoNum(t) { var m = /(?:navi|나비웹|사용법|매뉴얼|도우미)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
 function loadHowto(name) {
   name = name || 'guide-howto.json';
   if (!howtoP[name]) howtoP[name] = fetch(EMBED ? name : 'https://naviweb.kr/' + name, { cache: 'no-cache' })
