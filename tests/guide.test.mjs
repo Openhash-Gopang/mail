@@ -501,3 +501,15 @@ test('정보 공개 청구: 옛 확장이 절차를 몰라도 맡길 수 있고,
   assert.ok(!sp.includes('[OPTIONS') || sp.includes('[OPTIONS: ...] 선택지는 쓰지 않는다'));
   assert.ok(!sp.includes('직접 한다. 사용자가 원하면'));
 });
+
+test('매뉴얼: 중급 10장은 「예시: 정보 공개 청구와 행정 심판 청구」이고 행정심판 따라 하기와 SP·도우미 연결이 있다', () => {
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  const i = m.indexOf('var CHAPTERS = ') + 'var CHAPTERS = '.length;
+  const chs = JSON.parse(m.slice(i, m.indexOf('];\nvar TIER_LABELS', i) + 1));
+  const c = chs.find(x => x.id === 'ch_foi');
+  assert.equal(c.title, '예시: 정보 공개 청구와 행정 심판 청구');
+  assert.ok(c.body.includes('따라 해 보기 3') && c.body.includes('simpan.go.kr') && c.body.includes('이의신청은 건너뛰고 행정심판을 청구하고 싶어'));
+  assert.ok(c.quiz.length >= 8);
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('[행정심판 청구]') && h.includes('https://www.simpan.go.kr') && h.includes('행정심판\\s*청구서'));
+});
