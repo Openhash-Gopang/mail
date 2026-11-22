@@ -5,6 +5,7 @@ compatibility_date = "2026-11-01"
 # 같은 도메인(naviweb.kr)에서 /api/qna/* 만 이 Worker 가 받는다(naviweb-proxy 의 naviweb.kr/* 보다 구체적인 경로가 먼저 적용된다).
 routes = [
   { pattern = "naviweb.kr/api/qna/*", zone_name = "naviweb.kr" },
+  { pattern = "naviweb.kr/api/curriculum/*", zone_name = "naviweb.kr" },   # 커리큘럼 DB(curriculum.js) — 같은 KV·같은 SP 비밀값을 쓴다
 ]
 
 # 1) 저장소: Cloudflare 대시보드 → Storage & Databases → KV → "naviweb-qna" 를 만들고, 그 id 를 아래에 넣는다.
@@ -17,3 +18,4 @@ id = "8f481d8e276e47279e060ea2512529ba"
 #    SP_API_URL    SP 가 쓸 OpenAI 호환 chat completions 주소(예: https://api.deepseek.com/chat/completions). 없으면 SP 답변 없이 질문만 접수된다.
 #    SP_API_KEY    위 API 키.
 #    SP_MODEL      (선택) 모델 이름. 기본 deepseek-chat.
+#    TAVILY_API_KEY (선택) 커리큘럼 검색에 웹 검색(Tavily)을 더한다. 없으면 위키백과(ko·en)만 쓴다.
