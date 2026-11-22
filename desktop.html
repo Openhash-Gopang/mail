@@ -3491,7 +3491,7 @@ function _learnShow(view, then) {
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 (function () { const ib = document.querySelector('.unread-badge[data-for="inbox"]'); if (ib && window.MutationObserver) new MutationObserver(() => _infraExSync()).observe(ib, { attributes: true, childList: true, characterData: true, subtree: true }); })();
 // ── 인프라 AI(구 각종 기관, 2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 나비웹의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
-const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
+const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','은행'],['kstock','증권'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
 let _orgSel = -1;
 function _cmpOrgFilter() {
   const q = _docNorm(document.getElementById('cmp-org-q').value), list = document.getElementById('cmp-org-list');
