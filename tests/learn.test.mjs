@@ -43,3 +43,7 @@ test('learn.html: 주차 학습 페이지·확인 문제 페이지·화면 조�
   for (const k of ['viewWeek', 'viewQuiz', 'navi-learn-nav', 'navi-learn-state', 'navi-learn-result', 'applyResult', 'RECHECK']) assert.ok(l.includes(k), k);
   assert.match(l, /e\.origin !== location\.origin \|\| e\.source !== parent/);
 });
+
+test('learn.html: 학습 보고서·진로 추천 화면', () => {
+  for (const k of ['viewReport', 'viewCareer', 'metricsOf', 'careerOf', 'submitReport', '진로 지도 교수', '자료 부족']) assert.ok(l.includes(k), k);
+});
