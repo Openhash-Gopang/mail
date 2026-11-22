@@ -153,9 +153,9 @@ var QUIZ = {
 };
 var WEEK_TOPICS = { econ:['희소성과 선택','수요와 공급','탄력성','소비자 이론'], calc:['극한','연속','미분 기초','미분 공식','합성함수 미분','음함수 미분','미분의 응용(1)','미분의 응용(2)','적분 맛보기'] };
 
-var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, addSubj:'수학', addLevel:'중등' };
-try { var sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && Array.isArray(sv.added)) S.added = sv.added.filter(function (a) { return a && typeof a.name === 'string'; }); if (sv && sv.prog && typeof sv.prog === 'object') for (var pk in sv.prog) { var pv = sv.prog[pk]; if (pv && typeof pv.seq === 'string' && /^[MPLN]{1,60}$/.test(pv.seq)) S.prog[pk] = { seq:pv.seq, pass:(pv.pass && typeof pv.pass === 'object') ? pv.pass : {} }; } } catch (e) {}
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ added: S.added, prog: S.prog })); } catch (e) {} }
+var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, addSubj:'수학', addLevel:'중등' };
+try { var sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && Array.isArray(sv.added)) S.added = sv.added.filter(function (a) { return a && typeof a.name === 'string'; }); if (sv && sv.prog && typeof sv.prog === 'object') for (var pk in sv.prog) { var pv = sv.prog[pk]; if (pv && typeof pv.seq === 'string' && /^[MPLN]{1,60}$/.test(pv.seq)) S.prog[pk] = { seq:pv.seq, pass:(pv.pass && typeof pv.pass === 'object') ? pv.pass : {}, log:Array.isArray(pv.log) ? pv.log.filter(function (e) { return Array.isArray(e) && isFinite(e[0]) && isFinite(e[1]) && isFinite(e[2]); }).slice(-200) : [] }; } if (sv && sv.sub && typeof sv.sub === 'object') for (var sk in sv.sub) { var su = sv.sub[sk]; if (su && isFinite(su.ts) && isFinite(su.score)) S.sub[sk] = { ts:su.ts, score:su.score, prog:isFinite(su.prog) ? su.prog : null, avg:isFinite(su.avg) ? su.avg : null, first:isFinite(su.first) ? su.first : null, pace:isFinite(su.pace) ? su.pace : null, tried:Number(su.tried) || 0, att:Number(su.att) || 0, basis:String(su.basis || '').slice(0, 60) }; } } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ added: S.added, prog: S.prog, sub: S.sub })); } catch (e) {} }
 function all() { return EXAMPLE.concat(S.added); }
 function find(id) { return all().filter(function (c) { return c.id === id; })[0]; }
 function seqOf(c) { return (S.prog[c.id] && S.prog[c.id].seq) || c.seq || ''; }
@@ -188,7 +188,7 @@ function head(crumbs, title, lead) {
   return [c, h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null];
 }
 function tabs(active) {
-  return h('div', { class:'tabs', role:'tablist' }, [['subjects','내 수업'],['history','학습 기록']].map(function (t) { return h('button', { class:'tab', role:'tab', 'aria-selected':String(active === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }));
+  return h('div', { class:'tabs', role:'tablist' }, [['subjects','내 수업'],['history','학습 기록'],['report','학습 보고서'],['career','진로 추천']].map(function (t) { return h('button', { class:'tab', role:'tab', 'aria-selected':String(active === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }));
 }
 
 function viewSubjects() {
@@ -262,7 +262,7 @@ function applyResult(c, n, pct) {
     else if (cur === 'P') msg = '이미 통과한 주차입니다. 며칠 뒤 다시 풀어서도 통과하면 \'숙달\'이 됩니다.';
     else msg = '이미 숙달한 주차입니다.';
   } else { if (cur === 'N') to = 'L'; msg = '통과 기준(' + GATE + '%)에 조금 못 미쳤습니다. 풀이를 보고 다시 도전해 보세요.'; }
-  p.seq = p.seq.slice(0, i) + to + p.seq.slice(i + 1); save();
+  p.seq = p.seq.slice(0, i) + to + p.seq.slice(i + 1); (p.log || (p.log = [])).push([n, pct, now]); if (p.log.length > 200) p.log.shift(); save();
   return msg;
 }
 function viewQuiz() {
@@ -324,9 +324,107 @@ function viewHistory() {
   return kids;
 }
 
+// ── 학습 보고서(과목 교수) · 진로 추천(진로 지도 교수) ──
+// 과목 교수는 확인 문제 기록으로 진도·성취도·학습 속도·학습 능력을 평가한 보고서를 쓰고, 학습자가 제출하면
+// 진로 지도 교수가 제출된 보고서를 모아 적성에 맞는 진로를 추천한다. 점수 기록이 없으면 수치를 지어내지 않고 '자료 부족'으로 둔다.
+var DOMS = { '수학':['수리','컴퓨팅'], '물리':['수리','자연'], '화학':['자연'], '생명과학':['자연'], '영어':['언어'], '국어':['언어'], '역사':['인문사회'], '코딩':['컴퓨팅','수리'], '경제학':['사회경제','수리'] };
+var DOMN = { '수리':'수리·논리', '컴퓨팅':'컴퓨팅', '자연':'자연과학', '언어':'언어', '인문사회':'인문·사회', '사회경제':'경제·사회' };
+var CAREERS = [
+  { n:'데이터·AI·소프트웨어', w:{ '수리':0.5, '컴퓨팅':0.5 }, d:'수학적 사고와 코딩으로 데이터를 다루고 문제를 푸는 일' },
+  { n:'공학·기술 개발', w:{ '수리':0.5, '자연':0.3, '컴퓨팅':0.2 }, d:'물리·수학을 바탕으로 제품과 시스템을 설계하는 일' },
+  { n:'자연과학 연구·생명과학', w:{ '자연':0.7, '수리':0.3 }, d:'실험과 관찰로 원리를 밝히는 연구·의생명 분야' },
+  { n:'경제·금융·경영', w:{ '사회경제':0.6, '수리':0.4 }, d:'수치와 제도를 읽고 판단하는 분석·기획 분야' },
+  { n:'언어·교육·콘텐츠', w:{ '언어':0.6, '인문사회':0.4 }, d:'말과 글로 가르치고 전달하고 만드는 분야' },
+  { n:'법·행정·사회과학', w:{ '인문사회':0.5, '언어':0.3, '사회경제':0.2 }, d:'사회 제도와 사람을 이해하고 조율하는 분야' }
+];
+function lvOf(s) { return s == null ? '자료 부족' : s >= 85 ? '높음' : s >= 65 ? '보통' : '도움 필요'; }
+function metricsOf(c) {
+  var seq = seqOf(c), n = { M:0, P:0, L:0, N:0 }; seq.split('').forEach(function (k) { n[k]++; });
+  var log = (S.prog[c.id] && S.prog[c.id].log) || [], tried = n.M + n.P + n.L, done = n.M + n.P;
+  var m = { id:c.id, name:c.name, subj:c.subj, prof:c.prof, weeks:seq.length, tried:tried, done:done, mast:n.M, lrn:n.L, att:log.length, prog:seq ? Math.round(done / seq.length * 100) : null, avg:null, first:null, pace:null, score:null, basis:'' };
+  if (log.length) {
+    var sum = 0, wk = {}, t0 = Infinity, t1 = 0;
+    log.forEach(function (e) { sum += e[1]; if (!wk[e[0]]) wk[e[0]] = e[1]; if (e[2] < t0) t0 = e[2]; if (e[2] > t1) t1 = e[2]; });
+    m.avg = Math.round(sum / log.length);
+    var ks = Object.keys(wk), fp = ks.filter(function (k) { return wk[k] >= GATE; }).length; m.first = Math.round(fp / ks.length * 100);
+    if (log.length >= 2 && done) m.pace = Math.round(done / Math.max((t1 - t0) / 604800000, 1) * 10) / 10;
+    m.score = Math.round(0.6 * m.avg + 0.25 * m.first + 0.15 * (done ? n.M / done * 100 : 0)); m.basis = '확인 문제 ' + log.length + '회 기록';
+  } else if (tried) { m.score = Math.round((n.M * 100 + n.P * 80 + n.L * 40) / tried); m.basis = '주차 단계 기록만(점수 기록 없음)'; }
+  return m;
+}
+function notesOf(m) {
+  var g = [], d = [];
+  if (m.avg != null && m.avg >= 85) g.push('확인 문제 성취도가 높습니다(평균 ' + m.avg + '%).'); else if (m.avg != null && m.avg < 65) d.push('확인 문제 평균이 ' + m.avg + '%입니다. 풀이를 보고 개념을 다시 짚는 것이 좋습니다.');
+  if (m.first != null && m.first >= 70) g.push('처음 풀 때 통과하는 비율이 높습니다(' + m.first + '%).'); else if (m.first != null && m.first < 50) d.push('처음 풀 때 통과하는 비율이 낮습니다(' + m.first + '%). 학습 내용을 읽은 뒤 문제를 풀어 보세요.');
+  if (m.mast > 0) g.push('며칠 뒤 다시 풀어서도 통과한 주차가 ' + m.mast + '개 있어 기억이 오래 갑니다.');
+  if (m.lrn >= 2) d.push('연습 중인 주차가 ' + m.lrn + '개 있습니다. 먼저 이 주차들을 통과하세요.');
+  if (m.pace != null && m.pace < 0.5) d.push('주당 통과 속도가 느린 편입니다(' + m.pace + '주차/주). 학습 간격을 줄여 보세요.');
+  if (m.pace != null && m.pace >= 1) g.push('꾸준히 진행하고 있습니다(주당 ' + m.pace + '주차).');
+  if (!g.length && !d.length) d.push('기록이 아직 적어 강점과 보완점을 가리기 어렵습니다. 확인 문제를 더 풀어 보세요.');
+  return { good:g, need:d };
+}
+function submitReport(c) { var m = metricsOf(c); if (m.score == null) return false; S.sub[c.id] = { ts:Date.now(), score:m.score, prog:m.prog, avg:m.avg, first:m.first, pace:m.pace, tried:m.tried, att:m.att, basis:m.basis }; save(); return true; }
+function careerOf() {
+  var ds = {}, dn = {}, subs = [], att = 0;
+  all().forEach(function (c) { var r = S.sub[c.id]; if (!r) return; subs.push({ c:c, r:r }); att += r.att || 0; (DOMS[c.subj] || []).forEach(function (d) { ds[d] = (ds[d] || 0) + r.score; dn[d] = (dn[d] || 0) + 1; }); });
+  var list = CAREERS.map(function (k) {
+    var tot = 0, wt = 0, sw = 0, why = [];
+    Object.keys(k.w).forEach(function (d) { sw += k.w[d]; if (dn[d]) { tot += k.w[d] * ds[d] / dn[d]; wt += k.w[d]; why.push(DOMN[d] + ' ' + Math.round(ds[d] / dn[d])); } });
+    if (wt < 0.3) return null;
+    var fit = tot / wt, cov = wt / sw; return { n:k.n, d:k.d, fit:Math.round(fit), rank:fit * (0.6 + 0.4 * cov), why:why, cov:cov };
+  }).filter(Boolean).sort(function (a, b) { return b.rank - a.rank; });
+  var conf = subs.length >= 3 && att >= 10 ? '높음' : subs.length >= 2 && att >= 4 ? '보통' : '낮음';
+  return { subs:subs, list:list, conf:conf };
+}
+function fmtDate(ts) { var d = new Date(ts); return d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate(); }
+function viewReport() {
+  var kids = head([{ t:'내 수업', go:function () { go('subjects'); } }, { t:'교육' }, { t:'학습 보고서', cur:true }], '학습 보고서', '과목 교수가 확인 문제 기록으로 진도·성취도·학습 속도·학습 능력을 평가했습니다. 제출하면 진로 지도 교수가 모아서 진로를 추천합니다.');
+  kids.push(tabs('report'));
+  all().forEach(function (c) {
+    var m = metricsOf(c), sb = S.sub[c.id], card = h('div', { class:'card', style:'margin-top:16px' });
+    card.appendChild(h('div', { class:'ct', text:c.name + ' · ' + c.prof }));
+    if (m.score == null) {
+      card.appendChild(h('p', { class:'sub', text:'아직 학습 기록이 없어 보고서를 쓸 수 없습니다. 확인 문제를 풀면 교수가 평가합니다.' }));
+      card.appendChild(h('button', { class:'btn', style:'align-self:flex-start', text:'학습하러 가기', onclick:function () { go('course', c.id); } }));
+    } else {
+      [['진도', m.prog, m.done + ' / ' + m.weeks + '주 통과'], ['종합', m.score, lvOf(m.score)], ['성취도', m.avg, m.avg == null ? '자료 부족' : '평균 ' + m.avg + '%'], ['처음 통과', m.first, m.first == null ? '자료 부족' : m.first + '%']].forEach(function (x) {
+        card.appendChild(h('div', { class:'mrow' }, [h('div', { class:'nm', text:x[0] }), h('div', { class:'tr' }, [h('em', { style:'width:' + (x[1] == null ? 0 : x[1]) + '%' })]), h('div', { class:'v', text:x[2] })]));
+      });
+      card.appendChild(h('p', { class:'sub', style:'margin-top:10px', text:'학습 속도 · ' + (m.pace == null ? '자료 부족(기록 2회 이상 필요)' : '주당 ' + m.pace + '주차') + '   |   근거 · ' + m.basis }));
+      var nt = notesOf(m);
+      nt.good.forEach(function (t) { card.appendChild(h('div', { class:'row' }, [h('b', { style:'flex:0 0 52px;color:var(--p)', text:'강점' }), h('div', { style:'flex:1', text:t })])); });
+      nt.need.forEach(function (t) { card.appendChild(h('div', { class:'row' }, [h('b', { style:'flex:0 0 52px;color:var(--l)', text:'보완' }), h('div', { style:'flex:1', text:t })])); });
+      card.appendChild(h('div', { style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
+        h('button', { class:'btn fill', text:sb ? '다시 제출' : '진로 교수에게 제출', onclick:function () { submitReport(c); render(); } }),
+        h('button', { class:'btn', text:'교수 소견 받기', onclick:function () { ask(c.name + ' 학습 보고서에 대한 교수님 소견을 듣고 싶어요'); } }),
+        sb ? h('span', { class:'badge', text:fmtDate(sb.ts) + ' 제출됨' }) : null
+      ]));
+    }
+    kids.push(card);
+  });
+  return kids;
+}
+function viewCareer() {
+  var kids = head([{ t:'내 수업', go:function () { go('subjects'); } }, { t:'교육' }, { t:'진로 추천', cur:true }], '진로 추천', '진로 지도 교수가 제출된 과목 보고서를 모아 학습 성취가 잘 맞는 진로를 추천합니다. 참고 의견이며 선택은 학습자가 합니다.');
+  kids.push(tabs('career'));
+  var r = careerOf();
+  if (!r.subs.length || !r.list.length) {
+    kids.push(h('div', { class:'card', style:'margin-top:20px' }, [h('div', { class:'ct', text:'제출된 보고서가 없습니다' }), h('p', { class:'sub', text:'학습 보고서에서 과목 보고서를 제출하면, 진로 지도 교수가 그 보고서를 모아 분석합니다. 수학·물리·영어처럼 진로와 연결되는 과목의 기록이 필요합니다.' }), h('button', { class:'btn fill', style:'align-self:flex-start', text:'학습 보고서로', onclick:function () { go('report'); } })]));
+    return kids;
+  }
+  kids.push(h('p', { class:'sub', style:'margin-top:16px', text:'제출된 보고서 ' + r.subs.length + '건 · 추천 신뢰도 ' + r.conf + (r.conf === '낮음' ? ' (기록이 더 쌓이면 달라질 수 있습니다)' : '') }));
+  r.list.slice(0, 3).forEach(function (k, i) {
+    kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('div', { class:'ct', text:(i + 1) + '. ' + k.n }), h('p', { class:'sub', text:k.d }),
+      h('div', { class:'mrow' }, [h('div', { class:'nm', text:'적합도' }), h('div', { class:'tr' }, [h('em', { style:'width:' + k.fit + '%' })]), h('div', { class:'v', text:k.fit + '점' })]),
+      h('p', { class:'sub', style:'margin-top:8px', text:'근거 · ' + k.why.join(', ') + (k.cov < 0.7 ? ' (이 진로에 필요한 일부 영역의 기록은 아직 없습니다)' : '') })]));
+  });
+  kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('div', { class:'ct', text:'반영한 보고서' }), h('p', { class:'sub', text:r.subs.map(function (x) { return x.c.name + ' ' + x.r.score + '점(' + fmtDate(x.r.ts) + ' 제출)'; }).join(' · ') }),
+    h('div', { style:'display:flex;gap:8px;flex-wrap:wrap' }, [h('button', { class:'btn fill', text:'진로 교수와 상담', onclick:function () { ask('제 진로 추천 결과를 설명해 주세요'); } }), h('button', { class:'btn', text:'보고서 보기', onclick:function () { go('report'); } })])]));
+  return kids;
+}
 function render() {
   var root = document.getElementById('root'); root.textContent = '';
-  var kids = S.view === 'course' ? viewCourse() : S.view === 'week' ? viewWeek() : S.view === 'quiz' ? viewQuiz() : S.view === 'history' ? viewHistory() : viewSubjects();
+  var kids = S.view === 'course' ? viewCourse() : S.view === 'week' ? viewWeek() : S.view === 'quiz' ? viewQuiz() : S.view === 'history' ? viewHistory() : S.view === 'report' ? viewReport() : S.view === 'career' ? viewCareer() : viewSubjects();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   try { parent.postMessage({ type:'navi-learn-height', h:document.documentElement.scrollHeight }, location.origin); } catch (e) {}
   postState();
@@ -360,7 +458,9 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 function postState() {
   var cur = find(S.cur);
   var st = { view:S.view, cur:(cur && (S.view === 'course' || S.view === 'week' || S.view === 'quiz')) ? { id:cur.id, name:cur.name, week:(S.view === 'course' ? undefined : S.week) } : null,
-    courses:all().map(function (c) { var q = seqOf(c); return { id:c.id, name:c.name, subj:c.subj, level:c.level, prof:c.prof, weeks:q.length, next:q ? nextIdx(q) + 1 : 0 }; }) };
+    courses:all().map(function (c) { var q = seqOf(c); return { id:c.id, name:c.name, subj:c.subj, level:c.level, prof:c.prof, weeks:q.length, next:q ? nextIdx(q) + 1 : 0 }; }),
+    reports:all().map(function (c) { var m = metricsOf(c); return { id:c.id, name:c.name, prof:c.prof, score:m.score, prog:m.prog, avg:m.avg, first:m.first, pace:m.pace, attempts:m.att, basis:m.basis, submitted:!!S.sub[c.id] }; }).filter(function (x) { return x.score != null; }),
+    career:(function () { var r = careerOf(); return r.list.slice(0, 3).map(function (k) { return { name:k.n, fit:k.fit }; }); })() };
   try { parent.postMessage({ type:'navi-learn-state', state:st }, location.origin); } catch (e) {}
 }
 // 대화창(교육 SP)이 보낸 화면 조작 — 같은 출처의 부모 창에서 온 것만, 값은 다시 검증해서 쓴다. 결과는 navi-learn-result 로 알린다.
@@ -370,6 +470,13 @@ function nav(a) {
   var d = a && typeof a['do'] === 'string' ? a['do'] : '';
   if (d === 'subjects') { go('subjects'); return reply(true, '내 수업 화면으로 이동했습니다.'); }
   if (d === 'history') { go('history'); return reply(true, '학습 기록 화면으로 이동했습니다.'); }
+  if (d === 'report') { go('report'); return reply(true, '학습 보고서 화면으로 이동했습니다.'); }
+  if (d === 'career') { go('career'); var cr = careerOf(); return reply(true, cr.list.length ? '진로 추천 화면으로 이동했습니다.' : '진로 추천 화면으로 이동했습니다. 제출된 보고서가 없어 먼저 학습 보고서를 제출해야 합니다.'); }
+  if (d === 'submit') {
+    var tg = a.subject ? [resolve(a.subject)].filter(Boolean) : all(); if (!tg.length) return reply(false, '“' + String(a.subject || '').slice(0, 20) + '” 과목을 찾지 못했습니다. 내 과목: ' + names());
+    var ok = tg.filter(submitReport); go('report');
+    return reply(ok.length > 0, ok.length ? ok.map(function (c) { return c.name; }).join(', ') + ' 보고서를 진로 지도 교수에게 제출했습니다.' : '제출할 보고서가 없습니다. 확인 문제를 풀어 학습 기록을 먼저 만들어 주세요.');
+  }
   if (d === 'add') {
     var nm = String(a.subject || '').trim().slice(0, 12), lv = LEVELS.indexOf(a.level) >= 0 ? a.level : '';
     if (!nm) return reply(false, '추가할 과목 이름을 알려 주세요.');
@@ -390,10 +497,10 @@ function nav(a) {
 }
 window.addEventListener('message', function (e) {
   if (e.origin !== location.origin || e.source !== parent || !e.data) return;
-  if (e.data.type === 'navi-learn-view' && (e.data.view === 'subjects' || e.data.view === 'history')) go(e.data.view);
+  if (e.data.type === 'navi-learn-view' && (e.data.view === 'subjects' || e.data.view === 'history' || e.data.view === 'report' || e.data.view === 'career')) go(e.data.view);
   else if (e.data.type === 'navi-learn-nav') nav(e.data);
 });
-S.view = /history/.test(location.hash) ? 'history' : 'subjects';
+S.view = /history/.test(location.hash) ? 'history' : /report/.test(location.hash) ? 'report' : /career/.test(location.hash) ? 'career' : 'subjects';
 render();
 </script>
 </body>
