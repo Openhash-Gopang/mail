@@ -3481,7 +3481,7 @@ function _learnOpen(view) {
 window.addEventListener('message', (e) => {
   const f = document.getElementById('learn-frame'), d = e.data;
   if (!f || !d || e.origin !== location.origin || e.source !== f.contentWindow || d.type !== 'navi-learn-ask') return;
-  _switchTab('home'); _cmpOrgPick('kschool');
+  if (window.LearnHost) LearnHost.ask(d.text); return;
   const input = document.getElementById('cmp-input'), t = typeof d.text === 'string' ? d.text.slice(0, 300) : '';
   if (input && !input.disabled && t) { input.value = t; _kmailAutoResize(input); _cmpChatUpdateSendState(); try { input.focus(); } catch (x) {} }
 });
@@ -3915,7 +3915,7 @@ function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비
 /** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 나비웹 대화창이 그 기관 SP 로 전환된다. */
 function _cmpOrgPick(key) {
   _cmpOrgClose();
-  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return;
+  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return; if (key === 'kschool') { _learnOpen('subjects'); return; }
   if (key === 'kmail') {   // 메일은 이 화면이 곧 메일 비서 — 화면은 그대로 두고 메일의 "예시" 줄을 보인다
     if (_cmpMode !== 'default' && _cmpMode !== 'letter' && _cmpMode !== 'campaign') { if (!_cmpSetMode('default')) return; }
     _infraKey = 'kmail'; _cmpSyncModeUi(); try { document.getElementById('cmp-input').focus(); } catch (x) {} return;
@@ -6134,7 +6134,7 @@ function _switchTab(name) {
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
   if (name === 'xokorea') _xkSwitch(_subGet('xk') || (document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo'));   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
   if (name === 'expert100k') _exSwitch(_subGet('ex') || 'overview');   // 10만 AI 전문가 — 위쪽 탭(개요 …)의 문서를 연다
-  if (name === 'learn') { const f = document.getElementById('learn-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'learn.html?embed=mail'); } if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
+  if (name === 'learn') { const f = document.getElementById('learn-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'learn.html?embed=mail'); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
@@ -10397,7 +10397,7 @@ function _agentEntryRefresh() {
 }
 window._agentEntryRefresh = _agentEntryRefresh;
 </script>
-<script src="hondi-chat.js?v=20261107b"></script>
+<script src="hondi-chat.js?v=20261107b"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261122a"></script>
 <script>
 /* 내 데이터 금고: ① iframe 높이를 내용에 맞춰 iframe 자체 스크롤바를 없앤다 ② 우측 하단 대화창 아이콘이 이 탭에서는 '나만의 AI 비서(나비)'를 연다 */
 (function () {
