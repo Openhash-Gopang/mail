@@ -511,5 +511,13 @@ test('매뉴얼: 중급 10장은 「예시: 정보 공개 청구와 행정 심�
   assert.ok(c.body.includes('따라 해 보기 3') && c.body.includes('simpan.go.kr') && c.body.includes('이의신청은 건너뛰고 행정심판을 청구하고 싶어'));
   assert.ok(c.quiz.length >= 8);
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes('[행정심판 청구]') && h.includes('https://www.simpan.go.kr') && h.includes('행정심판\\s*청구서'));
+  assert.ok(h.includes('[행정심판 청구]') && h.includes('https://www.simpan.go.kr') && h.includes('행정\\s*심판'));
+});
+
+test('정보 공개 청구는 다른 서류와 같은 서류 작성 화면으로 열리고, 제출은 도우미가 포털에서 맡는다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const a = h.indexOf('function _cmpFoiPick()'), src = h.slice(a, h.indexOf('\n}\n', a) + 3);
+  assert.ok(src.includes("'law'") && src.includes('정보공개 청구서 · 이의신청서') && src.includes('_cmpDocComboPick') && !src.includes('_orgActivate'));
+  assert.ok(h.includes('async function _foiAgentSend(txt, title)') && h.includes('function _isFoiDocTitle(') && h.includes('_foiSubmitViaHelper(title, text)'));
+  assert.ok(h.includes('_submitGuideStartPlain(title, blank, text)'));
 });
