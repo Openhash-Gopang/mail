@@ -65,6 +65,16 @@ h2{font-size:18px;font-weight:600;margin:32px 0 6px}
 .chip[aria-pressed=true]{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:600}
 .lab{font-size:13px;font-weight:600;color:var(--on2);margin-top:16px}
 textarea{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;background:var(--bg);color:var(--on);resize:vertical;min-height:64px}
+.q{border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-top:12px;background:var(--card)}
+.q .qt{font-weight:600}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 14px;font-size:14px}
+.opt[aria-pressed=true]{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:600}
+.opt.ok{border-color:var(--m);background:var(--card);color:var(--on);font-weight:600}
+.opt.no{border-color:#D93025;color:#D93025}
+.ex{margin-top:8px;font-size:13px;color:var(--on2)}
+button:disabled{opacity:.45;cursor:default}
+.wk{text-align:left;width:100%}
 .foot{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--on2)}
 body.embed .wrap{padding-top:16px}
 @media (max-width:700px){h1{font-size:24px}.wrap{padding:20px 16px 48px}}
@@ -94,13 +104,71 @@ var HIST = [ // 예시 데이터
   { y:'2023', lv:'고등학교 1학년', h:210, subs:[['공통수학','고등 · 수학','2023.03 ~ 2023.11',120,'24 / 24주',85,'done'],['통합과학','고등 · 과학','2023.03 ~ 2023.11',90,'18 / 18주',79,'done']] }
 ];
 var MAST = [['수학',79,'4개 과정'],['영어',86,'3개 과정'],['물리',84,'1개 과정'],['화학',80,'1개 과정'],['과학',79,'1개 과정']];
+var RECHECK = 3 * 86400000; // 통과 뒤 이만큼 지나 다시 통과하면 '숙달'(가칭: 3일)
+var GOALS = {
+  econ:[['희소성: 자원은 한정되어 있어 선택이 필요하다','기회비용: 선택으로 포기한 것 중 가장 가치 큰 것','생산가능곡선과 효율적인 선택'],['수요법칙과 공급법칙','시장균형: 수요량 = 공급량','수요·공급의 변화와 가격 통제'],['수요의 가격탄력성의 뜻과 계산','탄력성과 총수입','탄력성을 정하는 요인'],['한계효용 체감','소비자 균형(1원당 한계효용)','예산선과 무차별곡선']],
+  calc:[['극한의 뜻과 계산','좌극한·우극한','무한대에서의 극한'],['연속의 세 조건','불연속인 점','중간값 정리'],['미분계수의 정의','접선의 기울기','기본 도함수']]
+};
+// 예시 확인 문제: [문제, [보기 4개], 정답 번호(0부터), 풀이]. 없는 주차는 교수가 출제한다.
+var QUIZ = {
+  econ:{
+    1:[['희소성의 뜻으로 가장 알맞은 것은?',['자원이 무한해 모든 욕구를 채울 수 있는 상태','욕구에 비해 자원이 한정되어 선택이 필요한 상태','가격이 매우 비싼 상태','정부가 공급을 제한한 상태'],1,'희소성은 욕구에 비해 자원이 부족해 선택이 불가피한 상태입니다.'],
+       ['기회비용이란?',['선택하며 포기한 대안 중 가장 가치가 큰 것','실제로 지출한 돈','선택한 재화의 가격','포기한 모든 대안의 가치를 더한 것'],0,'기회비용은 포기한 대안들 중 가장 가치가 큰 것 하나입니다.'],
+       ['한 학생이 시급 12,000원 아르바이트 2시간을 포기하고 영화를 본다. 이 2시간의 기회비용은?',['12,000원','24,000원','영화 관람료','0원'],1,'포기한 소득 12,000원 × 2시간 = 24,000원입니다.'],
+       ['생산가능곡선 위의 한 점이 뜻하는 것은?',['주어진 자원을 모두 효율적으로 쓰는 생산 조합','지금 생산할 수 없는 조합','자원이 놀고 있는 상태','가장 바람직한 조합'],0,'곡선 위는 효율적, 안쪽은 비효율, 바깥쪽은 불가능한 조합입니다.'],
+       ['합리적 선택에 대한 설명으로 알맞은 것은?',['가장 싼 것을 고른다','한계편익이 한계비용보다 큰 동안 선택을 늘린다','비용은 고려하지 않는다','가장 많이 소비한다'],1,'추가로 얻는 이득이 추가 비용보다 큰 동안 늘리는 것이 합리적입니다.']],
+    2:[['다른 조건이 같을 때 가격이 오르면 수요량은?',['증가한다','감소한다','변함없다','알 수 없다'],1,'수요법칙: 가격과 수요량은 반대로 움직입니다.'],
+       ['시장 균형 가격에서는?',['수요량 = 공급량','수요량 > 공급량','수요량 < 공급량','가격이 0이다'],0,'균형은 수요량과 공급량이 같아지는 점입니다.'],
+       ['공급은 그대로이고 수요가 늘면 균형 가격과 거래량은?',['모두 하락','가격 상승, 거래량 증가','가격 하락, 거래량 증가','모두 불변'],1,'수요곡선이 오른쪽으로 이동하면 가격과 거래량이 모두 늘어납니다.'],
+       ['균형 가격보다 낮게 정한 가격상한제 아래에서는?',['초과 공급','초과 수요(품귀)','변화 없음','공급 증가'],1,'가격이 낮으면 사려는 양이 팔려는 양보다 많아집니다.'],
+       ['대체재의 가격이 오르면 이 재화의 수요는?',['증가','감소','불변','0'],0,'대체재가 비싸지면 이 재화로 수요가 옮겨 옵니다.']],
+    3:[['수요의 가격탄력성은?',['가격 변화율 ÷ 수요량 변화율','수요량 변화율 ÷ 가격 변화율(절댓값)','수요량 변화량 ÷ 가격 변화량','가격 × 수요량'],1,'탄력성 = 수요량 변화율 ÷ 가격 변화율(절댓값)입니다.'],
+       ['가격이 10% 오르자 수요량이 20% 줄었다. 탄력성은?',['0.5','1','2','10'],2,'20 ÷ 10 = 2로 탄력적입니다.'],
+       ['수요가 탄력적일 때 가격을 올리면 총수입은?',['증가','감소','불변','알 수 없다'],1,'수요량이 더 크게 줄어 총수입이 감소합니다.'],
+       ['다음 중 수요가 가장 비탄력적인 재화는?',['외식','생필품(쌀)·필수 의약품','여행','고급 시계'],1,'필수재는 가격이 올라도 사야 하므로 비탄력적입니다.'],
+       ['대체재가 많을수록 수요의 탄력성은?',['커진다','작아진다','불변','0이 된다'],0,'갈아탈 곳이 많으면 가격에 민감해집니다.']],
+    4:[['한계효용 체감의 법칙이란?',['소비가 늘수록 추가 1단위의 효용이 줄어든다','소비가 늘수록 총효용이 줄어든다','가격이 내리면 효용이 준다','소득이 늘면 효용이 준다'],0,'총효용은 늘어도 추가로 얻는 효용은 점점 줄어듭니다.'],
+       ['소비자 균형의 조건은?',['모든 재화의 가격이 같다','재화별 1원당 한계효용이 같다','총효용이 0이다','소득이 가장 크다'],1,'MU₁/P₁ = MU₂/P₂ 일 때 예산을 가장 잘 쓴 것입니다.'],
+       ['예산선이 나타내는 것은?',['소득과 가격으로 살 수 있는 조합','같은 만족을 주는 조합','생산 가능한 조합','가격의 변화'],0,'예산선은 주어진 소득으로 살 수 있는 조합의 경계입니다.'],
+       ['재화 가격이 내리면 실질소득은?',['증가한다','감소한다','불변','0이 된다'],0,'같은 소득으로 더 살 수 있어 구매력이 늘어납니다(소득효과).'],
+       ['무차별곡선에 대한 설명으로 알맞은 것은?',['원점에서 멀수록 효용이 낮다','같은 곡선 위의 조합은 만족이 같다','서로 교차한다','오른쪽 위로 향한다'],1,'한 곡선 위의 조합은 효용이 같고, 원점에서 멀수록 효용이 높습니다.']]
+  },
+  calc:{
+    1:[['lim(x→2) (x²−4)/(x−2) 의 값은?',['0','2','4','존재하지 않는다'],2,'(x−2)(x+2)/(x−2) = x+2 → 4 입니다.'],
+       ['lim(x→3) (2x+1) 의 값은?',['5','6','7','9'],2,'x에 3을 넣으면 7입니다.'],
+       ['x=a에서 극한이 존재할 조건은?',['좌극한과 우극한이 같다','f(a)가 정의된다','함수가 연속이다','f(a)=0이다'],0,'좌극한과 우극한이 같으면 극한이 존재합니다.'],
+       ['lim(x→∞) 1/x 의 값은?',['∞','1','0','존재하지 않는다'],2,'x가 커질수록 1/x 는 0에 가까워집니다.'],
+       ['lim(x→1) (x²−1)/(x−1) 의 값은?',['0','1','2','존재하지 않는다'],2,'(x+1) → 2 입니다.']],
+    2:[['함수 f가 x=a에서 연속이려면?',['극한이 존재한다','f(a)가 정의된다','극한값이 f(a)와 같다','위 세 가지 모두'],3,'극한 존재·함숫값 존재·두 값이 같음, 세 조건이 모두 필요합니다.'],
+       ['f(x)=1/x 는 x=0에서?',['연속이다','정의되지 않아 연속이 아니다','극한이 0이다','미분 가능하다'],1,'x=0에서 함숫값이 없으므로 연속이 아닙니다.'],
+       ['다항함수는?',['모든 실수에서 연속이다','x=0에서만 연속이다','불연속이다','정의역이 제한된다'],0,'다항함수는 실수 전체에서 연속입니다.'],
+       ['f가 [a,b]에서 연속이고 f(a)<0<f(b) 이면?',['(a,b)에 f(c)=0 인 c가 존재한다','f는 증가한다','f(c)=0 인 c가 없다','f는 미분 가능하다'],0,'중간값 정리입니다.'],
+       ['f(x)=x+1 (x<1), f(x)=3 (x≥1) 은 x=1에서?',['연속이다','좌극한 2, f(1)=3 이라 불연속이다','극한이 3이다','정의되지 않는다'],1,'좌극한 2와 f(1)=3 이 달라 불연속입니다.']],
+    3:[['미분계수 f′(a)의 정의는?',['lim(h→0) (f(a+h)−f(a))/h','f(a)/a','f(a+1)−f(a)','lim(h→∞) f(a+h)'],0,'평균변화율의 극한입니다.'],
+       ['f(x)=x² 의 x=3에서의 미분계수는?',['3','6','9','2'],1,'f′(x)=2x 이므로 f′(3)=6 입니다.'],
+       ['미분계수의 기하적 의미는?',['곡선의 길이','접선의 기울기','곡선 아래 넓이','함숫값'],1,'그 점에서의 접선의 기울기입니다.'],
+       ['상수함수의 도함수는?',['상수 자신','1','0','존재하지 않는다'],2,'상수는 변하지 않으므로 0입니다.'],
+       ['f(x)=3x+2 의 도함수는?',['2','3','3x','5'],1,'기울기 3 입니다.']]
+  }
+};
 var WEEK_TOPICS = { econ:['희소성과 선택','수요와 공급','탄력성','소비자 이론'], calc:['극한','연속','미분 기초','미분 공식','합성함수 미분','음함수 미분','미분의 응용(1)','미분의 응용(2)','적분 맛보기'] };
 
-var S = { view:'subjects', cur:null, open:'2026', added:[], addSubj:'수학', addLevel:'중등' };
-try { var sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && Array.isArray(sv.added)) S.added = sv.added.filter(function (a) { return a && typeof a.name === 'string'; }); } catch (e) {}
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ added: S.added })); } catch (e) {} }
+var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, addSubj:'수학', addLevel:'중등' };
+try { var sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && Array.isArray(sv.added)) S.added = sv.added.filter(function (a) { return a && typeof a.name === 'string'; }); if (sv && sv.prog && typeof sv.prog === 'object') for (var pk in sv.prog) { var pv = sv.prog[pk]; if (pv && typeof pv.seq === 'string' && /^[MPLN]{1,60}$/.test(pv.seq)) S.prog[pk] = { seq:pv.seq, pass:(pv.pass && typeof pv.pass === 'object') ? pv.pass : {} }; } } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ added: S.added, prog: S.prog })); } catch (e) {} }
 function all() { return EXAMPLE.concat(S.added); }
 function find(id) { return all().filter(function (c) { return c.id === id; })[0]; }
+function seqOf(c) { return (S.prog[c.id] && S.prog[c.id].seq) || c.seq || ''; }
+function nextIdx(seq) { var i = seq.indexOf('L'); return i < 0 ? seq.indexOf('N') : i; }
+function topicOf(c, n) { var t = WEEK_TOPICS[c.id]; return (t && t[n - 1]) || ''; }
+function nextLabel(c) { var seq = seqOf(c), i = nextIdx(seq); if (i < 0) return ''; var t = topicOf(c, i + 1); return (i + 1) + '주차' + (t ? ' · ' + t : ''); }
+function resolve(q) {
+  q = String(q || '').trim().toLowerCase(); if (!q) return null;
+  var a = all(), r = a.filter(function (c) { return c.id === q || c.name.toLowerCase() === q; })[0]; if (r) return r;
+  var hits = a.filter(function (c) { var n = c.name.toLowerCase(), j = (c.subj || '').toLowerCase(); return n.indexOf(q) >= 0 || (j && (j.indexOf(q) >= 0 || q.indexOf(j) >= 0)); });
+  hits.sort(function (x, y) { return (seqOf(y) ? 1 : 0) - (seqOf(x) ? 1 : 0); });
+  return hits[0] || null;
+}
 
 function h(tag, attrs, kids) {
   var e = document.createElement(tag);
@@ -128,12 +196,12 @@ function viewSubjects() {
     return h('div', { class:'card' }, [
       h('div', {}, [h('span', { class:'badge', text:c.level || '' })]),
       h('div', { class:'ct', text:c.name }),
-      c.seq ? bar(c.seq) : null,
-      c.seq ? h('div', { class:'sub', text:count(c.seq) }) : h('div', { class:'sub', text:'교수와 상담한 뒤 맞춤 커리큘럼이 만들어집니다.' }),
-      c.next ? h('div', { class:'gate', text:'이어서 · ' + c.next }) : null,
+      seqOf(c) ? bar(seqOf(c)) : null,
+      seqOf(c) ? h('div', { class:'sub', text:count(seqOf(c)) }) : h('div', { class:'sub', text:'교수와 상담한 뒤 맞춤 커리큘럼이 만들어집니다.' }),
+      nextLabel(c) ? h('div', { class:'gate', text:'이어서 · ' + nextLabel(c) }) : null,
       c.review ? h('div', { class:'note', text:'복습 권장 · ' + c.review }) : null,
       h('div', { class:'sub', text:'담당 · ' + c.prof }),
-      h('button', { class:'btn', style:'margin-top:auto;align-self:flex-start', text:c.seq ? '이어서 학습 →' : '교수와 시작하기 →', onclick:function () { go('course', c.id); } })
+      h('button', { class:'btn', style:'margin-top:auto;align-self:flex-start', text:seqOf(c) ? '이어서 학습 →' : '교수와 시작하기 →', onclick:function () { go('course', c.id); } })
     ]);
   });
   cards.push(h('button', { class:'card add', onclick:openAdd }, ['+ 과목 추가', h('span', { class:'sub', style:'font-weight:400', text:'수학·물리·영어 등 / 초등부터 대학원 수준까지' })]));
@@ -147,22 +215,91 @@ function viewSubjects() {
 function viewCourse() {
   var c = find(S.cur); if (!c) return viewSubjects();
   var kids = head([{ t:'내 수업', go:function () { go('subjects'); } }, { t:'교육' }, { t:c.name, cur:true }], c.name, c.level + ' · 담당 ' + c.prof);
-  if (!c.seq) {
+  var seq = seqOf(c);
+  if (!seq) {
     kids.push(h('div', { class:'card', style:'margin-top:20px' }, [h('div', { class:'ct', text:'아직 커리큘럼이 없습니다' }), h('p', { class:'sub', text:'교수에게 지금 수준과 목표를 말하면, 학습자에게 맞춘 주차별 커리큘럼과 일정표를 만들어 줍니다.' }), h('button', { class:'btn fill', style:'align-self:flex-start', text:'교수에게 말하기', onclick:function () { ask(c.goal || (c.subj + ' 학습을 시작하고 싶어요')); } })]));
     return kids;
   }
-  var i = c.seq.indexOf('L'); if (i < 0) i = c.seq.indexOf('N');
-  var topics = WEEK_TOPICS[c.id] || [];
+  var i = nextIdx(seq); if (i < 0) i = seq.length - 1;
   kids.push(h('div', { class:'card', style:'margin-top:20px;background:var(--pri-bg);border-color:var(--pri)' }, [
-    h('div', { class:'sub', text:'이어서 학습하기' }), h('div', { class:'ct', text:c.next || ((i + 1) + '주차') }),
+    h('div', { class:'sub', text:'이어서 학습하기' }), h('div', { class:'ct', text:nextLabel(c) || ((i + 1) + '주차') }),
     h('div', { class:'gate', text:(i + 1) + '주차 확인 문제를 ' + GATE + '% 이상 맞히면 ' + (i + 2) + '주차가 열립니다.' }),
-    h('div', { style:'display:flex;gap:8px;flex-wrap:wrap' }, [h('button', { class:'btn fill', text:'학습 시작', onclick:function () { ask((i + 1) + '주차 학습을 시작할게요'); } }), h('button', { class:'btn quiet', text:'교수에게 묻기', onclick:function () { ask(''); } })])
+    h('div', { style:'display:flex;gap:8px;flex-wrap:wrap' }, [h('button', { class:'btn fill', text:'학습 시작', onclick:function () { openWeek(c, i + 1, 'week'); } }), h('button', { class:'btn', text:'확인 문제 풀기', onclick:function () { openWeek(c, i + 1, 'quiz'); } }), h('button', { class:'btn quiet', text:'교수에게 묻기', onclick:function () { ask(''); } })])
   ]));
   if (c.review) kids.push(h('div', { class:'note', style:'margin-top:12px', text:'복습 권장 · ' + c.review }));
-  kids.push(h('h2', { text:'주차별 마스터리' }), legend(), h('div', { class:'sub', style:'margin-top:6px', text:count(c.seq) }));
+  kids.push(h('h2', { text:'주차별 마스터리' }), legend(), h('div', { class:'sub', style:'margin-top:6px', text:count(seq) }));
   var grid = h('div', { class:'weeks' });
-  c.seq.split('').forEach(function (k, n) { grid.appendChild(h('div', { class:'wk ' + k }, [h('b', { text:(n + 1) + '주차' }), topics[n] || '', h('br'), h('span', { class:'st', style:'color:var(--' + k.toLowerCase() + ')', text:ST[k] })])); });
-  kids.push(grid, h('div', { class:'foot', text:'주차 구성과 진도는 예시입니다. 실제 일정은 학습자에 맞춰 교수가 정합니다.' }));
+  seq.split('').forEach(function (k, n) { grid.appendChild(h('button', { class:'wk ' + k, 'aria-label':(n + 1) + '주차 학습 페이지 열기', onclick:function () { openWeek(c, n + 1, 'week'); } }, [h('b', { text:(n + 1) + '주차' }), topicOf(c, n + 1), h('br'), h('span', { class:'st', style:'color:var(--' + k.toLowerCase() + ')', text:ST[k] })])); });
+  kids.push(grid, h('div', { class:'foot', text:'주차 구성과 진도는 예시입니다. 주차를 누르면 그 주차 학습 페이지가 열립니다. 실제 일정은 학습자에 맞춰 교수가 정합니다.' }));
+  return kids;
+}
+function openWeek(c, n, v) { S.cur = c.id; S.week = n; S.q = null; go(v, c.id); }
+
+function viewWeek() {
+  var c = find(S.cur); if (!c || !seqOf(c)) return viewCourse();
+  var seq = seqOf(c), n = Math.min(Math.max(S.week, 1), seq.length), st = seq.charAt(n - 1), topic = topicOf(c, n);
+  var kids = head([{ t:'내 수업', go:function () { go('subjects'); } }, { t:c.name, go:function () { go('course', c.id); } }, { t:n + '주차', cur:true }], c.name + ' · ' + n + '주차' + (topic ? ' — ' + topic : ''), c.level + ' · 담당 ' + c.prof);
+  kids.push(h('div', { style:'display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap' }, [h('span', { class:'badge', style:'color:var(--' + st.toLowerCase() + ')', text:'이 주차 ' + ST[st] }), h('span', { class:'sub', text:'전체 ' + seq.length + '주 중 ' + n + '주차' })]));
+  if (n > 1 && st === 'N' && seq.charAt(n - 2) === 'N') kids.push(h('div', { class:'note', style:'margin-top:12px', text:(n - 1) + '주차 확인 문제를 아직 통과하지 않았습니다. 앞 주차부터 순서대로 학습하길 권합니다.' }));
+  var goals = (GOALS[c.id] || [])[n - 1] || ['핵심 개념 읽기', '예제 풀이', '확인 문제로 점검'];
+  kids.push(h('h2', { text:'이번 주 학습 내용' }), h('div', { class:'card' }, goals.map(function (g, k) { return h('div', { class:'row' }, [h('b', { style:'flex:0 0 24px', text:String(k + 1) }), h('div', { style:'flex:1', text:g })]); })));
+  kids.push(h('div', { style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:18px' }, [
+    h('button', { class:'btn fill', text:'확인 문제 풀기', onclick:function () { openWeek(c, n, 'quiz'); } }),
+    h('button', { class:'btn', text:'교수에게 묻기', onclick:function () { ask(c.name + ' ' + n + '주차' + (topic ? ' ' + topic : '') + '에서 궁금한 점이 있어요'); } }),
+    n > 1 ? h('button', { class:'btn quiet', text:'← ' + (n - 1) + '주차', onclick:function () { openWeek(c, n - 1, 'week'); } }) : null,
+    n < seq.length ? h('button', { class:'btn quiet', text:(n + 1) + '주차 →', onclick:function () { openWeek(c, n + 1, 'week'); } }) : null
+  ]));
+  kids.push(h('div', { class:'foot', text:'주차 학습 내용은 예시입니다. 실제 수업 자료는 교수가 이 주차에 맞춰 제공합니다.' }));
+  return kids;
+}
+
+function bankOf(c, n) { return ((QUIZ[c.id] || {})[n]) || null; }
+function applyResult(c, n, pct) {
+  var p = S.prog[c.id] || (S.prog[c.id] = { seq:seqOf(c), pass:{} }), i = n - 1, cur = p.seq.charAt(i), now = Date.now(), to = cur, msg = '';
+  if (pct >= GATE) {
+    if (cur === 'P' && p.pass[n] && now - p.pass[n] >= RECHECK) { to = 'M'; msg = '며칠 뒤 다시 풀어서도 통과했습니다. \'숙달\'이 되었습니다.'; }
+    else if (cur === 'N' || cur === 'L') { to = 'P'; p.pass[n] = now; msg = '통과했습니다. ' + (n < p.seq.length ? (n + 1) + '주차가 열립니다. ' : '') + '며칠 뒤 다시 풀어서도 통과하면 \'숙달\'이 됩니다.'; }
+    else if (cur === 'P') msg = '이미 통과한 주차입니다. 며칠 뒤 다시 풀어서도 통과하면 \'숙달\'이 됩니다.';
+    else msg = '이미 숙달한 주차입니다.';
+  } else { if (cur === 'N') to = 'L'; msg = '통과 기준(' + GATE + '%)에 조금 못 미쳤습니다. 풀이를 보고 다시 도전해 보세요.'; }
+  p.seq = p.seq.slice(0, i) + to + p.seq.slice(i + 1); save();
+  return msg;
+}
+function viewQuiz() {
+  var c = find(S.cur); if (!c || !seqOf(c)) return viewCourse();
+  var seq = seqOf(c), n = Math.min(Math.max(S.week, 1), seq.length), bank = bankOf(c, n), topic = topicOf(c, n);
+  var kids = head([{ t:'내 수업', go:function () { go('subjects'); } }, { t:c.name, go:function () { go('course', c.id); } }, { t:n + '주차', go:function () { openWeek(c, n, 'week'); } }, { t:'확인 문제', cur:true }], n + '주차 확인 문제' + (topic ? ' — ' + topic : ''), c.name + ' · ' + GATE + '% 이상 맞히면 통과합니다.');
+  if (!bank) {
+    kids.push(h('div', { class:'card', style:'margin-top:20px' }, [h('div', { class:'ct', text:'이 주차의 확인 문제는 아직 없습니다' }), h('p', { class:'sub', text:'예시 문제는 경제학 입문 1~4주차, 미적분 기초 1~3주차에만 있습니다. 교수에게 이 주차 문제를 내 달라고 할 수 있습니다.' }), h('div', { style:'display:flex;gap:8px;flex-wrap:wrap' }, [h('button', { class:'btn fill', text:'교수에게 문제 요청', onclick:function () { ask(c.name + ' ' + n + '주차 확인 문제를 내 주세요'); } }), h('button', { class:'btn quiet', text:n + '주차 학습으로', onclick:function () { openWeek(c, n, 'week'); } })])]));
+    return kids;
+  }
+  if (!S.q || S.q.id !== c.id || S.q.week !== n) S.q = { id:c.id, week:n, ans:{}, done:false };
+  var q = S.q, submit;
+  function sync() { submit.disabled = Object.keys(q.ans).length < bank.length; }
+  if (q.done) {
+    var right = 0; bank.forEach(function (b, k) { if (q.ans[k] === b[2]) right++; });
+    var pct = Math.round(right / bank.length * 100);
+    kids.push(h('div', { class:'card', style:'margin-top:20px;background:' + (pct >= GATE ? 'var(--pri-bg);border-color:var(--pri)' : 'var(--warn-bg)') }, [h('div', { class:'sub', text:'채점 결과' }), h('div', { class:'ct', text:right + ' / ' + bank.length + '문제 · ' + pct + '%' }), h('div', { class:'gate', text:q.msg || '' })]));
+    bank.forEach(function (b, k) {
+      kids.push(h('div', { class:'q' }, [h('div', { class:'qt', text:(k + 1) + '. ' + b[0] }), h('div', { class:'opts' }, b[1].map(function (o, j) { return h('div', { class:'opt' + (j === b[2] ? ' ok' : (j === q.ans[k] ? ' no' : '')), text:(j === b[2] ? '✓ ' : (j === q.ans[k] ? '✗ ' : '')) + o }); })), h('div', { class:'ex', text:'풀이 · ' + b[3] })]));
+    });
+    kids.push(h('div', { style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:18px' }, [
+      h('button', { class:'btn fill', text:'다시 풀기', onclick:function () { S.q = null; render(); } }),
+      n < seq.length ? h('button', { class:'btn', text:(n + 1) + '주차 학습으로', onclick:function () { openWeek(c, n + 1, 'week'); } }) : null,
+      h('button', { class:'btn quiet', text:'교수에게 묻기', onclick:function () { ask(c.name + ' ' + n + '주차 확인 문제 풀이에서 모르는 게 있어요'); } }),
+      h('button', { class:'btn quiet', text:'과목으로', onclick:function () { go('course', c.id); } })
+    ]));
+    return kids;
+  }
+  submit = h('button', { class:'btn fill', text:'제출하고 채점', disabled:'disabled', onclick:function () { var r = 0; bank.forEach(function (b, k) { if (q.ans[k] === b[2]) r++; }); q.msg = applyResult(c, n, Math.round(r / bank.length * 100)); q.done = true; render(); try { window.scrollTo(0, 0); } catch (e) {} } });
+  bank.forEach(function (b, k) {
+    var opts = h('div', { class:'opts' }, []);
+    b[1].forEach(function (o, j) { var btn = h('button', { class:'opt', 'aria-pressed':String(q.ans[k] === j), text:o, onclick:function () { q.ans[k] = j; [].forEach.call(opts.children, function (x, y) { x.setAttribute('aria-pressed', String(y === j)); }); sync(); } }); opts.appendChild(btn); });
+    kids.push(h('div', { class:'q' }, [h('div', { class:'qt', text:(k + 1) + '. ' + b[0] }), opts]));
+  });
+  sync();
+  kids.push(h('div', { style:'display:flex;gap:8px;align-items:center;margin-top:18px;flex-wrap:wrap' }, [submit, h('span', { class:'sub', text:'모든 문제에 답하면 제출할 수 있습니다.' })]));
+  kids.push(h('div', { class:'foot', text:'확인 문제는 예시입니다. 채점 결과는 이 브라우저에만 저장됩니다.' }));
   return kids;
 }
 
@@ -189,9 +326,10 @@ function viewHistory() {
 
 function render() {
   var root = document.getElementById('root'); root.textContent = '';
-  var kids = S.view === 'course' ? viewCourse() : S.view === 'history' ? viewHistory() : viewSubjects();
+  var kids = S.view === 'course' ? viewCourse() : S.view === 'week' ? viewWeek() : S.view === 'quiz' ? viewQuiz() : S.view === 'history' ? viewHistory() : viewSubjects();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   try { parent.postMessage({ type:'navi-learn-height', h:document.documentElement.scrollHeight }, location.origin); } catch (e) {}
+  postState();
 }
 
 function chipRow(list, key) {
@@ -219,7 +357,42 @@ function commitAdd() {
 }
 document.getElementById('ov').addEventListener('click', function (e) { if (e.target.id === 'ov') closeAdd(); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAdd(); });
-window.addEventListener('message', function (e) { if (e.origin !== location.origin || !e.data) return; if (e.data.type === 'navi-learn-view' && (e.data.view === 'subjects' || e.data.view === 'history')) go(e.data.view); });
+function postState() {
+  var cur = find(S.cur);
+  var st = { view:S.view, cur:(cur && (S.view === 'course' || S.view === 'week' || S.view === 'quiz')) ? { id:cur.id, name:cur.name, week:(S.view === 'course' ? undefined : S.week) } : null,
+    courses:all().map(function (c) { var q = seqOf(c); return { id:c.id, name:c.name, subj:c.subj, level:c.level, prof:c.prof, weeks:q.length, next:q ? nextIdx(q) + 1 : 0 }; }) };
+  try { parent.postMessage({ type:'navi-learn-state', state:st }, location.origin); } catch (e) {}
+}
+// 대화창(교육 SP)이 보낸 화면 조작 — 같은 출처의 부모 창에서 온 것만, 값은 다시 검증해서 쓴다. 결과는 navi-learn-result 로 알린다.
+function reply(ok, msg) { try { parent.postMessage({ type:'navi-learn-result', ok:ok, msg:msg, view:S.view }, location.origin); } catch (e) {} }
+function names() { return all().map(function (c) { return c.name; }).join(', '); }
+function nav(a) {
+  var d = a && typeof a['do'] === 'string' ? a['do'] : '';
+  if (d === 'subjects') { go('subjects'); return reply(true, '내 수업 화면으로 이동했습니다.'); }
+  if (d === 'history') { go('history'); return reply(true, '학습 기록 화면으로 이동했습니다.'); }
+  if (d === 'add') {
+    var nm = String(a.subject || '').trim().slice(0, 12), lv = LEVELS.indexOf(a.level) >= 0 ? a.level : '';
+    if (!nm) return reply(false, '추가할 과목 이름을 알려 주세요.');
+    var dup = all().filter(function (c) { return c.subj === nm && (!lv || c.level.indexOf(lv) === 0); })[0];
+    if (dup) { go('course', dup.id); return reply(true, '이미 있는 과목이라 ' + dup.name + ' 화면을 열었습니다.'); }
+    var c = { id:'u' + Date.now(), name:nm + (lv ? ' · ' + lv : ''), subj:nm, level:(lv || '수준 미정') + ' · ' + nm, prof:nm + ' 교수', seq:'', goal:'' };
+    S.added.push(c); save(); go('course', c.id); return reply(true, c.name + ' 과목을 추가했습니다. 교수와 상담해 커리큘럼을 만들 수 있습니다.');
+  }
+  if (d !== 'course' && d !== 'week' && d !== 'quiz') return reply(false, '지원하지 않는 요청입니다.');
+  var co = resolve(a.subject);
+  if (!co) return reply(false, '“' + String(a.subject || '').slice(0, 20) + '” 과목을 찾지 못했습니다. 내 과목: ' + names());
+  if (d === 'course') { go('course', co.id); return reply(true, co.name + ' 과목 화면으로 이동했습니다.'); }
+  var seq = seqOf(co); if (!seq) { go('course', co.id); return reply(false, co.name + '은 아직 커리큘럼이 없어 과목 화면을 열었습니다. 교수와 상담해 커리큘럼을 만들어 보세요.'); }
+  var w = Number(a.week); if (!isFinite(w) || Math.floor(w) !== w || w < 1) return reply(false, '몇 주차인지 알려 주세요.');
+  if (w > seq.length) { go('course', co.id); return reply(false, co.name + '은 총 ' + seq.length + '주차입니다. 과목 화면을 열었습니다.'); }
+  openWeek(co, w, d);
+  reply(true, co.name + ' ' + w + '주차 ' + (d === 'quiz' ? '확인 문제' : '학습') + ' 페이지로 이동했습니다.' + (d === 'quiz' && !bankOf(co, w) ? ' 이 주차의 예시 문제는 아직 없습니다.' : ''));
+}
+window.addEventListener('message', function (e) {
+  if (e.origin !== location.origin || e.source !== parent || !e.data) return;
+  if (e.data.type === 'navi-learn-view' && (e.data.view === 'subjects' || e.data.view === 'history')) go(e.data.view);
+  else if (e.data.type === 'navi-learn-nav') nav(e.data);
+});
 S.view = /history/.test(location.hash) ? 'history' : 'subjects';
 render();
 </script>
