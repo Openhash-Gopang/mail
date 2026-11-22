@@ -1,11 +1,11 @@
 /**
  * learn-host.js — 나비웹 학습 화면의 "교육 SP 대화창" (2026-11-22, 주피터 지시)
  *
- * 인프라 AI → 교육을 고르면 학습 포털(learn.html)이 바로 열리고(desktop.html 의 _cmpOrgPick → _learnOpen),
+ * 인프라 AI → 교육을 고르면 학습 포털(learn-app.js, desktop.html 안에 직접 그림)이 바로 열리고(desktop.html 의 _cmpOrgPick → _learnOpen),
  * 우하단 대화 아이콘은 이 파일의 교육 SP 대화창을 연다. 사용자가 "경제학 3주차 학습 페이지로 가자" 처럼 말하면
- * 교육 SP(learn-sp.js)가 답변 끝에 ~~~learn 블록을 붙이고, 여기서 다시 검증한 뒤 learn.html 에 전한다.
+ * 교육 SP(learn-sp.js)가 답변 끝에 ~~~learn 블록을 붙이고, 여기서 다시 검증한 뒤 NaviLearn.nav() 로 전한다.
  *
- * desktop.html 의 전역(HondiChat, _org, _prof, _orgMd, _hcOrigin, _switchTab …)을 쓴다. 전역: window.LearnHost = { enter, leave, ask }
+ * desktop.html 의 전역(HondiChat, _org, _prof, _orgMd, _hcOrigin, _switchTab …)을 쓴다. 전역: window.LearnHost = { enter, leave, ask, bind }
  */
 (function () {
 'use strict';
@@ -100,21 +100,18 @@ function _learnAct(raw) {
   if (a['do'] === 'prof') { _learn.prof = _learnProfName(a.subject); _lchatSync(); _lchatNote(_learn.prof + '를 호출했습니다. 이제 이 교수가 답합니다.'); return; }
   if (a['do'] === 'endprof') { const was = _learn.prof; _learn.prof = null; _lchatSync(); if (was) _lchatNote('교수 호출을 마치고 교육 SP로 돌아왔습니다.'); return; }
   if (!document.getElementById('tab-learn').classList.contains('active')) _switchTab('learn');
-  const f = _learnEl('learn-frame'); if (!f) return;
-  const send = () => { try { f.contentWindow.postMessage(Object.assign({ type: 'navi-learn-nav' }, a), location.origin); } catch (x) {} };
-  if (f.getAttribute('src') && f.contentWindow && _learn.state) send(); else { if (!f.getAttribute('src')) f.setAttribute('src', 'learn.html?embed=mail'); f.addEventListener('load', () => setTimeout(send, 200), { once: true }); }
+  if (window._learnShow) _learnShow(null, () => { try { NaviLearn.nav(a); } catch (x) {} });   // 학습 화면은 같은 문서 안에 있다 — 직접 부른다
 }
 function _lchatSync() {
   const t = _learnEl('lchat-title'), e = _learnEl('lchat-end'); if (t) t.textContent = _learn.prof || '교육 SP'; if (e) e.hidden = !_learn.prof;
   const i = _learnEl('lchat-in'); if (i) i.placeholder = _learn.prof ? _learn.prof + '에게 질문하세요' : '예: 경제학 3주차 학습 페이지로 가자';
 }
-window.addEventListener('message', (e) => {   // 학습 화면에서 온 소식 — 같은 출처·학습 프레임에서 온 것만
-  const f = _learnEl('learn-frame'), d = e.data;
-  if (!f || !d || typeof d !== 'object' || e.origin !== location.origin || e.source !== f.contentWindow) return;
-  if (d.type === 'navi-learn-state' && d.state && typeof d.state === 'object') { _learn.state = d.state; return; }
-  if (d.type === 'navi-learn-result') { if (_learn.active && typeof d.msg === 'string') _lchatNote((d.ok ? '✓ ' : '! ') + d.msg.slice(0, 200), !d.ok); return; }
-  if (d.type === 'navi-learn-ask') { _learnAsk(d.text); }
-});
+function _learnBind(L) {   // 학습 화면(NaviLearn)에서 온 소식 — 같은 문서의 함수 호출이라 출처 검사가 필요 없다
+  if (!L || _learn.bound === L) return; _learn.bound = L;
+  L.on('state', (st) => { if (st && typeof st === 'object') _learn.state = st; });
+  L.on('result', (d) => { if (_learn.active && d && typeof d.msg === 'string') _lchatNote((d.ok ? '✓ ' : '! ') + d.msg.slice(0, 200), !d.ok); });
+  L.on('ask', (t) => { _learnAsk(t); });
+}
 window.addEventListener('message', (e) => {   // 교육 SP 의 답 — 나비웹 대화창(숨은 프레임)에서 온 것만
   const d = e.data; if (!d || typeof d !== 'object' || !window.HondiChat || e.source !== HondiChat.frameWindow() || !_hcOrigin(e)) return;
   if (d.type === 'hondi-embed-sp-ready' && _learn.active) { _learn.ready = true; _learn.queue.splice(0).forEach(m => HondiChat.post(m)); return; }
@@ -131,7 +128,7 @@ function _learnAsk(text) {   // 화면 안의 '교수에게 묻기' — 대화�
   const p = _learnEl('lchat-panel'); if (p && !p.classList.contains('open')) _lchatToggle();
   const i = _learnEl('lchat-in'), t = typeof text === 'string' ? text.slice(0, 300) : ''; if (i && t) { i.value = t; try { i.focus(); } catch (x) {} }
 }
-window.LearnHost = { enter: _learnEnter, leave: _learnLeave, ask: _learnAsk };
+window.LearnHost = { enter: _learnEnter, leave: _learnLeave, ask: _learnAsk, bind: _learnBind };
 // 이미 학습 화면이 열려 있다면(새로 고침 복원 등) 곧바로 켠다
 if (document.getElementById('tab-learn') && document.getElementById('tab-learn').classList.contains('active')) _learnEnter();
 })();

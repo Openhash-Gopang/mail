@@ -47,13 +47,12 @@ test('교육 SP 지침: 블록 형식과 금지 사항이 들어 있다', () => 
   for (const k of ['~~~learn', 'subjects', 'history', 'week', 'quiz', 'add', 'prof', 'endprof', '정답을 미리 알려 주지 않는다']) assert.ok(L.LEARN_SP.includes(k), k);
 });
 
-test('learn.html: 화면 조작(주차·시험)과 채점·단계 갱신', { skip: !JSDOM && 'jsdom 없음' }, () => {
-  const html = readFileSync(new URL('../learn.html', import.meta.url), 'utf8');
-  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://naviweb.kr/learn.html?embed=mail', pretendToBeVisual: true });
-  const w = dom.window, doc = w.document; w.scrollTo = () => {};
-  const out = []; w.parent.postMessage = (m) => { if (m.type === 'navi-learn-result') out.push(m); };
-  const nav = (a, o = 'https://naviweb.kr') => w.dispatchEvent(new w.MessageEvent('message', { data: Object.assign({ type: 'navi-learn-nav' }, a), origin: o, source: w }));
-  const txt = () => doc.getElementById('root').textContent;
+test('learn-app.js: 화면 조작(주차·시험)과 채점·단계 갱신', { skip: !JSDOM && 'jsdom 없음' }, () => {
+  const dom = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true });
+  const w = dom.window, doc = w.document; w.eval(readFileSync(new URL('../learn-app.js', import.meta.url), 'utf8'));
+  const out = []; w.NaviLearn.on('result', (m) => out.push(m)); w.NaviLearn.mount(doc.getElementById('m'));
+  const nav = (a) => w.NaviLearn.nav(a);
+  const txt = () => doc.getElementById('lrn-root').textContent;
   nav({ do: 'week', subject: '경제학', week: 3 });
   assert.match(txt(), /경제학 입문 · 3주차 — 탄력성/); assert.equal(out.pop().ok, true);
   nav({ do: 'quiz', subject: '경제학', week: 1 });
@@ -68,7 +67,7 @@ test('learn.html: 화면 조작(주차·시험)과 채점·단계 갱신', { ski
   assert.equal(JSON.parse(w.localStorage.getItem('navi-learn-v1')).prog.econ.seq[0], 'P');
   nav({ do: 'week', subject: '경제학', week: 99 }); assert.equal(out.pop().ok, false);
   nav({ do: 'week', subject: '화학', week: 1 }); assert.match(out.pop().msg, /찾지 못했습니다/);
-  const before = txt(); nav({ do: 'history' }, 'https://evil.example'); assert.equal(txt(), before, '다른 출처의 조작은 무시');
+  const before = txt(); w.NaviLearn.nav(null); w.NaviLearn.nav({ do: 'zzz' }); assert.match(out.pop().msg, /지원하지 않는/); assert.equal(txt(), before, '모르는 조작은 화면을 바꾸지 않는다');
   nav({ do: 'add', subject: '영어', level: '고등' }); assert.match(out.pop().msg, /추가했습니다/);
 });
 
@@ -83,13 +82,12 @@ test('localIntent·cleanAct: 보고서·제출·진로 명령', () => {
   assert.match(a, /"reports":\[\{"id":"econ"/); assert.match(a, /"career":\[\{"name":"경제·금융·경영"/);
 });
 
-test('learn.html: 보고서 제출 → 진로 추천', { skip: !JSDOM && 'jsdom 없음' }, () => {
-  const html = readFileSync(new URL('../learn.html', import.meta.url), 'utf8');
-  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://naviweb.kr/learn.html?embed=mail', pretendToBeVisual: true });
-  const w = dom.window, doc = w.document; w.scrollTo = () => {};
-  const out = []; w.parent.postMessage = (m) => { if (m.type === 'navi-learn-result') out.push(m); };
-  const nav = (a) => w.dispatchEvent(new w.MessageEvent('message', { data: Object.assign({ type: 'navi-learn-nav' }, a), origin: 'https://naviweb.kr', source: w }));
-  const txt = () => doc.getElementById('root').textContent;
+test('learn-app.js: 보고서 제출 → 진로 추천', { skip: !JSDOM && 'jsdom 없음' }, () => {
+  const dom = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true });
+  const w = dom.window, doc = w.document; w.eval(readFileSync(new URL('../learn-app.js', import.meta.url), 'utf8'));
+  const out = []; w.NaviLearn.on('result', (m) => out.push(m)); w.NaviLearn.mount(doc.getElementById('m'));
+  const nav = (a) => w.NaviLearn.nav(a);
+  const txt = () => doc.getElementById('lrn-root').textContent;
   nav({ do: 'career' });
   assert.match(txt(), /제출된 보고서가 없습니다/);
   nav({ do: 'submit', subject: '경제학' });
