@@ -30,7 +30,7 @@ export const MAIL_FILES = new Set([
  "devlog.js",
  "devlog.json",
  "doc-helper.js",
- "expert100k-field.html",
+ "expert100k-doc.js",
  "expert100k-overview.html",
  "favicon.ico",
  "feedback-digest-core.js",

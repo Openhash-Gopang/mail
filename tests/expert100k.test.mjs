@@ -11,16 +11,16 @@ test('10만 AI 전문가: 왼쪽 메뉴 항목이 안내 영상 아래에 있고
   assert.match(h, /<button id="tab-btn-expert100k" class="nav-btn" data-label="10만 AI 전문가" onclick="_switchTab\('expert100k'\)">/);
   assert.ok(h.includes('<div id="tab-expert100k" class="tab-panel">'));
   assert.ok(h.includes("if (name === 'expert100k') _exSwitch("), '_switchTab 이 화면을 열 때 탭을 맞춘다');
-  assert.match(h, /#tab-expert100k iframe\{/);
+  assert.ok(!/#tab-expert100k iframe/.test(h), 'iframe 스타일을 더 쓰지 않는다');
 });
 
 test('10만 AI 전문가: 위쪽 탭은 개요와 12개 분야이고, 탭 전환은 .wp-tab 전체를 훑어 새 탭을 더해도 고칠 곳이 없다', () => {
   const h = R('desktop.html');
-  const panel = /<div id="tab-expert100k"[\s\S]*?<iframe id="expert100k-frame"/.exec(h)[0];
+  const panel = /<div id="tab-expert100k"[\s\S]*?<div id="expert100k-doc"/.exec(h)[0];
   const tabs = [...panel.matchAll(/class="wp-tab[^"]*" id="ex-tab-([a-z0-9]+)"/g)].map((m) => m[1]);
   assert.deepEqual(tabs, ['overview', 'law', 'medical', 'edu', 'finance', 'market', 'legis', 'judicial', 'admin', 'transport', 'logistics', 'culture', 'living']);
   assert.ok(panel.includes('>개요</button>'));
-  assert.match(h, /const _EX_URL = \{ overview: 'expert100k-overview\.html\?embed=mail/);
+  assert.match(h, /const _EX_KEYS = \['overview', 'law'/);
   assert.ok(h.includes("document.querySelectorAll('#tab-expert100k .wp-tab')"));
 });
 
@@ -51,13 +51,13 @@ test('10만 AI 전문가: 개요 문서가 naviweb.kr 프록시의 mail 파일 �
 });
 
 test('10만 AI 전문가: 12개 분야 탭이 모두 분야 문서와 연결되고 각 분야에 필수 항목이 있다', () => {
-  const h = R('desktop.html'), d = R('expert100k-field.html');
-  assert.ok(h.includes("'expert100k-field.html?f=' + k"));
+  const h = R('desktop.html'), d = R('expert100k-doc.js');
+  assert.ok(h.includes('id="expert100k-doc"') && !h.includes('expert100k-frame'), 'iframe 없이 화면에 바로 그린다');
   const keys = [...d.matchAll(/^(\w+):\{t:'([^']+)'/gm)].map((m) => m[1]);
   assert.deepEqual(keys, ['law', 'medical', 'edu', 'finance', 'market', 'legis', 'judicial', 'admin', 'transport', 'logistics', 'culture', 'living']);
   for (const k of keys) assert.ok(h.includes(`id="ex-tab-${k}"`), k + ' 탭');
   const body = d.split('var F = {')[1].split('var K =')[0];
   for (const f of ['def:', 'pain:', 'layers:', 'flow:', 'l3:', 'gate:', 'ref:', 'ask:']) assert.equal(body.split(f).length - 1, 12, f + ' 12개');
   assert.ok(!/혼디/.test(d));
-  assert.ok([...MAIL_FILES].includes('expert100k-field.html'));
+  assert.ok([...MAIL_FILES].includes('expert100k-doc.js'));
 });
