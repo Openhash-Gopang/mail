@@ -491,3 +491,13 @@ test('매뉴얼: 정보 공개 청구서 장에 작성→도우미 입력→제�
   assert.ok(c.body.includes('내가 직접 로그인') && c.body.includes('도우미에게 맡기기') && c.body.includes('data-goto="ch_agent"'));
   assert.ok(c.quiz.length >= 6 && /^\d{4}-\d{2}-\d{2}$/.test(c.updated));
 });
+
+test('정보 공개 청구: 옛 확장이 절차를 몰라도 맡길 수 있고, SP 는 사용자에게 시키지 않고 도우미가 직접 한다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes("info.playbooks.some(p => p && p.id === 'open-go-kr-foi')") && h.includes("playbook: known ? 'open-go-kr-foi' : ''"));
+  assert.ok(h.includes('txt.slice(0, 1500)'));
+  const a = h.indexOf('const _FOI_SP = ['), sp = h.slice(a, h.indexOf('].join', a));
+  assert.ok(sp.includes('사용자에게 찾아보라고 시키지 않는다') && sp.includes('도우미가 정보공개포털에서 사전 공개 여부를 검색하고'));
+  assert.ok(!sp.includes('[OPTIONS') || sp.includes('[OPTIONS: ...] 선택지는 쓰지 않는다'));
+  assert.ok(!sp.includes('직접 한다. 사용자가 원하면'));
+});
