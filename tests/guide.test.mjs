@@ -463,3 +463,10 @@ test('다른 사이트 입력 탭: 같은 계정의 폰으로 촬영해 PC로 �
   const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
   assert.ok(m.includes('📱 폰으로 촬영</b>을 눌러'));
 });
+
+test('안내 문구는 ✕ 로 한 번 닫으면 다시 보이지 않는다(다른 사이트 입력 탭·폰 촬영 상자)', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.includes('function _hintAttach(') && h.includes('다시 보지 않기') && h.includes("const _HINT_KEY = 'navi_hints_off'"));
+  for (const k of ['ots-sub', 'ots-foot', 'ots-conn', 'ots-pnote', 'pp-note']) assert.ok(h.includes("'" + k + "'"), k);
+  assert.ok(h.includes('id="ots-sub"') && h.includes('id="ots-foot"'));
+});
