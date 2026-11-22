@@ -365,6 +365,39 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-infra-ex .ix-bd{min-width:18px;height:18px;border-radius:9px;background:#D93025;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;box-sizing:border-box}
 .cmp-infra-ex .ix-hint{flex:0 0 100%;text-align:center;font-size:12px;color:var(--hint,#6B7280);margin-top:2px}
 #tab-compose.infra-on .cmp-ex-btn{display:none!important}
+/* 2026-11-23 — 입력창 왼쪽은 '주소'(프로필 검색), '예시'는 입력창 아래 오른쪽(흰색). 누르면 예시 항목이 버튼 오른쪽으로 펼쳐지고 버튼은 왼쪽으로 옮겨 전체가 가운데 정렬된다. */
+.cmp-addr-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:6px;height:38px;margin:0;padding:0 15px 0 12px;border:1px solid var(--bdr);border-radius:999px;background:#fff;color:var(--pri);font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:var(--sh);transition:box-shadow .15s,border-color .15s,transform .08s}
+.cmp-addr-btn:hover{border-color:var(--pri);transform:scale(1.03)}
+.cmp-addr-btn:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.cmp-addr-btn[aria-pressed=true]{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
+#tab-compose[data-mode="default"] .cmp-addr-btn,#tab-compose[data-mode="org"] .cmp-addr-btn{display:inline-flex}
+#tab-compose.infra-on .cmp-addr-btn{display:none!important}
+.cmp-addr-res{margin:10px 6px 0;background:#fff;border:1px solid var(--bdr);border-radius:16px;box-shadow:var(--sh);padding:12px 16px;font-size:14px;color:var(--txt)}
+.cmp-addr-res[hidden]{display:none}
+.cmp-addr-res .ar-head{font-size:13px;color:var(--hint,#4B5563);margin-bottom:6px}
+.cmp-addr-res .ar-none{padding:6px 0;line-height:1.6}
+.cmp-addr-res .ar-it{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--bdr)}
+.cmp-addr-res .ar-it:first-of-type{border-top:0}
+.cmp-addr-res .ar-main{flex:1 1 auto;min-width:0}.cmp-addr-res .ar-main b{display:block;font-size:15px}
+.cmp-addr-res .ar-adr{font-size:13px;color:var(--hint,#4B5563)}
+.cmp-addr-res .ar-open{flex:none;border:1px solid var(--bdr);border-radius:999px;background:#fff;color:var(--pri);font:inherit;font-size:13px;font-weight:700;padding:6px 14px;text-decoration:none}
+.cmp-addr-res .ar-open:hover{border-color:var(--pri)}
+.cmp-ex-line{flex:1 0 100%;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:8px}
+.cmp-ex-line .cmp-ex-btn{background:#fff;color:var(--pri);border:1px solid var(--bdr);box-shadow:var(--sh)}
+.cmp-ex-line .cmp-ex-btn:hover{filter:none;border-color:var(--pri)}
+.cmp-ex-line .cmp-ex-btn[aria-expanded=true]{box-shadow:0 0 0 3px var(--pri-bg);border-color:var(--pri)}
+.cmp-ex-line.no-tr,.cmp-ex-line.no-tr *{transition:none!important}
+@media (min-width:721px){
+  .cmp-ex-line{position:relative;display:block;height:46px}
+  .cmp-ex-line.ex-none{height:0}
+  .cmp-ex-line .cmp-ex-btn{position:absolute;top:4px;left:0;transform:translateX(var(--bx,0px));transition:transform .46s cubic-bezier(.2,.8,.2,1),box-shadow .15s,border-color .15s}
+  .cmp-ex-line .cmp-ex-btn:hover{transform:translateX(var(--bx,0px)) scale(1.03)}
+  .cmp-ex-line .ex-panel{position:absolute;top:0;left:0;flex:none;width:max-content;max-height:none;transform:translateX(var(--px,0px));transition:transform .46s cubic-bezier(.2,.8,.2,1),opacity .3s ease,visibility 0s linear .46s}
+  .cmp-ex-line .ex-panel.open{transform:translateX(var(--px,0px));transition-delay:0s}
+  .cmp-ex-line .ex-panel>.ex-table{width:max-content;table-layout:auto}
+  .cmp-ex-line .ex-table td{transform:translateX(-14px)}
+  .cmp-ex-line .ex-panel.open .ex-table td{transform:none}
+}
 .cmp-inrow{display:flex;align-items:center;gap:8px}.cmp-inrow>.chat-inputbar{flex:1 1 auto;min-width:0}
 .cmp-ex-btn{display:none;flex-shrink:0;align-self:center;align-items:center;gap:5px;height:38px;margin:0;padding:0 12px 0 15px;border:0;border-radius:999px;background:var(--pri);color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .08s}   /* 2026-11-04: 1.5배에서 축소(높이 38px·글자 15px), 배경은 입력(전송) 버튼과 같은 --pri 초록 */
 .cmp-ex-btn:hover{filter:brightness(.93);transform:scale(1.03)}
@@ -1659,7 +1692,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="chat-composer">
       <div class="chat-attach-list" id="cmp-attach-list"></div>
       <div class="cmp-inrow">
-        <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <button type="button" class="cmp-addr-btn" id="cmp-addr-btn" aria-pressed="false" title="주소 — 나비웹 프로필(기관·사업장·사람)을 이름으로 찾습니다" onclick="_addrToggle(event)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>주소</span></button>
         <div class="chat-inputbar">
           <input type="file" id="cmp-file" style="display:none">
           <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
@@ -1677,8 +1710,11 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           </button>
         </div>
       </div>
+      <div class="cmp-addr-res" id="cmp-addr-res" role="region" aria-live="polite" aria-label="프로필 검색 결과" hidden></div>
       <div class="cmp-infra-ex" id="cmp-infra-ex" role="group" aria-label="예시" hidden></div>
       <div class="doc-host-row" id="cmp-doc-row">
+        <div class="cmp-ex-line" id="cmp-ex-line">
+      <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="ex-panel" id="cmp-ex-panel" role="group" aria-label="예시" aria-hidden="true">
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
         <table class="ex-table"><caption class="sr-only">예시</caption><tbody><tr>
@@ -1729,6 +1765,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
             <button type="button" class="doc-combo-btn ex-nabicode" id="cmp-nabi-btn" aria-pressed="false" onclick="_cmpNabiPick()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-family="Pretendard,system-ui,sans-serif" font-size="15" font-weight="800" textLength="23" lengthAdjust="spacingAndGlyphs" fill="currentColor" stroke="none">123</text></svg><span>나비 숫자 코드</span></button>
             </td>
         </tr></tbody></table>
+        </div>
         </div>
         <span id="cmp-doc-count" role="status"></span>
         <progress id="cmp-doc-bar" max="100" value="0" hidden aria-label="첨부 자료 읽는 진행률" style="width:140px;height:6px;vertical-align:middle;margin-left:8px;accent-color:var(--primary,#0f9d8a)"></progress>
@@ -3256,7 +3293,7 @@ function _cmpExOpen() {
   clearTimeout(p._t);
   p.querySelectorAll('td').forEach((c, i) => c.style.setProperty('--i', i));
   p.classList.remove('settled'); p.setAttribute('aria-hidden', 'false'); b && b.setAttribute('aria-expanded', 'true');
-  requestAnimationFrame(() => p.classList.add('open'));
+  requestAnimationFrame(() => { p.classList.add('open'); _cmpExLayout(); });
   p._t = setTimeout(() => { if (p.classList.contains('open')) p.classList.add('settled'); }, 380);
 }
 function _cmpExClose() {
@@ -3265,7 +3302,26 @@ function _cmpExClose() {
   p.querySelectorAll('.doc-combo-pop').forEach(x => { x.hidden = true; });
   p.querySelectorAll('[aria-haspopup]').forEach(x => x.setAttribute('aria-expanded', 'false'));
   p.classList.remove('settled', 'open'); p.setAttribute('aria-hidden', 'true'); b && b.setAttribute('aria-expanded', 'false');
+  _cmpExLayout();
 }
+// 넓은 화면: 예시 버튼은 입력창 아래 오른쪽 끝, 열리면 버튼+항목 묶음이 가운데로 모이도록 두 요소의 가로 위치를 계산한다(CSS 가 transform 으로 미끄러뜨린다).
+function _cmpExLayout(instant) {
+  const line = document.getElementById('cmp-ex-line'), p = _cmpExPanel(), b = document.getElementById('cmp-ex-btn'); if (!line || !p) return;
+  if (instant) line.classList.add('no-tr');
+  const GAP = 10, W = line.clientWidth, bw = b ? b.offsetWidth : 0, open = _cmpExIsOpen(), pw = p.scrollWidth;
+  let bx, px;
+  if (open) { const g = (bw ? bw + GAP : 0) + pw, s0 = Math.max(0, (W - g) / 2); bx = s0; px = s0 + (bw ? bw + GAP : 0); }
+  else { bx = Math.max(0, W - bw); px = bx; }
+  line.style.setProperty('--bx', bx + 'px'); line.style.setProperty('--px', px + 'px');
+  line.classList.toggle('ex-none', !bw && !open);
+  if (instant) { void line.offsetWidth; line.classList.remove('no-tr'); }
+}
+(function () {
+  const line = document.getElementById('cmp-ex-line'); if (!line) return;
+  if (window.ResizeObserver) new ResizeObserver(() => _cmpExLayout(true)).observe(line);
+  window.addEventListener('load', () => _cmpExLayout(true));
+  _cmpExLayout(true);
+})();
 // 2026-11-10: 서류 작성 모드(서류를 아직 고르지 않았을 때)에는 패널과 서류 메뉴를 항상 펼쳐 둔다. 모드·.doc-live 가 바뀌거나 항목을 골라 패널이 접히면 다시 맞춘다.
 let _docInlinePicked = false;   // 서류 종류(법률 서류 등)를 목록에서 골랐으면 true — 고른 뒤에는 메뉴를 다시 펼치지 않는다. 서류 모드를 떠나면 false.
 function _cmpDocInlineWant() { const t = document.getElementById('tab-compose'); return !!t && t.getAttribute('data-mode') === 'doc' && !t.classList.contains('doc-live') && !_docInlinePicked; }
@@ -3279,7 +3335,8 @@ function _cmpDocInlineSync() {
 }
 (function () {
   const t = document.getElementById('tab-compose'); if (!t) return;
-  new MutationObserver(() => setTimeout(_cmpDocInlineSync, 0)).observe(t, { attributes: true, attributeFilter: ['class', 'data-mode'] });
+  new MutationObserver(() => setTimeout(() => { _cmpDocInlineSync(); _cmpExLayout(true); }, 0)).observe(t, { attributes: true, attributeFilter: ['class', 'data-mode'] });
+  new MutationObserver(() => { if (_addrMode) _addrOff(); }).observe(t, { attributes: true, attributeFilter: ['data-mode'] });
 })();
 function _cmpExToggle(e) { if (e) e.stopPropagation(); if (_docLocked()) { _drToast(_DOC_LOCK_MSG); return; } _cmpExIsOpen() ? _cmpExClose() : _cmpExOpen(); }
 (function () {
@@ -9153,7 +9210,40 @@ async function _navQuickDoc(text) {
   return hit || null;
 }
 
+// ── 주소(2026-11-23): 나비웹에 등록된 프로필(기관·사업장·사람)을 이름으로 찾는다. 하나뿐이면 프로필(웹사이트)을 새 탭으로 열고, 여럿이면 입력창 아래에 나열한다.
+// 주소가 있으면 보여 주고 없으면 "주소 정보가 없습니다"라고 밝힌다. 프로필 등록(검색) 서버가 아직 없어서 _ADDR_REGISTRY 가 비어 있는 동안에는 "등록된 프로필이 없습니다"로 답한다.
+// 서버가 생기면 이 주소만 채운다. 응답 형식: GET <주소>?q=이름 → [{ name, url, address }]
+const _ADDR_REGISTRY = '';
+let _addrMode = false;
+function _addrEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function _addrToggle(e) { if (e) e.stopPropagation(); _addrMode ? _addrOff() : _addrOn(); }
+function _addrOn() {
+  _addrMode = true;
+  const b = document.getElementById('cmp-addr-btn'), i = document.getElementById('cmp-input'); b && b.setAttribute('aria-pressed', 'true');
+  if (i) { i.placeholder = '찾을 기관·사업장·사람 이름을 입력하세요 — 예: 제주도청'; i.focus(); }
+  _cmpChatUpdateSendState();
+}
+function _addrOff() {
+  _addrMode = false;
+  const b = document.getElementById('cmp-addr-btn'), r = document.getElementById('cmp-addr-res'); b && b.setAttribute('aria-pressed', 'false'); if (r) { r.hidden = true; r.innerHTML = ''; }
+  if (typeof _cmpSyncModeUi === 'function') _cmpSyncModeUi();
+  _cmpChatUpdateSendState();
+}
+async function _addrFind(q) {
+  if (!_ADDR_REGISTRY) return [];
+  try { const r = await fetch(_ADDR_REGISTRY + (_ADDR_REGISTRY.indexOf('?') < 0 ? '?' : '&') + 'q=' + encodeURIComponent(q)); if (!r.ok) return null; const j = await r.json(); return Array.isArray(j) ? j : []; } catch (e) { return null; }
+}
+async function _addrRun() {
+  const i = document.getElementById('cmp-input'), r = document.getElementById('cmp-addr-res'), q = i.value.trim(); if (!q || !r) return;
+  r.hidden = false; r.innerHTML = '<div class="ar-none">찾는 중…</div>';
+  const hits = await _addrFind(q), head = '<div class="ar-head">‘' + _addrEsc(q) + '’ 프로필 검색</div>';
+  if (hits === null) { r.innerHTML = head + '<div class="ar-none">프로필 검색 서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.</div>'; return; }
+  if (!hits.length) { r.innerHTML = head + '<div class="ar-none">나비웹에 등록된 프로필이 없습니다.</div>'; return; }
+  r.innerHTML = head + hits.map(h => '<div class="ar-it"><div class="ar-main"><b>' + _addrEsc(h.name) + '</b><span class="ar-adr">' + (h.address ? _addrEsc(h.address) : '주소 정보가 없습니다') + '</span></div>' + (h.url ? '<a class="ar-open" href="' + _addrEsc(h.url) + '" target="_blank" rel="noopener">프로필 열기</a>' : '<span class="ar-adr">프로필 페이지 없음</span>') + '</div>').join('');
+  if (hits.length === 1 && /^https?:\/\//.test(hits[0].url || '')) window.open(hits[0].url, '_blank', 'noopener');
+}
 async function _cmpChatSend() {
+  if (_addrMode) { await _addrRun(); return; }
   if (_cmpMode === 'org') { await _orgSend(); return; }
   if (_cmpMode === 'doc') { await _docHostSubmit(true); return; }   // Enter(또는 보내기) = 보이는 첫 후보로 바로 확정 — 두 번 누르게 하지 않는다
   if (_cmpMode === 'verdict') { if (_cmpVAtt.length && document.getElementById('cmp-input').value.trim().length >= 20) _cmpVClear(); if (window.VerdictHost) await VerdictHost.submit(); return; }   // 보내는 순간 첨부 표시는 지운다(글은 이미 입력란에 들어 있다)
