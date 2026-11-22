@@ -16,7 +16,6 @@ button:disabled{opacity:.45;cursor:default}
 .top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .topin{max-width:1080px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;padding:12px 0}
-.logo{width:34px;height:34px;border-radius:10px;background:var(--hero);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
 .brand b{display:block;font-size:15px;line-height:1.2}.brand span{font-size:12px;color:var(--on2)}
 .tabs{display:flex;gap:4px;margin-left:auto;overflow-x:auto}
 .tab{background:none;border:0;border-bottom:3px solid transparent;padding:16px 12px 13px;font-size:14px;font-weight:600;color:var(--on2);white-space:nowrap}
@@ -119,6 +118,37 @@ h2{font-size:19px;font-weight:700;margin:36px 0 12px;letter-spacing:-.01em}
 .lab{font-size:13px;font-weight:700;color:var(--on2);margin:18px 0 8px}
 textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;background:var(--bg);color:var(--on);resize:vertical;min-height:64px}
 .foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--on2)}
+.sh{display:flex;gap:10px;flex-wrap:wrap}
+.sh input{flex:1 1 260px;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:12px 16px;font:inherit;font-size:16px;background:var(--bg);color:var(--on)}
+.sh input:focus{outline:none;border-color:var(--pri)}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--nb);border-top-color:var(--pri);animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.wlist{max-height:268px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.wlist div{display:flex;gap:10px;padding:7px 12px;font-size:13px;border-top:1px solid var(--line)}
+.wlist div:first-child{border-top:0}.wlist b{flex:0 0 42px;color:var(--on2)}.wlist span{flex:1;min-width:0}.wlist i{font-style:normal;color:var(--on2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.seg button{background:none;border:0;padding:7px 18px;font-size:13px;font-weight:600;color:var(--on2)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--pb0);color:var(--pri)}
+.qb{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:13px}
+.qb .nm{flex:0 0 118px;font-weight:600}.qb .v{flex:0 0 64px;text-align:right;color:var(--on2)}
+.qb .tr{flex:1;height:16px;border-radius:8px;background:var(--nb);position:relative;display:flex;overflow:visible}
+.qb .tr em{display:block;height:16px}.qb .tr em:first-child{border-radius:8px 0 0 8px}
+.qb .tr em.M{background:var(--m)}.qb .tr em.P{background:var(--p)}
+.qb .tr u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--on);text-decoration:none}
+.wk{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin-top:14px}
+.wk button{position:relative;height:40px;border-radius:9px;border:1.5px solid transparent;font-size:13px;font-weight:700}
+.wk button.M{background:var(--mb);color:var(--m)}.wk button.P{background:var(--pb);color:var(--p)}.wk button.L{background:var(--lb);color:var(--l)}.wk button.N{background:var(--nb);color:var(--on2)}
+.wk button.now{border-color:var(--on)}
+.wk button.now:after{content:"\25BC";position:absolute;top:-13px;left:0;right:0;font-size:9px;color:var(--on);line-height:1}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
+.cal div{height:38px;border-radius:8px;background:var(--nb);font-size:12px;color:var(--on2);display:flex;align-items:center;justify-content:center}
+.cal div.d1{background:color-mix(in srgb,var(--p) 30%,var(--nb));color:var(--on)}.cal div.d2{background:color-mix(in srgb,var(--p) 60%,var(--nb));color:#fff}.cal div.d3{background:var(--p);color:#fff}
+.cal div.today{outline:2px solid var(--on);outline-offset:1px}
+.dp{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}.dp:first-child{border-top:0}.dp b{flex:0 0 52px}.dp span{flex:1;min-width:0}.dp i{font-style:normal;color:var(--on2);font-size:13px}
+.srcs a{color:var(--pri)}
+@media print{.top,.sbar,.noprint,.ov{display:none!important}body{background:#fff}.wrap{padding:0}.card{box-shadow:none;break-inside:avoid;margin-top:12px}}
 body.embed .wrap{padding-top:20px}
 @media (max-width:860px){.g2{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){h1{font-size:24px}.wrap{padding:20px 16px 56px}.topin{padding:0 16px;gap:4px}.tabs{margin-left:0;width:100%}.hero .big{font-size:21px}.mrow .nm{flex-basis:64px}.mrow .v{flex-basis:90px}}
@@ -201,21 +231,23 @@ var QUIZ = {
 var WEEK_TOPICS = { econ:['희소성과 선택','수요와 공급','탄력성','소비자 이론'], calc:['극한','연속','미분 기초','미분 공식','합성함수 미분','음함수 미분','미분의 응용(1)','미분의 응용(2)','적분 맛보기'] };
 
 var UNIT = 4, DAY = 86400000;
-var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, goal:3, chk:{}, addSubj:'수학', addLevel:'중등' };
+var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, goal:3, chk:{}, addSubj:'수학', addLevel:'중등', srch:{ q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:null, n:0 }, grain:'month', qz:{}, qst:null };
+EXAMPLE[0].start = Date.now() - 3 * DAY; EXAMPLE[1].start = Date.now() - 58 * DAY;   // 예시 과목의 표준 일정 기준일(예시)
 try {
   var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
-  if (sv && Array.isArray(sv.added)) S.added = sv.added.filter(function (a) { return a && typeof a.name === 'string'; });
+  if (sv && Array.isArray(sv.added)) S.added = sv.added.filter(function (a) { return a && typeof a.name === 'string'; }).map(fixCourse);
   if (sv && sv.prog && typeof sv.prog === 'object') for (var pk in sv.prog) { var pv = sv.prog[pk]; if (pv && typeof pv.seq === 'string' && /^[MPLN]{1,60}$/.test(pv.seq)) S.prog[pk] = { seq:pv.seq, pass:(pv.pass && typeof pv.pass === 'object') ? pv.pass : {}, log:Array.isArray(pv.log) ? pv.log.filter(function (e) { return Array.isArray(e) && isFinite(e[0]) && isFinite(e[1]) && isFinite(e[2]); }).slice(-200) : [], chain:Array.isArray(pv.chain) ? pv.chain.filter(function (x) { return typeof x === 'string' && /^[0-9a-f]{64}$/.test(x); }).slice(-200) : [] }; }
   if (sv && sv.sub && typeof sv.sub === 'object') for (var sk in sv.sub) { var su = sv.sub[sk]; if (su && isFinite(su.ts) && isFinite(su.score)) S.sub[sk] = { ts:su.ts, score:su.score, prog:isFinite(su.prog) ? su.prog : null, avg:isFinite(su.avg) ? su.avg : null, first:isFinite(su.first) ? su.first : null, pace:isFinite(su.pace) ? su.pace : null, tried:Number(su.tried) || 0, att:Number(su.att) || 0, basis:String(su.basis || '').slice(0, 60) }; }
   if (sv && [2, 3, 5, 7].indexOf(sv.goal) >= 0) S.goal = sv.goal;
   if (sv && sv.chk && typeof sv.chk === 'object') for (var ck in sv.chk) if (/^[0-9a-z]{1,24}:\d{1,2}$/.test(ck) && /^[01]{1,8}$/.test(sv.chk[ck])) S.chk[ck] = sv.chk[ck];
 } catch (e) {}
+try { var zq = JSON.parse(localStorage.getItem('navi-learn-qz') || 'null'); if (zq && typeof zq === 'object') for (var zk in zq) if (/^c[0-9a-f]{12}:\d{1,2}$/.test(zk) && okBank(zq[zk])) S.qz[zk] = zq[zk]; } catch (e) {}
 function save() { try { localStorage.setItem(KEY, JSON.stringify({ added: S.added, prog: S.prog, sub: S.sub, goal: S.goal, chk: S.chk })); } catch (e) {} }
 function all() { return EXAMPLE.concat(S.added); }
 function find(id) { return all().filter(function (c) { return c.id === id; })[0]; }
 function seqOf(c) { return (S.prog[c.id] && S.prog[c.id].seq) || c.seq || ''; }
 function nextIdx(seq) { var i = seq.indexOf('L'); return i < 0 ? seq.indexOf('N') : i; }
-function topicOf(c, n) { var t = WEEK_TOPICS[c.id]; return (t && t[n - 1]) || ''; }
+function topicOf(c, n) { if (c.cur) return (c.cur.w[n - 1] || {}).t || ''; var t = WEEK_TOPICS[c.id]; return (t && t[n - 1]) || ''; }
 function nextLabel(c) { var seq = seqOf(c), i = nextIdx(seq); if (i < 0) return ''; var t = topicOf(c, i + 1); return (i + 1) + '주차' + (t ? ' · ' + t : ''); }
 function resolve(q) {
   q = String(q || '').trim().toLowerCase(); if (!q) return null;
@@ -226,6 +258,57 @@ function resolve(q) {
 }
 function tally(seq) { var n = { M:0, P:0, L:0, N:0 }; seq.split('').forEach(function (c) { n[c]++; }); return n; }
 function cpct(c) { var s = seqOf(c), n = tally(s); return s ? Math.round((n.M + n.P) / s.length * 100) : 0; }
+
+// ── 커리큘럼(DB에서 받은 것) · 표준 일정 ──
+// 커리큘럼 한 개: { id, title, sum, level, w:[{t:주 제목, g:[학습 목표], h:표준 학습 시간}], hours, hpw, web:웹 자료 기반 여부, src:[{title,url}] }
+// 모든 과정은 Self-paced 이다. 표준 일정(시작일 + 주 1개 단원)은 참고선일 뿐 학습자를 막지 않는다. 학습 단위: 분기(13주) · 월(4주) · 주 · 일.
+var QTR = 13, API = '/api/curriculum';
+function cleanCur(x) {
+  var src = x && typeof x === 'object' ? (x.weeks || x.w) : null; if (!Array.isArray(src) || src.length < 4 || src.length > 52) return null;
+  var w = [];
+  for (var i = 0; i < src.length; i++) {
+    var k = src[i]; if (!k || typeof k.t !== 'string' || !k.t.trim() || !Array.isArray(k.g)) return null;
+    var g = k.g.filter(function (v) { return typeof v === 'string' && v.trim(); }).map(function (v) { return v.slice(0, 90); }).slice(0, 4); if (g.length < 1) g = ['핵심 개념 읽기', '확인 문제로 점검'];
+    w.push({ t:k.t.slice(0, 40), g:g, h:Math.min(40, Math.max(1, Math.round(Number(k.h) || 4))) });
+  }
+  var hours = w.reduce(function (a, k) { return a + k.h; }, 0), sr = x.sources || x.src, lv = typeof x.level === 'string' ? x.level.slice(0, 10) : '';
+  return { id:/^c[0-9a-f]{12}$/.test(x.id) ? x.id : '', title:String(x.title || '').slice(0, 40), sum:String(x.summary || x.sum || '').slice(0, 220), level:lv, w:w, hours:hours, hpw:Math.round(hours / w.length * 10) / 10, web:!!(x.webBased || x.web),
+    src:(Array.isArray(sr) ? sr : []).filter(function (r) { return r && typeof r.url === 'string' && /^https:\/\//.test(r.url) && typeof r.title === 'string'; }).slice(0, 8).map(function (r) { return { title:r.title.slice(0, 80), url:r.url.slice(0, 200) }; }) };
+}
+function fixCourse(a) {
+  if (a.cur) { var cc = cleanCur(a.cur); if (cc) a.cur = cc; else delete a.cur; }
+  a.start = isFinite(a.start) && a.start > 0 ? Number(a.start) : undefined; a.cid = /^c[0-9a-f]{12}$/.test(a.cid) ? a.cid : undefined;
+  if (a.cur && !a.seq) a.seq = new Array(a.cur.w.length + 1).join('N');
+  return a;
+}
+function okBank(b) { return Array.isArray(b) && b.length >= 4 && b.every(function (x) { return Array.isArray(x) && typeof x[0] === 'string' && Array.isArray(x[1]) && x[1].length === 4 && Number.isInteger(x[2]) && x[2] >= 0 && x[2] < 4 && typeof x[3] === 'string'; }); }
+function saveQz() { try { var ks = Object.keys(S.qz); while (ks.length > 80) delete S.qz[ks.shift()]; localStorage.setItem('navi-learn-qz', JSON.stringify(S.qz)); } catch (e) {} }
+function totalWeeks(c) { return seqOf(c).length; }
+function hoursOf(c, n) { var w = c.cur && c.cur.w[n - 1]; return w ? w.h : 4; }
+function totalHours(c) { var s = 0; for (var n = 1; n <= totalWeeks(c); n++) s += hoursOf(c, n); return s; }
+function goalsOf(c, n) { var w = c.cur && c.cur.w[n - 1]; return w ? w.g : ((GOALS[c.id] || [])[n - 1] || ['핵심 개념 읽기', '예제 풀이', '확인 문제로 점검']); }
+function doneWeeks(c) { var n = tally(seqOf(c)); return n.M + n.P; }
+function elapsedWeeks(c, now) { return c.start ? Math.max(0, (now - c.start) / (7 * DAY)) : null; }
+// 표준 일정 대비: 표준은 주 1개 단원. exp = 지금까지 끝났어야 할 주 수. 1주 안쪽 차이는 '일정대로'로 본다.
+function schedule(c, now) {
+  var W = totalWeeks(c), done = doneWeeks(c), e = elapsedWeeks(c, now), exp = e == null ? null : Math.min(W, Math.floor(e)), diff = exp == null ? null : done - exp;
+  var st = !W ? 'none' : done >= W ? 'done' : exp == null ? 'none' : diff >= 1 ? 'ahead' : diff >= -1 ? 'on' : 'behind';
+  var label = { done:'과정을 마쳤어요', none:'표준 일정 없음', ahead:'표준보다 ' + diff + '주 앞서요', on:'표준 일정대로예요', behind:'표준보다 ' + (diff == null ? 0 : -diff) + '주 늦었어요' }[st];
+  return { W:W, done:done, exp:exp, diff:diff, st:st, label:label, week:e == null ? null : Math.min(W, Math.floor(e) + 1) };
+}
+function passTimes(c) { var p = S.prog[c.id], r = []; if (p && p.pass) for (var k in p.pass) if (isFinite(p.pass[k])) r.push(p.pass[k]); return r.sort(function (a, b) { return a - b; }); }
+function courseLog(c) { var p = S.prog[c.id]; return ((p && p.log) || []).map(function (e) { return { n:e[0], pct:e[1], ts:e[2] }; }); }
+function recent(c, days) { var t = Date.now() - days * DAY, l = courseLog(c).filter(function (e) { return e.ts >= t; }), d = {}; l.forEach(function (e) { d[dayKey(e.ts)] = 1; }); return { days:Object.keys(d).length, tries:l.length }; }
+function dayPlan(c, n) {
+  var g = goalsOf(c, n), m = Math.max(10, Math.round(hoursOf(c, n) * 60 / 5 / 5) * 5);
+  return [['1일차', '학습 목표 확인 · 핵심 개념 읽기', m], ['2일차', g[0] ? '목표 학습 · ' + g[0] : '개념 학습', m], ['3일차', g[1] ? '목표 학습 · ' + g[1] : '예제 풀이', m], ['4일차', '연습 문제 · 막히면 교수에게 질문', m], ['5일차', '확인 문제 풀이 · 틀린 문제 복습', m]];
+}
+function planText(c) {
+  var sc = schedule(c, Date.now()), r = recent(c, 7), W = sc.W, pct = W ? Math.round(sc.done / W * 100) : 0;
+  var a = c.name + ': 표준 ' + W + '주 과정 중 ' + sc.done + '주를 통과했습니다(' + pct + '%).';
+  var b = sc.st === 'none' ? '' : sc.st === 'done' ? ' 과정을 마쳤습니다.' : sc.st === 'ahead' ? ' 표준 일정보다 ' + sc.diff + '주 앞서 있습니다.' : sc.st === 'on' ? ' 표준 일정대로 진행 중입니다.' : ' 표준 일정보다 ' + (-sc.diff) + '주 늦어 있어 이번 주에 한 주 분량을 따라잡는 것을 권합니다.';
+  return a + b + ' 최근 7일에는 ' + (r.tries ? r.days + '일 동안 확인 문제를 ' + r.tries + '회 풀었습니다.' : '확인 문제를 풀지 않았습니다.');
+}
 
 // ── 그리기 도구(문자열을 마크업으로 해석하지 않는다) ──
 function h(tag, attrs, kids) {
@@ -261,11 +344,11 @@ function openWeek(c, n, v) { S.cur = c.id; S.week = n; S.q = null; go(v, c.id); 
 function head(back, title, lead) {
   return [back ? h('button', { class:'back', text:'← ' + back[0], onclick:back[1] }) : null, h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null];
 }
-var TABS = [['subjects','내 수업'],['history','학습 기록'],['report','학습 보고서'],['career','진로 추천']];
+var TABS = [['subjects','내 수업'],['plan','진행 현황'],['history','학습 기록'],['report','학습 보고서'],['career','진로 추천']];
 function topbar() {
   var act = { course:'subjects', week:'subjects', quiz:'subjects' }[S.view] || S.view;
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('span', { class:'logo', text:'학' }), h('div', {}, [h('b', { text:'나비웹 학습' }), h('span', { text:'인프라 AI · 교육' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('b', { text:'나비웹 학습' }), h('span', { text:'인프라 AI · 교육' })])]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { class:'tab', role:'tab', 'aria-selected':String(act === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 
@@ -289,6 +372,159 @@ function reviews() {
   return r.slice(0, 5);
 }
 
+// ── 과목 검색 · 커리큘럼 만들기(DB 공유) ──
+var ERR = { not_found:'서버에서 이 커리큘럼을 찾지 못했어요. 교수에게 문제를 요청해 보세요.', short:'검색어를 두 글자 이상 써 주세요.', unavailable:'새 커리큘럼을 만드는 서버가 아직 준비되지 않았어요. 이미 만들어진 커리큘럼은 검색해서 바로 쓸 수 있어요.', limit:'오늘 새로 만들 수 있는 횟수를 모두 썼어요. 내일 다시 시도해 주세요.', busy:'지금 요청이 많아요. 잠시 뒤에 다시 시도해 주세요.', not_a_subject:'학습 과목으로 보기 어려운 검색어예요. 배우고 싶은 과목이나 주제 이름으로 검색해 주세요.', llm_error:'커리큘럼을 만들지 못했어요. 잠시 뒤에 다시 시도해 주세요.', bad_format:'만든 커리큘럼의 형식이 맞지 않아 저장하지 않았어요. 다시 시도해 주세요.', network:'서버에 연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.' };
+function errMsg(code) { return ERR[code] || ERR.network; }
+function rnd(n) { var a = new Uint8Array(n); try { crypto.getRandomValues(a); } catch (e) { for (var i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256); } return [].map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('').slice(0, n); }
+function owner() { try { var t = localStorage.getItem('navi-learn-owner'); if (!t || t.length < 16) { t = rnd(24); localStorage.setItem('navi-learn-owner', t); } return t; } catch (e) { return S.tok || (S.tok = rnd(24)); } }
+function api(path, body, ms) {
+  if (typeof fetch !== 'function') return Promise.resolve({ ok:false, error:'network' });
+  var ctl = typeof AbortController === 'function' ? new AbortController() : null, tm = ctl ? setTimeout(function () { ctl.abort(); }, ms || 20000) : 0;
+  return fetch(API + path, { method:body ? 'POST' : 'GET', headers:{ 'Content-Type':'application/json', 'X-Qna-Owner':owner() }, body:body ? JSON.stringify(body) : undefined, signal:ctl ? ctl.signal : undefined })
+    .then(function (r) { return r.json().catch(function () { return { ok:false, error:'network' }; }); })
+    .then(function (j) { clearTimeout(tm); return j || { ok:false, error:'network' }; }, function () { clearTimeout(tm); return { ok:false, error:'network' }; });
+}
+function loadList() {
+  if (S.srch.list !== null) return; S.srch.list = [];
+  api('/list').then(function (j) { if (j.ok && Array.isArray(j.list)) { S.srch.list = j.list.filter(function (x) { return x && typeof x.title === 'string' && typeof x.id === 'string'; }).slice(0, 12); drawSearch(); } });
+}
+function doSearch(q) {
+  q = String(q || '').trim().slice(0, 40); S.srch.q = q; var inp = document.getElementById('srch-in'); if (inp) inp.value = q;
+  if (q.replace(/\s/g, '').length < 2) { S.srch.st = 'err'; S.srch.err = ERR.short; return drawSearch(); }
+  S.srch.st = 'search'; S.srch.cur = null; S.srch.rel = []; drawSearch();
+  var my = ++S.srch.n;
+  api('/search?q=' + encodeURIComponent(q)).then(function (j) {
+    if (my !== S.srch.n) return;
+    if (!j.ok) { S.srch.st = 'err'; S.srch.err = errMsg(j.error); }
+    else if (j.found) { var cc = cleanCur(j.curriculum); if (cc) { S.srch.st = 'found'; S.srch.cur = cc; S.srch.from = 'db'; } else { S.srch.st = 'err'; S.srch.err = ERR.bad_format; } }
+    else { S.srch.st = 'none'; S.srch.can = j.canBuild !== false; S.srch.rel = (j.related || []).filter(function (x) { return x && typeof x.title === 'string'; }).slice(0, 5); }
+    drawSearch();
+  });
+}
+function doBuild() {
+  var q = S.srch.q; S.srch.st = 'build'; drawSearch(); var my = ++S.srch.n;
+  api('/build', { q:q }, 90000).then(function (j) {
+    if (my !== S.srch.n) return;
+    var cc = j.ok ? cleanCur(j.curriculum) : null;
+    if (cc) { S.srch.st = 'found'; S.srch.cur = cc; S.srch.from = j.created ? 'new' : 'db'; } else { S.srch.st = 'err'; S.srch.err = j.ok ? ERR.bad_format : errMsg(j.error); }
+    drawSearch();
+  });
+}
+function haveCur(id) { return id ? all().filter(function (c) { return c.cid === id; })[0] : null; }
+function addCurriculum(cur) {
+  var ex = haveCur(cur.id); if (ex) return go('course', ex.id);
+  var lv = cur.level || '대학', c = { id:'u' + Date.now(), cid:cur.id || undefined, name:cur.title, subj:cur.title.slice(0, 12), level:lv + ' · ' + cur.title.slice(0, 12), prof:cur.title.slice(0, 10) + ' 교수', seq:new Array(cur.w.length + 1).join('N'), goal:'', start:Date.now(), cur:cur };
+  S.added.push(c); save(); S.srch = { q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:S.srch.list, n:S.srch.n + 1 }; go('course', c.id);
+}
+function srcLinks(cur) {
+  if (!cur.web || !cur.src.length) return h('div', { class:'sub', text:'웹에서 찾은 자료가 없어 AI가 일반적으로 알려진 표준 구성으로 작성했어요. 내용을 꼭 확인하세요.' });
+  var d = h('div', { class:'sub srcs' }, ['웹 자료 ' + cur.src.length + '건을 바탕으로 AI가 작성했어요 · 참고: ']);
+  cur.src.forEach(function (r, i) { if (i) d.appendChild(document.createTextNode(', ')); d.appendChild(h('a', { href:r.url, target:'_blank', rel:'noopener noreferrer', text:r.title })); });
+  return d;
+}
+function curPreview(cur, from) {
+  var have = haveCur(cur.id), q = Math.ceil(cur.w.length / QTR);
+  var list = h('div', { class:'wlist', tabindex:'0', role:'region', 'aria-label':'주차별 구성' }, cur.w.map(function (k, i) { return h('div', {}, [h('b', { text:(i + 1) + '주' }), h('span', { text:k.t }), h('i', { text:k.h + '시간' })]); }));
+  var flag = h('button', { class:'btn quiet sm', text:'내용이 이상해요', onclick:function (e) { var b = e.currentTarget; b.disabled = true; b.textContent = '신고했어요'; if (cur.id) api('/' + cur.id + '/flag', {}); } });
+  return h('div', { class:'card col', style:'background:var(--bg);box-shadow:none;margin-top:14px;gap:12px' }, [
+    h('div', { class:'rowf' }, [pill(from === 'new' ? '방금 새로 만들었어요' : '커리큘럼 DB에서 바로 불러왔어요', from === 'new' ? 'l' : 'm'), pill(cur.level || '')]),
+    h('div', { style:'font-size:20px;font-weight:700;letter-spacing:-.01em', text:cur.title }),
+    cur.sum ? h('div', { text:cur.sum }) : null,
+    h('div', { class:'g4' }, [['표준 기간', cur.w.length + '주'], ['표준 학습 시간', '총 ' + cur.hours + '시간'], ['주당', cur.hpw + '시간'], ['구성', q + '개 분기 · ' + Math.ceil(cur.w.length / UNIT) + '개월']].map(function (x) { return h('div', { class:'tile', style:'background:var(--card)' }, [h('div', { class:'k', text:x[0] }), h('div', { class:'v', style:'font-size:18px', text:x[1] })]); })),
+    h('div', { class:'sub', text:'Self-paced · 내 속도로 학습해요. 표준 기간은 그 과목을 처음 배우는 사람이 주당 ' + Math.round(cur.hpw) + '시간쯤 쓸 때를 기준으로 한 참고 일정이에요.' }),
+    list, srcLinks(cur),
+    h('div', { class:'rowf' }, [have ? btn('이미 내 수업에 있어요 · 열기', 'fill', function () { go('course', have.id); }) : btn('내 수업에 추가', 'fill', function () { addCurriculum(cur); }), btn('닫기', 'quiet', function () { S.srch.st = 'idle'; S.srch.cur = null; drawSearch(); }), flag]),
+    h('div', { class:'sub', text:'AI가 만든 커리큘럼은 틀릴 수 있어요. 학교 교과나 자격시험 준비에는 공식 교재·강의 계획서와 함께 쓰세요.' })]);
+}
+function searchCard() {
+  var inp = h('input', { id:'srch-in', type:'search', placeholder:'배우고 싶은 과목이나 주제 (예: 거시경제학, 파이썬 기초, 중2 수학)', maxlength:'40', 'aria-label':'과목 검색', value:S.srch.q });
+  inp.onkeydown = function (e) { if (e.key === 'Enter') doSearch(inp.value); };
+  return h('div', { class:'card col', style:'margin-top:20px;gap:12px' }, [
+    h('b', { style:'font-size:18px', text:'배우고 싶은 과목 검색' }),
+    h('div', { class:'sub', text:'온라인 강좌가 다루는 어떤 과목이든 검색해 보세요. 이미 만들어진 커리큘럼은 바로 열리고, 없으면 웹에서 자료를 찾아 새로 만들어 모든 학습자가 함께 쓰도록 저장해요.' }),
+    h('div', { class:'sh' }, [inp, h('button', { id:'srch-btn', class:'btn fill', text:'검색', onclick:function () { doSearch(inp.value); } })]),
+    h('div', { id:'srch-out' }), h('div', { id:'srch-list' })]);
+}
+function drawSearch() {
+  var out = document.getElementById('srch-out'); if (!out) return; var s = S.srch; out.textContent = '';
+  var b = document.getElementById('srch-btn'); if (b) b.disabled = s.st === 'search' || s.st === 'build';
+  if (s.st === 'search') out.appendChild(h('div', { class:'rowf', role:'status' }, [h('span', { class:'spin' }), h('span', { class:'sub', text:'커리큘럼 DB에서 찾는 중이에요…' })]));
+  else if (s.st === 'build') out.appendChild(h('div', { class:'card col', role:'status', style:'background:var(--bg);box-shadow:none' }, [h('div', { class:'rowf' }, [h('span', { class:'spin' }), h('b', { text:'“' + s.q + '” 커리큘럼을 만들고 있어요' })]), h('div', { class:'sub', text:'웹에서 자료를 찾고 → 표준 기간과 주별 학습 목표를 짜고 → DB에 저장해요. 보통 30초에서 1분쯤 걸려요. 이 화면을 닫지 마세요.' })]));
+  else if (s.st === 'err') out.appendChild(h('div', { class:'note', role:'alert', text:s.err }));
+  else if (s.st === 'found' && s.cur) out.appendChild(curPreview(s.cur, s.from));
+  else if (s.st === 'none') {
+    var kids = [h('b', { text:'“' + s.q + '” 커리큘럼은 아직 DB에 없어요' })];
+    if (s.rel.length) { kids.push(h('div', { class:'sub', text:'비슷한 과정이 있어요:' }), h('div', { class:'chips' }, s.rel.map(function (r) { return h('button', { class:'chip', text:r.title + ' · ' + r.weeks + '주', onclick:function () { doSearch(r.title); } }); }))); }
+    kids.push(h('div', { class:'sub', text:s.can === false ? '새 커리큘럼을 만드는 서버가 아직 준비되지 않았어요. 아래 \'과목 추가\'로 교수와 상담해 시작할 수 있어요.' : '웹에서 자료를 찾아 새로 만들까요? 만든 커리큘럼은 DB에 저장되어 다음 학습자는 바로 쓸 수 있어요.' }));
+    kids.push(h('div', { class:'rowf' }, [s.can === false ? null : btn('새로 만들기', 'fill', doBuild), btn('닫기', 'quiet', function () { s.st = 'idle'; drawSearch(); })]));
+    out.appendChild(h('div', { class:'card col', style:'background:var(--bg);box-shadow:none' }, kids));
+  }
+  var ls = document.getElementById('srch-list'); if (ls) { ls.textContent = ''; if (s.list && s.list.length) { ls.appendChild(h('div', { class:'sub', style:'margin-bottom:8px', text:'다른 학습자가 만든 과정' })); ls.appendChild(h('div', { class:'chips' }, s.list.map(function (r) { return h('button', { class:'chip', text:r.title + ' · ' + r.weeks + '주', onclick:function () { doSearch(r.title); } }); }))); } }
+}
+
+// ── 진행 현황(학부모·교사용): 표준 일정에 견준 진도를 분기·월·주·일로 ──
+var GRAINS = [['qtr', '분기'], ['month', '월'], ['week', '주'], ['day', '일']];
+function groupBars(c, size, unit) {
+  var seq = seqOf(c), W = seq.length, e = schedule(c, Date.now()).exp, box = h('div', {}, []);
+  for (var a = 0, k = 1; a < W; a += size, k++) (function (a, k) {
+    var b = Math.min(a + size, W), n = tally(seq.slice(a, b)), len = b - a, ex = e == null ? null : Math.max(0, Math.min(len, e - a));
+    box.appendChild(h('div', { class:'qb' }, [h('div', { class:'nm', text:k + unit + ' · ' + (a + 1) + '–' + b + '주' }),
+      h('div', { class:'tr', role:'img', 'aria-label':k + unit + ' 통과 ' + (n.M + n.P) + '주 / ' + len + '주' + (ex == null ? '' : ', 표준 ' + ex + '주') }, [h('em', { class:'M', style:'width:' + (n.M / len * 100) + '%' }), h('em', { class:'P', style:'width:' + (n.P / len * 100) + '%' }), ex == null ? null : h('u', { style:'left:' + (ex / len * 100) + '%', title:'표준 일정' })]),
+      h('div', { class:'v', text:(n.M + n.P) + '/' + len + '주' })]));
+  })(a, k);
+  return box;
+}
+function weekGrid(c) {
+  var seq = seqOf(c), sc = schedule(c, Date.now());
+  return h('div', { class:'wk' }, seq.split('').map(function (k, i) { return h('button', { class:k + (sc.week === i + 1 ? ' now' : ''), title:(i + 1) + '주차 ' + (topicOf(c, i + 1) || '') + ' · ' + ST[k], 'aria-label':(i + 1) + '주차 ' + ST[k], text:String(i + 1), onclick:function () { openWeek(c, i + 1, 'week'); } }); }));
+}
+function dayGrid(c) {
+  var cnt = {}, now = Date.now(), cells = [];
+  courseLog(c).forEach(function (e) { var k = dayKey(e.ts); cnt[k] = (cnt[k] || 0) + 1; });
+  for (var i = 27; i >= 0; i--) { var t = now - i * DAY, n = cnt[dayKey(t)] || 0, d = new Date(t); cells.push(h('div', { class:(n ? 'd' + Math.min(n, 3) : '') + (i === 0 ? ' today' : ''), title:(d.getMonth() + 1) + '월 ' + d.getDate() + '일 · 확인 문제 ' + n + '회', text:String(d.getDate()) })); }
+  return h('div', { class:'cal', role:'img', 'aria-label':'최근 28일 학습일' }, cells);
+}
+function trendChart(c) {
+  var W = totalWeeks(c), e = elapsedWeeks(c, Date.now()); if (e == null) return null;
+  var xm = Math.max(W, Math.ceil(e)), L = 34, R = 10, T = 12, B = 26, vw = 480, vh = 180, pw = vw - L - R, ph = vh - T - B;
+  function X(w) { return L + w / xm * pw; } function Y(n) { return T + ph - n / W * ph; }
+  var pts = passTimes(c).map(function (t, i) { return [Math.max(0, (t - c.start) / (7 * DAY)), i + 1]; }), done = doneWeeks(c);
+  var g = [sv2('line', { x1:L, y1:Y(0), x2:vw - R, y2:Y(0), stroke:'var(--line)' }), sv2('line', { x1:L, y1:Y(W), x2:vw - R, y2:Y(W), stroke:'var(--line)', 'stroke-dasharray':'3 3' })];
+  for (var q = QTR; q < xm; q += QTR) g.push(sv2('line', { x1:X(q), y1:T, x2:X(q), y2:Y(0), stroke:'var(--line)', 'stroke-dasharray':'2 4' }));
+  g.push(sv2('line', { x1:X(0), y1:Y(0), x2:X(W), y2:Y(W), stroke:'var(--n)', 'stroke-width':2, 'stroke-dasharray':'6 4' }));
+  g.push(sv2('line', { x1:X(Math.min(e, xm)), y1:T, x2:X(Math.min(e, xm)), y2:Y(0), stroke:'var(--on2)', 'stroke-width':1 }));
+  var path = 'M' + X(0) + ' ' + Y(0); pts.forEach(function (p) { path += ' L' + X(Math.min(p[0], xm)) + ' ' + Y(p[1] - 1) + ' L' + X(Math.min(p[0], xm)) + ' ' + Y(p[1]); }); path += ' L' + X(Math.min(e, xm)) + ' ' + Y(pts.length ? pts.length : done);
+  if (pts.length || !done) g.push(sv2('path', { d:path, fill:'none', stroke:'var(--pri)', 'stroke-width':2.5, 'stroke-linejoin':'round' }));
+  g.push(sv2('circle', { cx:X(Math.min(e, xm)), cy:Y(done), r:5, fill:'var(--pri)' }));
+  [[0, '0'], [W, W + '주']].forEach(function (t) { var tx = sv2('text', { x:L - 6, y:Y(t[0]) + 4, 'text-anchor':'end', 'font-size':12, fill:'var(--on2)' }); tx.textContent = t[1]; g.push(tx); });
+  for (var xq = 0; xq <= xm; xq += QTR) { var xt = sv2('text', { x:X(xq), y:vh - 8, 'text-anchor':xq ? 'middle' : 'start', 'font-size':12, fill:'var(--on2)' }); xt.textContent = xq ? xq + '주' : '시작'; g.push(xt); }
+  var ttl = sv2('title', {}); ttl.textContent = '시작 후 경과 주 수에 따른 통과한 주 수. 점선은 표준 일정, 파란 선은 실제.'; g.unshift(ttl);
+  return h('div', {}, [h('div', { class:'rowf', style:'gap:16px;margin-top:6px' }, [h('span', { class:'sub' }, [h('span', { style:'color:var(--n)', text:'╌╌ ' }), '표준 일정']), h('span', { class:'sub' }, [h('span', { style:'color:var(--pri)', text:'━ ' }), '실제 통과한 주'])]), sv2('svg', { viewBox:'0 0 ' + vw + ' ' + vh, width:'100%', style:'max-width:720px;display:block;margin-top:6px', role:'img' }, g)]);
+}
+function planCard(c) {
+  var seq = seqOf(c), now = Date.now();
+  if (!seq) return h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:c.name }), h('div', { class:'sub', text:'아직 커리큘럼이 없어 진행 현황이 없습니다. 교수와 상담하거나 과목을 검색해 커리큘럼을 받아 보세요.' })]);
+  var sc = schedule(c, now), r = recent(c, 7), pct = Math.round(sc.done / sc.W * 100), hd = 0;
+  for (var n = 1; n <= sc.W; n++) if (seq.charAt(n - 1) === 'P' || seq.charAt(n - 1) === 'M') hd += hoursOf(c, n);
+  var body;
+  if (S.grain === 'qtr') body = groupBars(c, QTR, '분기'); else if (S.grain === 'month') body = groupBars(c, UNIT, '개월'); else if (S.grain === 'week') body = h('div', {}, [weekGrid(c), h('div', { class:'sub', style:'margin-top:10px' }, [sc.week ? '▼ 표시는 표준 일정상 이번 주(' + sc.week + '주차)예요. 누르면 그 주 학습으로 가요. ' : '', legend()])]);
+  else { var cw = Math.min(nextIdx(seq) < 0 ? sc.W : nextIdx(seq) + 1, sc.W); body = h('div', {}, [dayGrid(c), h('div', { class:'sub', style:'margin-top:8px', text:'최근 28일에 확인 문제를 푼 날이에요(진할수록 많이 푼 날).' }), h('div', { style:'margin-top:14px' }, [h('b', { text:cw + '주차 표준 일일 계획 · 주 ' + hoursOf(c, cw) + '시간' }), h('div', {}, dayPlan(c, cw).map(function (d) { return h('div', { class:'dp' }, [h('b', { text:d[0] }), h('span', { text:d[1] }), h('i', { text:'약 ' + d[2] + '분' })]); }))])]); }
+  return h('div', { class:'card col', style:'margin-top:16px;gap:14px' }, [
+    h('div', { class:'rowf', style:'justify-content:space-between;flex-wrap:nowrap;gap:12px' }, [h('div', { class:'col', style:'gap:6px;min-width:0' }, [h('div', { class:'rowf' }, [pill(c.level || ''), pill(sc.label, { done:'m', ahead:'m', on:'p', behind:'l', none:'' }[sc.st])]), h('div', { style:'font-size:20px;font-weight:700;letter-spacing:-.01em', text:c.name })]), ring(pct, 72, pct + '%', '진도')]),
+    h('p', { text:planText(c) }),
+    h('div', { class:'g4' }, [['진도', sc.done + ' / ' + sc.W + '주'], ['표준 위치', sc.exp == null ? '일정 없음' : (sc.week || sc.W) + '주차'], ['표준 시간 기준', hd + ' / ' + totalHours(c) + '시간'], ['최근 7일', r.tries ? r.days + '일 · ' + r.tries + '회' : '학습 없음']].map(function (x) { return h('div', { class:'tile' }, [h('div', { class:'k', text:x[0] }), h('div', { class:'v', style:'font-size:19px', text:x[1] })]); })),
+    h('div', {}, [h('div', { class:'noprint', style:'margin-bottom:4px' }, [h('div', { class:'seg', role:'group', 'aria-label':'보기 단위' }, GRAINS.map(function (g) { return h('button', { 'aria-pressed':String(S.grain === g[0]), text:g[1], onclick:function () { S.grain = g[0]; render(); } }); }))]), body]),
+    trendChart(c),
+    h('div', { class:'rowf noprint' }, [btn('이 과목으로', 'sm', function () { go('course', c.id); }), btn('교수에게 진도 상담', 'sm quiet', function () { ask(c.name + ' 진도가 표준 일정에 비해 어떤지 상담하고 싶어요'); })])]);
+}
+function viewPlan() {
+  var kids = head(null, '진행 현황', '학부모·교사가 한 눈에 볼 수 있게, 표준 일정에 견준 진도를 분기·월·주·일 단위로 보여 줍니다.');
+  kids.push(h('div', { class:'rowf noprint', style:'margin-top:16px;justify-content:space-between' }, [h('span', { class:'sub', text:'모든 과정은 자기 속도(Self-paced)로 진행해요. 표준 일정은 참고선이라 늦어도 괜찮고, 길게 쉬었다면 다시 이어서 하면 돼요.' }), btn('인쇄 · PDF 저장', 'sm quiet', function () { try { window.print(); } catch (e) {} })]));
+  all().forEach(function (c) { kids.push(planCard(c)); });
+  kids.push(h('div', { class:'foot', text:'진도는 확인 문제를 통과한 주 수입니다. \'표준 시간 기준\'은 통과한 주의 표준 학습 시간을 더한 값이며 실제로 공부한 시간을 재는 것은 아닙니다. 경제학 입문·미적분 기초의 시작일과 기록은 예시입니다. 기록은 이 브라우저에만 저장됩니다.' }));
+  return kids;
+}
+
 // ── 홈(내 수업) ──
 function viewSubjects() {
   var nu = nextUp(), kids = head(null, '내 수업', '다음에 할 일부터 이어서 하세요. 주차 확인 문제를 통과하면 \'통과\', 며칠 뒤 다시 풀어서도 맞히면 \'숙달\'이 됩니다.');
@@ -308,6 +544,7 @@ function viewSubjects() {
     h('div', { class:'rowf', style:'gap:16px;flex-wrap:nowrap' }, [ring(Math.round(Math.min(wd, S.goal) / S.goal * 100), 84, wd + '/' + S.goal, '이번 주', wd >= S.goal ? 'var(--m)' : 'var(--pri)'),
       h('div', { class:'col', style:'gap:2px' }, [h('b', { text:'이번 주 확인 문제 목표' }), h('span', { class:'sub', text:wd >= S.goal ? '목표를 달성했습니다.' : '최근 7일에 ' + wd + '회 풀었습니다.' }), h('span', { class:'sub', text:st ? st + '일 연속 학습 중' : '오늘 첫 확인 문제를 풀어 보세요.' })])]),
     h('div', { class:'chips', role:'group', 'aria-label':'주간 목표 횟수' }, [2, 3, 5, 7].map(function (n) { return h('button', { class:'chip', 'aria-pressed':String(S.goal === n), text:'주 ' + n + '회', onclick:function () { S.goal = n; save(); render(); } }); }))]);
+  kids.push(searchCard()); loadList(); setTimeout(drawSearch, 0);
   kids.push(h('div', { class:'g2' }, [hero, gc]));
   var rv = reviews();
   if (rv.length) {
@@ -338,7 +575,7 @@ function profCard(c, msg) {
 }
 function viewCourse() {
   var c = find(S.cur); if (!c) return viewSubjects();
-  var seq = seqOf(c), kids = head(['내 수업', function () { go('subjects'); }], c.name, c.level + ' · 담당 ' + c.prof);
+  var seq = seqOf(c), kids = head(['내 수업', function () { go('subjects'); }], c.name, c.level + ' · 담당 ' + c.prof + (c.cur ? ' · 표준 ' + c.cur.w.length + '주 · 총 ' + c.cur.hours + '시간(주 ' + c.cur.hpw + '시간)' : ''));
   if (!seq) {
     kids.push(h('div', { class:'g2' }, [h('div', { class:'card col' }, [h('div', { class:'nm', style:'font-size:18px;font-weight:700', text:'아직 커리큘럼이 없습니다' }), h('p', { class:'sub', text:'교수에게 지금 수준과 목표를 말하면, 학습자에게 맞춘 주차별 커리큘럼과 일정표를 만들어 줍니다.' }), h('div', { class:'rowf' }, [btn('교수에게 말하기', 'fill', function () { ask(c.goal || (c.subj + ' 학습을 시작하고 싶어요')); })])]), profCard(c)]));
     return kids;
@@ -349,6 +586,8 @@ function viewCourse() {
     h('div', { class:'rowf' }, [btn('학습 시작', 'white', function () { openWeek(c, i + 1, 'week'); }), btn('확인 문제 풀기', 'ghost', function () { openWeek(c, i + 1, 'quiz'); })])]);
   var side = h('div', { class:'col', style:'gap:18px' }, [profCard(c), h('div', { class:'card col' }, [h('b', { text:'숙달 현황' }), bar(seq), h('div', { class:'sub', text:count(seq) }), legend(), c.review ? h('div', { class:'note', text:'복습 권장 · ' + c.review }) : null])]);
   var main = h('div', {}, [hero]);
+  if (c.start) { var sc0 = schedule(c, Date.now()); main.appendChild(h('div', { class:'card col', style:'margin-top:14px' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { text:'분기별 진도' }), pill(sc0.label, { done:'m', ahead:'m', on:'p', behind:'l', none:'' }[sc0.st])]), groupBars(c, QTR, '분기'), h('div', { class:'sub', text:'검은 막대는 표준 일정 위치예요. 월·주·일 그래프는 진행 현황에서 볼 수 있어요.' }), btn('진행 현황 보기', 'sm quiet', function () { go('plan'); })])); }
+  if (c.cur) side.appendChild(h('div', { class:'card col' }, [h('b', { text:'이 과정에 대해' }), c.cur.sum ? h('div', { class:'sub', text:c.cur.sum }) : null, srcLinks(c.cur), h('div', { class:'sub', text:'AI가 만든 커리큘럼은 틀릴 수 있어요.' })]));
   var units = Math.ceil(seq.length / UNIT);
   for (var u = 0; u < units; u++) (function (u) {
     var a = u * UNIT, b = Math.min(a + UNIT, seq.length), part = seq.slice(a, b), n = tally(part), pct = Math.round((n.M + n.P) / part.length * 100);
@@ -356,11 +595,11 @@ function viewCourse() {
     var box = h('div', { class:'card unit' }, [h('div', { class:'uh' }, [h('b', { text:'단원 ' + (u + 1) + ' · ' + (a + 1) + '–' + b + '주차' }), pill('단원 숙달도 ' + pct + '%', pct === 100 ? 'm' : ''), open ? btn('건너뛰기 도전', 'sm quiet', function () { openWeek(c, open, 'quiz'); }) : null])]);
     part.split('').forEach(function (k, j) {
       var w = a + j + 1;
-      box.appendChild(h('div', { class:'wrow' + (w === i + 1 ? ' cur' : '') }, [ico(k, 22), h('div', { class:'tt' }, [h('b', { text:w + '주차' + (topicOf(c, w) ? ' · ' + topicOf(c, w) : '') }), h('span', { class:'sub', text:ST[k] + (bankOf(c, w) ? '' : ' · 예시 문제 없음') })]), btn('학습', 'sm', function () { openWeek(c, w, 'week'); }), btn('확인 문제', 'sm quiet', function () { openWeek(c, w, 'quiz'); })]));
+      box.appendChild(h('div', { class:'wrow' + (w === i + 1 ? ' cur' : '') }, [ico(k, 22), h('div', { class:'tt' }, [h('b', { text:w + '주차' + (topicOf(c, w) ? ' · ' + topicOf(c, w) : '') }), h('span', { class:'sub', text:ST[k] + (c.cur ? ' · 표준 ' + hoursOf(c, w) + '시간' : (bankOf(c, w) ? '' : ' · 예시 문제 없음')) })]), btn('학습', 'sm', function () { openWeek(c, w, 'week'); }), btn('확인 문제', 'sm quiet', function () { openWeek(c, w, 'quiz'); })]));
     });
     main.appendChild(box);
   })(u);
-  kids.push(h('div', { class:'g2' }, [main, side]), h('div', { class:'foot', text:'주차 구성과 진도는 예시입니다. 건너뛰기 도전은 그 단원에서 아직 통과하지 않은 첫 주차의 확인 문제를 바로 풉니다. 실제 일정은 학습자에 맞춰 교수가 정합니다.' }));
+  kids.push(h('div', { class:'g2' }, [main, side]), h('div', { class:'foot', text:(c.cur ? 'AI가 웹 자료를 바탕으로 만든 커리큘럼이며 표준 일정은 참고용입니다.' : '주차 구성과 진도는 예시입니다.') + ' 건너뛰기 도전은 그 단원에서 아직 통과하지 않은 첫 주차의 확인 문제를 바로 풉니다.' + (c.cur ? '' : ' 실제 일정은 학습자에 맞춰 교수가 정합니다.') }));
   return kids;
 }
 
@@ -369,7 +608,7 @@ function chkOf(c, n, len) { var s = S.chk[c.id + ':' + n] || ''; while (s.length
 function viewWeek() {
   var c = find(S.cur); if (!c || !seqOf(c)) return viewCourse();
   var seq = seqOf(c), n = Math.min(Math.max(S.week, 1), seq.length), st = seq.charAt(n - 1), topic = topicOf(c, n);
-  var goals = (GOALS[c.id] || [])[n - 1] || ['핵심 개념 읽기', '예제 풀이', '확인 문제로 점검'], ck = chkOf(c, n, goals.length), allck = ck.indexOf('0') < 0;
+  var goals = goalsOf(c, n), ck = chkOf(c, n, goals.length), allck = ck.indexOf('0') < 0;
   var kids = head([c.name, function () { go('course', c.id); }], c.name + ' · ' + n + '주차' + (topic ? ' — ' + topic : ''), c.level + ' · 담당 ' + c.prof);
   kids.push(h('div', { class:'stepper' }, [
     h('div', { class:'step ' + (allck ? 'done' : 'on') }, [h('span', { class:'no', text:allck ? '✓' : '1' }), '학습 목표 확인']),
@@ -381,16 +620,24 @@ function viewWeek() {
   }));
   var main = h('div', {}, [warn, h('h2', { text:'이번 주 학습 목표', style:'margin-top:20px' }), h('p', { class:'sub', style:'margin:-6px 0 10px', text:'목표를 이해했으면 눌러서 체크하세요. 이 기기에만 저장됩니다.' }), list,
     h('div', { class:'rowf', style:'margin-top:18px' }, [btn('확인 문제 풀기', 'fill', function () { openWeek(c, n, 'quiz'); }), n > 1 ? btn('← ' + (n - 1) + '주차', 'quiet', function () { openWeek(c, n - 1, 'week'); }) : null, n < seq.length ? btn((n + 1) + '주차 →', 'quiet', function () { openWeek(c, n + 1, 'week'); }) : null])]);
+  main.appendChild(h('h2', { text:'이번 주 표준 일정 · 주 ' + hoursOf(c, n) + '시간', style:'margin-top:28px' })); main.appendChild(h('div', { class:'card', style:'padding:8px 22px' }, dayPlan(c, n).map(function (d) { return h('div', { class:'dp' }, [h('b', { text:d[0] }), h('span', { text:d[1] }), h('i', { text:'약 ' + d[2] + '분' })]); })));
   var q = (topic ? n + '주차 ' + topic : n + '주차');
   var side = h('div', { class:'col', style:'gap:18px;margin-top:20px' }, [h('div', { class:'card col' }, [h('div', { class:'prof' }, [h('div', { class:'av', text:(c.subj || c.name).charAt(0) }), h('div', {}, [h('b', { text:c.prof }), h('div', { class:'sub', text:'막히면 물어보세요' })])]),
     h('div', { class:'chips' }, ['핵심 개념을 쉽게 설명해 줘', '연습 문제를 내 줘', '자주 하는 실수가 뭐야?'].map(function (t) { return h('button', { class:'chip', text:t, onclick:function () { ask(c.name + ' ' + q + ': ' + t); } }); }))]),
     h('div', { class:'card col' }, [h('div', { class:'rowf' }, [ico(st, 22), h('b', { text:'이 주차 ' + ST[st] })]), h('div', { class:'sub', text:'전체 ' + seq.length + '주 중 ' + n + '주차' })])]);
-  kids.push(h('div', { class:'g2', style:'margin-top:0' }, [main, side]), h('div', { class:'foot', text:'주차 학습 내용은 예시입니다. 실제 수업 자료는 교수가 이 주차에 맞춰 제공합니다.' }));
+  kids.push(h('div', { class:'g2', style:'margin-top:0' }, [main, side]), h('div', { class:'foot', text:c.cur ? '주차 구성은 AI가 웹 자료를 바탕으로 만들었어요. 표준 일정은 참고용이며 내 속도로 해도 괜찮아요.' : '주차 학습 내용은 예시입니다. 실제 수업 자료는 교수가 이 주차에 맞춰 제공합니다.' }));
   return kids;
 }
 
 // ── 확인 문제 ──
-function bankOf(c, n) { return ((QUIZ[c.id] || {})[n]) || null; }
+function loadQuiz(c, n, key) {
+  api('/' + c.cid + '/quiz', { week:n }, 90000).then(function (j) {
+    var same = S.view === 'quiz' && S.cur === c.id && S.week === n;
+    if (j.ok && okBank(j.quiz)) { S.qz[key] = j.quiz; saveQz(); if (S.qst && S.qst.key === key) S.qst = null; if (same) render(); }
+    else { S.qst = { key:key, st:'err', msg:errMsg(j.ok ? 'bad_format' : j.error) }; if (same) render(); }
+  });
+}
+function bankOf(c, n) { var b = ((QUIZ[c.id] || {})[n]) || null; if (b) return b; return (c.cid && S.qz[c.cid + ':' + n]) || null; }
 function applyResult(c, n, pct) {
   var p = S.prog[c.id] || (S.prog[c.id] = { seq:seqOf(c), pass:{}, log:[], chain:[] }), i = n - 1, cur = p.seq.charAt(i), now = Date.now(), to = cur, msg = '';
   if (pct >= GATE) {
@@ -423,6 +670,11 @@ function viewQuiz() {
   var c = find(S.cur); if (!c || !seqOf(c)) return viewCourse();
   var seq = seqOf(c), n = Math.min(Math.max(S.week, 1), seq.length), bank = bankOf(c, n), topic = topicOf(c, n);
   var kids = head([n + '주차 학습', function () { openWeek(c, n, 'week'); }], n + '주차 확인 문제' + (topic ? ' — ' + topic : ''), c.name + ' · ' + GATE + '% 이상 맞히면 통과합니다.');
+  if (!bank && c.cid) {
+    var qk = c.cid + ':' + n; if (!S.qst || S.qst.key !== qk) { S.qst = { key:qk, st:'load' }; loadQuiz(c, n, qk); }
+    kids.push(S.qst.st === 'err' ? h('div', { class:'card col', style:'margin-top:20px;max-width:640px', role:'alert' }, [h('b', { style:'font-size:18px', text:'확인 문제를 불러오지 못했어요' }), h('p', { class:'sub', text:S.qst.msg }), h('div', { class:'rowf' }, [btn('다시 시도', 'fill', function () { S.qst = null; render(); }), btn('교수에게 문제 요청', 'quiet', function () { ask(c.name + ' ' + n + '주차 확인 문제를 내 주세요'); })])]) : h('div', { class:'card col', style:'margin-top:20px;max-width:640px', role:'status' }, [h('div', { class:'rowf' }, [h('span', { class:'spin' }), h('b', { text:'확인 문제를 준비하고 있어요' })]), h('p', { class:'sub', text:'이 주차 문제는 처음 풀 때 만들어 DB에 저장해요. 다음 학습자는 바로 풀 수 있어요. 보통 10~30초 걸려요.' })]));
+    return kids;
+  }
   if (!bank) {
     kids.push(h('div', { class:'card col', style:'margin-top:20px;max-width:640px' }, [h('b', { style:'font-size:18px', text:'이 주차의 확인 문제는 아직 없습니다' }), h('p', { class:'sub', text:'예시 문제는 경제학 입문 1~4주차, 미적분 기초 1~3주차에만 있습니다. 교수에게 이 주차 문제를 내 달라고 할 수 있습니다.' }), h('div', { class:'rowf' }, [btn('교수에게 문제 요청', 'fill', function () { ask(c.name + ' ' + n + '주차 확인 문제를 내 주세요'); }), btn(n + '주차 학습으로', 'quiet', function () { openWeek(c, n, 'week'); })])]));
     return kids;
@@ -457,7 +709,7 @@ function viewQuiz() {
   });
   kids.push(h('div', { class:'sbar' }, [cnt, h('div', { class:'pg' }, [pgm]), submit]));
   sync();
-  kids.push(h('div', { class:'foot', text:'확인 문제는 예시입니다. 채점 결과는 이 브라우저에만 저장되고, 기록은 학습 원장 해시 체인에 이어 붙습니다.' }));
+  kids.push(h('div', { class:'foot', text:(c.cid && !QUIZ[c.id] ? '확인 문제는 AI가 만들었어요(틀릴 수 있어요). ' : '확인 문제는 예시입니다. ') + '채점 결과는 이 브라우저에만 저장되고, 기록은 학습 원장 해시 체인에 이어 붙습니다.' }));
   return kids;
 }
 
@@ -598,7 +850,7 @@ function viewCareer() {
 }
 function render() {
   var root = document.getElementById('root'), tp = document.getElementById('top'); root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'course' ? viewCourse() : S.view === 'week' ? viewWeek() : S.view === 'quiz' ? viewQuiz() : S.view === 'history' ? viewHistory() : S.view === 'report' ? viewReport() : S.view === 'career' ? viewCareer() : viewSubjects();
+  var kids = S.view === 'course' ? viewCourse() : S.view === 'week' ? viewWeek() : S.view === 'quiz' ? viewQuiz() : S.view === 'history' ? viewHistory() : S.view === 'report' ? viewReport() : S.view === 'career' ? viewCareer() : S.view === 'plan' ? viewPlan() : viewSubjects();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   try { parent.postMessage({ type:'navi-learn-height', h:document.documentElement.scrollHeight }, location.origin); } catch (e) {}
   postState();
@@ -633,7 +885,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 function postState() {
   var cur = find(S.cur);
   var st = { view:S.view, cur:(cur && (S.view === 'course' || S.view === 'week' || S.view === 'quiz')) ? { id:cur.id, name:cur.name, week:(S.view === 'course' ? undefined : S.week) } : null,
-    courses:all().map(function (c) { var q = seqOf(c); return { id:c.id, name:c.name, subj:c.subj, level:c.level, prof:c.prof, weeks:q.length, next:q ? nextIdx(q) + 1 : 0 }; }),
+    courses:all().map(function (c) { var q = seqOf(c); return { id:c.id, name:c.name, subj:c.subj, level:c.level, prof:c.prof, weeks:q.length, next:q ? nextIdx(q) + 1 : 0, plan:q ? (function () { var z = schedule(c, Date.now()); return { done:z.done, expected:z.exp, status:z.st, std:totalHours(c) }; })() : undefined }; }),
     reports:all().map(function (c) { var m = metricsOf(c); return { id:c.id, name:c.name, prof:c.prof, score:m.score, prog:m.prog, avg:m.avg, first:m.first, pace:m.pace, attempts:m.att, basis:m.basis, submitted:!!S.sub[c.id] }; }).filter(function (x) { return x.score != null; }),
     career:(function () { var r = careerOf(); return r.list.slice(0, 3).map(function (k) { return { name:k.n, fit:k.fit }; }); })() };
   try { parent.postMessage({ type:'navi-learn-state', state:st }, location.origin); } catch (e) {}
@@ -645,6 +897,8 @@ function nav(a) {
   var d = a && typeof a['do'] === 'string' ? a['do'] : '';
   if (d === 'subjects') { go('subjects'); return reply(true, '내 수업 화면으로 이동했습니다.'); }
   if (d === 'history') { go('history'); return reply(true, '학습 기록 화면으로 이동했습니다.'); }
+  if (d === 'plan') { go('plan'); return reply(true, '진행 현황 화면으로 이동했습니다.'); }
+  if (d === 'search') { go('subjects'); var sq = String(a.subject || '').trim().slice(0, 40); if (!sq) return reply(false, '검색할 과목 이름을 알려 주세요.'); doSearch(sq); return reply(true, '“' + sq + '” 커리큘럼을 검색하고 있습니다. 결과는 내 수업 화면의 검색 카드에 나옵니다.'); }
   if (d === 'report') { go('report'); return reply(true, '학습 보고서 화면으로 이동했습니다.'); }
   if (d === 'career') { go('career'); var cr = careerOf(); return reply(true, cr.list.length ? '진로 추천 화면으로 이동했습니다.' : '진로 추천 화면으로 이동했습니다. 제출된 보고서가 없어 먼저 학습 보고서를 제출해야 합니다.'); }
   if (d === 'submit') {
@@ -672,10 +926,10 @@ function nav(a) {
 }
 window.addEventListener('message', function (e) {
   if (e.origin !== location.origin || e.source !== parent || !e.data) return;
-  if (e.data.type === 'navi-learn-view' && (e.data.view === 'subjects' || e.data.view === 'history' || e.data.view === 'report' || e.data.view === 'career')) go(e.data.view);
+  if (e.data.type === 'navi-learn-view' && (e.data.view === 'subjects' || e.data.view === 'plan' || e.data.view === 'history' || e.data.view === 'report' || e.data.view === 'career')) go(e.data.view);
   else if (e.data.type === 'navi-learn-nav') nav(e.data);
 });
-S.view = /history/.test(location.hash) ? 'history' : /report/.test(location.hash) ? 'report' : /career/.test(location.hash) ? 'career' : 'subjects';
+S.view = /plan/.test(location.hash) ? 'plan' : /history/.test(location.hash) ? 'history' : /report/.test(location.hash) ? 'report' : /career/.test(location.hash) ? 'career' : 'subjects';
 render();
 </script>
 </body>
