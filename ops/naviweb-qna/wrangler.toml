@@ -18,4 +18,5 @@ id = "8f481d8e276e47279e060ea2512529ba"
 #    SP_API_URL    SP 가 쓸 OpenAI 호환 chat completions 주소(예: https://api.deepseek.com/chat/completions). 없으면 SP 답변 없이 질문만 접수된다.
 #    SP_API_KEY    위 API 키.
 #    SP_MODEL      (선택) 모델 이름. 기본 deepseek-chat.
+#    ANTHROPIC_API_KEY (선택) Claude 키. 있으면 커리큘럼·퀴즈 생성이 claude-haiku-5-5(CLAUDE_MODEL 로 바꿈)를 쓴다. 나비웹 도우미 게이트웨이와 같은 키를 쓰면 된다.
 #    TAVILY_API_KEY (선택) 커리큘럼 검색에 웹 검색(Tavily)을 더한다. 없으면 위키백과(ko·en)만 쓴다.

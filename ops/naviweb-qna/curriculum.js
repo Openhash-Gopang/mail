@@ -119,10 +119,22 @@ export const QUIZ_SP = [
   '출력은 JSON 하나만: {"questions":[{"q":"문제","o":["보기1","보기2","보기3","보기4"],"a":1,"e":"풀이"}]}'
 ].join('\n');
 
+/** LLM 을 쓸 수 있는가: ANTHROPIC_API_KEY(Claude) 또는 SP_API_URL+SP_API_KEY(OpenAI 호환). */
+export function hasLLM(env) { return !!(env.ANTHROPIC_API_KEY || (env.SP_API_URL && env.SP_API_KEY)); }
 /** 반환: { ok, json } | { ok:false, why:'unavailable'|'error' }. */
 export async function llmJSON(env, messages, deps, maxTokens) {
-  if (!env.SP_API_URL || !env.SP_API_KEY) return { ok: false, why: 'unavailable' };
+  if (!hasLLM(env)) return { ok: false, why: 'unavailable' };
   const f = (deps && deps.fetch) || fetch;
+  if (env.ANTHROPIC_API_KEY) {   // Claude(기본 claude-haiku-5-5) 원래 Messages API — 호환 계층은 temperature<1·json_object 를 400 으로 돌려준다
+    try {
+      const sys = messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
+      const res = await f('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: env.CLAUDE_MODEL || 'claude-haiku-5-5', max_tokens: maxTokens || 4000, system: sys, messages: messages.filter((m) => m.role !== 'system') }), signal: AbortSignal.timeout(LIM.llmMs) });
+      if (!res.ok) return { ok: false, why: 'error' };
+      const j = await res.json(), text = j && Array.isArray(j.content) ? j.content.filter((b) => b && b.type === 'text').map((b) => b.text).join('') : '';
+      const json = extractJSON(text); return json ? { ok: true, json } : { ok: false, why: 'error' };
+    } catch (e) { return { ok: false, why: 'error' }; }
+  }
   const call = async (withFmt) => {
     const body = { model: env.SP_MODEL || 'deepseek-chat', temperature: 0.3, max_tokens: maxTokens || 4000, messages };
     if (withFmt) body.response_format = { type: 'json_object' };
@@ -185,7 +197,7 @@ export async function handleCurriculum(request, env, deps) {
     const q = ct(url.searchParams.get('q'), LIM.q), key = normKey(q); if (key.length < 2) return E('short', 400, origin);
     const id = await env.QNA.get('cur:k:' + key);
     if (id) { const c = await env.QNA.get('cur:d:' + id, 'json'); if (c && (c.flags || 0) < LIM.hideAtFlags) return J({ ok: true, found: true, curriculum: c, related: [] }, 200, origin); }
-    return J({ ok: true, found: false, related: fuzzy(q, await listAll(env), 5), canBuild: !!(env.SP_API_URL && env.SP_API_KEY) }, 200, origin);
+    return J({ ok: true, found: false, related: fuzzy(q, await listAll(env), 5), canBuild: hasLLM(env) }, 200, origin);
   }
   if (method === 'GET' && path === '/list') {
     const l = (await listAll(env)).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, LIM.listMax).map(summary);
@@ -197,7 +209,7 @@ export async function handleCurriculum(request, env, deps) {
     const lv = LEVELS.includes(ct(body.level, 10)) ? ct(body.level, 10) : '';
     const had = await env.QNA.get('cur:k:' + key);
     if (had) { const c = await env.QNA.get('cur:d:' + had, 'json'); if (c) return J({ ok: true, created: false, curriculum: c }, 200, origin); }
-    if (!(env.SP_API_URL && env.SP_API_KEY)) return E('unavailable', 503, origin);
+    if (!hasLLM(env)) return E('unavailable', 503, origin);
     if (!(await quota(env, owner, 'build', LIM.perDayBuild, today))) return E('limit', 429, origin);
     if (!(await quota(env, 'global', 'build', LIM.globalBuild, today))) return E('busy', 429, origin);
     const sources = await gatherSources(env, q, deps);
@@ -222,7 +234,7 @@ export async function handleCurriculum(request, env, deps) {
     const key = 'cur:q:' + c.id + ':' + week, had = await env.QNA.get(key, 'json');
     if (had) return J({ ok: true, cached: true, quiz: had }, 200, origin);
     if (!owner) return E('no_owner', 400, origin);
-    if (!(env.SP_API_URL && env.SP_API_KEY)) return E('unavailable', 503, origin);
+    if (!hasLLM(env)) return E('unavailable', 503, origin);
     if (!(await quota(env, owner, 'quiz', LIM.perDayQuiz, today))) return E('limit', 429, origin);
     const r = await llmJSON(env, buildQuizMessages(c, week), deps, 2500);
     if (!r.ok) return E(r.why === 'unavailable' ? 'unavailable' : 'llm_error', 503, origin);
