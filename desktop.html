@@ -406,7 +406,21 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .cmp-ex-btn[aria-expanded=true]{box-shadow:0 0 0 3px var(--pri-bg)}
 .cmp-ex-btn[aria-expanded=true] svg{transform:rotate(180deg)}
 #tab-compose[data-mode="default"] .cmp-ex-btn,#tab-compose[data-mode="org"] .cmp-ex-btn{display:inline-flex}   /* 2026-11-10: 가상 판결(K-Law)은 예시를 이미 골라 들어온 화면이라 "예시" 버튼을 숨긴다 */
-.ex-panel{flex:1 0 100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:0;opacity:0;transform:translateY(-12px);overflow:hidden;visibility:hidden;pointer-events:none;transition:max-height .34s cubic-bezier(.2,.8,.2,1),opacity .22s ease,transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s linear .34s}
+
+/* 2026-11-23 메인 화면 배치: 입력창은 가운데(최대 760px), "주소"·"예시"는 같은 모양의 칩으로 입력창 아래 왼쪽 가장자리에 나란히 둔다 */
+#tab-compose[data-mode="default"] .cmp-inrow,#tab-compose[data-mode="org"] .cmp-inrow,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row{max-width:760px;margin-left:auto;margin-right:auto}
+#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row{margin-top:8px;margin-bottom:0}
+.cmp-ex-line .cmp-addr-btn,.cmp-ex-line .cmp-ex-btn{height:32px;padding:0 12px;gap:4px;border:1px solid var(--bdr);border-radius:8px;background:#fff;color:var(--txt);font-size:14px;font-weight:500;box-shadow:none}
+.cmp-ex-line .cmp-addr-btn{transform:none!important}
+.cmp-ex-line .cmp-addr-btn:hover,.cmp-ex-line .cmp-ex-btn:hover{border-color:var(--pri);color:var(--pri)}
+.cmp-ex-line .cmp-addr-btn[aria-pressed=true],.cmp-ex-line .cmp-ex-btn[aria-expanded=true]{border-color:var(--pri);color:var(--pri);box-shadow:none;background:var(--pri-bg)}
+@media (min-width:721px){
+  .cmp-ex-line{height:40px}
+  .cmp-ex-line .cmp-addr-btn{position:absolute;top:4px;left:0}
+  .cmp-ex-line .cmp-ex-btn{top:4px}
+  .cmp-ex-line .cmp-ex-btn:hover{transform:translateX(var(--bx,0px))}
+}
+@media (max-width:720px){.cmp-ex-line{justify-content:flex-start}}.ex-panel{flex:1 0 100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:0;opacity:0;transform:translateY(-12px);overflow:hidden;visibility:hidden;pointer-events:none;transition:max-height .34s cubic-bezier(.2,.8,.2,1),opacity .22s ease,transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s linear .34s}
 .ex-panel.open{max-height:240px;opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}
 .ex-panel.open.settled{overflow:visible}   /* 다 열린 뒤에는 서류·기관 목록 팝업이 잘리지 않게 */
 .ex-panel>.ex-table{width:100%}
@@ -1692,7 +1706,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="chat-composer">
       <div class="chat-attach-list" id="cmp-attach-list"></div>
       <div class="cmp-inrow">
-        <button type="button" class="cmp-addr-btn" id="cmp-addr-btn" aria-pressed="false" title="주소 — 나비웹 프로필(기관·사업장·사람)을 이름으로 찾습니다" onclick="_addrToggle(event)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>주소</span></button>
         <div class="chat-inputbar">
           <input type="file" id="cmp-file" style="display:none">
           <input type="file" id="cmp-cam" accept="image/*" capture="environment" style="display:none">
@@ -1714,6 +1727,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="cmp-infra-ex" id="cmp-infra-ex" role="group" aria-label="예시" hidden></div>
       <div class="doc-host-row" id="cmp-doc-row">
         <div class="cmp-ex-line" id="cmp-ex-line">
+      <button type="button" class="cmp-addr-btn" id="cmp-addr-btn" aria-pressed="false" title="주소 — 나비웹 프로필(기관·사업장·사람)을 이름으로 찾습니다" onclick="_addrToggle(event)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>주소</span></button>
       <button type="button" class="cmp-ex-btn" id="cmp-ex-btn" aria-expanded="false" aria-controls="cmp-ex-panel" title="예시 — 누르면 입력창 아래에 예시 항목이 펼쳐집니다" onclick="_cmpExToggle(event)"><span>예시</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="ex-panel" id="cmp-ex-panel" role="group" aria-label="예시" aria-hidden="true">
         <select id="cmp-doc-site" aria-label="서류 종류" onchange="_cmpDocSelChange(this)" hidden style="display:none"></select>
@@ -3304,16 +3318,17 @@ function _cmpExClose() {
   p.classList.remove('settled', 'open'); p.setAttribute('aria-hidden', 'true'); b && b.setAttribute('aria-expanded', 'false');
   _cmpExLayout();
 }
-// 넓은 화면: 예시 버튼은 입력창 아래 오른쪽 끝, 열리면 버튼+항목 묶음이 가운데로 모이도록 두 요소의 가로 위치를 계산한다(CSS 가 transform 으로 미끄러뜨린다).
+// 넓은 화면: 주소·예시 칩은 입력창 아래 왼쪽 가장자리에 나란히 있고, 예시를 열면 항목이 그 오른쪽으로 펼쳐지도록 두 요소의 가로 위치를 계산한다(CSS 가 transform 으로 미끄러뜨린다). 칩이 없는 서류 모드는 예전처럼 가운데.
 function _cmpExLayout(instant) {
   const line = document.getElementById('cmp-ex-line'), p = _cmpExPanel(), b = document.getElementById('cmp-ex-btn'); if (!line || !p) return;
   if (instant) line.classList.add('no-tr');
-  const GAP = 10, W = line.clientWidth, bw = b ? b.offsetWidth : 0, open = _cmpExIsOpen(), pw = p.scrollWidth;
+  const GAP = 10, W = line.clientWidth, bw = b ? b.offsetWidth : 0, open = _cmpExIsOpen(), pw = p.scrollWidth, a = document.getElementById('cmp-addr-btn'), aw = a ? a.offsetWidth : 0;
   let bx, px;
-  if (open) { const g = (bw ? bw + GAP : 0) + pw, s0 = Math.max(0, (W - g) / 2); bx = s0; px = s0 + (bw ? bw + GAP : 0); }
+  if (bw || aw) { bx = aw ? aw + 8 : 0; px = bx + (bw ? bw + GAP : 0); }   // 칩(주소·예시)은 입력창 왼쪽 가장자리부터 나란히, 예시 패널은 그 오른쪽에 펼친다
+  else if (open) { const g = (bw ? bw + GAP : 0) + pw, s0 = Math.max(0, (W - g) / 2); bx = s0; px = s0 + (bw ? bw + GAP : 0); }
   else { bx = Math.max(0, W - bw); px = bx; }
   line.style.setProperty('--bx', bx + 'px'); line.style.setProperty('--px', px + 'px');
-  line.classList.toggle('ex-none', !bw && !open);
+  line.classList.toggle('ex-none', !bw && !aw && !open);
   if (instant) { void line.offsetWidth; line.classList.remove('no-tr'); }
 }
 (function () {
