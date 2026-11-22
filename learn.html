@@ -231,7 +231,7 @@ var QUIZ = {
 var WEEK_TOPICS = { econ:['희소성과 선택','수요와 공급','탄력성','소비자 이론'], calc:['극한','연속','미분 기초','미분 공식','합성함수 미분','음함수 미분','미분의 응용(1)','미분의 응용(2)','적분 맛보기'] };
 
 var UNIT = 4, DAY = 86400000;
-var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, goal:3, chk:{}, addSubj:'수학', addLevel:'중등', srch:{ q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:null, n:0 }, grain:'month', qz:{}, qst:null };
+var S = { view:'subjects', cur:null, week:1, q:null, open:'2026', added:[], prog:{}, sub:{}, goal:3, chk:{}, addSubj:'수학', addLevel:'중등', srch:{ q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:null, n:0, open:false }, grain:'month', qz:{}, qst:null };
 EXAMPLE[0].start = Date.now() - 3 * DAY; EXAMPLE[1].start = Date.now() - 58 * DAY;   // 예시 과목의 표준 일정 기준일(예시)
 try {
   var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -389,7 +389,8 @@ function loadList() {
   api('/list').then(function (j) { if (j.ok && Array.isArray(j.list)) { S.srch.list = j.list.filter(function (x) { return x && typeof x.title === 'string' && typeof x.id === 'string'; }).slice(0, 12); drawSearch(); } });
 }
 function doSearch(q) {
-  q = String(q || '').trim().slice(0, 40); S.srch.q = q; var inp = document.getElementById('srch-in'); if (inp) inp.value = q;
+  q = String(q || '').trim().slice(0, 40); S.srch.q = q; if (!S.srch.open) { S.srch.open = true; render(); }
+  var inp = document.getElementById('srch-in'); if (inp) inp.value = q;
   if (q.replace(/\s/g, '').length < 2) { S.srch.st = 'err'; S.srch.err = ERR.short; return drawSearch(); }
   S.srch.st = 'search'; S.srch.cur = null; S.srch.rel = []; drawSearch();
   var my = ++S.srch.n;
@@ -414,7 +415,7 @@ function haveCur(id) { return id ? all().filter(function (c) { return c.cid === 
 function addCurriculum(cur) {
   var ex = haveCur(cur.id); if (ex) return go('course', ex.id);
   var lv = cur.level || '대학', c = { id:'u' + Date.now(), cid:cur.id || undefined, name:cur.title, subj:cur.title.slice(0, 12), level:lv + ' · ' + cur.title.slice(0, 12), prof:cur.title.slice(0, 10) + ' 교수', seq:new Array(cur.w.length + 1).join('N'), goal:'', start:Date.now(), cur:cur };
-  S.added.push(c); save(); S.srch = { q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:S.srch.list, n:S.srch.n + 1 }; go('course', c.id);
+  S.added.push(c); save(); S.srch = { q:'', st:'idle', cur:null, from:'', rel:[], err:'', list:S.srch.list, n:S.srch.n + 1, open:false }; go('course', c.id);
 }
 function srcLinks(cur) {
   if (!cur.web || !cur.src.length) return h('div', { class:'sub', text:'웹에서 찾은 자료가 없어 AI가 일반적으로 알려진 표준 구성으로 작성했어요. 내용을 꼭 확인하세요.' });
@@ -436,14 +437,24 @@ function curPreview(cur, from) {
     h('div', { class:'rowf' }, [have ? btn('이미 내 수업에 있어요 · 열기', 'fill', function () { go('course', have.id); }) : btn('내 수업에 추가', 'fill', function () { addCurriculum(cur); }), btn('닫기', 'quiet', function () { S.srch.st = 'idle'; S.srch.cur = null; drawSearch(); }), flag]),
     h('div', { class:'sub', text:'AI가 만든 커리큘럼은 틀릴 수 있어요. 학교 교과나 자격시험 준비에는 공식 교재·강의 계획서와 함께 쓰세요.' })]);
 }
+function helpOn() {   // 검색 도움말은 처음 한 번만 보여 준다(다음부터 보지 않기)
+  if (S.srch.help === undefined) { var seen = false; try { seen = localStorage.getItem('navi-learn-help-srch') === '1'; } catch (e) {} S.srch.help = !seen; if (!seen) try { localStorage.setItem('navi-learn-help-srch', '1'); } catch (e) {} }
+  return S.srch.help;
+}
+function searchBtn() {
+  var s = sv2('svg', { width:22, height:22, viewBox:'0 0 22 22', 'aria-hidden':'true' });
+  s.appendChild(sv2('circle', { cx:9.5, cy:9.5, r:6, fill:'none', stroke:'currentColor', 'stroke-width':2 })); s.appendChild(sv2('path', { d:'M14 14l5 5', fill:'none', stroke:'currentColor', 'stroke-width':2, 'stroke-linecap':'round' }));
+  var b = h('button', { class:'btn quiet', title:'과목 검색', 'aria-label':'과목 검색', 'aria-expanded':String(S.srch.open), style:'padding:10px 12px;flex:none', onclick:function () { S.srch.open = !S.srch.open; if (!S.srch.open) S.srch.help = false; render(); if (S.srch.open) setTimeout(function () { var i = document.getElementById('srch-in'); if (i) i.focus(); }, 0); } }, [s]);
+  return b;
+}
 function searchCard() {
+  if (!S.srch.open) return null;
   var inp = h('input', { id:'srch-in', type:'search', placeholder:'배우고 싶은 과목이나 주제 (예: 거시경제학, 파이썬 기초, 중2 수학)', maxlength:'40', 'aria-label':'과목 검색', value:S.srch.q });
   inp.onkeydown = function (e) { if (e.key === 'Enter') doSearch(inp.value); };
-  return h('div', { class:'card col', style:'margin-top:20px;gap:12px' }, [
-    h('b', { style:'font-size:18px', text:'배우고 싶은 과목 검색' }),
-    h('div', { class:'sub', text:'온라인 강좌가 다루는 어떤 과목이든 검색해 보세요. 이미 만들어진 커리큘럼은 바로 열리고, 없으면 웹에서 자료를 찾아 새로 만들어 모든 학습자가 함께 쓰도록 저장해요.' }),
+  var help = helpOn() ? h('div', { class:'sub', id:'srch-help' }, ['온라인 강좌가 다루는 어떤 과목이든 검색해 보세요. 이미 만들어진 커리큘럼은 바로 열리고, 없으면 웹에서 자료를 찾아 새로 만들어 모든 학습자가 함께 쓰도록 저장해요. ', h('button', { class:'btn quiet sm', text:'다음부터 보지 않기', onclick:function () { S.srch.help = false; var e = document.getElementById('srch-help'); if (e) e.remove(); } })]) : null;
+  return h('div', { class:'card col', style:'margin-top:16px;gap:12px' }, [
     h('div', { class:'sh' }, [inp, h('button', { id:'srch-btn', class:'btn fill', text:'검색', onclick:function () { doSearch(inp.value); } })]),
-    h('div', { id:'srch-out' }), h('div', { id:'srch-list' })]);
+    help, h('div', { id:'srch-out' }), h('div', { id:'srch-list' })]);
 }
 function drawSearch() {
   var out = document.getElementById('srch-out'); if (!out) return; var s = S.srch; out.textContent = '';
@@ -527,7 +538,7 @@ function viewPlan() {
 
 // ── 홈(내 수업) ──
 function viewSubjects() {
-  var nu = nextUp(), kids = head(null, '내 수업');
+  var nu = nextUp(), kids = head(null, '내 수업'); kids[1] = h('div', { class:'rowf', style:'justify-content:space-between;flex-wrap:nowrap;gap:12px' }, [kids[1], searchBtn()]);
   var hero = h('div', { class:'card hero col' });
   if (nu) {
     var c = nu.c, i = nu.i;
