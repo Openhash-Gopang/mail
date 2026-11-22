@@ -17,7 +17,7 @@ test('parseReply: ~~~learn 블록을 떼어 글과 화면 조작으로 나눈다
 test('cleanAct: 허용되지 않은 값은 버린다', () => {
   assert.equal(L.cleanAct({ do: 'rm' }), null);
   assert.equal(L.cleanAct({ do: 'week', subject: '경제학', week: 0 }), null);
-  assert.equal(L.cleanAct({ do: 'week', subject: '경제학', week: 41 }), null);
+  assert.equal(L.cleanAct({ do: 'week', subject: '경제학', week: 53 }), null);
   assert.equal(L.cleanAct({ do: 'week', subject: '경제학', week: 2.5 }), null);
   assert.equal(L.cleanAct({ do: 'week', week: 3 }), null);
   assert.equal(L.cleanAct({ do: 'add', subject: '아주아주아주아주긴과목이름입니다' }), null);
@@ -109,4 +109,17 @@ test('learn.html: 보고서 제출 → 진로 추천', { skip: !JSDOM && 'jsdom 
   assert.match(txt(), /반영한 보고서/);
   // 점수 기록이 없는 예시 과목(미적분)은 단계 기록만으로 평가하되 근거를 밝힌다
   nav({ do: 'report' }); assert.match(txt(), /주차 단계 기록만/);
+});
+
+test('localIntent: 커리큘럼 검색·진행 현황 명령', () => {
+  assert.deepEqual(L.localIntent('거시경제학 커리큘럼 찾아줘'), { do: 'search', subject: '거시경제학' });
+  assert.deepEqual(L.localIntent('파이썬 기초 검색해줘'), { do: 'search', subject: '파이썬 기초' });
+  assert.deepEqual(L.localIntent('진행 현황 보여줘'), { do: 'plan' });
+  assert.deepEqual(L.localIntent('영어 과목 추가해줘 고등'), { do: 'add', subject: '영어', level: '고등' }, '추가 명령은 검색으로 새지 않는다');
+  assert.equal(L.cleanAct({ do: 'search' }), null); assert.deepEqual(L.cleanAct({ do: 'search', subject: '미적분' }), { do: 'search', subject: '미적분' });
+  assert.deepEqual(L.cleanAct({ do: 'plan', subject: 'x' }), { do: 'plan' });
+  assert.deepEqual(L.cleanAct({ do: 'week', subject: '수학', week: 52 }), { do: 'week', subject: '수학', week: 52 });
+  assert.ok(L.LEARN_SP.includes('search') && L.LEARN_SP.includes('plan') && L.LEARN_SP.includes('Self-paced'));
+  const a = L.buildAsk('진도 어때?', { courses: [{ id: 'u1', name: '거시경제학', weeks: 12, next: 3, plan: { done: 2, expected: 4, status: 'behind', std: 48 } }] });
+  assert.match(a, /"plan":\{"done":2,"expected":4,"status":"behind","stdHours":48\}/);
 });
