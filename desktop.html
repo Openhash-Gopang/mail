@@ -295,7 +295,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 #tab-whitepaper iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent}
 #tab-xokorea iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:transparent;overflow:hidden}   /* 높이는 안쪽 문서가 알려 준 값으로 맞춘다(_xkSwitch 옆 message 처리) — 안쪽 스크롤 막대 없음 */
 #tab-expert100k .wp-tabs{position:sticky;top:0;z-index:2;background:var(--bg,#fff)}
-#tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe,#tab-intro iframe,#tab-learn iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
+#tab-pricing iframe,#tab-feedback iframe,#tab-vault iframe,#tab-intro iframe{display:block;width:100%;height:calc(100vh - 100px);min-height:520px;border:0;background:transparent}
 #tab-vault iframe{overflow:hidden}
 .doc-host-row{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 6px 0;font-size:13px;color:var(--hint)}
 #tab-compose[data-mode="doc"] .doc-host-row,#tab-compose[data-mode="default"] .doc-host-row,#tab-compose[data-mode="org"] .doc-host-row,#tab-compose[data-mode="verdict"] .doc-host-row{display:flex}
@@ -2559,7 +2559,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
     <div id="expert100k-doc" role="tabpanel" aria-live="polite"></div>
   </div>
-  <div id="tab-learn" class="tab-panel"><iframe id="learn-frame" title="나비웹 학습"></iframe></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
+  <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
     <section class="yt-sec" aria-labelledby="yt-howto-h">
@@ -3470,20 +3470,25 @@ function _infraExGo(name, go) {
   const input = document.getElementById('cmp-input'); if (!input || input.disabled) return;
   input.value = name; _kmailAutoResize(input); _cmpChatUpdateSendState(); _cmpChatSend();   // 이름 그대로 이 인프라에 시킨다
 }
-// 나비웹 학습(2026-11-22): '내 수업'·'학습 기록' 칩 → learn.html 을 끼워 연다. 안쪽 '교수에게 말하기'는 교육 인프라 입력란으로 돌아와 말을 채워 준다(보내지는 않는다).
-function _learnOpen(view) {
-  _switchTab('learn');
-  const f = document.getElementById('learn-frame'); if (!f) return;
-  if (!f.getAttribute('src')) f.setAttribute('src', 'learn.html?embed=mail' + (view === 'history' ? '#history' : ''));
-  else { try { f.contentWindow.postMessage({ type: 'navi-learn-view', view: view }, location.origin); } catch (x) {} }
+// 나비웹 학습(2026-11-22 → 11-23): '내 수업'·'학습 기록' 칩 → 학습 포털을 이 문서 안에 직접 그려 연다(iframe 없음 — learn.css·learn-app.js, 모양은 설정 페이지와 같은 Material 3).
+// 안쪽 '교수에게 말하기'는 교육 인프라 입력란으로 돌아와 말을 채워 준다(보내지는 않는다).
+const _LEARN_V = '20261123a';
+function _learnLoad(cb) {
+  if (window.NaviLearn) { cb(); return; }
+  if (!document.getElementById('learn-css')) { const l = document.createElement('link'); l.id = 'learn-css'; l.rel = 'stylesheet'; l.href = 'learn.css?v=' + _LEARN_V; document.head.appendChild(l); }
+  let sc = document.getElementById('learn-js');
+  if (!sc) { sc = document.createElement('script'); sc.id = 'learn-js'; sc.src = 'learn-app.js?v=' + _LEARN_V; document.head.appendChild(sc); }
+  sc.addEventListener('load', cb, { once: true });
 }
-window.addEventListener('message', (e) => {
-  const f = document.getElementById('learn-frame'), d = e.data;
-  if (!f || !d || e.origin !== location.origin || e.source !== f.contentWindow || d.type !== 'navi-learn-ask') return;
-  if (window.LearnHost) LearnHost.ask(d.text); return;
-  const input = document.getElementById('cmp-input'), t = typeof d.text === 'string' ? d.text.slice(0, 300) : '';
-  if (input && !input.disabled && t) { input.value = t; _kmailAutoResize(input); _cmpChatUpdateSendState(); try { input.focus(); } catch (x) {} }
-});
+function _learnShow(view, then) {
+  _learnLoad(() => {
+    const r = document.getElementById('learn-root'); if (!r || !window.NaviLearn) return;
+    if (!r.dataset.on) { r.dataset.on = '1'; if (window.LearnHost) LearnHost.bind(NaviLearn); NaviLearn.mount(r, { view: view }); }
+    else if (view) NaviLearn.view(view);
+    if (then) then();
+  });
+}
+function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 (function () { const ib = document.querySelector('.unread-badge[data-for="inbox"]'); if (ib && window.MutationObserver) new MutationObserver(() => _infraExSync()).observe(ib, { attributes: true, childList: true, characterData: true, subtree: true }); })();
 // ── 인프라 AI(구 각종 기관, 2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 나비웹의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
 const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안 신고'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','금융'],['kstock','투자'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
@@ -6133,7 +6138,7 @@ function _switchTab(name) {
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
   if (name === 'xokorea') _xkSwitch(_subGet('xk') || (document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo'));   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
   if (name === 'expert100k') _exSwitch(_subGet('ex') || 'overview');   // 10만 AI 전문가 — 위쪽 탭(개요 …)의 문서를 연다
-  if (name === 'learn') { const f = document.getElementById('learn-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'learn.html?embed=mail'); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
+  if (name === 'learn') { _learnShow(); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
