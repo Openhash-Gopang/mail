@@ -461,7 +461,7 @@ test('다른 사이트 입력 탭: 같은 계정의 폰으로 촬영해 PC로 �
   assert.ok(h.includes('id="ots-phone-btn"') && h.includes('async function _otsPhoneToggle(') && h.includes("label: '다른 사이트 입력'"));
   assert.ok(h.includes('const phoneOn = _otsPhotos.filter(o => o.on);') && h.includes('_otsPhotos = _otsPhotos.filter(o => !o.on)'));
   const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
-  assert.ok(m.includes('📱 폰으로 촬영</b>을 눌러'));
+  assert.ok(m.includes('"id":"ch_othersite"') && m.includes('📱 폰으로 촬영</b>은 같은 계정의 폰에'));
 });
 
 test('안내 문구는 ✕ 로 한 번 닫으면 다시 보이지 않는다(다른 사이트 입력 탭·폰 촬영 상자)', () => {
@@ -469,4 +469,15 @@ test('안내 문구는 ✕ 로 한 번 닫으면 다시 보이지 않는다(다�
   assert.ok(h.includes('function _hintAttach(') && h.includes('다시 보지 않기') && h.includes("const _HINT_KEY = 'navi_hints_off'"));
   for (const k of ['ots-sub', 'ots-foot', 'ots-conn', 'ots-pnote', 'pp-note']) assert.ok(h.includes("'" + k + "'"), k);
   assert.ok(h.includes('id="ots-sub"') && h.includes('id="ots-foot"'));
+});
+
+test('매뉴얼: 중급에 「다른 사이트에 옮겨 적기」장이 내 양식 장 바로 뒤에 있고, 서류·도우미·폰 장이 이를 가리킨다', () => {
+  const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
+  const i = m.indexOf('var CHAPTERS = ') + 'var CHAPTERS = '.length;
+  const chs = JSON.parse(m.slice(i, m.indexOf('];\nvar TIER_LABELS', i) + 1));
+  const ids = chs.map(c => c.id), k = ids.indexOf('ch_othersite');
+  assert.ok(k > 0 && ids[k - 1] === 'ch_myforms' && chs[k].tier === 'intermediate');
+  assert.ok(chs[k].quiz.length >= 8 && chs[k].body.includes('practice-h') && chs[k].body.includes('이렇게 말해 보세요'));
+  for (const id of ['ch_docmenu', 'ch_agent', 'ch5', 'ch_doc_write', 'ch_sites']) assert.ok(chs.find(c => c.id === id).body.includes('data-goto="ch_othersite"'), id);
+  for (const c of chs) assert.match(String(c.updated || '2026-01-01'), /^\d{4}-\d{2}-\d{2}$/, c.id + ' updated');
 });
