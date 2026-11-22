@@ -2780,6 +2780,48 @@ function _slotReset(label) {
   if (_docChat.early) delete _docChat.early[lb];
   setTimeout(_docChatPush, 0);
 }
+/* 사진 → 임의 사이트 양식 입력(2026-11-22). 종이 서류(처방전·신청서 등)를 촬영한 사진의 글을 이 브라우저에서 읽고(OCR, 사진은 서버로 보내지 않는다),
+ * 사용자가 읽은 글을 확인·고친 뒤 나비웹 도우미에 맡긴다. 도우미가 열린 사이트의 칸을 보고 알맞은 값을 옮겨 적고, 로그인·제출은 사용자가 한다. */
+const _PHOTOFILL_RE = /(사진|촬영|찍은|종이|처방전|서류).{0,30}(사이트|웹\s*페이지|웹사이트|홈페이지|페이지).{0,20}(입력|옮겨|채워|적어|작성|등록)|(사이트|웹\s*페이지|웹사이트|홈페이지|페이지).{0,20}(입력|옮겨|채워|적어)\s*(줘|주세요|해)/;
+async function _photoFillStart(file, hint) {
+  if (!_agentInfo) return '나비웹 도우미가 연결돼 있어야 다른 사이트에 입력할 수 있습니다. 화면 위쪽의 도우미 설치·켜기 안내를 확인해 주세요.';
+  if (!file) return '입력할 종이 서류의 사진을 대화창의 클립 버튼으로 첨부해 주세요. 사진은 이 기기에서만 읽습니다. 사진을 첨부한 뒤 “이 내용을 열어 둔 사이트에 입력해 줘”라고 말씀해 주세요.';
+  _drToast('사진의 글자를 읽는 중입니다…');
+  let txt = '';
+  try { txt = await _extractImageText(file); } catch (e) { return '사진의 글자를 읽지 못했습니다. 더 밝고 평평하게 다시 촬영해 주세요.'; }
+  if (!txt || txt.replace(/\s/g, '').length < 8) return '사진에서 읽을 수 있는 글이 거의 없습니다. 서류 전체가 보이게 평평하게 다시 촬영해 주세요.';
+  const ok = await _photoFillConfirm(txt, hint);
+  return ok ? '도우미에 맡겼습니다. 열린 사이트에서 로그인하시면 도우미가 칸에 옮겨 적고, 제출 전에 멈춥니다. 내용을 확인하고 직접 제출해 주세요.' : '입력을 취소했습니다.';
+}
+function _photoFillConfirm(txt, hint) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div'); ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', '사진에서 읽은 내용 확인');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10030;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div style="background:var(--sur,#fff);color:inherit;border-radius:16px;max-width:620px;width:100%;max-height:92vh;overflow:auto;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.3)">' +
+      '<h3 style="margin:0 0 6px;font-size:17px">사진에서 읽은 내용 확인</h3>' +
+      '<p style="margin:0 0 10px;font-size:13.5px;line-height:1.5">틀리게 읽힌 글자는 고쳐 주세요(약 이름·용량·숫자는 꼭 확인). 사진은 이 기기에서만 읽었고 서버로 보내지 않았습니다. 확인한 글자는 도우미(AI)가 사이트의 칸에 옮겨 적기 위해 전달됩니다. 보내지 않을 부분(예: 주민등록번호)은 지우고, 사이트에 직접 입력해 주세요.</p>' +
+      '<textarea id="pf-txt" rows="11" style="width:100%;box-sizing:border-box;border:1px solid var(--bdr,#ccc);border-radius:10px;padding:10px;font:inherit;font-size:14px"></textarea>' +
+      '<label style="display:block;margin:10px 0 4px;font-size:13.5px">입력할 사이트 주소 (이미 열어 둔 사이트면 비워 두세요)</label>' +
+      '<input id="pf-url" type="url" placeholder="https://" style="width:100%;box-sizing:border-box;min-height:38px;border:1px solid var(--bdr,#ccc);border-radius:10px;padding:0 10px;font:inherit">' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" class="btn btn-sm" data-x="no">취소</button><button type="button" class="btn btn-sm btn-primary" data-x="ok">이 내용으로 입력 맡기기</button></div></div>';
+    document.body.appendChild(ov);
+    const ta = ov.querySelector('#pf-txt'), ui = ov.querySelector('#pf-url'); ta.value = txt;
+    const m = String(hint || '').match(/https?:\/\/[^\s"'<>)]+/); if (m) ui.value = m[0];
+    const done = v => { document.removeEventListener('keydown', esc, true); ov.remove(); resolve(v); };
+    const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', esc, true);
+    ov.querySelector('[data-x="no"]').onclick = () => done(false);
+    ov.querySelector('[data-x="ok"]').onclick = async () => {
+      const body = ta.value.trim(); if (!body) { ta.focus(); return; }
+      let url = ui.value.trim(); if (url && !/^https:\/\//i.test(url)) { _drToast('사이트 주소는 https:// 로 시작해야 합니다.'); ui.focus(); return; }
+      const goal = '사용자가 종이 서류를 촬영해 읽은 글(아래)을 직접 확인했습니다. ' + (url ? '이 주소의 사이트를 열고, ' : '지금 열려 있는 사이트의 ') + '입력 양식에서 칸 이름을 보고 알맞은 값을 옮겨 입력하세요. 글에 없는 칸은 비워 두고 지어내지 마세요. 로그인·인증은 사용자가 직접 하며, 입력이 끝나면 제출·저장·결제는 하지 말고 멈춰서 사용자가 확인하게 하세요. 읽은 글:\n' + body.slice(0, 1500);
+      const q = await NaviAgent.queue({ playbook: '', goal: goal, title: '사진 내용을 사이트에 입력', url: url });
+      if (!q) { _drToast('도우미에 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.'); return; }
+      done(true);
+    };
+    setTimeout(() => ta.focus(), 30);
+  });
+}
 function _agentFetchSlot(label, fresh) {
   if (window.DocHelper && _cmpMode === 'doc' && _docChat.on) {
     // 정부24 같은 공공기관 민원서류는 물을 것이 없으니 AI 답변을 기다리지 않고 곧바로 도우미에 맡겨 사이트를 연다(법인 이름 등 입력이 필요한 항목만 도우미 SP 를 거친다).
@@ -10091,6 +10133,10 @@ window.addEventListener('message', async (e) => {
        말은 곧바로 서류 SP 에 보낸다(navi-doc-ask): 서류 SP 가 현재 서류를 보고 짧게 답하고, 수정·기입 지시는 되묻지 않고 화면 칸에 바로 쓴다. (기본 SP 경유는 길게 되묻기만 해서 쓰지 않는다)
        입력창은 서류 검색·선택만 맡으므로 대화 내용은 입력창에 넣지 않는다. 서류가 아직 없으면 예전처럼 입력창에 넣어 서류를 찾는다. */
     if (_cmpMode === 'doc' && _docHost.loaded && document.getElementById('tab-compose').classList.contains('doc-live')) {
+      if (_PHOTOFILL_RE.test(text || '')) {   // "이 사진 내용을 ○○ 사이트에 입력해 줘" → 서류가 아니라 다른 사이트 입력(도우미)
+        const img = files.find(f => /^image\//.test(f.type || ''));
+        reply(await _photoFillStart(img || null, text)); return;
+      }
       if (files.length) {   // 대화창에 첨부한 문서·사진 → 서류 사이트가 읽어 칸을 채운다(검토·수정은 사용자)
         _embedAttachPending = true; _embedSendFiles(files);
         const ans = text ? await _docAsk(text) : null;
