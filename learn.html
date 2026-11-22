@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>나비웹 학습</title>
+<link rel="stylesheet" href="learn.css">
+<style>
+/* 단독으로 열었을 때만 쓰는 바탕. 나비웹 안에서는 desktop.html 이 같은 화면을 직접 그린다(learn-app.js) */
+:root{--pri:#3B7DDD;--pri-bg:#E3ECF9;--bg:#F7F9FC;--sur:#fff;--txt:#212529;--grn:#1E7B46;--gbg:#E2F4EA;--org:#B86E00;--obg:#FFF1D6;--red:#C9302C;--font:Pretendard,Roboto,-apple-system,'Noto Sans KR',sans-serif}
+body{margin:0;background:var(--bg)}
+#m{max-width:1080px;margin:0 auto;padding:28px 24px 72px}
+</style>
+</head>
+<body>
+<div id="m"></div>
+<script src="learn-app.js"></script>
+<script>NaviLearn.mount(document.getElementById('m'), { view: (location.hash || '').replace('#', '') });</script>
+</body>
+</html>
