@@ -288,7 +288,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-bubble.org-md table{border-collapse:collapse;margin:6px 0 10px;font-size:13.5px;display:block;overflow-x:auto}
 .chat-bubble.org-md th,.chat-bubble.org-md td{border:1px solid var(--bdr);padding:5px 9px;text-align:left}
 .chat-bubble.org-md th{background:var(--pri-bg)}
-.wp-tabs{display:flex;gap:6px;padding:10px 4px 0;border-bottom:1px solid var(--bdr)}
+.wp-tabs{display:flex;gap:6px;padding:10px 4px 0;border-bottom:1px solid var(--bdr);overflow-x:auto;scrollbar-width:thin}.wp-tabs .wp-tab{white-space:nowrap;flex:none}
 .wp-tab{background:none;border:0;border-bottom:3px solid transparent;padding:9px 18px;font:inherit;font-size:16px;font-weight:700;color:var(--hint);cursor:pointer;margin-bottom:-1px}
 .wp-tab:hover{color:var(--pri)}
 .wp-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
@@ -2545,6 +2545,18 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <!-- 위쪽 탭: 새 탭은 '개요' 오른쪽에 단추(id="ex-tab-<키>")를 더하고, 아래 스크립트의 _EX_URL 에 같은 키로 주소를 넣는다. 전환 코드는 .wp-tab 전체를 훑으므로 따로 고칠 곳이 없다. -->
     <div class="wp-tabs" role="tablist" aria-label="10만 AI 전문가">
       <button type="button" role="tab" class="wp-tab active" id="ex-tab-overview" aria-selected="true" onclick="_exSwitch('overview')">개요</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-law" aria-selected="false" onclick="_exSwitch('law')">법률</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-medical" aria-selected="false" onclick="_exSwitch('medical')">의료</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-edu" aria-selected="false" onclick="_exSwitch('edu')">교육</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-finance" aria-selected="false" onclick="_exSwitch('finance')">금융</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-market" aria-selected="false" onclick="_exSwitch('market')">시장</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-legis" aria-selected="false" onclick="_exSwitch('legis')">입법</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-judicial" aria-selected="false" onclick="_exSwitch('judicial')">사법</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-admin" aria-selected="false" onclick="_exSwitch('admin')">행정</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-transport" aria-selected="false" onclick="_exSwitch('transport')">교통</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-logistics" aria-selected="false" onclick="_exSwitch('logistics')">물류</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-culture" aria-selected="false" onclick="_exSwitch('culture')">문화</button>
+      <button type="button" role="tab" class="wp-tab" id="ex-tab-living" aria-selected="false" onclick="_exSwitch('living')">의식주</button>
     </div>
     <iframe id="expert100k-frame" title="10만 AI 전문가" allow="clipboard-write"></iframe>
   </div>
@@ -8602,6 +8614,7 @@ window.addEventListener('message', (e) => {
 // 10만 AI 전문가 — 위쪽 탭과 각 탭이 여는 문서. 새 탭은 _EX_URL 에 항목을 더하고 패널의 .wp-tabs 에 단추(id ex-tab-<키>)만 더하면 된다.
 const _EX_V = String(Math.floor(Date.now() / 60000));   // 1분마다 바뀌는 값 — 캐시가 옛 문서를 붙들지 않게 한다
 const _EX_URL = { overview: 'expert100k-overview.html?embed=mail&v=' + _EX_V };
+['law','medical','edu','finance','market','legis','judicial','admin','transport','logistics','culture','living'].forEach(k => { _EX_URL[k] = 'expert100k-field.html?f=' + k + '&embed=mail&v=' + _EX_V; });   // 분야별 초안은 한 문서가 ?f= 키로 내용을 바꿔 보여 준다
 function _exSwitch(k) {
   if (!_EX_URL[k]) k = 'overview';
   const f = document.getElementById('expert100k-frame');
