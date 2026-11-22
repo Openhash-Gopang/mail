@@ -47,6 +47,8 @@ export const MAIL_FILES = new Set([
  "icons/nb-wing-back.png",
  "icons/nb-wing-front.png",
  "index.html",
+ "learn-host.js",
+ "learn-sp.js",
  "learn.html",
  "mail-architecture.html",
  "manual-chat.js",
