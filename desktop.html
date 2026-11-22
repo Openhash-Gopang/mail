@@ -8651,7 +8651,7 @@ function _ytRow(v, i) {
     '<div class="yt-info"><div class="yt-no"></div><h3 class="yt-ttl"></h3><p class="yt-desc"></p></div>' +
     '<button type="button" class="yt-go"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button></div>';
   const title = m ? m[2] : (v.t || '');
-  const hn = !m && /(?:사용법|매뉴얼|도우미)\s*0*(\d+)/.exec((v.t || '').normalize('NFC'));   // '나비웹 사용법 05 …' 처럼 제목에 번호가 있으면 그 번호(건너뛴 번호도 그대로)
+  const hn = !m && /(?:나비웹|사용법|매뉴얼|도우미)\s*0*(\d+)/.exec((v.t || '').normalize('NFC'));   // '나비웹 사용법 05 …' 처럼 제목에 번호가 있으면 그 번호(건너뛴 번호도 그대로)
   li.querySelector('.yt-no').textContent = m ? m[1] : (hn ? hn[1] : String(i + 1));
   li.querySelector('.yt-ttl').textContent = title; li.querySelector('.yt-desc').textContent = v.d || '';
   li.querySelector('.yt-len').textContent = v.len || '';
