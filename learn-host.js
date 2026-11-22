@@ -32,7 +32,8 @@ function _learnLeave() {
   if (window.HondiChat && !(typeof _org !== 'undefined' && _org) && !(typeof _prof !== 'undefined' && _prof.active)) HondiChat.setSp(null);
 }
 function _learnProfName(subject) {
-  const q = String(subject || '').trim(), cs = (_learn.state && _learn.state.courses) || [];
+  const q = String(subject || '').trim(); if (/^진로/.test(q)) return '진로 지도 교수';
+  const cs = (_learn.state && _learn.state.courses) || [];
   const c = cs.find(x => x.id === q || x.name === q || x.subj === q || (q && (x.name.indexOf(q) >= 0 || (x.subj && (x.subj.indexOf(q) >= 0 || q.indexOf(x.subj) >= 0)))));
   return c && c.prof ? c.prof : (q ? q + ' 교수' : '교수');
 }
