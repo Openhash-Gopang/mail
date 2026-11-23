@@ -1,0 +1,136 @@
+/* traffic.css — 나비웹 교통(인프라 AI · 교통) 모양. 모든 규칙은 .trf 안에서만 적용된다.
+   학습 화면(learn.css)과 같은 Material Design 3 규격: 개요선 카드(radius 12, 그림자 없음) · 알약 단추(높이 40) · 48px 기본 탭(3px 밑줄) · 톤 칩/배너 · 8px 막대. 색은 나비웹 팔레트(--pri 등)를 그대로 쓴다. */
+.trf{--m3-line:#D9DEE6;--m3-outline:#79808C;--m3-on-var:#49505A;--m3-tonal:var(--pri-bg,#E3ECF9);
+ --on:var(--txt,#212529);--on2:var(--m3-on-var);--line:var(--m3-line);--soft:var(--bg,#F7F9FC);--card:var(--sur,#fff);--pb0:var(--m3-tonal);
+ --m:var(--grn,#1E7B46);--mb:var(--gbg,#E2F4EA);--p:var(--pri,#3B7DDD);--pb:var(--m3-tonal);--l:var(--org,#B86E00);--lb:var(--obg,#FFF1D6);
+ --n:var(--m3-outline);--nb:#E4E8EE;--bad:var(--red,#C9302C);--pri-d:color-mix(in srgb,var(--pri,#3B7DDD) 86%,#000);
+ font-family:var(--font,'Pretendard',Roboto,'Noto Sans KR',sans-serif);color:var(--on);font-size:15px;line-height:1.6;word-break:keep-all;scroll-margin-top:calc(var(--hd,54px) + 8px);text-align:left}
+.trf *,.trf *::before,.trf *::after{box-sizing:border-box;margin:0;padding:0}
+.trf button{font:inherit;color:inherit;cursor:pointer}
+.trf button:focus-visible,.trf input:focus-visible,.trf textarea:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.trf button:disabled{cursor:not-allowed}
+.trf a{color:var(--pri)}
+/* 머리: 제목 + 기본 탭 */
+.trf .top{background:var(--bg,#F7F9FC);margin-bottom:24px}
+.trf .topin{display:block}
+.trf .brand{padding:0 0 12px}
+.trf .brand b{display:block;font-size:22px;font-weight:600;line-height:1.3}
+.trf .brand span{display:block;font-size:14px;color:var(--on2);margin-top:2px}
+.trf .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);overflow-x:auto}
+.trf .tab{background:none;border:0;border-bottom:3px solid transparent;height:48px;padding:0 20px;font-size:14px;font-weight:500;letter-spacing:.1px;color:var(--on2);white-space:nowrap;border-radius:12px 12px 0 0;margin-bottom:-1px;transition:background .15s,color .15s}
+.trf .tab:hover{background:color-mix(in srgb,var(--pri) 8%,transparent);color:var(--on)}
+.trf .tab[aria-selected=true]{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+.trf .tab:focus-visible{outline-offset:-2px}
+.trf .wrap{padding:0 0 24px}
+.trf .back{background:none;border:0;color:var(--pri);font-size:14px;font-weight:500;padding:0 0 8px;border-radius:8px}
+.trf .back:hover{text-decoration:underline}
+.trf h1{font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-.2px}
+.trf .lead{margin-top:6px;color:var(--on2);font-size:14px;line-height:1.6;max-width:720px}
+.trf h2{font-size:16px;font-weight:600;margin:28px 0 12px}
+.trf .sub{font-size:13px;color:var(--on2)}
+/* 카드 = 개요선 카드 */
+.trf .card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;box-shadow:none;min-width:0;margin:0}
+.trf .col{display:flex;flex-direction:column;gap:10px}
+.trf .rowf{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.trf .g2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;margin-top:20px}
+.trf .g3{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.trf .g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+/* 강조 카드 = 채움 카드 */
+.trf .hero{background:var(--pri);color:#fff;border:0}
+.trf .hero .sub{color:rgba(255,255,255,.86)}
+.trf .hero .big{font-size:22px;font-weight:600;line-height:1.3}
+/* 단추 = 채움(주요) · 윤곽(보조) · 텍스트, 높이 40 · 알약 */
+.trf .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;margin:0;padding:0 24px;border-radius:20px;font-size:14px;font-weight:500;letter-spacing:.1px;line-height:1.2;border:1px solid var(--m3-outline);color:var(--pri);background:transparent;text-decoration:none;transition:background .15s,box-shadow .15s}
+.trf .btn:hover:not(:disabled){background:color-mix(in srgb,var(--pri) 8%,transparent)}
+.trf .btn.fill{background:var(--pri);border-color:var(--pri);color:#fff}
+.trf .btn.fill:hover:not(:disabled){background:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.trf .btn.white{background:#fff;border-color:#fff;color:var(--pri)}
+.trf .btn.white:hover:not(:disabled){background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.trf .btn.ghost{border-color:rgba(255,255,255,.6);color:#fff}
+.trf .btn.ghost:hover:not(:disabled){background:rgba(255,255,255,.14)}
+.trf .btn.quiet{border-color:var(--line);color:var(--on)}
+.trf .btn.sm{min-height:32px;padding:0 16px;font-size:13px;border-radius:16px}
+.trf .btn:disabled{background:rgba(28,27,31,.12);border-color:transparent;color:rgba(28,27,31,.38);box-shadow:none}
+/* 칩·알약(톤) */
+.trf .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:8px;padding:2px 10px;background:var(--nb);color:var(--on2)}
+.trf .pill.m{background:var(--mb);color:var(--m)}.trf .pill.p{background:var(--pb);color:var(--p)}.trf .pill.l{background:var(--lb);color:var(--l)}
+.trf .note{background:var(--lb);color:var(--l);border-radius:12px;padding:12px 16px;font-size:13px}
+.trf .note.info{background:var(--m3-tonal);color:var(--on)}
+.trf .chips{display:flex;flex-wrap:wrap;gap:8px}
+.trf .chip{border:1px solid var(--m3-outline);background:transparent;border-radius:8px;padding:6px 16px;font-size:14px;font-weight:500;color:var(--on)}
+.trf .chip:hover{background:color-mix(in srgb,var(--pri) 8%,transparent)}
+.trf .chip[aria-pressed=true]{background:var(--m3-tonal);border-color:var(--m3-tonal);color:var(--pri);font-weight:600}
+.trf .tile{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.trf .tile .k{font-size:12px;color:var(--on2);font-weight:500}.trf .tile .v{font-size:22px;font-weight:600}
+.trf .tile .tr{height:8px;border-radius:4px;background:var(--nb);margin-top:8px;overflow:hidden}.trf .tile .tr em{display:block;height:8px;background:var(--pri)}
+.trf .mrow{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:14px}
+.trf .mrow .nm{flex:0 0 76px;font-weight:600}
+.trf .mrow .tr{flex:1;height:8px;border-radius:4px;background:var(--nb);overflow:hidden}.trf .mrow .tr em{display:block;height:8px;background:var(--m);border-radius:4px}
+.trf .mrow .v{flex:0 0 118px;text-align:right;color:var(--on2)}
+.trf .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:12px 0;border:0;border-top:1px solid var(--line);background:none;margin:0}
+.trf .row:first-child{border-top:0}
+.trf .ov{position:fixed;inset:0;background:rgba(32,33,36,.32);display:flex;align-items:center;justify-content:center;z-index:3500}
+.trf .ov[hidden]{display:none}
+.trf .dlg{background:var(--card);border-radius:28px;padding:24px;width:min(560px,calc(100% - 32px));max-height:90vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.trf .lab{font-size:13px;font-weight:600;color:var(--on2);margin:18px 0 8px}
+.trf .foot{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--on2)}
+.trf .sh{display:flex;gap:10px;flex-wrap:wrap}
+.trf .sh input{flex:1 1 260px;min-width:0;width:auto;height:48px;padding:0 16px;font-size:16px}
+.trf .spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--nb);border-top-color:var(--pri);animation:bnk-sp 1s linear infinite;flex:none}
+@keyframes bnk-sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.trf .spin{animation:none}}
+@media print{.trf .top,.trf .sbar,.trf .noprint,.trf .ov{display:none!important}.trf .card{break-inside:avoid;margin-top:12px}}
+@media (max-width:860px){.trf .g2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.trf h1{font-size:22px}.trf .tab{padding:0 14px}.trf .card{padding:16px}.trf .hero .big{font-size:20px}.trf .mrow .nm{flex-basis:64px}.trf .mrow .v{flex-basis:90px}}
+/* 은행 전용 */
+.trf .amt{font-size:40px;font-weight:600;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
+.trf .amt small{font-size:16px;font-weight:500;margin-left:6px;opacity:.86}
+.trf .num{font-variant-numeric:tabular-nums}
+.trf .kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.trf .kv:first-child{border-top:0}
+.trf .kv>span{color:var(--on2)}
+.trf .kv b{font-weight:600;text-align:right;display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.trf .stp{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.trf .stp:first-child{border-top:0}
+.trf .stp i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--m3-tonal);color:var(--pri);font-style:normal;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center}
+.trf .stp b{display:block;font-size:15px;font-weight:600}
+.trf .stp span{font-size:13px;color:var(--on2)}
+.trf .field{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.trf .field label{font-size:13px;font-weight:600;color:var(--on2)}
+.trf .field input,.trf .field select{width:100%;height:48px;border:1px solid var(--m3-outline);border-radius:var(--r,4px);padding:0 16px;font:inherit;font-size:16px;background:transparent;color:var(--on)}
+.trf .field input:focus,.trf .field select:focus{outline:none;border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.trf .field input[aria-invalid=true]{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.trf .field .help{font-size:12px;color:var(--on2)}.trf .field .err{font-size:12px;color:var(--bad)}
+.trf .seg{display:inline-flex;border:1px solid var(--m3-outline);border-radius:20px;overflow:hidden}
+.trf .seg button{background:none;border:0;border-right:1px solid var(--m3-outline);height:36px;padding:0 16px;font-size:13px;font-weight:500}
+.trf .seg button:last-child{border-right:0}
+.trf .seg button:hover{background:color-mix(in srgb,var(--pri) 8%,transparent)}
+.trf .seg button[aria-pressed=true]{background:var(--m3-tonal);color:var(--pri);font-weight:600}
+.trf .tbl{width:100%;border-collapse:collapse;font-size:14px}
+.trf .tbl th{text-align:left;font-size:12.5px;font-weight:600;color:var(--on2);padding:8px 12px;background:var(--soft)}
+.trf .tbl td{padding:10px 12px;border-top:1px solid var(--line)}
+.trf .tbl .r{text-align:right;font-variant-numeric:tabular-nums}
+.trf .tbw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.trf .chart svg{display:block;width:100%;height:auto}
+.trf .dot{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none}
+.trf .fld{display:grid;gap:12px;margin-top:8px}
+.trf .fld .top{display:flex;align-items:center;gap:8px;font-size:14px}
+.trf .fld .top b{font-weight:600}.trf .fld .top .v{margin-left:auto;color:var(--on2);font-variant-numeric:tabular-nums}
+.trf .fld .meter{height:8px;border-radius:4px;background:var(--nb);overflow:hidden;margin-top:6px}.trf .fld .meter i{display:block;height:100%;border-radius:4px}
+.trf .empty{padding:24px 8px;text-align:center;color:var(--on2);font-size:14px}
+.trf .code{font-family:ui-monospace,Consolas,monospace;letter-spacing:2px}
+.trf .meter8{height:8px;border-radius:4px;background:var(--nb);overflow:hidden}.trf .meter8 i{display:block;height:100%;border-radius:4px;background:var(--pri)}
+.trf .meter8.bad i{background:var(--bad)}.trf .meter8.warn i{background:var(--l)}.trf .meter8.ok i{background:var(--m)}
+.trf .pill.bad{background:#FDE7E7;color:var(--bad)}
+@media (max-width:640px){.trf .amt{font-size:32px}.trf .kv{flex-direction:column;align-items:flex-start;gap:4px}.trf .kv b{justify-content:flex-start;text-align:left}}
+/* 교통 화면 전용 */
+.trf .tbl input{width:104px;height:36px;border:1px solid var(--m3-outline);border-radius:var(--r,4px);padding:0 10px;font:inherit;font-size:14px;text-align:right;background:transparent;color:var(--on)}
+.trf .tbl input:focus{outline:none;border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.trf .up{color:#C5221F}.trf .dn{color:#1A5FB4}
+.trf .frm{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 16px}
+.trf .chk{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}
+.trf .chk:first-of-type{border-top:0}
+.trf .chk input{width:20px;height:20px;margin-top:1px;flex:none;accent-color:var(--pri)}
+.trf .gl{border-top:1px solid var(--line);padding:10px 0;font-size:14px}.trf .gl:first-child{border-top:0}.trf .gl b{display:block;margin-bottom:2px}
+.trf .tgt{display:flex;align-items:center;gap:6px;justify-content:flex-end}.trf .tgt input{width:72px}
+
