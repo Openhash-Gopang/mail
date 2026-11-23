@@ -84,6 +84,8 @@ export const MAIL_FILES = new Set([
  "public-app.js",
  "public.css",
  "qna-ui.js",
+ "search-app.js",
+ "search.css",
  "stock-app.js",
  "stock.css",
  "tax-app.js",
