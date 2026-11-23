@@ -1376,7 +1376,7 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 #tab-intro iframe{background:#fff;border-radius:10px}
 .side-logo{flex:none;display:block;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;cursor:pointer;padding:6px 0 10px 16px;line-height:0}
 .side-logo:hover{background:rgba(59,125,221,.08)}.side-logo:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
-#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback,#tab-btn-pricing,#tab-btn-learn,#tab-btn-bank,#tab-btn-stock,#tab-btn-insure,#tab-btn-emg,#tab-btn-pol,#tab-btn-med{display:none!important}
+#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback,#tab-btn-pricing,#tab-btn-learn,#tab-btn-bank,#tab-btn-stock,#tab-btn-insure,#tab-btn-emg,#tab-btn-pol,#tab-btn-med,#tab-btn-tax{display:none!important}
 .side-group:has(#tab-btn-pricing){display:none}   /* 도움말 묶음은 비었다 — 플랜 업그레이드는 사용자 팝업으로 옮겼다 */   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
 .home-xo{position:fixed;left:72px;right:0;bottom:22px;display:none;justify-content:center;pointer-events:none;z-index:5}
 .home-xo a{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;color:var(--sub);font-size:14px;font-weight:500;text-decoration:none;cursor:pointer}
@@ -1655,7 +1655,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="side-group">
       <div class="side-label">도움말</div>
       <button id="tab-btn-whitepaper" class="nav-btn" data-label="Whitepaper" onclick="_switchTab('whitepaper')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Whitepaper</button>
-      <button id="tab-btn-learn" class="nav-btn" data-label="학습" onclick="_switchTab('learn')">학습</button> <button id="tab-btn-bank" class="nav-btn" data-label="은행" onclick="_switchTab('bank')">은행</button> <button id="tab-btn-stock" class="nav-btn" data-label="증권" onclick="_switchTab('stock')">증권</button> <button id="tab-btn-insure" class="nav-btn" data-label="보험" onclick="_switchTab('insure')">보험</button> <button id="tab-btn-emg" class="nav-btn" data-label="응급" onclick="_switchTab('emg')">응급</button> <button id="tab-btn-pol" class="nav-btn" data-label="치안" onclick="_switchTab('pol')">치안</button> <button id="tab-btn-med" class="nav-btn" data-label="의료" onclick="_switchTab('med')">의료</button> <button id="tab-btn-pricing" class="nav-btn" data-label="플랜 업그레이드" onclick="_switchTab('pricing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 16.5V8M8 11.8L12 7.8l4 4"/></svg>플랜 업그레이드</button>
+      <button id="tab-btn-learn" class="nav-btn" data-label="학습" onclick="_switchTab('learn')">학습</button> <button id="tab-btn-bank" class="nav-btn" data-label="은행" onclick="_switchTab('bank')">은행</button> <button id="tab-btn-stock" class="nav-btn" data-label="증권" onclick="_switchTab('stock')">증권</button> <button id="tab-btn-insure" class="nav-btn" data-label="보험" onclick="_switchTab('insure')">보험</button> <button id="tab-btn-emg" class="nav-btn" data-label="응급" onclick="_switchTab('emg')">응급</button> <button id="tab-btn-pol" class="nav-btn" data-label="치안" onclick="_switchTab('pol')">치안</button> <button id="tab-btn-med" class="nav-btn" data-label="의료" onclick="_switchTab('med')">의료</button> <button id="tab-btn-tax" class="nav-btn" data-label="세무" onclick="_switchTab('tax')">세무</button> <button id="tab-btn-pricing" class="nav-btn" data-label="플랜 업그레이드" onclick="_switchTab('pricing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 16.5V8M8 11.8L12 7.8l4 4"/></svg>플랜 업그레이드</button>
       <button id="tab-btn-xokorea" class="nav-btn" data-label="XO Korea" onclick="_switchTab('xokorea')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg>
         XO Korea</button>
     </div>
@@ -2609,7 +2609,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
     <div id="expert100k-doc" role="tabpanel" aria-live="polite"></div>
   </div>
-  <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
+  <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-tax" class="tab-panel"><div id="tx-root-host"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
     <section class="yt-sec" aria-labelledby="yt-howto-h">
@@ -3500,7 +3500,7 @@ const _INFRA_EX = {
   kpolice:['신고하기>pol:report','대응 원리>pol:principle','대응 시뮬레이션>pol:sim','내 신고>pol:log'], ksecurity:['보안 점검','위협 알림','내 기기','조치 이력'],
   khealth:['증상 상담','내 의료 정보>med:profile','제출 범위>med:submit','진료 기록>med:visits'], kschool:['학습 상담','내 수업>learn:subjects','과제','학습 기록>learn:history'],
   gdc:['송금·결제>bank:pay','내 지갑(GDC)>bank:wallet','거래 내역>bank:history','청구서>bank:history'], kstock:['종목 상담','관심 종목>stock:watch','내 포트폴리오>stock:portfolio','거래 내역>stock:trades'],
-  kinsurance:['보장 상담','내 보험>insure:mine','요율 원리>insure:rate','보험금 청구>insure:claims'], ktax:['세무 상담','신고서 작성','납부·환급','신고 이력'],
+  kinsurance:['보장 상담','내 보험>insure:mine','요율 원리>insure:rate','보험금 청구>insure:claims'], ktax:['세무 상담','회계 원리>tax:acct','거래 상호 검증>tax:verify','내 재무제표>tax:fs','세금 계산>tax:tax'],
   kmarket:['상품 찾기','장바구니','주문 내역','판매 관리'], ktraffic:['길 찾기','예약·결제','교통 정보','이동 기록'],
   klogistics:['배송 조회','발송 접수','내 배송','반품·교환'], kcleaner:['분리배출 상담','민원 접수','환경 정보','내 활동'],
   kpublic:['민원 상담','서류 발급·신청','처리 현황','내 민원'], kdemocracy:['정책 찾기','내게 맞는 지원','의견 제안','참여 현황'],
@@ -3537,7 +3537,7 @@ function _infraExSync() {
 function _infraExGo(name, go) {
   if (go.indexOf('mail:') === 0) { _navMailSub(go.slice(5)); return; }
   if (go === 'letter' || go === 'campaign') { const k = _infraKey; if (_cmpSetMode(go)) { _infraKey = k; _cmpSyncModeUi(); try { document.getElementById('cmp-input').focus(); } catch (x) {} } return; }
-  if (go.indexOf('med:') === 0) { _medOpen(go.slice(4)); return; } if (go.indexOf('pol:') === 0) { _polOpen(go.slice(4)); return; } if (go.indexOf('emg:') === 0) { _emgOpen(go.slice(4)); return; } if (go.indexOf('insure:') === 0) { _insureOpen(go.slice(7)); return; } if (go.indexOf('stock:') === 0) { _stockOpen(go.slice(6)); return; } if (go.indexOf('bank:') === 0) { _bankOpen(go.slice(5)); return; } if (go.indexOf('learn:') === 0) { _learnOpen(go.slice(6)); return; } if (go === 'verdict' || go === 'doc') { _switchTab(go); return; }
+  if (go.indexOf('tax:') === 0) { _taxOpen(go.slice(4)); return; } if (go.indexOf('med:') === 0) { _medOpen(go.slice(4)); return; } if (go.indexOf('pol:') === 0) { _polOpen(go.slice(4)); return; } if (go.indexOf('emg:') === 0) { _emgOpen(go.slice(4)); return; } if (go.indexOf('insure:') === 0) { _insureOpen(go.slice(7)); return; } if (go.indexOf('stock:') === 0) { _stockOpen(go.slice(6)); return; } if (go.indexOf('bank:') === 0) { _bankOpen(go.slice(5)); return; } if (go.indexOf('learn:') === 0) { _learnOpen(go.slice(6)); return; } if (go === 'verdict' || go === 'doc') { _switchTab(go); return; }
   const input = document.getElementById('cmp-input'); if (!input || input.disabled) return;
   input.value = name; _kmailAutoResize(input); _cmpChatUpdateSendState(); _cmpChatSend();   // 이름 그대로 이 인프라에 시킨다
 }
@@ -3682,6 +3682,25 @@ function _medShow(view) {
   });
 }
 function _medOpen(view) { _switchTab('med'); _medShow(view); }
+const _TAX_V = '20261123a'; let _taxChat = false;
+function _taxLoad(cb) {
+  if (window.NaviTax) { cb(); return; }
+  if (!document.getElementById('tax-css')) { const l = document.createElement('link'); l.id = 'tax-css'; l.rel = 'stylesheet'; l.href = 'tax.css?v=' + _TAX_V; document.head.appendChild(l); }
+  let sc = document.getElementById('tax-js');
+  if (!sc) { sc = document.createElement('script'); sc.id = 'tax-js'; sc.src = 'tax-app.js?v=' + _TAX_V; document.head.appendChild(sc); }
+  sc.addEventListener('load', cb, { once: true });
+}
+function _taxShow(view) {
+  _taxLoad(() => {
+    const r = document.getElementById('tx-root-host'); if (!r || !window.NaviTax) return;
+    if (!r.dataset.on) {
+      r.dataset.on = '1';
+      NaviTax.on('ask', (t) => { _taxChat = true; try { _cmpOrgPick('ktax'); } finally { _taxChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviTax.mount(r, { view: view });
+    } else if (view) NaviTax.view(view);
+  });
+}
+function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
 (function () { const ib = document.querySelector('.unread-badge[data-for="inbox"]'); if (ib && window.MutationObserver) new MutationObserver(() => _infraExSync()).observe(ib, { attributes: true, childList: true, characterData: true, subtree: true }); })();
 // ── 인프라 AI(구 각종 기관, 2026-11-02): '서류 선택' 오른쪽의 드롭다운. 맨 위 검색 입력 + 나비웹의 K-서비스(인프라) 항목. 고르면 그 서비스의 화면(대화창 포함)을 아래에 연다.
 const _ORG_ITEMS = [['kmail','메일'],['k119','응급'],['klaw','법률'],['kpolice','치안'],['ksecurity','보안'],['khealth','의료'],['kschool','교육'],['gdc','은행'],['kstock','증권'],['kinsurance','보험'],['ktax','세무'],['kmarket','쇼핑·거래'],['ktraffic','교통'],['klogistics','물류'],['kcleaner','환경'],['kpublic','행정'],['kdemocracy','정책'],['ktelecom','통신'],['ksearch','검색'],['kbiz','사업자'],['kplan','목표·기획'],['kwatch','신고'],['kjob','직업'],['kjit','조달'],['kcity','도시 설계'],['kestate','부동산'],['ksocial','모임']];
@@ -4112,7 +4131,7 @@ function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비
 /** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 나비웹 대화창이 그 기관 SP 로 전환된다. */
 function _cmpOrgPick(key) {
   _cmpOrgClose();
-  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return; if (key === 'kschool') { _learnOpen('subjects'); return; } if (key === 'gdc' && !_bankChat) { _bankOpen('wallet'); return; } if (key === 'kstock' && !_stockChat) { _stockOpen('portfolio'); return; } if (key === 'kinsurance' && !_insureChat) { _insureOpen('mine'); return; } if (key === 'k119' && !_emgChat) { _emgOpen('contact'); return; } if (key === 'kpolice' && !_polChat) { _polOpen('report'); return; } if (key === 'ksecurity') { _switchTab('vault'); return; } if (key === 'khealth' && !_medChat) { _medOpen('profile'); return; } if (key === 'klaw') { _switchTab('verdict'); return; }
+  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return; if (key === 'kschool') { _learnOpen('subjects'); return; } if (key === 'gdc' && !_bankChat) { _bankOpen('wallet'); return; } if (key === 'kstock' && !_stockChat) { _stockOpen('portfolio'); return; } if (key === 'kinsurance' && !_insureChat) { _insureOpen('mine'); return; } if (key === 'k119' && !_emgChat) { _emgOpen('contact'); return; } if (key === 'kpolice' && !_polChat) { _polOpen('report'); return; } if (key === 'ksecurity') { _switchTab('vault'); return; } if (key === 'khealth' && !_medChat) { _medOpen('profile'); return; } if (key === 'ktax' && !_taxChat) { _taxOpen('acct'); return; } if (key === 'klaw') { _switchTab('verdict'); return; }
   if (key === 'kmail') { _switchTab('mail'); return; }   // 메일: 기존 메일 페이지로 연결(2026-11-23, 새 화면을 만들지 않는다)
   const greeting = '안녕하세요! 나비 ' + item[1] + ' 서비스입니다. 원하시는 것을 말씀해 주세요.';
   _infraKey = null; _orgActivate({ key, label: item[1], sp: _ORG_SP[key] || null, infra: true }, greeting);
@@ -6328,7 +6347,7 @@ function _switchTab(name) {
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
   if (name === 'xokorea') _xkSwitch(_subGet('xk') || (document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo'));   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
   if (name === 'expert100k') _exSwitch(_subGet('ex') || 'overview');   // 10만 AI 전문가 — 위쪽 탭(개요 …)의 문서를 연다
-  if (name === 'bank') _bankShow(); if (name === 'stock') _stockShow(); if (name === 'insure') _insureShow(); if (name === 'emg') _emgShow(); if (name === 'pol') _polShow(); if (name === 'med') _medShow(); if (name === 'learn') { _learnShow(); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
+  if (name === 'bank') _bankShow(); if (name === 'stock') _stockShow(); if (name === 'insure') _insureShow(); if (name === 'emg') _emgShow(); if (name === 'pol') _polShow(); if (name === 'med') _medShow(); if (name === 'tax') _taxShow(); if (name === 'learn') { _learnShow(); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
