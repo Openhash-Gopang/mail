@@ -59,6 +59,8 @@ export const MAIL_FILES = new Set([
  "infra-sp.js",
  "insurance-app.js",
  "insurance.css",
+ "job-app.js",
+ "job.css",
  "learn-app.js",
  "learn-host.js",
  "learn-sp.js",
