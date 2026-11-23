@@ -10720,6 +10720,7 @@ window.addEventListener('message', async (e) => {
   const files = _embedFiles(d.files);
   const reply = (t) => HondiChat.post({ type: 'hondi-embed-ai-reply', id, text: String(t || '').slice(0, 1800) });
   if (!id || (!text && !files.length)) return;
+  HondiChat.post({ type: 'hondi-embed-ai-ack', id });   // 2026-11-23: 질문을 받았다는 즉시 확인 신호 — 패널(webapp)이 이 신호가 없으면 몇 초 안에 '연결되지 않았다'고 안내한다(hondi-embed-host 의 ack:1 로 알려 둔 호스트에만 적용)
   const _fbc = window.NaviFeedback && !files.length ? NaviFeedback.fromChat(text) : null;   // "신고: …"·"서류 요청: …"·"제안: …" 는 AI 를 거치지 않고 제보 창구로
   if (_fbc) { if (_fbc.kind === 'idea') { _switchTab('feedback'); reply('기능 개선 제안 게시판을 열었습니다. 채택되면 GDC로 보상합니다.'); } else { _fbOpen(_fbc.kind, _fbc.kind === 'newdoc' ? _fbc.text : '', _fbc.kind === 'bug' ? _fbc.text : ''); reply('제보 창을 열었습니다. 내용을 확인하고 “보내기”를 눌러 주세요.'); } return; }
   if (_embedBusy) { reply('앞의 요청을 처리하는 중입니다. 잠시 뒤 다시 보내 주세요.'); return; }
@@ -10818,7 +10819,7 @@ function _agentEntryRefresh() {
 }
 window._agentEntryRefresh = _agentEntryRefresh;
 </script>
-<script src="hondi-chat.js?v=20261107b"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261123a"></script><script src="infra-sp.js?v=20261123a"></script><script src="infra-host.js?v=20261123b"></script>
+<script src="hondi-chat.js?v=20261123a"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261123a"></script><script src="infra-sp.js?v=20261123a"></script><script src="infra-host.js?v=20261123b"></script>
 <script>
 /* 2026-11-23: #bank 처럼 해시로 직접 열거나 새로고침하면 위쪽 큰 스크립트가 InfraSP·InfraHost·HondiChat 보다 먼저 실행되어 _infraChatSync 가 조용히 건너뛰어졌다(우하단 대화창이 인프라 SP 가 아니라 기본 비서로 남음). 이 스크립트들이 모두 로드된 뒤, 지금 열려 있는 화면 이름으로 한 번 더 맞춘다. 모든 인프라 전용 화면에 공통으로 적용된다. */
 (function () {

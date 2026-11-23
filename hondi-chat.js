@@ -190,12 +190,12 @@
     if (!t || t.indexOf('tid-') === 0 || !e || Date.now() > e - 30000) return false;
     return post({ type: 'hondi-embed-auth', token: t, exp: e });
   }
-  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' }); if (S.spMsg) post(S.spMsg); postAuth(); }
+  function announce() { post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate', ack: 1 }); if (S.spMsg) post(S.spMsg); postAuth(); }
   /** 패널의 SP 를 바꾼다(각종 기관 선택). msg 가 null 이면 이 화면 기본 SP 위임으로 되돌린다. 페이지가 다시 로드돼도 announce() 가 다시 보낸다. */
   function setSp(msg) {
     S.spMsg = msg || null;
     if (S.mounted) ensureLoaded();   // 패널은 열지 않는다 — 대화는 메일 화면 안에서 보인다
-    post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate' });
+    post({ type: 'hondi-embed-host', v: 1, ai: S.spMsg ? 'self' : 'delegate', ack: 1 });
     post(S.spMsg || { type: 'hondi-embed-sp', sp: null });
   }
   /** 대화창에 AI 말풍선 한 줄을 보여 준다(모델 호출 없음). 창이 아직 로드 중이면 로드된 뒤 보낸다. */
