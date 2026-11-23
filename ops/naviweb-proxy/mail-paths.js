@@ -98,6 +98,8 @@ export const MAIL_FILES = new Set([
  "traffic.css",
  "user-name.css",
  "verdict-host.js",
+ "watch-app.js",
+ "watch.css",
  "whitepaper.html",
  "xo-korea.html",
  "xo.html"
