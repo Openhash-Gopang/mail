@@ -27,6 +27,8 @@ export const MAIL_FILES = new Set([
  "case-store.js",
  "case-sync.js",
  "case-ui.js",
+ "democracy-app.js",
+ "democracy.css",
  "desktop.html",
  "devlog.css",
  "devlog.js",
