@@ -17,6 +17,8 @@ export const MAIL_FILES = new Set([
  "attach-catalog.js",
  "bank-app.js",
  "bank.css",
+ "biz-app.js",
+ "biz.css",
  "butterfly-landing.js",
  "case-assist.js",
  "case-core.js",
