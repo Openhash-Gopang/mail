@@ -133,4 +133,4 @@
 .mkt .chk input{width:20px;height:20px;margin-top:1px;flex:none;accent-color:var(--pri)}
 .mkt .gl{border-top:1px solid var(--line);padding:10px 0;font-size:14px}.mkt .gl:first-child{border-top:0}.mkt .gl b{display:block;margin-bottom:2px}
 .mkt .tgt{display:flex;align-items:center;gap:6px;justify-content:flex-end}.mkt .tgt input{width:72px}
-
+.mkt .tbl tr.bad td{background:var(--lb);color:var(--l)}
