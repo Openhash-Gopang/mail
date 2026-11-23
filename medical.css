@@ -22,6 +22,7 @@
 .med .tab[aria-selected=true]{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
 .med .tab:focus-visible{outline-offset:-2px}
 .med .wrap{padding:0 0 24px}
+.med .sec{scroll-margin-top:72px;margin-bottom:32px}.med .sec+.sec{border-top:1px solid var(--m3-line,#D9DEE6);padding-top:24px}
 .med .back{background:none;border:0;color:var(--pri);font-size:14px;font-weight:500;padding:0 0 8px;border-radius:8px}
 .med .back:hover{text-decoration:underline}
 .med h1{font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-.2px}

@@ -102,7 +102,7 @@ test('CSS는 .ins 아래로 한정, 네트워크 호출 없음', () => {
 test('desktop.html: 보험은 전용 화면, 메일·법률은 기존 페이지로 연결', () => {
   assert.match(d, /tab-btn-insure/); assert.match(d, /insure-root/); assert.match(d, /_insureOpen/); assert.match(d, /key === 'kinsurance' && !_insureChat/);
   assert.match(d, /insurance-app\.js/); assert.match(d, /insurance\.css/); assert.match(d, /insure:mine/);
-  assert.match(d, /if \(key === 'kmail'\) \{ _switchTab\('mail'\); return; \}/);
-  assert.match(d, /if \(key === 'klaw'\) \{ _switchTab\('verdict'\); return; \}/);
+  assert.match(d, /if \(key === 'kmail'\) \{ _infraVia = key; _switchTab\('mail'\); return; \}/);
+  assert.match(d, /if \(key === 'klaw'\) \{ _infraVia = key; _switchTab\('verdict'\); return; \}/);
   assert.match(paths, /"insurance-app\.js"/); assert.match(paths, /"insurance\.css"/);
 });

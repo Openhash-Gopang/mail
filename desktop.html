@@ -1376,7 +1376,8 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 #tab-intro iframe{background:#fff;border-radius:10px}
 .side-logo{flex:none;display:block;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;cursor:pointer;padding:6px 0 10px 16px;line-height:0}
 .side-logo:hover{background:rgba(59,125,221,.08)}.side-logo:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
-#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback,#tab-btn-pricing,#tab-btn-learn,#tab-btn-bank,#tab-btn-stock,#tab-btn-insure,#tab-btn-emg,#tab-btn-pol,#tab-btn-med,#tab-btn-tax,#tab-btn-mkt,#tab-btn-trf{display:none!important}
+#tab-btn-home,#tab-btn-xokorea,#tab-btn-whitepaper,#tab-btn-feedback,#tab-btn-pricing,#tab-btn-learn,#tab-btn-bank,#tab-btn-stock,#tab-btn-insure,#tab-btn-emg,#tab-btn-pol,#tab-btn-med,#tab-btn-tax,#tab-btn-mkt,#tab-btn-trf,#tab-btn-infra{display:none!important}
+#infra-root{max-width:880px;margin:0 auto;padding:24px 16px}#infra-root h1{font-size:24px;font-weight:600;margin:0 0 8px}#infra-root .lead{color:var(--hint,#5b6676);margin:0 0 20px}.igen-card{border:1px solid #D9DEE6;border-radius:12px;padding:20px;background:var(--sur,#fff)}.igen-card p{margin:8px 0 16px;line-height:1.6}.igen-ex{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}.igen-ex button{border:1px solid #D9DEE6;background:var(--sur,#fff);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer}.igen-open{border:0;background:var(--pri,#3B7DDD);color:#fff;border-radius:999px;height:40px;padding:0 20px;font:inherit;font-weight:600;cursor:pointer}
 .side-group:has(#tab-btn-pricing){display:none}   /* 도움말 묶음은 비었다 — 플랜 업그레이드는 사용자 팝업으로 옮겼다 */   /* XO Korea 는 홈 화면 하단 중앙 링크로 옮겼다 — 화면 전환 코드가 쓰는 자리만 남겨 둔다 */
 .home-xo{position:fixed;left:72px;right:0;bottom:22px;display:none;justify-content:center;pointer-events:none;z-index:5}
 .home-xo a{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;color:var(--sub);font-size:14px;font-weight:500;text-decoration:none;cursor:pointer}
@@ -1655,7 +1656,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="side-group">
       <div class="side-label">도움말</div>
       <button id="tab-btn-whitepaper" class="nav-btn" data-label="Whitepaper" onclick="_switchTab('whitepaper')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Whitepaper</button>
-      <button id="tab-btn-learn" class="nav-btn" data-label="학습" onclick="_switchTab('learn')">학습</button> <button id="tab-btn-bank" class="nav-btn" data-label="은행" onclick="_switchTab('bank')">은행</button> <button id="tab-btn-stock" class="nav-btn" data-label="증권" onclick="_switchTab('stock')">증권</button> <button id="tab-btn-insure" class="nav-btn" data-label="보험" onclick="_switchTab('insure')">보험</button> <button id="tab-btn-emg" class="nav-btn" data-label="응급" onclick="_switchTab('emg')">응급</button> <button id="tab-btn-pol" class="nav-btn" data-label="치안" onclick="_switchTab('pol')">치안</button> <button id="tab-btn-med" class="nav-btn" data-label="의료" onclick="_switchTab('med')">의료</button> <button id="tab-btn-tax" class="nav-btn" data-label="세무" onclick="_switchTab('tax')">세무</button> <button id="tab-btn-mkt" class="nav-btn" data-label="시장" onclick="_switchTab('mkt')">시장</button> <button id="tab-btn-trf" class="nav-btn" data-label="교통" onclick="_switchTab('trf')">교통</button> <button id="tab-btn-pricing" class="nav-btn" data-label="플랜 업그레이드" onclick="_switchTab('pricing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 16.5V8M8 11.8L12 7.8l4 4"/></svg>플랜 업그레이드</button>
+      <button id="tab-btn-learn" class="nav-btn" data-label="학습" onclick="_switchTab('learn')">학습</button> <button id="tab-btn-bank" class="nav-btn" data-label="은행" onclick="_switchTab('bank')">은행</button> <button id="tab-btn-stock" class="nav-btn" data-label="증권" onclick="_switchTab('stock')">증권</button> <button id="tab-btn-insure" class="nav-btn" data-label="보험" onclick="_switchTab('insure')">보험</button> <button id="tab-btn-emg" class="nav-btn" data-label="응급" onclick="_switchTab('emg')">응급</button> <button id="tab-btn-pol" class="nav-btn" data-label="치안" onclick="_switchTab('pol')">치안</button> <button id="tab-btn-med" class="nav-btn" data-label="의료" onclick="_switchTab('med')">의료</button> <button id="tab-btn-tax" class="nav-btn" data-label="세무" onclick="_switchTab('tax')">세무</button> <button id="tab-btn-mkt" class="nav-btn" data-label="시장" onclick="_switchTab('mkt')">시장</button> <button id="tab-btn-trf" class="nav-btn" data-label="교통" onclick="_switchTab('trf')">교통</button> <button id="tab-btn-infra" class="nav-btn" data-label="인프라" onclick="_switchTab('infra')">인프라</button> <button id="tab-btn-pricing" class="nav-btn" data-label="플랜 업그레이드" onclick="_switchTab('pricing')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 16.5V8M8 11.8L12 7.8l4 4"/></svg>플랜 업그레이드</button>
       <button id="tab-btn-xokorea" class="nav-btn" data-label="XO Korea" onclick="_switchTab('xokorea')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg>
         XO Korea</button>
     </div>
@@ -2609,7 +2610,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
     <div id="expert100k-doc" role="tabpanel" aria-live="polite"></div>
   </div>
-  <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-tax" class="tab-panel"><div id="tx-root-host"></div></div> <div id="tab-mkt" class="tab-panel"><div id="mk-root-host"></div></div> <div id="tab-trf" class="tab-panel"><div id="tf-root-host"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
+  <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-tax" class="tab-panel"><div id="tx-root-host"></div></div> <div id="tab-mkt" class="tab-panel"><div id="mk-root-host"></div></div> <div id="tab-trf" class="tab-panel"><div id="tf-root-host"></div></div> <div id="tab-infra" class="tab-panel"><div id="infra-root"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
     <section class="yt-sec" aria-labelledby="yt-howto-h">
@@ -3575,7 +3576,7 @@ function _bankShow(view) {
     const r = document.getElementById('bank-root'); if (!r || !window.NaviBank) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviBank.on('ask', (t) => { _bankChat = true; try { _cmpOrgPick('gdc'); } finally { _bankChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviBank.on('ask', (t) => { _infraChatSync('bank'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviBank.mount(r, { view: view, guid: (typeof _gdcGuid === 'function' ? _gdcGuid() : ''), proxy: PROXY, onPlans: () => _switchTab('pricing') });
     } else { if (view) NaviBank.view(view); NaviBank.refresh(); }
   });
@@ -3596,7 +3597,7 @@ function _stockShow(view) {
     const r = document.getElementById('stock-root'); if (!r || !window.NaviStock) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviStock.on('ask', (t) => { _stockChat = true; try { _cmpOrgPick('kstock'); } finally { _stockChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviStock.on('ask', (t) => { _infraChatSync('stock'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviStock.mount(r, { view: view });
     } else if (view) NaviStock.view(view);
   });
@@ -3616,7 +3617,7 @@ function _insureShow(view) {
     const r = document.getElementById('insure-root'); if (!r || !window.NaviInsure) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviInsure.on('ask', (t) => { _insureChat = true; try { _cmpOrgPick('kinsurance'); } finally { _insureChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviInsure.on('ask', (t) => { _infraChatSync('insure'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviInsure.mount(r, { view: view });
     } else if (view) NaviInsure.view(view);
   });
@@ -3636,7 +3637,7 @@ function _emgShow(view) {
     const r = document.getElementById('emg-root'); if (!r || !window.NaviEmergency) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviEmergency.on('ask', (t) => { _emgChat = true; try { _cmpOrgPick('k119'); } finally { _emgChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviEmergency.on('ask', (t) => { _infraChatSync('emg'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviEmergency.mount(r, { view: view });
     } else if (view) NaviEmergency.view(view);
   });
@@ -3656,14 +3657,44 @@ function _polShow(view) {
     const r = document.getElementById('pol-root'); if (!r || !window.NaviPolice) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviPolice.on('ask', (t) => { _polChat = true; try { _cmpOrgPick('kpolice'); } finally { _polChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviPolice.on('ask', (t) => { _infraChatSync('pol'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviPolice.mount(r, { view: view });
     } else if (view) NaviPolice.view(view);
   });
 }
 function _polOpen(view) { _switchTab('pol'); _polShow(view); }
 // 나비웹 의료(2026-11-23): 인프라 AI → 의료를 고르면 의료 화면을 이 문서 안에 직접 그려 연다(medical.css·medical-app.js). 의료 기관·건강보험 연결, 질병 확률 계산, 제출·기록은 아직 연결되어 있지 않다(설계 단계). 진단·처방은 하지 않고 질병 이름·확률을 지어내지 않는다. 기록은 이 브라우저에만 저장.
-const _MED_V = '20261123a'; let _medChat = false;
+// ── 인프라 전용 화면의 우하단 대화 아이콘: 인프라별 전문가 SP v0.1(infra-sp.js)을 infra-host.js 가 대화창으로 연다 ──
+// 인프라 AI 에서 고른 인프라는 화면(탭)과 SP 를 함께 부른다. 화면은 같은 문서 안의 탭이고, SP 는 우하단 아이콘의 대화창이다.
+let _infraVia = null;   // 인프라 AI 에서 막 고른 인프라 키(전용 탭이 없는 메일·보안·법률·준비 중 인프라는 이 값으로 SP 를 켠다)
+const _INFRA_OWN = { bank: 'gdc', stock: 'kstock', insure: 'kinsurance', emg: 'k119', pol: 'kpolice', med: 'khealth', tax: 'ktax', mkt: 'kmarket', trf: 'ktraffic' };   // 전용 화면(탭 이름 → 인프라 키)
+function _infraViaTab(key) { return key === 'kmail' ? 'mail' : key === 'ksecurity' ? 'vault' : key === 'klaw' ? 'verdict' : 'infra'; }   // 인프라 키 → 화면(탭)
+function _infraChatSync(name) {
+  let key = _INFRA_OWN[name] || '';
+  if (!key && _infraVia && _infraViaTab(_infraVia) === name) key = _infraVia;
+  if (name !== 'learn' && _infraVia && _infraViaTab(_infraVia) !== name) _infraVia = null;
+  try {
+    if (!window.InfraHost || !window.InfraSP) return;
+    const c = key ? InfraSP.cfg(key) : null;
+    if (c) InfraHost.enter(c); else InfraHost.leave();
+  } catch (x) {}
+}
+/** 전용 화면이 아직 없는 인프라: 안내 화면 + SP 대화(우하단 아이콘). */
+function _infraRender(key) {
+  const root = document.getElementById('infra-root'); if (!root) return;
+  const item = _ORG_ITEMS.find(x => x[0] === key), name = item ? item[1] : '', ex = window.InfraSP ? InfraSP.examples(key) : [];
+  root.textContent = ''; { const nb = document.getElementById('tab-btn-infra'); if (nb) nb.setAttribute('data-label', name); }
+  const h1 = document.createElement('h1'); h1.textContent = '나비웹 ' + name; const lead = document.createElement('p'); lead.className = 'lead'; lead.textContent = _ORG_DESC[key] || '';
+  const card = document.createElement('div'); card.className = 'igen-card';
+  const b = document.createElement('b'); b.textContent = name + ' 전용 화면은 아직 준비 중입니다.';
+  const p1 = document.createElement('p'); p1.textContent = '우측 하단의 대화 아이콘을 누르면 ' + name + ' SP(' + (window.InfraSP ? InfraSP.VERSION : 'v0.1') + ')와 이야기할 수 있어요. 이 분야의 지식과 경험을 갖춘 전문가처럼 답하고, 송금·접수·신고 같은 실제 처리는 하지 않습니다.';
+  card.append(b, p1);
+  if (ex.length) { const row = document.createElement('div'); row.className = 'igen-ex'; ex.forEach(t => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = t; bt.onclick = () => { if (window.InfraHost) InfraHost.ask(t); }; row.appendChild(bt); }); card.appendChild(row); }
+  const open = document.createElement('button'); open.type = 'button'; open.className = 'igen-open'; open.textContent = name + ' SP 대화 열기'; open.onclick = () => { if (window.InfraHost) InfraHost.ask(''); }; card.appendChild(open);
+  root.append(h1, lead, card);
+}
+function _infraOpen(key) { _infraVia = key; _infraRender(key); _switchTab('infra'); }
+const _MED_V = '20261123b'; let _medChat = false;
 function _medLoad(cb) {
   if (window.NaviMedical) { cb(); return; }
   if (!document.getElementById('med-css')) { const l = document.createElement('link'); l.id = 'med-css'; l.rel = 'stylesheet'; l.href = 'medical.css?v=' + _MED_V; document.head.appendChild(l); }
@@ -3676,8 +3707,8 @@ function _medShow(view) {
     const r = document.getElementById('med-root'); if (!r || !window.NaviMedical) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviMedical.on('ask', (t) => { _medChat = true; try { _cmpOrgPick('khealth'); } finally { _medChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
-      NaviMedical.mount(r, { view: view });
+      NaviMedical.on('ask', (t) => { _infraChatSync('med'); if (window.InfraHost) InfraHost.ask(t); });   // 의료 대화는 우하단 아이콘의 의료 SP 대화창에서
+      NaviMedical.mount(r, { view: 'all', section: view });   // 한 페이지에 모든 기능을 쌓고, 고른 칸으로 옮겨 간다
     } else if (view) NaviMedical.view(view);
   });
 }
@@ -3695,7 +3726,7 @@ function _taxShow(view) {
     const r = document.getElementById('tx-root-host'); if (!r || !window.NaviTax) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviTax.on('ask', (t) => { _taxChat = true; try { _cmpOrgPick('ktax'); } finally { _taxChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviTax.on('ask', (t) => { _infraChatSync('tax'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviTax.mount(r, { view: view });
     } else if (view) NaviTax.view(view);
   });
@@ -3714,7 +3745,7 @@ function _mktShow(view) {
     const r = document.getElementById('mk-root-host'); if (!r || !window.NaviMarket) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviMarket.on('ask', (t) => { _mktChat = true; try { _cmpOrgPick('kmarket'); } finally { _mktChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviMarket.on('ask', (t) => { _infraChatSync('mkt'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviMarket.mount(r, { view: view });
     } else if (view) NaviMarket.view(view);
   });
@@ -3733,7 +3764,7 @@ function _trfShow(view) {
     const r = document.getElementById('tf-root-host'); if (!r || !window.NaviTraffic) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviTraffic.on('ask', (t) => { _trfChat = true; try { _cmpOrgPick('ktraffic'); } finally { _trfChat = false; } const i = document.getElementById('cmp-input'); if (i && !i.disabled) { i.value = t; try { _kmailAutoResize(i); _cmpChatUpdateSendState(); i.focus(); } catch (x) {} } });
+      NaviTraffic.on('ask', (t) => { _infraChatSync('trf'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviTraffic.mount(r, { view: view });
     } else if (view) NaviTraffic.view(view);
   });
@@ -4169,13 +4200,15 @@ function _orgNotice(name) { return name + ' 서비스의 대화 상담은 준비
 /** 인프라 AI를 고르면 ① 입력창이 그 기관 SP 로 전환되고 ② 나비웹 대화창이 그 기관 SP 로 전환된다. */
 function _cmpOrgPick(key) {
   _cmpOrgClose();
-  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return; if (key === 'kschool') { _learnOpen('subjects'); return; } if (key === 'gdc' && !_bankChat) { _bankOpen('wallet'); return; } if (key === 'kstock' && !_stockChat) { _stockOpen('portfolio'); return; } if (key === 'kinsurance' && !_insureChat) { _insureOpen('mine'); return; } if (key === 'k119' && !_emgChat) { _emgOpen('contact'); return; } if (key === 'kpolice' && !_polChat) { _polOpen('report'); return; } if (key === 'ksecurity') { _switchTab('vault'); return; } if (key === 'khealth' && !_medChat) { _medOpen('profile'); return; } if (key === 'ktraffic' && !_trfChat) { _trfOpen('principle'); return; } if (key === 'kmarket' && !_mktChat) { _mktOpen('principle'); return; } if (key === 'ktax' && !_taxChat) { _taxOpen('acct'); return; } if (key === 'klaw') { _switchTab('verdict'); return; }
-  if (key === 'kmail') { _switchTab('mail'); return; }   // 메일: 기존 메일 페이지로 연결(2026-11-23, 새 화면을 만들지 않는다)
+  const item = _ORG_ITEMS.find(x => x[0] === key); if (!item) return; if (key === 'kschool') { _learnOpen('subjects'); return; } if (key === 'gdc' && !_bankChat) { _bankOpen('wallet'); return; } if (key === 'kstock' && !_stockChat) { _stockOpen('portfolio'); return; } if (key === 'kinsurance' && !_insureChat) { _insureOpen('mine'); return; } if (key === 'k119' && !_emgChat) { _emgOpen('contact'); return; } if (key === 'kpolice' && !_polChat) { _polOpen('report'); return; } if (key === 'ksecurity') { _infraVia = key; _switchTab('vault'); return; } if (key === 'khealth' && !_medChat) { _medOpen('profile'); return; } if (key === 'ktraffic' && !_trfChat) { _trfOpen('principle'); return; } if (key === 'kmarket' && !_mktChat) { _mktOpen('principle'); return; } if (key === 'ktax' && !_taxChat) { _taxOpen('acct'); return; } if (key === 'klaw') { _infraVia = key; _switchTab('verdict'); return; }
+  if (key === 'kmail') { _infraVia = key; _switchTab('mail'); return; }   // 메일: 기존 메일 페이지로 연결(2026-11-23, 새 화면을 만들지 않는다)
+  if (window.InfraSP && InfraSP.has(key)) { _infraOpen(key); return; }   // 나머지 인프라도 안내 화면 + 우하단 아이콘의 전문가 SP(v0.1)를 바로 부른다(2026-11-23)
   const greeting = '안녕하세요! 나비 ' + item[1] + ' 서비스입니다. 원하시는 것을 말씀해 주세요.';
   _infraKey = null; _orgActivate({ key, label: item[1], sp: _ORG_SP[key] || null, infra: true }, greeting);
 }
 /** 기관·전문가 공통: 입력창 모드를 'org' 로, 나비웹 대화창을 그 SP 로 전환한다. */
 function _orgActivate(o, greeting) {
+  if (window.InfraHost) InfraHost.leave();   // 우하단 아이콘의 의료·법률 SP 대화가 켜져 있었다면 먼저 닫는다
   _org = Object.assign({ ready: false, queue: [], pending: null }, o);
   const was = _cmpMode === 'org';
   if (!was) { if (!_cmpSetMode('org')) { _org = null; return; } } else { document.getElementById('cmp-thread').innerHTML = ''; _cmpSyncModeUi(); }
@@ -6385,7 +6418,7 @@ function _switchTab(name) {
   if (name === 'vault') { const f = document.getElementById('vault-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _PDV_URL + '?embed=mail'); }   // 내 데이터 금고(PDV) — hondi 의 pdv.html 을 그대로 끼워 쓴다(한 곳만 고치면 되도록)
   if (name === 'xokorea') _xkSwitch(_subGet('xk') || (document.getElementById('xk-tab-history').classList.contains('active') ? 'history' : 'xo'));   // XO Korea → OpenHash → 나비웹 계통 문서 — 같은 저장소의 xo-korea.html
   if (name === 'expert100k') _exSwitch(_subGet('ex') || 'overview');   // 10만 AI 전문가 — 위쪽 탭(개요 …)의 문서를 연다
-  if (name === 'bank') _bankShow(); if (name === 'stock') _stockShow(); if (name === 'insure') _insureShow(); if (name === 'emg') _emgShow(); if (name === 'pol') _polShow(); if (name === 'med') _medShow(); if (name === 'tax') _taxShow(); if (name === 'mkt') _mktShow(); if (name === 'trf') _trfShow(); if (name === 'learn') { _learnShow(); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
+  _infraChatSync(name); if (name === 'bank') _bankShow(); if (name === 'stock') _stockShow(); if (name === 'insure') _insureShow(); if (name === 'emg') _emgShow(); if (name === 'pol') _polShow(); if (name === 'med') _medShow(); if (name === 'tax') _taxShow(); if (name === 'mkt') _mktShow(); if (name === 'trf') _trfShow(); if (name === 'learn') { _learnShow(); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
   if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
@@ -10681,7 +10714,7 @@ function _agentEntryRefresh() {
 }
 window._agentEntryRefresh = _agentEntryRefresh;
 </script>
-<script src="hondi-chat.js?v=20261107b"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261122a"></script>
+<script src="hondi-chat.js?v=20261107b"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261123a"></script><script src="infra-sp.js?v=20261123a"></script><script src="infra-host.js?v=20261123b"></script>
 <script>
 /* 내 데이터 금고: ① iframe 높이를 내용에 맞춰 iframe 자체 스크롤바를 없앤다 ② 우측 하단 대화창 아이콘이 이 탭에서는 '나만의 AI 비서(나비)'를 연다 */
 (function () {

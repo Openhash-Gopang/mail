@@ -50,7 +50,7 @@ export const MAIL_FILES = new Set([
  "icons/nb-wing-front.png",
  "index.html",
  "learn-app.js",
- "learn-host.js",
+ "learn-host.js", "infra-sp.js", "infra-host.js",
  "learn-sp.js",
  "learn.css",
  "learn.html",

@@ -80,7 +80,7 @@ test('CSS는 .pol 아래로 한정, 네트워크 호출 없음', () => {
 test('desktop.html: 치안 전용 화면, 이름은 치안, 보안은 PDV 로 연결', () => {
   assert.match(d, /tab-btn-pol/); assert.match(d, /pol-root/); assert.match(d, /_polOpen/); assert.match(d, /key === 'kpolice' && !_polChat/);
   assert.match(d, /\['kpolice','치안'\]/); assert.doesNotMatch(d, /\['kpolice','치안 신고'\]/); assert.match(d, /pol:report/);
-  assert.match(d, /if \(key === 'ksecurity'\) \{ _switchTab\('vault'\); return; \}/);
+  assert.match(d, /if \(key === 'ksecurity'\) \{ _infraVia = key; _switchTab\('vault'\); return; \}/);
   assert.match(d, /police-app\.js/); assert.match(d, /police\.css/);
   assert.match(paths, /"police-app\.js"/); assert.match(paths, /"police\.css"/);
 });

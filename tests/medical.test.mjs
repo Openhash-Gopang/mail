@@ -99,3 +99,23 @@ test('desktop.html: 의료 전용 화면 연결', () => {
   assert.match(d, /medical-app\.js/); assert.match(d, /medical\.css/); assert.match(d, /med:profile/);
   assert.match(paths, /"medical-app\.js"/); assert.match(paths, /"medical\.css"/);
 });
+
+test('화면: 한 페이지(all) — 모든 기능이 세로로 쌓이고 칸 id가 겹치지 않는다', { skip }, () => {
+  const p = page('all'); const secs = [...p.doc.querySelectorAll('section.sec')].map((s) => s.id);
+  assert.deepEqual(secs, ['med-sec-profile', 'med-sec-submit', 'med-sec-principle', 'med-sec-rank', 'med-sec-visits']);
+  const ids = [...p.doc.querySelectorAll('[id]')].map((e) => e.id); assert.equal(ids.length, new Set(ids).size);
+  assert.match(p.txt(), /119/); assert.match(p.txt(), /진료 참고 목록/); assert.match(p.txt(), /진료 기록/); assert.match(p.txt(), /우측 하단의 대화 아이콘/);
+  assert.equal(p.fetched(), 0);
+});
+
+test('화면: all 에서 칸 이동은 다시 그리지 않고, 대화창 열기는 ask 소식을 낸다', { skip }, () => {
+  const p = page('all'); let scrolled = 0; p.doc.getElementById('med-sec-rank').scrollIntoView = () => { scrolled++; };
+  p.N.view('rank'); assert.equal(scrolled, 1); assert.ok(p.doc.getElementById('med-sec-profile'));
+  p.btn('대화창 열기').click(); assert.equal(p.asks.length, 1); assert.equal(p.asks[0], '');
+  type(p, 'med-st', '허리가 아파요'); p.btns('추가')[0].click(); assert.match(p.txt(), /허리가 아파요/); assert.ok(p.doc.getElementById('med-sec-visits'));
+});
+
+test('desktop.html: 의료는 한 페이지 + 우하단 의료 SP 대화창', { skip }, () => {
+  assert.ok(d.includes("NaviMedical.mount(r, { view: 'all', section: view })")); assert.ok(d.includes("_INFRA_OWN") && d.includes("med: 'khealth'")); assert.ok(d.includes("_infraChatSync('med')"));
+  assert.ok(d.includes('<script src="infra-host.js')); assert.ok(paths.includes('"infra-host.js"'));
+});

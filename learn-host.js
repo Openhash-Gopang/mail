@@ -14,6 +14,7 @@ function _learnEl(id) { return document.getElementById(id); }
 function _learnEnter() {
   if (_learn.active) return;
   if (!window.HondiChat || !window.LearnSP) return;
+  if (window.InfraHost) InfraHost.leave();   // 대화창은 하나 — 의료·법률 SP 대화를 쓰고 있었다면 먼저 닫는다
   if (typeof _prof !== 'undefined' && _prof.active) _profLeave();
   if (typeof _org !== 'undefined' && _org) _orgLeave();   // 대화창은 하나 — 기관·전문가 대화를 쓰고 있었다면 먼저 닫는다
   try { if (HondiChat.isOpen()) HondiChat.close(); } catch (x) {}
@@ -128,7 +129,7 @@ function _learnAsk(text) {   // 화면 안의 '교수에게 묻기' — 대화�
   const p = _learnEl('lchat-panel'); if (p && !p.classList.contains('open')) _lchatToggle();
   const i = _learnEl('lchat-in'), t = typeof text === 'string' ? text.slice(0, 300) : ''; if (i && t) { i.value = t; try { i.focus(); } catch (x) {} }
 }
-window.LearnHost = { enter: _learnEnter, leave: _learnLeave, ask: _learnAsk, bind: _learnBind };
+window.LearnHost = { enter: _learnEnter, leave: _learnLeave, ask: _learnAsk, bind: _learnBind, active: function () { return _learn.active; } };
 // 이미 학습 화면이 열려 있다면(새로 고침 복원 등) 곧바로 켠다
 if (document.getElementById('tab-learn') && document.getElementById('tab-learn').classList.contains('active')) _learnEnter();
 })();
