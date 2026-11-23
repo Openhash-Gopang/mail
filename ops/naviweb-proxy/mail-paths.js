@@ -80,6 +80,8 @@ export const MAIL_FILES = new Set([
  "market.css",
  "medical-app.js",
  "medical.css",
+ "meet-app.js",
+ "meet.css",
  "navi-intro.html",
  "naviweb-guide.html",
  "openhash.html",
