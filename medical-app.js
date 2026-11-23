@@ -37,7 +37,8 @@ function clean(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001f
 // ── 저장 ──
 var KEY = 'navi-med-v1', MAXL = 100;
 var TABS = [['profile', '내 의료 정보'], ['submit', '제출 범위'], ['principle', '의료 인프라 원리'], ['rank', '진료 참고 목록'], ['visits', '진료 기록']];
-var VIEWS = TABS.map(function (t) { return t[0]; });
+var SECS = TABS.map(function (t) { return t[0]; });
+var VIEWS = SECS.concat(['all']);   // 'all' = 한 페이지에 모든 기능을 세로로 쌓은 화면(인프라 의료의 기본). 나머지는 한 화면씩 보는 방식
 /** 의료 기관이 요청할 수 있는 데이터 종류. 이름·주민번호·정확한 주소 같은 신원 정보는 어떤 경우에도 제출하지 않는다(익명화). */
 var CATS = [['stmt', '진술(증상)'], ['vit', '생체 정보'], ['hist', '질병 이력'], ['fam', '가족력'], ['life', '생활 습관']];
 var LIFE = { smoke:['안 함', '과거에 함', '현재 함'], drink:['안 함', '주 1~2회', '주 3회 이상'], exer:['거의 안 함', '주 1~2회', '주 3회 이상'] };
@@ -55,7 +56,10 @@ function field(id, label, val, o) {
 function empty(t, b) { return h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'empty', text:t }), b ? h('div', { class:'rowf', style:'justify-content:center' }, [b]) : null]); }
 
 function head(title, lead) { return [h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null]; }
-function go(v) { S.view = v; S.err = {}; S.msg = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) {} }
+function go(v) {
+  if (S.view === 'all' && SECS.indexOf(v) >= 0) { var el = $('med-sec-' + v); if (el) { try { el.scrollIntoView({ block:'start', behavior:'smooth' }); } catch (e) { el.scrollIntoView(); } } return; }   // 한 페이지 화면에서는 그 칸으로 옮겨 간다
+  S.view = v; S.err = {}; S.msg = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) {}
+}
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
@@ -114,7 +118,7 @@ function rankCandidates(list) {
 function topbar() {
   return h('div', { class:'topin' }, [
     h('div', { class:'brand' }, [h('div', {}, [h('b', { text:'나비웹 의료' }), h('span', { text:'인프라 AI · 의료' })])]),
-    h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
+    h('div', { class:'tabs', role:S.view === 'all' ? 'navigation' : 'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:S.view === 'all' ? null : 'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function warn() {
   return h('div', { class:'note', role:'alert', style:'margin:16px 0', id:'med-warn' }, [h('b', { text:'위급하면 119에 먼저 전화하세요. ' }), '이 화면은 진단이나 처방을 하지 않고 의료 기관과 연결되어 있지 않습니다. 진단·처치·처방은 의료진이 합니다.']);
@@ -231,15 +235,23 @@ function viewVisits() {
   return kids;
 }
 
+/** 한 페이지 화면: 내 의료 정보 → 제출 범위 → 의료 인프라 원리 → 진료 참고 목록 → 진료 기록을 한 줄로 쌓는다. 대화는 화면 밖(우하단 아이콘)에서 한다. */
+function viewAll() {
+  var out = [h('div', { class:'note info', id:'med-chat-hint', style:'margin:0 0 16px' }, [h('span', { text:'의료 SP와 이야기하려면 우측 하단의 대화 아이콘을 누르세요. ' }), btn('대화창 열기', 'sm quiet', function () { ask(''); })])];
+  [['profile', viewProfile], ['submit', viewSubmit], ['principle', viewPrinciple], ['rank', viewRank], ['visits', viewVisits]].forEach(function (p) {
+    var sec = h('section', { id:'med-sec-' + p[0], class:'sec' }); p[1]().forEach(function (k) { if (k && !(out.length > 1 && k.id === 'med-warn')) sec.appendChild(k); }); out.push(sec);   // 위급 안내(119)는 맨 위 한 번만
+  });
+  return out;
+}
 function render() {
   var root = $('med-root'), tp = $('med-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'submit' ? viewSubmit() : S.view === 'principle' ? viewPrinciple() : S.view === 'rank' ? viewRank() : S.view === 'visits' ? viewVisits() : viewProfile();
+  var kids = S.view === 'all' ? viewAll() : S.view === 'submit' ? viewSubmit() : S.view === 'principle' ? viewPrinciple() : S.view === 'rank' ? viewRank() : S.view === 'visits' ? viewVisits() : viewProfile();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
 function nav(a) {
   var d = a && typeof a['do'] === 'string' ? a['do'] : '';
-  if (VIEWS.indexOf(d) >= 0) { go(d); return reply(true, TABS[VIEWS.indexOf(d)][1] + ' 화면으로 이동했습니다.'); }
+  if (SECS.indexOf(d) >= 0) { go(d); return reply(true, TABS[SECS.indexOf(d)][1] + ' 화면으로 이동했습니다.'); }
   return reply(false, '지원하지 않는 요청입니다.');
 }
 function mount(el, o) {
@@ -247,6 +259,7 @@ function mount(el, o) {
   M = el; el.textContent = ''; el.classList.add('med'); S.p = { st:[], vit:[], hist:[], fam:[], life:{} }; S.share = {}; S.req = {}; S.vlist = []; S.err = {}; S.msg = ''; load();
   [h('div', { id:'med-top' }), h('div', { class:'wrap', id:'med-root' })].forEach(function (x) { el.appendChild(x); });
   S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'profile'; render();
+  if (S.view === 'all' && SECS.indexOf(o.section) >= 0) setTimeout(function () { go(o.section); }, 0);
 }
 window.NaviMedical = {
   mount:mount,
