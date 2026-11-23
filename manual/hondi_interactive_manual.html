@@ -1464,7 +1464,21 @@ function kgovBuildApp(root) {
     kgovFileCategory(body, 'prompts/gov-tree/09-national/other/');
   }));
 }
-function renderAll() { renderHeader(); renderTierTabs(); renderChapterTabs(); renderContent(); }
+/* 새로 고침해도 보던 장에 머문다: 주소 해시(#ch=장id)가 우선, 없으면 마지막으로 본 장(localStorage). 해시는 공유 링크로도 쓴다. */
+var POS_KEY = 'naviweb_manual_pos_v1';
+function savePos() {
+  try { localStorage.setItem(POS_KEY, currentChapterId); } catch (e) { /* 저장 불가 */ }
+  try { if (!window.__naviManualRoot && history.replaceState) history.replaceState(null, '', '#ch=' + encodeURIComponent(currentChapterId)); } catch (e) { /* 해시 불가 */ }
+}
+function restorePos() {
+  var id = null, m = window.__naviManualRoot ? null : /[#&]ch=([^&]+)/.exec(location.hash || '');   // 다른 페이지에 끼워 넣은 경우엔 그 페이지의 해시를 건드리지 않는다
+  if (m) { try { id = decodeURIComponent(m[1]); } catch (e) { id = null; } }
+  if (!id) { try { id = localStorage.getItem(POS_KEY); } catch (e) { id = null; } }
+  var ch = null; CHAPTERS.forEach(function (c) { if (c.id === id) ch = c; });
+  if (ch) { currentTier = ch.tier; currentChapterId = ch.id; }
+}
+function renderAll() { renderHeader(); renderTierTabs(); renderChapterTabs(); renderContent(); savePos(); }
+restorePos();
 renderAll();
 DOC.getElementById('chScrim').addEventListener('click', function () { setPanel(false); });
 DOC.getElementById('cpClose').addEventListener('click', function () { setPanel(false); });
