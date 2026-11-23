@@ -7,6 +7,7 @@
  *  - 첫째, 그 물품·서비스가 사용자에게 실제로 필요한지 판단하고 불필요한 구매의 자제를 요청한다.
  *  - 둘째, 은행 등 금융 인프라와 협업해 사용자가 팔려는 물품·서비스를 시장 인프라가 먼저 사고 대금을 차등 지급한다.
  *    예) 급히 부동산을 팔려는 사용자: 감정 평가 후 예상 매각 금액의 10~50%를 선지급, 나머지는 매각이 성사된 뒤 지급하고 금융 인프라가 부과한 이자를 차감한다.
+ *  - 셋째(2026-11-24, 주피터 지시), 블록체인 기반의 상호 인증·잔고(balance) 검증·장부 기록: 구매자·판매자가 같은 내용에 서명해야 거래가 인정되고, 기록 전에 구매자 잔고를 장부로 다시 계산해 확인하며, 앞 블록 해시를 품은 블록으로 이어 붙인다('거래 인증·장부' 탭, 체험용·한 브라우저 안).
  * 이 화면은 위 원리 가운데 계산할 수 있는 부분을 사용자가 넣은 값으로 계산해 보여 준다:
  *  fairPrice(비교 가격 대비 가격 편차), qualityRate, satisfaction, needCheck(구매 필요성 점검), presale(선지급·이자·잔금).
  * 무엇이 실제이고 무엇이 아닌가(화면에도 그대로 적는다):
@@ -38,11 +39,11 @@ function clean(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001f
 
 // ── 저장 ──
 var KEY = 'navi-market-v1', MAXP = 100;
-var TABS = [['principle', '시장 원리'], ['eval', '상품 평가'], ['need', '필요 판단'], ['presale', '선구매']];
+var TABS = [['principle', '시장 원리'], ['eval', '상품 평가'], ['need', '필요 판단'], ['presale', '선구매'], ['ledger', '거래 인증·장부']];
 var VIEWS = TABS.map(function (t) { return t[0]; });
 var KINDS = ['부동산', '물품', '서비스'], STATES = ['검토 중', '매각 완료'];
 var M = null, LS = {};
-var S = { view:'principle', list:[], err:{}, msg:'',
+var S = { view:'principle', list:[], ledger:[], lg:newLg(), err:{}, msg:'',
   fp:{ refs:'', price:'', th:'30' }, ql:{ total:'', met:'' }, sat:{ r:'' },
   nd:{ price:'', budget:'', owned:'no', uses:'often', plan:'plan', alt:'no' },
   ps:{ item:'', kind:'부동산', value:'', rate:'30', annual:'', days:'', actual:'' } };
@@ -75,14 +76,14 @@ function stepsCard(title, st, foot) {
 
 
 function load() {
-  try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return; S.list = (Array.isArray(v.list) ? v.list : []).map(fixP).filter(Boolean).slice(0, MAXP); } catch (e) {}
+  try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return; S.list = (Array.isArray(v.list) ? v.list : []).map(fixP).filter(Boolean).slice(0, MAXP); S.ledger = (Array.isArray(v.ledger) ? v.ledger : []).filter(function (b) { return b && typeof b === 'object'; }).slice(0, MAXB); } catch (e) {}   // 장부는 걸러 내지 않고 그대로 읽는다 — 고쳐졌으면 검증에서 드러나야 한다
 }
 function fixP(x) {
   if (!x || typeof x !== 'object' || KINDS.indexOf(x.kind) < 0 || STATES.indexOf(x.st) < 0) return null;
   var v = Number(x.value), r = Number(x.rate); if (!(v > 0) || v > 1e15 || Math.floor(v) !== v || !(r >= 10 && r <= 50)) return null;
   return { id:clean(x.id, 20) || uid(), item:clean(x.item, 40), kind:x.kind, value:v, rate:r, adv:Math.round(v * r / 100), st:x.st, d:/^\d{4}-\d{2}-\d{2}$/.test(x.d) ? x.d : '' };
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ list:S.list })); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ list:S.list, ledger:S.ledger })); } catch (e) {} }
 
 /** 가격 공정성: 사용자가 넣은 비교 가격(3개 이상)의 중앙값 대비 편차. th(%) 이상 벗어나면 공정 범위 밖. */
 function fairPrice(refs, price, th) {
@@ -121,12 +122,207 @@ function presale(value, rate, annual, days, actual) {
 }
 function snum(v) { var s = String(v == null ? '' : v).replace(/[,\s원]/g, ''); return /^\d+$/.test(s) ? Number(s) : NaN; }
 
+// ── 거래 인증 · 잔고 검증 · 장부 기록 (블록체인 방식: 서명으로 인증하고, 해시로 이어 붙인 장부) ──
+// 원리: ① 구매자·판매자가 같은 거래 내용에 각자 서명(ECDSA P-256)해야 거래가 인정된다(상호 인증).
+//       ② 기록하기 전에 구매자 잔고가 거래 금액 이상인지 장부를 처음부터 다시 계산해 확인한다(잔고 검증).
+//       ③ 거래는 앞 블록의 해시를 품은 블록으로 이어 붙여 기록한다 — 한 칸만 고쳐도 뒤가 모두 어긋난다(장부 기록).
+// 이 화면의 장부는 한 브라우저 안의 체험용이다. 여러 나비가 같은 장부를 나눠 갖고 맞춰 보는 분산 장부, 실제 GDC 잔고 연결, 실제 지급은 설계 단계다.
+var MAXB = 200, ZERO = '0000000000000000000000000000000000000000000000000000000000000000';
+var TERM_LABELS = ['품목', '수량', '단가', '구매자', '판매자', '거래일', '거래번호'];
+function subtle() { try { var c = window.crypto || window.msCrypto; return c && c.subtle ? c.subtle : null; } catch (e) { return null; } }
+function enc(s) { return new TextEncoder().encode(String(s)); }
+function toHex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join(''); }
+function toB64(buf) { var s = '', a = new Uint8Array(buf), i; for (i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); }
+function fromB64(t) { var s = atob(String(t)), a = new Uint8Array(s.length), i; for (i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+function sha256Hex(s) { var sb = subtle(); if (!sb) return Promise.reject(new Error('nosubtle')); return sb.digest('SHA-256', enc(s)).then(toHex); }
+function termsArr(t) { t = t || {}; return [clean(t.item, 40), Number(t.qty), Number(t.price), clean(t.buyer, 20), clean(t.seller, 20), clean(t.d, 10), clean(t.n, 30)]; }
+function canonTerms(t) { return JSON.stringify(termsArr(t)); }
+function parseSlip(t) {
+  if (!t || typeof t !== 'object') return null;
+  var q = snum(t.qty), p = snum(t.price), by = clean(t.buyer, 20), se = clean(t.seller, 20), it = clean(t.item, 40);
+  if (!it || !by || !se || by === se || !(q >= 1 && q <= 1e5) || !(p >= 1 && p <= 1e9) || !clean(t.n, 30)) return null;
+  return { item:it, qty:q, price:p, total:q * p, buyer:by, seller:se };
+}
+function newKeys() {
+  var sb = subtle(); if (!sb) return Promise.reject(new Error('nosubtle'));
+  return sb.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign', 'verify']).then(function (kp) {
+    return sb.exportKey('jwk', kp.publicKey).then(function (j) { return { priv:kp.privateKey, pub:{ kty:'EC', crv:'P-256', x:j.x, y:j.y } }; });
+  });
+}
+function fingerprint(pub) { return sha256Hex(String(pub && pub.x) + '.' + String(pub && pub.y)).then(function (x) { return x.slice(0, 8); }); }
+function signText(priv, text) { return subtle().sign({ name:'ECDSA', hash:'SHA-256' }, priv, enc(text)).then(toB64); }
+function verifySig(pub, sig, text) {
+  var sb = subtle(); if (!sb || !pub || typeof sig !== 'string' || !sig) return Promise.resolve(false);
+  return sb.importKey('jwk', { kty:'EC', crv:'P-256', x:String(pub.x), y:String(pub.y), ext:true }, { name:'ECDSA', namedCurve:'P-256' }, false, ['verify'])
+    .then(function (k) { return sb.verify({ name:'ECDSA', hash:'SHA-256' }, k, fromB64(sig), enc(text)); }).catch(function () { return false; });
+}
+// 상호 인증: 두 전표의 내용이 같고, 구매자·판매자 서명이 각자 그 내용에 대해 유효해야 한다.
+function mutualAuth(b, s) {
+  if (!b || !s || !b.sig || !s.sig || !b.terms || !s.terms) return Promise.resolve({ ok:false, code:'nosig', msg:'구매자와 판매자가 모두 서명해야 해요.' });
+  var ab = termsArr(b.terms), as = termsArr(s.terms), cb = JSON.stringify(ab), cs = JSON.stringify(as);
+  if (cb !== cs) { var diff = TERM_LABELS.filter(function (l, i) { return ab[i] !== as[i]; }); return Promise.resolve({ ok:false, code:'diff', msg:'두 전표의 내용이 달라요(' + diff.join('·') + '). 같은 내용에 서명해야 해요.' }); }
+  return Promise.all([verifySig(b.pub, b.sig, cb), verifySig(s.pub, s.sig, cs)]).then(function (r) {
+    if (!r[0]) return { ok:false, code:'badsig', msg:'구매자의 서명이 이 내용과 맞지 않아요.' };
+    if (!r[1]) return { ok:false, code:'badsig', msg:'판매자의 서명이 이 내용과 맞지 않아요.' };
+    return { ok:true, code:'ok', msg:'상호 인증 성공 — 두 사람이 같은 내용에 서명했어요.' };
+  });
+}
+function bodyKey(kind, b) {
+  b = b || {};
+  if (kind === 'deposit') return JSON.stringify([clean(b.acct, 20), Number(b.amt)]);
+  return JSON.stringify([canonTerms(b.terms), b.bpub && b.bpub.x, b.bpub && b.bpub.y, b.spub && b.spub.x, b.spub && b.spub.y, b.bsig, b.ssig]);
+}
+function hashOf(prev, i, kind, t, body) { return sha256Hex(String(prev) + '|' + i + '|' + kind + '|' + String(t) + '|' + bodyKey(kind, body)); }
+function mkBlock(chain, kind, body) {
+  var prev = chain.length ? chain[chain.length - 1].hash : ZERO, i = chain.length, t = new Date().toISOString();
+  return hashOf(prev, i, kind, t, body).then(function (hh) { return { i:i, kind:kind, t:t, prev:prev, body:body, hash:hh }; });
+}
+// 장부를 처음부터 다시 읽는다: 블록 이음·해시, 거래 서명, 그 시점의 잔고를 모두 확인하고 잔고를 다시 계산한다.
+function verifyLedger(blocks) {
+  var bal = {}, prev = ZERO, i = 0;
+  function fail(k, why) { return { ok:false, bad:k, why:why, bal:bal, n:blocks.length }; }
+  function step() {
+    if (i >= blocks.length) return Promise.resolve({ ok:true, bad:-1, why:'', bal:bal, n:blocks.length });
+    var b = blocks[i], k = i;
+    if (!b || typeof b !== 'object' || b.i !== k || (b.kind !== 'deposit' && b.kind !== 'trade') || !b.body || typeof b.body !== 'object') return Promise.resolve(fail(k, '블록 형식이 맞지 않아요.'));
+    if (b.prev !== prev) return Promise.resolve(fail(k, '앞 블록과의 이음이 끊어졌어요.'));
+    return hashOf(b.prev, b.i, b.kind, b.t, b.body).then(function (hh) {
+      if (hh !== b.hash) return fail(k, '내용이 기록 당시와 달라요(해시가 맞지 않아요).');
+      if (b.kind === 'deposit') {
+        var a = Number(b.body.amt), ac = clean(b.body.acct, 20);
+        if (!ac || !(a >= 1 && a <= 1e13) || Math.floor(a) !== a) return fail(k, '입금 기록이 올바르지 않아요.');
+        bal[ac] = (bal[ac] || 0) + a; prev = b.hash; i++; return step();
+      }
+      var t = b.body.terms, sl = parseSlip(t); if (!sl) return fail(k, '거래 내용이 올바르지 않아요.');
+      return mutualAuth({ terms:t, pub:b.body.bpub, sig:b.body.bsig }, { terms:t, pub:b.body.spub, sig:b.body.ssig }).then(function (m) {
+        if (!m.ok) return fail(k, '서명이 맞지 않아요.');
+        if ((bal[sl.buyer] || 0) < sl.total) return fail(k, '그 시점의 구매자 잔고가 모자라요.');
+        bal[sl.buyer] -= sl.total; bal[sl.seller] = (bal[sl.seller] || 0) + sl.total; prev = b.hash; i++; return step();
+      });
+    });
+  }
+  return step();
+}
+function appendDeposit(chain, acct, amt) {
+  var ac = clean(acct, 20), a = snum(amt);
+  if (!ac) return Promise.resolve({ ok:false, code:'bad', msg:'계정 이름을 적어 주세요.' });
+  if (!(a >= 1 && a <= 1e13)) return Promise.resolve({ ok:false, code:'bad', msg:'금액은 1 이상의 정수로 넣어 주세요.' });
+  if (chain.length >= MAXB) return Promise.resolve({ ok:false, code:'full', msg:'장부는 최대 ' + MAXB + '개 블록까지예요.' });
+  return verifyLedger(chain).then(function (r) {
+    if (!r.ok) return { ok:false, code:'broken', msg:'장부에 이상이 있어 기록할 수 없어요(' + r.bad + '번 블록).' };
+    return mkBlock(chain, 'deposit', { acct:ac, amt:a }).then(function (blk) { return { ok:true, block:blk }; });
+  });
+}
+// 거래 기록: 상호 인증 → 중복(재사용) 확인 → 장부 이상 여부 → 잔고 검증 → 블록 이어 붙이기. 하나라도 어긋나면 기록하지 않는다.
+function appendTrade(chain, b, s) {
+  var t = b && b.terms, sl = parseSlip(t);
+  if (!sl) return Promise.resolve({ ok:false, code:'bad', msg:'품목·수량(1~100000)·단가(1~1000000000)와 서로 다른 구매자·판매자 이름을 확인해 주세요.' });
+  if (chain.length >= MAXB) return Promise.resolve({ ok:false, code:'full', msg:'장부는 최대 ' + MAXB + '개 블록까지예요.' });
+  return mutualAuth(b, s).then(function (m) {
+    if (!m.ok) return m;
+    var nonce = clean(t.n, 30);
+    if (chain.some(function (x) { return x && x.kind === 'trade' && x.body && x.body.terms && clean(x.body.terms.n, 30) === nonce; })) return { ok:false, code:'replay', msg:'이미 기록된 거래예요. 같은 거래를 두 번 기록할 수 없어요.' };
+    return verifyLedger(chain).then(function (r) {
+      if (!r.ok) return { ok:false, code:'broken', msg:'장부에 이상이 있어 기록할 수 없어요(' + r.bad + '번 블록).' };
+      var have = r.bal[sl.buyer] || 0;
+      if (have < sl.total) return { ok:false, code:'balance', msg:'구매자 잔고가 모자라요. 잔고 ' + won(have) + ' GDC, 필요 ' + won(sl.total) + ' GDC(부족 ' + won(sl.total - have) + ' GDC).' };
+      return mkBlock(chain, 'trade', { terms:{ item:sl.item, qty:sl.qty, price:sl.price, buyer:sl.buyer, seller:sl.seller, d:clean(t.d, 10), n:nonce }, bpub:b.pub, spub:s.pub, bsig:b.sig, ssig:s.sig })
+        .then(function (blk) { return { ok:true, block:blk, total:sl.total, buyerLeft:have - sl.total }; });
+    });
+  });
+}
+function gdc(n) { return won(n) + ' GDC'; }
+function blockLine(b) {
+  try {
+    if (b.kind === 'deposit') return '입금(체험) · ' + clean(b.body.acct, 20) + ' +' + gdc(b.body.amt);
+    var t = b.body.terms; return clean(t.buyer, 20) + ' → ' + clean(t.seller, 20) + ' · ' + clean(t.item, 40) + ' × ' + won(t.qty) + ' · ' + gdc(Number(t.qty) * Number(t.price));
+  } catch (e) { return '(읽을 수 없는 블록)'; }
+}
+var KEYS = { b:null, s:null };
+function ensureKey(k) { if (!KEYS[k]) KEYS[k] = newKeys().then(function (kk) { return fingerprint(kk.pub).then(function (fp) { kk.fp = fp; return kk; }); }); return KEYS[k]; }
+function newLg() { return { acct:'', amt:'', buyer:'나', seller:'', n:uid(), d:kst(), b:{ item:'', qty:'1', price:'', sig:'', fp:'', pub:null, terms:null }, s:{ item:'', qty:'1', price:'', sig:'', fp:'', pub:null, terms:null }, clearAsk:false }; }
+
+function viewLedger() {
+  var kids = head('거래 인증·장부', '거래를 기록하기 전에 두 사람이 서로 인증하고, 잔고를 확인하고, 고칠 수 없게 이어 붙인 장부에 남겨요.'); kids.push(notice());
+  kids.push(h('div', { class:'note', id:'mk-l-scope', style:'margin-bottom:16px', text:'이 화면의 장부는 이 브라우저 안에만 저장되는 체험용이에요. 여러 나비가 같은 장부를 나눠 갖고 서로 맞춰 보는 분산 장부, 실제 GDC 잔고 연결, 실제 대금 지급은 아직 설계 단계입니다. 서명 키는 접속할 때마다 새로 만드는 임시 키이며 저장하지 않아요.' }));
+  if (!subtle()) kids.push(h('div', { class:'note', role:'alert', style:'margin-bottom:16px', text:'이 브라우저에서는 서명·해시 기능(보안 연결 필요)을 쓸 수 없어 체험할 수 없어요.' }));
+  var g = S.lg, bal = h('div', { id:'mk-l-bal', style:'margin-top:12px' }), stat = h('div', { id:'mk-l-stat', style:'margin-top:12px' }), tbl = h('div', { id:'mk-l-tbl', style:'margin-top:12px' }),
+    auth = h('div', { id:'mk-l-auth', style:'margin-top:12px' }), msg = h('div', { id:'mk-l-msg', style:'margin-top:12px' }), tam = h('div', { id:'mk-l-tam', style:'margin-top:12px' });
+  function say(node, text, bad) { node.textContent = ''; if (text) node.appendChild(h('div', { class:bad ? 'note' : 'note info', role:bad ? 'alert' : 'status', text:text })); }
+  function sigUi() { ['b', 's'].forEach(function (k) { var e = $('mk-l-' + k + '-sig'); if (e) e.textContent = g[k].sig ? '서명됨 (키 ' + g[k].fp + ')' : '아직 서명 안 함'; }); }
+  function clr(k) { var ks = k ? [k] : ['b', 's'], had = false; ks.forEach(function (x) { if (g[x].sig) { had = true; g[x].sig = ''; g[x].fp = ''; g[x].pub = null; g[x].terms = null; } }); if (had) { sigUi(); say(auth, '내용을 고쳐서 서명이 지워졌어요. 서명은 서명한 내용에만 맞아서, 다시 서명해야 해요.', false); } }
+  function refresh() {
+    verifyLedger(S.ledger).then(function (r) {
+      bal.textContent = '';
+      var names = Object.keys(r.bal).sort();
+      if (!r.ok) bal.appendChild(h('div', { class:'sub', text:'장부에 이상이 있어 잔고를 믿을 수 없어요.' }));
+      else if (!names.length) bal.appendChild(h('div', { class:'sub', text:'아직 잔고가 없어요. 위에서 입금(체험용)을 기록해 보세요.' }));
+      else bal.appendChild(h('div', { class:'card', id:'mk-l-balcard' }, names.map(function (nm) { return h('div', { class:'kv' }, [h('span', { text:nm }), h('b', { text:gdc(r.bal[nm]) })]); })));
+      stat.textContent = '';
+      stat.appendChild(h('div', { id:'mk-l-ok', class:r.ok ? 'note info' : 'note', role:r.ok ? 'status' : 'alert', text:r.ok ? '장부 검증: 이상 없음 (' + r.n + '개 블록 — 이음·서명·잔고가 모두 맞아요)' : '장부 검증: ' + r.bad + '번 블록에서 이상 발견 — ' + r.why }));
+      tbl.textContent = '';
+      if (!S.ledger.length) { tbl.appendChild(h('div', { class:'card' }, [h('div', { class:'empty', text:'아직 기록이 없어요. 입금이나 거래를 기록하면 블록이 이어 붙어요.' })])); return; }
+      tbl.appendChild(h('div', { class:'card', style:'padding:0' }, [h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['번호', '내용', '해시', '앞 블록 해시'].map(function (t) { return h('th', { text:t }); }))]),
+        h('tbody', {}, S.ledger.map(function (b, k) { var bad = !r.ok && k === r.bad; return h('tr', { class:bad ? 'bad' : '' }, [h('td', { text:String(k) }), h('td', { text:blockLine(b) + (bad ? '  ⚠' : '') }), h('td', { style:'font-family:monospace', text:String(b && b.hash || '').slice(0, 8) }), h('td', { style:'font-family:monospace', text:String(b && b.prev || '').slice(0, 8) })]); }))])])]));
+    }).catch(function () { say(stat, '장부를 검증하지 못했어요(이 브라우저에서는 해시 기능을 쓸 수 없어요).', true); });
+  }
+  function doDeposit() {
+    appendDeposit(S.ledger, g.acct, g.amt).then(function (res) {
+      if (!res.ok) { say(msg, res.msg, true); return; }
+      S.ledger.push(res.block); save(); g.amt = ''; S.msg = '입금을 장부에 기록했어요(체험용).'; render();
+    }).catch(function () { say(msg, '기록하지 못했어요(이 브라우저에서는 해시 기능을 쓸 수 없어요).', true); });
+  }
+  function slipTerms(o) { return { item:clean(o.item, 40), qty:o.qty, price:o.price, buyer:clean(g.buyer, 20), seller:clean(g.seller, 20), d:g.d, n:g.n }; }
+  function signSlip(k) {
+    var o = g[k], t = slipTerms(o); if (!parseSlip(t)) { say(auth, '품목·수량·단가와 서로 다른 구매자·판매자 이름을 먼저 확인해 주세요.', true); return; }
+    ensureKey(k).then(function (kk) { return signText(kk.priv, canonTerms(t)).then(function (sig) { o.sig = sig; o.pub = kk.pub; o.fp = kk.fp; o.terms = t; sigUi(); say(auth, (k === 'b' ? '구매자' : '판매자') + '가 서명했어요. 이 서명은 지금 적은 내용에만 맞아요.', false); }); })
+      .catch(function () { say(auth, '서명하지 못했어요(이 브라우저에서는 서명 기능을 쓸 수 없어요).', true); });
+  }
+  function pair() { return [{ terms:g.b.terms, pub:g.b.pub, sig:g.b.sig }, { terms:g.s.terms, pub:g.s.pub, sig:g.s.sig }]; }
+  function checkAuth() { var p = pair(); mutualAuth(p[0], p[1]).then(function (m) { say(auth, m.msg, !m.ok); }).catch(function () { say(auth, '확인하지 못했어요.', true); }); }
+  function doTrade() {
+    var p = pair();
+    appendTrade(S.ledger, p[0], p[1]).then(function (res) {
+      if (!res.ok) { say(msg, res.msg, true); return; }
+      S.ledger.push(res.block); save(); var tot = res.total, left = res.buyerLeft; S.lg = newLg(); S.lg.seller = g.seller; S.lg.buyer = g.buyer; S.msg = '거래를 장부에 기록했어요(' + gdc(tot) + '). 구매자 잔고는 ' + gdc(left) + ' 남았어요.'; render();
+    }).catch(function () { say(msg, '기록하지 못했어요(이 브라우저에서는 서명·해시 기능을 쓸 수 없어요).', true); });
+  }
+  function tamper() {
+    tam.textContent = '';
+    if (!S.ledger.length) { say(tam, '장부에 블록이 하나 이상 있어야 해요.', true); return; }
+    var copy = JSON.parse(JSON.stringify(S.ledger)), k = copy.findIndex(function (b) { return b && b.kind === 'trade'; }); if (k < 0) k = 0;
+    if (copy[k].kind === 'trade') copy[k].body.terms.price = Number(copy[k].body.terms.price) + 1; else copy[k].body.amt = Number(copy[k].body.amt) + 1;
+    verifyLedger(copy).then(function (r) { say(tam, k + '번 블록의 금액을 몰래 1만 올렸다고 가정해 검증해 봤어요(실제 장부는 그대로예요). ' + (r.ok ? '그대로 통과했어요.' : '→ ' + r.bad + '번 블록에서 바로 드러났어요: ' + r.why), r.ok); });
+  }
+  function clearLedger(btnEl) {
+    if (!g.clearAsk) { g.clearAsk = true; btnEl.textContent = '정말 지울까요? 한 번 더 누르면 지워요'; return; }
+    S.ledger = []; save(); g.clearAsk = false; S.msg = '체험용 장부를 지웠어요.'; render();
+  }
+  var fld = function (id, label, key, o) { o = o || {}; return field(id, label, g[key], { max:o.max, ph:o.ph, mode:o.mode, help:o.help, set:function (v) { g[key] = v; if (o.clr) clr(); } }); };
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'① 잔고 — 장부로 계산해요' }), h('div', { class:'sub', text:'잔고는 따로 적어 두는 값이 아니라 장부의 입금·거래를 처음부터 더하고 빼서 구해요. 체험용으로 입금을 기록해 잔고를 만들어 보세요.' }),
+    h('div', { class:'frm' }, [fld('mk-l-acct', '계정 이름', 'acct', { max:20, ph:'예: 나' }), fld('mk-l-amt', '입금 금액(GDC)', 'amt', { mode:'numeric', max:13, ph:'예: 50000' })]),
+    h('div', { class:'rowf', style:'margin-top:12px' }, [btn('입금 기록(체험용)', 'fill', doDeposit)]), bal]));
+  var slip = function (k, title) { var o = g[k], id = 'mk-l-' + k, cl = function () { clr(k); };
+    return h('div', { class:'card col' }, [h('b', { text:title }), h('div', { class:'frm' }, [
+      field(id + '-item', '품목', o.item, { max:40, ph:'예: 중고 자전거', set:function (v) { o.item = v; cl(); } }), field(id + '-qty', '수량', o.qty, { mode:'numeric', max:6, set:function (v) { o.qty = v; cl(); } }), field(id + '-price', '단가(GDC)', o.price, { mode:'numeric', max:10, set:function (v) { o.price = v; cl(); } })]),
+      h('div', { class:'rowf', style:'margin-top:12px' }, [btn((k === 'b' ? '구매자' : '판매자') + ' 서명', 'fill', function () { signSlip(k); }), h('span', { class:'sub', id:id + '-sig', text:o.sig ? '서명됨 (키 ' + o.fp + ')' : '아직 서명 안 함' })])]); };
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'② 거래 — 서로 인증하고 잔고를 확인해요' }),
+    h('div', { class:'sub', text:'구매자와 판매자가 같은 내용의 전표를 적고 각자 서명합니다. 내용이 다르거나 서명이 하나라도 없거나, 구매자 잔고가 모자라거나, 이미 기록한 거래이면 장부에 기록되지 않아요. 두 전표를 일부러 다르게 적어 보세요.' }),
+    h('div', { class:'frm' }, [fld('mk-l-buyer', '구매자 이름', 'buyer', { max:20, clr:true }), fld('mk-l-seller', '판매자 이름', 'seller', { max:20, ph:'예: 철수', clr:true })]),
+    h('div', { class:'g2', style:'margin-top:12px;align-items:start' }, [slip('b', '구매자 전표'), slip('s', '판매자 전표')]),
+    h('div', { class:'rowf', style:'margin-top:16px' }, [btn('상호 인증 확인', '', checkAuth), btn('장부에 기록', 'fill', doTrade)]), auth, msg]));
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'③ 장부 — 이어 붙인 기록' }), h('div', { class:'sub', text:'블록마다 앞 블록의 해시(내용의 지문)를 품고 있어요. 한 칸만 고쳐도 그 블록부터 뒤가 모두 어긋나서, 고친 자리가 바로 드러나요.' }), stat, tbl,
+    h('div', { class:'rowf', style:'margin-top:12px' }, [btn('장부 다시 검증', '', refresh), btn('한 칸을 몰래 고친다면?', '', tamper), btn('체험용 장부 지우기', '', function (ev) { clearLedger(ev.currentTarget || ev.target); })]), tam]));
+  say(msg, S.msg, false); refresh();
+  return kids;
+}
+
 // ── 시장 원리 ──
 function viewPrinciple() {
   var kids = head('시장 원리', '나비웹 시장 인프라는 기존 공정거래위원회의 사회적 역할과 기능을 확장합니다.');
-  kids.push(stepsCard('시장 인프라가 하는 일', [['가격·품질·만족도를 평가하고 측정', '모든 상품(물품·서비스)의 가격 공정성, 품질 기준 달성 여부, 고객 만족도를 측정해서 어떤 재화나 용역도 공정 가격을 현저히 벗어날 수 없게 합니다.'], ['첫째, 정말 필요한지 판단', '그 물품이나 서비스가 사용자에게 실제로 필요한지 판단하고, 불필요한 구매는 자제하도록 요청합니다.'], ['둘째, 팔려는 물건을 먼저 사고 대금을 차등 지급', '은행 등 금융 인프라와 협업해 사용자가 팔려는 물품이나 서비스를 시장 인프라가 먼저 삽니다. 급히 부동산을 팔려는 경우 감정 평가 뒤 예상 매각 금액의 10~50%를 먼저 지급하고, 나머지는 매각이 성사된 뒤 지급하며 금융 인프라가 부과한 이자를 뺍니다.']],
-    '설계 원칙입니다. 시장 전체 측정, 감정 평가, 선구매와 대금 지급은 아직 연결되어 있지 않아요. 이 화면은 같은 원리를 내가 넣은 값으로 계산해 볼 수 있게 한 것입니다.'));
-  kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [['상품 평가', '비교 가격 대비 편차, 품질 달성률, 고객 만족도', 'eval'], ['필요 판단', '사기 전에 정말 필요한지 점검', 'need'], ['선구매', '선지급액과 이자, 매각 후 받을 금액 계산', 'presale']].map(function (x) { return h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:x[0] }), h('span', { class:'sub', text:x[1] }), h('div', { class:'rowf' }, [btn('열기', 'fill', function () { go(x[2]); })])]); })));
+  kids.push(stepsCard('시장 인프라가 하는 일', [['가격·품질·만족도를 평가하고 측정', '모든 상품(물품·서비스)의 가격 공정성, 품질 기준 달성 여부, 고객 만족도를 측정해서 어떤 재화나 용역도 공정 가격을 현저히 벗어날 수 없게 합니다.'], ['첫째, 정말 필요한지 판단', '그 물품이나 서비스가 사용자에게 실제로 필요한지 판단하고, 불필요한 구매는 자제하도록 요청합니다.'], ['둘째, 팔려는 물건을 먼저 사고 대금을 차등 지급', '은행 등 금융 인프라와 협업해 사용자가 팔려는 물품이나 서비스를 시장 인프라가 먼저 삽니다. 급히 부동산을 팔려는 경우 감정 평가 뒤 예상 매각 금액의 10~50%를 먼저 지급하고, 나머지는 매각이 성사된 뒤 지급하며 금융 인프라가 부과한 이자를 뺍니다.'], ['셋째, 거래는 서로 인증하고 잔고를 확인해 장부에 기록', '모든 거래는 구매자와 판매자가 같은 내용에 각자 서명(상호 인증)해야 인정됩니다. 기록하기 전에 구매자 잔고가 거래 금액 이상인지 장부를 처음부터 다시 계산해 확인(잔고 검증)하고, 앞 블록의 해시를 품은 블록으로 이어 붙여 기록(장부 기록)합니다. 블록체인 방식이라 한 칸만 고쳐도 바로 드러나고 같은 거래를 두 번 기록할 수 없습니다.']],
+    '설계 원칙입니다. 시장 전체 측정, 감정 평가, 선구매와 대금 지급, 여러 나비가 나눠 갖는 분산 장부와 실제 GDC 잔고 연결은 아직 연결되어 있지 않아요. 이 화면은 같은 원리를 내가 넣은 값으로 계산해 볼 수 있게 한 것입니다.'));
+  kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [['상품 평가', '비교 가격 대비 편차, 품질 달성률, 고객 만족도', 'eval'], ['필요 판단', '사기 전에 정말 필요한지 점검', 'need'], ['선구매', '선지급액과 이자, 매각 후 받을 금액 계산', 'presale'], ['거래 인증·장부', '두 사람의 서명, 잔고 확인, 이어 붙인 장부', 'ledger']].map(function (x) { return h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:x[0] }), h('span', { class:'sub', text:x[1] }), h('div', { class:'rowf' }, [btn('열기', 'fill', function () { go(x[2]); })])]); })));
   return kids;
 }
 
@@ -178,7 +374,7 @@ function viewPresale() {
 
 function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'eval' ? viewEval() : S.view === 'need' ? viewNeed() : S.view === 'presale' ? viewPresale() : viewPrinciple();
+  var kids = S.view === 'eval' ? viewEval() : S.view === 'need' ? viewNeed() : S.view === 'presale' ? viewPresale() : S.view === 'ledger' ? viewLedger() : viewPrinciple();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -189,7 +385,7 @@ function nav(a) {
 }
 function mount(el, o) {
   if (!el) return; o = o || {};
-  M = el; el.textContent = ''; el.classList.add('mkt'); S.list = []; S.err = {}; S.msg = ''; load();
+  M = el; el.textContent = ''; el.classList.add('mkt'); S.list = []; S.ledger = []; S.lg = newLg(); S.err = {}; S.msg = ''; load();
   [h('div', { id:'mk-top' }), h('div', { class:'wrap', id:'mk-root' })].forEach(function (x) { el.appendChild(x); });
   S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'principle'; render();
 }
@@ -198,6 +394,7 @@ window.NaviMarket = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   fairPrice:fairPrice, qualityRate:qualityRate, satisfaction:satisfaction, needCheck:needCheck, presale:presale,
+  ledger:{ newKeys:newKeys, signTerms:function (priv, t) { return signText(priv, canonTerms(t)); }, mutualAuth:mutualAuth, appendDeposit:appendDeposit, appendTrade:appendTrade, verify:verifyLedger, parseSlip:parseSlip, canonTerms:canonTerms },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
