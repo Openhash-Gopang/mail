@@ -1,0 +1,142 @@
+/* watch.css — 나비웹 감시(인프라 AI · 감시) 모양. 모든 규칙은 .wch 안에서만 적용된다.
+   학습 화면(learn.css)과 같은 Material Design 3 규격: 개요선 카드(radius 12, 그림자 없음) · 알약 단추(높이 40) · 48px 기본 탭(3px 밑줄) · 톤 칩/배너 · 8px 막대. 색은 나비웹 팔레트(--pri 등)를 그대로 쓴다. */
+.wch{--m3-line:#D9DEE6;--m3-outline:#79808C;--m3-on-var:#49505A;--m3-tonal:var(--pri-bg,#E3ECF9);
+ --on:var(--txt,#212529);--on2:var(--m3-on-var);--line:var(--m3-line);--soft:var(--bg,#F7F9FC);--card:var(--sur,#fff);--pb0:var(--m3-tonal);
+ --m:var(--grn,#1E7B46);--mb:var(--gbg,#E2F4EA);--p:var(--pri,#3B7DDD);--pb:var(--m3-tonal);--l:var(--org,#B86E00);--lb:var(--obg,#FFF1D6);
+ --n:var(--m3-outline);--nb:#E4E8EE;--bad:var(--red,#C9302C);--pri-d:color-mix(in srgb,var(--pri,#3B7DDD) 86%,#000);
+ font-family:var(--font,'Pretendard',Roboto,'Noto Sans KR',sans-serif);color:var(--on);font-size:15px;line-height:1.6;word-break:keep-all;scroll-margin-top:calc(var(--hd,54px) + 8px);text-align:left}
+.wch *,.wch *::before,.wch *::after{box-sizing:border-box;margin:0;padding:0}
+.wch button{font:inherit;color:inherit;cursor:pointer}
+.wch button:focus-visible,.wch input:focus-visible,.wch textarea:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.wch button:disabled{cursor:not-allowed}
+.wch a{color:var(--pri)}
+/* 머리: 제목 + 기본 탭 */
+.wch .top{background:var(--bg,#F7F9FC);margin-bottom:24px}
+.wch .topin{display:block}
+.wch .brand{padding:0 0 12px}
+.wch .brand b{display:block;font-size:22px;font-weight:600;line-height:1.3}
+.wch .brand span{display:block;font-size:14px;color:var(--on2);margin-top:2px}
+.wch .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);overflow-x:auto}
+.wch .tab{background:none;border:0;border-bottom:3px solid transparent;height:48px;padding:0 20px;font-size:14px;font-weight:500;letter-spacing:.1px;color:var(--on2);white-space:nowrap;border-radius:12px 12px 0 0;margin-bottom:-1px;transition:background .15s,color .15s}
+.wch .tab:hover{background:color-mix(in srgb,var(--pri) 8%,transparent);color:var(--on)}
+.wch .tab[aria-selected=true]{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+.wch .tab:focus-visible{outline-offset:-2px}
+.wch .wrap{padding:0 0 24px}
+.wch .back{background:none;border:0;color:var(--pri);font-size:14px;font-weight:500;padding:0 0 8px;border-radius:8px}
+.wch .back:hover{text-decoration:underline}
+.wch h1{font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-.2px}
+.wch .lead{margin-top:6px;color:var(--on2);font-size:14px;line-height:1.6;max-width:720px}
+.wch h2{font-size:16px;font-weight:600;margin:28px 0 12px}
+.wch .sub{font-size:13px;color:var(--on2)}
+/* 카드 = 개요선 카드 */
+.wch .card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;box-shadow:none;min-width:0;margin:0}
+.wch .col{display:flex;flex-direction:column;gap:10px}
+.wch .rowf{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.wch .g2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;margin-top:20px}
+.wch .g3{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.wch .g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+/* 강조 카드 = 채움 카드 */
+.wch .hero{background:var(--pri);color:#fff;border:0}
+.wch .hero .sub{color:rgba(255,255,255,.86)}
+.wch .hero .big{font-size:22px;font-weight:600;line-height:1.3}
+/* 단추 = 채움(주요) · 윤곽(보조) · 텍스트, 높이 40 · 알약 */
+.wch .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;margin:0;padding:0 24px;border-radius:20px;font-size:14px;font-weight:500;letter-spacing:.1px;line-height:1.2;border:1px solid var(--m3-outline);color:var(--pri);background:transparent;text-decoration:none;transition:background .15s,box-shadow .15s}
+.wch .btn:hover:not(:disabled){background:color-mix(in srgb,var(--pri) 8%,transparent)}
+.wch .btn.fill{background:var(--pri);border-color:var(--pri);color:#fff}
+.wch .btn.fill:hover:not(:disabled){background:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.wch .btn.white{background:#fff;border-color:#fff;color:var(--pri)}
+.wch .btn.white:hover:not(:disabled){background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.wch .btn.ghost{border-color:rgba(255,255,255,.6);color:#fff}
+.wch .btn.ghost:hover:not(:disabled){background:rgba(255,255,255,.14)}
+.wch .btn.quiet{border-color:var(--line);color:var(--on)}
+.wch .btn.sm{min-height:32px;padding:0 16px;font-size:13px;border-radius:16px}
+.wch .btn:disabled{background:rgba(28,27,31,.12);border-color:transparent;color:rgba(28,27,31,.38);box-shadow:none}
+/* 칩·알약(톤) */
+.wch .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:8px;padding:2px 10px;background:var(--nb);color:var(--on2)}
+.wch .pill.m{background:var(--mb);color:var(--m)}.wch .pill.p{background:var(--pb);color:var(--p)}.wch .pill.l{background:var(--lb);color:var(--l)}
+.wch .note{background:var(--lb);color:var(--l);border-radius:12px;padding:12px 16px;font-size:13px}
+.wch .note.info{background:var(--m3-tonal);color:var(--on)}
+.wch .chips{display:flex;flex-wrap:wrap;gap:8px}
+.wch .chip{border:1px solid var(--m3-outline);background:transparent;border-radius:8px;padding:6px 16px;font-size:14px;font-weight:500;color:var(--on)}
+.wch .chip:hover{background:color-mix(in srgb,var(--pri) 8%,transparent)}
+.wch .chip[aria-pressed=true]{background:var(--m3-tonal);border-color:var(--m3-tonal);color:var(--pri);font-weight:600}
+.wch .tile{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.wch .tile .k{font-size:12px;color:var(--on2);font-weight:500}.wch .tile .v{font-size:22px;font-weight:600}
+.wch .tile .tr{height:8px;border-radius:4px;background:var(--nb);margin-top:8px;overflow:hidden}.wch .tile .tr em{display:block;height:8px;background:var(--pri)}
+.wch .mrow{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:14px}
+.wch .mrow .nm{flex:0 0 76px;font-weight:600}
+.wch .mrow .tr{flex:1;height:8px;border-radius:4px;background:var(--nb);overflow:hidden}.wch .mrow .tr em{display:block;height:8px;background:var(--m);border-radius:4px}
+.wch .mrow .v{flex:0 0 118px;text-align:right;color:var(--on2)}
+.wch .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:12px 0;border:0;border-top:1px solid var(--line);background:none;margin:0}
+.wch .row:first-child{border-top:0}
+.wch .ov{position:fixed;inset:0;background:rgba(32,33,36,.32);display:flex;align-items:center;justify-content:center;z-index:3500}
+.wch .ov[hidden]{display:none}
+.wch .dlg{background:var(--card);border-radius:28px;padding:24px;width:min(560px,calc(100% - 32px));max-height:90vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.wch .lab{font-size:13px;font-weight:600;color:var(--on2);margin:18px 0 8px}
+.wch .foot{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--on2)}
+.wch .sh{display:flex;gap:10px;flex-wrap:wrap}
+.wch .sh input{flex:1 1 260px;min-width:0;width:auto;height:48px;padding:0 16px;font-size:16px}
+.wch .spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--nb);border-top-color:var(--pri);animation:bnk-sp 1s linear infinite;flex:none}
+@keyframes bnk-sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.wch .spin{animation:none}}
+@media print{.wch .top,.wch .sbar,.wch .noprint,.wch .ov{display:none!important}.wch .card{break-inside:avoid;margin-top:12px}}
+@media (max-width:860px){.wch .g2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.wch h1{font-size:22px}.wch .tab{padding:0 14px}.wch .card{padding:16px}.wch .hero .big{font-size:20px}.wch .mrow .nm{flex-basis:64px}.wch .mrow .v{flex-basis:90px}}
+/* 은행 전용 */
+.wch .amt{font-size:40px;font-weight:600;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
+.wch .amt small{font-size:16px;font-weight:500;margin-left:6px;opacity:.86}
+.wch .num{font-variant-numeric:tabular-nums}
+.wch .kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.wch .kv:first-child{border-top:0}
+.wch .kv>span{color:var(--on2)}
+.wch .kv b{font-weight:600;text-align:right;display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.wch .stp{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.wch .stp:first-child{border-top:0}
+.wch .stp i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--m3-tonal);color:var(--pri);font-style:normal;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center}
+.wch .stp b{display:block;font-size:15px;font-weight:600}
+.wch .stp span{font-size:13px;color:var(--on2)}
+.wch .field{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.wch .field label{font-size:13px;font-weight:600;color:var(--on2)}
+.wch .field input,.wch .field select{width:100%;height:48px;border:1px solid var(--m3-outline);border-radius:var(--r,4px);padding:0 16px;font:inherit;font-size:16px;background:transparent;color:var(--on)}
+.wch .field input:focus,.wch .field select:focus{outline:none;border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.wch .field input[aria-invalid=true]{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.wch .field .help{font-size:12px;color:var(--on2)}.wch .field .err{font-size:12px;color:var(--bad)}
+.wch .seg{display:inline-flex;border:1px solid var(--m3-outline);border-radius:20px;overflow:hidden}
+.wch .seg button{background:none;border:0;border-right:1px solid var(--m3-outline);height:36px;padding:0 16px;font-size:13px;font-weight:500}
+.wch .seg button:last-child{border-right:0}
+.wch .seg button:hover{background:color-mix(in srgb,var(--pri) 8%,transparent)}
+.wch .seg button[aria-pressed=true]{background:var(--m3-tonal);color:var(--pri);font-weight:600}
+.wch .tbl{width:100%;border-collapse:collapse;font-size:14px}
+.wch .tbl th{text-align:left;font-size:12.5px;font-weight:600;color:var(--on2);padding:8px 12px;background:var(--soft)}
+.wch .tbl td{padding:10px 12px;border-top:1px solid var(--line)}
+.wch .tbl .r{text-align:right;font-variant-numeric:tabular-nums}
+.wch .tbw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.wch .chart svg{display:block;width:100%;height:auto}
+.wch .dot{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none}
+.wch .fld{display:grid;gap:12px;margin-top:8px}
+.wch .fld .top{display:flex;align-items:center;gap:8px;font-size:14px}
+.wch .fld .top b{font-weight:600}.wch .fld .top .v{margin-left:auto;color:var(--on2);font-variant-numeric:tabular-nums}
+.wch .fld .meter{height:8px;border-radius:4px;background:var(--nb);overflow:hidden;margin-top:6px}.wch .fld .meter i{display:block;height:100%;border-radius:4px}
+.wch .empty{padding:24px 8px;text-align:center;color:var(--on2);font-size:14px}
+.wch .code{font-family:ui-monospace,Consolas,monospace;letter-spacing:2px}
+.wch .meter8{height:8px;border-radius:4px;background:var(--nb);overflow:hidden}.wch .meter8 i{display:block;height:100%;border-radius:4px;background:var(--pri)}
+.wch .meter8.bad i{background:var(--bad)}.wch .meter8.warn i{background:var(--l)}.wch .meter8.ok i{background:var(--m)}
+.wch .pill.bad{background:#FDE7E7;color:var(--bad)}
+@media (max-width:640px){.wch .amt{font-size:32px}.wch .kv{flex-direction:column;align-items:flex-start;gap:4px}.wch .kv b{justify-content:flex-start;text-align:left}}
+/* 교통 화면 전용 */
+.wch .tbl input{width:104px;height:36px;border:1px solid var(--m3-outline);border-radius:var(--r,4px);padding:0 10px;font:inherit;font-size:14px;text-align:right;background:transparent;color:var(--on)}
+.wch .tbl input:focus{outline:none;border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.wch .up{color:#C5221F}.wch .dn{color:#1A5FB4}
+.wch .frm{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 16px}
+.wch .chk{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}
+.wch .chk:first-of-type{border-top:0}
+.wch .chk input{width:20px;height:20px;margin-top:1px;flex:none;accent-color:var(--pri)}
+.wch .gl{border-top:1px solid var(--line);padding:10px 0;font-size:14px}.wch .gl:first-child{border-top:0}.wch .gl b{display:block;margin-bottom:2px}
+.wch .tgt{display:flex;align-items:center;gap:6px;justify-content:flex-end}.wch .tgt input{width:72px}
+
+/* 민주주의 화면 전용: 여러 줄 입력 */
+.wch .field textarea{width:100%;min-height:96px;border:1px solid var(--m3-outline);border-radius:var(--r,4px);padding:12px 16px;font:inherit;font-size:15px;line-height:1.6;background:transparent;color:var(--on);resize:vertical}
+.wch .field textarea:focus{outline:none;border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.wch .field textarea[aria-invalid=true]{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.wch ul{margin:8px 0 8px 20px}.wch li{margin:2px 0}
+.wch .tbl th[scope],.wch .tbl tbody th{width:140px;text-align:left;font-size:14px;font-weight:600;color:var(--on);background:transparent;vertical-align:top}
