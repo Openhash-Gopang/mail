@@ -22,7 +22,7 @@ function _ihEnter(cfg) {
   if (typeof _org !== 'undefined' && _org) _orgLeave();
   try { if (HondiChat.isOpen()) HondiChat.close(); } catch (x) {}
   _ih.active = true; _ih.cfg = cfg; _ih.ready = false; _ih.queue = []; _ih.busy = false; _ih.pending = {};
-  HondiChat.setSp({ type: 'hondi-embed-sp', sp: cfg.sp, spText: cfg.spText || undefined, label: cfg.label || '', greeting: '', role: '', context: '' });   // spText 가 있으면 인라인 SP(infra-sp.js, v0.1)
+  HondiChat.setSp({ type: 'hondi-embed-sp', sp: cfg.sp, spText: cfg.spText || undefined, label: cfg.label || '', greeting: String(cfg.greeting || '').slice(0, 300), role: '', context: '' });   // spText 가 있으면 인라인 SP(infra-sp.js, v0.1)
   setTimeout(function () { if (_ih.active && !_ih.ready) { _ih.ready = true; _ih.queue.splice(0).forEach(function (m) { HondiChat.post(m); }); } }, 5000);   // 준비 신호가 늦어도 말은 전한다
   if (!_ih.fabHooked) { _ih.fabHooked = true; var prev = HondiChat.onFab; HondiChat.onFab = function () { if (_ih.active) { _ihToggle(); return true; } return typeof prev === 'function' ? prev() : false; }; }
   _ihBuild(); var fab = _el('hchat-fab'); if (fab) fab.setAttribute('aria-label', cfg.label + ' 대화');

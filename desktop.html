@@ -10819,7 +10819,7 @@ function _agentEntryRefresh() {
 }
 window._agentEntryRefresh = _agentEntryRefresh;
 </script>
-<script src="hondi-chat.js?v=20261123a"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261123a"></script><script src="infra-sp.js?v=20261123a"></script><script src="infra-host.js?v=20261123b"></script>
+<script src="hondi-chat.js?v=20261123a"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261123a"></script><script src="infra-sp.js?v=20261123a"></script><script src="infra-host.js?v=20261123c"></script>
 <script>
 /* 2026-11-23: #bank 처럼 해시로 직접 열거나 새로고침하면 위쪽 큰 스크립트가 InfraSP·InfraHost·HondiChat 보다 먼저 실행되어 _infraChatSync 가 조용히 건너뛰어졌다(우하단 대화창이 인프라 SP 가 아니라 기본 비서로 남음). 이 스크립트들이 모두 로드된 뒤, 지금 열려 있는 화면 이름으로 한 번 더 맞춘다. 모든 인프라 전용 화면에 공통으로 적용된다. */
 (function () {
