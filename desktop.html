@@ -10713,7 +10713,8 @@ function _embedCapPush(t) { if (_embedCap && t) _embedCap.buf.push(String(t).rep
 function _embedNote(src, text) { try { if (src && text) HondiChat.post({ type: 'hondi-embed-ai-note', text: String(text).slice(0, 1500) }); } catch (e) {} }
 window.addEventListener('message', async (e) => {
   const d = e.data;
-  if (!d || d.type !== 'hondi-embed-ai' || e.origin !== 'https://hondi.net') return;
+  // 2026-11-23: 패널 iframe 은 2026-11-16 부터 naviweb.kr/webapp 이다(hondi-chat.js URL_DEFAULT). hondi.net 만 허용하면 패널의 질문이 전부 버려져 '나만의 AI 비서'가 무응답이 된다. embed-delegate.js 의 호스트 규약과 같은 출처 집합을 허용한다(e.source 가 패널 프레임인지는 아래에서 다시 검사).
+  if (!d || d.type !== 'hondi-embed-ai' || ['https://hondi.net', 'https://naviweb.kr', 'https://www.naviweb.kr'].indexOf(e.origin) < 0) return;
   if (!window.HondiChat || e.source !== HondiChat.frameWindow()) return;
   const id = String(d.id || '').slice(0, 40), text = String(d.text || '').trim().slice(0, 2000);
   const files = _embedFiles(d.files);
@@ -10818,6 +10819,16 @@ function _agentEntryRefresh() {
 window._agentEntryRefresh = _agentEntryRefresh;
 </script>
 <script src="hondi-chat.js?v=20261107b"></script><script src="learn-sp.js?v=20261122a"></script><script src="learn-host.js?v=20261123a"></script><script src="infra-sp.js?v=20261123a"></script><script src="infra-host.js?v=20261123b"></script>
+<script>
+/* 2026-11-23: #bank 처럼 해시로 직접 열거나 새로고침하면 위쪽 큰 스크립트가 InfraSP·InfraHost·HondiChat 보다 먼저 실행되어 _infraChatSync 가 조용히 건너뛰어졌다(우하단 대화창이 인프라 SP 가 아니라 기본 비서로 남음). 이 스크립트들이 모두 로드된 뒤, 지금 열려 있는 화면 이름으로 한 번 더 맞춘다. 모든 인프라 전용 화면에 공통으로 적용된다. */
+(function () {
+  try {
+    var p = document.querySelector('.tab-panel.active');
+    var name = p && p.id ? String(p.id).replace(/^tab-/, '') : '';
+    if (name && typeof _infraChatSync === 'function' && window.InfraHost && window.InfraSP && !(InfraHost.cur && InfraHost.cur())) _infraChatSync(name);
+  } catch (x) {}
+})();
+</script>
 <script>
 /* 내 데이터 금고: ① iframe 높이를 내용에 맞춰 iframe 자체 스크롤바를 없앤다 ② 우측 하단 대화창 아이콘이 이 탭에서는 '나만의 AI 비서(나비)'를 연다 */
 (function () {
