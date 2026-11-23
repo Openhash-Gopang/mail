@@ -80,6 +80,8 @@ export const MAIL_FILES = new Set([
  "orgtree.js",
  "pdv-panel.css",
  "pdv-panel.js",
+ "plan-app.js",
+ "plan.css",
  "police-app.js",
  "police.css",
  "pricing.html",
