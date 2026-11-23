@@ -193,7 +193,7 @@ var TABS = [['subjects','내 수업'],['plan','진행 현황'],['history','학�
 function topbar() {
   var act = { course:'subjects', week:'subjects', quiz:'subjects' }[S.view] || S.view;
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('b', { text:'나비웹 학습' }), h('span', { text:'인프라 AI · 교육' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 교육' })])]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { class:'tab', role:'tab', 'aria-selected':String(act === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 

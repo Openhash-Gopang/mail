@@ -94,7 +94,7 @@ function dispatch(s) {
 
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('b', { text:'나비웹 치안' }), h('span', { text:'인프라 AI · 치안' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 치안' })])]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function warn() {
