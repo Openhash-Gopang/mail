@@ -108,7 +108,7 @@ test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 �
     assert.ok(seen.size >= pg.tabs.length - 2, k + ' 탭마다 내용이 달라야 해요');
     assert.equal(S.tab(k, '없는탭'), false); S.close();
   }
-  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
+  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3 + 8); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
   S.open('stock', 'goal'); doc.getElementById('sm-sv').value = '500000'; doc.getElementById('sm-sv').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-g-sum').textContent, /목표를 넘긴/);
   S.open('stock', 'alloc'); doc.getElementById('sm-wa').value = '100'; doc.getElementById('sm-wa').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-a-sum').textContent, /현금 비중 0%/);
   S.open('market', 's3'); doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
@@ -145,6 +145,16 @@ test('서류·기록 시뮬레이션: 서류함·외부 입력·서류 작성·P
 
 test('버튼 위치: 모든 화면의 시뮬레이션 버튼은 같은 작은 모양(simbtn)이고, 제목 줄 오른쪽 끝에 놓는 공통 규칙이 있다', { skip }, () => {
   for (const [src, n] of [[stockApp, 1], [bankApp, 1], [taxApp, 1], [mktApp, 2], [insApp, 1], [lrnApp, 1]]) assert.equal((src.match(/class:'btn quiet simbtn', id:'[a-z-]*sim/g) || []).length, n);
-  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 5);
+  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 6);
   assert.match(desk, /id="simbtn-css"/); assert.match(desk, /\.brand:has\(> \.simbtn\)\{display:flex/); assert.match(desk, /min-height:30px!important/);
+});
+
+test('설정 시뮬레이션: 아이디 규칙·백업 키 복구·폰 연동·부재중 자동응답이 입력에 따라 달라지고, 버튼이 현재 탭을 넘긴다', { skip }, () => {
+  const { S, doc, w } = env(); const fire = (id, v) => { const e = doc.getElementById(id); e.value = v; e.dispatchEvent(new w.Event('change', { bubbles: true })); };
+  S.open('settings', 'account'); fire('sm-uid', 'jupiter'); assert.match(doc.getElementById('sim-a-id').textContent, /이미 쓰는 사람/); fire('sm-uid', 'A!'); assert.match(doc.getElementById('sim-a-id').textContent, /쓸 수 없어요/); fire('sm-uid', 'navi_ok'); assert.match(doc.getElementById('sim-a-id').textContent, /쓸 수 있어요/);
+  S.tab('settings', 'gdc'); const words = S.gen.settings(S.gen.settings ? 0 : 0).words; assert.ok(Array.isArray(words));
+  const d = S.gen.settings(doc.getElementById('sm-seed').value ? Number(doc.getElementById('sm-seed').value) : 1); fire('sm-gk', d.words.join(' ')); assert.match(doc.getElementById('sim-g-key').textContent, /복구 성공/); fire('sm-gk', '틀림'); assert.match(doc.getElementById('sim-g-key').textContent, /복구되지 않아요/);
+  S.tab('settings', 'phone'); fire('sm-pc', d.code); assert.match(doc.getElementById('sim-ph-sum').textContent, /연결됨/);
+  S.tab('settings', 'autoreply'); fire('sm-as', '24'); fire('sm-ae', '30'); assert.match(doc.getElementById('sim-ar-sum').textContent, /7통 중 7통/);
+  assert.equal(J(S.gen.settings(4)), J(S.gen.settings(4))); assert.match(desk, /NaviSim\.tab\('settings', name\)/); assert.match(desk, /_simOpen&&window\._simOpen\('settings',_SET_CUR_SEC\(\)\)|_simOpen\('settings',_SET_CUR_SEC\(\)\)/);
 });

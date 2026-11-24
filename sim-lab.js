@@ -167,6 +167,7 @@ var PAGES = {
   stock:{ name:'증권', tabs:[['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['wage', '내 임금'], ['explore', '종목 탐색'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']] },
   bank:{ name:'은행', tabs:[['wallet', '내 지갑'], ['topup', '충전·입금'], ['pay', '송금·결제'], ['history', '거래 내역'], ['save', '예금·대출'], ['credit', '신용·채권']] },
   tax:{ name:'세무 회계', tabs:[['slip', '거래 전표'], ['vat', '부가세'], ['stmts', '재무제표'], ['exp', '판관비'], ['inc', '소득세']] },
+  settings:{ name:'설정', tabs:[['account', '계정'], ['profile', '프로필'], ['ai', 'AI 비서'], ['gdc', 'GDC 지갑'], ['skin', '화면'], ['phone', '폰 전용'], ['signature', '서명'], ['autoreply', '부재중 자동응답']] },
   pdv:{ name:'내 기록', tabs:[['vault', '내 데이터 금고'], ['tx', '거래'], ['is', '손익'], ['bs', '재무상태'], ['cf', '현금흐름'], ['fa', '재무분석'], ['docs', '서류']] },
   myforms:{ name:'내 서류함', tabs:[['forms', '양식 보관·재사용']] },
   othersite:{ name:'다른 사이트 입력', tabs:[['steps', '옮겨 적기 순서']] },
@@ -176,13 +177,14 @@ var PAGES = {
   market:{ name:'시장', tabs:[['s0', '상품 이름'], ['s1', '구매 이력'], ['s2', '필요도'], ['s3', '구매 의사'], ['s4', '의견'], ['s5', 'AS 평가'], ['s6', '가격 비교'], ['s7', '판매자 협의'], ['s8', '최종 확인'], ['s9', '결제'], ['s10', '국세청 보고'], ['sell', '판매']] }
 };
 var LEAD = {
+  settings:'가상 값으로 설정의 각 탭을 미리 해 볼 수 있어요. 여기서 바꾼 것은 실제 설정에 반영되지 않아요.',
   pdv:'가상 월별 기록으로 내 기록(PDV)의 금고·거래·재무제표·서류 화면이 어떻게 이어지는지 해 볼 수 있어요.', myforms:'가상 양식으로 서류함에 담고 다시 쓰는 흐름을 해 볼 수 있어요.', othersite:'다른 사이트에 옮겨 적을 때 도우미와 사용자가 맡는 일을 순서대로 해 볼 수 있어요.', docs:'가상 서류로 작성 → 준법 점검 → 확정 → 보관까지 한 바퀴를 해 볼 수 있어요.',
   learn:'가상 학습자 한 명의 정답률·학습 기록으로 수업 조정, 진행 확인, 이상 탐지, 보고서를 해 볼 수 있어요.',
   insure:'가상 가입자·사고·청구로 보험료와 요율, 청구 심사가 어떻게 돌아가는지 해 볼 수 있어요. 요율은 모두 예시예요.',
   market:'가상 상품과 판매처 가격으로 구매 단계를 하나씩 해 볼 수 있어요.', tax:'가상 거래로 전표·부가세·재무제표·소득세가 어떻게 이어지는지 해 볼 수 있어요.',
   bank:'가상 월별 수입·지출로 지갑·충전·결제·내역·예금·신용을 해 볼 수 있어요.', stock:'가상 기업과 시세로 증권 화면의 각 탭을 해 볼 수 있어요. 모든 요율·가정은 예시예요.'
 };
-var DEF = { pdv:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, myforms:{}, othersite:{}, docs:{}, learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
+var DEF = { settings:{}, pdv:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, myforms:{}, othersite:{}, docs:{}, learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
 var X = {   // 탭별 보조 입력의 기본값
   pi:'0', q:'', need:'3', bud:'', ask:'', my:'', bal:'5000000', co:'0', g:'3', r:'10', w:'3000000', wa:'60', wb:'30', sv:'300000', yr:'10', tg:'100000000', px:'10', tp:'1000000', ti:'3', dp:'10000000', rt:'3', dm:'12'
 };
@@ -470,6 +472,80 @@ BODY.docs = function (box, s, tab) {
   if (tab === 'done') box.appendChild(tbl(['서류', '확정일', '점검 결과'], d.docs.filter(function (x) { return x.done; }).map(function (x) { return [x.kind, x.saved, { t:x.issue === '문제 없음' ? '통과' : '고친 뒤 확정', c:'ok' }]; })));
   if (tab !== 'write') box.appendChild(h('div', { class:'sub', text:'Draft는 작성 중 자동 저장된 것, 작성한 서류는 확정한 것이에요. 가상 목록이에요.' }));
 };
+
+/** 설정용 가상 데이터: 이미 쓰는 아이디, 가상 백업 단어, 폰 연동 코드, 가상 수신 메일. */
+var WORDS = ['사과', '구름', '바다', '나무', '별', '종이', '여름', '거울', '시계', '우산', '노을', '언덕', '파도', '등대', '기차', '바람'];
+function settingsGen(seed, o) {
+  var r = rng(seed), words = [], i; while (words.length < 6) { var w = WORDS[Math.floor(r() * WORDS.length)]; if (words.indexOf(w) < 0) words.push(w); }
+  var code = ''; for (i = 0; i < 6; i++) code += Math.floor(r() * 10);
+  var mails = []; for (i = 0; i < 7; i++) mails.push({ day:24 + i, from:'보낸이 ' + String.fromCharCode(65 + Math.floor(r() * 6)) });
+  return { seed:seed, taken:['jupiter', 'hondi', 'navi01', 'kim2026', 'lee_jeju', 'park77', 'naviweb', 'test1'], words:words, code:code, mails:mails };
+}
+BODY.settings = function (box, s, tab) {
+  var d = s.data, sv = function (id, def) { var c = cur(id); return c === '' ? def : c; };
+  var note = function (t) { box.appendChild(h('div', { class:'sub', text:t })); };
+  if (tab === 'account') {
+    var id = String(sv('sm-uid', 'navi2026')), okFmt = /^[a-z0-9_]{3,20}$/.test(id), dup = d.taken.indexOf(id) >= 0;
+    box.appendChild(h('div', { class:'row' }, [fld('sm-uid', '바꾸고 싶은 아이디', id), fld('sm-disp', '보내는 사람 표시', String(sv('sm-disp', '홍길동')))]));
+    var iu = document.getElementById('sm-uid'); if (iu) { iu.removeAttribute('inputmode'); }
+    box.appendChild(sumBox('sim-a-id', ['아이디 「' + id + '」 → ', [h('b', { class:okFmt && !dup ? 'ok' : 'bad', text:!okFmt ? '쓸 수 없어요: 영문 소문자·숫자·밑줄 3~20자' : dup ? '이미 쓰는 사람이 있어요' : '쓸 수 있어요' })], '받는 사람에게는 「' + String(sv('sm-disp', '홍길동')) + ' <' + id + '@가상>」 으로 보여요.']));
+    note('이미 쓰는 가상 아이디: ' + d.taken.join(', ') + '. 실제 아이디는 바뀌지 않아요.');
+  }
+  if (tab === 'profile') {
+    var nm = String(sv('sm-pn', '홍길동')), intro = String(sv('sm-pi2', '제주에서 귤 농사를 짓습니다.')), pub = String(sv('sm-pp', 'intro'));
+    box.appendChild(h('div', { class:'row' }, [fld('sm-pn', '이름', nm), fld('sm-pi2', '한 줄 소개', intro), fld('sm-pp', '공개 범위', pub, { opts:[['none', '아무에게도 안 보임'], ['intro', '이름+소개만'], ['all', '모두 공개']] })]));
+    var sel = document.getElementById('sm-pp'); if (sel) sel.value = pub;
+    ['sm-pn', 'sm-pi2'].forEach(function (x) { var e = document.getElementById(x); if (e) e.removeAttribute('inputmode'); });
+    box.appendChild(sumBox('sim-pf-card', [pub === 'none' ? '공개 안 함: 다른 사람에게 프로필이 보이지 않아요.' : ['미리보기 — ', h('b', { text:nm }), pub === 'all' ? ' · ' + intro + ' · 연락처·활동 내역 공개' : ' · ' + intro], '저장되지 않는 미리보기예요.']));
+  }
+  if (tab === 'ai') {
+    var lv = String(sv('sm-lv', 'mid')), r = rng(d.seed + 61), tips = [], i2;
+    for (i2 = 0; i2 < 10; i2++) tips.push({ t:['일정 알림', '서류 마감', '요금 안내', '새 기능', '건강 점검', '모임 제안'][i2 % 6], imp:Math.round(r() * 100) });
+    var th = { low:80, mid:50, high:20 }[lv] || 50, shown = tips.filter(function (x) { return x.imp >= th; });
+    box.appendChild(h('div', { class:'row' }, [fld('sm-lv', '알림 강도', lv, { opts:[['low', '조용히'], ['mid', '보통'], ['high', '적극적으로']] })]));
+    var s2 = document.getElementById('sm-lv'); if (s2) s2.value = lv;
+    box.appendChild(sumBox('sim-ai-sum', ['오늘 비서가 낸 제안 가상 10건 중 ' + shown.length + '건이 화면에 떠요.', '중요도 ' + th + ' 이상만 보여 줘요. 너무 적극적이면 알림이 많아지고, 너무 조용하면 놓칠 수 있어요.']));
+    box.appendChild(tbl(['제안', '중요도', '표시'], tips.map(function (x) { var on = x.imp >= th; return [x.t, x.imp, { t:on ? '표시' : '숨김', c:on ? 'ok' : '' }]; }), [1]));
+  }
+  if (tab === 'gdc') {
+    var bal = num('sm-gb', 0), up = num('sm-gu', 10000), use = num('sm-gs', 3000), typed = String(sv('sm-gk', ''));
+    box.appendChild(h('div', { class:'row' }, [fld('sm-gb', '현재 가상 GDC', String(bal)), fld('sm-gu', '충전할 양', String(up)), fld('sm-gs', '쓸 양', String(use))]));
+    box.appendChild(sumBox('sim-g-flow', ['충전 +' + won(up) + ' → ' + won(bal + up) + ', 사용 −' + won(use) + ' → ', [h('b', { text:won(bal + up - use) + ' GDC' })], bal + up - use < 0 ? '잔액이 모자라 사용이 거절돼요.' : '가상 GDC예요. 실제 GDC와 섞이지 않아요.']));
+    box.appendChild(h('div', { class:'box' }, [h('b', { text:'가상 백업 키 연습' }), h('div', { class:'sub', id:'sim-g-words', text:'가상 백업 단어: ' + d.words.join(' ') + ' (진짜 키가 아니에요. 종이에 적어 두는 연습만 해요.)' }), h('div', { class:'row' }, [fld('sm-gk', '단어를 안 보고 적어 보세요(띄어쓰기로 구분)', typed)])]));
+    var gk = document.getElementById('sm-gk'); if (gk) gk.removeAttribute('inputmode');
+    box.appendChild(sumBox('sim-g-key', [typed.trim() === '' ? '위 칸에 방금 본 단어를 순서대로 적으면 복구가 되는지 확인해요.' : typed.trim().split(/\s+/).join(' ') === d.words.join(' ') ? '복구 성공 — 키를 잃어버려도 이 단어가 있으면 되찾을 수 있어요.' : '순서나 단어가 달라요. 복구되지 않아요.']));
+  }
+  if (tab === 'skin') {
+    var fs2 = num('sm-fs', 16), dk = String(sv('sm-dk', 'light'));
+    box.appendChild(h('div', { class:'row' }, [fld('sm-fs', '글자 크기(12~24)', String(fs2)), fld('sm-dk', '밝기', dk, { opts:[['light', '밝게'], ['dark', '어둡게']] })]));
+    var s3 = document.getElementById('sm-dk'); if (s3) s3.value = dk;
+    var px = Math.min(24, Math.max(12, fs2));
+    box.appendChild(h('div', { class:'box', id:'sim-sk-prev', style:'font-size:' + px + 'px;' + (dk === 'dark' ? 'background:#1c1f24;color:#f1f3f5' : 'background:#fff;color:#1b1d21') }, [h('b', { text:'미리보기' }), h('div', { text:'안녕하세요. 이 글자 크기와 밝기로 보여요.' })]));
+    note('이 상자 안에서만 바뀌고, 실제 화면은 바뀌지 않아요.');
+  }
+  if (tab === 'phone') {
+    var typed2 = String(sv('sm-pc', '')), on = typed2.trim() === d.code, al = ['메일 도착', '서류 마감', '결제 알림'].map(function (x, i) { return { n:x, on:String(sv('sm-pa' + i, '1')) === '1' }; });
+    box.appendChild(h('div', { class:'sub', id:'sim-ph-code', text:'폰 화면에 뜬 가상 연동 코드: ' + d.code }));
+    box.appendChild(h('div', { class:'row' }, [fld('sm-pc', 'PC에 코드 입력', typed2)].concat(al.map(function (x, i) { return fld('sm-pa' + i, x.n + ' 알림', x.on ? '1' : '0', { opts:[['1', '켬'], ['0', '끔']] }); }))));
+    al.forEach(function (x, i) { var e = document.getElementById('sm-pa' + i); if (e) e.value = x.on ? '1' : '0'; }); var pc2 = document.getElementById('sm-pc'); if (pc2) pc2.removeAttribute('inputmode');
+    box.appendChild(sumBox('sim-ph-sum', [on ? '연결됨 — 폰과 PC가 같은 계정으로 묶였어요.' : '코드가 맞지 않아 아직 연결되지 않았어요.', '오늘 도착할 가상 알림: ' + (on ? (al.filter(function (x) { return x.on; }).map(function (x) { return x.n; }).join(', ') || '없음(모두 꺼 둠)') : '연결 뒤에 보여요')]));
+  }
+  if (tab === 'signature') {
+    var sg = String(sv('sm-sg', '홍길동 드림\n제주시 한림읍'));
+    box.appendChild(h('div', { class:'row' }, [h('label', {}, ['서명 내용', h('textarea', { id:'sm-sg', rows:'3', 'aria-label':'서명 내용', onchange:function () { ST._redraw(); } })])]));
+    var ta = document.getElementById('sm-sg'); if (ta) ta.value = sg;
+    box.appendChild(h('div', { class:'box', id:'sim-sg-prev', style:'white-space:pre-wrap' }, [h('div', { text:'안녕하세요. 서류 잘 받았습니다.' }), h('div', { class:'sub', text:'— ' }), h('div', { text:sg })]));
+    note('보내는 메일 아래에 이렇게 붙어요(미리보기). 실제 서명은 바뀌지 않아요.');
+  }
+  if (tab === 'autoreply') {
+    var a0 = num('sm-as', 26), a1 = num('sm-ae', 28), msg = String(sv('sm-am', '자리를 비웠습니다. 돌아와서 답하겠습니다.'));
+    box.appendChild(h('div', { class:'row' }, [fld('sm-as', '시작일(11월 며칠)', String(a0)), fld('sm-ae', '끝나는 날', String(a1)), fld('sm-am', '자동응답 문구', msg)]));
+    var am = document.getElementById('sm-am'); if (am) am.removeAttribute('inputmode');
+    var hit = d.mails.filter(function (m) { return m.day >= a0 && m.day <= a1; });
+    box.appendChild(tbl(['도착일', '보낸이', '자동응답'], d.mails.map(function (m) { var on = m.day >= a0 && m.day <= a1; return ['11월 ' + m.day + '일', m.from, { t:on ? '보내요' : '안 보내요', c:on ? 'ok' : '' }]; })));
+    box.appendChild(sumBox('sim-ar-sum', ['가상 메일 ' + d.mails.length + '통 중 ' + hit.length + '통에 자동응답이 나가요. 문구: 「' + msg + '」']));
+  }
+};
 function readOpt(kind) {
   var s = ST[kind], o = s.opt, g = function (id, d) { var e = document.getElementById(id); return e ? String(e.value).replace(/,/g, '') : d; };
   if (kind === 'market') { o.n = g('sm-n', o.n); o.spread = g('sm-sp', o.spread); o.odd = g('sm-odd', o.odd); o.pi = g('sm-pi', o.pi || '0'); }
@@ -480,7 +556,7 @@ function readOpt(kind) {
   if (kind === 'bank') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'stock') { o.n = g('sm-n', o.n); o.ft = g('sm-ft', o.ft); o.fa = g('sm-fa', o.fa); o.fc = g('sm-fc', o.fc); o.fr = g('sm-fr', o.fr); o.br = g('sm-br', o.br); o.co = g('sm-co', o.co || '0'); o.w = g('sm-w', o.w || X.w); s.f = { sector:g('sm-sec', s.f.sector), region:g('sm-reg', s.f.region), size:g('sm-sz', s.f.size) }; }
 }
-function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
+function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, settings:settingsGen, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
   ST._redraw = null; document.removeEventListener('keydown', onKey, true);
@@ -493,7 +569,7 @@ function render() {
   if (!PN || !CUR) return; var kind = CUR, s = ST[kind], tab = s.tab, box = document.getElementById('sim-body'); if (!box) return;
   document.getElementById('sim-title-t').textContent = PAGES[kind].name + ' · ' + tabLabel(kind, tab) + ' 시뮬레이션';
   Array.prototype.forEach.call(PN.querySelectorAll('.chips button'), function (b) { var on = b.getAttribute('data-tab') === tab; b.className = on ? 'cur' : ''; b.setAttribute('aria-selected', on ? 'true' : 'false'); });
-  s.vals = s.vals || {}; Array.prototype.forEach.call(box.querySelectorAll('input,select'), function (e) { if (e.id) s.vals[e.id] = e.value; });
+  s.vals = s.vals || {}; Array.prototype.forEach.call(box.querySelectorAll('input,select,textarea'), function (e) { if (e.id) s.vals[e.id] = e.value; });
   box.textContent = ''; BODY[kind](box, s, tab);
 }
 /** 화면에서 탭이 바뀌면 패널도 그 탭의 시뮬레이션으로 따라간다. */
@@ -514,5 +590,5 @@ function open(kind, tab) {
   requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
   var c = document.getElementById('sim-close'); if (c) c.focus(); return true;
 }
-window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ forms:formsGen, docs:docsGen, learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
+window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ settings:settingsGen, forms:formsGen, docs:docsGen, learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
 })();
