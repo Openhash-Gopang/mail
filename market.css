@@ -144,3 +144,8 @@
 .mkt .prod{display:flex;gap:14px;align-items:center;margin-top:12px}
 .mkt .prod img,.mkt .prod .noimg{width:88px;height:88px;object-fit:cover;border-radius:8px;flex:none}
 .mkt .prod .noimg{display:flex;align-items:center;justify-content:center;background:var(--lb,#eef3fd);color:var(--sub,#5f6368);font-size:12px}
+
+.mkt .mk-ov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.mkt .mk-dlg{background:var(--bg,#fff);color:inherit;border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px}
+.mkt .mk-dlg b{font-size:18px}
+.mkt .mk-dlg #mk-ask-x{white-space:pre-line}
