@@ -153,3 +153,9 @@ test('도우미 버전: 오래된 확장(주소를 전달하지 못함)은 맡�
   const ok = mk('0.6.40'); ok.type('mk-link', 'https://shop.example/p/1'); ok.btn('도우미로 읽어 오기').click(); await wait(30); assert.equal(queued, 1);
   const V = ok.N.agentVer; assert.equal(V.ok('0.6.41'), true); assert.equal(V.ok('0.7.0'), true); assert.equal(V.ok('1.0'), true); assert.equal(V.ok('0.6.39'), false); assert.equal(V.ok(''), false); assert.equal(V.ok('x.y'), false);
 });
+test('상품 링크 칸: 엔터 키로 도우미를 바로 실행한다(한글 조합 중 엔터는 무시)', { skip }, async () => {
+  let queued = 0; const p = page({ onData() {}, detect: () => Promise.resolve({ version: '0.6.40' }), queue: () => { queued++; return Promise.resolve({ ok: true }); } });
+  p.type('mk-link', 'https://shop.example/p/1'); const i = p.doc.getElementById('mk-link');
+  i.dispatchEvent(new p.w.KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })); await wait(30); assert.equal(queued, 0);
+  i.dispatchEvent(new p.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await wait(30); assert.equal(queued, 1);
+});
