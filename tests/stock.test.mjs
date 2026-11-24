@@ -111,8 +111,8 @@ test('매도: 보유 수량보다 많으면 막는다', { skip }, () => {
 
 test('탭 이동: 모든 탭이 그려진다', { skip }, () => {
   const p = page('portfolio');
-  for (const v of ['portfolio', 'value', 'wage', 'company', 'order', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
-  assert.equal(p.doc.querySelectorAll('.tab').length, 10);
+  for (const v of ['portfolio', 'value', 'wage', 'explore', 'company', 'order', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
+  assert.equal(p.doc.querySelectorAll('.tab').length, 11);
 });
 
 test('투자 점검·용어, 시세 서버 없음 안내', { skip }, () => {
@@ -251,4 +251,27 @@ test('내 임금: 중복 월·미래 월·잘못된 금액은 막고, 증감은 
   const N = api(); assert.equal(N.wageStats([]), null);
   const rows = ['01', '02', '03', '04', '05', '06'].map((m, i) => ({ m: '2026-' + m, amt: i < 3 ? 1000 : 1100 })); const s = N.wageStats(rows);
   assert.equal(Math.round(s.change * 10) / 10, 10); assert.equal(s.lo, 1000); assert.equal(s.hi, 1100);
+});
+
+// ── 7단계: 종목 탐색·공개 설정 ──
+const chk = (p, id, on) => { const c = p.doc.getElementById(id); c.checked = on; c.dispatchEvent(new p.w.Event('change', { bubbles: true })); };
+const sel = (p, id, v) => { const s = p.doc.getElementById(id); s.value = v; s.dispatchEvent(new p.w.Event('change', { bubbles: true })); };
+const BOOK = { 'navi-tax-v2': { rec: [rec('MK-1')], inbox: [] }, 'navi-wallet-v1': { bal: 5200000, at: '2026-11-25T01:00:00Z' } };
+test('종목 탐색: 공개 전에는 아무것도 찾아지지 않고, 공개 서버가 없음을 알린다', { skip }, () => {
+  const p = page('explore', BOOK); assert.ok(p.doc.getElementById('stk-x-empty')); assert.match(p.txt(), /공개 정보를 모으는 서버가 아직 없어/); assert.equal(p.fetched(), 0);
+});
+test('종목 탐색: 공개를 켜고 이름·업종·지역을 채우면 고른 항목만 담긴 미리보기가 나오고, 조건으로 걸러진다', { skip }, () => {
+  const p = page('explore', BOOK); chk(p, 'stk-x-on', true);
+  type(p, 'stk-x-name', '나의 가게'); sel(p, 'stk-x-psector', '도소매'); sel(p, 'stk-x-pregion', '제주'); chk(p, 'stk-x-f-equity', true);
+  p.S.view('explore'); const t = p.doc.getElementById('stk-x-res').textContent;
+  assert.match(t, /찾은 기업 1곳/); assert.match(t, /순자산/); assert.ok(!/매출/.test(t) && !/가치 평가 구간/.test(t));
+  const saved = JSON.parse(p.w.localStorage.getItem('navi-pub-v1')); assert.equal(saved.on, true); assert.equal(saved.fields.sales, false);
+  sel(p, 'stk-x-sector', 'IT·정보통신'); p.btn('찾기').click(); assert.match(p.doc.getElementById('stk-x-res').textContent, /찾은 기업 0곳/);
+  p.btn('조건 지우기').click(); assert.match(p.doc.getElementById('stk-x-res').textContent, /찾은 기업 1곳/);
+});
+test('종목 탐색: 공개를 끄거나 정보가 모자라면 아무것도 내보내지 않고, searchListings 는 조건을 모두 만족한 것만 이름순으로 돌려준다', { skip }, () => {
+  const p = page('explore', BOOK); type(p, 'stk-x-name', 'x'); assert.match(p.doc.getElementById('stk-x-res').textContent, /0곳/);
+  const N = api(), L = [{ name: 'b', sector: '제조', region: '제주', size: 'mid' }, { name: 'a', sector: '제조', region: '서울', size: 'mid' }, { name: 'c', sector: '서비스', region: '제주', size: 'small' }];
+  assert.deepEqual(N.searchListings(L, { sector: '제조' }).map((x) => x.name), ['a', 'b']); assert.deepEqual(N.searchListings(L, { sector: '제조', region: '제주' }).map((x) => x.name), ['b']);
+  assert.equal(N.searchListings(L, { text: 'C' }).length, 1); assert.equal(N.searchListings(null, {}).length, 0); assert.equal(N.sizeOf(5e7), 'small'); assert.equal(N.sizeOf(1e9), 'large');
 });
