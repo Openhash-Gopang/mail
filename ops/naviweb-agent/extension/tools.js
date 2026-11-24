@@ -26,7 +26,8 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
   { name: 'report_data', description: '화면에서 읽은 상품 정보를 나비웹(시장 화면)으로 보낸다. 나비웹에서 맡긴 상품 확인 작업에서만 쓴다. 보고 읽은 값만 넣고 모르는 항목은 비운다(지어내지 않는다). 구매·결제는 하지 않는다.',
     input_schema: { type: 'object', properties: { kind: { type: 'string', enum: ['product'] }, data: { type: 'object', properties: {
-      name: { type: 'string', description: '상품명' }, price: { type: 'number', description: '판매 가격(원, 숫자만)' }, image: { type: 'string', description: '대표 이미지 주소(https)' },
+      stage: { type: 'string', enum: ['core', 'detail'], description: 'core: 먼저 상품명·가격(·이미지·판매자)만 보낼 때, detail: 나머지를 보낼 때' }, sellerTrust: { type: 'string', description: '판매자 신뢰도(판매자 평점·등급·운영 기간·분쟁 여부, 화면에 보이는 말 그대로)' },
+      name: { type: 'string', description: '상품명(페이지에 보이는 제목을 글자 하나 바꾸지 말고 그대로)' }, price: { type: 'number', description: '판매 가격(원, 숫자만)' }, image: { type: 'string', description: '대표 이미지 주소(https)' },
       seller: { type: 'string', description: '판매자·판매 사이트 이름' }, as: { type: 'string', description: '사후 서비스(AS·반품·교환·보증) 안내 요약' },
       rating: { type: 'number', description: '고객 리뷰 평균 평점(1~5)' }, count: { type: 'number', description: '리뷰 건수' }, reviews: { type: 'array', items: { type: 'string' }, description: '대표 리뷰 요약 최대 5개' },
       shipping: { type: 'string', description: '배송 방식·기간' }, compare: { type: 'array', items: { type: 'number' }, description: '같은 상품의 다른 판매처 가격(원) 최대 5개' } } } }, required: ['kind', 'data'] } },

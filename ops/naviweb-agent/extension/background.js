@@ -274,6 +274,7 @@ async function host(playbook) {
         const d = input && input.data && typeof input.data === 'object' ? input.data : null;
         if (!d || input.kind !== 'product') return { text: '보낼 상품 정보가 없습니다. kind 는 product, data 에 읽은 값을 넣으세요.' };
         await deliverToNavi({ kind: 'data', label: state.slot, data: d });
+        if (d.stage === 'core') return { text: '상품 이름과 가격을 나비웹 시장 화면에 먼저 보냈습니다. 이어서 나머지(판매자·판매자 신뢰도·AS·리뷰 평점과 건수·대표 리뷰·배송·다른 판매처 가격)를 읽어 report_data(kind: product, data.stage: detail)로 한 번 더 보내세요. 사용자에게 묻지 마세요(구매·결제는 하지 않습니다).' };
         return { text: '나비웹 시장 화면으로 상품 정보를 보냈습니다. 사용자에게 다시 묻지 말고 작업을 마치세요(구매·결제는 하지 않습니다).' };
       }
       if (name === 'pdv_get') {

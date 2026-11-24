@@ -80,13 +80,17 @@ test('화면: 자동 진행 중 처음으로 돌아가면 뒤늦은 타이머가
 });
 test('도우미: 링크 없으면 안내, 있으면 맡기고, 읽어 온 값은 걸러서 칸에 채운다(주소·이미지 검사)', { skip }, async () => {
   let cb = null, job = null;
-  const agent = { onData: (f) => { cb = f; }, detect: () => Promise.resolve({ version: '0.6.40' }), queue: (j) => { job = j; return Promise.resolve({ ok: true }); } };
+  const agent = { onData: (f) => { cb = f; }, detect: () => Promise.resolve({ version: '0.6.41' }), queue: (j) => { job = j; return Promise.resolve({ ok: true }); } };
   const p = page(agent); p.btn('도우미로 읽어 오기').click(); assert.ok(p.txt().includes('상품 링크')); assert.equal(job, null);
   p.type('mk-link', 'http://evil.test/x'); p.btn('도우미로 읽어 오기').click(); assert.equal(job, null);
   p.type('mk-link', 'https://shop.example/p/1'); p.btn('도우미로 읽어 오기').click(); await wait(30);
   assert.ok(job && job.url === 'https://shop.example/p/1' && job.slot === '시장 상품 확인' && job.goal.includes('report_data') && job.goal.includes('결제는 하지 마세요'));
   assert.ok(p.txt().includes('나비웹 도우미에게 맡겼어요')); assert.ok(p.doc.getElementById('mk-hprog').textContent.includes('진행 중'));
-  cb({ label: '다른 항목', data: { name: '무시돼야 함', price: 1 } }); assert.equal(p.doc.getElementById('mk-name').value, '');
+  p.w.__naviMarketCoreWait = 0;
+  cb({ label: '시장 상품 확인', data: { stage: 'core', name: '계양 DG18BLZ-100S 100mm 본체만', price: 112170 } });
+  assert.ok(p.txt().includes('살 물건을 알려 주세요') && p.doc.getElementById('mk-name').value === '계양 DG18BLZ-100S 100mm 본체만', '이름·가격이 먼저 오면 칸에 채우고 나머지를 기다린다');
+  assert.ok(p.doc.getElementById('mk-hprog').textContent.includes('계양 DG18BLZ-100S') && p.doc.getElementById('mk-hprog').textContent.includes('112,170원'));
+  cb({ label: '다른 항목', data: { name: '무시돼야 함', price: 1 } }); assert.equal(p.doc.getElementById('mk-name').value, '계양 DG18BLZ-100S 100mm 본체만');
   cb({ label: '시장 상품 확인', data: { name: '무선 청소기', price: 189000, image: 'javascript:alert(1)', seller: '예시몰', as: '1년 무상 AS', rating: 4.6, count: 230, reviews: ['좋아요'], compare: [185000, 190000, 'x', 192000] } });
   assert.ok(p.txt().includes('비슷한 걸 산 적이 있는지'), '이름·가격을 읽어 오면 검토 시작이 자동으로 눌린다'); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('189,000원')); assert.equal(p.doc.querySelector('img'), null);
   cb({ label: '시장 상품 확인', data: { image: 'https://img.example/a.jpg' } }); assert.equal(p.doc.querySelector('img').getAttribute('src'), 'https://img.example/a.jpg'); assert.ok(p.txt().includes('비슷한 걸 산 적이 있는지'));
@@ -97,7 +101,7 @@ test('도우미: 링크 없으면 안내, 있으면 맡기고, 읽어 온 값은
 test('도우미가 없으면 직접 넣으라고 안내한다', { skip }, async () => {
   const p = page(); p.type('mk-link', 'https://shop.example/p/1'); p.btn('도우미로 읽어 오기').click(); assert.ok(p.txt().includes('직접 넣어도 돼요'));
   const q = page({ onData() {}, detect: () => Promise.resolve(null), queue: () => Promise.resolve({ ok: true }) }); q.type('mk-link', 'https://shop.example/p/1'); q.btn('도우미로 읽어 오기').click(); await wait(2500); assert.ok(q.txt().includes('설치되어 있지 않거나') && q.txt().includes('새로고침(F5)'));
-  let n = 0; const r = page({ onData() {}, detect: () => Promise.resolve(++n < 3 ? null : { version: '0.6.40' }), queue: () => Promise.resolve({ ok: true }) }); r.type('mk-link', 'https://shop.example/p/1'); r.btn('도우미로 읽어 오기').click(); await wait(2000); assert.equal(n, 3); assert.ok(!r.txt().includes('설치되어 있지 않거나'));
+  let n = 0; const r = page({ onData() {}, detect: () => Promise.resolve(++n < 3 ? null : { version: '0.6.41' }), queue: () => Promise.resolve({ ok: true }) }); r.type('mk-link', 'https://shop.example/p/1'); r.btn('도우미로 읽어 오기').click(); await wait(2000); assert.equal(n, 3); assert.ok(!r.txt().includes('설치되어 있지 않거나'));
 });
 test('desktop.html 연결 + 경로 + 범위 css + 확장 도구(report_data) 중계', () => {
   assert.ok(d.includes('_mktOpen('), 'desktop 에서 시장 열기'); assert.ok(d.includes("go.indexOf('mkt:') === 0") && d.includes("if (name === 'mkt') _mktShow();") && d.includes('id="tab-mkt"'));
@@ -163,12 +167,12 @@ test('시장 화면: 연결 전인 것(PDV·판매자 나비·분산 장부)을 
 test('도우미 버전: 오래된 확장(주소를 전달하지 못함)은 맡기지 않고 업데이트를 안내한다', { skip }, async () => {
   let queued = 0; const mk = (v) => page({ onData() {}, detect: () => Promise.resolve({ version: v }), queue: () => { queued++; return Promise.resolve({ ok: true }); } });
   const old = mk('0.6.5'); old.type('mk-link', 'https://shop.example/p/1'); old.btn('도우미로 읽어 오기').click(); await wait(30);
-  assert.equal(queued, 0); assert.ok(old.txt().includes('오래된 버전(0.6.5)') && old.txt().includes('chrome://extensions') && old.txt().includes('0.6.40'));
-  const ok = mk('0.6.40'); ok.type('mk-link', 'https://shop.example/p/1'); ok.btn('도우미로 읽어 오기').click(); await wait(30); assert.equal(queued, 1);
+  assert.equal(queued, 0); assert.ok(old.txt().includes('오래된 버전(0.6.5)') && old.txt().includes('chrome://extensions') && old.txt().includes('0.6.41'));
+  const ok = mk('0.6.41'); ok.type('mk-link', 'https://shop.example/p/1'); ok.btn('도우미로 읽어 오기').click(); await wait(30); assert.equal(queued, 1);
   const V = ok.N.agentVer; assert.equal(V.ok('0.6.41'), true); assert.equal(V.ok('0.7.0'), true); assert.equal(V.ok('1.0'), true); assert.equal(V.ok('0.6.39'), false); assert.equal(V.ok(''), false); assert.equal(V.ok('x.y'), false);
 });
 test('상품 링크 칸: 엔터 키로 도우미를 바로 실행한다(한글 조합 중 엔터는 무시)', { skip }, async () => {
-  let queued = 0; const p = page({ onData() {}, detect: () => Promise.resolve({ version: '0.6.40' }), queue: () => { queued++; return Promise.resolve({ ok: true }); } });
+  let queued = 0; const p = page({ onData() {}, detect: () => Promise.resolve({ version: '0.6.41' }), queue: () => { queued++; return Promise.resolve({ ok: true }); } });
   p.type('mk-link', 'https://shop.example/p/1'); const i = p.doc.getElementById('mk-link');
   i.dispatchEvent(new p.w.KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })); await wait(30); assert.equal(queued, 0);
   i.dispatchEvent(new p.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await wait(30); assert.equal(queued, 1);
