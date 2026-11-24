@@ -19,7 +19,7 @@ var COL = ['#3B7DDD', '#0F8F7E', '#E8710A', '#7C4DDB', '#C2410C', '#4B5563', '#B
 var RANGES = [['today', '오늘'], ['7', '7일'], ['30', '30일'], ['90', '90일']];
 var CHG = { pending:'입금 대기', matched:'충전 완료', expired:'만료', cancelled:'취소' };
 var M = null, LS = {};
-var S = { view:'wallet', guid:'', proxy:'', fetch:null, st:'idle', at:0, bal:null, quota:null, usage:null, series:null, charges:null, errs:[], range:'7', pay:{ code:'', amt:'', memo:'' }, sim:false, calc:{ kind:'save', p:'', r:'', m:'12' }, onPlans:null, plans:null };
+var S = { view:'wallet', guid:'', proxy:'', fetch:null, st:'idle', at:0, bal:null, quota:null, usage:null, series:null, charges:null, errs:[], range:'7', pay:{ code:'', amt:'', memo:'' }, sim:false, hsim:false, hseed:1, csim:false, cstep:1, cseed:1, lsim:false, lseed:1, calc:{ kind:'save', p:'', r:'', m:'12' }, onPlans:null, plans:null };
 
 // ── 작은 도구 ──
 function h(tag, attrs, kids) {
@@ -288,8 +288,86 @@ function viewPay() {
 }
 
 // ── 거래 내역 ──
+// ── 시뮬레이션 공통(연습용 가상 값: 실제 돈·내 장부와 무관) ──
+function prng(seed) { var s = seed >>> 0; return function () { s = (s + 0x6D2B79F5) >>> 0; var t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function rint(r, a, b, step) { step = step || 100; return Math.round((a + r() * (b - a)) / step) * step; }
+function dayAgo(n) { var p = kst().split('-'), x = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]) - n * 864e5); return x.getUTCFullYear() + '-' + ('0' + (x.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + x.getUTCDate()).slice(-2); }
+function svgBox(id, w, hh, label, inner) { return h('div', { id:id, html:'<svg viewBox="0 0 ' + w + ' ' + hh + '" role="img" aria-label="' + label + '" style="width:100%;height:auto;display:block;font-family:inherit">' + inner + '</svg>' }); }
+function sx(x, y, t, o) { o = o || {}; return '<text x="' + x + '" y="' + y + '" font-size="' + (o.fs || 12) + '" text-anchor="' + (o.a || 'start') + '" fill="' + (o.c || 'var(--on)') + '"' + (o.b ? ' font-weight="700"' : '') + '>' + t + '</text>'; }
+function man(v) { return v >= 1e4 ? (v / 1e4).toLocaleString('ko-KR') + '만' : String(v); }
+function simHead(title, sub, on, key, seedKey, goId, redoId) {
+  var b = btn(on ? '시뮬레이션 닫기' : '시뮬레이션', on ? 'quiet' : 'fill', function () { S[key] = !S[key]; render(); }); b.id = goId;
+  var acts = [b];
+  if (on) { var rb = btn('다시 생성', 'quiet', function () { S[seedKey]++; render(); }); rb.id = redoId; acts.unshift(rb); }
+  return h('div', { class:'rowf', style:'justify-content:space-between;align-items:center;gap:12px' }, [h('div', {}, [h('b', { style:'font-size:17px', text:title }), h('div', { class:'sub', text:sub })]), h('div', { class:'rowf' }, acts)]);
+}
+function stTable(title, rows, id) { return h('div', { class:'stcol', id:id }, [h('div', { class:'sth', text:title }), h('table', { class:'stbl' }, [h('tbody', {}, rows.map(function (r) { return h('tr', { class:r[2] || '' }, [h('td', { text:r[0] }), h('td', { class:'r num', text:r[1] })]); }))])]); }
+// ── 거래 내역 시뮬레이션: 가상 거래 → 분야별 그래프, 국민 평균과 비교 ──
+// 국민 평균: 국가데이터처(통계청) 가계동향조사 2025년 연간 가구당 월평균 소비지출 2,939,000원 기준 비중(%).
+// 외식(음식·숙박 15.8%)·가정식(식료품·비주류음료 15.3%)·학비(교육 244,000원 ÷ 2,939,000원 = 8.3%)는 발표 값, 나머지는 대략값. 같은 7개 분야 안에서 비중으로 비교한다.
+var SPC = [['교통비', 10.5, 0], ['식비 · 외식', 15.8, 1], ['식비 · 가정식', 15.3, 1], ['학비', 8.3, 1], ['통신비', 4.5, 0], ['문화·여가', 5.5, 0], ['의료·건강', 7.5, 0]];
+function spendGen(seed) {
+  var r = prng(seed), tx = [];
+  function add(i, c, w, a) { tx.push({ d:dayAgo(29 - i), i:i, c:c, w:w, a:a }); }
+  for (var i = 0; i < 30; i++) {
+    var dow = new Date(dayAgo(29 - i) + 'T00:00:00Z').getUTCDay(), wk = dow > 0 && dow < 6;
+    if (wk) { add(i, 0, '지하철·버스', rint(r, 1400, 2900, 50)); add(i, 0, '지하철·버스', rint(r, 1400, 2900, 50)); if (r() < 0.9) add(i, 1, '점심 식당', rint(r, 8000, 13500, 500)); if (r() < 0.6) add(i, 1, '카페', rint(r, 4500, 6500, 100)); }
+    else { if (r() < 0.7) add(i, 1, '저녁 식당', rint(r, 18000, 42000, 500)); if (r() < 0.3) add(i, 1, '배달 주문', rint(r, 16000, 28000, 500)); if (r() < 0.25) add(i, 5, '영화관', 14000); }
+    if (r() < 0.12) add(i, 0, '택시', rint(r, 8500, 21000, 500));
+    if (i % 7 === 2) add(i, 2, '동네 마트', rint(r, 38000, 92000, 500));
+    if (r() < 0.35) add(i, 2, '편의점', rint(r, 3000, 9000, 100));
+    if (r() < 0.06) add(i, 6, '약국', rint(r, 6500, 15000, 500));
+    if (i === 4 || i === 19) add(i, 0, '주유소', rint(r, 52000, 74000, 1000));
+    if (i === 1) add(i, 3, '학원 수강료', 280000);
+    if (i === 16) add(i, 3, '교재 구입', rint(r, 15000, 30000, 1000));
+    if (i === 3) add(i, 4, '휴대폰 요금', rint(r, 55000, 69000, 1000));
+    if (i === 8) add(i, 4, '인터넷 요금', 33000);
+    if (i === 6) add(i, 5, '동영상 구독', 13500);
+    if (i === 11) add(i, 6, '병원', rint(r, 14000, 28000, 500));
+  }
+  return tx;
+}
+function spendSimCard() {
+  var on = S.hsim, kids = [simHead('시뮬레이션 — 가상 거래 내역을 분야별로 보고 국민 평균과 비교', '가상의 최근 30일 거래를 만들어 교통비·식비·학비·통신비 등으로 나눠 보여 줘요. 실제 거래와 무관한 연습입니다.', on, 'hsim', 'hseed', 'bnk-hsim-go', 'bnk-hsim-redo')];
+  if (on) {
+    var tx = spendGen(S.hseed), tot = [0, 0, 0, 0, 0, 0, 0], total = 0, day = [], i;
+    for (i = 0; i < 30; i++) day.push(0);
+    tx.forEach(function (t) { tot[t.c] += t.a; total += t.a; day[t.i] += t.a; });
+    var asum = 0; SPC.forEach(function (c) { asum += c[1]; });
+    var rows = SPC.map(function (c, k) { return { n:c[0], amt:tot[k], mine:total ? tot[k] / total * 100 : 0, avg:c[1] / asum * 100, pub:c[2] }; });
+    var far = rows.slice().sort(function (a, b) { return Math.abs(b.mine - b.avg) - Math.abs(a.mine - a.avg); })[0], dfv = far.mine - far.avg;
+    function t3(k, vv, id) { return h('div', { class:'tile' }, [h('div', { class:'k', text:k }), h('div', { class:'v num', id:id, text:vv })]); }
+    kids.push(h('div', { class:'g4 cmp', style:'margin-top:12px' }, [t3('최근 30일 지출', won(total) + ' GDC', 'bnk-hsim-total'), t3('거래 건수', tx.length + '건', 'bnk-hsim-cnt'), t3('평균과 가장 다른 분야', far.n + ' ' + (dfv > 0 ? '+' : '−') + Math.abs(dfv).toFixed(1) + '%p', 'bnk-hsim-far')]));
+    // 도넛: 분야별 구성(단색, 농도만 다르게)
+    var op = [1, 0.82, 0.66, 0.52, 0.4, 0.3, 0.2], C = 2 * Math.PI * 80, off = 0, segs = '';
+    rows.forEach(function (x, k) { var len = total ? x.amt / total * C : 0; if (len > 0) segs += '<circle cx="110" cy="110" r="80" fill="none" stroke="var(--pri)" stroke-opacity="' + op[k] + '" stroke-width="30" stroke-dasharray="' + Math.max(len - 1.5, 0.5).toFixed(2) + ' ' + C.toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 110 110)"/>'; off += len; });
+    segs += sx(110, 106, '30일 지출', { a:'middle', fs:12, c:'var(--on2)' }) + sx(110, 130, short(total), { a:'middle', fs:22, b:1 });
+    var legend = h('div', { style:'flex:1;min-width:190px' }, rows.map(function (x, k) { return h('div', { style:'display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;border-top:1px solid var(--line)' }, [h('span', { style:'display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--pri);opacity:' + op[k] }), h('span', { style:'flex:1', text:x.n }), h('span', { class:'num', text:won(x.amt) }), h('span', { class:'num', style:'width:48px;text-align:right;color:var(--on2)', text:x.mine.toFixed(1) + '%' })]); }));
+    var donut = h('div', { class:'card col', style:'margin:0' }, [h('b', { text:'분야별 지출 구성' }), h('div', { style:'display:flex;flex-wrap:wrap;align-items:center;gap:12px' }, [h('div', { style:'width:200px;max-width:100%' }, [svgBox('bnk-hsim-donut', 220, 220, '분야별 지출 구성 도넛 차트', segs)]), legend])]);
+    // 비교 막대: 나 vs 국민 평균(같은 7개 분야 안의 비중)
+    var mx = 0; rows.forEach(function (x) { mx = Math.max(mx, x.mine, x.avg); }); mx = Math.ceil(mx / 5) * 5;
+    var L = 112, sc = (560 - L - 54) / mx, bar = sx(L, 12, '나', { fs:11, c:'var(--on2)' }) + '<rect x="' + (L + 22) + '" y="4" width="10" height="10" fill="var(--pri)"/>' + sx(L + 60, 12, '국민 평균', { fs:11, c:'var(--on2)' }) + '<rect x="' + (L + 118) + '" y="4" width="10" height="10" fill="none" stroke="var(--n)" stroke-width="1.4"/>';
+    bar = sx(L, 12, '■ 나', { fs:11 }) + sx(L + 60, 12, '□ 국민 평균', { fs:11, c:'var(--on2)' });
+    rows.forEach(function (x, k) { var y0 = 26 + k * 38; bar += sx(0, y0 + 17, x.n, { fs:12.5 }) + '<rect x="' + L + '" y="' + (y0 + 3) + '" width="' + Math.max(x.mine * sc, 1).toFixed(1) + '" height="13" rx="2" fill="var(--pri)"/>' + sx(L + x.mine * sc + 6, y0 + 14, x.mine.toFixed(1) + '%', { fs:11 }) + '<rect x="' + L + '" y="' + (y0 + 20) + '" width="' + Math.max(x.avg * sc, 1).toFixed(1) + '" height="13" rx="2" fill="none" stroke="var(--n)" stroke-width="1.4"/>' + sx(L + x.avg * sc + 6, y0 + 31, x.avg.toFixed(1) + '%', { fs:11, c:'var(--on2)' }); });
+    var cmpCard = h('div', { class:'card col', style:'margin:0' }, [h('b', { text:'국민 평균과 비교 — 지출 비중(%)' }), svgBox('bnk-hsim-cmp', 560, 26 + 7 * 38 + 4, '분야별 지출 비중을 나와 국민 평균으로 비교한 막대 차트', bar)]);
+    kids.push(h('div', { class:'g2 eq', style:'margin-top:8px' }, [donut, cmpCard]));
+    // 일별 지출 막대
+    var dm = 0; day.forEach(function (x) { dm = Math.max(dm, x); }); var step = Math.pow(10, Math.floor(Math.log(dm || 1) / Math.LN10)); dm = Math.ceil(dm / step) * step || 1;
+    var PL = 44, PB = 22, PT = 8, ch = 170, bw = (560 - PL - 6) / 30, dsv = '';
+    [0, 0.5, 1].forEach(function (g) { var y = PT + (ch - PT - PB) * (1 - g); dsv += '<line x1="' + PL + '" y1="' + y + '" x2="556" y2="' + y + '" stroke="var(--line)" stroke-width="1"/>' + sx(PL - 6, y + 4, short(dm * g), { a:'end', fs:10.5, c:'var(--on2)' }); });
+    day.forEach(function (x, k) { var hh = (ch - PT - PB) * x / dm; dsv += '<rect x="' + (PL + k * bw + bw * 0.15).toFixed(1) + '" y="' + (ch - PB - hh).toFixed(1) + '" width="' + (bw * 0.7).toFixed(1) + '" height="' + Math.max(hh, 0).toFixed(1) + '" rx="1.5" fill="var(--pri)" fill-opacity="0.85"/>'; });
+    [0, 14, 29].forEach(function (k) { dsv += sx(PL + k * bw + bw / 2, ch - 6, dayAgo(29 - k).slice(5), { a:'middle', fs:10.5, c:'var(--on2)' }); });
+    kids.push(h('div', { class:'card col', style:'margin-top:8px' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { text:'일별 지출(GDC)' }), h('span', { class:'sub', text:'큰 막대는 학원비·휴대폰 요금·장보기·주유 같은 날이에요.' })]), svgBox('bnk-hsim-daily', 560, ch, '최근 30일 일별 지출 막대 차트', dsv)]));
+    // 최근 거래
+    var recent = tx.slice().sort(function (a, b) { return b.i - a.i; }).slice(0, 12);
+    kids.push(h('div', { class:'stcol', id:'bnk-hsim-tx', style:'margin-top:8px' }, [h('div', { class:'sth', text:'가상 거래 내역 — 최근 12건 (전체 ' + tx.length + '건)' }), h('table', { class:'stbl' }, [h('tbody', {}, recent.map(function (t) { return h('tr', {}, [h('td', { class:'sub', text:t.d.slice(5) }), h('td', { text:SPC[t.c][0] }), h('td', { text:t.w }), h('td', { class:'r num', text:won(t.a) + ' GDC' })]); }))])]));
+    kids.push(h('div', { class:'sub', id:'bnk-hsim-src', style:'margin-top:8px', text:'국민 평균은 국가데이터처(통계청) 가계동향조사 2025년 연간, 가구당 월평균 소비지출 293만 9천 원을 기준으로 했어요. 외식(음식·숙박 15.8%)·가정식(식료품·비주류음료 15.3%)·학비(교육, 월 24만 4천 원 = 8.3%)는 발표 값이고, 교통비·통신비·문화·여가·의료·건강은 대략값이에요. 같은 7개 분야 안에서 비중(%)으로 비교하고, 거래 내역은 연습용 가상 값이에요.' }));
+  }
+  return h('div', { class:'card col', id:'bnk-hsim', style:'margin-top:16px' }, kids);
+}
 function viewHistory() {
   var kids = head('거래 내역', '충전과 사용 내역, 이번 달 청구서를 모았습니다.'), st = status(); if (st) kids.push(st);
+  kids.push(spendSimCard());
   kids.push(h('div', { class:'rowf noprint', style:'margin-top:16px' }, [h('div', { class:'seg', role:'group', 'aria-label':'기간' }, RANGES.map(function (r) { return h('button', { type:'button', 'aria-pressed':String(S.range === r[0]), text:r[1], onclick:function () { S.range = r[0]; render(); } }); }))]));
   var R = rowsOf(S.range);
   if (!R) kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'empty', text:S.st === 'ok' || S.st === 'err' || S.st === 'nologin' ? '사용 내역이 아직 없어요. 서비스 도입 초기라 기록이 없을 수 있어요.' : '불러오는 중…' })]));
@@ -339,9 +417,133 @@ function calcCard() {
     num('bnk-c-p', save ? '예치 원금 (GDC)' : '대출 원금 (GDC)', 'p', '1000000'), num('bnk-c-r', '연 이율 (%)', 'r', '3.5', '예: 3.5'), num('bnk-c-m', '기간 (개월)', 'm', '12', '1~600개월'), res]);
   paint(); return card;
 }
+// ── 신용 평가 시뮬레이션: 종래의 평가 기법(재무비율 스코어카드·5C·Altman Z″)을 단계별로 적용 ──
+var GR = [['AAA', 90, 3.5, 100], ['AA', 80, 4.2, 90], ['A', 70, 5.2, 75], ['BBB', 60, 6.5, 60], ['BB', 50, 8.0, 40], ['B', 40, 10.0, 20], ['CCC', 0, 13.0, 0]];
+function grIdx(score) { for (var i = 0; i < GR.length; i++) if (score >= GR[i][1]) return i; return GR.length - 1; }
+function frac(v, cuts, hi) { var fr = [1, 0.8, 0.6, 0.4, 0.2]; for (var i = 0; i < cuts.length; i++) if (hi ? v >= cuts[i] : v <= cuts[i]) return fr[i]; return 0; }
+function r1k(x) { return Math.round(x / 1e3) * 1e3; }
+function credGen(seed) {
+  var r = prng(seed * 7919 + 13), i;
+  var E = rint(r, 20e6, 60e6, 1e6), L = r1k(E * (0.3 + r() * 1.9));
+  var ap = r1k(L * 0.3), sd = r1k(L * 0.35), ld = L - ap - sd, CL = ap + sd, A = E + L;
+  var CA = Math.min(r1k(CL * (0.8 + r() * 1.6)), r1k(A * 0.85)), cash = r1k(CA * 0.35), rec = r1k(CA * 0.3), inv = CA - cash - rec, fix = A - CA;
+  var cap = Math.round(E * (0.55 + r() * 0.25) / 1e6) * 1e6, re = E - cap;
+  var base = rint(r, 5e6, 12e6, 1e5), sig = 0.04 + r() * 0.26, gg = (r() - 0.35) * 0.5, sales = [], rev = 0;
+  for (i = 0; i < 12; i++) { var m = Math.max(base * (1 + gg * (i - 5.5) / 11 + (r() - 0.5) * 2 * sig), base * 0.3); m = r1k(m); sales.push(m); rev += m; }
+  var mean = rev / 12, vs = 0; sales.forEach(function (x) { vs += (x - mean) * (x - mean); });
+  var cv = Math.sqrt(vs / 12) / mean * 100, gr = ((sales[9] + sales[10] + sales[11]) / (sales[0] + sales[1] + sales[2]) - 1) * 100;
+  var cogs = r1k(rev * (0.66 + r() * 0.2)), sga = r1k(rev * (0.08 + r() * 0.12)), gp = rev - cogs, op = gp - sga, intr = r1k((sd + ld) * 0.06), pre = op - intr;
+  var u = r(), months = Math.round(3 + r() * 45), per = Math.round(25 + r() * 190), cp = Math.round(6 + r() * 60), od = u < 0.55 ? 0 : u < 0.8 ? 1 : u < 0.93 ? 2 : 3, nt = Math.round(45 + r() * 52);
+  var dr = L / E * 100, cr = CA / CL * 100, om = op / rev * 100, icr = intr > 0 ? op / intr : 99;
+  function it(c5, grp, lab, vt, rule, mx, fr) { return { c:c5, g:grp, l:lab, v:vt, rule:rule, mx:mx, s:Math.round(mx * fr * 10) / 10 }; }
+  var items = [
+    it('자본', 0, '부채비율', dr.toFixed(0) + '%', '50% 이하 만점 · 400% 초과 0점', 15, frac(dr, [50, 100, 150, 250, 400], false)),
+    it('담보', 0, '유동비율', cr.toFixed(0) + '%', '200% 이상 만점 · 80% 미만 0점', 12, frac(cr, [200, 150, 120, 100, 80], true)),
+    it('상환능력', 0, '영업이익률', om.toFixed(1) + '%', '15% 이상 만점 · 0% 미만 0점', 12, frac(om, [15, 10, 6, 3, 0], true)),
+    it('상환능력', 0, '이자보상배율', icr >= 99 ? '이자 없음' : icr.toFixed(1) + '배', '8배 이상 만점 · 1배 미만 0점', 11, frac(icr, [8, 5, 3, 1.5, 1], true)),
+    it('경기·환경', 0, '매출 성장률', gr.toFixed(1) + '%', '10% 이상 만점 · −10% 미만 0점', 10, frac(gr, [10, 5, 0, -5, -10], true)),
+    it('성향', 1, '거래 기간', months + '개월', '36개월 이상 만점 · 3개월 미만 0점', 8, frac(months, [36, 24, 12, 6, 3], true)),
+    it('성향', 1, '월 거래 건수', per + '건', '150건 이상 만점 · 10건 미만 0점', 6, frac(per, [150, 100, 60, 30, 10], true)),
+    it('경기·환경', 1, '매출 변동계수', cv.toFixed(1) + '%', '8% 이하 만점 · 50% 초과 0점', 10, frac(cv, [8, 15, 25, 35, 50], false)),
+    it('성향', 1, '최근 12개월 연체', od + '건', '0건 만점 · 3건 이상 0점', 6, od === 0 ? 1 : od === 1 ? 0.6 : od === 2 ? 0.3 : 0),
+    it('성향', 2, '나비 온도', nt + '점', '90점 이상 만점 · 50점 미만 0점', 10, frac(nt, [90, 80, 70, 60, 50], true))
+  ];
+  var sub = [0, 0, 0], subm = [0, 0, 0], score = 0;
+  items.forEach(function (x) { sub[x.g] += x.s; subm[x.g] += x.mx; score += x.s; });
+  score = Math.round(score * 10) / 10;
+  var x1 = (CA - CL) / A, x2 = re / A, x3 = op / A, x4 = E / L, z = 6.56 * x1 + 3.26 * x2 + 6.72 * x3 + 1.05 * x4;
+  var gi = grIdx(score), adj = (z < 1.1 && gi < 3) ? 1 : 0;
+  return { E:E, L:L, A:A, CA:CA, CL:CL, ap:ap, sd:sd, ld:ld, cash:cash, rec:rec, inv:inv, fix:fix, cap:cap, re:re, sales:sales, rev:rev, mean:mean, cv:cv, gr:gr, cogs:cogs, sga:sga, gp:gp, op:op, intr:intr, pre:pre, months:months, per:per, cp:cp, od:od, nt:nt, dr:dr, cr:cr, om:om, icr:icr, items:items, sub:sub, subm:subm, score:score, x1:x1, x2:x2, x3:x3, x4:x4, z:z, zone:z > 2.6 ? '안전' : z >= 1.1 ? '회색' : '위험', gi:gi, adj:adj, fi:Math.min(gi + adj, GR.length - 1) };
+}
+function gtab(id, head, rows) {
+  return h('div', { class:'stcol', id:id }, [h('table', { class:'stbl' }, [h('thead', {}, [h('tr', {}, head.map(function (x) { return h('th', { style:'text-align:' + (x[1] === 'r' ? 'right' : 'left') + ';font-weight:700;font-size:12px;color:var(--on2);padding:6px 8px', text:x[0] }); }))]), h('tbody', {}, rows.map(function (r) { return h('tr', { class:r.cls || '' }, r.c.map(function (x, k) { return (typeof x === 'string' || typeof x === 'number') ? h('td', { class:head[k][1] === 'r' ? 'r num' : '', text:String(x) }) : h('td', { class:head[k][1] === 'r' ? 'r' : '' }, [x]); })); }))])]);
+}
+function salesChart(id, sales, mean) {
+  var PL = 44, PB = 22, PT = 8, w = 560, ch = 170, bw = (w - PL - 6) / 12, mx = 0, s = '';
+  sales.forEach(function (x) { mx = Math.max(mx, x); });
+  var stp = Math.pow(10, Math.floor(Math.log(mx) / Math.LN10)); mx = Math.ceil(mx / stp) * stp;
+  [0, 0.5, 1].forEach(function (g) { var y = PT + (ch - PT - PB) * (1 - g); s += '<line x1="' + PL + '" y1="' + y + '" x2="556" y2="' + y + '" stroke="var(--line)" stroke-width="1"/>' + sx(PL - 6, y + 4, short(mx * g), { a:'end', fs:10.5, c:'var(--on2)' }); });
+  sales.forEach(function (x, k) { var hh = (ch - PT - PB) * x / mx; s += '<rect x="' + (PL + k * bw + bw * 0.18).toFixed(1) + '" y="' + (ch - PB - hh).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="2" fill="var(--pri)" fill-opacity="0.85"/>'; });
+  var ym = ch - PB - (ch - PT - PB) * mean / mx;
+  s += '<line x1="' + PL + '" y1="' + ym.toFixed(1) + '" x2="556" y2="' + ym.toFixed(1) + '" stroke="var(--on)" stroke-width="1.2" stroke-dasharray="4 3"/>' + sx(556, ym - 5, '평균 ' + short(mean), { a:'end', fs:10.5 });
+  s += sx(PL, ch - 6, '11개월 전', { fs:10.5, c:'var(--on2)' }) + sx(556, ch - 6, '이번 달', { a:'end', fs:10.5, c:'var(--on2)' });
+  return svgBox(id, w, ch, '최근 12개월 월별 매출 막대 차트', s);
+}
+function cstep(n, title, kidsIn) { return h('div', { class:'card col', id:'bnk-csim-s' + n, style:'margin:8px 0 0' }, [h('div', { class:'rowf', style:'align-items:center;gap:10px' }, [h('span', { class:'pill p', text:String(n) }), h('b', { text:title })])].concat(kidsIn)); }
+function tile(k, v, id) { return h('div', { class:'tile' }, [h('div', { class:'k', text:k }), h('div', { class:'v num', id:id || null, text:v })]); }
+function csimCard() {
+  var on = S.csim, n = S.cstep, g = on ? credGen(S.cseed) : null, acts = [];
+  var go = btn(on ? '시뮬레이션 닫기' : '시뮬레이션', on ? 'quiet' : 'fill', function () { S.csim = !S.csim; S.cstep = 1; render(); }); go.id = 'bnk-csim-go';
+  if (on) {
+    var rd = btn('다시 생성', 'quiet', function () { S.cseed++; S.cstep = 1; render(); }); rd.id = 'bnk-csim-redo'; acts.push(rd); acts.push(go);
+    if (n < 6) { var nx = btn('다음 단계 ▶', 'fill', function () { S.cstep++; render(); setTimeout(function () { var e = document.getElementById('bnk-csim-s' + S.cstep); if (e && e.scrollIntoView) e.scrollIntoView({ block:'nearest', behavior:'smooth' }); }, 0); }); nx.id = 'bnk-csim-next'; acts.push(nx); }
+  } else acts.push(go);
+  var kids = [h('div', { class:'rowf', style:'justify-content:space-between;align-items:center;gap:12px' }, [h('div', {}, [h('b', { style:'font-size:17px', text:'시뮬레이션 — 신용 등급이 정해지는 과정 보기' }), h('div', { class:'sub', text:on ? '가상의 재무제표와 거래 이력으로 신용 등급을 정합니다. 단계 ' + n + ' / 6' : '가상의 재무제표와 거래 이력으로, 널리 쓰이는 신용 평가 기법을 6단계로 차근차근 보여 드려요. 실제 평가와 무관한 연습입니다.' })]), h('div', { class:'rowf' }, acts)])];
+  if (!on) return h('div', { class:'card col', id:'bnk-csim', style:'margin-top:16px' }, kids);
+  // 1단계: 재무제표
+  var bs = [['자산', '', 'sec'], ['현금 및 예금', won(g.cash)], ['매출채권', won(g.rec)], ['상품(재고)', won(g.inv)], ['유동자산 합계', won(g.CA), 'tot'], ['비품·설비', won(g.fix)], ['자산 총계', won(g.A), 'tot'], ['부채', '', 'sec'], ['매입채무', won(g.ap)], ['단기차입금', won(g.sd)], ['유동부채 합계', won(g.CL), 'tot'], ['장기차입금', won(g.ld)], ['부채 총계', won(g.L), 'tot'], ['자본', '', 'sec'], ['자본금', won(g.cap)], ['이익잉여금', won(g.re)], ['자본 총계', won(g.E), 'tot'], ['부채와 자본 총계', won(g.L + g.E), 'tot']];
+  var is = [['매출액', won(g.rev)], ['매출원가', '−' + won(g.cogs)], ['매출총이익', won(g.gp), 'tot'], ['판매관리비', '−' + won(g.sga)], ['영업이익', won(g.op), 'tot'], ['이자비용', '−' + won(g.intr)], ['세전이익', won(g.pre), 'tot']];
+  kids.push(cstep(1, '가상 재무제표 만들기', [h('div', { class:'g2 eq' }, [stTable('재무상태표 (단위: GDC)', bs, 'bnk-csim-bs'), stTable('손익계산서 · 최근 12개월', is, 'bnk-csim-is')]), h('div', { class:'sub', text:'자산 총계 ' + won(g.A) + ' = 부채 총계 ' + won(g.L) + ' + 자본 총계 ' + won(g.E) + ' — 대차가 맞아요. 신용 평가는 먼저 이 숫자들을 모으는 데서 시작합니다.' })]));
+  if (n >= 2) kids.push(cstep(2, '거래 이력 정리하기', [h('div', { class:'g3' }, [tile('거래 기간', g.months + '개월'), tile('월평균 거래 건수', g.per + '건'), tile('거래처 수', g.cp + '곳'), tile('최근 12개월 연체', g.od + '건'), tile('나비 온도(가상)', g.nt + '점')]), h('b', { style:'font-size:13px', text:'월별 매출 — 최근 12개월' }), salesChart('bnk-csim-sales', g.sales, g.mean), h('div', { class:'sub', text:'매출의 들쭉날쭉한 정도를 변동계수(표준편차 ÷ 평균)로 재면 ' + g.cv.toFixed(1) + '%예요. 낮을수록 매출이 안정적이라는 뜻입니다.' })]));
+  if (n >= 3) kids.push(cstep(3, '재무비율 계산하기', [gtab('bnk-csim-ratio', [['비율', 'l'], ['산식', 'l'], ['값', 'r'], ['읽는 법', 'l']], [
+    { c:['부채비율', '부채 총계 ÷ 자본 총계', g.dr.toFixed(0) + '%', '낮을수록 빚 부담이 작아요'] },
+    { c:['유동비율', '유동자산 ÷ 유동부채', g.cr.toFixed(0) + '%', '높을수록 단기 상환 여유가 커요'] },
+    { c:['영업이익률', '영업이익 ÷ 매출액', g.om.toFixed(1) + '%', '높을수록 본업이 잘 벌어요'] },
+    { c:['이자보상배율', '영업이익 ÷ 이자비용', g.icr >= 99 ? '이자 없음' : g.icr.toFixed(1) + '배', '1배 미만이면 번 돈으로 이자도 못 내요'] },
+    { c:['매출 성장률', '최근 3개월 매출 ÷ 처음 3개월 매출 − 1', g.gr.toFixed(1) + '%', '높을수록 사업이 커지는 중이에요'] }]), h('div', { class:'sub', text:'은행과 신용평가사가 오래전부터 쓰는 기본 비율이에요: 안정성(부채·유동), 수익성(영업이익률), 이자 부담(이자보상배율), 성장성.' })]));
+  if (n >= 4) {
+    var rows = [], grp = ['재무 평가', '거래 이력 평가', '신뢰도 평가'];
+    for (var gi = 0; gi < 3; gi++) {
+      g.items.forEach(function (x) { if (x.g !== gi) return; rows.push({ c:[x.c, x.l, x.v, x.rule, h('div', { style:'display:flex;align-items:center;gap:8px;justify-content:flex-end' }, [h('div', { style:'width:64px;height:8px;background:var(--line);border-radius:4px;overflow:hidden' }, [h('i', { style:'display:block;height:100%;background:var(--pri);width:' + Math.round(x.s / x.mx * 100) + '%' })]), h('span', { class:'num', style:'width:64px;text-align:right', text:x.s + ' / ' + x.mx })])] }); });
+      rows.push({ cls:'tot', c:['', grp[gi] + ' 소계', '', '', g.sub[gi].toFixed(1) + ' / ' + g.subm[gi]] });
+    }
+    rows.push({ cls:'tot hl', c:['', '합계', '', '', g.score + ' / 100'] });
+    kids.push(cstep(4, '항목별로 점수 매기기 — 스코어카드', [gtab('bnk-csim-score', [['5C', 'l'], ['항목', 'l'], ['값', 'r'], ['점수 기준', 'l'], ['득점', 'r']], rows), h('div', { class:'sub', text:'스코어카드 방식: 항목마다 값의 구간에 따라 만점의 100·80·60·40·20·0%를 주고 더합니다. 5C는 신용 평가의 고전적인 관점이에요 — 성향(Character), 상환능력(Capacity), 자본(Capital), 담보(Collateral), 경기·환경(Conditions).' })]));
+  }
+  if (n >= 5) kids.push(cstep(5, '다른 방법으로 한 번 더 확인하기 — Altman Z″', [gtab('bnk-csim-z', [['항목', 'l'], ['산식', 'l'], ['값', 'r'], ['계수', 'r'], ['기여', 'r']], [
+    { c:['X1 운전자본', '(유동자산 − 유동부채) ÷ 자산 총계', g.x1.toFixed(3), '6.56', (6.56 * g.x1).toFixed(2)] },
+    { c:['X2 누적 이익', '이익잉여금 ÷ 자산 총계', g.x2.toFixed(3), '3.26', (3.26 * g.x2).toFixed(2)] },
+    { c:['X3 수익력', '영업이익 ÷ 자산 총계', g.x3.toFixed(3), '6.72', (6.72 * g.x3).toFixed(2)] },
+    { c:['X4 자본 여력', '자본 총계 ÷ 부채 총계', g.x4.toFixed(3), '1.05', (1.05 * g.x4).toFixed(2)] },
+    { cls:'tot hl', c:['Z″ 점수', '', '', '', g.z.toFixed(2)] }]), h('div', { class:'sub', id:'bnk-csim-zone', text:'Z″ ' + g.z.toFixed(2) + ' → ' + g.zone + ' 구간 (2.6 초과 안전 · 1.1~2.6 회색 · 1.1 미만 위험). ' + (g.adj ? '스코어카드 등급은 좋은데 Z″가 위험 구간이라, 보수적 원칙에 따라 등급을 한 단계 낮춥니다.' : '스코어카드 결과와 크게 어긋나지 않아 등급을 그대로 둡니다. (스코어카드가 A 이상인데 Z″가 위험이면 한 단계 낮춰요.)') })]));
+  if (n >= 6) {
+    var cells = GR.map(function (x, i) { return h('div', { style:'flex:1;text-align:center;padding:10px 0;border-radius:6px;font-weight:700;font-size:14px;border:1px solid var(--line);' + (i === g.fi ? 'background:var(--pri);color:#fff;border-color:var(--pri)' : 'color:var(--on2)'), text:x[0] }); });
+    var trs = GR.map(function (x, i) { return { cls:i === g.fi ? 'hl' : '', c:[x[0], i === 0 ? x[1] + '점 이상' : i === GR.length - 1 ? GR[i - 1][1] + '점 미만' : x[1] + '점 이상 ' + GR[i - 1][1] + '점 미만', x[2].toFixed(1) + '%', x[3] + '%'] }; });
+    var F = GR[g.fi];
+    kids.push(cstep(6, '종합 점수로 등급 정하기', [h('div', { class:'sub', text:'스코어카드 ' + g.score + '점 → ' + GR[g.gi][0] + (g.adj ? ' → Z″ 조정 → ' + F[0] : ' (조정 없음)') }), h('div', { style:'display:flex;gap:6px' }, cells), h('div', { class:'tile', id:'bnk-csim-final' }, [h('div', { class:'k', text:'최종 신용 등급' }), h('div', { class:'v num', text:F[0] }), h('div', { class:'sub', text:'점수 ' + g.score + ' / 100 · 기본 이자율 연 ' + F[2].toFixed(1) + '% · 대출 한도 계수 ' + F[3] + '%' })]), gtab('bnk-csim-grades', [['등급', 'l'], ['점수 구간', 'l'], ['기본 이자율(연)', 'r'], ['한도 계수', 'r']], trs), h('div', { class:'sub', text:'등급이 높을수록 낮은 이자율과 큰 한도를 받아요. 이 등급이 예금·대출 화면의 대출 시뮬레이션에도 쓰입니다. 모두 연습용 가상 값이에요.' })]));
+  }
+  return h('div', { class:'card col', id:'bnk-csim', style:'margin-top:16px' }, kids);
+}
+// ── 대출 시뮬레이션: 가상 재무제표·거래 이력·신용 등급 → 한도 → 금액별 차등 이자율 ──
+var LT = [[500000, 0], [1000000, 0.3], [3000000, 0.7], [5000000, 1.2], [7000000, 1.8], [10000000, 2.5], [20000000, 3.5]];
+function pmt(P, ar, n) { var r = ar / 1200; return r ? P * r / (1 - Math.pow(1 + r, -n)) : P / n; }
+function loanSimCard() {
+  var on = S.lsim, kids = [simHead('시뮬레이션 — 가상 재무제표로 대출 한도와 이자율 보기', '가상의 재무제표·거래 이력·신용 등급을 만들고, 한도와 금액별 이자율을 보여 줘요. 실제 대출과 무관한 연습입니다.', on, 'lsim', 'lseed', 'bnk-lsim-go', 'bnk-lsim-redo')];
+  if (!on) return h('div', { class:'card col', id:'bnk-lsim', style:'margin-top:16px' }, kids);
+  var g = credGen(S.lseed), F = GR[g.fi], a = g.E * 0.5, b = g.mean * 3, lim0 = Math.min(a, b), lim = Math.floor(lim0 * F[3] / 100 / 1e5) * 1e5, i;
+  var fs = [['자산 총계', won(g.A)], ['부채 총계', won(g.L)], ['자본 총계(순자산)', won(g.E)], ['부채비율', g.dr.toFixed(0) + '%'], ['연 매출액', won(g.rev)], ['영업이익', won(g.op)], ['이자비용', won(g.intr)]];
+  var cr = [['거래 기간', g.months + '개월'], ['월평균 거래 건수', g.per + '건'], ['거래처 수', g.cp + '곳'], ['최근 12개월 연체', g.od + '건'], ['나비 온도(가상)', g.nt + '점'], ['신용 점수', g.score + ' / 100'], ['신용 등급', F[0], 'tot hl']];
+  kids.push(h('div', { class:'g2 eq', style:'margin-top:12px' }, [stTable('① 가상 재무제표 요약 (GDC)', fs, 'bnk-lsim-fs'), stTable('② 거래 이력 · ③ 신용 등급', cr, 'bnk-lsim-cr')]));
+  kids.push(h('div', { class:'sub', text:'신용 등급은 재무비율 스코어카드와 Z″ 점검으로 정해요. 단계별 과정은 신용·채권 화면의 시뮬레이션에서 볼 수 있어요.' }));
+  var lm = [['순자산의 50%', won(a)], ['월평균 매출의 3배', won(b)], ['둘 중 작은 값', won(lim0), 'tot'], ['등급 계수 (' + F[0] + ')', F[3] + '%'], ['대출 한도 (10만 단위 내림)', won(lim) + ' GDC', 'tot hl']];
+  kids.push(h('div', { style:'margin-top:8px' }, [stTable('④ 대출 한도 산정', lm, 'bnk-lsim-limit')]));
+  var rows = LT.map(function (t) { var rate = F[2] + t[1], ok = t[0] <= lim, p = pmt(t[0], rate, 12); return { cls:ok ? '' : 'dim', c:[won(t[0]) + ' GDC', rate.toFixed(1) + '%', won(p), won(p * 12 - t[0]), ok ? '가능' : (lim ? '한도 초과' : '어려움')] }; });
+  kids.push(h('div', { style:'margin-top:8px' }, [h('div', { class:'sth', text:'⑤ 대출 금액별 이자율 — 12개월 원리금균등 상환' }), gtab('bnk-lsim-tiers', [['대출 금액', 'l'], ['이자율(연)', 'r'], ['월 상환액', 'r'], ['총 이자', 'r'], ['상태', 'r']], rows)]));
+  // 막대: 금액이 커질수록 오르는 이자율
+  var PL = 40, PB = 34, PT = 22, w = 560, ch = 200, bw = (w - PL - 6) / LT.length, mr = Math.ceil(F[2] + 3.5 + 1), s = '', k = 0;
+  LT.forEach(function (t) { if (t[0] <= lim) k++; });
+  [0, 0.5, 1].forEach(function (q) { var y = PT + (ch - PT - PB) * (1 - q); s += '<line x1="' + PL + '" y1="' + y + '" x2="556" y2="' + y + '" stroke="var(--line)" stroke-width="1"/>' + sx(PL - 6, y + 4, (mr * q).toFixed(0) + '%', { a:'end', fs:10.5, c:'var(--on2)' }); });
+  LT.forEach(function (t, j) { var rate = F[2] + t[1], hh = (ch - PT - PB) * rate / mr, x = PL + j * bw + bw * 0.2, ok = t[0] <= lim; s += '<rect x="' + x.toFixed(1) + '" y="' + (ch - PB - hh).toFixed(1) + '" width="' + (bw * 0.6).toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="2" ' + (ok ? 'fill="var(--pri)" fill-opacity="0.85"' : 'fill="none" stroke="var(--n)" stroke-width="1.4"') + '/>' + sx(x + bw * 0.3, ch - PB - hh - 5, rate.toFixed(1) + '%', { a:'middle', fs:11, b:ok }) + sx(x + bw * 0.3, ch - 16, man(t[0]), { a:'middle', fs:11, c:'var(--on2)' }); });
+  s += sx(PL + 0, ch - 2, '대출 금액(GDC)', { fs:10.5, c:'var(--on2)' });
+  if (k < LT.length) { var xl = PL + k * bw; s += '<line x1="' + xl.toFixed(1) + '" y1="' + (PT - 6) + '" x2="' + xl.toFixed(1) + '" y2="' + (ch - PB) + '" stroke="var(--on)" stroke-width="1.2" stroke-dasharray="4 3"/>' + sx(xl + 4, PT - 9, '한도 ' + man(lim) + ' ▸ 이 선 오른쪽은 한도 초과', { fs:10.5 }); }
+  kids.push(h('div', { class:'card col', style:'margin:8px 0 0' }, [h('b', { text:'금액이 커질수록 이자율이 올라가요' }), svgBox('bnk-lsim-chart', w, ch, '대출 금액별 연 이자율 막대 차트', s), h('div', { class:'sub', text:'이자율 = 등급별 기본 이자율(' + F[0] + ' ' + F[2].toFixed(1) + '%) + 금액 가산. 가산은 50만 원 0%p, 100만 원 0.3%p, 300만 원 0.7%p, 500만 원 1.2%p, 700만 원 1.8%p, 1천만 원 2.5%p, 2천만 원 3.5%p로 커져요. 속이 빈 막대는 한도를 넘는 금액이에요.' })]));
+  kids.push(h('div', { class:'sub', id:'bnk-lsim-src', style:'margin-top:8px', text:'재무제표·거래 이력·신용 등급과 금액은 모두 연습용 가상 값이고, 실제 대출 신청이나 자금 이동은 없어요.' }));
+  return h('div', { class:'card col', id:'bnk-lsim', style:'margin-top:16px' }, kids);
+}
 function viewSave() {
   var kids = head('예금·대출', '신용 평가와 채권 이자율 체계를 기반으로, 예금·대출이 자동으로 처리되도록 설계되어 있습니다.');
   kids.push(soon('아직 설계 단계입니다. 실제 예치·대출 신청과 자금 이동은 아직 할 수 없고, 아래 계산기는 직접 넣은 이율로 계산만 합니다.'));
+  kids.push(loanSimCard());
   var items = [['GDC 예치', '여유 자금을 예치하면 정해진 이자를 받습니다.', '예치하면 얼마를 받나요?'], ['대출 신청', '필요 자금을 신청하면 내 신용 등급의 이자율이 자동 적용됩니다.', '대출을 받으려면 어떻게 하나요?'], ['자동 상환 관리', '상환 일정과 이자 계산이 자동으로 관리됩니다.', '상환 일정은 어떻게 관리되나요?']];
   kids.push(h('div', { class:'g3' }, items.map(function (x) { return h('div', { class:'card cc' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('div', { class:'nm', text:x[0] }), pill('준비 중', 'l')]), h('div', { class:'sub', text:x[1] }), h('div', { class:'rowf', style:'margin-top:auto' }, [btn('은행 AI에게 묻기', 'sm quiet', function () { ask(x[2]); })])]); })));
   kids.push(h('div', { class:'note info', style:'margin-top:16px', text:'서류 심사가 필요한가요? 별도 서류 없이, 이미 쌓인 재무제표와 신용 등급으로 처리하도록 설계되었습니다. 큰 금액은 추가 확인이 있을 수 있습니다.' }));
@@ -356,6 +558,7 @@ function viewCredit() {
   kids.push(h('h2', { text:'신용 등급은 이렇게 정해집니다', style:'margin-top:8px' }));
   var st = [['재무 데이터 분석', '자동 생성된 재무제표에서 매출 안정성·거래 빈도·수익성을 AI가 분석합니다.'], ['나비 온도 반영', '거래 신뢰도(나비 온도)도 신용 평가에 함께 반영됩니다.'], ['등급 산정과 이자율', '종합 점수로 등급이 정해지고, 신용이 높을수록 낮은 이자율로 자금을 조달합니다.']];
   kids.push(h('div', { class:'g3' }, st.map(function (x, i) { return h('div', { class:'card cc' }, [h('div', { class:'rowf' }, [h('span', { class:'pill p', text:String(i + 1) }), h('div', { class:'nm', text:x[0] })]), h('div', { class:'sub', text:x[1] })]); })));
+  kids.push(csimCard());
   kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'내 신용 등급' }), h('div', { class:'empty', text:'아직 표시할 등급이 없습니다. 재무제표가 쌓이고 평가가 열리면 이곳에 나타납니다.' }), h('div', { class:'rowf' }, [btn('은행 AI에게 묻기', 'sm quiet', function () { ask('제 신용 등급은 어떻게 정해지나요?'); })])]));
   kids.push(h('h2', { text:'채권 POOL — 위험을 나누는 방법' }));
   kids.push(h('div', { class:'sub', style:'margin:-6px 0 12px', text:'한 사람의 채권에 몰아 투자하지 않고 여러 발행자를 묶은 POOL에 투자해, 한 명이 부도나도 영향을 줄입니다. 범위가 넓을수록 위험이 줄고 이자율은 낮아집니다.' }));

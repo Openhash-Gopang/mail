@@ -90,6 +90,43 @@ test('송금·결제: 시뮬레이션 — 가상 구매자·판매자 재무제�
   assert.equal(p.doc.querySelectorAll('#bnk-sim tr.hl').length, 8);   // 바뀐 줄: 구매자 2 + 판매자 대차 3·손익 3
   p.doc.getElementById('bnk-sim-go').click(); assert.ok(!p.doc.getElementById('bnk-sim-deal'));
 });
+test('거래 내역: 시뮬레이션 — 가상 거래가 분야별 그래프와 국민 평균 비교로 나온다', { skip }, async () => {
+  const p = page(); await p.until(/5,200/); p.nav({ do: 'history' });
+  assert.ok(!p.doc.getElementById('bnk-hsim-donut'));
+  p.doc.getElementById('bnk-hsim-go').click();
+  assert.ok(p.doc.querySelector('#bnk-hsim-donut svg') && p.doc.querySelector('#bnk-hsim-cmp svg') && p.doc.querySelector('#bnk-hsim-daily svg'));
+  const t = p.doc.getElementById('bnk-hsim').textContent;
+  for (const k of ['교통비', '식비 · 외식', '식비 · 가정식', '학비', '통신비', '국민 평균', '가계동향조사']) assert.ok(t.includes(k), k);
+  assert.equal(p.doc.querySelectorAll('#bnk-hsim-tx tr').length, 12);
+  p.doc.getElementById('bnk-hsim-redo').click(); assert.ok(p.doc.getElementById('bnk-hsim-donut'));
+  p.doc.getElementById('bnk-hsim-go').click(); assert.ok(!p.doc.getElementById('bnk-hsim-donut'));
+});
+test('신용·채권: 시뮬레이션 — 가상 재무제표와 거래 이력으로 신용 등급이 6단계로 정해진다', { skip }, async () => {
+  const p = page(); await p.until(/5,200/); p.nav({ do: 'credit' });
+  assert.ok(!p.doc.getElementById('bnk-csim-s1'));
+  p.doc.getElementById('bnk-csim-go').click();
+  assert.ok(p.doc.getElementById('bnk-csim-s1') && !p.doc.getElementById('bnk-csim-s2'));
+  for (let n = 2; n <= 6; n++) { p.doc.getElementById('bnk-csim-next').click(); assert.ok(p.doc.getElementById('bnk-csim-s' + n), '단계 ' + n); }
+  assert.ok(!p.doc.getElementById('bnk-csim-next'));
+  const t = p.doc.getElementById('bnk-csim').textContent;
+  for (const k of ['재무상태표', '부채비율', '스코어카드', 'Z\u2033', '5C']) assert.ok(t.includes(k), k);
+  assert.match(p.doc.getElementById('bnk-csim-final').textContent, /최종 신용 등급\s*(AAA|AA|A|BBB|BB|B|CCC)/);
+  assert.equal(p.doc.querySelectorAll('#bnk-csim-grades tr.hl').length, 1);
+  p.doc.getElementById('bnk-csim-go').click(); assert.ok(!p.doc.getElementById('bnk-csim-s1'));
+});
+test('예금·대출: 시뮬레이션 — 가상 재무제표로 한도를 정하고 금액이 커질수록 이자율이 오른다', { skip }, async () => {
+  const p = page(); await p.until(/5,200/); p.nav({ do: 'save' });
+  assert.ok(!p.doc.getElementById('bnk-lsim-tiers'));
+  p.doc.getElementById('bnk-lsim-go').click();
+  for (const id of ['bnk-lsim-fs', 'bnk-lsim-cr', 'bnk-lsim-limit', 'bnk-lsim-tiers']) assert.ok(p.doc.getElementById(id), id);
+  assert.ok(p.doc.querySelector('#bnk-lsim-chart svg'));
+  const tr = p.doc.querySelectorAll('#bnk-lsim-tiers tbody tr'); assert.equal(tr.length, 7);
+  let prev = 0;
+  for (let i = 0; i < tr.length; i++) { const rate = parseFloat(tr[i].querySelectorAll('td')[1].textContent); assert.ok(rate > prev, '금액이 커질수록 이자율이 올라야 한다'); prev = rate; }
+  assert.match(p.doc.getElementById('bnk-lsim-cr').textContent, /신용 등급(AAA|AA|A|BBB|BB|B|CCC)/);
+  p.doc.getElementById('bnk-lsim-redo').click(); assert.ok(p.doc.getElementById('bnk-lsim-tiers'));
+  p.doc.getElementById('bnk-lsim-go').click(); assert.ok(!p.doc.getElementById('bnk-lsim-tiers'));
+});
 test('거래 내역: 기간별 합계·분야별·청구서·모델별·충전 내역', { skip }, async () => {
   const p = page(); await p.until(/5,200/); p.nav({ do: 'history', range: '7' });
   assert.match(p.txt(), /청구액700원/); assert.match(p.txt(), /API 요청70/); assert.match(p.txt(), /나비 대화·서류 작성·전문가 AI/); assert.match(p.txt(), /K-Law\(법률\)/);
