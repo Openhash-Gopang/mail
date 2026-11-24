@@ -252,7 +252,7 @@ function viewPay() {
       h('div', {}, [['폰에서 결제받기 열기', '폰의 나비웹 앱 왼쪽 메뉴에서 “결제받기(내 코드)”를 엽니다.'], ['내 코드 보여 주기', '화면에 내 코드가 나타납니다. 상호명(선택)을 적고 손님께 코드를 보여 줍니다.'], ['입금 확인', '손님이 결제하면 내 GDC 잔액이 늘고, 거래 내역에 남습니다.']].map(function (x, i) { return h('div', { class:'stp' }, [h('i', { text:String(i + 1) }), h('div', {}, [h('b', { text:x[0] }), h('span', { text:x[1] })])]); }))]),
     h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'보내기 전에 확인하세요' }),
       h('ul', { style:'padding-left:20px;font-size:14px;display:flex;flex-direction:column;gap:6px' }, ['코드 10자리와 금액을 눈으로 한 번 더 확인합니다.', '새 가게에서는 판매자 이름이 맞는지 보고 보냅니다.', '잘못 보낸 이체를 되돌리는 방법은 확인되지 않았습니다.', '연습할 때는 1 GDC처럼 아주 작은 금액으로 합니다.'].map(function (t) { return h('li', { text:t }); }))])]);
-  kids.push(h('div', { class:'g2' }, [f1, f2]));
+  kids.push(h('div', { class:'g2 eq' }, [f1, f2]));
   return kids;
 }
 
