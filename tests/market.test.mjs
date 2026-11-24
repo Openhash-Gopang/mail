@@ -54,11 +54,11 @@ test('화면: 자동 진행 — 중복이면 팝업으로 멈추고 "구매 원�
   btn('구매 원함').click(); await wait(40);
   const sc = Number(doc.getElementById('mk-score') ? doc.getElementById('mk-score').textContent.split('/')[0] : doc.querySelector('[role=dialog]') ? 0 : 0);
   if (doc.getElementById('mk-go2')) btn('계속 진행').click(); await wait(40); // 필요도가 낮으면 팝업, 3점 이상이면 자동 진행
-  assert.ok(txt().includes('가격·AS·리뷰 평가 보고서')); assert.ok(txt().includes('구매할까요?') && txt().includes('판매자 신뢰도'), '보고서 요약과 함께 최종 구매 의견을 묻는다'); assert.ok(txt().includes('판단을 보류'));
+  assert.ok(txt().includes('구매 검토 보고서')); { const pg = doc.getElementById('mk-prog').textContent; assert.ok(pg.includes('이전 구매: 무선 청소기 A100') && pg.includes('필요도') && pg.includes('/ 5') && pg.includes('재택') === pg.includes('재택') && pg.includes('판매자 신뢰도'), '보고서에 단계별 결과(이전 구매 이력·필요도·평가)가 모두 들어 있다'); } assert.ok(txt().includes('구매할까요?') && txt().includes('판매자 신뢰도'), '보고서 요약과 함께 최종 구매 의견을 묻는다'); assert.ok(txt().includes('판단을 보류'));
   btn('보고서 더 보기').click(); assert.ok(!doc.querySelector('[role=dialog]'));
   type('mk-trust', '판매자 평점 4.8 · 우수 판매자'); type('mk-as', '1년 무상 AS'); type('mk-rating', '4.6'); type('mk-count', '230'); type('mk-cmp', '185000, 190000, 192000'); btn('보고서 다시 만들기').click();
   assert.ok(doc.getElementById('mk-verdict').textContent.includes('공정')); btn('구매').click(); await wait(40);
-  assert.ok(txt().includes('판매자 나비와 조건을 맞췄어요') && txt().includes('체험용')); assert.ok(txt().includes('이 조건으로 결제할까요?'));
+  assert.ok(txt().includes('판매자 나비와 조건을 맞췄어요') && txt().includes('체험용')); assert.ok(doc.getElementById('mk-prog-2').className === 'done' && doc.getElementById('mk-prog-4').className === 'now', '진행 기록: 끝난 단계는 ✓, 지금 단계는 ●'); assert.ok(txt().includes('이 조건으로 결제할까요?'));
   btn('승인').click(); await wait(300);
   assert.ok(txt().includes('잔고가 모자라요'), '잔고 0이면 결제 전에 묻는다'); assert.ok(!txt().includes('구매를 마쳤어요'));
   btn('체험용 입금 후 결제').click(); await wait(600);
@@ -85,7 +85,7 @@ test('도우미: 링크 없으면 안내, 있으면 맡기고, 읽어 온 값은
   p.type('mk-link', 'http://evil.test/x'); p.btn('도우미로 읽어 오기').click(); assert.equal(job, null);
   p.type('mk-link', 'https://shop.example/p/1'); p.btn('도우미로 읽어 오기').click(); await wait(30);
   assert.ok(job && job.url === 'https://shop.example/p/1' && job.slot === '시장 상품 확인' && job.goal.includes('report_data') && job.goal.includes('결제는 하지 마세요'));
-  assert.ok(p.txt().includes('나비웹 도우미에게 맡겼어요'));
+  assert.ok(p.txt().includes('나비웹 도우미에게 맡겼어요')); assert.ok(p.doc.getElementById('mk-hprog').textContent.includes('진행 중'));
   cb({ label: '다른 항목', data: { name: '무시돼야 함', price: 1 } }); assert.equal(p.doc.getElementById('mk-name').value, '');
   cb({ label: '시장 상품 확인', data: { name: '무선 청소기', price: 189000, image: 'javascript:alert(1)', seller: '예시몰', as: '1년 무상 AS', rating: 4.6, count: 230, reviews: ['좋아요'], compare: [185000, 190000, 'x', 192000] } });
   assert.ok(p.txt().includes('비슷한 걸 산 적이 있는지'), '이름·가격을 읽어 오면 검토 시작이 자동으로 눌린다'); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('189,000원')); assert.equal(p.doc.querySelector('img'), null);

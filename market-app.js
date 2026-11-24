@@ -296,6 +296,39 @@ function prodCard() {
     img ? h('img', { src:img, alt:'상품 이미지', referrerpolicy:'no-referrer' }) : h('div', { class:'noimg', text:'이미지 없음' }),
     h('div', { class:'col' }, [h('b', { text:p.name || '(이름 없음)' }), h('div', { class:'sub', text:(isFinite(price) ? won(price) + '원' : '가격 없음') + (p.seller ? ' · ' + p.seller : hostOf(p.link) ? ' · ' + hostOf(p.link) : '') })])]);
 }
+// ── 진행 기록: 도우미와 시장 SP가 지금까지 한 일을 단계별로 보여 준다 ──
+var DOING = ['상품 정보를 받는 중', 'PDV 구매 기록에서 비슷한 물건을 찾는 중', 'PDV의 업무·일상을 살펴 필요도를 따지는 중', '가격·AS·리뷰·판매자를 평가하는 중', '판매자 나비와 조건을 협의하는 중', '결제하고 장부에 기록하는 중'];
+function progRows() {
+  var p = S.prod, price = snum(p.price), r = [], i, d = S.deal, rp = S.rep, n = S.need;
+  var res = [
+    { t:(clean(p.name, 40) || '(이름 없음)') + ' · ' + (isFinite(price) ? won(price) + '원' : '가격 없음') + (p.seller ? ' · ' + p.seller : '') + ' — ' + (S.read.st === 'done' ? '도우미가 읽어 왔어요' : '직접 넣었어요'), sub:[] },
+    S.step < 1 ? null : { t:S.dup.length ? '비슷한 구매 ' + S.dup.length + '건 있음 → ' + (S.dupOverride ? '“구매 원함”으로 계속' : '멈추고 확인 중') : '비슷한 구매 없음(PDV 기록 ' + S.history.length + '건 확인)',
+      sub:S.dup.slice(0, 3).map(function (x) { return '이전 구매: ' + x.name + ' · ' + won(x.price) + '원' + (x.d ? ' · ' + x.d : ''); }) },
+    n ? { t:'필요도 ' + n.score + ' / 5 — ' + n.label, sub:n.reasons } : null,
+    rp ? { t:rp.title, sub:rp.lines.map(function (l) { return (l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k + ': ' + l.text; }) } : null,
+    d ? { t:d.seller + ' · ' + won(d.price) + '원 × ' + d.qty + '개 · ' + d.pay, sub:['배송: ' + d.ship, '구매 조건: ' + d.cond] } : null,
+    S.done ? { t:'결제 완료 ' + gdc(S.done.total) + ' · 잔액 ' + gdc(S.done.left) + ' · 장부 ' + S.done.n + '번째 블록', sub:[] } : null];
+  for (i = 0; i < STEPS.length; i++) {
+    var st = S.step === 6 || i < S.step ? 'done' : i === S.step ? 'now' : 'wait', x = res[i];
+    r.push({ k:STEPS[i], st:st, t:st === 'wait' ? '대기' : x ? x.t : DOING[i] + '…', sub:st === 'wait' || !x ? [] : x.sub });
+  }
+  return r;
+}
+function progCard(detail) {
+  var rows = progRows();
+  return h('div', { class:'card', style:'margin-top:16px', id:'mk-prog' }, [h('b', { text:'진행 기록' }), h('ol', { class:'mk-prog' }, rows.map(function (x, i) {
+    return h('li', { class:x.st, id:'mk-prog-' + i }, [h('i', { text:x.st === 'done' ? '✓' : x.st === 'now' ? '●' : String(i + 1) }),
+      h('div', { class:'col' }, [h('span', {}, [h('b', { text:x.k + ' ' }), h('span', { text:x.t })])].concat(detail ? x.sub.map(function (s) { return h('div', { class:'sub', text:s }); }) : []))]);
+  }))]);
+}
+// 시작 화면: 도우미가 맡은 일을 어디까지 했는지
+function helperProg() {
+  var s = S.read.st; if (s !== 'wait' && s !== 'done') return null;
+  var rows = [['도우미에게 맡김', 'done'], ['판매 사이트 열기 · 로그인(필요할 때만 직접)', s === 'done' ? 'done' : 'now'], ['상품 이름·가격·AS·리뷰·판매자 읽어 보내기', s === 'done' ? 'done' : 'wait']];
+  return h('div', { class:'card', style:'margin-top:12px', id:'mk-hprog' }, [h('b', { text:'도우미 진행' }), h('ol', { class:'mk-prog' }, rows.map(function (x, i) {
+    return h('li', { class:x[1] }, [h('i', { text:x[1] === 'done' ? '✓' : x[1] === 'now' ? '●' : String(i + 1) }), h('div', { class:'col' }, [h('span', { text:x[0] + (x[1] === 'now' ? ' — 진행 중' : '') })])]);
+  }))]);
+}
 function viewStart() {
   var p = S.prod, kids = [];
   kids.push(h('h2', { text:'살 물건을 알려 주세요' }), h('p', { class:'lead', text:'판매 사이트의 상품 링크를 넣고 "도우미로 읽어 오기"를 누르면, 나비웹 도우미가 그 사이트를 열어 이미지·가격·AS·리뷰를 읽어 와요. 로그인은 직접 해 주세요. 직접 넣어도 돼요.' }));
@@ -303,6 +336,7 @@ function viewStart() {
   var rowb = [btn('도우미로 읽어 오기', 'fill', askAgent, 'mk-read')];
   kids.push(h('div', { class:'rowf' }, rowb));
   if (S.read.msg) kids.push(note(S.read.msg, S.read.st === 'none', 'mk-read-msg'));
+  kids.push(helperProg());
   kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [
     inp('mk-name', '상품 이름', p.name, function (v) { p.name = v; }, { ph:'예: 무선 청소기', max:'80' }),
     inp('mk-price', '가격(원)', p.price, function (v) { p.price = v; }, { ph:'예: 189000', mode:'numeric', max:'12' })]));
@@ -390,7 +424,7 @@ function askBuy() {
     [{ t:'구매', c:'fill', id:'mk-buy', fn:function () { startDeal(); } }, { t:'그만두기', fn:function () { reset(); } }, { t:'보고서 더 보기', id:'mk-more' }]);
 }
 function viewReport() {
-  var r = S.rep, p = S.prod, kids = [h('h2', { text:'가격·AS·리뷰 평가 보고서' }), prodCard()];
+  var r = S.rep, p = S.prod, kids = [h('h2', { text:'구매 검토 보고서' }), prodCard(), progCard(true)];
   kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('b', { id:'mk-verdict', text:r.title }), h('div', {}, r.lines.map(function (l) {
     return h('div', { class:'kv', style:'align-items:flex-start' }, [h('span', { text:(l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k }), h('span', { style:'text-align:right', text:l.text })]); }))]));
   if (p.reviews && p.reviews.length) kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'대표 리뷰' }), h('ul', {}, p.reviews.map(function (x) { return h('li', { text:x }); }))]));
@@ -487,6 +521,7 @@ function viewDone() {
 function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
   tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), steps()]));
+  if (S.step >= 1 && S.step !== 3) root.appendChild(progCard(false));
   var v = [viewStart, viewDup, viewNeed, viewReport, viewDeal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });
   root.appendChild(h('div', { class:'rowf', style:'margin-top:24px' }, [btn('시장 SP에게 물어보기', '', function () { emit('ask', '지금 보고 있는 구매 검토 단계에서 무엇을 확인하면 좋을지 알려 줘'); })]));
