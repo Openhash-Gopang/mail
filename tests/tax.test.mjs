@@ -47,22 +47,33 @@ test('진실성: 일련번호로 확인하면 통과하고, 금액·세액·서�
   x = cp(); x.sigI = x.sigB; t = await T(x); assert.equal(t.ok, false); assert.equal(t.checks.find((c) => c.k.includes('인프라')).ok, false);
   x = cp(); x.hash = 'x'.repeat(64); t = await T(x); assert.equal(t.ok, false);
 });
-test('화면: 한 페이지에 6하 원칙 입력 → 거래 성사 → 흐름·두 장부·확인·몰래 고치기', { skip }, async () => {
-  const p = page(), { doc, btn, type } = p;
-  assert.ok(p.txt().includes('거래 전표 한 장이') && p.txt().includes('Openhash Network') && p.txt().includes('체험'));
-  assert.ok(!p.txt().includes('회계 원리') && !p.txt().includes('내 재무제표'));
-  btn('거래 성사시키기').click(); await wait(); assert.ok(doc.getElementById('tx-err').textContent.includes('판매자'));
-  type('tx-seller', '철수상회'); type('tx-what', '무선 청소기'); type('tx-price', '90000'); type('tx-qty', '2'); type('tx-why', '재택 근무용');
-  btn('거래 성사시키기').click(); await wait(400);
+test('화면: 받은 전표 없음 → 예시 전표 → 국세청 AI에 보내기 → 흐름·두 장부·내 장부 합계·확인·몰래 고치기', { skip }, async () => {
+  const p = page(), { doc, btn } = p;
+  assert.ok(p.txt().includes('세무 회계') && p.txt().includes('Openhash Network') && p.txt().includes('체험') && p.txt().includes('받은 거래 전표'));
+  assert.ok(!doc.getElementById('tx-buyer') && !doc.getElementById('tx-seller') && !doc.getElementById('tx-go'));       // 시장 내용(거래 입력 폼)은 두지 않는다
+  assert.ok(doc.getElementById('tx-empty') && !btn('국세청 AI에 보내기'));
+  btn('예시 전표 받기').click(); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('180,000원'));
+  btn('국세청 AI에 보내기').click(); await wait(400);
   assert.ok(doc.getElementById('tx-hops').children.length === 7); assert.ok(p.txt().includes('MK-') && p.txt().includes('구매자 장부') && p.txt().includes('판매자 장부'));
   assert.ok(doc.getElementById('tx-led-b').textContent.includes('부가세대급금') && doc.getElementById('tx-led-s').textContent.includes('부가세예수금'));
+  assert.ok(doc.getElementById('tx-books').textContent.includes('18,000') && doc.getElementById('tx-books').textContent.includes('대차가 맞아요'));
+  assert.ok(doc.getElementById('tx-empty') && !btn('국세청 AI에 보내기'));                                                // 보낸 전표는 목록에서 빠진다
   btn('일련번호로 확인').click(); await wait(300); assert.ok(doc.getElementById('tx-trace-ok').textContent.includes('모두 맞아요'));
   btn('장부를 몰래 고친다면?').click(); await wait(300); assert.ok(doc.getElementById('tx-tam-out').textContent.includes('드러나요'));
   assert.ok(doc.getElementById('tx-led-b').textContent.includes('180,000'));                                       // 실제 장부는 그대로
   const s = JSON.parse(p.w.localStorage.getItem('navi-tax-v2')); assert.equal(s.rec.length, 1);
   p.N.mount(doc.getElementById('m')); assert.ok(p.txt().includes('MK-'));                                            // 다시 열어도 남아 있다
-  btn('일련번호로 확인').click(); await wait(300); assert.ok(doc.getElementById('tx-trace-ok').textContent.includes('모두 맞아요'));   // 저장된 공개키로도 확인된다
+  btn('일련번호로 확인').click(); await wait(300); assert.ok(doc.getElementById('tx-trace-ok').textContent.includes('모두 맞아요'));
   btn('체험 기록 지우기').click(); btn('정말 지울까요').click(); assert.ok(!p.txt().includes('MK-')); assert.equal(p.fetched(), 0);
+});
+test('화면: 시장 화면이 남긴 구매 거래가 받은 전표로 도착한다(읽기만 한다)', { skip }, async () => {
+  const p = page(), { doc, btn } = p;
+  p.w.localStorage.setItem('navi-market-v2', JSON.stringify({ ledger: [{ kind: 'trade', body: { terms: { item: '무선 청소기 A200', qty: 1, price: 189000, buyer: '나', seller: '판매자', d: '2026-11-24', n: 'abc123' } } }] }));
+  p.N.mount(doc.getElementById('m')); assert.ok(p.txt().includes('무선 청소기 A200') && p.txt().includes('시장 화면의 구매') && p.txt().includes('189,000원'));
+  btn('국세청 AI에 보내기').click(); await wait(400); assert.ok(doc.getElementById('tx-books').textContent.includes('18,900'));      // 189,000의 10%
+  assert.ok(doc.getElementById('tx-empty'));
+  p.N.mount(doc.getElementById('m')); assert.ok(doc.getElementById('tx-empty'));                                      // 다시 열어도 같은 거래가 되돌아오지 않는다
+  assert.equal(JSON.parse(p.w.localStorage.getItem('navi-market-v2')).ledger.length, 1); assert.equal(p.fetched(), 0);
 });
 test('이름 "세무 회계" + desktop.html 연결 + 경로 + 범위 css + SP', () => {
   assert.ok(d.includes('data-label="세무 회계"') && d.includes("['ktax','세무 회계']") && !d.includes("['ktax','세무']") && !d.includes('data-label="세무"'));

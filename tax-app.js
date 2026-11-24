@@ -2,7 +2,8 @@
  * 사용: NaviTax.mount(요소) · .nav({do:'reset'}) · .on('ask'|'result', 함수) · .flow(순수 함수·전표 흐름)
  * 모양은 tax.css(.tx 범위). 전역은 NaviTax 하나만 쓴다.
  *
- * 한 페이지(주피터 지시 2026-11-24, 이전의 탭 여러 개짜리 화면은 모두 지우고 새로 씀): 거래 전표 한 장이 세무·회계까지 가는 길.
+ * 한 페이지(주피터 지시 2026-11-24): 시장 인프라가 보낸 거래 전표를 받아 세액 결정과 장부 반영까지 처리하는 세무 회계 쪽 화면.
+ *  전표는 시장 화면이 남긴 거래(이 브라우저, 읽기 전용)나 예시 전표로 받는다. 거래를 직접 만드는 입력 폼은 시장 화면의 일이라 여기 두지 않는다.
  *  ① 판매자·구매자의 시장 SP가 시장 인프라 AI를 통해 거래하고, 각자 서명한 거래 전표를 만든다(6하 원칙: 누가·언제·어디서·무엇을·어떻게·왜).
  *  ② 거래가 성사되면 시장 인프라 AI가 일련번호와 자기 서명을 붙여 국세청 AI(국세청의 나만의 AI 비서)에게 전달한다.
  *  ③ 국세청 AI가 인프라 AI의 서명을 확인하고 세액을 정해, 세액과 자기 서명을 붙여 시장 인프라 AI에게 돌려준다.
@@ -134,40 +135,67 @@ function trace(rec) {
 
 // ── 화면 ──
 var M = null, LS = {};
-var S = { rec:[], f:{ buyer:'나', seller:'', when:kst(), where:'나비웹 시장 인프라', what:'', qty:'1', price:'', how:'GDC 결제', why:'' }, err:'', info:'', trc:null, tam:null, clr:false, busy:false };
+var MKEY = 'navi-market-v2';
+var S = { rec:[], inbox:[], err:'', trc:null, tam:null, clr:false, busy:false };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || !Array.isArray(v.rec)) return;
     S.rec = v.rec.filter(function (r) { return r && typeof r.serial === 'string' && r.slip && r.pubs && r.buyer && r.seller && Array.isArray(r.hops); }).slice(0, MAXR);
+    S.inbox = (Array.isArray(v.inbox) ? v.inbox : []).filter(function (x) { return x && typeof x.n === 'string' && x.f; }).slice(0, 20);
   } catch (e) { /* 저장값이 깨졌으면 비운 채 시작 */ }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ rec:S.rec })); } catch (e) { /* 저장 불가여도 화면은 쓴다 */ } }
-function inp(id, label, val, set, o) {
-  o = o || {}; var e = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '40', inputmode:o.mode || '', autocomplete:'off' });
-  e.oninput = function () { set(e.value); };
-  return h('div', { class:'field' }, [h('label', { for:id, text:label }), e]);
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ rec:S.rec, inbox:S.inbox })); } catch (e) { /* 저장 불가여도 화면은 쓴다 */ } }
+/** 시장 화면이 이 브라우저에 남긴 거래 장부에서, 아직 세무 회계로 처리하지 않은 거래를 전표로 읽어 온다(읽기만 한다). */
+function marketSlips() {
+  var out = [];
+  try {
+    var v = JSON.parse(localStorage.getItem(MKEY) || 'null'), L = v && Array.isArray(v.ledger) ? v.ledger : [];
+    L.forEach(function (x) { var t = x && x.kind === 'trade' && x.body && x.body.terms; if (!t || !t.n) return;
+      out.push({ n:'mk:' + clean(t.n, 30), src:'시장 화면의 구매', f:{ buyer:t.buyer, seller:t.seller, when:t.d, where:'나비웹 시장 인프라', what:t.item, qty:String(t.qty), price:String(t.price), how:'GDC 결제', why:'시장에서 구매' } }); });
+  } catch (e) { /* 시장 기록을 못 읽으면 없는 것으로 본다 */ }
+  return out;
+}
+function pending() {
+  var done = {}; S.rec.forEach(function (r) { if (r.src) done[r.src] = 1; });
+  return marketSlips().concat(S.inbox).filter(function (x) { return !done[x.n]; });
 }
 function ledgerCard(e, title, id) {
   return h('div', { class:'card', id:id, style:'padding:0' }, [h('div', { style:'padding:12px 16px' }, [h('b', { text:title + ' — ' + e.owner }), h('div', { class:'sub', text:'일련번호 ' + e.serial })]),
     h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['계정', '차변', '대변'].map(function (t) { return h('th', { text:t }); }))]),
       h('tbody', {}, e.lines.map(function (l) { return h('tr', {}, [h('td', { text:l[0] }), h('td', { text:l[1] ? won(l[1]) : '' }), h('td', { text:l[2] ? won(l[2]) : '' })]); }))])])]);
 }
+function slipLine(f) { var s = snum(f.qty) * snum(f.price); return f.when + ' · ' + f.seller + ' → ' + f.buyer + ' · ' + f.what + ' ' + f.qty + '개 × ' + won(snum(f.price)) + '원 = ' + won(s) + '원'; }
 function viewMain() {
-  var f = S.f, kids = [];
-  kids.push(h('h2', { text:'거래 전표 한 장이 국세청과 장부까지 가는 길' }),
-    h('p', { class:'lead', text:'거래 내용을 6하 원칙으로 적고 "거래 성사시키기"를 누르면, 전표가 서명을 받으며 시장 인프라 AI → 국세청 AI → 나만의 AI 비서 → 재무제표 SP를 지나 장부에 반영돼요.' }));
-  kids.push(h('div', { class:'g2' }, [inp('tx-buyer', '누가 — 구매자', f.buyer, function (v) { f.buyer = v; }, { max:'20' }), inp('tx-seller', '누가 — 판매자', f.seller, function (v) { f.seller = v; }, { max:'20', ph:'예: 철수상회' })]));
-  kids.push(h('div', { class:'g2' }, [inp('tx-when', '언제', f.when, function (v) { f.when = v; }, { max:'10', ph:'YYYY-MM-DD' }), inp('tx-where', '어디서', f.where, function (v) { f.where = v; }, { max:'40' })]));
-  kids.push(h('div', { class:'g3' }, [inp('tx-what', '무엇을(품목)', f.what, function (v) { f.what = v; }, { max:'40', ph:'예: 무선 청소기' }), inp('tx-qty', '수량', f.qty, function (v) { f.qty = v; }, { max:'6', mode:'numeric' }), inp('tx-price', '단가(원)', f.price, function (v) { f.price = v; }, { max:'12', mode:'numeric', ph:'예: 189000' })]));
-  kids.push(h('div', { class:'g2' }, [inp('tx-how', '어떻게(결제 방식)', f.how, function (v) { f.how = v; }, { max:'30' }), inp('tx-why', '왜(거래 사유)', f.why, function (v) { f.why = v; }, { max:'40', ph:'예: 재택 근무용 청소 장비' })]));
+  var kids = [], P = pending();
+  kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }),
+    h('p', { class:'lead', text:'시장 인프라 AI가 거래 전표(6하 원칙)를 보내오면, 국세청 AI가 서명을 확인해 세액을 정하고 각자의 재무제표 SP가 거래 일련번호와 함께 장부에 반영해요. 이 화면은 그 전표를 받는 세무 회계 쪽입니다.' }));
+  var box = [h('b', { text:'받은 거래 전표' + (P.length ? ' ' + P.length + '건' : '') })];
+  if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:'아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
+  P.forEach(function (x, i) { box.push(h('div', { class:'rowf', style:'justify-content:space-between;align-items:center;gap:12px;margin-top:8px' }, [h('div', {}, [h('div', { text:slipLine(x.f) }), h('div', { class:'sub', text:'출처: ' + x.src })]), btn('국세청 AI에 보내기', 'fill', function () { send(x); }, 'tx-send-' + i)])); });
+  box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('예시 전표 받기(체험)', '', addSample, 'tx-sample')]));
+  kids.push(h('div', { class:'card col', style:'margin-top:12px' }, box));
   if (S.err) kids.push(note(S.err, true, 'tx-err'));
-  kids.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('거래 성사시키기', 'fill', go, 'tx-go')]));
-  kids.push(h('div', { class:'note info', style:'margin-top:12px', id:'tx-scope', text:'시장 인프라 AI·국세청 AI·시장 SP·나만의 AI 비서·재무제표 SP는 아직 서로 연결되어 있지 않아서, 이 화면이 한 브라우저 안에서 모두를 대신해 보여 줘요. 서명은 이 화면이 만든 임시 키로 하고, 세액은 부가가치세 10% 체험 값이에요. 편의상 Openhash Network에 해시를 등록하는 과정은 생략했어요. 기록은 이 브라우저에만 저장돼요.' }));
+  kids.push(h('div', { class:'note info', style:'margin-top:12px', id:'tx-scope', text:'시장 인프라 AI·국세청 AI·시장 SP·나만의 AI 비서·재무제표 SP는 아직 서로 연결되어 있지 않아서, 이 화면이 한 브라우저 안에서 모두를 대신해 보여 줘요. 서명은 이 화면이 만든 임시 키로 하며 실제 신원 인증이 아니에요. 시장 화면의 구매 금액을 공급가액으로 보고 부가가치세 10%를 체험 값으로 계산해요. 편의상 Openhash Network 해시 등록은 생략했어요. 신고·납부는 하지 않고 어떤 정보도 밖으로 보내지 않아요.' }));
   var r = S.rec[0]; if (r) kids = kids.concat(viewResult(r));
+  if (S.rec.length) kids.push(ownBooks());
   return kids;
 }
+function addSample() {
+  var n = 'ex:' + Date.now().toString(36);
+  S.inbox.unshift({ n:n, src:'예시 전표(체험)', f:{ buyer:'나', seller:'철수상회', when:kst(), where:'나비웹 시장 인프라', what:'무선 청소기', qty:'2', price:'90000', how:'GDC 결제', why:'예시 전표' } });
+  S.inbox = S.inbox.slice(0, 20); save(); render();
+}
+/** 내 장부 합계: 구매자 이름이 '나'인 장부 항목을 계정별로 모은다(내 재무제표의 바탕). */
+function ownBooks() {
+  var acc = {}, order = [], n = 0, vat = 0;
+  S.rec.forEach(function (r) { [r.buyer, r.seller].forEach(function (e) { if (e.owner !== '나') return; n++; e.lines.forEach(function (l) { if (!acc[l[0]]) { acc[l[0]] = [0, 0]; order.push(l[0]); } acc[l[0]][0] += l[1]; acc[l[0]][1] += l[2]; if (l[0] === '부가세대급금') vat += l[1]; }); }); });
+  if (!n) return h('div', { id:'tx-books', class:'sub', style:'margin-top:12px', text:'내 이름("나")으로 된 장부 항목이 아직 없어요.' });
+  var d = 0, c = 0; order.forEach(function (k) { d += acc[k][0]; c += acc[k][1]; });
+  return h('div', { class:'card', id:'tx-books', style:'padding:0;margin-top:12px' }, [h('div', { style:'padding:12px 16px' }, [h('b', { text:'내 장부 합계 (' + n + '건)' }), h('div', { class:'sub', text:'매입 부가세(부가세대급금) 합계 ' + won(vat) + '원 · 차변 ' + won(d) + ' / 대변 ' + won(c) + (d === c ? ' — 대차가 맞아요' : ' — 대차가 맞지 않아요') })]),
+    h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['계정', '차변', '대변'].map(function (x) { return h('th', { text:x }); }))]), h('tbody', {}, order.map(function (k) { return h('tr', {}, [h('td', { text:k }), h('td', { text:acc[k][0] ? won(acc[k][0]) : '' }), h('td', { text:acc[k][1] ? won(acc[k][1]) : '' })]); }))])])]);
+}
 function viewResult(r) {
-  var k = [h('h3', { style:'margin-top:24px', text:'방금 거래한 전표 — ' + r.serial })];
+  var k = [h('h3', { style:'margin-top:24px', text:'방금 처리한 전표 — ' + r.serial })];
   k.push(h('ol', { class:'tx-tl', id:'tx-hops' }, r.hops.map(function (x) { return h('li', {}, [h('b', { text:x.who + ' → ' + x.to }), h('div', { text:x.text })]); })));
   k.push(h('div', { class:'g2', style:'margin-top:12px' }, [ledgerCard(r.buyer, '구매자 장부', 'tx-led-b'), ledgerCard(r.seller, '판매자 장부', 'tx-led-s')]));
   var out = h('div', { id:'tx-trace', style:'margin-top:12px' });
@@ -183,12 +211,12 @@ function traceView(t) {
   return h('div', { class:t.ok ? 'note info' : 'note', role:t.ok ? 'status' : 'alert', id:'tx-trace-ok' }, [h('b', { text:t.ok ? '모두 맞아요 — 이 일련번호의 전표와 두 장부 항목은 서명과 해시로 입증돼요.' : '맞지 않는 곳이 있어요.' }),
     h('ul', {}, t.checks.map(function (c) { return h('li', { text:(c.ok ? '✓ ' : '⚠ ') + c.k }); }))]);
 }
-function go() {
+function send(x) {
   if (S.busy) return; S.busy = true; S.err = ''; S.trc = null; S.tam = null;
-  run(S.f, S.rec.length).then(function (res) {
+  run(x.f, S.rec.length).then(function (res) {
     S.busy = false;
     if (!res.ok) { S.err = res.msg; render(); return; }
-    S.rec.unshift(res.rec); S.rec = S.rec.slice(0, MAXR); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
+    res.rec.src = x.n; S.rec.unshift(res.rec); S.rec = S.rec.slice(0, MAXR); S.inbox = S.inbox.filter(function (y) { return y.n !== x.n; }); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
   });
 }
 function doTrace() { var r = S.rec[0]; if (!r) return; trace(r).then(function (t) { S.trc = t; S.tam = null; render(); }); }
@@ -203,7 +231,7 @@ function render() {
   var root = $('tx-root'), tp = $('tx-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
   tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 세무 회계' })])])]));
   viewMain().forEach(function (k) { if (k) root.appendChild(k); });
-  root.appendChild(h('div', { class:'rowf', style:'margin-top:24px' }, [btn('세무 회계 SP에게 물어보기', '', function () { emit('ask', '거래 전표가 국세청 AI를 거쳐 장부에 반영되는 과정에서 무엇을 확인하면 좋을지 알려 줘'); })]));
+  root.appendChild(h('div', { class:'rowf', style:'margin-top:24px' }, [btn('세무 회계 SP에게 물어보기', '', function () { emit('ask', '시장에서 받은 거래 전표를 세무 회계에서 처리할 때 무엇을 확인하면 좋을지 알려 줘'); })]));
 }
 function nav(a) {
   var d = a && typeof a['do'] === 'string' ? a['do'] : '';
@@ -211,7 +239,7 @@ function nav(a) {
   emit('result', { ok:false, msg:'지원하지 않는 요청입니다.', view:'main' });
 }
 function mount(el) {
-  if (!el) return; M = el; el.textContent = ''; el.classList.add('tx'); S.rec = []; S.err = ''; S.trc = null; S.tam = null; load();
+  if (!el) return; M = el; el.textContent = ''; el.classList.add('tx'); S.rec = []; S.inbox = []; S.err = ''; S.trc = null; S.tam = null; load();
   [h('div', { id:'tx-top' }), h('div', { class:'wrap', id:'tx-root' })].forEach(function (x) { el.appendChild(x); }); render();
 }
 window.NaviTax = {
