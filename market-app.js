@@ -252,6 +252,13 @@ function wireAgent() {
   if (agentWired || !window.NaviAgent || !NaviAgent.onData) return; agentWired = true;
   NaviAgent.onData(function (m) { if (m.label !== SLOT || !M) return; takeProduct(m.data); if (S.step === 0) render(); });
 }
+var MINVER = '0.6.40';   // 상품 주소 전달(url)과 읽은 값 보내기(report_data)가 들어간 확장 버전. 이보다 낮으면 빈 페이지만 열리고 값이 오지 않는다.
+function verOk(v) {
+  var a = String(v || '').split('.').map(Number), b = MINVER.split('.').map(Number), i;
+  if (a.length < 2 || a.some(function (x) { return !isFinite(x); })) return false;
+  for (i = 0; i < b.length; i++) { var x = a[i] || 0; if (x !== b[i]) return x > b[i]; }
+  return true;
+}
 function askAgent() {
   var link = safeLink(S.prod.link);
   if (!link) { S.err = '판매 사이트의 상품 링크(https://로 시작)를 먼저 넣어 주세요.'; render(); return; }
@@ -259,6 +266,7 @@ function askAgent() {
   wireAgent(); S.read = { st:'wait', msg:'나비웹 도우미에게 맡겼어요. 판매 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 읽은 값은 이 화면에 채워져요.' }; S.err = ''; render();
   NaviAgent.detect().then(function (info) {
     if (!info) { S.read = { st:'none', msg:'나비웹 도우미가 설치되어 있지 않거나 연결되지 않았어요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
+    if (!verOk(info.version)) { S.read = { st:'none', msg:'나비웹 도우미가 오래된 버전(' + (info.version || '알 수 없음') + ')이에요. 상품 읽기는 ' + MINVER + ' 이상이 필요해요. 크롬 주소창에 chrome://extensions 를 열어 나비웹 도우미를 업데이트한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
     return NaviAgent.queue({ goal:goalFor(link), url:link, slot:SLOT, title:'상품 확인' }).then(function (ok) {
       if (!ok || ok.ok === false) { S.read = { st:'none', msg:'도우미에게 맡기지 못했어요. 아래 칸에 직접 넣어도 돼요.' }; render(); }
     });
@@ -455,6 +463,7 @@ window.NaviMarket = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function () { if (M) { S.step = 0; render(); } },
   flow:F,
+  agentVer:{ ok:verOk, min:MINVER },
   ledger:{ newKeys:newKeys, signTerms:function (priv, t) { return signText(priv, canonTerms(t)); }, mutualAuth:mutualAuth, appendDeposit:appendDeposit, appendTrade:appendTrade, verify:verifyLedger, parseSlip:parseSlip, canonTerms:canonTerms },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
