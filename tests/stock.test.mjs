@@ -136,26 +136,26 @@ test('desktop.html 연결과 배포 목록', () => {
 });
 
 // ── 내 가치 평가 v0 ──
-const SM = (o = {}) => ({ owner: '나', asOf: '2026-11-25 10:00:00', serials: ['MK-1'], n: 1, equity: 3000000, assets: 3200000, debt: 200000, sales: 0, totals: { balanced: true }, ...o });
+const SM = (o = {}) => ({ owner: '나', asOf: '2026-11-25 10:00:00', serials: ['MK-1'], n: 1, equity: 3000000, assets: 3200000, debt: 200000, sales: 0, profit: 0, profitKnown: false, cogs: 0, uncoveredRevenue: 0, totals: { balanced: true }, ...o });
 const rec = (serial, supply = 180000) => { const tax = Math.round(supply * 0.1); return { serial, at: '2026-11-25 10:00:00', hash: 'h',
   buyer: { side: 'buyer', owner: '나', lines: [['상품(재고자산)', supply, 0], ['부가세대급금', tax, 0], ['현금(GDC)', 0, supply + tax]] },
   seller: { side: 'seller', owner: '철수상회', lines: [['현금(GDC)', supply + tax, 0], ['매출', 0, supply], ['부가세예수금', 0, tax]] } }; };
 
 test('valueOf: 이익이 있으면 수익가치 시나리오의 최소~최대 구간', { skip }, () => {
-  const v = api().valueOf(SM({ sales: 1000000 }), { g: '3', r: '10' });
+  const v = api().valueOf(SM({ sales: 1000000, profit: 1000000, profitKnown: true }), { g: '3', r: '10' });
   assert.equal(v.mode, 'range'); assert.equal(v.sc.length, 3);
   assert.equal(Math.round(v.low), 10200000); assert.equal(Math.round(v.high), 26000000); assert.equal(v.ver, 'v0');
 });
 test('valueOf: 이익이 없으면 구간을 내지 않고 순자산만, 요구수익률 ≤ 성장률인 시나리오는 뺀다', { skip }, () => {
   const N = api(), a = N.valueOf(SM(), { g: '3', r: '10' });
   assert.equal(a.mode, 'asset'); assert.equal(a.low, 3000000); assert.equal(a.high, 3000000);
-  const b = N.valueOf(SM({ sales: 1000000 }), { g: '9', r: '10' }); // 낮은(8,12)·입력(9,10)만 성립, 높은(10,8)은 r ≤ g 라 제외
-  assert.equal(b.sc.length, 2); assert.equal(N.valueOf(SM({ sales: 1000000 }), { g: '10', r: '10' }).sc.length, 1); // 낮은 가정(9, 12)만 성립
-  assert.equal(N.valueOf(SM({ sales: 1000000 }), { g: '20', r: '10' }).mode, 'asset'); // 성립하는 시나리오가 없으면 구간을 내지 않는다
+  const b = N.valueOf(SM({ sales: 1000000, profit: 1000000, profitKnown: true }), { g: '9', r: '10' }); // 낮은(8,12)·입력(9,10)만 성립, 높은(10,8)은 r ≤ g 라 제외
+  assert.equal(b.sc.length, 2); assert.equal(N.valueOf(SM({ sales: 1000000, profit: 1000000, profitKnown: true }), { g: '10', r: '10' }).sc.length, 1); // 낮은 가정(9, 12)만 성립
+  assert.equal(N.valueOf(SM({ sales: 1000000, profit: 1000000, profitKnown: true }), { g: '20', r: '10' }).mode, 'asset'); // 성립하는 시나리오가 없으면 구간을 내지 않는다
   assert.equal(N.valueOf(null, {}), null);
 });
 test('hashOf: 같은 입력은 같은 해시, 가정이 다르면 다른 해시', { skip }, async () => {
-  const N = api(), a = await N.hashOf(N.valueOf(SM({ sales: 1 }), { g: '3', r: '10' })), b = await N.hashOf(N.valueOf(SM({ sales: 1 }), { g: '3', r: '10' })), c = await N.hashOf(N.valueOf(SM({ sales: 1 }), { g: '4', r: '10' }));
+  const N = api(), a = await N.hashOf(N.valueOf(SM({ sales: 1, profit: 1, profitKnown: true }), { g: '3', r: '10' })), b = await N.hashOf(N.valueOf(SM({ sales: 1, profit: 1, profitKnown: true }), { g: '3', r: '10' })), c = await N.hashOf(N.valueOf(SM({ sales: 1, profit: 1, profitKnown: true }), { g: '4', r: '10' }));
   assert.match(a, /^[0-9a-f]{64}$/); assert.equal(a, b); assert.notEqual(a, c);
 });
 test('내 가치 탭: 장부가 없으면 만들어 보여 주지 않고 안내한다', { skip }, () => {
@@ -179,4 +179,17 @@ test('내 가치 탭: 가정을 바꾸면 저장되고, 말로 이동(nav)도 �
 test('desktop.html: 증권 화면도 공통 장부를 먼저 불러온다, 증권 SP에 내 가치 원칙이 있다', () => {
   assert.match(d, /function _stockLoad\(cb\) \{ _ledgerLoad\(\(\) => _stockLoad2\(cb\)\); \}/);
   assert.match(readFileSync(new URL('../infra-sp.js', import.meta.url), 'utf8'), /'내 가치' 탭은 공통 장부에서 내 장부를 읽어/);
+});
+
+test('valueOf: 원가를 알 수 없는 매출이 있으면 이익을 쓰지 않는다(순자산만)', { skip }, () => {
+  const v = api().valueOf(SM({ sales: 3000000, profit: 3000000, profitKnown: false, uncoveredRevenue: 3000000 }), { g: '3', r: '10' });
+  assert.equal(v.mode, 'asset'); assert.equal(v.low, 3000000); assert.equal(v.uncovered, 3000000);
+});
+const sale = (serial, what, qty, supply, buyer, seller) => { const tax = Math.round(supply * 0.1); return { serial, at: '2026-11-25 12:00:00', hash: 'h', slip: { what, qty, supply, price: supply / qty },
+  buyer: { side: 'buyer', owner: buyer, lines: [['상품(재고자산)', supply, 0], ['부가세대급금', tax, 0], ['현금(GDC)', 0, supply + tax]] },
+  seller: { side: 'seller', owner: seller, lines: [['현금(GDC)', supply + tax, 0], ['매출', 0, supply], ['부가세예수금', 0, tax]] } }; };
+test('내 가치 탭: 산 물건을 팔면 매출총이익으로 수익가치 구간이 나온다', { skip }, () => {
+  const buy = sale('MK-1', '무선 청소기', 2, 180000, '나', '철수상회'), sell = sale('MK-2', '무선 청소기', 1, 120000, '영희', '나');
+  const p = page('value', { 'navi-tax-v2': { rec: [sell, buy], inbox: [] } });
+  assert.match(p.doc.getElementById('stk-v-range').textContent, /~/); assert.match(p.txt(), /매출총이익 30,000원/); assert.match(p.txt(), /매출 120,000 − 매출원가 90,000/);
 });

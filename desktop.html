@@ -3562,7 +3562,7 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 공통 장부(2026-11-25): 세무 회계·은행·증권 화면이 같은 장부 계산(ledger-book.js)을 쓰도록, 세 화면은 이 파일을 먼저 불러온 뒤 열린다.
-const _LEDGER_V = '20261125a';
+const _LEDGER_V = '20261125b';
 function _ledgerLoad(cb) {
   if (window.NaviLedger) { cb(); return; }
   let sc = document.getElementById('ledger-js');
@@ -3571,7 +3571,7 @@ function _ledgerLoad(cb) {
 }
 // 나비웹 은행(2026-11-23): 인프라 AI → 은행을 고르면 은행 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — bank.css·bank-app.js, Material 3).
 // 읽기 전용(잔액·무료 한도·사용·충전 내역). 돈은 옮기지 않으며 송금·결제는 폰 앱으로 안내한다. 안쪽 '은행 AI에게 묻기'는 기존 은행 대화창으로 말을 채워 준다(보내지는 않는다).
-const _BANK_V = '20261125a'; let _bankChat = false;
+const _BANK_V = '20261125b'; let _bankChat = false;
 function _bankLoad(cb) { _ledgerLoad(() => _bankLoad2(cb)); }
 function _bankLoad2(cb) {
   if (window.NaviBank) { cb(); return; }
@@ -3593,7 +3593,7 @@ function _bankShow(view) {
 function _bankOpen(view) { _switchTab('bank'); _bankShow(view); }
 // 나비웹 증권(2026-11-23): 인프라 AI → 증권을 고르면 증권 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — stock.css·stock-app.js, Material 3).
 // 시세·주문 서버가 없어 주문은 보내지 않고 시세는 보여 주지 않는다(현재가는 직접 입력). 기록은 이 브라우저에만 저장. 안쪽 '증권 AI에게 묻기'는 기존 증권 대화창으로 말을 채워 준다(보내지는 않는다).
-const _STOCK_V = '20261125b'; let _stockChat = false;
+const _STOCK_V = '20261125c'; let _stockChat = false;
 function _stockLoad(cb) { _ledgerLoad(() => _stockLoad2(cb)); }
 function _stockLoad2(cb) {
   if (window.NaviStock) { cb(); return; }
@@ -3723,7 +3723,7 @@ function _medShow(view) {
   });
 }
 function _medOpen(view) { _switchTab('med'); _medShow(view); }
-const _TAX_V = '20261125a'; let _taxChat = false;
+const _TAX_V = '20261125b'; let _taxChat = false;
 function _taxLoad(cb) { _ledgerLoad(() => _taxLoad2(cb)); }
 function _taxLoad2(cb) {
   if (window.NaviTax) { cb(); return; }

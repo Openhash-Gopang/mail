@@ -56,3 +56,25 @@ test('배선: 세 화면은 공통 장부를 먼저 불러오고 경로 목록�
   for (const n of ['bank', 'stock', 'tax']) assert.match(desk, new RegExp('function _' + n + 'Load\\(cb\\) \\{ _ledgerLoad\\(\\(\\) => _' + n + 'Load2\\(cb\\)\\); \\}'), n);
   for (const f of ['tax-app.js', 'bank-app.js']) assert.match(rd('../' + f), /NaviLedger/);
 });
+
+const sale = (serial, what, qty, supply, buyer, seller) => { const r = rec(serial, '2026-11-25 12:00:00', buyer, seller, supply); r.slip = { what, qty, supply, price: supply / qty }; return r; };
+test('매출원가: 산 이력의 평균 매입가가 판매 때 원가가 되고 대차는 그대로 맞는다', { skip }, () => {
+  const L = env().NaviLedger, buy1 = sale('MK-1', '청소기', 2, 180000, '나', '철수상회'), buy2 = sale('MK-2', '청소기', 2, 220000, '나', '철수상회'), sell = sale('MK-3', '청소기', 3, 450000, '영희', '나');
+  const chron = [buy1, buy2, sell], f = L.costFlow('나', chron); // 평균 매입가 (180000+220000)/4 = 100000, 3개 → 300000
+  assert.equal(f.cogs, 300000); assert.equal(f.uncoveredRevenue, 0);
+  const b = L.bookOf('나', chron); assert.equal(b['매출원가'], 300000); assert.equal(b['매출'], 450000); assert.equal(b['이익잉여금'], 450000 - 300000);
+  assert.equal(b['상품(재고자산)'], 400000 - 300000); assert.equal(L.totals(b).balanced, true);
+  const pi = L.profitInfo('나', chron); assert.equal(pi.gross, 150000); assert.equal(pi.known, true);
+});
+test('매출원가: 산 이력이 없는 판매·가상 초안의 기존 매출은 원가 미확인으로 두고 지어내지 않는다', { skip }, () => {
+  const L = env().NaviLedger, only = sale('MK-1', '청소기', 2, 180000, '나', '철수상회'), shop = L.profitInfo('철수상회', [only]);
+  assert.equal(shop.cogs, 0); assert.equal(shop.known, false); assert.equal(shop.uncovered, 3000000 + 180000);
+  const part = [sale('MK-1', '청소기', 1, 90000, '나', '철수상회'), sale('MK-2', '청소기', 3, 360000, '영희', '나')]; // 1개만 재고, 3개 판매 → 2개분 매출 240000 원가 미확인
+  const f = L.costFlow('나', part); assert.equal(f.cogs, 90000); assert.equal(f.uncoveredRevenue, 240000); assert.equal(L.profitInfo('나', part).known, false);
+});
+test('은행 재무제표: 매출원가가 반영되고 대차가 맞는다, 요약에 이익 정보가 있다', { skip }, () => {
+  const buy = sale('MK-1', '청소기', 2, 180000, '나', '철수상회'), sell = sale('MK-2', '청소기', 1, 120000, '영희', '나'), L = env({ 'navi-tax-v2': { rec: [sell, buy], inbox: [] } }).NaviLedger;
+  const b = L.walletBook(L.recs(), 5000); assert.equal(b['매출원가'], 90000);
+  assert.equal(b['현금(GDC)'] + b['상품(재고자산)'] + b['부가세대급금'] + b['비품'], b['미지급금'] + b['부가세예수금'] + b['자본금'] + b['이익잉여금']);
+  const s = L.summary('나'); assert.equal(s.profit, 30000); assert.equal(s.profitKnown, true); assert.equal(s.cogs, 90000); assert.equal(s.totals.balanced, true);
+});

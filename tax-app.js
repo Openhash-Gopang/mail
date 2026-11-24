@@ -176,6 +176,14 @@ var WHY = { 'buyer|상품(재고자산)':'구매한 상품을 재고로 반영(�
 function bookOf(owner, rs) { var w = owner === '나' ? NL.wallet() : null; return NL.bookOf(owner, rs, w ? { cashEnd:w.bal, all:S.rec } : null); }
 function sgn(n) { return n === 0 ? '' : (n > 0 ? '+' : '−') + won(Math.abs(n)); }
 function thr(a) { return h('thead', {}, [h('tr', {}, a.map(function (t) { return h('th', { text:t }); }))]); }
+/** 손익계산서 줄: 매출, 매출원가(구매 이력에서 파생), 매출총이익(원가를 모두 알 때만). 바뀐 줄은 강조한다. */
+function isRows(s0, s1, c0, c1, mark) {
+  var hl = function (x, y) { return x !== y ? 'background:rgba(30,138,90,.12)' : null; };
+  function tr(label, x, y, m) { return h('tr', { style:hl(x, y) }, [h('td', { text:label }), h('td', { text:won(x) }), h('td', { text:sgn(y - x) }), h('td', { text:won(y) }), h('td', { class:'sub', text:x !== y ? m : '' })]); }
+  var rows = [tr('매출', s0, s1, mark)];
+  if (c0 || c1) { rows.push(tr('매출원가', c0, c1, mark)); rows.push(tr('매출총이익(원가를 아는 범위)', s0 - c0, s1 - c1, mark)); }
+  return rows;
+}
 function stmtCard(owner, role, id) {
 var mine = S.rec.slice().reverse().filter(function (r) { return r.buyer.owner === owner || r.seller.owner === owner; }), last = mine[mine.length - 1];
 if (!last) return null;
@@ -193,13 +201,14 @@ var A = tot('자산 합계', ASSETS), L = tot('부채 합계', LIABS), E = tot('
 rows.push(h('tr', {}, [h('td', { colspan:'5', class:'sub', text:g[0] })]));
 g[1].forEach(function (a) { rows.push(row(a)); }); rows.push(g[2].tr);
 });
-var s0 = bf['매출'] || 0, s1 = af['매출'] || 0, ok = A.y === L.y + E.y;
+var s0 = bf['매출'] || 0, s1 = af['매출'] || 0, c0 = bf['매출원가'] || 0, c1 = af['매출원가'] || 0, ok = A.y === L.y + E.y, pi = NL.profitInfo(owner, mine);
+var costNote = pi.known ? '매출원가는 같은 품목을 산 이력(장부)에서 파생했어요. 판매비·관리비·세금은 아직 반영하지 않아요.' : (pi.sales > 0 ? '매출원가는 장부의 매입 이력이 있는 판매만 계산해요. 이 장부에는 원가를 알 수 없는 매출(가상 초안의 기존 매출, 산 이력이 없는 판매)이 ' + won(pi.uncovered) + '원 있어 원가 미확인이에요.' : '아직 매출이 없어요.');
 return h('div', { class:'card', id:id, style:'padding:0' }, [
 h('div', { style:'padding:12px 16px' }, [h('b', { text:role + ' ' + owner + ' — 재무제표 갱신' }), h('div', { class:'sub', text:'체험용 가상 초안에서 시작 · 일련번호 ' + last.serial + ' · ' + (last.at || '갱신일시 기록 없음') })]),
 h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['대차대조표', '전', '증감', '후', '부기(갱신일시 · 일련번호)']), h('tbody', {}, rows)])]),
 h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['손익계산서(11월 누계)', '전', '증감', '후', '부기(갱신일시 · 일련번호)']),
-h('tbody', {}, [h('tr', { style:s1 !== s0 ? 'background:rgba(30,138,90,.12)' : null }, [h('td', { text:'매출' }), h('td', { text:won(s0) }), h('td', { text:sgn(s1 - s0) }), h('td', { text:won(s1) }), h('td', { class:'sub', text:s1 !== s0 ? mark : '' })])])])]),
-h('div', { class:'sub', style:'padding:8px 16px 12px', text:'자산 ' + won(A.y) + ' = 부채 ' + won(L.y) + ' + 자본 ' + won(E.y) + (ok ? ' — 대차가 맞아요' : ' — 대차가 맞지 않아요') + ' · 매출원가는 이 체험에서 반영하지 않아요.' })]);
+h('tbody', {}, isRows(s0, s1, c0, c1, mark))])]),
+h('div', { class:'sub', style:'padding:8px 16px 12px', text:'자산 ' + won(A.y) + ' = 부채 ' + won(L.y) + ' + 자본 ' + won(E.y) + (ok ? ' — 대차가 맞아요' : ' — 대차가 맞지 않아요') + ' · ' + costNote })]);
 }
 function stmtsView(r) { return h('div', { class:'g2', style:'margin-top:12px', id:'tx-stmts' }, [stmtCard(r.buyer.owner, '구매자', 'tx-stmt-b'), stmtCard(r.seller.owner, '판매자', 'tx-stmt-s')]); }
 /** 갱신 이력: 언제(갱신일시)·무엇이(일련번호·계정)·왜(사유)·어떻게(차변·대변, 전표 해시) 바뀌었는지 한 줄씩 남는다. */
