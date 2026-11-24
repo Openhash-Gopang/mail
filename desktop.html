@@ -120,7 +120,7 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js?v=20261112"></script>
+<script src="agent-bridge.js?v=20261124a"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
 <script src="manual-chat.js?v=20261106a"></script>
@@ -3502,7 +3502,7 @@ const _INFRA_EX = {
   khealth:['증상 상담','내 의료 정보>med:profile','제출 범위>med:submit','진료 기록>med:visits'], kschool:['학습 상담','내 수업>learn:subjects','과제','학습 기록>learn:history'],
   gdc:['송금·결제>bank:pay','내 지갑(GDC)>bank:wallet','거래 내역>bank:history','청구서>bank:history'], kstock:['종목 상담','관심 종목>stock:watch','내 포트폴리오>stock:portfolio','거래 내역>stock:trades'],
   kinsurance:['보장 상담','내 보험>insure:mine','요율 원리>insure:rate','보험금 청구>insure:claims'], ktax:['세무 상담','회계 원리>tax:acct','거래 상호 검증>tax:verify','내 재무제표>tax:fs','세금 계산>tax:tax'],
-  kmarket:['시장 상담','상품 평가>mkt:eval','필요 판단>mkt:need','선구매>mkt:presale'], ktraffic:['교통 상담','교통 원리>trf:principle','공유 차량 규모>trf:fleet','충돌·혼잡 방지>trf:control','이동 메모>trf:trips'],
+  kmarket:['시장 상담','구매 검토>mkt:buy'], ktraffic:['교통 상담','교통 원리>trf:principle','공유 차량 규모>trf:fleet','충돌·혼잡 방지>trf:control','이동 메모>trf:trips'],
   klogistics:['물류 상담','물류 원리>lgs:principle','합차 효과>lgs:pack','경로·도착 시각>lgs:route','물품 메모>lgs:parcels'], kcleaner:['분리배출 상담','민원 접수','환경 정보','내 활동'],
   kpublic:['행정 상담','대행 원리>pub:principle','대행 요청>pub:request','기관 AI 연결>pub:connect','내 행정>pub:home'], kdemocracy:['민주주의 상담','민주주의 원리>dem:principle','청원 쓰기>dem:write','1차 심사>dem:screen','받은 청원>dem:inbox','내 청원>dem:mine'],
   ktelecom:['요금 상담','회선 관리','이용 내역','장애 신고'], ksearch:['검색 상담','검색 원리>sch:principle','검색하기>sch:find','내 데이터 공개>sch:share','등록 기준>sch:rules','공동 관리>sch:govern','엔진·데이터베이스>sch:engine'],
@@ -3732,7 +3732,7 @@ function _taxShow(view) {
   });
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
-const _MKT_V = '20261124a'; let _mktChat = false;
+const _MKT_V = '20261124b'; let _mktChat = false;
 function _mktLoad(cb) {
   if (window.NaviMarket) { cb(); return; }
   if (!document.getElementById('mkt-css')) { const l = document.createElement('link'); l.id = 'mkt-css'; l.rel = 'stylesheet'; l.href = 'market.css?v=' + _MKT_V; document.head.appendChild(l); }

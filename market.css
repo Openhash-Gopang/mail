@@ -134,3 +134,13 @@
 .mkt .gl{border-top:1px solid var(--line);padding:10px 0;font-size:14px}.mkt .gl:first-child{border-top:0}.mkt .gl b{display:block;margin-bottom:2px}
 .mkt .tgt{display:flex;align-items:center;gap:6px;justify-content:flex-end}.mkt .tgt input{width:72px}
 .mkt .tbl tr.bad td{background:var(--lb);color:var(--l)}
+
+.mkt .mk-steps{display:flex;flex-wrap:wrap;gap:6px 14px;list-style:none;margin:0;padding:0}
+.mkt .mk-steps li{display:flex;align-items:center;gap:6px;color:var(--sub,#5f6368);font-size:14px}
+.mkt .mk-steps li i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-style:normal;font-size:12px;border:1px solid currentColor}
+.mkt .mk-steps li.cur{color:var(--p,#1a73e8);font-weight:700}
+.mkt .mk-steps li.done{color:var(--p,#1a73e8)}
+.mkt .mk-steps li.done i,.mkt .mk-steps li.cur i{background:var(--p,#1a73e8);color:#fff;border-color:var(--p,#1a73e8)}
+.mkt .prod{display:flex;gap:14px;align-items:center;margin-top:12px}
+.mkt .prod img,.mkt .prod .noimg{width:88px;height:88px;object-fit:cover;border-radius:8px;flex:none}
+.mkt .prod .noimg{display:flex;align-items:center;justify-content:center;background:var(--lb,#eef3fd);color:var(--sub,#5f6368);font-size:12px}

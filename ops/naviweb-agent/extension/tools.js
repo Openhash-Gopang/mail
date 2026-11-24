@@ -24,6 +24,12 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },
   { name: 'report_status', description: '나비웹에서 맡긴 첨부서류 항목의 진행 결과를 나비웹 화면에 알린다. 파일이 아닌 결과(법원·기관으로 바로 전송 등)와 진행 상황·실패를 알릴 때 쓴다. state: sent(기관으로 전송 완료), pending(아직 진행 중), failed(실패). note 는 한 줄(법인 이름·건수 등).',
     input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
+  { name: 'report_data', description: '화면에서 읽은 상품 정보를 나비웹(시장 화면)으로 보낸다. 나비웹에서 맡긴 상품 확인 작업에서만 쓴다. 보고 읽은 값만 넣고 모르는 항목은 비운다(지어내지 않는다). 구매·결제는 하지 않는다.',
+    input_schema: { type: 'object', properties: { kind: { type: 'string', enum: ['product'] }, data: { type: 'object', properties: {
+      name: { type: 'string', description: '상품명' }, price: { type: 'number', description: '판매 가격(원, 숫자만)' }, image: { type: 'string', description: '대표 이미지 주소(https)' },
+      seller: { type: 'string', description: '판매자·판매 사이트 이름' }, as: { type: 'string', description: '사후 서비스(AS·반품·교환·보증) 안내 요약' },
+      rating: { type: 'number', description: '고객 리뷰 평균 평점(1~5)' }, count: { type: 'number', description: '리뷰 건수' }, reviews: { type: 'array', items: { type: 'string' }, description: '대표 리뷰 요약 최대 5개' },
+      shipping: { type: 'string', description: '배송 방식·기간' }, compare: { type: 'array', items: { type: 'number' }, description: '같은 상품의 다른 판매처 가격(원) 최대 5개' } } } }, required: ['kind', 'data'] } },
   { name: 'send_file_to_navi', description: '발급·내려받은 서류 파일을 나비웹의 맡긴 첨부서류 항목으로 보낸다(파일 내용은 AI 에게 보이지 않는다). 내려받기 링크 요소의 ref 를 주면 그 링크의 파일을, ref 없이 부르면 지금 열린 문서 보기 화면(정부24 \"문서출력\" 창 등)이 불러온 PDF 를 직접 가져오고, 그런 화면이 아니면 방금 내려받은 파일을 보낸다. 나비웹이 맡긴 항목에 자동으로 넣으므로 사용자에게 다시 묻지 않는다.',
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
   { name: 'open_issued_document', description: '정부24 신청 내역(처리완료) 화면에서 방금 발급된 서류의 "문서출력" 단추를 찾아 사람처럼 눌러 문서 보기 창을 열고, 그 문서를 PDF 로 만들어 나비웹의 맡긴 항목으로 보낸다. 단추 찾기·누르기·창 확인·전송을 한 번에 하므로 화면을 여러 번 읽거나 단추를 직접 누르지 말고 이것을 부른다. row 는 위에서 몇 번째 행인지(기본 0 = 가장 최근).',
