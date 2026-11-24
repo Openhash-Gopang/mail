@@ -154,7 +154,8 @@ function ensureKey(k) { if (!KEYS[k]) KEYS[k] = newKeys().then(function (kk) { r
 // 상품 정보는 나비웹 도우미가 판매 사이트를 열어(로그인은 사용자가) 읽어 오고, 직접 넣어도 된다.
 // 연결 전인 것(화면에도 적는다): PDV 실제 연동(기록은 이 브라우저에 저장한 체험용), 판매자 나비(응답은 체험용), 재무제표 SP·나만의 AI 비서(이 화면이 대신 기록), 실제 GDC 잔고·지급.
 function snum(v) { var s = String(v == null ? '' : v).replace(/[,\s원]/g, ''); return /^\d+$/.test(s) ? Number(s) : NaN; }
-var STEPS = ['상품', '중복 확인', '필요도', '가격·품질', '판매자 협의', '결제·기록'];
+var STEPS = ['상품 이름', '구매 이력', '필요도', '구매 의사', '판매자·소비자 의견', 'AS 평가', '가격 비교', '판매자 협의', '최종 확인', '결제', '국세청 보고'];
+var LAST = STEPS.length - 1;
 var F = { ver:1 };   // 화면에서 쓰는 순수 함수 모음(테스트용으로도 내보낸다)
 
 function norm(s) { return String(s == null ? '' : s).toLowerCase().replace(/[^0-9a-z\u3131-\u318e\uac00-\ud7a3]+/g, ' ').trim(); }
@@ -209,7 +210,7 @@ F.snum = snum; F.norm = norm;
 var KEY = 'navi-market-v2', MAXP = 200;
 var M = null, LS = {};
 var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
-  auto:false, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
+  auto:false, nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
@@ -226,7 +227,7 @@ function safeImg(u) { u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/i.test
 function safeLink(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
 function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; if (window.NaviHist) NaviHist.push('market', n); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
-function reset(keepHistory) { S.tok++; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
+function reset(keepHistory) { S.tok++; S.nts = null; S.ntsMsg = null; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
 
 // ── 도우미(상품 페이지 읽기) ──
 var SLOT = '시장 상품 확인';
@@ -305,19 +306,27 @@ function prodCard() {
     h('div', { class:'col' }, [h('b', { text:p.name || '(이름 없음)' }), h('div', { class:'sub', text:(isFinite(price) ? won(price) + '원' : '가격 없음') + (p.seller ? ' · ' + p.seller : hostOf(p.link) ? ' · ' + hostOf(p.link) : '') })])]);
 }
 // ── 진행 기록: 도우미와 시장 SP가 지금까지 한 일을 단계별로 보여 준다 ──
-var DOING = ['상품 정보를 받는 중', 'PDV 구매 기록에서 비슷한 물건을 찾는 중', 'PDV의 업무·일상을 살펴 필요도를 따지는 중', '가격·AS·리뷰·판매자를 평가하는 중', '판매자 나비와 조건을 협의하는 중', '결제하고 장부에 기록하는 중'];
+var DOING = ['상품 이름을 받는 중', 'PDV 구매 기록에서 비슷한 물건을 찾는 중', 'PDV의 업무·일상을 살펴 필요도를 따지는 중', '구매 의사를 확인하는 중', '판매자 신뢰도와 소비자 의견을 모으는 중', '사후 서비스(AS)를 평가하는 중', '다른 판매처의 같은 상품 가격과 비교하는 중', '판매자 나비와 조건을 협의하는 중', '최종 구매 의사를 확인하는 중', '결제하고 장부에 기록하는 중', '시장 인프라가 국세청에 거래를 보고하는 중'];
+function lineRes(keys) {
+  var L = S.rep ? S.rep.lines.filter(function (l) { return keys.indexOf(l.k) >= 0; }) : []; if (!L.length) return null;
+  return { t:L.map(function (l) { return (l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k; }).join(' · '), sub:L.map(function (l) { return l.k + ': ' + l.text; }) };
+}
 function progRows() {
-  var p = S.prod, price = snum(p.price), r = [], i, d = S.deal, rp = S.rep, n = S.need;
+  var p = S.prod, price = snum(p.price), r = [], i, d = S.deal, n = S.need, c = p.compare || [];
+  var cmp = lineRes(['가격']); if (cmp && c.length) cmp.sub = cmp.sub.concat(['다른 판매처 가격: ' + c.map(won).join('원, ') + '원']);
   var res = [
     { t:(clean(p.name, 40) || '(이름 없음)') + ' · ' + (isFinite(price) ? won(price) + '원' : '가격 없음') + (p.seller ? ' · ' + p.seller : '') + ' — ' + (S.read.st === 'done' ? '도우미가 읽어 왔어요' : '직접 넣었어요'), sub:[] },
     S.step < 1 ? null : { t:S.dup.length ? '비슷한 구매 ' + S.dup.length + '건 있음 → ' + (S.dupOverride ? '“구매 원함”으로 계속' : '멈추고 확인 중') : '비슷한 구매 없음(PDV 기록 ' + S.history.length + '건 확인)',
       sub:S.dup.slice(0, 3).map(function (x) { return '이전 구매: ' + x.name + ' · ' + won(x.price) + '원' + (x.d ? ' · ' + x.d : ''); }) },
     n ? { t:'필요도 ' + n.score + ' / 5 — ' + n.label, sub:n.reasons } : null,
-    rp ? { t:rp.title, sub:rp.lines.map(function (l) { return (l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k + ': ' + l.text; }) } : null,
+    S.step > 3 ? { t:'구매 의사를 확인했어요' + (S.dupOverride ? '(비슷한 구매가 있지만 “구매 원함”)' : ''), sub:[] } : null,
+    lineRes(['판매자 신뢰도', '고객 리뷰']), lineRes(['사후 서비스(AS)']), cmp,
     d ? { t:d.seller + ' · ' + won(d.price) + '원 × ' + d.qty + '개 · ' + d.pay, sub:['배송: ' + d.ship, '구매 조건: ' + d.cond] } : null,
-    S.done ? { t:'결제 완료 ' + gdc(S.done.total) + ' · 잔액 ' + gdc(S.done.left) + ' · 장부 ' + S.done.n + '번째 블록', sub:[] } : null];
+    S.step > 8 ? { t:'최종 구매 의사를 확인했어요(승인)', sub:[] } : null,
+    S.done ? { t:'결제 완료 ' + gdc(S.done.total) + ' · 잔액 ' + gdc(S.done.left) + ' · 장부 ' + S.done.n + '번째 블록', sub:[] } : null,
+    S.nts ? { t:'일련번호 ' + S.nts.serial + ' · 세액 ' + won(S.nts.tax) + '원', sub:[] } : null];
   for (i = 0; i < STEPS.length; i++) {
-    var st = S.step === 6 || i < S.step ? 'done' : i === S.step ? 'now' : 'wait', x = res[i];
+    var st = (S.step === LAST && (i < LAST || S.nts)) || i < S.step ? 'done' : i === S.step ? 'now' : 'wait', x = res[i];
     r.push({ k:STEPS[i], st:st, t:st === 'wait' ? '대기' : x ? x.t : DOING[i] + '…', sub:st === 'wait' || !x ? [] : x.sub });
   }
   return r;
@@ -411,40 +420,61 @@ function pdvCard() {
 }
 function toNeed() {
   S.need = F.need({ name:S.prod.name, price:snum(S.prod.price), memo:S.memo, history:S.history, dupOverride:S.dupOverride }); go(2);
-  later(function () {
-    if (S.need.score >= 3) { toReport(); return; }
-    openAsk('필요도가 낮아요(' + S.need.score + ' / 5 · ' + S.need.label + ')', S.need.reasons.join(' / ') + ' — 그래도 계속 볼까요?',
-      [{ t:'계속 진행', c:'fill', id:'mk-go2', fn:function () { toReport(); } }, { t:'그만두기', fn:function () { reset(); } }]);
-  });
+  later(toIntent);
 }
 function viewNeed() {
-  var n = S.need, kids = [h('h2', { text:'이 물건이 나에게 필요할까요?' }), prodCard()];
+  var n = S.need, kids = [h('h2', { text:S.step >= 3 ? '필요도를 보고 사려는 마음을 확인해요' : '이 물건이 나에게 필요할까요?' }), prodCard()];
   kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'k', text:'필요도 (5 매우 적절 · 1 불필요)' }), h('div', { class:'num', id:'mk-score', style:'font-size:34px;font-weight:700', text:n.score + ' / 5' }), h('div', { class:'sub', id:'mk-score-label', text:n.label }),
     h('ul', {}, n.reasons.map(function (r) { return h('li', { text:r }); }))]));
-  kids.push(h('p', { class:'sub', text:'체험용 규칙으로 계산한 점수예요. 실제로는 시장 SP가 PDV의 업무·일상 전체를 분석해 판단해요. 3점 이상이면 자동으로 이어 가고, 낮으면 물어봐요.' }));
+  kids.push(h('p', { class:'sub', text:'체험용 규칙으로 계산한 점수예요. 실제로는 시장 SP가 PDV의 업무·일상 전체를 분석해 판단해요.' }));
   return kids;
 }
-function toReport() {
-  var p = S.prod; S.rep = F.report({ price:snum(p.price), compare:p.compare, as:p.as, seller:p.seller, sellerTrust:p.sellerTrust, rating:p.rating, count:p.count }); go(3);
-  later(function () { askBuy(); });
+// 3단계: 필요도를 알려 주고 사용자의 구매 의사를 확인한다.
+function toIntent() {
+  go(3);
+  later(function () {
+    var n = S.need;
+    openAsk('구매 의사 확인 — 필요도 ' + n.score + ' / 5(' + n.label + ')', n.reasons.join(' / ') + '\n계속 진행해 판매자·소비자 의견, AS, 가격을 알아볼까요?',
+      [{ t:'계속 진행', c:'fill', id:'mk-go2', fn:function () { toTrust(); } }, { t:'그만두기', fn:function () { reset(); } }]);
+  });
 }
-function askBuy() {
-  var r = S.rep, brief = r.lines.map(function (l) { return (l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k + ': ' + l.text; }).join('\n');
-  openAsk('구매할까요? — ' + r.title, '「' + clean(S.prod.name, 40) + '」 ' + won(snum(S.prod.price)) + '원\n' + brief,
-    [{ t:'구매', c:'fill', id:'mk-buy', fn:function () { startDeal(); } }, { t:'그만두기', fn:function () { reset(); } }, { t:'보고서 더 보기', id:'mk-more' }]);
+function evalRep() { var p = S.prod; S.rep = F.report({ price:snum(p.price), compare:p.compare, as:p.as, seller:p.seller, sellerTrust:p.sellerTrust, rating:p.rating, count:p.count }); }
+function toTrust() { evalRep(); go(4); later(function () { go(5); later(function () { go(6); later(startDeal); }); }); }
+function lineCard(keys) {
+  var L = S.rep.lines.filter(function (l) { return keys.indexOf(l.k) >= 0; });
+  return h('div', { class:'card', style:'margin-top:16px' }, L.map(function (l) { return h('div', { class:'kv', style:'align-items:flex-start' }, [h('span', { text:(l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k }), h('span', { style:'text-align:right', text:l.text })]); }));
 }
-function viewReport() {
-  var r = S.rep, p = S.prod, kids = [h('h2', { text:'구매 검토 보고서' }), prodCard(), progCard(true)];
-  kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('b', { id:'mk-verdict', text:r.title }), h('div', {}, r.lines.map(function (l) {
-    return h('div', { class:'kv', style:'align-items:flex-start' }, [h('span', { text:(l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k }), h('span', { style:'text-align:right', text:l.text })]); }))]));
+function viewTrust() {
+  var p = S.prod, kids = [h('h2', { text:'판매자 신뢰도와 소비자 의견' }), prodCard(), lineCard(['판매자 신뢰도', '고객 리뷰'])];
   if (p.reviews && p.reviews.length) kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'대표 리뷰' }), h('ul', {}, p.reviews.map(function (x) { return h('li', { text:x }); }))]));
-  if (!p.as || !p.sellerTrust || !p.rating || p.compare.length < 3) kids.push(h('details', { class:'card', style:'margin-top:12px' }, [h('summary', { text:'보고서에 빠진 값 직접 넣기' }),
+  return kids;
+}
+function viewAs() { return [h('h2', { text:'사후 서비스(AS) 평가' }), prodCard(), lineCard(['사후 서비스(AS)'])]; }
+function viewCompare() {
+  var p = S.prod, c = p.compare || [], kids = [h('h2', { text:'같은 상품을 파는 다른 판매처와 가격 비교' }), prodCard(), lineCard(['가격'])];
+  if (c.length) kids.push(h('div', { class:'card', style:'padding:0;margin-top:12px' }, [h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'mk-cmp-tbl' }, [h('thead', {}, [h('tr', {}, ['판매처', '가격'].map(function (x) { return h('th', { text:x }); }))]),
+    h('tbody', {}, [h('tr', {}, [h('td', { text:'이 상품(' + (p.seller || hostOf(p.link) || '내가 보는 곳') + ')' }), h('td', { text:won(snum(p.price)) + '원' })])].concat(c.map(function (x, i) { return h('tr', {}, [h('td', { text:'다른 판매처 ' + (i + 1) }), h('td', { text:won(x) + '원' })]); })))])])]));
+  return kids;
+}
+// 8단계: 지금까지의 모든 결과와 협의 조건을 한 번에 보여 주고 최종 구매 의사를 묻는다.
+function toFinal() {
+  go(8);
+  later(function () {
+    var d = S.deal, brief = S.rep.lines.map(function (l) { return (l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k; }).join(' · ');
+    openAsk('최종 구매 의사 확인 — ' + S.rep.title, '「' + clean(S.prod.name, 40) + '」 ' + won(d.price) + '원 × 1개 · 판매자 ' + d.seller + '\n' + brief + '\n결제 ' + d.pay + ' · 배송 ' + d.ship + ' · 구매 조건 ' + d.cond,
+      [{ t:'승인', c:'fill', id:'mk-approve', fn:function () { go(9); later(autoPay); } }, { t:'그만두기', fn:function () { reset(); } }, { t:'보고서 더 보기', id:'mk-more' }]);
+  });
+}
+function viewFinal() {
+  var p = S.prod, d = S.deal, kids = [h('h2', { text:'구매 검토 최종 보고서' }), prodCard(), progCard(true)];
+  kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'협의한 조건' })].concat([['판매자', d.seller], ['금액', won(d.price) + '원 × ' + d.qty + '개'], ['결제', d.pay], ['배송', d.ship], ['구매 조건', d.cond]].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('span', { text:x[1] })]); }))));
+  kids.push(h('details', { class:'card', style:'margin-top:12px' }, [h('summary', { text:'보고서에 빠진 값 직접 넣기' }),
     inp('mk-trust', '판매자 신뢰도(평점·등급 등)', p.sellerTrust, function (v) { p.sellerTrust = v; }, { max:'120' }),
     inp('mk-as', 'AS·반품·교환 안내', p.as, function (v) { p.as = v; }, { max:'200' }),
     h('div', { class:'g2' }, [inp('mk-rating', '리뷰 평점(1~5)', p.rating, function (v) { p.rating = v; }, { max:'4' }), inp('mk-count', '리뷰 건수', p.count, function (v) { p.count = v; }, { max:'8', mode:'numeric' })]),
-    inp('mk-cmp', '다른 판매처 가격(원, 쉼표로 3개 이상)', p.compare.join(', '), function (v) { p.compare = v.split(/[\s,]+/).map(snum).filter(function (x) { return x >= 1; }).slice(0, 5); }, { max:'80' }),
-    btn('보고서 다시 만들기', '', function () { S.rep = F.report({ price:snum(p.price), compare:p.compare, as:p.as, seller:p.seller, sellerTrust:p.sellerTrust, rating:p.rating, count:p.count }); render(); }, 'mk-remake')]));
-  if (!S.ask) kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('구매', 'fill', startDeal, 'mk-buy-inline'), btn('그만두기', '', function () { reset(); })]));
+    inp('mk-cmp', '다른 판매처 가격(원, 쉼표로 3개 이상)', (p.compare || []).join(', '), function (v) { p.compare = v.split(/[\s,]+/).map(snum).filter(function (x) { return x >= 1; }).slice(0, 5); }, { max:'80' }),
+    btn('보고서 다시 만들기', '', function () { evalRep(); render(); }, 'mk-remake')]));
+  if (!S.ask) kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('승인', 'fill', function () { go(9); later(autoPay); }, 'mk-approve-inline'), btn('그만두기', '', function () { reset(); })]));
   return kids;
 }
 // 판매자 나비와의 협의(체험용): 시장 SP가 보내는 말과 판매자 나비의 응답을 보여 준다. 판매자 나비 응답은 실제 연결 전이라 이 화면이 만든 체험용 값이다.
@@ -453,12 +483,8 @@ function startDeal() {
   S.deal = { seller:seller, price:price, qty:1, pay:'GDC 블록체인 결제(상호 인증·잔고 검증·장부 기록)', ship:clean(p.shipping, 60) || '택배(기간은 판매자 확인 전 — 체험용)', cond:clean(p.as, 80) || '반품·교환 조건은 판매자 안내 기준(체험용)',
     talk:[['시장 SP → 판매자 나비', '「' + clean(p.name, 40) + '」 1개를 ' + won(price) + '원에 사려고 합니다. 결제는 GDC로, 배송은 택배를 원합니다. 조건을 알려 주세요.'],
           ['판매자 나비(체험용 응답)', '가격 ' + won(price) + '원, 수량 1개 확인했습니다. 결제는 GDC 서명 결제로 받겠습니다. 배송: ' + (clean(p.shipping, 60) || '택배') + '.']] };
-  go(4);
-  later(function () {
-    var d = S.deal;
-    openAsk('이 조건으로 결제할까요?', '판매자 ' + d.seller + ' · ' + won(d.price) + '원 × 1개 · 결제 ' + d.pay + ' · 배송 ' + d.ship + ' · 구매 조건 ' + d.cond,
-      [{ t:'승인', c:'fill', id:'mk-approve', fn:function () { go(5); later(autoPay); } }, { t:'취소', fn:function () { reset(); } }]);
-  });
+  go(7);
+  later(toFinal);
 }
 function viewDeal() {
   var d = S.deal, kids = [h('h2', { text:'판매자 나비와 조건을 맞췄어요' }), prodCard()];
@@ -499,7 +525,7 @@ function doPay() {
         var total = res.total, left = res.buyerLeft;
         S.fin.unshift({ d:kst(), item:t.item, amt:total, left:left }); S.fin = S.fin.slice(0, MAXP);                          // 재무제표 SP: 장부(지출) 갱신
         S.history.unshift({ name:t.item, price:total, d:kst(), seller:t.seller }); S.history = S.history.slice(0, MAXP);       // 나만의 AI 비서: PDV에 기록
-        save(); S.done = { total:total, left:left, n:S.ledger.length, seller:t.seller, item:t.item }; go(6);
+        save(); S.done = { total:total, left:left, n:S.ledger.length, seller:t.seller, item:t.item }; S.nts = null; S.ntsMsg = null; go(LAST); autoReport();
       });
     });
   }).catch(function () { S.payMsg = { t:'결제하지 못했어요(이 브라우저에서는 서명·해시 기능을 쓸 수 없어요).', bad:true }; render(); });
@@ -515,12 +541,47 @@ function viewPay() {
   } else if (!S.ask) kids.push(h('div', { class:'sub', id:'mk-pay-wait', style:'margin-top:12px', text:'결제하고 있어요…' }));
   return kids;
 }
+// 결제 뒤 시장 인프라 AI의 다음 단계: 국세청에 거래를 보고한다(체험용). 6하원칙 거래 전표에 일련번호와 인프라 서명을 붙여 보내면,
+// 국세청 AI가 서명을 확인하고 세액을 정해 자기 서명과 함께 돌려주고, 시장 SP → 나만의 AI 비서 → 재무제표 SP 순으로 장부에 반영한다.
+function ntsCanon(o) { return JSON.stringify([o.buyer, o.seller, o.when, o.where, o.what, o.qty, o.price, o.how, o.why]); }
+function autoReport() {
+  var o = S.done; if (!o) return; S.ntsMsg = null; S.nts = null;
+  if (!subtle()) { S.ntsMsg = '이 브라우저에서는 서명·해시 기능(보안 연결 필요)을 쓸 수 없어 국세청 보고를 체험할 수 없어요.'; render(); return; }
+  var p = S.prod, serial = 'MK-' + kst().replace(/-/g, '') + '-' + String(100000 + S.ledger.length).slice(1), where = '시장 인프라 AI · ' + (hostOf(p.link) || '판매 사이트'),
+    slip = { buyer:'나', seller:o.seller, when:kst(), where:where, what:o.item, qty:1, price:o.total, how:'GDC 블록체인 결제(장부 ' + o.n + '번째 블록)', why:S.need ? '필요도 ' + S.need.score + '/5 · 구매 의사 확인 후 구매' : '구매 의사 확인 후 구매' };
+  var text = ntsCanon(slip) + '|' + serial, supply = Math.round(o.total / 1.1), tax = o.total - supply, k = S.tok;
+  Promise.all([ensureKey('i'), ensureKey('n')]).then(function (ks) {
+    return signText(ks[0].priv, text).then(function (isg) {
+      return verifySig(ks[0].pub, isg, text).then(function (ok) {        // 국세청 AI가 인프라 서명을 확인한다
+        if (!ok) throw new Error('isig');
+        var ntext = text + '|' + tax;
+        return signText(ks[1].priv, ntext).then(function (nsg) {
+          return verifySig(ks[1].pub, nsg, ntext).then(function (ok2) {  // 나만의 AI 비서가 국세청 서명을 확인한다
+            if (!ok2) throw new Error('nsig');
+            if (!M || S.tok !== k) return;
+            S.nts = { serial:serial, slip:slip, supply:supply, tax:tax, ifp:ks[0].fp, nfp:ks[1].fp };
+            if (S.fin[0] && S.fin[0].item === o.item) { S.fin[0].serial = serial; S.fin[0].tax = tax; }
+            save(); render();
+          });
+        });
+      });
+    });
+  }).catch(function () { if (!M || S.tok !== k) return; S.ntsMsg = '국세청 보고를 마치지 못했어요(서명 확인 실패). 결제와 장부 기록은 이미 끝났어요.'; render(); });
+}
 function viewDone() {
-  var o = S.done, kids = [h('h2', { text:'구매를 마쳤어요' }), note('결제와 기록은 체험용이에요. 실제 GDC 지급과 분산 장부는 아직 연결되어 있지 않아요.', false)];
-  var rows = [['시장 SP', '「' + o.item + '」 ' + gdc(o.total) + ' 결제를 두 사람의 서명으로 인증하고 잔고를 확인한 뒤, 장부 ' + o.n + '번째 블록으로 기록했어요.'],
-    ['재무제표 SP', '지출 ' + gdc(o.total) + '을 내 장부에 반영했어요. 잔고는 ' + gdc(o.left) + '이에요.'],
-    ['나만의 AI 비서', '이 구매를 내 데이터 금고(PDV) 구매 기록에 남겼어요. 다음에 비슷한 상품을 보면 중복을 알려 드려요.']];
+  var o = S.done, n = S.nts, kids = [h('h2', { text:n ? '구매를 마쳤어요' : '시장 인프라가 국세청에 거래를 보고해요' }), note('결제·국세청 보고·기록은 체험용이에요. 국세청 AI와 실제 GDC 지급, 분산 장부는 아직 연결되어 있지 않고, Openhash Network 해시 등록은 생략했어요.', false)];
+  if (!n) {
+    kids.push(S.ntsMsg ? h('div', { id:'mk-nts-msg', style:'margin-top:12px' }, [note(S.ntsMsg, true), h('div', { class:'rowf', style:'margin-top:12px' }, [btn('국세청에 다시 보고', 'fill', function () { autoReport(); render(); }, 'mk-nts-retry')])])
+      : h('div', { class:'sub', id:'mk-nts-wait', style:'margin-top:12px', text:'국세청에 거래를 보고하고 있어요…' }));
+    return kids;
+  }
+  var s = n.slip, rows = [['시장 SP', '「' + o.item + '」 ' + gdc(o.total) + ' 결제를 두 사람의 서명으로 인증하고 잔고를 확인한 뒤, 장부 ' + o.n + '번째 블록으로 기록했어요.'],
+    ['시장 인프라 AI → 국세청 AI', '거래 전표(6하원칙)에 일련번호 ' + n.serial + '와 자기 서명(키 ' + n.ifp + ')을 붙여 국세청에 보고했어요.'],
+    ['국세청 AI', '인프라 서명을 확인하고 세액을 정했어요: 공급가액 ' + gdc(n.supply) + ' + 부가세 ' + gdc(n.tax) + '(체험용 10%). 세액과 자기 서명(키 ' + n.nfp + ')을 붙여 돌려보냈어요.'],
+    ['나만의 AI 비서', '시장 SP를 거쳐 받은 전표의 국세청 서명을 확인하고, 재무제표 SP에 넘기고, 이 구매를 내 데이터 금고(PDV) 구매 기록에 남겼어요. 다음에 비슷한 상품을 보면 중복을 알려 드려요.'],
+    ['재무제표 SP', '일련번호 ' + n.serial + '와 함께 지출 ' + gdc(n.supply) + '·부가세대급금 ' + gdc(n.tax) + '을 내 장부에 반영했어요. 잔고는 ' + gdc(o.left) + '이에요.']];
   kids.push(h('div', { class:'card col', style:'margin-top:16px', id:'mk-done' }, rows.map(function (r) { return h('div', {}, [h('b', { text:'✓ ' + r[0] }), h('div', { text:r[1] })]); })));
+  kids.push(h('div', { class:'card', style:'margin-top:12px', id:'mk-slip' }, [h('b', { text:'국세청에 보고한 거래 전표 — 일련번호 ' + n.serial })].concat([['누가', '구매자 ' + s.buyer + ' · 판매자 ' + s.seller], ['언제', s.when], ['어디서', s.where], ['무엇을', s.what + ' × ' + s.qty], ['얼마에', gdc(s.price) + '(공급가액 ' + gdc(n.supply) + ' + 부가세 ' + gdc(n.tax) + ')'], ['어떻게', s.how], ['왜', s.why]].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('span', { style:'text-align:right', text:x[1] })]); }))));
   var lg = h('div', { id:'mk-done-ledger', style:'margin-top:12px' });
   kids.push(lg);
   verifyLedger(S.ledger).then(function (r) { lg.appendChild(note(r.ok ? '장부 검증: 이상 없음(' + r.n + '개 블록 — 이음·서명·잔고가 모두 맞아요)' : '장부 검증: ' + r.bad + '번 블록에 이상이 있어요.', !r.ok, 'mk-done-ok')); }).catch(function () {});
@@ -531,8 +592,8 @@ function viewDone() {
 function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
   tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), steps()]));
-  if (S.step >= 1 && S.step !== 3) root.appendChild(progCard(false));
-  var v = [viewStart, viewDup, viewNeed, viewReport, viewDeal, viewPay, viewDone][S.step] || viewStart;
+  if (S.step >= 1 && S.step !== 8) root.appendChild(progCard(false));
+  var v = [viewStart, viewDup, viewNeed, viewNeed, viewTrust, viewAs, viewCompare, viewDeal, viewFinal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });
   root.appendChild(h('div', { class:'rowf', style:'margin-top:24px' }, [btn('시장 SP에게 물어보기', '', function () { emit('ask', '지금 보고 있는 구매 검토 단계에서 무엇을 확인하면 좋을지 알려 줘'); })]));
   var m = modal(); if (m) root.appendChild(m);
@@ -547,7 +608,7 @@ function mount(el) {
   M = el; el.textContent = ''; el.classList.add('mkt'); S.history = []; S.memo = ''; S.fin = []; S.ledger = []; reset(); load(); wireAgent();
   [h('div', { id:'mk-top' }), h('div', { class:'wrap', id:'mk-root' })].forEach(function (x) { el.appendChild(x); }); render();
 }
-if (window.NaviHist) NaviHist.on('market', 'mkt', function (sub) { if (!M) return; S.tok++; S.step = typeof sub === 'number' && sub >= 0 && sub <= 6 ? sub : 0; S.err = ''; S.info = ''; render(); });   // 브라우저 뒤로·앞으로 가기로 단계를 옮긴다
+if (window.NaviHist) NaviHist.on('market', 'mkt', function (sub) { if (!M) return; S.tok++; S.step = typeof sub === 'number' && sub >= 0 && sub <= LAST ? sub : 0; S.err = ''; S.info = ''; render(); });   // 브라우저 뒤로·앞으로 가기로 단계를 옮긴다
 window.NaviMarket = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
