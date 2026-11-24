@@ -204,12 +204,8 @@ function viewTopup() {
   var how = h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'충전 순서' }),
     h('div', {}, [['입금자명을 가입한 이름과 같게', '신청서 없이 지정 계좌로 원하는 금액을 바로 입금합니다. 띄어쓰기는 달라도 됩니다.'], ['입금 알림으로 자동 확인', '입금되면 은행 알림이 서버로 전달되어 입금자 이름으로 내 계정을 찾아 충전합니다. 보통 몇 분 안에 끝납니다.'], ['GDC 발행', '입금액과 1:1 비율로 GDC가 지갑에 들어옵니다(예: 1,000원 = 1,000 GDC. 테스트 기간 기준이며 바뀔 수 있습니다).']].map(function (x, i) { return h('div', { class:'stp' }, [h('i', { text:String(i + 1) }), h('div', {}, [h('b', { text:x[0] }), h('span', { text:x[1] })])]); })),
     h('div', { class:'note', text:'같은 이름의 가입자가 둘 이상이면 자동 처리되지 않고 관리자가 확인한 뒤 충전합니다.' })]);
-  kids.push(h('div', { class:'g2' }, [acct, how]));
-  var pl = S.plans || PLANS;
-  var plan = h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'요금제' })].concat(pl.map(function (p) { return h('div', { class:'kv' }, [h('span', { text:p[0] }), h('b', { text:p[1] + (p[2] ? ' · ' + p[2] : '') })]); }), [isBeta() ? h('div', { class:'note info', text:'베타 테스트 기간(2026년 12월 말까지) 유료 플랜은 어느 것을 고르셔도 $200 플랜을 90% 할인한 $20에 이용합니다.' }) : null,
-    h('div', { class:'sub', text:'입금액은 요금제 화면에서 플랜을 고르면 그날 환율로 정해집니다. 입금자명은 나비웹에 등록한 실명과 같게 하세요(다르면 자동 처리되지 않습니다).' }),
-    h('div', { class:'rowf' }, [btn('요금제 열기', 'fill', function () { if (S.onPlans) S.onPlans(); })])]));
-  kids.push(plan);
+  kids.push(h('div', { class:'g2 eq' }, [acct, how]));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('요금제 열기', 'fill', function () { if (S.onPlans) S.onPlans(); })]));
   var ch = S.charges || [], list = h('div', { class:'card', style:'margin-top:16px;padding:8px 24px' });
   list.appendChild(h('div', { style:'padding:12px 0 4px' }, [h('b', { style:'font-size:17px', text:'충전 내역' }), h('div', { class:'sub', text:'최근 20건' })]));
   if (!ch.length) list.appendChild(h('div', { class:'empty', text:S.st === 'ok' || S.st === 'err' ? '아직 충전 내역이 없어요.' : '불러오는 중…' }));
