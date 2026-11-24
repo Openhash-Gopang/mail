@@ -145,3 +145,11 @@ test('위·변조 감지: 한 칸을 고치거나 이음을 끊으면 그 블록
 test('시장 화면: 연결 전인 것(PDV·판매자 나비·분산 장부)을 숨기지 않고 적는다', { skip }, () => {
   const p = page(); assert.ok(app.includes('분산 장부') && app.includes('체험용')); p.type('mk-name', '에어프라이어'); p.type('mk-price', '90000'); p.btn('검토 시작').click(); assert.ok(p.txt().includes('체험용'));
 });
+
+test('도우미 버전: 오래된 확장(주소를 전달하지 못함)은 맡기지 않고 업데이트를 안내한다', { skip }, async () => {
+  let queued = 0; const mk = (v) => page({ onData() {}, detect: () => Promise.resolve({ version: v }), queue: () => { queued++; return Promise.resolve({ ok: true }); } });
+  const old = mk('0.6.5'); old.type('mk-link', 'https://shop.example/p/1'); old.btn('도우미로 읽어 오기').click(); await wait(30);
+  assert.equal(queued, 0); assert.ok(old.txt().includes('오래된 버전(0.6.5)') && old.txt().includes('chrome://extensions') && old.txt().includes('0.6.40'));
+  const ok = mk('0.6.40'); ok.type('mk-link', 'https://shop.example/p/1'); ok.btn('도우미로 읽어 오기').click(); await wait(30); assert.equal(queued, 1);
+  const V = ok.N.agentVer; assert.equal(V.ok('0.6.41'), true); assert.equal(V.ok('0.7.0'), true); assert.equal(V.ok('1.0'), true); assert.equal(V.ok('0.6.39'), false); assert.equal(V.ok(''), false); assert.equal(V.ok('x.y'), false);
+});
