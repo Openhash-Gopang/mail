@@ -58,8 +58,8 @@ test('서버가 모두 실패하면 다시 시도 단추를 보인다', { skip }
 test('충전·입금: 계좌·순서·요금제·베타·충전 내역', { skip }, async () => {
   const p = page(); await p.until(/5,200/); p.nav({ do: 'topup' }); await p.until(/충전 완료/);
   assert.match(p.txt(), /중소기업은행/); assert.match(p.txt(), /415-092028-04-011/); assert.match(p.txt(), /에이아이시티주식회사/);
-  assert.match(p.txt(), /입금자명을 가입한 이름과 같게/); assert.match(p.txt(), /\$200 \/ 월/); assert.match(p.txt(), /입금 대기/); assert.match(p.txt(), /정기 자동결제를 쓰지 않습니다/);
-  assert.equal(/베타 테스트 기간/.test(p.txt()), today <= '2026-12-31');
+  assert.match(p.txt(), /입금자명을 가입한 이름과 같게/); assert.ok(!/\$200 \/ 월/.test(p.txt())); assert.match(p.txt(), /입금 대기/); assert.match(p.txt(), /정기 자동결제를 쓰지 않습니다/);
+  assert.equal(/베타 테스트 기간/.test(p.txt()), false);   // 요금제 카드는 버튼만 남긴다
   let opened = 0; const q = page({ mount: { onPlans: () => opened++ } }); q.nav({ do: 'topup' }); q.btn('요금제 열기').click(); assert.equal(opened, 1);
 });
 test('송금·결제: 코드 10자리·금액을 검사하고 확인 창만 띄운다(돈은 움직이지 않는다)', { skip }, async () => {
