@@ -123,7 +123,7 @@ function share(risks, total) {
 
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 보험' })]), h('button', { type:'button', class:'btn quiet', id:'insure-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('insure', S.view); } })]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 보험' })]), h('button', { type:'button', class:'btn quiet simbtn', id:'insure-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('insure', S.view); } })]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function notice() {

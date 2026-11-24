@@ -142,3 +142,9 @@ test('서류·기록 시뮬레이션: 서류함·외부 입력·서류 작성·P
   for (const id of ['docs-sim-drafts', 'docs-sim-done', 'myforms-sim', 'othersite-sim', 'pdv-sim']) assert.ok(desk.includes('id="' + id + '"'), id);
   assert.match(desk, /#pdv-root \[role=tab\]/);
 });
+
+test('버튼 위치: 모든 화면의 시뮬레이션 버튼은 같은 작은 모양(simbtn)이고, 제목 줄 오른쪽 끝에 놓는 공통 규칙이 있다', { skip }, () => {
+  for (const [src, n] of [[stockApp, 1], [bankApp, 1], [taxApp, 1], [mktApp, 2], [insApp, 1], [lrnApp, 1]]) assert.equal((src.match(/class:'btn quiet simbtn', id:'[a-z-]*sim/g) || []).length, n);
+  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 5);
+  assert.match(desk, /id="simbtn-css"/); assert.match(desk, /\.brand:has\(> \.simbtn\)\{display:flex/); assert.match(desk, /min-height:30px!important/);
+});

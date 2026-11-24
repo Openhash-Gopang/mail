@@ -319,7 +319,7 @@ function doTamper() {
 }
 function render() {
   var root = $('tx-root'), tp = $('tx-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
-  tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 세무 회계' })]), h('button', { type:'button', class:'btn quiet', id:'tax-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('tax', 'slip'); } })])]));
+  tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 세무 회계' })]), h('button', { type:'button', class:'btn quiet simbtn', id:'tax-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('tax', 'slip'); } })])]));
   viewMain().forEach(function (k) { if (k) root.appendChild(k); });
 }
 function nav(a) {

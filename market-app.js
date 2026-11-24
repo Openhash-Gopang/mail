@@ -782,7 +782,7 @@ function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
   if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('market', S.mode === 'sell' ? 'sell' : 's' + S.step);
   if (S.mode === 'sell') { renderSell(tp, root); var m2 = modal(); if (m2) root.appendChild(m2); return; }
-  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })]), h('button', { type:'button', class:'btn quiet', id:'market-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('market', 's' + S.step); } })]), findBar(), steps()]));
+  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })]), h('button', { type:'button', class:'btn quiet simbtn', id:'market-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('market', 's' + S.step); } })]), findBar(), steps()]));
   if (S.step >= 1 && S.step !== 8) root.appendChild(progCard(false));
   var v = [viewStart, viewDup, viewNeed, viewNeed, viewTrust, viewAs, viewCompare, viewDeal, viewFinal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });
@@ -1000,7 +1000,7 @@ function myListings() {
       h('td', {}, [btn(L.status === '판매 완료' ? '보기' : '정산하기', '', function () { openListing(L.id); }, 'mk-L-open-' + i)])]); }))])])]);
 }
 function renderSell(tp, root) {
-  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장 · 판매' })]), h('button', { type:'button', class:'btn quiet', id:'market-sim-sell', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('market', 'sell'); } })]), sellSteps()]));
+  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장 · 판매' })]), h('button', { type:'button', class:'btn quiet simbtn', id:'market-sim-sell', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('market', 'sell'); } })]), sellSteps()]));
   if (!S.sell) S.sell = newSell();
   if (S.sell.step >= 1) root.appendChild(sellProgCard());
   sellView().forEach(function (k) { if (k) root.appendChild(k); });
