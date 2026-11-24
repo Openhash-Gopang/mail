@@ -151,3 +151,7 @@
 .tx #tx-stmts{grid-template-columns:repeat(2,minmax(0,1fr))}
 .tx #tx-stmts .tbl td.sub{white-space:normal}
 @media (max-width:860px){.tx #tx-stmts{grid-template-columns:minmax(0,1fr)}}
+/* 서명된 전표(장부) 두 칸도 구매자·판매자 1:1 */
+.tx #tx-slips{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tx #tx-slips .tbl td.sub{white-space:normal}
+@media (max-width:860px){.tx #tx-slips{grid-template-columns:minmax(0,1fr)}}
