@@ -130,10 +130,46 @@ function copyBtn(text, label) {
 }
 
 // ── 내 지갑 ──
+/** 내 재무제표(은행 장부): 현금 계정은 GDC 잔액과 같다. 나머지 계정은 세무 회계 화면이 남긴 거래 기록(일련번호·갱신일시)으로 채운다. */
+function walletBook() {
+  var recs = [], b = { '현금(GDC)':0, '상품(재고자산)':0, '부가세대급금':0, '비품':500000, '미지급금':0, '부가세예수금':0, '자본금':0, '이익잉여금':0, '매출':0 }, dCash = 0, marks = [];
+  try { var v = JSON.parse(localStorage.getItem('navi-tax-v2') || 'null'); if (v && Array.isArray(v.rec)) recs = v.rec; } catch (e) { recs = []; }
+  recs.forEach(function (r) {
+    var mine = false;
+    [r.buyer, r.seller].forEach(function (e) {
+      if (!e || e.owner !== '나' || !Array.isArray(e.lines)) return; mine = true;
+      e.lines.forEach(function (l) {
+        var a = l[0]; if (!(a in b)) return;
+        var dr = (a === '현금(GDC)' || a === '상품(재고자산)' || a === '부가세대급금' || a === '비품'), d = dr ? l[1] - l[2] : l[2] - l[1];
+        b[a] += d; if (a === '매출') b['이익잉여금'] += d; if (a === '현금(GDC)') dCash += d;
+      });
+    });
+    if (mine) marks.push((r.at || '갱신일시 기록 없음') + ' · ' + r.serial);
+  });
+  b['현금(GDC)'] = S.bal; b['자본금'] = (S.bal - dCash) + b['비품'];
+  b.marks = marks; return b;
+}
+function stmtCard() {
+  var head = [h('b', { text:'내 재무제표 — 은행 장부' })];
+  if (S.bal === null) return h('div', { class:'card stmt cmp', id:'bnk-stmt' }, head.concat([h('div', { class:'sub', text:'잔액을 불러오면 재무제표가 나타나요.' })]));
+  var b = walletBook();
+  function sec(t) { return h('tr', { class:'sec' }, [h('td', { text:t, colspan:'3' })]); }
+  function row(a, val, note, cls) { return h('tr', { class:cls || '' }, [h('td', { text:a }), h('td', { class:'r num', text:won(val) }), h('td', { class:'sub', text:note || '' })]); }
+  function opt(a, label) { return b[a] ? row(label || a, b[a]) : null; }
+  var A = b['현금(GDC)'] + b['상품(재고자산)'] + b['부가세대급금'] + b['비품'], L = b['미지급금'] + b['부가세예수금'], E = b['자본금'] + b['이익잉여금'], ok = A === L + E;
+  var rows = [sec('대차대조표 — 자산'), row('현금(GDC)', b['현금(GDC)'], '= 은행 GDC 잔액', 'hl'), opt('상품(재고자산)'), opt('부가세대급금'), row('비품', b['비품']), row('자산 합계', A, '', 'tot'),
+    sec('부채와 자본'), opt('미지급금'), opt('부가세예수금'), row('자본금', b['자본금']), opt('이익잉여금'), row('부채·자본 합계', L + E, ok ? '대차가 맞아요' : '대차가 맞지 않아요', 'tot'),
+    sec('손익계산서'), row('매출', b['매출']), row('당기 순이익', b['매출'], '이번 기록 기준', 'tot')];
+  var last = b.marks.length ? '최근 반영: ' + b.marks.slice(0, 2).join(' · ') : '아직 반영된 거래가 없어요. 세무 회계에서 전표를 처리하면 여기에 이어서 반영돼요.';
+  return h('div', { class:'card stmt cmp', id:'bnk-stmt' }, head.concat([
+    h('div', { class:'sub', text:'현금 계정은 위의 GDC 잔액과 같아요. 모든 수치는 오픈해시(5천만 인구의 결합 재무제표)와 거래 이력 기록으로 위·변조할 수 없어서, 이 재무제표가 곧 은행 장부예요.' }),
+    h('table', { class:'stbl' }, [h('tbody', {}, rows)]),
+    h('div', { class:'sub', text:last })]));
+}
 function viewWallet() {
   var kids = head('내 지갑', 'GDC 잔액과 사용 현황을 한눈에 봅니다. GDC는 나비 안에서 현금처럼 쓰입니다.'), st = status(); if (st) kids.push(st);
   var low = S.bal != null && S.bal <= LOW;
-  var hero = h('div', { class:'card hero col', style:'margin-top:20px' }, [
+  var hero = h('div', { class:'card hero col cmp', style:'margin-top:12px' }, [
     h('div', { class:'sub', text:'GDC 잔액' }),
     h('div', { class:'amt num', id:'bnk-bal' }, [S.bal == null ? '—' : won(S.bal), h('small', { text:'GDC' })]),
     low ? h('div', { class:'sub', text:'잔액이 ' + won(LOW) + ' GDC 이하입니다. 충전을 권해 드려요.' }) : null,
@@ -142,16 +178,17 @@ function viewWallet() {
   var q = S.quota, tiles = [h('div', { class:'tile' }, [h('div', { class:'k', text:'지금까지 쓴 금액' }), h('div', { class:'v num', text:q ? won(q.spent_krw) + '원' : '—' })])];
   var mb = monthBill(); tiles.push(h('div', { class:'tile' }, [h('div', { class:'k', text:'이번 달 청구액' }), h('div', { class:'v num', text:mb ? won(mb.krw) + '원' : '—' })]));
   var r7 = rowsOf('7'); tiles.push(h('div', { class:'tile' }, [h('div', { class:'k', text:'최근 7일 API 요청' }), h('div', { class:'v num', text:r7 ? won(sum(r7.rows, 'req')) : '—' })]));
-  kids.push(h('div', { class:'g4', style:'margin-top:16px' }, tiles));
+  kids.push(h('div', { class:'g4 cmp', style:'margin-top:8px' }, tiles)); kids.push(stmtCard()); var pair = [];
   if (q) {
     var pct = Math.min(Math.round(q.spent_krw / (q.limit_krw || 1) * 100), 100), msg = '';
     if (q.estimated_monthly_krw > 0) { msg = '지금 쓰시는 속도라면 한 달에 대략 ' + won(q.estimated_monthly_krw) + '원 정도예요.'; if (q.remaining_krw <= 0) msg += ' 가입 무료 한도를 모두 사용했어요.'; else if (q.projected_days_to_limit != null && q.projected_days_to_limit > 0) msg += ' 이 속도라면 약 ' + q.projected_days_to_limit + '일 후 무료 한도를 다 쓰게 돼요.'; }
     else msg = '아직 대화를 시작하기 전이에요.';
-    kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'가입 무료 한도 사용 현황' }),
+    pair.push(h('div', { class:'card col cmp' }, [h('b', { text:'가입 무료 한도 사용 현황' }),
       h('div', { class:'meter8 ' + (pct >= 90 ? 'bad' : ''), role:'progressbar', 'aria-valuemin':'0', 'aria-valuemax':'100', 'aria-valuenow':String(pct) }, [h('i', { style:'width:' + pct + '%' })]),
       h('div', { text:won(q.spent_krw) + '원 / ' + won(q.limit_krw) + '원 (' + pct + '%)' }), h('div', { class:'sub', text:msg })]));
   }
-  if (S.series) { var d = S.series.daily.slice(-30); kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { text:'최근 30일 청구액(원)' }), btn('거래 내역 보기', 'sm quiet', function () { go('history'); })]), bars(d.map(function (r) { return r.krw || 0; }), d.map(function (r) { return r.d.slice(5); }), 'var(--pri)', short)])); }
+  if (S.series) { var d = S.series.daily.slice(-30); pair.push(h('div', { class:'card col cmp' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { text:'최근 30일 청구액(원)' }), btn('거래 내역 보기', 'sm quiet', function () { go('history'); })]), bars(d.map(function (r) { return r.krw || 0; }), d.map(function (r) { return r.d.slice(5); }), 'var(--pri)', short)])); }
+  if (pair.length) kids.push(h('div', { class:'g2 eq cmp', style:'margin-top:8px' }, pair));
   kids.push(h('h2', { text:'은행 서비스' }));
   var svc = [['충전·입금', '계좌 입금으로 GDC를 채우고 요금제를 확인합니다.', 'topup', '충전하기'], ['송금·결제', '나비 코드(10자리)로 GDC를 주고받습니다.', 'pay', '송금·결제'], ['거래 내역', '충전·사용 내역과 이번 달 청구서를 봅니다.', 'history', '내역 보기'], ['예금·대출', 'GDC 예치, 대출, 자동 상환(설계 단계).', 'save', '자세히'], ['신용·채권', '재무제표 기반 신용 등급과 채권 POOL(개념 시연).', 'credit', '자세히']];
   kids.push(h('div', { class:'g3' }, svc.map(function (x) { return h('div', { class:'card cc' }, [h('div', { class:'nm', text:x[0] }), h('div', { class:'sub', text:x[1] }), h('div', { class:'rowf', style:'margin-top:auto' }, [btn(x[3], 'sm', function () { go(x[2]); })])]); })));
