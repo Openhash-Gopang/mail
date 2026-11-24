@@ -134,19 +134,19 @@ function crossCheck(a, b, tolPct) {
 }
 
 // ── 내 가치 평가 v0(장부 기반) ──
-var VER = 'v0';
+var VER = 'v1';
 // 증권 AI가 최종적으로 종합하려는 신호 중 아직 연결된 데이터가 없는 것 — 지어내지 않고 "미연결"로 보여 준다.
 var GAPS = ['통화량(한국은행 발행·시중 유통)', '글로벌·국내 경제 구조 변화', '업종 사이클(성장·사양 산업)', '경영진·임직원 경력·신용도·근속', '세금 납부액 시계열', '인구 구조'];
 function NL() { return window.NaviLedger || null; }
 /** 장부 요약(NaviLedger.summary) + 가정(이익 성장률 g, 요구 수익률 r, %) → 가치 구간.
  *  이익이 있으면 수익가치 시나리오 3개(낮은·입력·높은 가정)의 최소~최대. 이익 근거가 없으면 구간 대신 순자산(장부가)만 낸다.
- *  이익은 장부의 매출총이익(매출 − 매출원가)이다. 원가는 구매 이력에서 파생하며, 원가를 알 수 없는 매출이 있으면 이익을 쓰지 않는다(판매비·관리비·세금은 미반영). */
+ *  이익은 장부의 세후 영업이익(매출 − 매출원가 − 판매비와관리비 − 참고용 예상 소득세)이다. 원가는 구매 이력에서 파생하며, 원가를 알 수 없는 매출이 있으면 이익을 쓰지 않는다. 판관비는 사용자가 적은 기록이고 세금은 공제 없는 참고 계산이다. */
 function valueOf(sm, a) {
   if (!sm || !sm.totals || !isFinite(sm.equity)) return null;
-  var g = snum(a && a.g), r = snum(a && a.r), earn = sm.profitKnown && sm.profit > 0 ? sm.profit : 0, sc = [];
+  var g = snum(a && a.g), r = snum(a && a.r), ern = sm.earnNet != null ? sm.earnNet : sm.profit, earn = sm.profitKnown && ern > 0 ? ern : 0, sc = [];
   if (earn > 0 && isFinite(g) && isFinite(r)) [[g - 1, r + 2, '낮은 가정'], [g, r, '입력값'], [g + 1, r - 2, '높은 가정']].forEach(function (x) { if (x[1] > x[0] && x[1] <= 100 && x[0] > -50) sc.push({ g:x[0], r:x[1], name:x[2], v:earn * (1 + x[0] / 100) / ((x[1] - x[0]) / 100) }); });
   var vs = sc.map(function (x) { return x.v; });
-  return { ver:VER, owner:sm.owner, asOf:sm.asOf, serials:sm.serials, n:sm.n, equity:sm.equity, assets:sm.assets, debt:sm.debt, earn:earn, sales:sm.sales || 0, cogs:sm.cogs || 0, uncovered:sm.uncoveredRevenue || 0, profitKnown:!!sm.profitKnown, sc:sc, mode:vs.length ? 'range' : 'asset', low:vs.length ? Math.min.apply(null, vs) : sm.equity, high:vs.length ? Math.max.apply(null, vs) : sm.equity, g:g, r:r, balanced:sm.totals.balanced };
+  return { ver:VER, owner:sm.owner, asOf:sm.asOf, serials:sm.serials, n:sm.n, equity:sm.equity, assets:sm.assets, debt:sm.debt, earn:earn, sales:sm.sales || 0, cogs:sm.cogs || 0, opex:sm.opex || 0, taxEst:sm.taxEst ? sm.taxEst.total : 0, net:sm.earnNet != null, uncovered:sm.uncoveredRevenue || 0, profitKnown:!!sm.profitKnown, sc:sc, mode:vs.length ? 'range' : 'asset', low:vs.length ? Math.min.apply(null, vs) : sm.equity, high:vs.length ? Math.max.apply(null, vs) : sm.equity, g:g, r:r, balanced:sm.totals.balanced };
 }
 /** 같은 입력(전표 일련번호·장부 값·가정·모델 버전)이면 같은 해시 — 평가를 다시 계산해 맞춰 볼 수 있게 한다. 해시 기능이 없으면 null. */
 function hashOf(v) {
@@ -268,11 +268,11 @@ function valOut(sm) {
     ? h('div', { class:'card col', id:'stk-v-res' }, [h('b', { style:'font-size:17px', text:'내 가치 구간 (' + VER + ')' }), h('div', { class:'num', id:'stk-v-range', style:'font-size:24px;font-weight:700', text:won(v.low) + ' ~ ' + won(v.high) + '원' }),
         h('div', { class:'sub', text:'수익가치 시나리오 ' + v.sc.length + '개(' + v.sc.map(function (x) { return x.name + ' 성장 ' + x.g + '%·수익률 ' + x.r + '%'; }).join(' / ') + ')의 최소~최대입니다. 구간의 폭은 가정의 차이일 뿐 데이터 충분도를 뜻하지 않아요.' })])
     : h('div', { class:'card col', id:'stk-v-res' }, [h('b', { style:'font-size:17px', text:'구간을 낼 수 없어요 — 순자산(장부가)만 보여 드려요' }), h('div', { class:'num', id:'stk-v-range', style:'font-size:24px;font-weight:700', text:won(v.equity) + '원' }),
-        h('div', { class:'sub', text:(v.sales > 0 && !v.profitKnown ? '원가를 알 수 없는 매출이 있어(원가 미확인 ' + won(v.uncovered) + '원) 이익을 계산할 수 없어요.' : v.sales > 0 ? '매출총이익이 0 이하라 수익가치를 계산할 수 없어요.' : '이익 근거가 없어요(아직 매출이 없어요).') + ' 순자산은 자산 합계 ' + won(v.assets) + '원 − 부채 합계 ' + won(v.debt) + '원입니다. 산 이력이 있는 물건을 팔아 거래가 쌓이면 구간이 나와요.' })]);
+        h('div', { class:'sub', text:(v.sales > 0 && !v.profitKnown ? '원가를 알 수 없는 매출이 있어(원가 미확인 ' + won(v.uncovered) + '원) 이익을 계산할 수 없어요.' : v.sales > 0 ? '세후 영업이익이 0 이하라 수익가치를 계산할 수 없어요(판매비·관리비·예상 세금 반영 후).' : '이익 근거가 없어요(아직 매출이 없어요).') + ' 순자산은 자산 합계 ' + won(v.assets) + '원 − 부채 합계 ' + won(v.debt) + '원입니다. 산 이력이 있는 물건을 팔아 거래가 쌓이면 구간이 나와요.' })]);
   k.push(tile);
   k.push(h('div', { class:'card col' }, [h('b', { text:'이 평가에 쓴 신호' }), h('div', {}, [
     ['재무(내 장부)', '연결됨 · 자산 ' + won(v.assets) + ' / 부채 ' + won(v.debt) + ' / 자본 ' + won(v.equity) + '원' + (v.balanced ? '' : ' (대차 불일치)')],
-    ['이익', v.earn > 0 ? '매출총이익 ' + won(v.earn) + '원 (매출 ' + won(v.sales) + ' − 매출원가 ' + won(v.cogs) + ', 판매비·관리비·세금 미반영)' : v.sales > 0 && !v.profitKnown ? '원가 미확인 — 쓰지 않았어요' : '근거 없음']].concat(GAPS.map(function (g) { return [g, '데이터 미연결 — 쓰지 않았어요']; })).map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); }))]));
+    ['이익', v.earn > 0 ? (v.net ? '세후 영업이익 ' + won(v.earn) + '원 (매출 ' + won(v.sales) + ' − 매출원가 ' + won(v.cogs) + ' − 판매비·관리비 ' + won(v.opex) + ' − 참고용 예상 소득세 ' + won(v.taxEst) + ')' : '매출총이익 ' + won(v.earn) + '원 (매출 ' + won(v.sales) + ' − 매출원가 ' + won(v.cogs) + ', 판매비·관리비·세금 미반영)') : v.sales > 0 && !v.profitKnown ? '원가 미확인 — 쓰지 않았어요' : '근거 없음']].concat(GAPS.map(function (g) { return [g, '데이터 미연결 — 쓰지 않았어요']; })).map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); }))]));
   k.push(h('div', { class:'sub', id:'stk-v-hash', text:'입력 해시 계산 중…' }));
   hashOf(v).then(function (x) { var e = $('stk-v-hash'); if (e) e.textContent = x ? '모델 ' + VER + ' · 입력 해시 ' + x.slice(0, 16) + '… (같은 장부·같은 가정이면 같은 값이 나와요)' : '모델 ' + VER + ' · 이 브라우저에서는 입력 해시를 만들 수 없어요.'; });
   return k;
