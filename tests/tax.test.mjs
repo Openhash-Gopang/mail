@@ -49,11 +49,11 @@ test('진실성: 일련번호로 확인하면 통과하고, 금액·세액·서�
 });
 test('화면: 받은 전표 없음 → 예시 전표 → 국세청 AI에 보내기 → 흐름·두 장부·내 장부 합계·확인·몰래 고치기', { skip }, async () => {
   const p = page(), { doc, btn } = p;
-  assert.ok(p.txt().includes('세무 회계') && p.txt().includes('체험') && p.txt().includes('받은 거래 전표'));
+  assert.ok(p.txt().includes('세무 회계') && p.txt().includes('받은 거래 전표'));
   assert.ok(!doc.getElementById('tx-buyer') && !doc.getElementById('tx-seller') && !doc.getElementById('tx-go'));       // 시장 내용(거래 입력 폼)은 두지 않는다
   assert.ok(doc.getElementById('tx-empty') && !btn('국세청 AI에 보내기'));
-  btn('예시 전표 받기').click(); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('180,000원'));
-  btn('국세청 AI에 보내기').click(); await wait(400); assert.ok(doc.getElementById('tx-step1') && !doc.getElementById('tx-slips') && !doc.getElementById('tx-stmts') && !doc.getElementById('tx-hist') && p.txt().includes('서명된 거래 전표를 보냅니다')); doc.getElementById('tx-step1').click(); await wait(100); assert.ok(doc.getElementById('tx-slips') && !doc.getElementById('tx-stmts') && doc.getElementById('tx-step2') && p.txt().includes('회계사 AI에게 보냅니다')); doc.getElementById('tx-step2').click(); await wait(100); assert.ok(doc.getElementById('tx-stmts') && !doc.getElementById('tx-hist') && doc.getElementById('tx-step3') && p.txt().includes('거래 이력을 기록합니다')); doc.getElementById('tx-step3').click(); await wait(100); assert.ok(doc.getElementById('tx-hist'));
+  btn('거래 전표 받기').click(); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('180,000원')); await wait(500); assert.ok(doc.getElementById('tx-infra-sig-0').textContent.includes('시장 인프라 디지털 서명 ✓') && !p.txt().includes('국세청 서명'));
+  btn('국세청 AI에 보내기').click(); await wait(400); assert.ok(doc.getElementById('tx-signed') && p.txt().includes('국세청 서명') && p.txt().includes('부가세(10%'));  assert.ok(doc.getElementById('tx-step1') && !doc.getElementById('tx-slips') && !doc.getElementById('tx-stmts') && !doc.getElementById('tx-hist') && p.txt().includes('서명된 거래 전표를 보냅니다')); doc.getElementById('tx-step1').click(); await wait(100); assert.ok(doc.getElementById('tx-slips') && !doc.getElementById('tx-stmts') && doc.getElementById('tx-step2') && p.txt().includes('회계사 AI에게 보냅니다')); doc.getElementById('tx-step2').click(); await wait(100); assert.ok(doc.getElementById('tx-stmts') && !doc.getElementById('tx-hist') && doc.getElementById('tx-step3') && p.txt().includes('거래 이력을 기록합니다')); doc.getElementById('tx-step3').click(); await wait(100); assert.ok(doc.getElementById('tx-hist'));
   assert.ok(doc.getElementById('tx-hops').children.length === 7); assert.ok(p.txt().includes('MK-') && p.txt().includes('구매자 장부') && p.txt().includes('판매자 장부'));
   assert.ok(doc.getElementById('tx-led-b').textContent.includes('부가세대급금') && doc.getElementById('tx-led-s').textContent.includes('부가세예수금'));
   assert.ok(doc.getElementById('tx-books').textContent.includes('18,000') && doc.getElementById('tx-books').textContent.includes('대차가 맞아요'));
@@ -84,7 +84,7 @@ test('이름 "세무 회계" + desktop.html 연결 + 경로 + 범위 css + SP', 
 
 test('화면: 전표를 처리하면 두 사람의 재무제표가 갱신되고 갱신일시·일련번호가 부기된다', { skip }, async () => {
 const p = page(), { doc, btn } = p;
-btn('예시 전표 받기').click(); btn('국세청 AI에 보내기').click(); await wait(400); for (const id of ['tx-step1', 'tx-step2', 'tx-step3']) { doc.getElementById(id).click(); await wait(100); }
+btn('거래 전표 받기').click(); btn('국세청 AI에 보내기').click(); await wait(400); for (const id of ['tx-step1', 'tx-step2', 'tx-step3']) { doc.getElementById(id).click(); await wait(100); }
 const b = doc.getElementById('tx-stmt-b').textContent, s = doc.getElementById('tx-stmt-s').textContent, h = doc.getElementById('tx-hist').textContent;
 assert.ok(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(b) && b.includes('MK-') && s.includes('MK-')); // 갱신일시와 일련번호 부기
 assert.ok(b.includes('1,802,000') && b.includes('대차가 맞아요')); // 구매자: GDC 2,000,000 − 198,000
