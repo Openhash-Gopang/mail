@@ -225,8 +225,8 @@ function viewMain() {
   var kids = [], P = pending();
   kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }));
   var box = [h('b', { text:'받은 거래 전표' + (P.length ? ' ' + P.length + '건' : '') })];
-  box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [(function () { var b = btn('예시 전표 받기(체험)', '', addSample, 'tx-sample'); if (P.some(function (x) { return /^ex:/.test(x.n); })) b.disabled = true; return b; })()]));
-  if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:'아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
+  box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [(function () { var b = btn('예시 전표 받기(체험)', '', addSample, 'tx-sample'); if (P.some(function (x) { return /^ex:/.test(x.n); }) || (S.rec.length && S.stage != null && S.stage < 3)) b.disabled = true; return b; })()]));
+  if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:(S.rec.length && S.stage != null && S.stage < 3) ? '전표를 국세청 AI에 보냈어요. 아래에서 단계별로 진행해 주세요.' : '아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
   P.forEach(function (x, i) { box.push(h('div', { style:'margin-top:16px' }, [h('div', { text:slipLine(x.f) }), h('div', { class:'sub', text:'출처: ' + x.src }), h('div', { class:'rowf', style:'margin-top:10px' }, [btn('국세청 AI에 보내기', 'fill', function () { send(x); }, 'tx-send-' + i)])])); });
   kids.push(h('div', { class:'card col', style:'margin-top:12px' }, box));
   if (S.err) kids.push(note(S.err, true, 'tx-err'));
@@ -251,7 +251,7 @@ function ownBooks() {
     h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['계정', '차변', '대변'].map(function (x) { return h('th', { text:x }); }))]), h('tbody', {}, order.map(function (k) { return h('tr', {}, [h('td', { text:k }), h('td', { text:acc[k][0] ? won(acc[k][0]) : '' }), h('td', { text:acc[k][1] ? won(acc[k][1]) : '' })]); }))])])]);
 }
 function viewResult(r) {
-  var k = [h('h3', { style:'margin-top:24px', text:'방금 처리한 전표 — ' + r.serial })];
+  var k = [h('h3', { style:'margin-top:24px', text:((S.stage == null || S.stage >= 3) ? '방금 처리한 전표' : '국세청에 보낸 거래 전표') + ' — ' + r.serial })];
   var st = (S.stage == null) ? 3 : S.stage;
   function stepCard(txt, label, id, next) { return h('div', { class:'card', style:'margin-top:12px', id:id + '-card' }, [h('div', { class:'sub', text:txt }), h('div', { class:'rowf', style:'margin-top:8px' }, [btn(label, 'fill', function () { S.stage = next; render(); }, id)])]); }
   if (st < 1) k.push(stepCard('다음 단계는 국세청이 거래 당사자에게 서명된 거래 전표를 보냅니다.', '보내기', 'tx-step1', 1));
@@ -272,7 +272,7 @@ function viewResult(r) {
 function viewTail() {
   var k = [];
   if (S.rec.length > 1) k.push(h('div', { class:'sub', style:'margin-top:12px', text:'이전 거래 ' + (S.rec.length - 1) + '건: ' + S.rec.slice(1, 6).map(function (x) { return x.serial + ' ' + x.slip.what; }).join(' · ') }));
-  k.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn(S.clr ? '정말 지울까요? 한 번 더 누르면 지워요' : '체험 기록 지우기', '', function () { if (!S.clr) { S.clr = true; render(); return; } S.rec = []; S.trc = null; S.tam = null; S.clr = false; save(); render(); }, 'tx-clear')]));
+  k.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn(S.clr ? '정말 지울까요? 한 번 더 누르면 지워요' : '체험 기록 지우기', '', function () { if (!S.clr) { S.clr = true; render(); return; } S.rec = []; S.inbox = S.inbox.filter(function (y) { return !/^ex:/.test(y.n); }); S.stage = null; S.trc = null; S.tam = null; S.clr = false; save(); render(); }, 'tx-clear')]));
   return k;
 }
 function traceView(t) {
