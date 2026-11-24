@@ -66,3 +66,32 @@ test('배선: 네 화면에 시뮬레이션 버튼이 있고 눌러도 오류 �
   w.NaviStock.mount(doc.getElementById('m'), { view: 'portfolio' }); doc.getElementById('stock-sim').click(); assert.deepEqual(calls, ['stock']);
   assert.ok(!/fetch\(|XMLHttpRequest/.test(sim));
 });
+
+// ── 8단계: 사업성 점검 ──
+test('수수료 모형: 월 거래대금·수입·절감액·손익분기가 산식대로 나온다', { skip }, () => {
+  const { S } = env(); const f = S.viab.feeModel({ ft: '1000', fa: '500000', fr: '0.0015', br: '0.015', fc: '5000000' });
+  assert.equal(f.volume, 1000 * 500000 * 22); assert.equal(Math.round(f.revenue), 165000); assert.equal(Math.round(f.saving), 1485000); assert.equal(Math.round(f.profit), 165000 - 5000000);
+  assert.equal(Math.round(f.breakEvenVolume), Math.round(5000000 / 0.000015)); assert.ok(f.breakEvenTradesPerDay > 0);
+  assert.equal(S.viab.feeModel({ fr: '0' }).breakEvenVolume, null); assert.equal(S.viab.feeModel({ ft: 'abc' }).trades, 1000);
+});
+test('감독 한도별 성적: 한도를 높이면 탐지율·오탐이 줄고, 심은 이상 변동 수는 같다', { skip }, () => {
+  const { S } = env(); const t = S.viab.detectTable(S.gen.stock(5, { n: 30, days: 200 }));
+  assert.equal(new Set(t.map((x) => x.total)).size, 1); assert.ok(t[0].total > 20);
+  for (let i = 1; i < t.length; i++) { assert.ok(t[i].hit <= t[i - 1].hit); assert.ok(t[i].falseAlarms <= t[i - 1].falseAlarms); }
+  assert.ok(t[0].recall > t[3].recall);
+});
+test('평가 구간 백테스트: 증권 모듈이 있으면 적중률을 내고, 없으면 null', { skip }, () => {
+  const { S } = env(true), d = S.gen.stock(9, { n: 40 }); const b = S.viab.backtest(d); assert.ok(b && b.n > 5 && b.hit <= b.n && b.rate >= 0 && b.rate <= 1 && b.avgWidth > 1);
+  assert.equal(env(false).S.viab.backtest(d), null);
+});
+test('장부 변조 시험: 변조는 모두 잡히고 변조 전 장부는 정상, 저장소는 건드리지 않는다', { skip }, async () => {
+  const { S, w } = env(); const before = w.localStorage.length; const r = await S.viab.chainTest(3, 40);
+  assert.ok(r.baselineOk); assert.equal(r.detected, r.trials); assert.equal(r.tailTruncationDetected, false);   // 끝 전표 삭제는 이음만으로는 못 잡는다(알려진 한계)
+  assert.ok(r.records >= 5); assert.equal(w.localStorage.length, before);
+});
+test('화면: 증권 시뮬레이션에 사업성 점검이 보이고, 수수료율을 바꾸면 다시 계산되며 변조 시험이 돈다', { skip }, async () => {
+  const { S, doc, w } = env(true); S.open('stock'); assert.ok(doc.getElementById('sim-s-biz')); assert.match(doc.getElementById('sim-s-fee').textContent, /손익분기/);
+  const before = doc.getElementById('sim-s-fee').textContent; const fr = doc.getElementById('sm-fr'); fr.value = '0.01'; fr.dispatchEvent(new w.Event('change', { bubbles: true }));
+  assert.notEqual(doc.getElementById('sim-s-fee').textContent, before); assert.match(doc.getElementById('sim-s-bt').textContent, /진짜 가치|시험할 수 없어요/);
+  doc.getElementById('sim-chain').click(); await new Promise((r) => setTimeout(r, 400)); assert.match(doc.getElementById('sim-s-chain').textContent, /변조 30번 중 30번 잡았어요.*맨 끝 전표를 지우면 이 장부만으로는 못 잡아요/);
+});

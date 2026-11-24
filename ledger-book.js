@@ -107,6 +107,23 @@ function wageAdd(m, amt, memo) {
   try { localStorage.setItem(WAGE_KEY, JSON.stringify({ items:items })); } catch (e) { return { ok:false, msg:'이 브라우저에 저장하지 못했어요.' }; }
   return { ok:true, item:it };
 }
+// ── 시장 가격 신호 — 증권 AI 갱신 8단계 ──
+// 시장 화면이 이 브라우저(navi-market-v2)에 남긴 구매 이력에서, 같은 이름의 물건을 두 번 이상 산 경우의 가격 변화를 읽는다(읽기 전용).
+// 품목이 3개 미만이면 "자료 부족"으로 두고 값을 만들지 않는다. 한 사람의 구매 이력이라 시장 전체의 물가가 아니라 "내 장바구니"의 변화다.
+function priceSignal() {
+  var hist = []; try { var v = JSON.parse(localStorage.getItem('navi-market-v2') || 'null'); hist = v && Array.isArray(v.history) ? v.history : []; } catch (e) { hist = []; }
+  var by = {}, order = 0; hist.slice().reverse().forEach(function (x) {   // 저장은 최신이 앞이라 뒤집어 시간 순서로 본다
+    if (!x || typeof x.name !== 'string' || !(Number(x.price) > 0)) return; var k = x.name.trim().toLowerCase(); if (!k) return;
+    (by[k] = by[k] || []).push({ p:Number(x.price), d:typeof x.d === 'string' ? x.d : '', o:order++, name:x.name.trim() });
+  });
+  var items = []; Object.keys(by).forEach(function (k) {
+    var a = by[k].sort(function (x, y) { return x.d === y.d ? x.o - y.o : (x.d < y.d ? -1 : 1); }); if (a.length < 2) return;
+    items.push({ name:a[0].name, first:a[0].p, last:a[a.length - 1].p, n:a.length, pct:(a[a.length - 1].p / a[0].p - 1) * 100 });
+  });
+  if (!items.length) return { state:hist.length ? 'thin' : 'none', n:0, items:[], medianPct:null };
+  var ps = items.map(function (x) { return x.pct; }).sort(function (a, b) { return a - b; }), m = Math.floor(ps.length / 2), med = ps.length % 2 ? ps[m] : (ps[m - 1] + ps[m]) / 2;
+  return { state:items.length >= 3 ? 'ok' : 'thin', n:items.length, items:items.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); }).slice(0, 5), medianPct:med };
+}
 var TAX_BR = [[14e6, .06, 0], [50e6, .15, 1260000], [88e6, .24, 5760000], [150e6, .35, 15440000], [300e6, .38, 19940000], [500e6, .40, 25940000], [1000e6, .42, 35940000], [Infinity, .45, 65940000]];
 /** 종합소득세 참고 예상액(공제 없음) + 지방소득세 10%. 소득이 0 이하면 0. */
 function incomeTax(income) {
@@ -260,5 +277,5 @@ function secVerify(recs) {
 }
 window.NaviLedger = { ASSETS:ASSETS, LIABS:LIABS, EQUITY:EQUITY, LMAP:LMAP, recs:recs, wallet:wallet, saveWallet:saveWallet, deltas:deltas, cashDelta:cashDelta, costFlow:costFlow, profitInfo:profitInfo, bookOf:bookOf, totals:totals, walletBook:walletBook, summary:summary,
   SIM_GRANT:SIM_GRANT, FEE_RATE:FEE_RATE, DEV_LIMIT:DEV_LIMIT, SEC_ACCOUNTS:{ cash:SEC_CASH, inv:SEC_INV, cap:SEC_CAP, pl:SEC_PL, fee:SEC_FEE }, secLoad:secLoad, secSave:secSave, secState:secState, secLines:secLines, secPlan:secPlan, secGrant:secGrant, secAppend:secAppend, secVerify:secVerify, secFee:secFee,
-  EXP_CATS:EXP_CATS, expLoad:expLoad, expAdd:expAdd, expTotal:expTotal, expClear:expClear, incomeTax:incomeTax, wageLoad:wageLoad, wageAdd:wageAdd };
+  EXP_CATS:EXP_CATS, expLoad:expLoad, expAdd:expAdd, expTotal:expTotal, expClear:expClear, incomeTax:incomeTax, wageLoad:wageLoad, wageAdd:wageAdd, priceSignal:priceSignal };
 })();

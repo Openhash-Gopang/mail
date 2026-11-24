@@ -275,3 +275,13 @@ test('종목 탐색: 공개를 끄거나 정보가 모자라면 아무것도 내
   assert.deepEqual(N.searchListings(L, { sector: '제조' }).map((x) => x.name), ['a', 'b']); assert.deepEqual(N.searchListings(L, { sector: '제조', region: '제주' }).map((x) => x.name), ['b']);
   assert.equal(N.searchListings(L, { text: 'C' }).length, 1); assert.equal(N.searchListings(null, {}).length, 0); assert.equal(N.sizeOf(5e7), 'small'); assert.equal(N.sizeOf(1e9), 'large');
 });
+
+test('내 가치: 시장 가격 신호는 자료가 있으면 참고로 보이고, 평가 값·입력 해시는 바뀌지 않는다', { skip }, async () => {
+  const H = (name, price, d) => ({ name, price, d, seller: '' });
+  const hist = [H('가', 120, '2026-11-03'), H('가', 100, '2026-10-01'), H('나', 110, '2026-11-03'), H('나', 100, '2026-10-02'), H('다', 90, '2026-11-04'), H('다', 100, '2026-10-03')];
+  const a = page('value', BOOK), b = page('value', { ...BOOK, 'navi-market-v2': { history: hist } });
+  assert.match(a.doc.getElementById('stk-v-out').textContent, /시장에서 산 이력이 아직 없어요/);
+  assert.match(b.doc.getElementById('stk-v-out').textContent, /중앙값 \+10\.0%/); assert.match(b.doc.getElementById('stk-v-out').textContent, /평가에는 넣지 않았어요/);
+  await tick(); assert.equal(a.doc.getElementById('stk-v-hash').textContent, b.doc.getElementById('stk-v-hash').textContent);
+  assert.equal(a.doc.getElementById('stk-v-range').textContent, b.doc.getElementById('stk-v-range').textContent);
+});
