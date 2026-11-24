@@ -115,7 +115,8 @@ test('상품 찾기: 상단 입력 → 도우미가 후보를 찾아 옴 → 장
   assert.ok(p.doc.querySelector('#mk-top #mk-q'), '입력 필드는 페이지 맨 위에 있다');
   p.btn('상품 찾아오기').click(); assert.ok(p.txt().includes('두 글자 이상') || p.doc.body.textContent.includes('두 글자 이상')); assert.equal(jobs.length, 0);
   p.type('mk-q', '무선 청소기'); p.btn('상품 찾아오기').click(); await wait(30);
-  assert.equal(jobs.length, 1); assert.ok(jobs[0].url.startsWith('https://www.coupang.com/np/search?q=') && jobs[0].slot === '시장 상품 찾기' && jobs[0].goal.includes('candidates') && jobs[0].goal.includes('결제는 하지 마세요'));
+  assert.equal(p.doc.getElementById('mk-site').value, 'web', '쇼핑몰 지정은 선택이고 기본은 웹 전체다'); assert.equal(p.doc.getElementById('mk-site').options[0].textContent, '웹 전체');
+  assert.equal(jobs.length, 1); assert.ok(jobs[0].url.startsWith('https://www.google.com/search?q=') && jobs[0].goal.includes('웹 전체에서') && jobs[0].slot === '시장 상품 찾기' && jobs[0].goal.includes('candidates') && jobs[0].goal.includes('결제는 하지 마세요'));
   assert.ok(p.doc.getElementById('mk-fprog').textContent.includes('진행 중'));
   cb({ label: '시장 상품 찾기', data: { stage: 'candidates', candidates: [
     { name: 'A사 무선 청소기 A200', price: 189000, image: 'javascript:x', link: 'https://www.coupang.com/vp/products/1', seller: 'A몰', rating: 4.6, count: 230, pros: ['흡입력이 좋아요', '가벼워요'], cons: ['배터리 40분'] },
@@ -283,4 +284,10 @@ test('화면: 판매 탭 — 도우미가 시세·구매자를 찾아 오고, �
   assert.ok(doc.getElementById('mk-send') && txt().includes('중고매입점') && !txt().includes('위험'), '의향서 확인 창, 안전하지 않은 링크 후보는 거른다'); assert.equal(jobs.length, 2, '확인 전에는 보내지 않는다');
   doc.getElementById('mk-send').click(); await wait(80); assert.ok(jobs.length === 3 && jobs[2].slot === '시장 판매 의향서');
   if (onS) onS({ label: '시장 판매 의향서', state: 'sent', note: '1곳' }); await wait(40); assert.ok(txt().includes('판매 의향서를 보냈어요'));
+});
+test('상품 찾기: 쇼핑몰을 고르면 그 사이트에서, 고르지 않으면 웹 전체에서 찾는다', { skip }, async () => {
+  const jobs = []; const agent = { onData() {}, detect: () => Promise.resolve({ version: '0.6.43' }), queue: (j) => { jobs.push(j); return Promise.resolve({ ok: true }); } };
+  const p = page(agent); const sel = p.doc.getElementById('mk-site'); assert.deepEqual([...sel.options].map((o) => o.textContent), ['웹 전체', '쿠팡', '네이버 쇼핑', '다나와']);
+  sel.value = 'danawa'; sel.dispatchEvent(new p.w.Event('change')); p.type('mk-q', '에어프라이어'); p.btn('상품 찾아오기').click(); await wait(30);
+  assert.ok(jobs[0].url.startsWith('https://search.danawa.com/') && jobs[0].goal.includes('다나와') && !jobs[0].goal.includes('웹 전체에서'));
 });
