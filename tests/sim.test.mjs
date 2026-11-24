@@ -108,7 +108,7 @@ test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 �
     assert.ok(seen.size >= pg.tabs.length - 2, k + ' 탭마다 내용이 달라야 해요');
     assert.equal(S.tab(k, '없는탭'), false); S.close();
   }
-  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
+  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
   S.open('stock', 'goal'); doc.getElementById('sm-sv').value = '500000'; doc.getElementById('sm-sv').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-g-sum').textContent, /목표를 넘긴/);
   S.open('stock', 'alloc'); doc.getElementById('sm-wa').value = '100'; doc.getElementById('sm-wa').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-a-sum').textContent, /현금 비중 0%/);
   S.open('market', 's3'); doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
@@ -131,4 +131,14 @@ test('교육 시뮬레이션: 같은 시드는 같은 결과, 몰아치기 기�
   let found = 0; for (let sd = 1; sd <= 20; sd++) { const d = S.gen.learn(sd); if (d.logs.some((l) => l.min >= 240)) found++; } assert.ok(found > 5);
   S.open('learn', 'history'); assert.match(doc.getElementById('sim-e-hist').textContent, /추가 확인 \d+건/); S.tab('learn', 'career'); assert.match(doc.getElementById('sim-e-car').textContent, /살펴볼 분야/);
   assert.match(lrnApp, /_simOpen\('learn', S\.view\)/); assert.match(lrnApp, /id:'learn-sim'/);
+});
+
+test('서류·기록 시뮬레이션: 서류함·외부 입력·서류 작성·PDV가 각자 내용을 그리고, 화면에 버튼이 있다', { skip }, () => {
+  const { S, doc } = env(true);
+  S.open('othersite', 'steps'); for (let i = 0; i < 5; i++) doc.getElementById('sim-ost-next').click(); assert.match(doc.getElementById('sim-ost-sum').textContent, /제출 버튼은 한 번도 도우미가 누르지 않았어요/);
+  S.open('docs', 'write'); for (let i = 0; i < 3; i++) doc.getElementById('sim-w-next').click(); assert.match(doc.getElementById('sim-w-sum').textContent, /준법 점검/);
+  S.open('pdv', 'bs'); assert.match(doc.getElementById('sim-p-bs').textContent, /장부 대조/); S.tab('pdv', 'vault'); assert.ok(doc.getElementById('sim-chain'));
+  assert.equal(J(S.gen.forms(2)), J(S.gen.forms(2)));
+  for (const id of ['docs-sim-drafts', 'docs-sim-done', 'myforms-sim', 'othersite-sim', 'pdv-sim']) assert.ok(desk.includes('id="' + id + '"'), id);
+  assert.match(desk, /#pdv-root \[role=tab\]/);
 });
