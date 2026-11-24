@@ -150,7 +150,7 @@ function stmtCard() {
     h('div', { class:'stgrid' }, [
       col('대차대조표 · 자산', [row('현금(GDC)', b['현금(GDC)'], 'hl'), opt('상품(재고자산)'), opt('부가세대급금'), row('비품', b['비품']), row('자산 합계', A, 'tot')]),
       col('부채와 자본', [opt('미지급금'), opt('부가세예수금'), row('자본금', b['자본금']), opt('이익잉여금'), row('부채·자본 합계', L + E, 'tot')], [h('div', { class:'sub stok', text:ok ? '대차가 맞아요' : '대차가 맞지 않아요' })]),
-      col('손익계산서', [row('매출', b['매출']), row('당기 순이익', b['매출'], 'tot')], [h('div', { class:'sub', text:last })])])]));
+      col('손익계산서', [row('매출', b['매출']), opt('매출원가'), row('매출총이익', b['매출'] - b['매출원가'], 'tot')], [h('div', { class:'sub', text:last }), h('div', { class:'sub', text:'매출원가는 장부의 매입 이력에서 파생해요. 판매비·관리비·세금은 아직 반영하지 않아 순이익이 아니에요.' })])])]));
 }
 function viewWallet() {
   var kids = head('내 지갑', 'GDC 잔액과 사용 현황을 한눈에 봅니다. GDC는 나비 안에서 현금처럼 쓰입니다.'), st = status(); if (st) kids.push(st);
