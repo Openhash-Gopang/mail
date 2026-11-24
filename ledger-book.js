@@ -90,6 +90,23 @@ function expAdd(cat, amt, memo) {
   return { ok:true, item:it };
 }
 function expClear() { try { localStorage.removeItem(EXP_KEY); return true; } catch (e) { return false; } }
+// ── 임금 기록 — 증권 AI 갱신 6단계(개인의 가치는 임금으로 표명) ──
+// 월 임금을 사용자가 직접 적는 자기 기록이다(시장이 서명한 전표가 아님). 달마다 한 건, 추가만 가능하다. 읽기·적기 외에 계산은 증권 화면이 한다.
+var WAGE_KEY = 'navi-wage-v1', WAGE_MAX = 120;
+function wageLoad() {
+  try { var v = JSON.parse(localStorage.getItem(WAGE_KEY) || 'null'); return v && Array.isArray(v.items) ? v.items.filter(function (x) { return x && /^\d{4}-(0[1-9]|1[0-2])$/.test(x.m) && isFinite(Number(x.amt)) && Number(x.amt) > 0; }).sort(function (a, b) { return a.m < b.m ? -1 : 1; }).slice(-WAGE_MAX) : []; } catch (e) { return []; }
+}
+function wageAdd(m, amt, memo) {
+  var n = Number(String(amt).replace(/,/g, '')), items = wageLoad(), cur = kstDate().slice(0, 7);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(m))) return { ok:false, msg:'월은 2026-11 처럼 적어 주세요.' };
+  if (m > cur) return { ok:false, msg:'아직 오지 않은 달은 적을 수 없어요.' };
+  if (!(n > 0) || n !== Math.floor(n) || n > 1000000000) return { ok:false, msg:'임금은 1원 이상 정수로 적어 주세요.' };
+  if (items.some(function (x) { return x.m === m; })) return { ok:false, msg:m + ' 기록이 이미 있어요. 한번 적은 기록은 고칠 수 없어요.' };
+  if (items.length >= WAGE_MAX) return { ok:false, msg:'기록은 ' + WAGE_MAX + '건까지 담을 수 있어요.' };
+  var it = { m:m, amt:n, memo:String(memo || '').slice(0, 40), at:kstNow() }; items.push(it);
+  try { localStorage.setItem(WAGE_KEY, JSON.stringify({ items:items })); } catch (e) { return { ok:false, msg:'이 브라우저에 저장하지 못했어요.' }; }
+  return { ok:true, item:it };
+}
 var TAX_BR = [[14e6, .06, 0], [50e6, .15, 1260000], [88e6, .24, 5760000], [150e6, .35, 15440000], [300e6, .38, 19940000], [500e6, .40, 25940000], [1000e6, .42, 35940000], [Infinity, .45, 65940000]];
 /** 종합소득세 참고 예상액(공제 없음) + 지방소득세 10%. 소득이 0 이하면 0. */
 function incomeTax(income) {
@@ -243,5 +260,5 @@ function secVerify(recs) {
 }
 window.NaviLedger = { ASSETS:ASSETS, LIABS:LIABS, EQUITY:EQUITY, LMAP:LMAP, recs:recs, wallet:wallet, saveWallet:saveWallet, deltas:deltas, cashDelta:cashDelta, costFlow:costFlow, profitInfo:profitInfo, bookOf:bookOf, totals:totals, walletBook:walletBook, summary:summary,
   SIM_GRANT:SIM_GRANT, FEE_RATE:FEE_RATE, DEV_LIMIT:DEV_LIMIT, SEC_ACCOUNTS:{ cash:SEC_CASH, inv:SEC_INV, cap:SEC_CAP, pl:SEC_PL, fee:SEC_FEE }, secLoad:secLoad, secSave:secSave, secState:secState, secLines:secLines, secPlan:secPlan, secGrant:secGrant, secAppend:secAppend, secVerify:secVerify, secFee:secFee,
-  EXP_CATS:EXP_CATS, expLoad:expLoad, expAdd:expAdd, expTotal:expTotal, expClear:expClear, incomeTax:incomeTax };
+  EXP_CATS:EXP_CATS, expLoad:expLoad, expAdd:expAdd, expTotal:expTotal, expClear:expClear, incomeTax:incomeTax, wageLoad:wageLoad, wageAdd:wageAdd };
 })();

@@ -9,6 +9,7 @@
  *  - 시세 서버와 주문 기능이 없다. 이 화면은 주문을 보내지 않고, 시세를 지어내지 않는다. 현재가는 사용자가 직접 적는다.
  *  - 내 포트폴리오는 사용자가 적은 '거래 기록'에서 계산한다(평균단가법). 모든 기록은 이 브라우저(localStorage)에만 저장된다.
  *  - '내 가치'는 공통 장부(ledger-book.js)에서 내 장부를 읽어 평가 v0 구간을 계산한다. 연결되지 않은 신호는 쓰지 않고 미연결로 적는다. 이익은 매출총이익(매출 − 매출원가)이다.
+ *  - '내 임금'은 사용자가 적은 월 임금 기록(자기 기록, 달마다 한 건·추가만)에서 최근 12개월 최저~최고·평균·증감을 보여 준다. 시장 임금 통계가 연결되지 않아 공정 임금 구간은 내지 않는다.
  *  - '모의 주문'은 테스트 GDC로 거래를 장부 전표(분개·일련번호·해시 이음)로 남기는 연습이다. 실제 주문·결제가 아니며 은행 잔고와 섞이지 않는다. 체결가는 직접 적고, 감독 규칙(직전 체결가 ±30%·보유 수량·모의 현금)이 주문을 검사한다. 보유·손익은 이 전표에서만 계산한다.
  *  - 자산 배분·목표 계산기는 사용자가 넣은 값으로 계산만 한다. 예측이나 추천이 아니다. 특정 상품을 사라고 권하지 않는다.
  */
@@ -16,13 +17,13 @@
 'use strict';
 var KEY = 'navi-stock-v1', MAXT = 500, MAXW = 100;
 var CLS = ['국내주식', '해외주식', 'ETF·펀드', '채권', '부동산·리츠', '암호화폐', '원자재', '현금·예금', '기타'];
-var TABS = [['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']];
+var TABS = [['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['wage', '내 임금'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']];
 var VIEWS = TABS.map(function (t) { return t[0]; });
 var CONC = 30;   // 한 종목이 평가금액의 이 비율(%)을 넘으면 알려 준다(참고)
 var CHECKS = ['비상 자금(생활비 3~6개월분)은 따로 두었나요?', '투자 목적과 기간(언제 쓸 돈인지)을 적어 두었나요?', '한 종목에 넣을 최대 비중을 정해 두었나요?', '손실이 얼마까지 나면 어떻게 할지 미리 정해 두었나요?', '내가 이해하지 못하는 상품에는 투자하지 않기로 했나요?', '수수료·세금(양도세·배당세 등)을 확인했나요?', '빚을 내서 투자하지 않나요?'];
 var GLOSS = [['분산투자', '여러 종목·자산군·지역에 나누어 투자해 한 곳의 손실이 전체에 미치는 영향을 줄이는 방법입니다.'], ['리밸런싱', '시간이 지나 달라진 자산 비중을 처음 정한 목표 비중으로 되돌리는 조정입니다.'], ['평균단가법', '여러 번 나눠 산 종목의 평균 매수 가격을 구해 매도 때 손익을 계산하는 방법입니다. 이 화면도 이 방법을 씁니다.'], ['평가손익 · 실현손익', '평가손익은 아직 팔지 않은 종목의 현재가 기준 손익이고, 실현손익은 실제로 판 뒤 확정된 손익입니다.'], ['ETF', '여러 종목을 묶어 지수 등을 따라가도록 만든 펀드로, 주식처럼 거래소에서 사고팝니다.'], ['PER · PBR', 'PER은 주가를 주당순이익으로, PBR은 주가를 주당순자산으로 나눈 값으로 주가가 이익·자산에 비해 어느 수준인지 가늠하는 지표입니다.'], ['배당수익률', '1주당 배당금을 주가로 나눈 비율입니다. 배당은 회사 사정에 따라 줄거나 없어질 수 있습니다.'], ['채권', '정부나 기업이 돈을 빌리며 발행하는 증서로, 정해진 이자를 주고 만기에 원금을 갚기로 한 약속입니다. 발행자의 신용에 따라 위험이 다릅니다.'], ['신용등급', '채권 발행자가 이자와 원금을 갚을 능력을 등급으로 나타낸 것입니다. 등급이 낮을수록 보통 이자가 높고 위험도 큽니다.'], ['변동성', '가격이 오르내리는 폭입니다. 변동성이 크면 수익도 손실도 크게 날 수 있습니다.'], ['환율 위험', '해외 자산은 가격이 그대로여도 환율이 변하면 원화 가치가 달라집니다.'], ['복리', '이자에 다시 이자가 붙는 방식으로, 기간이 길수록 차이가 커집니다. 목표 계산기는 월 복리로 계산합니다.'], ['인플레이션(물가 상승)', '물가가 올라 같은 돈으로 살 수 있는 것이 줄어드는 현상입니다. 실질 가치는 물가 상승을 뺀 값입니다.'], ['유동성', '필요할 때 손해 없이 현금으로 바꿀 수 있는 정도입니다. 거래가 적은 자산은 팔고 싶을 때 못 팔 수 있습니다.'], ['레버리지', '빌린 돈으로 투자 규모를 키우는 것입니다. 이익도 손실도 커지며 손실이 원금보다 클 수 있습니다.'], ['시가총액', '주가에 발행 주식 수를 곱한 회사의 시장 가치입니다.'], ['호가', '사려는 가격(매수 호가)과 팔려는 가격(매도 호가)입니다.'], ['공매도', '주식을 빌려 먼저 팔고 나중에 사서 갚는 거래로, 가격이 내릴 때 이익이 나지만 오를 때 손실에는 한도가 없습니다.'], ['GDC 채권(설계 중)', '나비웹이 구상하는 GDC 기반 채권입니다. 아직 실제로 발행·거래되지 않는 개념 단계이며 이 화면에서는 거래할 수 없습니다.']];
 var M = null, LS = {};
-var S = { view:'portfolio', co:{ name:'', rev:'', op:'', ni:'', assets:'', debt:'', equity:'', shares:'', price:'', g:'3', r:'10' }, cos:[], cc:{ a:'', b:'', tol:'1' }, trades:[], px:{}, watch:[], target:{}, checks:{}, goal:{ p0:'', m:'', r:'5', y:'10', t:'', inf:'2' }, val:{ g:'3', r:'10' }, sec:{ recs:[], alerts:[] }, secMsg:null, secVer:null, secBusy:false, order:{ side:'B', sym:'', cls:'국내주식', qty:'', px:'' }, form:{ side:'B', d:'', sym:'', cls:'국내주식', qty:'', px:'', fee:'' }, wform:{ sym:'', cls:'국내주식', target:'', memo:'' }, err:{}, gq:'', msg:'' };
+var S = { view:'portfolio', co:{ name:'', rev:'', op:'', ni:'', assets:'', debt:'', equity:'', shares:'', price:'', g:'3', r:'10' }, cos:[], cc:{ a:'', b:'', tol:'1' }, trades:[], px:{}, watch:[], target:{}, checks:{}, goal:{ p0:'', m:'', r:'5', y:'10', t:'', inf:'2' }, val:{ g:'3', r:'10' }, wage:{ m:'', amt:'', memo:'' }, wageMsg:null, sec:{ recs:[], alerts:[] }, secMsg:null, secVer:null, secBusy:false, order:{ side:'B', sym:'', cls:'국내주식', qty:'', px:'' }, form:{ side:'B', d:'', sym:'', cls:'국내주식', qty:'', px:'', fee:'' }, wform:{ sym:'', cls:'국내주식', target:'', memo:'' }, err:{}, gq:'', msg:'' };
 
 // ── 작은 도구 ──
 function h(tag, attrs, kids) {
@@ -295,6 +296,38 @@ function viewValue() {
   return kids;
 }
 
+// ── 내 임금(개인 가치 v0) ──
+/** 임금 기록(월 오름차순)에서 최근 12개월 구간·평균·최근 3개월 대 직전 3개월 증감. 기록이 없으면 null(지어내지 않는다). */
+function wageStats(items) {
+  if (!items || !items.length) return null;
+  var a = items.slice().sort(function (x, y) { return x.m < y.m ? -1 : 1; }), r = a.slice(-12), v = r.map(function (x) { return Number(x.amt); }), sum = v.reduce(function (s, x) { return s + x; }, 0), ch = null;
+  if (a.length >= 6) { var l3 = a.slice(-3).reduce(function (s, x) { return s + Number(x.amt); }, 0) / 3, p3 = a.slice(-6, -3).reduce(function (s, x) { return s + Number(x.amt); }, 0) / 3; ch = (l3 - p3) / p3 * 100; }
+  return { n:a.length, from:a[0].m, to:a[a.length - 1].m, last:Number(a[a.length - 1].amt), lo:Math.min.apply(null, v), hi:Math.max.apply(null, v), avg:Math.round(sum / v.length), months:r.length, change:ch, rows:a };
+}
+var WAGE_GAPS = ['직무·경력·자격(검증된 정보)', '업종·지역 노동시장 임금 통계', '근속·고용 안정성', '경제·인구 구조 변화'];
+function viewWage() {
+  var kids = head('내 임금', '개인의 가치는 임금으로 표명돼요. 내가 적은 월 임금 기록으로 내 임금의 흐름을 봅니다. 평가 정보는 나만 보고, 내보내지 않아요.');
+  kids.push(h('div', { class:'note info', style:'margin:16px 0', text:'임금 평가 v0입니다. 지금은 내가 적은 기록만 쓰고, 시장 임금 통계·검증된 경력은 아직 연결되지 않아 "공정 임금 구간"은 내지 않아요. 기록은 시장이 서명한 전표가 아니라 내가 적는 것이라, 한번 적으면 고칠 수 없고(달마다 한 건) 그렇게 표시돼요.' }));
+  var L = NL(); if (!L) { kids.push(h('div', { class:'note', role:'alert', text:'장부 모듈을 불러오지 못했어요. 새로고침해 주세요.' })); return kids; }
+  if (S.wageMsg) kids.push(h('div', { class:S.wageMsg.bad ? 'note' : 'note info', role:S.wageMsg.bad ? 'alert' : 'status', id:'stk-w-msg', style:'margin-bottom:12px', text:S.wageMsg.t }));
+  var w = S.wage, setW = function (k) { return function (v) { w[k] = v; }; };
+  kids.push(h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'월 임금 적기' }),
+    h('div', { class:'frm' }, [field('stk-w-m', '월(예: ' + kst().slice(0, 7) + ')', w.m, { ph:kst().slice(0, 7), max:7, set:setW('m') }), field('stk-w-amt', '그 달 임금(원, 세전)', w.amt, { ph:'3500000', mode:'numeric', set:setW('amt') }), field('stk-w-memo', '메모(선택)', w.memo, { max:40, set:setW('memo') })]),
+    h('div', { class:'rowf' }, [btn('적기', 'fill', function () { var r = L.wageAdd(w.m, w.amt, w.memo); S.wageMsg = r.ok ? { t:r.item.m + ' 임금 ' + won(r.item.amt) + '원을 적었어요.' } : { t:r.msg, bad:true }; if (r.ok) { w.m = ''; w.amt = ''; w.memo = ''; } render(); })])]));
+  var st = wageStats(L.wageLoad());
+  if (!st) { kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'sub', id:'stk-w-empty', text:'아직 적은 임금이 없어요. 한 달치를 적으면 흐름이 나와요.' })])); }
+  else {
+    kids.push(h('div', { class:'card col', id:'stk-w-res', style:'margin-top:16px' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { style:'font-size:17px', text:'내 임금의 흐름' }), pill('내가 적은 기록', 'm')]),
+      h('div', { class:'num', id:'stk-w-range', style:'font-size:22px;font-weight:700', text:won(st.lo) + ' ~ ' + won(st.hi) + '원' }),
+      h('div', { class:'sub', text:'최근 ' + st.months + '개월 기록의 최저 ~ 최고예요. 가치의 예측이 아니라 적은 값의 범위입니다.' }),
+      h('div', {}, [['최근 달(' + st.to + ')', won(st.last) + '원'], ['최근 ' + st.months + '개월 평균', won(st.avg) + '원'], ['기록', st.n + '개월 (' + st.from + ' ~ ' + st.to + ')'], ['최근 3개월 대 직전 3개월', st.change == null ? '6개월 이상 적으면 나와요' : (st.change >= 0 ? '+' : '−') + Math.abs(st.change).toFixed(1) + '%']].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); }))]));
+    kids.push(h('div', { class:'card', style:'margin-top:16px;padding:0' }, [h('div', { style:'padding:14px 16px 0' }, [h('b', { text:'월별 기록(시계열)' })]), h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'stk-w-tbl' }, [h('thead', {}, [h('tr', {}, ['월', '임금', '메모'].map(function (t, i) { return h('th', { class:i === 1 ? 'r' : '', text:t }); }))]), h('tbody', {}, st.rows.slice().reverse().slice(0, 24).map(function (x) { return h('tr', {}, [h('td', { class:'num', text:x.m }), h('td', { class:'r num', text:won(x.amt) }), h('td', { class:'sub', text:x.memo || '' })]); }))])])]));
+  }
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'아직 쓰지 않는 신호' })].concat(WAGE_GAPS.map(function (g) { return h('div', { class:'kv' }, [h('span', { text:g }), h('b', { text:'데이터 미연결 — 쓰지 않았어요' })]); }))));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 묻기', 'quiet', function () { ask('내 임금 기록은 어떻게 평가에 쓰이나요?'); })]));
+  return kids;
+}
+
 // ── 모의 주문·체결(테스트 GDC, 장부 전표) ──
 function simCard() {
   var L = NL(); if (!L || !S.sec.recs.length) return null;
@@ -483,7 +516,7 @@ function viewLearn() {
 
 function render() {
   var root = $('stk-root'), tp = $('stk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'order' ? viewOrder() : S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
+  var kids = S.view === 'wage' ? viewWage() : S.view === 'order' ? viewOrder() : S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   if (S.view === 'goal' && M.__goalOut) M.__goalOut();
 }
@@ -508,6 +541,7 @@ function nav(a) {
 function mount(el, o) {
   if (!el) return; o = o || {};
   M = el; el.textContent = ''; el.classList.add('stk'); S.trades = []; S.cos = []; S.px = {}; S.watch = []; S.target = {}; S.checks = {}; S.val = { g:'3', r:'10' }; S.err = {}; S.msg = ''; load();
+S.wage = { m:'', amt:'', memo:'' }; S.wageMsg = null;
 S.sec = NL() ? NL().secLoad() : { recs:[], alerts:[] }; S.secMsg = null; S.secVer = null; S.secBusy = false; S.order = { side:'B', sym:'', cls:'국내주식', qty:'', px:'' };
   [h('div', { id:'stk-top' }), h('div', { class:'wrap', id:'stk-root' })].forEach(function (x) { el.appendChild(x); });
   S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'portfolio'; render();
@@ -516,7 +550,7 @@ window.NaviStock = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
-  positions:positions, valued:valued, evalCo:evalCo, valueOf:valueOf, hashOf:hashOf, crossCheck:crossCheck, fv:fv, needMonthly:needMonthly, goalCalc:goalCalc,
+  positions:positions, valued:valued, evalCo:evalCo, valueOf:valueOf, wageStats:wageStats, hashOf:hashOf, crossCheck:crossCheck, fv:fv, needMonthly:needMonthly, goalCalc:goalCalc,
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
