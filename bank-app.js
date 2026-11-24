@@ -153,18 +153,17 @@ function stmtCard() {
   var head = [h('b', { text:'내 재무제표 — 은행 장부' })];
   if (S.bal === null) return h('div', { class:'card stmt cmp', id:'bnk-stmt' }, head.concat([h('div', { class:'sub', text:'잔액을 불러오면 재무제표가 나타나요.' })]));
   var b = walletBook();
-  function sec(t) { return h('tr', { class:'sec' }, [h('td', { text:t, colspan:'3' })]); }
-  function row(a, val, note, cls) { return h('tr', { class:cls || '' }, [h('td', { text:a }), h('td', { class:'r num', text:won(val) }), h('td', { class:'sub', text:note || '' })]); }
-  function opt(a, label) { return b[a] ? row(label || a, b[a]) : null; }
+  function row(a, val, cls) { return h('tr', { class:cls || '' }, [h('td', { text:a }), h('td', { class:'r num', text:won(val) })]); }
+  function opt(a) { return b[a] ? row(a, b[a]) : null; }
+  function col(title, rows, extra) { return h('div', { class:'stcol' }, [h('div', { class:'sth', text:title }), h('table', { class:'stbl' }, [h('tbody', {}, rows)])].concat(extra || [])); }
   var A = b['현금(GDC)'] + b['상품(재고자산)'] + b['부가세대급금'] + b['비품'], L = b['미지급금'] + b['부가세예수금'], E = b['자본금'] + b['이익잉여금'], ok = A === L + E;
-  var rows = [sec('대차대조표 — 자산'), row('현금(GDC)', b['현금(GDC)'], '= 은행 GDC 잔액', 'hl'), opt('상품(재고자산)'), opt('부가세대급금'), row('비품', b['비품']), row('자산 합계', A, '', 'tot'),
-    sec('부채와 자본'), opt('미지급금'), opt('부가세예수금'), row('자본금', b['자본금']), opt('이익잉여금'), row('부채·자본 합계', L + E, ok ? '대차가 맞아요' : '대차가 맞지 않아요', 'tot'),
-    sec('손익계산서'), row('매출', b['매출']), row('당기 순이익', b['매출'], '이번 기록 기준', 'tot')];
-  var last = b.marks.length ? '최근 반영: ' + b.marks.slice(0, 2).join(' · ') : '아직 반영된 거래가 없어요. 세무 회계에서 전표를 처리하면 여기에 이어서 반영돼요.';
+  var last = b.marks.length ? '최근 반영: ' + b.marks.slice(0, 2).join(' · ') : '아직 반영된 거래가 없어요. 세무 회계에서 전표를 처리하면 이어서 반영돼요.';
   return h('div', { class:'card stmt cmp', id:'bnk-stmt' }, head.concat([
-    h('div', { class:'sub', text:'현금 계정은 위의 GDC 잔액과 같아요. 모든 수치는 오픈해시(5천만 인구의 결합 재무제표)와 거래 이력 기록으로 위·변조할 수 없어서, 이 재무제표가 곧 은행 장부예요.' }),
-    h('table', { class:'stbl' }, [h('tbody', {}, rows)]),
-    h('div', { class:'sub', text:last })]));
+    h('div', { class:'sub', text:'현금 계정은 위의 GDC 잔액과 같아요(= 은행 잔고). 모든 수치는 오픈해시와 거래 이력 기록으로 위·변조할 수 없어서, 이 재무제표가 곧 은행 장부예요.' }),
+    h('div', { class:'stgrid' }, [
+      col('대차대조표 · 자산', [row('현금(GDC)', b['현금(GDC)'], 'hl'), opt('상품(재고자산)'), opt('부가세대급금'), row('비품', b['비품']), row('자산 합계', A, 'tot')]),
+      col('부채와 자본', [opt('미지급금'), opt('부가세예수금'), row('자본금', b['자본금']), opt('이익잉여금'), row('부채·자본 합계', L + E, 'tot')], [h('div', { class:'sub stok', text:ok ? '대차가 맞아요' : '대차가 맞지 않아요' })]),
+      col('손익계산서', [row('매출', b['매출']), row('당기 순이익', b['매출'], 'tot')], [h('div', { class:'sub', text:last })])])]));
 }
 function viewWallet() {
   var kids = head('내 지갑', 'GDC 잔액과 사용 현황을 한눈에 봅니다. GDC는 나비 안에서 현금처럼 쓰입니다.'), st = status(); if (st) kids.push(st);

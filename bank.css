@@ -139,7 +139,15 @@
 .bnk .card.cmp svg{display:block;width:100%;height:120px}
 @media (max-width:860px){.bnk .g2.eq,.bnk .g4.cmp{grid-template-columns:minmax(0,1fr)}.bnk .hero.cmp .rowf{margin-left:0!important}}
 /* 재무제표(은행 장부): 화면 가운데 */
-.bnk .card.stmt{max-width:720px;margin:12px auto 0}
+.bnk .card.stmt{max-width:none;margin:8px 0 0}
+.bnk .stgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.bnk .stcol{border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.bnk .sth{background:var(--soft);color:var(--on2);font-size:12.5px;font-weight:600;padding:6px 12px}
+.bnk .stcol .stbl{margin:0}
+.bnk .stcol .stbl tr:first-child td{border-top:0}
+.bnk .stcol>.sub{padding:6px 12px;font-size:12px}
+.bnk .stok{color:var(--m);font-weight:600}
+@media (max-width:860px){.bnk .stgrid{grid-template-columns:minmax(0,1fr)}}
 .bnk .stbl{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
 .bnk .stbl td{padding:6px 12px;border-top:1px solid var(--line)}
 .bnk .stbl td.r{text-align:right;font-variant-numeric:tabular-nums}
