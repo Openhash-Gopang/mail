@@ -155,3 +155,8 @@
 .mkt .mk-prog li i{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-style:normal;font-size:12px;border:1px solid currentColor}
 .mkt .mk-prog li.done{color:var(--on,#212529)}.mkt .mk-prog li.done i{background:var(--pri,#3b82f6);border-color:var(--pri,#3b82f6);color:#fff}
 .mkt .mk-prog li.now{color:var(--pri,#3b82f6);font-weight:600}
+
+.mkt .mk-fbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:12px 0 4px}
+.mkt .mk-fbar .field{flex:1;min-width:240px;margin:0}
+.mkt .mk-fbar select{height:44px;border-radius:8px;border:1px solid var(--line,#D9DEE6);padding:0 10px;background:var(--card,#fff);color:inherit}
+.mkt .pros,.mkt .cons{margin:4px 0;padding-left:0;list-style:none;font-size:14px}.mkt .cons{color:#9a5b00}
