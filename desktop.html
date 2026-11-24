@@ -3713,7 +3713,7 @@ function _medShow(view) {
   });
 }
 function _medOpen(view) { _switchTab('med'); _medShow(view); }
-const _TAX_V = '20261124b'; let _taxChat = false;
+const _TAX_V = '20261124c'; let _taxChat = false;
 function _taxLoad(cb) {
   if (window.NaviTax) { cb(); return; }
   if (!document.getElementById('tax-css')) { const l = document.createElement('link'); l.id = 'tax-css'; l.rel = 'stylesheet'; l.href = 'tax.css?v=' + _TAX_V; document.head.appendChild(l); }
@@ -3732,7 +3732,7 @@ function _taxShow(view) {
   });
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
-const _MKT_V = '20261124e'; let _mktChat = false;
+const _MKT_V = '20261124f'; let _mktChat = false;
 function _mktLoad(cb) {
   if (window.NaviMarket) { cb(); return; }
   if (!document.getElementById('mkt-css')) { const l = document.createElement('link'); l.id = 'mkt-css'; l.rel = 'stylesheet'; l.href = 'market.css?v=' + _MKT_V; document.head.appendChild(l); }
@@ -10766,6 +10766,22 @@ window.kmailOpenSettings = function (section) {
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc' || h === 'verdict') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
+// 화면 안에서 바뀌는 단계(시장 1~6단계, 세무 회계의 확인 결과 등)도 뒤로 가기에 남긴다(2026-11-24).
+// 화면 모듈이 NaviHist.on(모듈, 탭, 복원함수)로 등록하고, 단계가 바뀔 때 NaviHist.push(모듈, 단계)를 부른다.
+window.NaviHist = (function () {
+  var cbs = {};
+  return {
+    on: function (mod, tab, fn) { cbs[mod] = { tab: tab, fn: fn }; },
+    push: function (mod, sub) {
+      if (!window._navReady || window._navPop) return;
+      var st = history.state || {}; if (st.mod === mod && st.sub === sub) return;
+      try { history.pushState({ navTab: st.navTab, mod: mod, sub: sub }, '', location.href); } catch (e) {}
+    },
+    restore: function (tab, st) {
+      Object.keys(cbs).forEach(function (m) { var c = cbs[m]; if (c.tab === tab) { try { c.fn(st && st.mod === m ? st.sub : undefined); } catch (e) {} } });
+    }
+  };
+})();
 // 뒤로·앞으로 가기: 주소의 #해시에 맞는 화면으로 옮긴다(새 기록은 만들지 않는다). 해시가 비면 홈 화면이다.
 window.addEventListener('popstate', function () {
   const h = (location.hash || '').replace('#', '');
@@ -10778,6 +10794,7 @@ window.addEventListener('popstate', function () {
     else if (document.getElementById('tab-' + name) && document.getElementById('tab-btn-' + (name === 'gprog' ? 'guidenav' : name))) _switchTab(name);
     else if (['home', 'compose', 'letter', 'verdict'].indexOf(name) >= 0) _switchTab(name);
   } catch (e) {}
+  try { NaviHist.restore(name, history.state); } catch (e) {}
   window._navPop = false;
 });
 setTimeout(function () { window._navReady = true; }, 0);

@@ -219,9 +219,9 @@ function send(x) {
     res.rec.src = x.n; S.rec.unshift(res.rec); S.rec = S.rec.slice(0, MAXR); S.inbox = S.inbox.filter(function (y) { return y.n !== x.n; }); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
   });
 }
-function doTrace() { var r = S.rec[0]; if (!r) return; trace(r).then(function (t) { S.trc = t; S.tam = null; render(); }); }
+function doTrace() { var r = S.rec[0]; if (!r) return; if (window.NaviHist) NaviHist.push('tax', 'trace'); trace(r).then(function (t) { S.trc = t; S.tam = null; render(); }); }
 function doTamper() {
-  var r = S.rec[0]; if (!r) return; var copy = JSON.parse(JSON.stringify(r)); copy.buyer.lines[0][1] = Number(copy.buyer.lines[0][1]) + 1;
+  var r = S.rec[0]; if (!r) return; if (window.NaviHist) NaviHist.push('tax', 'tamper'); var copy = JSON.parse(JSON.stringify(r)); copy.buyer.lines[0][1] = Number(copy.buyer.lines[0][1]) + 1;
   trace(copy).then(function (t) {
     var bad = t.checks.filter(function (c) { return !c.ok; }).map(function (c) { return c.k; });
     S.trc = null; S.tam = note('구매자 장부의 첫 항목 금액을 몰래 1원 올렸다고 가정해 다시 확인해 봤어요(실제 장부는 그대로예요). ' + (bad.length ? '→ "' + bad.join(', ') + '"에서 바로 드러나요.' : '그대로 통과했어요.'), bad.length === 0, 'tx-tam-out'); render();
@@ -242,6 +242,7 @@ function mount(el) {
   if (!el) return; M = el; el.textContent = ''; el.classList.add('tx'); S.rec = []; S.inbox = []; S.err = ''; S.trc = null; S.tam = null; load();
   [h('div', { id:'tx-top' }), h('div', { class:'wrap', id:'tx-root' })].forEach(function (x) { el.appendChild(x); }); render();
 }
+if (window.NaviHist) NaviHist.on('tax', 'tax', function (sub) { if (!M) return; S.trc = null; S.tam = null; if (sub === 'trace') doTrace(); else if (sub === 'tamper') doTamper(); else render(); });   // 뒤로 가면 확인 결과를 닫고, 앞으로 가면 다시 보인다
 window.NaviTax = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
