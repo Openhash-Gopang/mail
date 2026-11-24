@@ -43,35 +43,37 @@ test('보고서: 가격 공정성(비교 3개 이상)·AS·리뷰를 따로 판�
   const hold = F.report({ price: 100000, compare: [], as: '있음', rating: '', count: '' }); assert.equal(hold.verdict, 'hold');
 });
 
-test('화면: 자동 진행 — 중복이면 팝업으로 멈추고 "구매 원함" → 필요도 → 보고서 → 구매 팝업 → 협의 → 승인 팝업 → 잔고 팝업 → 결제 → 기록', { skip }, async () => {
+test('화면: 11단계 자동 진행 — 이름 → 이력(중복 팝업) → 필요도 → 구매 의사 → 신뢰도·의견 → AS → 가격 비교 → 협의 → 최종 확인 → 결제 → 국세청 보고', { skip }, async () => {
   const p = page(); const { doc, btn, type, txt } = p;
   assert.ok(txt().includes('살 물건을 알려 주세요') && !txt().includes('시장 원리'));
   p.w.localStorage.setItem('navi-market-v2', JSON.stringify({ history: [{ name: '무선 청소기 A100', price: 150000, d: '2026-05-01' }], memo: '재택 근무, 청소 자주 함', fin: [], ledger: [] }));
   p.N.mount(doc.getElementById('m'));
+  assert.equal(doc.querySelectorAll('.mk-steps li').length, 11);
   btn('검토 시작').click(); assert.ok(txt().includes('상품 이름을 넣어')); type('mk-name', '무선청소기 A200'); btn('검토 시작').click(); assert.ok(txt().includes('가격을 1원 이상'));
-  type('mk-price', '189000'); btn('검토 시작').click(); await wait(40);
-  assert.ok(doc.querySelector('[role=dialog]') && txt().includes('비슷한 구매 기록이 있어요'), '중복이면 팝업으로 묻는다'); assert.ok(!doc.getElementById('mk-go2'));
-  btn('구매 원함').click(); await wait(40);
-  const sc = Number(doc.getElementById('mk-score') ? doc.getElementById('mk-score').textContent.split('/')[0] : doc.querySelector('[role=dialog]') ? 0 : 0);
-  if (doc.getElementById('mk-go2')) btn('계속 진행').click(); await wait(40); // 필요도가 낮으면 팝업, 3점 이상이면 자동 진행
-  assert.ok(txt().includes('구매 검토 보고서')); { const pg = doc.getElementById('mk-prog').textContent; assert.ok(pg.includes('이전 구매: 무선 청소기 A100') && pg.includes('필요도') && pg.includes('/ 5') && pg.includes('재택') === pg.includes('재택') && pg.includes('판매자 신뢰도'), '보고서에 단계별 결과(이전 구매 이력·필요도·평가)가 모두 들어 있다'); } assert.ok(txt().includes('구매할까요?') && txt().includes('판매자 신뢰도'), '보고서 요약과 함께 최종 구매 의견을 묻는다'); assert.ok(txt().includes('판단을 보류'));
+  type('mk-price', '189000'); btn('검토 시작').click(); await wait(60);
+  assert.ok(doc.querySelector('[role=dialog]') && txt().includes('비슷한 구매 기록이 있어요'), '이력에 비슷한 구매가 있으면 팝업으로 묻는다'); assert.ok(!doc.getElementById('mk-go2'));
+  btn('구매 원함').click(); await wait(100);
+  assert.ok(doc.getElementById('mk-score') && txt().includes('구매 의사 확인'), '필요도 뒤에는 늘 구매 의사를 묻는다'); const sc = Number(doc.getElementById('mk-score').textContent.split('/')[0]); assert.ok(sc >= 1 && sc <= 5);
+  btn('계속 진행').click(); await wait(400);
+  assert.ok(txt().includes('최종 구매 의사 확인') && txt().includes('구매 검토 최종 보고서') && txt().includes('협의한 조건'), '협의까지 마치고 최종 의사를 묻는다');
+  { const pg = doc.getElementById('mk-prog').textContent; assert.ok(pg.includes('이전 구매: 무선 청소기 A100') && pg.includes('/ 5') && pg.includes('구매 의사') && pg.includes('판매자 신뢰도') && pg.includes('사후 서비스') && pg.includes('가격'), '최종 보고서에 모든 단계 결과가 들어 있다'); }
+  assert.ok(doc.getElementById('mk-prog-4').className === 'done' && doc.getElementById('mk-prog-8').className === 'now');
   btn('보고서 더 보기').click(); assert.ok(!doc.querySelector('[role=dialog]'));
   type('mk-trust', '판매자 평점 4.8 · 우수 판매자'); type('mk-as', '1년 무상 AS'); type('mk-rating', '4.6'); type('mk-count', '230'); type('mk-cmp', '185000, 190000, 192000'); btn('보고서 다시 만들기').click();
-  assert.ok(doc.getElementById('mk-verdict').textContent.includes('공정')); btn('구매').click(); await wait(40);
-  assert.ok(txt().includes('판매자 나비와 조건을 맞췄어요') && txt().includes('체험용')); assert.ok(doc.getElementById('mk-prog-2').className === 'done' && doc.getElementById('mk-prog-4').className === 'now', '진행 기록: 끝난 단계는 ✓, 지금 단계는 ●'); assert.ok(txt().includes('이 조건으로 결제할까요?'));
+  assert.ok(doc.getElementById('mk-prog').textContent.includes('다른 판매처 가격: 185,000원') && doc.getElementById('mk-prog').textContent.includes('우수 판매자'));
   btn('승인').click(); await wait(300);
   assert.ok(txt().includes('잔고가 모자라요'), '잔고 0이면 결제 전에 묻는다'); assert.ok(!txt().includes('구매를 마쳤어요'));
-  btn('체험용 입금 후 결제').click(); await wait(600);
-  assert.ok(txt().includes('구매를 마쳤어요')); assert.ok(txt().includes('재무제표 SP') && txt().includes('나만의 AI 비서')); await wait(150); assert.ok(doc.getElementById('mk-done-ok').textContent.includes('이상 없음'));
-  const s = JSON.parse(p.w.localStorage.getItem('navi-market-v2')); assert.equal(s.fin[0].amt, 189000); assert.equal(s.fin[0].left, 0); assert.equal(s.history[0].name, '무선청소기 A200'); assert.equal(s.ledger.length, 2);
-  assert.equal(p.fetched(), 0); btn('다른 물건 검토하기').click(); assert.ok(txt().includes('살 물건을 알려 주세요')); assert.ok(sc >= 0);
+  btn('체험용 입금 후 결제').click(); await wait(900);
+  assert.ok(txt().includes('구매를 마쳤어요')); assert.ok(txt().includes('국세청 AI') && txt().includes('재무제표 SP') && txt().includes('나만의 AI 비서') && txt().includes('MK-'), '결제 뒤 시장 인프라가 국세청에 보고한다');
+  assert.ok(doc.getElementById('mk-slip').textContent.includes('누가') && doc.getElementById('mk-slip').textContent.includes('왜') && doc.getElementById('mk-slip').textContent.includes('부가세')); await wait(150); assert.ok(doc.getElementById('mk-done-ok').textContent.includes('이상 없음'));
+  const s = JSON.parse(p.w.localStorage.getItem('navi-market-v2')); assert.equal(s.fin[0].amt, 189000); assert.equal(s.fin[0].left, 0); assert.ok(/^MK-\d{8}-\d{5}$/.test(s.fin[0].serial)); assert.equal(s.fin[0].tax, 189000 - Math.round(189000 / 1.1)); assert.equal(s.history[0].name, '무선청소기 A200'); assert.equal(s.ledger.length, 2);
+  assert.equal(p.fetched(), 0); btn('다른 물건 검토하기').click(); assert.ok(txt().includes('살 물건을 알려 주세요'));
 });
-test('화면: 비슷한 구매가 없으면 팝업 없이 필요도로 자동 진행하고, 그만두면 처음으로 돌아간다', { skip }, async () => {
+test('화면: 비슷한 구매가 없으면 팝업 없이 필요도까지 가고, 구매 의사 팝업에서 그만두면 처음으로 돌아간다', { skip }, async () => {
   const p = page(); p.type('mk-name', '에어프라이어'); p.type('mk-price', '90000'); p.btn('검토 시작').click();
-  assert.ok(p.doc.getElementById('mk-nodup')); assert.ok(!p.doc.querySelector('[role=dialog]')); await wait(40);
-  assert.ok(p.doc.querySelector('[role=dialog]') && p.txt().includes('구매할까요?'), '중복·필요도 문제가 없으면 보고서까지 자동으로 가서 구매 의견을 묻는다');
-  p.btn('그만두기').click(); await wait(40);
-  assert.ok(p.txt().includes('살 물건을 알려 주세요'));
+  assert.ok(p.doc.getElementById('mk-nodup')); assert.ok(!p.doc.querySelector('[role=dialog]')); await wait(100);
+  assert.ok(p.doc.querySelector('[role=dialog]') && p.txt().includes('구매 의사 확인'));
+  p.btn('그만두기').click(); await wait(40); assert.ok(p.txt().includes('살 물건을 알려 주세요'));
 });
 test('화면: 자동 진행 중 처음으로 돌아가면 뒤늦은 타이머가 화면을 되살리지 않는다', { skip }, async () => {
   const p = page(); p.w.__naviMarketDelay = 80; p.type('mk-name', '에어프라이어'); p.type('mk-price', '90000'); p.btn('검토 시작').click();
