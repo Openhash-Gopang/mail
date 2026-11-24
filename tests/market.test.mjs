@@ -173,3 +173,8 @@ test('상품 링크 칸: 엔터 키로 도우미를 바로 실행한다(한글 �
   i.dispatchEvent(new p.w.KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })); await wait(30); assert.equal(queued, 0);
   i.dispatchEvent(new p.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await wait(30); assert.equal(queued, 1);
 });
+test('뒤로 가기: 해시가 없는 화면끼리 옮겨도 기록이 남고, 뒤로 갈 때 기록의 화면 이름으로 돌아간다', () => {
+  assert.ok(d.includes("history.pushState({ navTab: name }"), '화면 이동마다 state 에 화면 이름을 넣어 기록을 남긴다');
+  assert.ok(d.includes("_st !== name"), '해시가 같아도 화면 이름이 다르면 기록을 남긴다');
+  assert.ok(d.includes("history.state && history.state.navTab"), 'popstate 가 기록의 화면 이름을 읽는다');
+});
