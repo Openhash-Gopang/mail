@@ -173,7 +173,7 @@ function short(v) { return v >= 1e8 ? Math.round(v / 1e7) / 10 + '억' : v >= 1e
 // ── 공통 조각 ──
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 증권' })]), h('button', { type:'button', class:'btn quiet', id:'stock-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('stock'); } })]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 증권' })]), h('button', { type:'button', class:'btn quiet', id:'stock-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('stock', S.view); } })]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function head(title, lead) { return [h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null]; }
@@ -585,7 +585,7 @@ function viewLearn() {
 }
 
 function render() {
-  var root = $('stk-root'), tp = $('stk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
+  var root = $('stk-root'), tp = $('stk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('stock', S.view);
   var kids = S.view === 'explore' ? viewExplore() : S.view === 'wage' ? viewWage() : S.view === 'order' ? viewOrder() : S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   if (S.view === 'goal' && M.__goalOut) M.__goalOut();

@@ -42,28 +42,28 @@ test('증권: 급변동일을 감독 AI 가 모두 찾고, 가치 평가는 증�
 test('화면: 열면 가상 데이터 표시가 있고, 실제 저장소에는 아무것도 쓰지 않으며, Esc·닫기로 닫힌다', { skip }, () => {
   for (const k of ['market', 'tax', 'bank', 'stock']) {
     const { S, doc, w, fetched } = env(true); const before = w.localStorage.length;
-    assert.equal(S.open(k), true); const ov = doc.getElementById('nsim-ov'); assert.ok(ov); assert.match(ov.textContent, /가상 데이터/); assert.match(ov.textContent, /실제 장부·잔고·전표·기록에는 들어가지 않아요/);
-    assert.equal(ov.querySelector('[role=dialog]').getAttribute('aria-modal'), 'true');
+    assert.equal(S.open(k), true); const ov = doc.getElementById('nsim-pn'); assert.ok(ov); assert.ok(!doc.querySelector('[role=dialog]'), '팝업(dialog)이 아니라 패널'); assert.match(ov.textContent, /가상 데이터/); assert.match(ov.textContent, /실제 장부·잔고·전표·기록에는 들어가지 않아요/);
+    assert.equal(ov.getAttribute('role'), 'complementary'); assert.equal(ov.parentNode, doc.body);
     doc.getElementById('sim-again').click(); doc.getElementById('sim-gen').click(); assert.ok(doc.getElementById('sim-body').textContent.length > 50, k);
     if (doc.getElementById('sim-next')) { doc.getElementById('sim-next').click(); }
     assert.equal(w.localStorage.length, before, k + ' 저장소 변경 없음'); assert.equal(fetched(), 0);
-    doc.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); assert.ok(!doc.getElementById('nsim-ov'), k + ' Esc'); 
-    S.open(k); doc.getElementById('sim-close').click(); assert.ok(!doc.getElementById('nsim-ov'));
+    doc.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); assert.ok(!doc.getElementById('nsim-pn'), k + ' Esc'); 
+    S.open(k); doc.getElementById('sim-close').click(); assert.ok(!doc.getElementById('nsim-pn'));
   }
   assert.equal(env().S.open('nope'), false);
 });
 test('화면: 입력값을 바꿔 다시 만들면 반영되고, 증권은 하루 진행으로 시세가 움직이며 필터가 걸린다', { skip }, () => {
   const { S, doc, w } = env(true); S.open('bank'); doc.getElementById('sm-st').value = '0'; doc.getElementById('sm-in').value = '1,000,000'; doc.getElementById('sm-fx').value = '1500000'; doc.getElementById('sim-gen').click();
   assert.match(doc.getElementById('sim-b-sum').textContent, /거절된 결제 [1-9]/); assert.match(doc.getElementById('sim-b-sum').textContent, /장부 대조: .*✓/);
-  S.open('stock'); const rows0 = doc.querySelectorAll('#sim-body tbody tr').length; assert.ok(rows0 >= 3); doc.getElementById('sim-next').click(); assert.match(doc.getElementById('sim-body').textContent, /시세 1일째/);
+  S.open('stock'); doc.getElementById('sim-next').click(); assert.match(doc.getElementById('sim-body').textContent, /시세 1일째/); S.tab('stock', 'explore'); const rows0 = doc.querySelectorAll('#sim-body tbody tr').length; assert.ok(rows0 >= 3);
   const sec = doc.getElementById('sm-sec'); sec.value = '__none__'; sec.dispatchEvent(new w.Event('change', { bubbles: true }));
   const cnt = doc.querySelectorAll('#sim-body tbody tr').length; assert.ok(cnt <= rows0);
 });
 test('배선: 네 화면에 시뮬레이션 버튼이 있고 눌러도 오류 없이 시뮬레이션을 부르며, 로더·경로 목록에 등록돼 있다', { skip }, () => {
   for (const [src, id] of [[taxApp, 'tax-sim'], [bankApp, 'bank-sim'], [stockApp, 'stock-sim'], [mktApp, 'market-sim']]) assert.ok(src.includes("id:'" + id + "'"), id);
   assert.match(desk, /window\._simOpen = function/); assert.match(desk, /sim-lab\.js\?v=/); assert.match(paths, /"sim-lab\.js"/);
-  const { w, doc } = env(true); const calls = []; w._simOpen = (k) => calls.push(k);
-  w.NaviStock.mount(doc.getElementById('m'), { view: 'portfolio' }); doc.getElementById('stock-sim').click(); assert.deepEqual(calls, ['stock']);
+  const { w, doc } = env(true); const calls = []; w._simOpen = (k, tab) => calls.push([k, tab]);
+  w.NaviStock.mount(doc.getElementById('m'), { view: 'portfolio' }); doc.getElementById('stock-sim').click(); assert.deepEqual(calls, [['stock', 'portfolio']]);
   assert.ok(!/fetch\(|XMLHttpRequest/.test(sim));
 });
 
@@ -90,8 +90,30 @@ test('장부 변조 시험: 변조는 모두 잡히고 변조 전 장부는 정�
   assert.ok(r.records >= 5); assert.equal(w.localStorage.length, before);
 });
 test('화면: 증권 시뮬레이션에 사업성 점검이 보이고, 수수료율을 바꾸면 다시 계산되며 변조 시험이 돈다', { skip }, async () => {
-  const { S, doc, w } = env(true); S.open('stock'); assert.ok(doc.getElementById('sim-s-biz')); assert.match(doc.getElementById('sim-s-fee').textContent, /손익분기/);
+  const { S, doc, w } = env(true); S.open('stock', 'order'); assert.match(doc.getElementById('sim-s-fee').textContent, /손익분기/);
   const before = doc.getElementById('sim-s-fee').textContent; const fr = doc.getElementById('sm-fr'); fr.value = '0.01'; fr.dispatchEvent(new w.Event('change', { bubbles: true }));
-  assert.notEqual(doc.getElementById('sim-s-fee').textContent, before); assert.match(doc.getElementById('sim-s-bt').textContent, /진짜 가치|시험할 수 없어요/);
+  assert.notEqual(doc.getElementById('sim-s-fee').textContent, before); S.tab('stock', 'company'); assert.match(doc.getElementById('sim-s-bt').textContent, /진짜 가치|시험할 수 없어요/); S.tab('stock', 'trades');
   doc.getElementById('sim-chain').click(); await new Promise((r) => setTimeout(r, 400)); assert.match(doc.getElementById('sim-s-chain').textContent, /변조 30번 중 30번 잡았어요.*맨 끝 전표를 지우면 이 장부만으로는 못 잡아요/);
+});
+
+test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 그리고, 탭을 옮기면 패널이 따라가며, 저장소·네트워크는 쓰지 않는다', { skip }, () => {
+  const { S, doc, w, fetched } = env(true); const before = w.localStorage.length; let total = 0;
+  for (const [k, pg] of Object.entries(S.pages)) {
+    S.open(k, pg.tabs[0][0]); const seen = new Set();
+    for (const [id, label] of pg.tabs) {
+      assert.equal(S.tab(k, id), true, k + id); const body = doc.getElementById('sim-body').textContent; assert.ok(body.length > 20, k + ':' + id + ' 비어 있음');
+      assert.match(doc.getElementById('sim-title-t').textContent, new RegExp(label)); seen.add(body); total++;
+      assert.equal(doc.getElementById('nsim-pn').querySelectorAll('.chips button.cur').length, 1);
+    }
+    assert.ok(seen.size >= pg.tabs.length - 2, k + ' 탭마다 내용이 달라야 해요');
+    assert.equal(S.tab(k, '없는탭'), false); S.close();
+  }
+  assert.equal(total, 11 + 6 + 5 + 12); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
+  S.open('stock', 'goal'); doc.getElementById('sm-sv').value = '500000'; doc.getElementById('sm-sv').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-g-sum').textContent, /목표를 넘긴/);
+  S.open('stock', 'alloc'); doc.getElementById('sm-wa').value = '100'; doc.getElementById('sm-wa').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-a-sum').textContent, /현금 비중 0%/);
+  S.open('market', 's3'); doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
+});
+test('배선: 각 화면은 현재 탭을 시뮬레이션에 넘기고, 화면을 옮기면 패널을 닫는다', { skip }, () => {
+  assert.match(stockApp, /_simOpen\('stock', S\.view\)/); assert.match(bankApp, /_simOpen\('bank', S\.view\)/); assert.match(mktApp, /_simOpen\('market', 's' \+ S\.step\)/); assert.match(mktApp, /market-sim-sell/); assert.match(taxApp, /_simOpen\('tax', 'slip'\)/);
+  assert.match(desk, /NaviSim\.close\(\);[^\n]*다른 화면으로 가면/); assert.ok(!/aria-modal/.test(sim) && !/nsim-ov/.test(sim));
 });
