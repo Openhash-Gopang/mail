@@ -206,7 +206,7 @@ F.snum = snum; F.norm = norm;
 var KEY = 'navi-market-v2', MAXP = 200;
 var M = null, LS = {};
 var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
-  history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
+  auto:false, history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
@@ -250,7 +250,7 @@ function takeProduct(d) {
 var agentWired = false;
 function wireAgent() {
   if (agentWired || !window.NaviAgent || !NaviAgent.onData) return; agentWired = true;
-  NaviAgent.onData(function (m) { if (m.label !== SLOT || !M) return; takeProduct(m.data); if (S.step === 0) render(); });
+  NaviAgent.onData(function (m) { if (m.label !== SLOT || !M) return; takeProduct(m.data); if (S.step === 0 && S.auto && clean(S.prod.name, 80) && snum(S.prod.price) >= 1) { S.auto = false; startReview(); } else render(); });   // 도우미가 이름·가격을 읽어 오면 "검토 시작"을 자동으로 누른다
 }
 var MINVER = '0.6.40';   // 상품 주소 전달(url)과 읽은 값 보내기(report_data)가 들어간 확장 버전. 이보다 낮으면 빈 페이지만 열리고 값이 오지 않는다.
 function verOk(v) {
@@ -263,7 +263,7 @@ function askAgent() {
   var link = safeLink(S.prod.link);
   if (!link) { S.err = '판매 사이트의 상품 링크(https://로 시작)를 먼저 넣어 주세요.'; render(); return; }
   if (!window.NaviAgent || !NaviAgent.queue) { S.read = { st:'none', msg:'나비웹 도우미를 쓸 수 없는 화면이에요. 아래 칸에 직접 넣어도 돼요.' }; render(); return; }
-  wireAgent(); S.read = { st:'wait', msg:'나비웹 도우미에게 맡겼어요. 판매 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 읽은 값은 이 화면에 채워져요.' }; S.err = ''; render();
+  wireAgent(); S.auto = true; S.read = { st:'wait', msg:'나비웹 도우미에게 맡겼어요. 판매 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 읽은 값은 이 화면에 채워져요.' }; S.err = ''; render();
   function probe(n) { return NaviAgent.detect().then(function (info) { return info || (n > 1 ? new Promise(function (r) { setTimeout(r, 700); }).then(function () { return probe(n - 1); }) : null); }); }   // 확장 서비스 워커가 깨어나는 동안 첫 응답이 늦을 수 있어 세 번까지 묻는다
   probe(3).then(function (info) {
     if (!info) { var mark = NaviAgent.installedMark ? NaviAgent.installedMark() : ''; S.read = { st:'none', msg:mark ? '나비웹 도우미가 설치되어 있지만 이 화면과 연결되지 않았어요. 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' : '나비웹 도우미가 설치되어 있지 않거나 이 화면에 연결되지 않았어요. 방금 설치했거나 켰다면 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
@@ -311,7 +311,7 @@ function viewStart() {
   return kids;
 }
 function startReview() {
-  var p = S.prod, price = snum(p.price);
+  S.auto = false; var p = S.prod, price = snum(p.price);
   if (!clean(p.name, 80)) { S.err = '상품 이름을 넣어 주세요(도우미가 읽어 왔다면 확인해 주세요).'; return render(); }
   if (!(price >= 1 && price <= 1e9)) { S.err = '가격을 1원 이상 숫자로 넣어 주세요.'; return render(); }
   S.dup = F.similar(p.name, S.history); S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.err = '';
