@@ -30,6 +30,7 @@ function won(n) { return Math.round(Number(n) || 0).toLocaleString('ko-KR'); }
 function btn(t, c, fn, id) { return h('button', { type:'button', class:'btn ' + (c || ''), text:t, onclick:fn, id:id }); }
 function note(t, bad, id) { return h('div', { class:bad ? 'note' : 'note info', role:bad ? 'alert' : 'status', id:id, text:t }); }
 function kst() { return new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul' }).format(new Date()); }
+function nowKst() { var m = {}; new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).formatToParts(new Date()).forEach(function (x) { m[x.type] = x.value; }); return m.year + '-' + m.month + '-' + m.day + ' ' + (m.hour === '24' ? '00' : m.hour) + ':' + m.minute + ':' + m.second; }
 function clean(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001f<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); }
 function snum(v) { var s = String(v == null ? '' : v).replace(/[,\s원]/g, ''); return /^\d+$/.test(s) ? Number(s) : NaN; }
 
@@ -99,7 +100,7 @@ function run(f, seq) {
           if (!ok[0]) return { ok:false, msg:'국세청 AI가 시장 인프라 AI의 서명을 확인하지 못해 멈췄어요.' };
           if (!ok[1] || !ok[2]) return { ok:false, msg:'국세청 AI가 구매자·판매자의 서명을 확인하지 못해 멈췄어요.' };
           var tax = vat10(slip.supply), tN = txt('NTS', serial, C, tax, sigI);
-          hops.push({ who:'국세청 AI(국세청의 나만의 AI 비서)', to:'시장 인프라 AI', text:'인프라 서명과 당사자 서명을 확인했어요(✓). 세액을 ' + won(tax) + '원으로 정하고(공급가액 ' + won(slip.supply) + '원의 10%, 체험 값) 자기 서명(키 ' + F.n + ')을 붙여 돌려보냈어요.' });
+          hops.push({ who:'국세청 AI(국세청의 나만의 AI 비서)', to:'시장 인프라 AI', text:'인프라 서명과 당사자 서명을 확인했어요(✓). 부가가치세법 제9조(재화의 공급)·제29조(과세표준)·제30조(세율 10%)를 참고해 세액을 ' + won(tax) + '원으로 정하고(공급가액 ' + won(slip.supply) + '원의 10%, 체험 값) 자기 서명(키 ' + F.n + ')을 붙여 돌려보냈어요.' });
           return sign(K.n.priv, tN).then(function (sigN) {
             hops.push({ who:'시장 인프라 AI', to:'구매자·판매자 시장 SP', text:'세액과 국세청 서명이 붙은 전표를 두 시장 SP에게 전달했어요.' });
             hops.push({ who:'구매자 시장 SP · 판매자 시장 SP', to:'각자의 나만의 AI 비서', text:'각자의 나만의 AI 비서에게 보고했어요.' });
@@ -165,6 +166,61 @@ function ledgerCard(e, title, id) {
       h('tbody', {}, e.lines.map(function (l) { return h('tr', {}, [h('td', { text:l[0] }), h('td', { text:l[1] ? won(l[1]) : '' }), h('td', { text:l[2] ? won(l[2]) : '' })]); }))])])]);
 }
 function slipLine(f) { var s = snum(f.qty) * snum(f.price); return f.when + ' · ' + f.seller + ' → ' + f.buyer + ' · ' + f.what + ' ' + f.qty + '개 × ' + won(snum(f.price)) + '원 = ' + won(s) + '원'; }
+// ── 재무제표(대차대조표·손익계산서) 갱신과 갱신 이력: 전표 한 건마다 갱신일시와 일련번호를 부기한다 ──
+// 시작 장부는 체험용 가상 초안이다. 구매자 '나'는 개인사업자, 그 밖의 판매자는 작은 가게로 가정한다. 매출원가는 반영하지 않는다.
+var DRAFT_ME = { 'GDC 잔액':2000000, '비품':500000, '자본금':2500000 };
+var DRAFT_SHOP = { 'GDC 잔액':5000000, '상품(재고자산)':1200000, '비품':800000, '미지급금':300000, '자본금':5000000, '이익잉여금':1700000, '매출':3000000 };
+var LMAP = { '현금(GDC)':'GDC 잔액', '상품(재고자산)':'상품(재고자산)', '부가세대급금':'부가세대급금', '부가세예수금':'부가세예수금', '매출':'매출' };
+var ASSETS = ['GDC 잔액', '상품(재고자산)', '부가세대급금', '비품'], LIABS = ['미지급금', '부가세예수금'], EQUITY = ['자본금', '이익잉여금'];
+var WHY = { 'buyer|상품(재고자산)':'구매한 상품을 재고로 반영(공급가액)', 'buyer|부가세대급금':'국세청이 정한 부가세를 매입세액으로 반영', 'buyer|현금(GDC)':'구매대금과 부가세를 GDC로 지급',
+'seller|현금(GDC)':'판매대금과 부가세를 GDC로 수령', 'seller|매출':'재화 공급에 따른 매출 인식', 'seller|부가세예수금':'국세청이 정한 부가세 납부 의무 계상' };
+function bookOf(owner, recs) {
+var b = {}, base = owner === '나' ? DRAFT_ME : DRAFT_SHOP, k;
+for (k in base) b[k] = base[k];
+recs.forEach(function (r) { [r.buyer, r.seller].forEach(function (e) { if (e.owner !== owner) return; e.lines.forEach(function (l) {
+var a = LMAP[l[0]]; if (!a) return; var d = ASSETS.indexOf(a) >= 0 ? l[1] - l[2] : l[2] - l[1];
+b[a] = (b[a] || 0) + d; if (a === '매출') b['이익잉여금'] = (b['이익잉여금'] || 0) + d;
+}); }); });
+return b;
+}
+function sgn(n) { return n === 0 ? '' : (n > 0 ? '+' : '−') + won(Math.abs(n)); }
+function thr(a) { return h('thead', {}, [h('tr', {}, a.map(function (t) { return h('th', { text:t }); }))]); }
+function stmtCard(owner, role, id) {
+var mine = S.rec.slice().reverse().filter(function (r) { return r.buyer.owner === owner || r.seller.owner === owner; }), last = mine[mine.length - 1];
+if (!last) return null;
+var bf = bookOf(owner, mine.slice(0, -1)), af = bookOf(owner, mine), mark = (last.at || '갱신일시 기록 없음') + ' · ' + last.serial;
+function row(a) {
+var x = bf[a] || 0, y = af[a] || 0, d = y - x; if (!x && !y) return null;
+return h('tr', { style:d ? 'background:rgba(30,138,90,.12)' : null }, [h('td', { text:a }), h('td', { text:won(x) }), h('td', { text:sgn(d) }), h('td', { text:won(y) }), h('td', { class:'sub', text:d ? mark : '' })]);
+}
+function tot(label, list) {
+var x = 0, y = 0; list.forEach(function (a) { x += bf[a] || 0; y += af[a] || 0; });
+return { x:x, y:y, tr:h('tr', {}, [h('td', {}, [h('b', { text:label })]), h('td', { text:won(x) }), h('td', { text:sgn(y - x) }), h('td', { text:won(y) }), h('td', {})]) };
+}
+var A = tot('자산 합계', ASSETS), L = tot('부채 합계', LIABS), E = tot('자본 합계', EQUITY), rows = [];
+[['자산', ASSETS, A], ['부채', LIABS, L], ['자본', EQUITY, E]].forEach(function (g) {
+rows.push(h('tr', {}, [h('td', { colspan:'5', class:'sub', text:g[0] })]));
+g[1].forEach(function (a) { rows.push(row(a)); }); rows.push(g[2].tr);
+});
+var s0 = bf['매출'] || 0, s1 = af['매출'] || 0, ok = A.y === L.y + E.y;
+return h('div', { class:'card', id:id, style:'padding:0' }, [
+h('div', { style:'padding:12px 16px' }, [h('b', { text:role + ' ' + owner + ' — 재무제표 갱신' }), h('div', { class:'sub', text:'체험용 가상 초안에서 시작 · 일련번호 ' + last.serial + ' · ' + (last.at || '갱신일시 기록 없음') })]),
+h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['대차대조표', '전', '증감', '후', '부기(갱신일시 · 일련번호)']), h('tbody', {}, rows)])]),
+h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['손익계산서(11월 누계)', '전', '증감', '후', '부기(갱신일시 · 일련번호)']),
+h('tbody', {}, [h('tr', { style:s1 !== s0 ? 'background:rgba(30,138,90,.12)' : null }, [h('td', { text:'매출' }), h('td', { text:won(s0) }), h('td', { text:sgn(s1 - s0) }), h('td', { text:won(s1) }), h('td', { class:'sub', text:s1 !== s0 ? mark : '' })])])])]),
+h('div', { class:'sub', style:'padding:8px 16px 12px', text:'자산 ' + won(A.y) + ' = 부채 ' + won(L.y) + ' + 자본 ' + won(E.y) + (ok ? ' — 대차가 맞아요' : ' — 대차가 맞지 않아요') + ' · 매출원가는 이 체험에서 반영하지 않아요.' })]);
+}
+function stmtsView(r) { return h('div', { class:'g2', style:'margin-top:12px', id:'tx-stmts' }, [stmtCard(r.buyer.owner, '구매자', 'tx-stmt-b'), stmtCard(r.seller.owner, '판매자', 'tx-stmt-s')]); }
+/** 갱신 이력: 언제(갱신일시)·무엇이(일련번호·계정)·왜(사유)·어떻게(차변·대변, 전표 해시) 바뀌었는지 한 줄씩 남는다. */
+function histCard() {
+var rows = [];
+S.rec.slice().reverse().forEach(function (r) { [r.seller, r.buyer].forEach(function (e) { e.lines.forEach(function (l) {
+rows.push(h('tr', {}, [h('td', { text:r.at || '-' }), h('td', { text:r.serial }), h('td', { text:e.owner }), h('td', { text:l[0] }), h('td', { text:l[1] ? '차변 ' + won(l[1]) : '대변 ' + won(l[2]) }), h('td', { text:WHY[e.side + '|' + l[0]] || '장부 반영' }), h('td', { text:r.hash ? r.hash.slice(0, 8) : '' })]));
+}); }); });
+rows.reverse();
+return h('div', { class:'card', id:'tx-hist', style:'padding:0;margin-top:12px' }, [h('div', { style:'padding:12px 16px' }, [h('b', { text:'갱신 이력 — 언제·왜·어떻게 바뀌었는지' }), h('div', { class:'sub', text:'장부가 바뀔 때마다 갱신일시와 일련번호가 한 줄씩 남아요. 장부 항목을 몰래 고치면 아래 "일련번호로 확인"에서 전표와 맞지 않아 드러나요.' })]),
+h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['갱신일시', '일련번호', '장부 주인', '계정', '차변·대변', '사유', '전표 해시']), h('tbody', {}, rows.slice(0, 36))])])]);
+}
 function viewMain() {
   var kids = [], P = pending();
   kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }),
@@ -197,7 +253,7 @@ function ownBooks() {
 function viewResult(r) {
   var k = [h('h3', { style:'margin-top:24px', text:'방금 처리한 전표 — ' + r.serial })];
   k.push(h('ol', { class:'tx-tl', id:'tx-hops' }, r.hops.map(function (x) { return h('li', {}, [h('b', { text:x.who + ' → ' + x.to }), h('div', { text:x.text })]); })));
-  k.push(h('div', { class:'g2', style:'margin-top:12px' }, [ledgerCard(r.buyer, '구매자 장부', 'tx-led-b'), ledgerCard(r.seller, '판매자 장부', 'tx-led-s')]));
+  k.push(h('div', { class:'g2', style:'margin-top:12px' }, [ledgerCard(r.buyer, '구매자 장부', 'tx-led-b'), ledgerCard(r.seller, '판매자 장부', 'tx-led-s')])); k.push(stmtsView(r)); k.push(histCard());
   var out = h('div', { id:'tx-trace', style:'margin-top:12px' });
   if (S.trc) out.appendChild(traceView(S.trc));
   var tam = h('div', { id:'tx-tam', style:'margin-top:12px' }); if (S.tam) tam.appendChild(S.tam);
@@ -216,7 +272,7 @@ function send(x) {
   run(x.f, S.rec.length).then(function (res) {
     S.busy = false;
     if (!res.ok) { S.err = res.msg; render(); return; }
-    res.rec.src = x.n; S.rec.unshift(res.rec); S.rec = S.rec.slice(0, MAXR); S.inbox = S.inbox.filter(function (y) { return y.n !== x.n; }); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
+    res.rec.src = x.n; res.rec.at = nowKst(); S.rec.unshift(res.rec); S.rec = S.rec.slice(0, MAXR); S.inbox = S.inbox.filter(function (y) { return y.n !== x.n; }); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
   });
 }
 function doTrace() { var r = S.rec[0]; if (!r) return; if (window.NaviHist) NaviHist.push('tax', 'trace'); trace(r).then(function (t) { S.trc = t; S.tam = null; render(); }); }
