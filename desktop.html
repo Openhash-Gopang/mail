@@ -6626,7 +6626,12 @@ function _switchTab(name) {
   try {
     const _hk = name === 'gprog' ? 'guide-prog' : (name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
     const _nh = _isCompose ? ((name === 'home' || name === 'doc') ? '' : '#' + name) : (_hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '');   // 2026-11-10: 편지(#letter)·캠페인(#compose)·가상 판결(#verdict)도 주소에 남긴다(홈·서류는 비움 — 서류는 #doc/<번호>)
-    if ((location.hash || '') !== _nh) history.replaceState(null, '', location.pathname + location.search + _nh);
+    if ((location.hash || '') !== _nh) {
+      // 2026-11-24: 화면을 옮길 때마다 기록을 하나 남긴다 — 브라우저 뒤로 가기(좌 상단)가 직전 화면으로 돌아가고, 처음 화면에서는 이전 웹 페이지(나비웹 메인 등)로 나간다.
+      // 처음 열 때와 뒤로·앞으로 가기로 옮길 때는 새 기록을 만들지 않는다.
+      if (window._navReady && !window._navPop) history.pushState(null, '', location.pathname + location.search + _nh);
+      else history.replaceState(null, '', location.pathname + location.search + _nh);
+    }
   } catch (e) {}   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
   if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
@@ -10757,6 +10762,20 @@ window.kmailOpenSettings = function (section) {
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc' || h === 'verdict') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
   if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
 })();
+// 뒤로·앞으로 가기: 주소의 #해시에 맞는 화면으로 옮긴다(새 기록은 만들지 않는다). 해시가 비면 홈 화면이다.
+window.addEventListener('popstate', function () {
+  const h = (location.hash || '').replace('#', '');
+  if (/^doc\//.test(h)) return;   // 서류 편집기는 자체 주소 규칙(#doc/번호)을 쓴다
+  const name = h === '' ? 'home' : h === 'guide-prog' ? 'gprog' : (h === 'mail' || h === 'docs') ? 'mail' : h;
+  window._navPop = true;
+  try {
+    if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
+    else if (document.getElementById('tab-' + name) && document.getElementById('tab-btn-' + (name === 'gprog' ? 'guidenav' : name))) _switchTab(name);
+    else if (['home', 'compose', 'letter', 'verdict'].indexOf(name) >= 0) _switchTab(name);
+  } catch (e) {}
+  window._navPop = false;
+});
+setTimeout(function () { window._navReady = true; }, 0);
 window.addEventListener('hashchange', function () {
   const h = (location.hash || '').replace('#', '');
   if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
