@@ -301,7 +301,6 @@ function render() {
   var root = $('tx-root'), tp = $('tx-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
   tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 세무 회계' })])])]));
   viewMain().forEach(function (k) { if (k) root.appendChild(k); });
-  root.appendChild(h('div', { class:'rowf', style:'margin-top:24px' }, [btn('세무 회계 SP에게 물어보기', '', function () { emit('ask', '시장에서 받은 거래 전표를 세무 회계에서 처리할 때 무엇을 확인하면 좋을지 알려 줘'); })]));
 }
 function nav(a) {
   var d = a && typeof a['do'] === 'string' ? a['do'] : '';
