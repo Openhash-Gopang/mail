@@ -74,6 +74,8 @@ function mutualAuth(b, s) {
 }
 function bodyKey(kind, b) {
   b = b || {};
+  if (kind === 'advance') return JSON.stringify(['advance', clean(b.acct, 20), Number(b.amt), clean(b.lid, 30), Number(b.est), clean(b.d, 10), b.fpub && b.fpub.x, b.fsig, b.upub && b.upub.x, b.usig]);
+  if (kind === 'settle') return JSON.stringify(['settle', clean(b.acct, 20), Number(b.amt), clean(b.lid, 30), Number(b.price), Number(b.adv), Number(b.interest), clean(b.d, 10), b.fpub && b.fpub.x, b.fsig]);
   if (kind === 'deposit') return JSON.stringify([clean(b.acct, 20), Number(b.amt)]);
   return JSON.stringify([canonTerms(b.terms), b.bpub && b.bpub.x, b.bpub && b.bpub.y, b.spub && b.spub.x, b.spub && b.spub.y, b.bsig, b.ssig]);
 }
@@ -89,7 +91,7 @@ function verifyLedger(blocks) {
   function step() {
     if (i >= blocks.length) return Promise.resolve({ ok:true, bad:-1, why:'', bal:bal, n:blocks.length });
     var b = blocks[i], k = i;
-    if (!b || typeof b !== 'object' || b.i !== k || (b.kind !== 'deposit' && b.kind !== 'trade') || !b.body || typeof b.body !== 'object') return Promise.resolve(fail(k, '블록 형식이 맞지 않아요.'));
+    if (!b || typeof b !== 'object' || b.i !== k || (b.kind !== 'deposit' && b.kind !== 'trade' && b.kind !== 'advance' && b.kind !== 'settle') || !b.body || typeof b.body !== 'object') return Promise.resolve(fail(k, '블록 형식이 맞지 않아요.'));
     if (b.prev !== prev) return Promise.resolve(fail(k, '앞 블록과의 이음이 끊어졌어요.'));
     return hashOf(b.prev, b.i, b.kind, b.t, b.body).then(function (hh) {
       if (hh !== b.hash) return fail(k, '내용이 기록 당시와 달라요(해시가 맞지 않아요).');
@@ -97,6 +99,22 @@ function verifyLedger(blocks) {
         var a = Number(b.body.amt), ac = clean(b.body.acct, 20);
         if (!ac || !(a >= 1 && a <= 1e13) || Math.floor(a) !== a) return fail(k, '입금 기록이 올바르지 않아요.');
         bal[ac] = (bal[ac] || 0) + a; prev = b.hash; i++; return step();
+      }
+      if (b.kind === 'advance') {   // 선지급: 금융 인프라가 지급하고 사용자가 받기로 서명했는지
+        var bd = b.body, av = Number(bd.amt), ae = Number(bd.est), at = advText(bd);
+        if (!(av >= 1 && Math.floor(av) === av && ae >= av) || clean(bd.acct, 20) !== '나' || !clean(bd.lid, 30)) return fail(k, '선지급 기록이 올바르지 않아요.');
+        return Promise.all([verifySig(bd.fpub, bd.fsig, at), verifySig(bd.upub, bd.usig, at)]).then(function (v) {
+          if (!v[0] || !v[1]) return fail(k, '선지급 서명이 맞지 않아요.');
+          bal['나'] = (bal['나'] || 0) + av; bal['금융 인프라 AI'] = (bal['금융 인프라 AI'] || 0) - av; prev = b.hash; i++; return step();
+        });
+      }
+      if (b.kind === 'settle') {   // 정산: 판매가 − 선지급 − 이자(0 밑으로는 내려가지 않음)
+        var sd = b.body, pr = Number(sd.price), ad = Number(sd.adv), it = Number(sd.interest), pay = Number(sd.amt);
+        if (!(pr >= 1 && ad >= 0 && it >= 0 && pay >= 0) || pay !== Math.max(0, pr - ad - it) || clean(sd.acct, 20) !== '나' || !clean(sd.lid, 30)) return fail(k, '정산 기록이 올바르지 않아요.');
+        return verifySig(sd.fpub, sd.fsig, settleText(sd)).then(function (ok) {
+          if (!ok) return fail(k, '정산 서명이 맞지 않아요.');
+          bal['나'] = (bal['나'] || 0) + pay; bal['금융 인프라 AI'] = (bal['금융 인프라 AI'] || 0) - pay; prev = b.hash; i++; return step();
+        });
       }
       var t = b.body.terms, sl = parseSlip(t); if (!sl) return fail(k, '거래 내용이 올바르지 않아요.');
       return mutualAuth({ terms:t, pub:b.body.bpub, sig:b.body.bsig }, { terms:t, pub:b.body.spub, sig:b.body.ssig }).then(function (m) {
@@ -107,6 +125,38 @@ function verifyLedger(blocks) {
     });
   }
   return step();
+}
+function advText(b) { return JSON.stringify(['advance', clean(b.lid, 30), Number(b.est), Number(b.amt), clean(b.d, 10)]); }
+function settleText(b) { return JSON.stringify(['settle', clean(b.lid, 30), Number(b.price), Number(b.adv), Number(b.interest), Number(b.amt), clean(b.d, 10)]); }
+/** 선지급: 나비웹 금융 인프라가 서명해 지급하고, 사용자가 받기로 서명한다. 같은 판매 상품에는 한 번만. */
+function appendAdvance(chain, o) {
+  var amt = snum(o.amt), est = snum(o.est), lid = clean(o.lid, 30);
+  if (!lid || !(amt >= 1) || !(est >= amt)) return Promise.resolve({ ok:false, code:'bad', msg:'선지급 금액이 올바르지 않아요.' });
+  if (chain.length >= MAXB) return Promise.resolve({ ok:false, code:'full', msg:'장부는 최대 ' + MAXB + '개 블록까지예요.' });
+  if (chain.some(function (x) { return x && x.kind === 'advance' && x.body && x.body.lid === lid; })) return Promise.resolve({ ok:false, code:'replay', msg:'이 판매 상품은 이미 선지급을 받았어요.' });
+  return verifyLedger(chain).then(function (r) {
+    if (!r.ok) return { ok:false, code:'broken', msg:'장부에 이상이 있어 기록할 수 없어요(' + r.bad + '번 블록).' };
+    var body = { acct:'나', amt:amt, lid:lid, est:est, d:clean(o.d, 10) || kst() }, text = advText(body);
+    return Promise.all([ensureKey('f'), ensureKey('b')]).then(function (ks) {
+      return Promise.all([signText(ks[0].priv, text), signText(ks[1].priv, text)]).then(function (sg) {
+        body.fpub = ks[0].pub; body.fsig = sg[0]; body.upub = ks[1].pub; body.usig = sg[1];
+        return mkBlock(chain, 'advance', body).then(function (blk) { return { ok:true, block:blk }; });
+      });
+    });
+  });
+}
+function appendSettle(chain, o) {
+  var price = snum(o.price), adv = Number(o.adv) || 0, it = Number(o.interest) || 0, lid = clean(o.lid, 30), pay = Math.max(0, price - adv - it);
+  if (!lid || !(price >= 1)) return Promise.resolve({ ok:false, code:'bad', msg:'판매 금액을 1원 이상으로 넣어 주세요.' });
+  if (chain.length >= MAXB) return Promise.resolve({ ok:false, code:'full', msg:'장부는 최대 ' + MAXB + '개 블록까지예요.' });
+  if (chain.some(function (x) { return x && x.kind === 'settle' && x.body && x.body.lid === lid; })) return Promise.resolve({ ok:false, code:'replay', msg:'이미 정산한 판매 상품이에요.' });
+  return verifyLedger(chain).then(function (r) {
+    if (!r.ok) return { ok:false, code:'broken', msg:'장부에 이상이 있어 기록할 수 없어요(' + r.bad + '번 블록).' };
+    var body = { acct:'나', amt:pay, lid:lid, price:price, adv:adv, interest:it, d:clean(o.d, 10) || kst() };
+    return ensureKey('f').then(function (fk) {
+      return signText(fk.priv, settleText(body)).then(function (sg) { body.fpub = fk.pub; body.fsig = sg; return mkBlock(chain, 'settle', body).then(function (blk) { return { ok:true, block:blk, payout:pay, shortfall:Math.max(0, adv + it - price) }; }); });
+    });
+  });
 }
 function appendDeposit(chain, acct, amt) {
   var ac = clean(acct, 20), a = snum(amt);
@@ -139,11 +189,13 @@ function appendTrade(chain, b, s) {
 function gdc(n) { return won(n) + ' GDC'; }
 function blockLine(b) {
   try {
+    if (b.kind === 'advance') return '선지급 · 금융 인프라 → 나 +' + gdc(b.body.amt) + ' · ' + clean(b.body.lid, 30);
+    if (b.kind === 'settle') return '판매 정산 · ' + clean(b.body.lid, 30) + ' · 판매가 ' + gdc(b.body.price) + ' − 선지급 ' + gdc(b.body.adv) + ' − 이자 ' + gdc(b.body.interest) + ' = +' + gdc(b.body.amt);
     if (b.kind === 'deposit') return '입금(체험) · ' + clean(b.body.acct, 20) + ' +' + gdc(b.body.amt);
     var t = b.body.terms; return clean(t.buyer, 20) + ' → ' + clean(t.seller, 20) + ' · ' + clean(t.item, 40) + ' × ' + won(t.qty) + ' · ' + gdc(Number(t.qty) * Number(t.price));
   } catch (e) { return '(읽을 수 없는 블록)'; }
 }
-var KEYS = { b:null, s:null };
+var KEYS = { b:null, s:null, f:null };
 function ensureKey(k) { if (!KEYS[k]) KEYS[k] = newKeys().then(function (kk) { return fingerprint(kk.pub).then(function (fp) { kk.fp = fp; return kk; }); }); return KEYS[k]; }
 
 // ── 구매 검토 한 페이지 (주피터 지시 2026-11-24) ──
@@ -204,22 +256,40 @@ F.report = function (p) {
   var verdict = warn ? 'caution' : hold ? 'hold' : 'ok';
   return { lines:L, verdict:verdict, title:verdict === 'ok' ? '가격이 공정하고 만족도가 충분해요' : verdict === 'caution' ? '확인이 필요한 점이 있어요(' + warn + '건)' : '근거가 부족한 항목이 있어요(' + hold + '건 보류)', median:med };
 };
+/** 판매 상품의 시장 가치 추정: 비슷한 상품 가격 3개 이상의 중앙값 × 상태 계수. 비교 가격이 모자라면 희망가 × 상태 계수(믿음이 낮음)로 하고, 그렇다고 알린다. */
+var CONDS = { '새 것':1, '거의 새 것':0.85, '사용감 있음':0.7, '수리 필요':0.45 };
+F.CONDS = CONDS;
+F.value = function (o) {
+  var ask = Number(o.ask), comps = (o.comps || []).map(Number).filter(function (x) { return x > 0; }), fac = o.kind === '서비스' ? 1 : (CONDS[o.cond] || 0.7), base, conf, basis, s, n;
+  if (comps.length >= 3) { s = comps.slice().sort(function (a, b) { return a - b; }); n = s.length; base = n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; conf = 'mid'; basis = '비슷한 상품 ' + n + '개의 가격 중앙값 ' + won(Math.round(base)) + '원' + (fac !== 1 ? ' × 상태 계수 ' + fac : ''); }
+  else { base = ask; conf = 'low'; basis = '비교할 가격이 3개 미만(' + comps.length + '개)이라 내가 적은 희망가 ' + won(ask) + '원' + (fac !== 1 ? ' × 상태 계수 ' + fac : '') + '로 어림했어요(믿음이 낮아요)'; }
+  var est = Math.max(1, Math.round(base * fac / 100) * 100 || Math.round(base * fac)), sp = conf === 'mid' ? 0.1 : 0.2;
+  return { est:est, low:Math.round(est * (1 - sp)), high:Math.round(est * (1 + sp)), conf:conf, basis:basis, rate:conf === 'mid' ? 0.30 : 0.25, adv:Math.round(est * (conf === 'mid' ? 0.30 : 0.25) / 100) * 100 };
+};
+var APR = 0.08;   // 체험용 연 이자율
+F.interest = function (adv, days) { return Math.round(Number(adv) * APR * Math.max(1, Math.round(Number(days) || 1)) / 365); };
+F.days = function (d1, d2) { var a = Date.parse(d1), b = Date.parse(d2); return isFinite(a) && isFinite(b) ? Math.max(1, Math.round((b - a) / 86400000)) : 1; };
+F.settle = function (price, adv, days) { var it = F.interest(adv, days), pay = Math.max(0, Number(price) - Number(adv) - it); return { interest:it, payout:pay, shortfall:Math.max(0, Number(adv) + it - Number(price)) }; };
+F.intent = function (it, price) {
+  return '안녕하세요. 나비웹을 통해 판매 의사를 전해 드립니다.\n판매 품목: ' + it.name + '(' + it.kind + (it.kind === '물품' ? ', ' + it.cond : '') + ', ' + it.qty + '개)\n희망 가격: ' + won(price) + '원\n' + (it.desc ? '설명: ' + it.desc + '\n' : '') + '관심이 있으시면 이 문의 창으로 답해 주세요. 거래는 나비웹 시장에서 구매자·판매자가 같은 내용에 서명하는 방식으로 진행할 수 있습니다.';
+};
 F.snum = snum; F.norm = norm;
 
 // ── 저장(이 브라우저, 체험용) ──
 var KEY = 'navi-market-v2', MAXP = 200;
 var M = null, LS = {};
 var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
-  auto:false, find:{ q:'', site:'coupang', st:'idle', msg:'' }, cands:[], nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
+  mode:'buy', sell:null, listings:[], auto:false, find:{ q:'', site:'coupang', st:'idle', msg:'' }, cands:[], nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
     S.history = (Array.isArray(v.history) ? v.history : []).map(function (p) { return p && clean(p.name, 60) && Number(p.price) > 0 ? { name:clean(p.name, 60), price:Math.round(Number(p.price)), d:/^\d{4}-\d{2}-\d{2}$/.test(p.d) ? p.d : '', seller:clean(p.seller, 30) } : null; }).filter(Boolean).slice(0, MAXP);
     S.memo = clean(v.memo, 600); S.fin = (Array.isArray(v.fin) ? v.fin : []).filter(function (x) { return x && Number(x.amt) > 0; }).slice(0, MAXP);
     S.ledger = (Array.isArray(v.ledger) ? v.ledger : []).slice(0, MAXB);
+    S.listings = (Array.isArray(v.listings) ? v.listings : []).map(function (x) { return x && clean(x.id, 30) && clean(x.name, 60) && Number(x.est) > 0 ? { id:clean(x.id, 30), name:clean(x.name, 60), kind:x.kind === '서비스' ? '서비스' : '물품', cond:clean(x.cond, 12), qty:Math.max(1, Math.round(Number(x.qty) || 1)), ask:Math.round(Number(x.ask) || 0), est:Math.round(Number(x.est)), d:/^\d{4}-\d{2}-\d{2}$/.test(x.d) ? x.d : '', status:['등록', '의향서 전송', '선판매', '판매 완료'].indexOf(x.status) >= 0 ? x.status : '등록', advance:Math.round(Number(x.advance) || 0), advD:/^\d{4}-\d{2}-\d{2}$/.test(x.advD) ? x.advD : '', sold:Math.round(Number(x.sold) || 0), payout:Math.round(Number(x.payout) || 0) } : null; }).filter(Boolean).slice(0, MAXP);
   } catch (e) { /* 저장값이 깨졌으면 비운 채 시작 */ }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ history:S.history, memo:S.memo, fin:S.fin, ledger:S.ledger })); } catch (e) { /* 저장 불가여도 화면은 쓴다 */ } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ listings:S.listings, history:S.history, memo:S.memo, fin:S.fin, ledger:S.ledger })); } catch (e) { /* 저장 불가여도 화면은 쓴다 */ } }
 function emit(t, p) { (LS[t] || []).slice().forEach(function (f) { try { f(p); } catch (e) { /* 듣는 쪽 오류는 무시 */ } }); }
 function btn(t, c, fn, id) { return h('button', { type:'button', class:'btn ' + (c || ''), text:t, onclick:fn, id:id }); }
 function note(t, bad, id) { return h('div', { class:bad ? 'note' : 'note info', role:bad ? 'alert' : 'status', id:id, text:t }); }
@@ -261,28 +331,35 @@ function wireAgent() {
   NaviAgent.onData(function (m) {
     if (!M) return;
     if (m.label === SLOT_FIND) { takeCands(m.data); render(); return; }
+    if (m.label === SLOT_COMP) { if (S.sell && S.sell.step === 1) takeComps(m.data); return; }
+    if (m.label === SLOT_BUYERS) { if (S.sell && S.sell.step >= 3 && S.sell.step <= 4) takeBuyers(m.data); return; }
     if (m.label !== SLOT) return; takeProduct(m.data);
     var ready = S.step === 0 && S.auto && clean(S.prod.name, 80) && snum(S.prod.price) >= 1, core = m.data && m.data.stage === 'core';
     if (ready && core) { clearTimeout(coreT); coreT = setTimeout(function () { if (M && S.step === 0 && S.auto) { S.auto = false; startReview(); } }, coreWait()); render(); }   // 이름·가격이 먼저 오면 보여 주고 나머지를 기다린다(오래 안 오면 있는 값으로 시작)
     else if (ready) { clearTimeout(coreT); S.auto = false; startReview(); } else render();
   });   // 도우미가 이름·가격을 읽어 오면 "검토 시작"을 자동으로 누른다
+  if (NaviAgent.onStatus) NaviAgent.onStatus(function (m) {   // 의향서 전송 결과(도우미가 report_status 로 알림)
+    if (!M || !S.sell || m.label !== SLOT_INTENT) return;
+    S.sell.sendSt = m.state === 'sent' ? 'sent' : m.state === 'failed' ? 'failed' : 'wait'; S.sell.sendMsg = (m.state === 'sent' ? '판매 의향서를 보냈어요. ' : m.state === 'failed' ? '판매 의향서를 보내지 못했어요. ' : '판매 의향서를 보내는 중이에요. ') + (m.note || '');
+    var L = curListing(); if (L && m.state === 'sent' && L.status === '등록') { L.status = '의향서 전송'; save(); } render();
+  });
 }
 var MINVER = '0.6.41';   // 상품 주소 전달(url)과 읽은 값 보내기(report_data)가 들어간 확장 버전. 이보다 낮으면 빈 페이지만 열리고 값이 오지 않는다.
-function verOk(v) {
-  var a = String(v || '').split('.').map(Number), b = MINVER.split('.').map(Number), i;
+function verOk(v, min) {
+  var a = String(v || '').split('.').map(Number), b = String(min || MINVER).split('.').map(Number), i;
   if (a.length < 2 || a.some(function (x) { return !isFinite(x); })) return false;
   for (i = 0; i < b.length; i++) { var x = a[i] || 0; if (x !== b[i]) return x > b[i]; }
   return true;
 }
 // 도우미에게 일을 맡기는 공통 절차: 연결 확인(세 번까지) → 버전 확인 → 맡기기. 실패하면 setSt('none', 이유)로 알리고 fail()을 부른다.
-function agentJob(job, what, setSt, fail) {
+function agentJob(job, what, setSt, fail, min) {
   function bad(msg) { setSt('none', msg); if (fail) fail(); else render(); return null; }
   if (!window.NaviAgent || !NaviAgent.queue) { bad('나비웹 도우미를 쓸 수 없는 화면이에요. 아래 칸에 직접 넣어도 돼요.'); return; }
   wireAgent(); S.err = '';
   function probe(n) { return NaviAgent.detect().then(function (info) { return info || (n > 1 ? new Promise(function (r) { setTimeout(r, 700); }).then(function () { return probe(n - 1); }) : null); }); }   // 확장 서비스 워커가 깨어나는 동안 첫 응답이 늦을 수 있어 세 번까지 묻는다
   probe(3).then(function (info) {
     if (!info) { var mark = NaviAgent.installedMark ? NaviAgent.installedMark() : ''; return bad(mark ? '나비웹 도우미가 설치되어 있지만 이 화면과 연결되지 않았어요. 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' : '나비웹 도우미가 설치되어 있지 않거나 이 화면에 연결되지 않았어요. 방금 설치했다면 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.'); }
-    if (!verOk(info.version)) return bad('나비웹 도우미가 오래된 버전(' + (info.version || '알 수 없음') + ')이에요. ' + what + '는 ' + MINVER + ' 이상이 필요해요. 크롬 주소창에 chrome://extensions 를 열어 나비웹 도우미를 업데이트한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.');
+    if (!verOk(info.version, min)) return bad('나비웹 도우미가 오래된 버전(' + (info.version || '알 수 없음') + ')이에요. ' + what + '는 ' + (min || MINVER) + ' 이상이 필요해요. 크롬 주소창에 chrome://extensions 를 열어 나비웹 도우미를 업데이트한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.');
     return NaviAgent.queue(job).then(function (ok) { if (!ok || ok.ok === false) bad('도우미에게 맡기지 못했어요. 아래 칸에 직접 넣어도 돼요.'); });
   });
 }
@@ -702,7 +779,8 @@ function viewDone() {
 
 function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
-  tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), findBar(), steps()]));
+  if (S.mode === 'sell') { renderSell(tp, root); var m2 = modal(); if (m2) root.appendChild(m2); return; }
+  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), findBar(), steps()]));
   if (S.step >= 1 && S.step !== 8) root.appendChild(progCard(false));
   var v = [viewStart, viewDup, viewNeed, viewNeed, viewTrust, viewAs, viewCompare, viewDeal, viewFinal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });
@@ -714,6 +792,223 @@ function nav(a) {
   if (d === 'reset' || d === 'start') { reset(); return emit('result', { ok:true, msg:'새 구매 검토를 시작합니다.', view:'buy' }); }
   emit('result', { ok:false, msg:'지원하지 않는 요청입니다.', view:'buy' });
 }
+// ── 판매 탭 (주피터 지시 2026-11-24) ──
+// 사용자가 가진 물품·서비스의 상세를 넣으면 → 나비웹이 시장 가치를 추정하고 → 나비웹 시장에 등록하고 → 도우미가 구매자를 물색해 → (사용자가 확인하면) 판매 의향서를 보낸다.
+// 선판매: 추정 금액의 30% 안팎(비교 가격이 모자라면 25%)을 나비웹 금융 인프라가 먼저 지급하고, 나머지는 판매된 뒤 정산한다(이자를 뺀 금액을 지급).
+// 연결 전(체험용): 나비웹 시장 등록은 이 브라우저에만 저장, 금융 인프라 지급·이자(연 8%)·정산은 이 화면이 장부에 흉내, 구매자 응답과 실제 판매는 사용자가 "판매 완료 처리"로 알려 준다.
+var SELL_STEPS = ['상품 입력', '시장 가치 추정', '시장 등록', '구매자 물색', '판매 의향서', '선판매', '판매·정산'];
+var SLOT_COMP = '시장 판매 시세', SLOT_BUYERS = '시장 구매자 물색', SLOT_INTENT = '시장 판매 의향서';
+function newSell(item) { return { step:0, item:item || { name:'', kind:'물품', cond:'거의 새 것', qty:'1', ask:'', desc:'' }, comps:[], compSt:'idle', compMsg:'', val:null, lid:'', buyers:[], buySt:'idle', buyMsg:'', intent:'', sendSt:'idle', sendMsg:'', adv:null, sold:null, err:'' }; }
+function sellReset(item) { S.tok++; S.ask = null; clearTimeout(sellT.c); clearTimeout(sellT.b); S.sell = newSell(item); render(); }
+var sellT = { c:0, b:0 };
+function sgo(n) { S.tok++; S.sell.step = n; S.sell.err = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
+function hasAgent() { return !!(window.NaviAgent && NaviAgent.queue); }
+function curListing() { var id = S.sell && S.sell.lid; return S.listings.filter(function (x) { return x.id === id; })[0] || null; }
+function sellStart() {
+  var it = S.sell.item, ask = snum(it.ask), qty = snum(it.qty);
+  if (clean(it.name, 60).length < 2) { S.sell.err = '판매할 상품(또는 서비스) 이름을 두 글자 이상 적어 주세요.'; return render(); }
+  if (!(ask >= 1 && ask <= 1e9)) { S.sell.err = '희망 가격을 1원 이상 숫자로 넣어 주세요.'; return render(); }
+  if (!(qty >= 1 && qty <= 1000)) { S.sell.err = '수량은 1~1000 사이로 넣어 주세요.'; return render(); }
+  toValue();
+}
+// 2단계: 시장 가치 추정 — 도우미가 비슷한 상품의 현재 가격을 찾아 오면 그 중앙값으로, 못 찾으면 희망가로 어림한다.
+function toValue() {
+  var it = S.sell.item; S.sell.comps = []; S.sell.val = null; sgo(1);
+  if (!hasAgent()) { S.sell.compSt = 'none'; S.sell.compMsg = '나비웹 도우미를 쓸 수 없는 화면이라 내가 적은 희망가로 어림해요.'; render(); later(finishValue); return; }
+  S.sell.compSt = 'wait'; S.sell.compMsg = '도우미가 비슷한 상품의 현재 가격을 찾는 중이에요. 쇼핑 사이트가 열리면 로그인이 필요할 때만 직접 해 주세요.'; render();
+  var url = SITES.naver[1] + encodeURIComponent(clean(it.name, 60));
+  agentJob({ goal:goalComps(it, url), url:url, slot:SLOT_COMP, title:'시세 확인' }, '시세 확인', function (st, msg) { S.sell.compSt = st; S.sell.compMsg = msg; }, function () { finishValue(); });
+  clearTimeout(sellT.c); sellT.c = setTimeout(function () { if (M && S.sell && S.sell.step === 1 && !S.sell.val) { S.sell.compSt = 'none'; S.sell.compMsg = '시세를 제때 받지 못해 희망가로 어림해요.'; finishValue(); } }, 90000);
+}
+function goalComps(it, url) {
+  return '사용자가 판매하려는 「' + clean(it.name, 60) + '」(' + it.kind + (it.kind === '물품' ? ', 상태: ' + it.cond : '') + ')과 비슷한 ' + (it.kind === '물품' ? '상품' : '서비스') + '의 현재 판매 가격을 이 쇼핑 사이트(' + url + ')에서 찾아 주세요. 로그인이 필요하면 사용자가 로그인하도록 넘기고, 로그인하면 이어서 진행해 주세요. ' +
+    (it.kind === '물품' && it.cond !== '새 것' ? '가능하면 중고 가격도 함께 봐 주세요. ' : '') + '서로 다른 판매자의 비슷한 것 3~5개의 name·price(원, 숫자)·link(https)·seller를 report_data(kind: product, data: { stage: "candidates", candidates: [ { name, price, link, seller } ] })로 한 번에 보내 주세요. 찾지 못한 값은 비우고 지어내지 마세요. 구매·장바구니·결제는 하지 마세요.';
+}
+function takeComps(d) {
+  var a = d && Array.isArray(d.candidates) ? d.candidates : [];
+  S.sell.comps = a.slice(0, 8).map(function (c) { return Math.round(Number(c && c.price)); }).filter(function (x) { return x >= 1 && x <= 1e9; });
+  S.sell.compSt = S.sell.comps.length ? 'done' : 'none'; S.sell.compMsg = S.sell.comps.length ? '도우미가 비슷한 ' + (S.sell.item.kind === '물품' ? '상품' : '서비스') + ' ' + S.sell.comps.length + '개의 가격을 찾아 왔어요.' : '도우미가 비슷한 상품의 가격을 찾지 못했어요. 희망가로 어림해요.';
+  clearTimeout(sellT.c); finishValue();
+}
+function finishValue() {
+  if (!M || !S.sell || S.sell.step !== 1 || S.sell.val) return;
+  var it = S.sell.item; S.sell.val = F.value({ ask:snum(it.ask), cond:it.cond, kind:it.kind, comps:S.sell.comps }); render();
+  later(function () {
+    var v = S.sell.val;
+    openAsk('시장 가치 추정 — ' + won(v.est) + '원', v.basis + '\n예상 범위 ' + won(v.low) + ' ~ ' + won(v.high) + '원. 이 값으로 나비웹 시장에 등록할까요?',
+      [{ t:'계속 진행', c:'fill', id:'mk-sv-ok', fn:function () { listIt(); } }, { t:'희망가·상태 고치기', id:'mk-sv-edit', fn:function () { sellReset(S.sell.item); } }, { t:'그만두기', fn:function () { sellReset(); } }]);
+  });
+}
+// 3단계: 나비웹 시장 등록(체험용: 이 브라우저에 저장)
+function listIt() {
+  var it = S.sell.item, v = S.sell.val, L = { id:'L-' + kst().replace(/-/g, '') + '-' + String(1000 + S.listings.length + 1).slice(1), name:clean(it.name, 60), kind:it.kind, cond:it.kind === '물품' ? it.cond : '', qty:snum(it.qty), ask:snum(it.ask), est:v.est, d:kst(), status:'등록', advance:0, advD:'', sold:0, payout:0 };
+  S.listings.unshift(L); S.listings = S.listings.slice(0, MAXP); S.sell.lid = L.id; save(); sgo(2); later(toBuyers);
+}
+// 4단계: 구매자 물색(도우미)
+function goalBuyers(it) {
+  return '「' + clean(it.name, 60) + '」(' + it.kind + ')을 사 줄 구매자 후보를 찾아 주세요(이 ' + (it.kind === '물품' ? '물건' : '서비스') + '을 찾는 구매 글, 매입 업체, 관련 구매 커뮤니티 등). 로그인이 필요하면 사용자가 하도록 넘기세요. 후보 3~5곳의 name(업체·계정 이름)·site(사이트 이름)·link(문의·메시지 페이지 주소, https)·reason(후보로 고른 이유, 짧게)을 ' +
+    'report_data(kind: product, data: { stage: "buyers", buyers: [ { name, site, link, reason } ] })로 한 번에 보내 주세요. 개인 연락처(전화번호·이메일)는 읽지 말고 문의 페이지 링크만 주세요. 지금은 메시지를 보내지 마세요. 구매·결제는 하지 마세요.';
+}
+function takeBuyers(d) {
+  var a = d && Array.isArray(d.buyers) ? d.buyers : [];
+  S.sell.buyers = a.slice(0, 5).map(function (b) { b = b && typeof b === 'object' ? b : {}; var nm = clean(b.name, 60), lk = safeLink(b.link); return nm && lk ? { name:nm, site:clean(b.site, 30), link:lk, reason:clean(b.reason, 100) } : null; }).filter(Boolean);
+  S.sell.buySt = S.sell.buyers.length ? 'done' : 'none'; S.sell.buyMsg = S.sell.buyers.length ? '도우미가 구매자 후보 ' + S.sell.buyers.length + '곳을 찾아 왔어요.' : '도우미가 구매자 후보를 찾지 못했어요. 시장 등록만 유지돼요.';
+  clearTimeout(sellT.b); if (S.sell.step === 3) later(sToIntent); else render();
+}
+function toBuyers() {
+  var it = S.sell.item; sgo(3);
+  if (!hasAgent()) { S.sell.buySt = 'none'; S.sell.buyMsg = '나비웹 도우미를 쓸 수 없는 화면이라 구매자를 물색하지 못해요. 시장 등록만 유지돼요.'; render(); later(sToIntent); return; }
+  S.sell.buySt = 'wait'; S.sell.buyMsg = '도우미가 구매자 후보를 찾는 중이에요. 로그인이 필요할 때만 직접 해 주세요.'; render();
+  var url = 'https://search.naver.com/search.naver?query=' + encodeURIComponent(clean(it.name, 60) + (it.kind === '물품' ? ' 매입' : ' 구매 문의'));
+  agentJob({ goal:goalBuyers(it), url:url, slot:SLOT_BUYERS, title:'구매자 물색' }, '구매자 물색', function (st, msg) { S.sell.buySt = st; S.sell.buyMsg = msg; }, function () { later(sToIntent); }, '0.6.43');
+  clearTimeout(sellT.b); sellT.b = setTimeout(function () { if (M && S.sell && S.sell.step === 3 && S.sell.buySt === 'wait') { S.sell.buySt = 'none'; S.sell.buyMsg = '구매자 후보를 제때 받지 못했어요. 시장 등록만 유지돼요.'; sToIntent(); } }, 120000);
+}
+// 5단계: 판매 의향서 — 보내기 전에 사용자가 문안과 받는 곳을 확인한다.
+function sToIntent() {
+  if (!M || !S.sell || S.sell.step > 4) return; var L = curListing(); S.sell.intent = F.intent(S.sell.item, snum(S.sell.item.ask)); sgo(4);
+  later(function () {
+    var b = S.sell.buyers;
+    if (!b.length) { toAdv(); return; }
+    openAsk('판매 의향서를 보낼까요?', '받는 곳 ' + b.length + '곳: ' + b.map(function (x) { return x.name; }).join(', ') + '\n\n' + S.sell.intent,
+      [{ t:'보내기', c:'fill', id:'mk-send', fn:function () { sendIntent(); toAdv(); } }, { t:'보내지 않기', id:'mk-nosend', fn:function () { toAdv(); } }]);
+  });
+  void L;
+}
+function sendIntent() {
+  var b = S.sell.buyers; if (!b.length || !hasAgent()) return; S.sell.sendSt = 'wait'; S.sell.sendMsg = '도우미가 판매 의향서를 ' + b.length + '곳에 보내는 중이에요. 로그인·본인 확인이 필요하면 직접 해 주세요.';
+  var goal = '아래 판매 의향서를 각 구매자 후보의 문의·메시지 페이지로 보내 주세요. 로그인이나 본인 확인이 필요하면 사용자에게 넘기고, 문안은 한 글자도 바꾸지 마세요. 계좌·카드 정보는 보내지 마세요.\n\n[판매 의향서]\n' + S.sell.intent + '\n\n[받는 곳]\n' +
+    b.map(function (x, i) { return (i + 1) + ') ' + x.name + ' — ' + x.link; }).join('\n') + '\n\n마치면 report_status(state: sent 또는 failed, note: 보낸 곳 수와 실패한 곳)로 알려 주세요.';
+  agentJob({ goal:goal, url:b[0].link, slot:SLOT_INTENT, title:'판매 의향서 전송' }, '의향서 전송', function (st, msg) { S.sell.sendSt = st === 'none' ? 'failed' : st; S.sell.sendMsg = msg; });
+}
+// 6단계: 선판매 — 추정 금액의 30% 안팎을 금융 인프라가 먼저 지급
+function toAdv() {
+  if (!M || !S.sell || S.sell.step > 5 || S.sell.step === 5) return; sgo(5);
+  later(function () {
+    var v = S.sell.val;
+    openAsk('선판매 — ' + won(v.adv) + '원을 지금 받으시겠어요?', '추정 금액 ' + won(v.est) + '원의 약 ' + Math.round(v.rate * 100) + '%를 나비웹 금융 인프라가 지금 지급해요. 나머지는 판매된 뒤 정산하며, 정산할 때 이자(연 ' + Math.round(APR * 100) + '%, 체험용)를 뺀 금액을 받아요.',
+      [{ t:'선지급 받기', c:'fill', id:'mk-adv-yes', fn:function () { doAdvance(); } }, { t:'나중에', id:'mk-adv-no', fn:function () { toSold(); } }]);
+  });
+}
+function doAdvance() {
+  var v = S.sell.val, L = curListing(); if (!L) return;
+  if (!subtle()) { S.sell.err = '이 브라우저에서는 서명·해시 기능(보안 연결 필요)을 쓸 수 없어 선지급을 체험할 수 없어요.'; render(); return; }
+  appendAdvance(S.ledger, { lid:L.id, est:L.est, amt:v.adv, d:kst() }).then(function (r) {
+    if (!r.ok) { S.sell.err = r.msg; render(); return; }
+    S.ledger.push(r.block); L.advance = v.adv; L.advD = kst(); L.status = '선판매'; S.sell.adv = { amt:v.adv, n:S.ledger.length }; save(); toSold();
+  }).catch(function () { S.sell.err = '선지급을 기록하지 못했어요.'; render(); });
+}
+function toSold() { var L = curListing(); if (L && L.status === '등록' && S.sell.sendSt === 'sent') { L.status = '의향서 전송'; save(); } sgo(6); }
+// 7단계: 판매·정산 — 실제 판매는 사용자가 알려 준다(체험용)
+function doSold(priceText) {
+  var L = curListing(), price = snum(priceText); if (!L || L.status === '판매 완료') return;
+  if (!(price >= 1 && price <= 1e9)) { S.sell.err = '판매된 금액을 1원 이상 숫자로 넣어 주세요.'; render(); return; }
+  if (!subtle()) { S.sell.err = '이 브라우저에서는 서명·해시 기능(보안 연결 필요)을 쓸 수 없어 정산을 체험할 수 없어요.'; render(); return; }
+  var days = L.advance ? F.days(L.advD, kst()) : 0, st = L.advance ? F.settle(price, L.advance, days) : { interest:0, payout:price, shortfall:0 };
+  appendSettle(S.ledger, { lid:L.id, price:price, adv:L.advance, interest:st.interest, d:kst() }).then(function (r) {
+    if (!r.ok) { S.sell.err = r.msg; render(); return; }
+    S.ledger.push(r.block); L.status = '판매 완료'; L.sold = price; L.payout = r.payout; save();
+    S.sell.sold = { price:price, adv:L.advance, days:days, interest:st.interest, payout:r.payout, shortfall:r.shortfall, n:S.ledger.length }; S.sell.err = ''; render();
+    verifyLedger(S.ledger).then(function (v) { if (M && S.sell && S.sell.sold) { S.sell.sold.left = v.ok ? (v.bal['나'] || 0) : null; render(); } });
+  }).catch(function () { S.sell.err = '정산을 기록하지 못했어요.'; render(); });
+}
+function openListing(id) { var L = S.listings.filter(function (x) { return x.id === id; })[0]; if (!L) return; var s = newSell({ name:L.name, kind:L.kind, cond:L.cond || '거의 새 것', qty:String(L.qty), ask:String(L.ask), desc:'' }); s.lid = L.id; s.val = { est:L.est, low:Math.round(L.est * 0.9), high:Math.round(L.est * 1.1), conf:'mid', basis:'등록할 때 추정한 값이에요', rate:0.3, adv:L.advance }; s.step = 6; if (L.status === '판매 완료') s.sold = { price:L.sold, adv:L.advance, days:L.advance ? F.days(L.advD, L.d) : 0, interest:Math.max(0, L.sold - L.advance - L.payout), payout:L.payout, shortfall:0, n:0, left:null }; S.tok++; S.ask = null; S.sell = s; render(); }
+
+// ── 판매 화면 ──
+function sellSteps() {
+  return h('ol', { class:'mk-steps', 'aria-label':'판매 진행 단계' }, SELL_STEPS.map(function (x, i) {
+    var st = S.sell.step;
+    return h('li', { class:i < st ? 'done' : i === st ? 'cur' : '', 'aria-current':i === st ? 'step' : null }, [h('i', { text:i < st ? '✓' : String(i + 1) }), h('span', { text:x })]);
+  }));
+}
+function agentProg(id, title, st, rows) {
+  if (st !== 'wait' && st !== 'done') return null;
+  return h('div', { class:'card', style:'margin-top:12px', id:id }, [h('b', { text:title }), h('ol', { class:'mk-prog' }, rows.map(function (x, i) {
+    var s = x[1](st); return h('li', { class:s }, [h('i', { text:s === 'done' ? '✓' : s === 'now' ? '●' : String(i + 1) }), h('div', { class:'col' }, [h('span', { text:x[0] + (s === 'now' ? ' — 진행 중' : '') })])]);
+  }))]);
+}
+function sellProgCard() {
+  var s = S.sell, L = curListing(), v = s.val, rows = [];
+  function row(k, i, t) { var st = i < s.step || (s.step === 6 && s.sold) ? 'done' : i === s.step ? 'now' : 'wait'; rows.push({ k:k, st:st, t:st === 'wait' ? '대기' : t }); }
+  row(SELL_STEPS[0], 0, clean(s.item.name, 40) + ' · ' + s.item.kind + (s.item.kind === '물품' ? '(' + s.item.cond + ')' : '') + ' · ' + s.item.qty + '개 · 희망가 ' + won(snum(s.item.ask)) + '원');
+  row(SELL_STEPS[1], 1, v ? '추정 ' + won(v.est) + '원(' + won(v.low) + '~' + won(v.high) + '원) — ' + v.basis : '추정하는 중…');
+  row(SELL_STEPS[2], 2, L ? '나비웹 시장에 등록했어요 · ' + L.id : '등록하는 중…');
+  row(SELL_STEPS[3], 3, s.buyers.length ? '구매자 후보 ' + s.buyers.length + '곳: ' + s.buyers.map(function (b) { return b.name; }).join(', ') : s.buySt === 'wait' ? '도우미가 찾는 중…' : '찾지 못했거나 도우미를 쓸 수 없었어요');
+  row(SELL_STEPS[4], 4, s.sendSt === 'sent' ? '판매 의향서를 보냈어요' : s.sendSt === 'wait' ? '도우미가 보내는 중…' : s.sendSt === 'failed' ? '보내지 못했어요: ' + s.sendMsg : s.buyers.length ? '보내지 않았어요' : '보낼 곳이 없었어요');
+  row(SELL_STEPS[5], 5, s.adv ? '선지급 ' + gdc(s.adv.amt) + ' 받음(장부 ' + s.adv.n + '번째 블록)' : '선지급을 받지 않았어요');
+  row(SELL_STEPS[6], 6, s.sold ? '판매 완료 · 정산 ' + gdc(s.sold.payout) : '구매자 응답을 기다리는 중');
+  return h('div', { class:'card', style:'margin-top:16px', id:'mk-sprog' }, [h('b', { text:'진행 기록' }), h('ol', { class:'mk-prog' }, rows.map(function (x, i) {
+    return h('li', { class:x.st, id:'mk-sprog-' + i }, [h('i', { text:x.st === 'done' ? '✓' : x.st === 'now' ? '●' : String(i + 1) }), h('div', { class:'col' }, [h('span', {}, [h('b', { text:x.k + ' ' }), h('span', { text:x.t })])])]);
+  }))]);
+}
+function sellForm() {
+  var s = S.sell, it = s.item, kids = [h('h2', { text:'내 물건·서비스 판매하기' }), h('p', { class:'lead', text:'파려는 것의 상세를 적으면 나비웹이 시장 가치를 추정하고, 나비웹 시장에 등록하고, 도우미가 구매자를 찾아 판매 의향서를 보내요. 원하면 추정 금액의 30% 안팎을 먼저 받는 선판매도 돼요.' })];
+  var sel = h('select', { id:'mk-s-kind', 'aria-label':'물품 또는 서비스' }, ['물품', '서비스'].map(function (k) { return h('option', { value:k, text:k, selected:k === it.kind ? '' : null }); }));
+  sel.onchange = function () { it.kind = sel.value; render(); };
+  var cs = h('select', { id:'mk-s-cond', 'aria-label':'상태' }, Object.keys(CONDS).map(function (k) { return h('option', { value:k, text:k, selected:k === it.cond ? '' : null }); }));
+  cs.onchange = function () { it.cond = cs.value; };
+  kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [inp('mk-s-name', '상품(서비스) 이름', it.name, function (v) { it.name = v; }, { ph:'예: 중고 노트북 · 사진 촬영 서비스', max:'60' }), h('div', { class:'field' }, [h('label', { for:'mk-s-kind', text:'종류' }), sel])]));
+  kids.push(h('div', { class:'g2' }, [inp('mk-s-ask', '희망 가격(원)', it.ask, function (v) { it.ask = v; }, { ph:'예: 450000', mode:'numeric', max:'12' }), inp('mk-s-qty', '수량', it.qty, function (v) { it.qty = v; }, { ph:'1', mode:'numeric', max:'4' })]));
+  if (it.kind === '물품') kids.push(h('div', { class:'field' }, [h('label', { for:'mk-s-cond', text:'상태' }), cs]));
+  kids.push(inp('mk-s-desc', '상세 설명(선택)', it.desc, function (v) { it.desc = v; }, { ph:'예: 2023년 구입, 배터리 90%, 충전기 포함', max:'200' }));
+  if (s.err) kids.push(note(s.err, true, 'mk-s-err'));
+  kids.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('판매 시작', 'fill', function () { sellStart(); }, 'mk-s-go')]));
+  return kids;
+}
+function sellItemCard() { var it = S.sell.item; return h('div', { class:'card', style:'margin-top:16px' }, [h('b', { text:clean(it.name, 60) }), h('div', { class:'sub', text:it.kind + (it.kind === '물품' ? ' · ' + it.cond : '') + ' · ' + it.qty + '개 · 희망가 ' + won(snum(it.ask)) + '원' + (it.desc ? ' · ' + it.desc : '') })]); }
+function sellView() {
+  var s = S.sell, v = s.val, L = curListing(), kids;
+  if (s.step === 0) return sellForm();
+  if (s.step === 1) {
+    kids = [h('h2', { text:'시장 가치를 추정해요' }), sellItemCard(), agentProg('mk-cprog', '도우미 진행(시세 확인)', s.compSt, [['도우미에게 맡김', function () { return 'done'; }], ['쇼핑 사이트 열기 · 비슷한 상품 가격 읽기', function (st) { return st === 'done' ? 'done' : 'now'; }]])];
+    if (s.compMsg) kids.push(note(s.compMsg, s.compSt === 'none', 'mk-comp-msg'));
+    if (v) kids.push(h('div', { class:'card', style:'margin-top:12px', id:'mk-val' }, [h('div', { class:'k', text:'추정 시장 가치' }), h('div', { class:'num', id:'mk-est', style:'font-size:30px;font-weight:700', text:won(v.est) + '원' }), h('div', { class:'sub', text:'예상 범위 ' + won(v.low) + ' ~ ' + won(v.high) + '원' }), h('div', { class:'sub', text:v.basis }),
+      s.comps.length ? h('div', { class:'sub', text:'찾아 온 비슷한 가격: ' + s.comps.map(won).join('원, ') + '원' }) : null]));
+    return kids;
+  }
+  if (s.step === 2) return [h('h2', { text:'나비웹 시장에 등록했어요' }), sellItemCard(), L ? h('div', { class:'card', style:'margin-top:12px', id:'mk-listed' }, [h('b', { text:'등록 번호 ' + L.id }), h('div', { class:'sub', text:'추정 ' + won(L.est) + '원 · 상태 ' + L.status + ' · ' + L.d }), h('div', { class:'sub', text:'체험용이라 이 브라우저에만 등록돼요. 실제 나비웹 시장 노출은 아직 연결되어 있지 않아요.' })]) : null];
+  if (s.step === 3) {
+    kids = [h('h2', { text:'도우미가 구매자를 찾아요' }), sellItemCard(), agentProg('mk-bprog', '도우미 진행(구매자 물색)', s.buySt, [['도우미에게 맡김', function () { return 'done'; }], ['구매자 후보 찾기(구매 글·매입 업체 등)', function (st) { return st === 'done' ? 'done' : 'now'; }]])];
+    if (s.buyMsg) kids.push(note(s.buyMsg, s.buySt === 'none', 'mk-buy-msg'));
+    if (s.buyers.length) kids.push(h('div', { class:'card', style:'margin-top:12px', id:'mk-buyers' }, [h('b', { text:'구매자 후보' })].concat(s.buyers.map(function (b, i) { return h('div', { class:'kv', style:'align-items:flex-start' }, [h('span', { text:(i + 1) + '. ' + b.name + (b.site ? ' · ' + b.site : '') }), h('span', { style:'text-align:right', text:b.reason })]); }))));
+    return kids;
+  }
+  if (s.step === 4) {
+    kids = [h('h2', { text:'판매 의향서' }), sellItemCard(), h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'보낼 문안' }), h('pre', { id:'mk-intent', style:'white-space:pre-wrap;font:inherit;margin:8px 0 0', text:s.intent })])];
+    if (s.buyers.length) kids.push(h('div', { class:'sub', style:'margin-top:8px', text:'받는 곳: ' + s.buyers.map(function (b) { return b.name; }).join(', ') + ' — 보내기 전에 사용자가 확인해요.' })); else kids.push(note('보낼 구매자 후보가 없어 의향서는 보내지 않아요.', false));
+    return kids;
+  }
+  if (s.step === 5) return [h('h2', { text:'선판매 — 먼저 받고 나중에 정산' }), sellItemCard(), h('div', { class:'card', style:'margin-top:12px', id:'mk-advcard' }, [h('b', { text:'선지급 안내' }), h('div', { class:'kv' }, [h('span', { text:'추정 금액' }), h('b', { text:won(v.est) + '원' })]), h('div', { class:'kv' }, [h('span', { text:'지금 받는 금액(약 ' + Math.round(v.rate * 100) + '%)' }), h('b', { id:'mk-advamt', text:won(v.adv) + '원' })]),
+    h('div', { class:'sub', text:'선지급금은 나비웹 금융 인프라가 지급해요. 나머지는 판매된 뒤 정산하고, 정산할 때 이자(연 ' + Math.round(APR * 100) + '%, 체험용)를 뺀 금액을 받아요.' })])];
+  var sd = s.sold; kids = [h('h2', { text:sd ? '판매를 마치고 정산했어요' : '구매자 응답을 기다려요' }), sellItemCard()];
+  if (s.sendMsg) kids.push(note(s.sendMsg, s.sendSt === 'failed', 'mk-send-msg'));
+  if (s.err) kids.push(note(s.err, true, 'mk-s-err'));
+  if (!sd && L) {
+    var pin = h('input', { id:'mk-sold-price', type:'text', inputmode:'numeric', maxlength:'12', value:String(L.est), 'aria-label':'판매된 금액(원)' });
+    kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'체험용: 판매 완료 처리' }), h('div', { class:'sub', text:'실제 구매자 응답과 결제는 아직 연결되어 있지 않아요. 판매된 금액을 넣고 누르면 정산을 체험해요.' }), h('div', { class:'field' }, [h('label', { for:'mk-sold-price', text:'판매된 금액(원)' }), pin]),
+      L.advance ? h('div', { class:'sub', text:'이미 받은 선지급 ' + won(L.advance) + '원과 이자를 뺀 나머지를 받아요.' }) : null, h('div', { class:'rowf', style:'margin-top:8px' }, [btn('판매 완료 · 정산하기', 'fill', function () { doSold(pin.value); }, 'mk-sold')])]));
+  }
+  if (sd) kids.push(h('div', { class:'card col', id:'mk-settle', style:'margin-top:12px' }, [h('b', { text:'정산 내역' })].concat([['판매된 금액', gdc(sd.price)], ['이미 받은 선지급', '− ' + gdc(sd.adv)], ['이자(연 ' + Math.round(APR * 100) + '%, ' + sd.days + '일, 체험용)', '− ' + gdc(sd.interest)], ['지금 받는 금액', gdc(sd.payout)]].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); })).concat([sd.shortfall ? note('판매 금액이 선지급금과 이자에 못 미쳐 받을 금액은 0이에요. 모자란 ' + gdc(sd.shortfall) + '은 나비웹 금융 인프라가 떠안는 것으로 체험해요.', false) : null, sd.left != null ? h('div', { class:'kv' }, [h('span', { text:'내 잔고(장부 기준)' }), h('b', { id:'mk-settle-left', text:gdc(sd.left) })]) : null])));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('다른 물건 판매하기', sd ? 'fill' : '', function () { sellReset(); }, 'mk-s-again')]));
+  return kids;
+}
+function myListings() {
+  if (!S.listings.length) return null;
+  return h('div', { class:'card', style:'margin-top:24px', id:'mk-mine' }, [h('b', { text:'내 판매 상품(나비웹 시장 등록, 체험용)' }), h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['상품', '추정', '선지급', '상태', ''].map(function (x) { return h('th', { text:x }); }))]),
+    h('tbody', {}, S.listings.slice(0, 10).map(function (L, i) { return h('tr', { id:'mk-L-' + i }, [h('td', { text:L.name }), h('td', { text:won(L.est) + '원' }), h('td', { text:L.advance ? won(L.advance) + '원' : '-' }), h('td', { text:L.status + (L.status === '판매 완료' ? ' · 정산 ' + won(L.payout) + '원' : '') }),
+      h('td', {}, [btn(L.status === '판매 완료' ? '보기' : '정산하기', '', function () { openListing(L.id); }, 'mk-L-open-' + i)])]); }))])])]);
+}
+function renderSell(tp, root) {
+  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장 · 판매' })])]), sellSteps()]));
+  if (!S.sell) S.sell = newSell();
+  if (S.sell.step >= 1) root.appendChild(sellProgCard());
+  sellView().forEach(function (k) { if (k) root.appendChild(k); });
+  var ml = myListings(); if (ml) root.appendChild(ml);
+}
+function tabsBar() {
+  function tab(id, label) { var on = S.mode === id; return h('button', { type:'button', role:'tab', id:'mk-tab-' + id, class:'mk-tab' + (on ? ' on' : ''), 'aria-selected':on ? 'true' : 'false', text:label, onclick:function () { if (S.mode === id) return; S.tok++; S.ask = null; S.mode = id; if (id === 'sell' && !S.sell) S.sell = newSell(); render(); } }); }
+  return h('div', { class:'mk-tabs', role:'tablist', 'aria-label':'시장 기능' }, [tab('buy', '구매 검토'), tab('sell', '판매')]);
+}
+
 function mount(el) {
   if (!el) return;
   M = el; el.textContent = ''; el.classList.add('mkt'); S.history = []; S.memo = ''; S.fin = []; S.ledger = []; reset(); load(); wireAgent();
@@ -721,12 +1016,12 @@ function mount(el) {
 }
 if (window.NaviHist) NaviHist.on('market', 'mkt', function (sub) { if (!M) return; S.tok++; S.step = typeof sub === 'number' && sub >= 0 && sub <= LAST ? sub : 0; S.err = ''; S.info = ''; render(); });   // 브라우저 뒤로·앞으로 가기로 단계를 옮긴다
 window.NaviMarket = {
-  mount:mount, chat:chat, find:function (q) { if (M) { S.find.q = clean(q, 60); askFind(); } }, pick:function (i) { if (M) pickCand(i); },
+  mount:mount, chat:chat, sell:{ F:F }, find:function (q) { if (M) { S.find.q = clean(q, 60); askFind(); } }, pick:function (i) { if (M) pickCand(i); },
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function () { if (M) { S.step = 0; render(); } },
   flow:F,
   agentVer:{ ok:verOk, min:MINVER },
-  ledger:{ newKeys:newKeys, signTerms:function (priv, t) { return signText(priv, canonTerms(t)); }, mutualAuth:mutualAuth, appendDeposit:appendDeposit, appendTrade:appendTrade, verify:verifyLedger, parseSlip:parseSlip, canonTerms:canonTerms },
+  ledger:{ appendAdvance:appendAdvance, appendSettle:appendSettle, newKeys:newKeys, signTerms:function (priv, t) { return signText(priv, canonTerms(t)); }, mutualAuth:mutualAuth, appendDeposit:appendDeposit, appendTrade:appendTrade, verify:verifyLedger, parseSlip:parseSlip, canonTerms:canonTerms },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
