@@ -139,7 +139,7 @@ function vat(sales, purch) {
 
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 세무' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 세무 회계' })])]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function notice() {
@@ -156,10 +156,17 @@ function stepsCard(title, st, foot) {
 
 // ── 회계 원리 ──
 function viewAcct() {
-  var kids = head('회계 원리', '나비웹 회계 인프라가 모든 사용자의 재무제표를 만들고 거짓을 막는 방식입니다.');
-  kids.push(stepsCard('재무제표가 만들어지는 과정', [['모든 사용자의 재무제표를 자동으로 생성·갱신', '개인, 기관, 기업, 부서 모두 거래가 생길 때마다 재무제표가 자동으로 만들어지고 갱신됩니다.'], ['거래 당사자가 전표를 내고 서로 검증', '거래할 때 양쪽이 각자 거래 전표를 냅니다. 상대방·품목·금액·날짜가 서로 맞아야 거래가 확정돼요.'], ['분식과 거짓 거래는 차단, 이상 거래는 즉시 탐지', '상대 전표와 맞지 않는 수치는 기록되지 않고, 평소와 다른 거래는 이상 탐지로 즉시 잡힙니다.'], ['하나의 결합 재무제표', '5천만 한국인과 수백만 기업·기관·부서의 재무제표가 하나로 맞물립니다. 예) 고무 수입업체 → 타이어 생산업체 → 자동차 생산업체 → 소비자·정비업체가 수직·수평으로 연동되어, 한 곳이 1원이라도 거짓을 적으면 맞물린 상대 기록과 어긋나요.']],
-    '설계 원칙입니다. 지금은 나비웹 전체 거래와 연결되어 있지 않아요. 이 화면에서는 같은 원리를 입력한 값으로 직접 계산해 볼 수 있습니다.'));
-  kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [['거래 상호 검증', '판매자·구매자 전표 대조, 공급망 연쇄 검증, 이상 거래 탐지', 'verify'], ['내 재무제표', '분개를 적으면 재무상태표·손익계산서가 자동으로 만들어져요', 'fs']].map(function (x) { return h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:x[0] }), h('span', { class:'sub', text:x[1] }), h('div', { class:'rowf' }, [btn('열기', 'fill', function () { go(x[2]); })])]); })));
+  var kids = head('회계 원리', '거래 전표 하나가 시장 → 국세청 → 장부로 돌아오는 길입니다. 모든 장부 항목은 거래 일련번호로 추적됩니다.');
+  kids.push(h('div', { class:'rowf', style:'flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px' }, ['시장 SP', '시장 인프라', '국세청 AI', '시장 인프라', '시장 SP', '나만의 AI 비서', '재무제표 SP'].reduce(function (a, x, i) { if (i) a.push(h('span', { text:'→', 'aria-hidden':'true' })); a.push(h('span', { class:'chip', text:x })); return a; }, [])));
+  kids.push(stepsCard('거래 전표의 흐름', [
+    ['거래와 전표 작성', '판매자와 구매자의 시장 SP가 시장 인프라 AI를 통해 거래하고, 각자 서명한 거래 전표를 만듭니다.'],
+    ['시장 인프라가 국세청 AI에 전달', '거래가 성사되면 시장 인프라가 두 당사자의 전표에 자신의 서명과 거래 일련번호를 붙여 국세청 AI(국세청의 나만의 AI 비서)에 보냅니다.'],
+    ['국세청 AI가 세액 결정', '인프라 서명을 확인한 뒤 세액을 정하고, 전표에 세액과 국세청 서명을 붙여 시장 인프라에 돌려줍니다.'],
+    ['당사자에게 전달', '시장 인프라가 판매자와 구매자의 시장 SP에 전달하고, 각 시장 SP는 자기 나만의 AI 비서에게 보고합니다.'],
+    ['장부 반영', '나만의 AI 비서가 국세청 서명을 확인하고 재무제표 SP에 넘기면, 재무제표 SP가 일련번호와 함께 장부에 반영합니다.'],
+    ['진실성 입증', '모든 개인·기관의 장부 항목과 갱신은 거래 일련번호를 추적해 진실임을 입증할 수 있습니다.']],
+    '거래 전표는 6하 원칙(누가·언제·어디서·무엇을·어떻게·왜)으로 씁니다. 설명을 줄이려고 Openhash Network 해시 등록은 생략했습니다. 설계 원칙이며 지금은 나비웹 전체 거래와 연결되어 있지 않아요.'));
+  kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [['거래 상호 검증', '판매자·구매자 전표 대조와 이상 거래 탐지', 'verify'], ['내 재무제표', '분개를 적으면 재무상태표·손익계산서 자동 작성', 'fs']].map(function (x) { return h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:x[0] }), h('span', { class:'sub', text:x[1] }), h('div', { class:'rowf' }, [btn('열기', 'fill', function () { go(x[2]); })])]); })));
   return kids;
 }
 
