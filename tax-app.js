@@ -233,7 +233,8 @@ function viewMain() {
   if (S.err) kids.push(note(S.err, true, 'tx-err'));
   kids.push(h('div', { class:'note info', style:'margin-top:12px', id:'tx-scope', text:'시장 인프라 AI·국세청 AI·시장 SP·나만의 AI 비서·재무제표 SP는 아직 서로 연결되어 있지 않아서, 이 화면이 한 브라우저 안에서 모두를 대신해 보여 줘요. 서명은 이 화면이 만든 임시 키로 하며 실제 신원 인증이 아니에요. 시장 화면의 구매 금액을 공급가액으로 보고 부가가치세 10%를 체험 값으로 계산해요. 편의상 Openhash Network 해시 등록은 생략했어요. 신고·납부는 하지 않고 어떤 정보도 밖으로 보내지 않아요.' }));
   var r = S.rec[0]; if (r) kids = kids.concat(viewResult(r));
-  if (S.rec.length) kids.push(ownBooks());
+  if (S.rec.length && (S.stage == null || S.stage >= 3)) kids.push(ownBooks());   // 이력 기록 뒤에 내 장부 합계를 보여 준다
+  if (S.rec.length) kids = kids.concat(viewTail());
   return kids;
 }
 function addSample() {
@@ -267,6 +268,11 @@ function viewResult(r) {
   var tam = h('div', { id:'tx-tam', style:'margin-top:12px' }); if (S.tam) tam.appendChild(S.tam);
   if (st >= 3) k.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'진실성 확인 — 일련번호로 거슬러 올라가기' }), h('div', { class:'sub', text:'장부의 항목은 일련번호로 전표를 찾아가 서명·해시·금액을 다시 확인할 수 있어요.' }),
     h('div', { class:'rowf', style:'margin-top:8px' }, [btn('일련번호로 확인', 'fill', doTrace, 'tx-trace-btn'), btn('장부를 몰래 고친다면?', '', doTamper, 'tx-tam-btn')]), out, tam]));
+  return k;
+}
+/** 화면 맨 아래: 이전 거래 요약과 체험 기록 지우기(장부 합계 다음에 둔다). */
+function viewTail() {
+  var k = [];
   if (S.rec.length > 1) k.push(h('div', { class:'sub', style:'margin-top:12px', text:'이전 거래 ' + (S.rec.length - 1) + '건: ' + S.rec.slice(1, 6).map(function (x) { return x.serial + ' ' + x.slip.what; }).join(' · ') }));
   k.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn(S.clr ? '정말 지울까요? 한 번 더 누르면 지워요' : '체험 기록 지우기', '', function () { if (!S.clr) { S.clr = true; render(); return; } S.rec = []; S.trc = null; S.tam = null; S.clr = false; save(); render(); }, 'tx-clear')]));
   return k;
