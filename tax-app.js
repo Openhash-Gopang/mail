@@ -226,7 +226,8 @@ function viewMain() {
   kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }));
   var box = [h('b', { text:'받은 거래 전표' + (P.length ? ' ' + P.length + '건' : '') })];
   box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [(function () { var b = btn('거래 전표 받기', '', addSample, 'tx-sample'); if (P.some(function (x) { return /^ex:/.test(x.n); }) || (S.rec.length && S.stage != null && S.stage < 3)) b.disabled = true; return b; })()]));
-  if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:(S.rec.length && S.stage != null && S.stage < 3) ? '전표를 국세청 AI에 보냈어요. 아래에서 단계별로 진행해 주세요.' : '아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
+  if (!P.length && (S.rec.length && S.stage != null && S.stage < 3)) { var q = S.rec[0]; box.push(h('div', { id:'tx-sent', style:'margin-top:12px' }, [h('div', { text:slipLine(q.slip) }), h('div', { class:'sub', text:'시장 인프라 디지털 서명 ✓ ' + String(q.sigI).slice(0, 28) + '…' }), h('div', { class:'sub', text:'국세청 AI에 보냈어요 ✓' })])); }
+  else if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:'아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
   P.forEach(function (x, i) {
     var pr = PRE[x.n];   // 전표를 받으면 시장 인프라 서명을 미리 만들어 둔다(국세청 서명·세액은 보내기 뒤에 보인다)
     if (!pr || pr.seq !== S.rec.length) { pr = PRE[x.n] = { seq:S.rec.length, res:null }; (function (p, xx) { run(xx.f, p.seq).then(function (res) { p.res = res; render(); }); })(pr, x); }
@@ -256,16 +257,17 @@ function ownBooks() {
     h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['계정', '차변', '대변'].map(function (x) { return h('th', { text:x }); }))]), h('tbody', {}, order.map(function (k) { return h('tr', {}, [h('td', { text:k }), h('td', { text:acc[k][0] ? won(acc[k][0]) : '' }), h('td', { text:acc[k][1] ? won(acc[k][1]) : '' })]); }))])])]);
 }
 function viewResult(r) {
-  var k = [h('h3', { style:'margin-top:24px', text:((S.stage == null || S.stage >= 3) ? '방금 처리한 전표' : '국세청에 보낸 거래 전표') + ' — ' + r.serial })];
+  var k = [];
   var st = (S.stage == null) ? 3 : S.stage;
   function stepCard(txt, label, id, next) { return h('div', { class:'card', style:'margin-top:12px', id:id + '-card' }, [h('div', { class:'sub', text:txt }), h('div', { class:'rowf', style:'margin-top:8px' }, [btn(label, 'fill', function () { S.stage = next; render(); }, id)])]); }
   function slipCard() {
     var s = r.slip;
     function tr(a, b) { return h('tr', {}, [h('td', { text:a }), h('td', { class:'r', text:b })]); }
-    return h('div', { class:'card', style:'margin-top:12px', id:'tx-signed' }, [h('b', { text:'국세청이 세액을 더한 거래 전표' }), h('div', { class:'sub', text:s.when + ' · ' + s.seller + ' → ' + s.buyer + ' · ' + s.what + ' ' + s.qty + '개 × ' + won(s.price) + '원' }),
-      h('table', { class:'tbl', style:'margin-top:8px' }, [h('tbody', {}, [tr('일련번호', r.serial), tr('공급가액', won(s.supply) + '원'), tr('부가세(10%, 국세청이 정함)', won(r.tax) + '원'), tr('합계', won(s.supply + r.tax) + '원'), tr('시장 인프라 서명', String(r.sigI).slice(0, 28) + '…'), tr('국세청 서명', String(r.sigN).slice(0, 28) + '…')])])]);
+    return h('div', { class:'card', style:'margin-top:24px', id:'tx-signed' }, [h('b', { text:'국세청이 세액을 더한 거래 전표 — ' + r.serial }),
+      h('table', { class:'tbl', style:'margin-top:8px' }, [h('tbody', {}, [tr('일련번호', r.serial), tr('공급가액', won(s.supply) + '원'), tr('부가세(10%, 국세청이 정함)', won(r.tax) + '원'), tr('합계', won(s.supply + r.tax) + '원'), tr('국세청 서명', String(r.sigN).slice(0, 28) + '…')])])]);
   }
-  if (st < 1) { k.push(slipCard()); k.push(stepCard('다음 단계는 국세청이 거래 당사자에게 서명된 거래 전표를 보냅니다.', '보내기', 'tx-step1', 1)); }
+  k.push(slipCard());
+  if (st < 1) k.push(stepCard('다음 단계는 국세청이 거래 당사자에게 서명된 거래 전표를 보냅니다.', '보내기', 'tx-step1', 1));
   else {
     k.push(h('ol', { class:'tx-tl', id:'tx-hops' }, r.hops.map(function (x) { return h('li', {}, [h('b', { text:x.who + ' → ' + x.to }), h('div', { text:x.text })]); })));
     k.push(h('div', { class:'g2', id:'tx-slips', style:'margin-top:12px' }, [ledgerCard(r.buyer, '구매자 장부', 'tx-led-b'), ledgerCard(r.seller, '판매자 장부', 'tx-led-s')]));
