@@ -54,7 +54,7 @@ test('인프라 SP v0.1: 27개 모두 전문가 SP·설정이 있다', { skip },
   const items = [...d.match(/const _ORG_ITEMS = (\[.*\]);/)[1].matchAll(/\['(\w+)','([^']+)'\]/g)].map((m) => [m[1], m[2]]); assert.equal(items.length, 27);
   for (const [k, n] of items) { assert.ok(S.has(k), k); assert.equal(S.name(k), n); const c = S.cfg(k); assert.equal(c.sp, 'inline:' + k + ':v0.1'); assert.match(c.spText, /v0\.1/); assert.match(c.spText, new RegExp('"' + n.replace('·', '·') + ' SP"')); assert.match(c.spText, /통달한|전문가/); assert.equal(c.examples.length, 3); assert.ok(c.spText.length > 400 && c.spText.length < 4000); assert.match(c.spText, /실제 처리는 하지 않고/); }
   assert.match(S.build('gdc'), /시중은행과 중앙은행의 모든 업무에 통달/); assert.match(S.build('klaw'), /법률 전문가/); assert.match(S.build('k119'), /119/); assert.match(S.build('kpolice'), /112/);
-  assert.match(S.build('kstock'), /분식 회계가 불가능/); assert.match(S.build('kinsurance'), /보험 인프라 AI만 접근/); assert.match(S.build('ktax'), /1원도 더 내거나 덜 낼 수 없다/);
+  assert.match(S.build('kstock'), /분식 회계가 불가능/); assert.match(S.build('kinsurance'), /보험 인프라 AI만 접근/); assert.match(S.build('ktax'), /국세청 AI/); assert.match(S.build('ktax'), /거래 일련번호/);
   assert.match(S.build('kmarket'), /구매 원함/); assert.match(S.build('kmarket'), /필요도를 1~5/); assert.match(S.build('ktraffic'), /1\/2 이하/); assert.match(S.build('khealth'), /의료진이 하며/);
   assert.equal(S.build('nope'), ''); assert.equal(S.cfg('nope'), null);
 });
