@@ -83,7 +83,8 @@ test('도우미: 링크 없으면 안내, 있으면 맡기고, 읽어 온 값은
 });
 test('도우미가 없으면 직접 넣으라고 안내한다', { skip }, async () => {
   const p = page(); p.type('mk-link', 'https://shop.example/p/1'); p.btn('도우미로 읽어 오기').click(); assert.ok(p.txt().includes('직접 넣어도 돼요'));
-  const q = page({ onData() {}, detect: () => Promise.resolve(null), queue: () => Promise.resolve({ ok: true }) }); q.type('mk-link', 'https://shop.example/p/1'); q.btn('도우미로 읽어 오기').click(); await wait(30); assert.ok(q.txt().includes('설치되어 있지 않거나'));
+  const q = page({ onData() {}, detect: () => Promise.resolve(null), queue: () => Promise.resolve({ ok: true }) }); q.type('mk-link', 'https://shop.example/p/1'); q.btn('도우미로 읽어 오기').click(); await wait(2500); assert.ok(q.txt().includes('설치되어 있지 않거나') && q.txt().includes('새로고침(F5)'));
+  let n = 0; const r = page({ onData() {}, detect: () => Promise.resolve(++n < 3 ? null : { version: '0.6.40' }), queue: () => Promise.resolve({ ok: true }) }); r.type('mk-link', 'https://shop.example/p/1'); r.btn('도우미로 읽어 오기').click(); await wait(2000); assert.equal(n, 3); assert.ok(!r.txt().includes('설치되어 있지 않거나'));
 });
 test('desktop.html 연결 + 경로 + 범위 css + 확장 도구(report_data) 중계', () => {
   assert.ok(d.includes('_mktOpen('), 'desktop 에서 시장 열기'); assert.ok(d.includes("go.indexOf('mkt:') === 0") && d.includes("if (name === 'mkt') _mktShow();") && d.includes('id="tab-mkt"'));

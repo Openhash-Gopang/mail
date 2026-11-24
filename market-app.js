@@ -264,8 +264,9 @@ function askAgent() {
   if (!link) { S.err = '판매 사이트의 상품 링크(https://로 시작)를 먼저 넣어 주세요.'; render(); return; }
   if (!window.NaviAgent || !NaviAgent.queue) { S.read = { st:'none', msg:'나비웹 도우미를 쓸 수 없는 화면이에요. 아래 칸에 직접 넣어도 돼요.' }; render(); return; }
   wireAgent(); S.read = { st:'wait', msg:'나비웹 도우미에게 맡겼어요. 판매 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 읽은 값은 이 화면에 채워져요.' }; S.err = ''; render();
-  NaviAgent.detect().then(function (info) {
-    if (!info) { S.read = { st:'none', msg:'나비웹 도우미가 설치되어 있지 않거나 연결되지 않았어요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
+  function probe(n) { return NaviAgent.detect().then(function (info) { return info || (n > 1 ? new Promise(function (r) { setTimeout(r, 700); }).then(function () { return probe(n - 1); }) : null); }); }   // 확장 서비스 워커가 깨어나는 동안 첫 응답이 늦을 수 있어 세 번까지 묻는다
+  probe(3).then(function (info) {
+    if (!info) { var mark = NaviAgent.installedMark ? NaviAgent.installedMark() : ''; S.read = { st:'none', msg:mark ? '나비웹 도우미가 설치되어 있지만 이 화면과 연결되지 않았어요. 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' : '나비웹 도우미가 설치되어 있지 않거나 이 화면에 연결되지 않았어요. 방금 설치했거나 켰다면 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
     if (!verOk(info.version)) { S.read = { st:'none', msg:'나비웹 도우미가 오래된 버전(' + (info.version || '알 수 없음') + ')이에요. 상품 읽기는 ' + MINVER + ' 이상이 필요해요. 크롬 주소창에 chrome://extensions 를 열어 나비웹 도우미를 업데이트한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
     return NaviAgent.queue({ goal:goalFor(link), url:link, slot:SLOT, title:'상품 확인' }).then(function (ok) {
       if (!ok || ok.ok === false) { S.read = { st:'none', msg:'도우미에게 맡기지 못했어요. 아래 칸에 직접 넣어도 돼요.' }; render(); }
