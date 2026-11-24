@@ -99,6 +99,7 @@ export const MAIL_FILES = new Set([
  "qna-ui.js",
  "search-app.js",
  "search.css",
+ "sim-lab.js",
  "stock-app.js",
  "stock.css",
  "tax-app.js",

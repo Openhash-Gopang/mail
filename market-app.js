@@ -781,7 +781,7 @@ function viewDone() {
 function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
   if (S.mode === 'sell') { renderSell(tp, root); var m2 = modal(); if (m2) root.appendChild(m2); return; }
-  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), findBar(), steps()]));
+  tp.appendChild(h('div', { class:'topin' }, [tabsBar(), h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })]), h('button', { type:'button', class:'btn quiet', id:'market-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('market'); } })]), findBar(), steps()]));
   if (S.step >= 1 && S.step !== 8) root.appendChild(progCard(false));
   var v = [viewStart, viewDup, viewNeed, viewNeed, viewTrust, viewAs, viewCompare, viewDeal, viewFinal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });

@@ -173,7 +173,7 @@ function short(v) { return v >= 1e8 ? Math.round(v / 1e7) / 10 + '억' : v >= 1e
 // ── 공통 조각 ──
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 증권' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 증권' })]), h('button', { type:'button', class:'btn quiet', id:'stock-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('stock'); } })]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function head(title, lead) { return [h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null]; }
