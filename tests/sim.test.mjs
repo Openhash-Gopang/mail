@@ -5,7 +5,7 @@ import { webcrypto } from 'node:crypto';
 let JSDOM = null; try { ({ JSDOM } = await import('jsdom')); } catch (e) { /* jsdom 이 없으면 건너뛴다 */ }
 const skip = !JSDOM && 'jsdom 없음';
 const rd = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
-const sim = rd('../sim-lab.js'), ledger = rd('../ledger-book.js'), stockApp = rd('../stock-app.js'), taxApp = rd('../tax-app.js'), bankApp = rd('../bank-app.js'), mktApp = rd('../market-app.js'), desk = rd('../desktop.html'), paths = rd('../ops/naviweb-proxy/mail-paths.js');
+const insApp = rd('../insurance-app.js'), sim = rd('../sim-lab.js'), ledger = rd('../ledger-book.js'), stockApp = rd('../stock-app.js'), taxApp = rd('../tax-app.js'), bankApp = rd('../bank-app.js'), mktApp = rd('../market-app.js'), desk = rd('../desktop.html'), paths = rd('../ops/naviweb-proxy/mail-paths.js');
 function env(withStock = false) {
   const w = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true }).window;
   Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true }); w.TextEncoder = TextEncoder; let f = 0; w.fetch = () => { f++; return Promise.reject(new Error('no')); };
@@ -108,7 +108,7 @@ test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 �
     assert.ok(seen.size >= pg.tabs.length - 2, k + ' 탭마다 내용이 달라야 해요');
     assert.equal(S.tab(k, '없는탭'), false); S.close();
   }
-  assert.equal(total, 11 + 6 + 5 + 12); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
+  assert.equal(total, 11 + 6 + 5 + 12 + 5); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
   S.open('stock', 'goal'); doc.getElementById('sm-sv').value = '500000'; doc.getElementById('sm-sv').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-g-sum').textContent, /목표를 넘긴/);
   S.open('stock', 'alloc'); doc.getElementById('sm-wa').value = '100'; doc.getElementById('sm-wa').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-a-sum').textContent, /현금 비중 0%/);
   S.open('market', 's3'); doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
@@ -116,4 +116,12 @@ test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 �
 test('배선: 각 화면은 현재 탭을 시뮬레이션에 넘기고, 화면을 옮기면 패널을 닫는다', { skip }, () => {
   assert.match(stockApp, /_simOpen\('stock', S\.view\)/); assert.match(bankApp, /_simOpen\('bank', S\.view\)/); assert.match(mktApp, /_simOpen\('market', 's' \+ S\.step\)/); assert.match(mktApp, /market-sim-sell/); assert.match(taxApp, /_simOpen\('tax', 'slip'\)/);
   assert.match(desk, /NaviSim\.close\(\);[^\n]*다른 화면으로 가면/); assert.ok(!/aria-modal/.test(sim) && !/nsim-ov/.test(sim));
+});
+
+test('보험 시뮬레이션: 같은 시드는 같은 결과, 가입자가 많을수록 손해율이 안정되고, 화면 버튼이 현재 탭을 넘긴다', { skip }, () => {
+  const { S, doc, w } = env(); assert.equal(J(S.gen.insure(3)), J(S.gen.insure(3))); assert.notEqual(J(S.gen.insure(3)), J(S.gen.insure(4)));
+  const spread = (n) => { const xs = []; for (let sd = 1; sd <= 40; sd++) xs.push(S.gen.insure(sd, { n, rate: 4, prem: 20000, cov: 10000000 }).lossRatio); const m = xs.reduce((a, b) => a + b, 0) / xs.length; return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length); };
+  assert.ok(spread(5000) < spread(50), '대수의 법칙');
+  S.open('insure', 'claims'); assert.match(doc.getElementById('sim-i-claims').textContent, /추가 확인/); S.tab('insure', 'mine'); assert.match(doc.getElementById('sim-i-mine').textContent, /월 보험료/);
+  assert.match(insApp, /_simOpen\('insure', S\.view\)/); assert.match(insApp, /id:'insure-sim'/);
 });

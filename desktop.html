@@ -3562,7 +3562,7 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
-const _SIM_V = '20261125c';
+const _SIM_V = '20261125d';
 window._simOpen = function (kind, tab) {   // 가상 데이터 시뮬레이션은 팝업이 아니라 페이지 오른쪽에서 밀려 나오는 패널로 열고, 탭마다 다른 시뮬레이션을 보여 준다
   const go = () => { if (window.NaviSim) window.NaviSim.open(kind, tab); };
   if (window.NaviSim) { go(); return; }
@@ -3626,7 +3626,7 @@ function _stockShow(view) {
 }
 function _stockOpen(view) { _switchTab('stock'); _stockShow(view); }
 // 나비웹 보험(2026-11-23): 인프라 AI → 보험을 고르면 보험 화면을 이 문서 안에 직접 그려 연다(insurance.css·insurance-app.js). 보험 판매·가입·청구 접수와 데이터 제공은 아직 연결되어 있지 않다(설계 단계). 기록은 이 브라우저에만 저장.
-const _INSURE_V = '20261123c'; let _insureChat = false;
+const _INSURE_V = '20261125a'; let _insureChat = false;
 function _insureLoad(cb) {
   if (window.NaviInsure) { cb(); return; }
   if (!document.getElementById('insure-css')) { const l = document.createElement('link'); l.id = 'insure-css'; l.rel = 'stylesheet'; l.href = 'insurance.css?v=' + _INSURE_V; document.head.appendChild(l); }

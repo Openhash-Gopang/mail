@@ -167,13 +167,15 @@ var PAGES = {
   stock:{ name:'증권', tabs:[['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['wage', '내 임금'], ['explore', '종목 탐색'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']] },
   bank:{ name:'은행', tabs:[['wallet', '내 지갑'], ['topup', '충전·입금'], ['pay', '송금·결제'], ['history', '거래 내역'], ['save', '예금·대출'], ['credit', '신용·채권']] },
   tax:{ name:'세무 회계', tabs:[['slip', '거래 전표'], ['vat', '부가세'], ['stmts', '재무제표'], ['exp', '판관비'], ['inc', '소득세']] },
+  insure:{ name:'보험', tabs:[['mine', '내 보험'], ['rate', '요율 원리'], ['data', '상품과 공개 데이터'], ['claims', '청구 기록'], ['learn', '점검·용어']] },
   market:{ name:'시장', tabs:[['s0', '상품 이름'], ['s1', '구매 이력'], ['s2', '필요도'], ['s3', '구매 의사'], ['s4', '의견'], ['s5', 'AS 평가'], ['s6', '가격 비교'], ['s7', '판매자 협의'], ['s8', '최종 확인'], ['s9', '결제'], ['s10', '국세청 보고'], ['sell', '판매']] }
 };
 var LEAD = {
+  insure:'가상 가입자·사고·청구로 보험료와 요율, 청구 심사가 어떻게 돌아가는지 해 볼 수 있어요. 요율은 모두 예시예요.',
   market:'가상 상품과 판매처 가격으로 구매 단계를 하나씩 해 볼 수 있어요.', tax:'가상 거래로 전표·부가세·재무제표·소득세가 어떻게 이어지는지 해 볼 수 있어요.',
   bank:'가상 월별 수입·지출로 지갑·충전·결제·내역·예금·신용을 해 볼 수 있어요.', stock:'가상 기업과 시세로 증권 화면의 각 탭을 해 볼 수 있어요. 모든 요율·가정은 예시예요.'
 };
-var DEF = { market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
+var DEF = { insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
 var X = {   // 탭별 보조 입력의 기본값
   pi:'0', q:'', need:'3', bud:'', ask:'', my:'', bal:'5000000', co:'0', g:'3', r:'10', w:'3000000', wa:'60', wb:'30', sv:'300000', yr:'10', tg:'100000000', px:'10', tp:'1000000', ti:'3', dp:'10000000', rt:'3', dm:'12'
 };
@@ -194,7 +196,43 @@ function chipsRow(kind) {
 function stockList(d) {
   return d.cos.map(function (c) { var v = valueCo(c); return { c:c, v:v, size:window.NaviStock && window.NaviStock.sizeOf ? window.NaviStock.sizeOf(c.assets) : '' }; });
 }
+/** 보험: 가입자 n명이 1년 동안 사고(확률 rate%)를 겪고 보험금(보장액의 20~100%)을 받는 가상 한 해. */
+function insure(seed, o) {
+  o = o || {}; var r = rng(seed), n = ci(o.n, 10, 20000, 500), rate = Math.min(60, Math.max(0, Number(o.rate) || 4)) / 100, prem = ci(o.prem, 0, 1e7, 20000), cov = ci(o.cov, 0, 1e10, 10000000), acc = 0, pay = 0, i;
+  for (i = 0; i < n; i++) if (r() < rate) { acc++; pay += Math.round(cov * (0.2 + r() * 0.8) / 1000) * 1000; }
+  var income = n * prem * 12; return { seed:seed, n:n, rate:rate, prem:prem, cov:cov, accidents:acc, payout:pay, income:income, lossRatio:income ? pay / income : null };
+}
 var BODY = {};
+BODY.insure = function (box, s, tab) {
+  var d = s.data, o = s.opt, P = function (x) { return won(x) + '원'; };
+  var inputs = h('div', { class:'row' }, [fld('sm-n', '가입자 수(10~20000)', o.n), fld('sm-rate', '연 사고율(%)', o.rate), fld('sm-prem', '월 보험료(원)', o.prem), fld('sm-cov', '보장액(원)', o.cov)]);
+  if (tab === 'mine') {
+    var cov = num('sm-mcov', 50000000), g = ci(num('sm-grade', 2), 1, 3, 2), mp = Math.round(cov * 0.0004 * (1 + 0.5 * (g - 1)) / 10) * 10;
+    box.appendChild(h('div', { class:'row' }, [fld('sm-mcov', '내가 원하는 보장액(원)', String(cov)), fld('sm-grade', '위험 등급(1 낮음~3 높음)', String(g))]));
+    box.appendChild(sumBox('sim-i-mine', ['월 보험료 ', [h('b', { text:P(mp) }), ' (예시 요율: 보장액의 0.04%에 등급 1단계마다 50% 가산)'], '가입·결제는 일어나지 않아요. 실제 요율은 보험사 AI가 정해요.']));
+  }
+  if (tab === 'rate') {
+    box.appendChild(inputs);
+    box.appendChild(tbl(['가입자 수', '사고 건수', '보험금 지급', '보험료 수입', '손해율'], [50, 500, 5000].map(function (n) { var x = insure(s.seed, { n:n, rate:o.rate, prem:o.prem, cov:o.cov }); return [won(n), x.accidents, P(x.payout), P(x.income), x.lossRatio == null ? '—' : pc(x.lossRatio)]; }), [0, 1, 2, 3, 4]));
+    box.appendChild(sumBox('sim-i-rate', ['지금 입력(' + won(d.n) + '명): 손해율 ' + (d.lossRatio == null ? '—' : pc(d.lossRatio)) + ' — 100%를 넘으면 걷은 보험료보다 더 지급한 거예요.', '가입자가 적으면 손해율이 크게 흔들리고, 많아질수록 안정돼요(대수의 법칙). 다른 데이터로 여러 번 해 보세요.']));
+  }
+  if (tab === 'data') {
+    var r = rng(s.seed + 41), names = ['실손의료', '운전자', '화재', '여행자', '펫'], rows = names.map(function (nm) { var n = 200 + Math.floor(r() * 4800), pr = 0.3 + r() * 0.6; return [nm, won(n) + '명', pc(pr), P(Math.round((5000 + r() * 40000) / 100) * 100)]; });
+    box.appendChild(tbl(['상품', '가입자', '지급률(가상)', '월 보험료(가상)'], rows, [1, 2, 3]));
+    box.appendChild(h('div', { class:'sub', text:'가상 상품과 가상 공개 데이터예요. 실제 상품·통계가 아니에요.' }));
+  }
+  if (tab === 'claims') {
+    var rc = rng(s.seed + 53), cl = [], k, ws = [];
+    for (k = 0; k < 10; k++) { var odd = rc() < 0.2, a = odd ? Math.round(3e6 * (3 + rc() * 3) / 1000) * 1000 : Math.round(3e6 * (0.5 + rc()) / 1000) * 1000; cl.push({ id:'C' + (k + 1), who:'가입자 ' + String.fromCharCode(65 + Math.floor(rc() * 4)), amt:a }); ws.push(a); }
+    var bd = bandOf(ws), cnt = {}; cl.forEach(function (c) { cnt[c.who] = (cnt[c.who] || 0) + 1; });
+    box.appendChild(tbl(['청구', '가입자', '금액', '심사'], cl.map(function (c) { var flag = c.amt > bd.hi || cnt[c.who] >= 4; return [c.id, c.who, P(c.amt), { t:flag ? '추가 확인' : '지급 가능', c:flag ? 'bad' : 'ok' }]; }), [2]));
+    box.appendChild(h('div', { class:'sub', id:'sim-i-claims', text:'기준: 청구 금액이 중앙값 기준 구간(' + P(bd.lo) + ' ~ ' + P(bd.hi) + ')을 넘거나 한 가입자가 4번 이상 청구하면 추가 확인. 연습용 단순 규칙이고, 확인 대상이라고 부정이라는 뜻은 아니에요.' }));
+  }
+  if (tab === 'learn') {
+    var QS = [['손해율이 100%를 넘으면?', ['걷은 보험료보다 더 지급했다', '이익이 났다', '사고가 없었다'], 0], ['가입자가 많아지면 손해율은?', ['더 크게 흔들린다', '더 안정된다', '항상 0%다'], 1], ['청구가 추가 확인 대상이 되면?', ['부정이 확정된 것이다', '더 살펴본다는 뜻이다', '자동으로 거절된다'], 1], ['이 화면의 요율은?', ['예시(가정) 값', '확정된 값', '정부 고시 값'], 0]];
+    QS.forEach(function (q, qi) { var res = h('div', { class:'sub', id:'sim-il-r' + qi }); box.appendChild(h('div', { class:'box' }, [h('b', { text:(qi + 1) + '. ' + q[0] })].concat(q[1].map(function (tx, ti) { return h('div', {}, [h('button', { type:'button', text:tx, onclick:function () { res.textContent = ti === q[2] ? '맞아요.' : '다시 생각해 보세요.'; res.className = 'sub ' + (ti === q[2] ? 'ok' : 'bad'); } })]); })).concat([res]))); });
+  }
+};
 BODY.stock = function (box, s, tab) {
   var d = s.data, o = s.opt, day = s.day, list = stockList(d), lim = (window.NaviLedger && window.NaviLedger.DEV_LIMIT) || 0.3;
   var dayBtn = function () { return h('div', { class:'row' }, [h('button', { type:'button', id:'sim-next', text:'하루 진행', onclick:function () { readOpt('stock'); if (s.day < d.days - 1) s.day++; ST._redraw(); } }), h('span', { class:'sub', text:'시세 ' + day + '일째 / ' + (d.days - 1) + '일' })]); };
@@ -335,11 +373,12 @@ BODY.market = function (box, s, tab) {
 function readOpt(kind) {
   var s = ST[kind], o = s.opt, g = function (id, d) { var e = document.getElementById(id); return e ? String(e.value).replace(/,/g, '') : d; };
   if (kind === 'market') { o.n = g('sm-n', o.n); o.spread = g('sm-sp', o.spread); o.odd = g('sm-odd', o.odd); o.pi = g('sm-pi', o.pi || '0'); }
+  if (kind === 'insure') { o.n = g('sm-n', o.n); o.rate = g('sm-rate', o.rate); o.prem = g('sm-prem', o.prem); o.cov = g('sm-cov', o.cov); }
   if (kind === 'tax') { o.n = g('sm-n', o.n); o.opex = g('sm-opex', o.opex); }
   if (kind === 'bank') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'stock') { o.n = g('sm-n', o.n); o.ft = g('sm-ft', o.ft); o.fa = g('sm-fa', o.fa); o.fc = g('sm-fc', o.fc); o.fr = g('sm-fr', o.fr); o.br = g('sm-br', o.br); o.co = g('sm-co', o.co || '0'); o.w = g('sm-w', o.w || X.w); s.f = { sector:g('sm-sec', s.f.sector), region:g('sm-reg', s.f.region), size:g('sm-sz', s.f.size) }; }
 }
-function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
+function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
   ST._redraw = null; document.removeEventListener('keydown', onKey, true);
@@ -373,5 +412,5 @@ function open(kind, tab) {
   requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
   var c = document.getElementById('sim-close'); if (c) c.focus(); return true;
 }
-window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
+window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
 })();
