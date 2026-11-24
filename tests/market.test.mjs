@@ -178,3 +178,9 @@ test('뒤로 가기: 해시가 없는 화면끼리 옮겨도 기록이 남고, �
   assert.ok(d.includes("_st !== name"), '해시가 같아도 화면 이름이 다르면 기록을 남긴다');
   assert.ok(d.includes("history.state && history.state.navTab"), 'popstate 가 기록의 화면 이름을 읽는다');
 });
+test('뒤로 가기: 시장 단계·세무 확인 결과도 기록에 남고 복원된다', () => {
+  assert.ok(app.includes("NaviHist.push('market', n)") && app.includes("NaviHist.on('market', 'mkt'"));
+  const tax = rd('../tax-app.js');
+  assert.ok(tax.includes("NaviHist.push('tax', 'trace')") && tax.includes("NaviHist.push('tax', 'tamper')") && tax.includes("NaviHist.on('tax', 'tax'"));
+  assert.ok(d.includes('window.NaviHist') && d.includes('NaviHist.restore(name, history.state)'));
+});

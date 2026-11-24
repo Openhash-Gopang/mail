@@ -225,7 +225,7 @@ function note(t, bad, id) { return h('div', { class:bad ? 'note' : 'note info', 
 function safeImg(u) { u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/i.test(u) || /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u) ? u : ''; }
 function safeLink(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
-function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
+function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; if (window.NaviHist) NaviHist.push('market', n); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
 function reset(keepHistory) { S.tok++; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; S.err = ''; S.info = ''; render(); }
 
 // ── 도우미(상품 페이지 읽기) ──
@@ -480,7 +480,7 @@ function viewDone() {
   var lg = h('div', { id:'mk-done-ledger', style:'margin-top:12px' });
   kids.push(lg);
   verifyLedger(S.ledger).then(function (r) { lg.appendChild(note(r.ok ? '장부 검증: 이상 없음(' + r.n + '개 블록 — 이음·서명·잔고가 모두 맞아요)' : '장부 검증: ' + r.bad + '번 블록에 이상이 있어요.', !r.ok, 'mk-done-ok')); }).catch(function () {});
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('다른 물건 검토하기', 'fill', function () { reset(); }, 'mk-again')]));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('다른 물건 검토하기', 'fill', function () { reset(); if (window.NaviHist) NaviHist.push('market', 0); }, 'mk-again')]));
   return kids;
 }
 
@@ -502,6 +502,7 @@ function mount(el) {
   M = el; el.textContent = ''; el.classList.add('mkt'); S.history = []; S.memo = ''; S.fin = []; S.ledger = []; reset(); load(); wireAgent();
   [h('div', { id:'mk-top' }), h('div', { class:'wrap', id:'mk-root' })].forEach(function (x) { el.appendChild(x); }); render();
 }
+if (window.NaviHist) NaviHist.on('market', 'mkt', function (sub) { if (!M) return; S.tok++; S.step = typeof sub === 'number' && sub >= 0 && sub <= 6 ? sub : 0; S.err = ''; S.info = ''; render(); });   // 브라우저 뒤로·앞으로 가기로 단계를 옮긴다
 window.NaviMarket = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
