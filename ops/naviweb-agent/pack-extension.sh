@@ -5,6 +5,10 @@ cd "$(dirname "$0")/extension"
 v=$(node -p "require('./manifest.json').version")
 out="../naviweb-agent-extension-$v.zip"
 rm -f "$out"
-zip -qr "$out" manifest.json *.js *.html icons
+# 스토어가 ID 를 직접 부여하므로 제출본에서는 개발용 고정 키("key")를 뺀다(폴더 로드용 manifest 는 그대로 둔다).
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+cp -R manifest.json *.js *.html icons "$tmp"/
+node -e "const fs=require('fs'),p=process.argv[1]+'/manifest.json',m=JSON.parse(fs.readFileSync(p,'utf8'));delete m.key;fs.writeFileSync(p,JSON.stringify(m,null,2))" "$tmp"
+(cd "$tmp" && zip -qr "$OLDPWD/$out" manifest.json *.js *.html icons)
 echo "만든 파일: $(cd .. && pwd)/$(basename "$out")"
 unzip -l "$out" | tail -n +4 | head -n -2
