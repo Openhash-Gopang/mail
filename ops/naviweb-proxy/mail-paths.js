@@ -70,6 +70,7 @@ export const MAIL_FILES = new Set([
  "learn-sp.js",
  "learn.css",
  "learn.html",
+ "ledger-book.js",
  "logistics-app.js",
  "logistics.css",
  "mail-architecture.html",

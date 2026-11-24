@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 let JSDOM = null; try { ({ JSDOM } = await import('jsdom')); } catch (e) { /* jsdom 이 없으면 건너뛴다 */ }
 const skip = !JSDOM && 'jsdom 없음';
-const app = readFileSync(new URL('../bank-app.js', import.meta.url), 'utf8');
+const app = readFileSync(new URL('../bank-app.js', import.meta.url), 'utf8'), ledger = readFileSync(new URL('../ledger-book.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../bank.css', import.meta.url), 'utf8');
 const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
@@ -20,7 +20,7 @@ function page(o) {
   const dom = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true });
   const w = dom.window, urls = [];
   const fetch = async (u) => { urls.push(u); const p = u.replace('https://px.test', '').replace(/[?&]guid=.*/, '').replace(/\?days=90/, '?days=90'); const key = Object.keys(API).find((k) => p.startsWith(k)); return { json: async () => (o && o.fail) ? { ok: false } : API[key] }; };
-  w.eval(app);
+  w.eval(ledger); w.eval(app);
   const doc = w.document, out = [], asks = [];
   w.NaviBank.on('result', (m) => out.push(m)); w.NaviBank.on('ask', (t) => asks.push(t));
   w.NaviBank.mount(doc.getElementById('m'), Object.assign({ guid: 'g1', proxy: 'https://px.test', fetch }, o && o.mount));
@@ -35,7 +35,7 @@ test('내 지갑: 잔액·무료 한도·이번 달 청구액을 서버 값으�
   const p = page(); await p.until(/5,200/);
   assert.match(p.doc.getElementById('bnk-bal').textContent, /5,200GDC/);
   assert.match(p.txt(), /3,000원 \/ 10,000원 \(30%\)/); assert.match(p.txt(), /20일 후 무료 한도/);
-  assert.match(p.txt(), /이번 달 청구액/); assert.match(p.doc.querySelector('.brand').textContent, /나비웹 은행/);
+  assert.match(p.txt(), /이번 달 청구액/); assert.match(p.doc.querySelector('.brand').textContent, /인프라 AI · 은행/);
   assert.equal(p.doc.querySelectorAll('.tab').length, 6);
   assert.ok(p.urls.some((u) => /\/biz\/balance\?guid=g1/.test(u)) && p.urls.some((u) => /usage-log\?days=90&guid=g1/.test(u)));
 });

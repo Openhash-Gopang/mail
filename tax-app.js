@@ -1,6 +1,6 @@
 /* tax-app.js — 나비웹 세무 회계(인프라 AI · 세무 회계). desktop.html 안에 직접 그려 넣는다(iframe 없음).
  * 사용: NaviTax.mount(요소) · .nav({do:'reset'}) · .on('ask'|'result', 함수) · .flow(순수 함수·전표 흐름)
- * 모양은 tax.css(.tx 범위). 전역은 NaviTax 하나만 쓴다.
+ * 모양은 tax.css(.tx 범위). 전역은 NaviTax 하나만 쓴다. 장부 계산은 ledger-book.js(NaviLedger)를 먼저 불러온 뒤 쓴다.
  *
  * 한 페이지(주피터 지시 2026-11-24): 시장 인프라가 보낸 거래 전표를 받아 세액 결정과 장부 반영까지 처리하는 세무 회계 쪽 화면.
  *  전표는 시장 화면이 남긴 거래(이 브라우저, 읽기 전용)나 예시 전표로 받는다. 거래를 직접 만드는 입력 폼은 시장 화면의 일이라 여기 두지 않는다.
@@ -168,21 +168,12 @@ function ledgerCard(e, title, id) {
 function slipLine(f) { var s = snum(f.qty) * snum(f.price); return f.when + ' · ' + f.seller + ' → ' + f.buyer + ' · ' + f.what + ' ' + f.qty + '개 × ' + won(snum(f.price)) + '원 = ' + won(s) + '원'; }
 // ── 재무제표(대차대조표·손익계산서) 갱신과 갱신 이력: 전표 한 건마다 갱신일시와 일련번호를 부기한다 ──
 // 시작 장부는 체험용 가상 초안이다. 구매자 '나'는 개인사업자, 그 밖의 판매자는 작은 가게로 가정한다. 매출원가는 반영하지 않는다.
-var DRAFT_ME = { 'GDC 잔액':2000000, '비품':500000, '자본금':2500000 };
-var DRAFT_SHOP = { 'GDC 잔액':5000000, '상품(재고자산)':1200000, '비품':800000, '미지급금':300000, '자본금':5000000, '이익잉여금':1700000, '매출':3000000 };
-var LMAP = { '현금(GDC)':'GDC 잔액', '상품(재고자산)':'상품(재고자산)', '부가세대급금':'부가세대급금', '부가세예수금':'부가세예수금', '매출':'매출' };
-var ASSETS = ['GDC 잔액', '상품(재고자산)', '부가세대급금', '비품'], LIABS = ['미지급금', '부가세예수금'], EQUITY = ['자본금', '이익잉여금'];
+// 장부 계산 규칙은 공통 장부(ledger-book.js)에 있다 — 은행·증권 화면과 같은 값을 보장하기 위해서다.
+var NL = window.NaviLedger, ASSETS = NL.ASSETS, LIABS = NL.LIABS, EQUITY = NL.EQUITY;
 var WHY = { 'buyer|상품(재고자산)':'구매한 상품을 재고로 반영(공급가액)', 'buyer|부가세대급금':'국세청이 정한 부가세를 매입세액으로 반영', 'buyer|현금(GDC)':'구매대금과 부가세를 GDC로 지급',
 'seller|현금(GDC)':'판매대금과 부가세를 GDC로 수령', 'seller|매출':'재화 공급에 따른 매출 인식', 'seller|부가세예수금':'국세청이 정한 부가세 납부 의무 계상' };
-function bookOf(owner, recs) {
-var b = {}, base = owner === '나' ? DRAFT_ME : DRAFT_SHOP, k;
-for (k in base) b[k] = base[k];
-recs.forEach(function (r) { [r.buyer, r.seller].forEach(function (e) { if (e.owner !== owner) return; e.lines.forEach(function (l) {
-var a = LMAP[l[0]]; if (!a) return; var d = ASSETS.indexOf(a) >= 0 ? l[1] - l[2] : l[2] - l[1];
-b[a] = (b[a] || 0) + d; if (a === '매출') b['이익잉여금'] = (b['이익잉여금'] || 0) + d;
-}); }); });
-return b;
-}
+/** 은행 화면이 읽은 GDC 잔액이 있으면 "나"의 현금 계정이 그 잔고로 끝나도록 시작 현금을 맞춘다(없으면 가상 초안 값). */
+function bookOf(owner, rs) { var w = owner === '나' ? NL.wallet() : null; return NL.bookOf(owner, rs, w ? { cashEnd:w.bal, all:S.rec } : null); }
 function sgn(n) { return n === 0 ? '' : (n > 0 ? '+' : '−') + won(Math.abs(n)); }
 function thr(a) { return h('thead', {}, [h('tr', {}, a.map(function (t) { return h('th', { text:t }); }))]); }
 function stmtCard(owner, role, id) {

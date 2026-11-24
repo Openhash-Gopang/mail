@@ -53,6 +53,7 @@ function load(force) {
   Promise.all(jobs).then(function (r) {
     var ok = function (x) { return x.v && x.v.ok ? x.v : null; };
     S.bal = ok(r[0]) && typeof r[0].v.balance === 'number' ? r[0].v.balance : (ok(r[0]) ? 0 : null);
+    if (S.bal !== null && window.NaviLedger) NaviLedger.saveWallet(S.bal);   // 세무·증권 화면이 "나"의 현금 계정을 은행 잔고와 같게 쓰도록 남겨 둔다
     S.quota = ok(r[1]); S.usage = ok(r[2]); S.series = S.usage && S.usage.series && S.usage.series.daily ? S.usage.series : null;
     S.charges = ok(r[3]) && Array.isArray(r[3].v.requests) ? r[3].v.requests.slice(0, 20) : [];
     S.errs = r.map(function (x, i) { return ok(x) ? '' : ['잔액', '무료 한도', '사용 내역', '충전 내역'][i]; }).filter(Boolean);
@@ -132,27 +133,13 @@ function copyBtn(text, label) {
 // ── 내 지갑 ──
 /** 내 재무제표(은행 장부): 현금 계정은 GDC 잔액과 같다. 나머지 계정은 세무 회계 화면이 남긴 거래 기록(일련번호·갱신일시)으로 채운다. */
 function walletBook() {
-  var recs = [], b = { '현금(GDC)':0, '상품(재고자산)':0, '부가세대급금':0, '비품':500000, '미지급금':0, '부가세예수금':0, '자본금':0, '이익잉여금':0, '매출':0 }, dCash = 0, marks = [];
-  try { var v = JSON.parse(localStorage.getItem('navi-tax-v2') || 'null'); if (v && Array.isArray(v.rec)) recs = v.rec; } catch (e) { recs = []; }
-  recs.forEach(function (r) {
-    var mine = false;
-    [r.buyer, r.seller].forEach(function (e) {
-      if (!e || e.owner !== '나' || !Array.isArray(e.lines)) return; mine = true;
-      e.lines.forEach(function (l) {
-        var a = l[0]; if (!(a in b)) return;
-        var dr = (a === '현금(GDC)' || a === '상품(재고자산)' || a === '부가세대급금' || a === '비품'), d = dr ? l[1] - l[2] : l[2] - l[1];
-        b[a] += d; if (a === '매출') b['이익잉여금'] += d; if (a === '현금(GDC)') dCash += d;
-      });
-    });
-    if (mine) marks.push((r.at || '갱신일시 기록 없음') + ' · ' + r.serial);
-  });
-  b['현금(GDC)'] = S.bal; b['자본금'] = (S.bal - dCash) + b['비품'];
-  b.marks = marks; return b;
+  var NL = window.NaviLedger; if (!NL) return null;   // 공통 장부(ledger-book.js)가 없으면 재무제표를 만들지 않는다
+  return NL.walletBook(NL.recs(), S.bal);
 }
 function stmtCard() {
   var head = [h('b', { text:'내 재무제표 — 은행 장부' })];
   if (S.bal === null) return h('div', { class:'card stmt cmp', id:'bnk-stmt' }, head.concat([h('div', { class:'sub', text:'잔액을 불러오면 재무제표가 나타나요.' })]));
-  var b = walletBook();
+  var b = walletBook(); if (!b) return h('div', { class:'card stmt cmp', id:'bnk-stmt' }, head.concat([h('div', { class:'sub', text:'장부 모듈을 불러오지 못해 재무제표를 보여 드릴 수 없어요. 새로고침해 주세요.' })]));
   function row(a, val, cls) { return h('tr', { class:cls || '' }, [h('td', { text:a }), h('td', { class:'r num', text:won(val) })]); }
   function opt(a) { return b[a] ? row(a, b[a]) : null; }
   function col(title, rows, extra) { return h('div', { class:'stcol' }, [h('div', { class:'sth', text:title }), h('table', { class:'stbl' }, [h('tbody', {}, rows)])].concat(extra || [])); }
