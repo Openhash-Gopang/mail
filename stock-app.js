@@ -263,6 +263,14 @@ function coOut(R) {
 }
 
 // ── 내 가치 ──
+/** 시장 화면의 구매 이력에서 읽은 가격 신호를 한 줄로. 평가식에는 넣지 않고 참고로만 보여 준다(반영 방식은 사업성 점검 뒤에 정한다). */
+function sigText() {
+  var L = NL(); if (!L || !L.priceSignal) return '데이터 미연결 — 쓰지 않았어요';
+  var g = L.priceSignal();
+  if (g.state === 'none') return '시장에서 산 이력이 아직 없어요 — 쓰지 않았어요';
+  if (g.state === 'thin') return '같은 물건을 두 번 이상 산 품목이 3개 미만이라 자료가 부족해요(' + g.n + '개) — 쓰지 않았어요';
+  return '내 구매 품목 ' + g.n + '개의 가격 변화 중앙값 ' + (g.medianPct >= 0 ? '+' : '−') + Math.abs(g.medianPct).toFixed(1) + '% (참고만 하고 평가에는 넣지 않았어요)';
+}
 function valOut(sm) {
   var v = valueOf(sm, S.val), k = [];
   if (!v) return [h('div', { class:'note', text:'지금 값으로는 계산할 수 없어요.' })];
@@ -274,6 +282,7 @@ function valOut(sm) {
   k.push(tile);
   k.push(h('div', { class:'card col' }, [h('b', { text:'이 평가에 쓴 신호' }), h('div', {}, [
     ['재무(내 장부)', '연결됨 · 자산 ' + won(v.assets) + ' / 부채 ' + won(v.debt) + ' / 자본 ' + won(v.equity) + '원' + (v.balanced ? '' : ' (대차 불일치)')],
+    ['시장 가격 신호(내 구매 이력)', sigText()],
     ['이익', v.earn > 0 ? (v.net ? '세후 영업이익 ' + won(v.earn) + '원 (매출 ' + won(v.sales) + ' − 매출원가 ' + won(v.cogs) + ' − 판매비·관리비 ' + won(v.opex) + ' − 참고용 예상 소득세 ' + won(v.taxEst) + ')' : '매출총이익 ' + won(v.earn) + '원 (매출 ' + won(v.sales) + ' − 매출원가 ' + won(v.cogs) + ', 판매비·관리비·세금 미반영)') : v.sales > 0 && !v.profitKnown ? '원가 미확인 — 쓰지 않았어요' : '근거 없음']].concat(GAPS.map(function (g) { return [g, '데이터 미연결 — 쓰지 않았어요']; })).map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); }))]));
   k.push(h('div', { class:'sub', id:'stk-v-hash', text:'입력 해시 계산 중…' }));
   hashOf(v).then(function (x) { var e = $('stk-v-hash'); if (e) e.textContent = x ? '모델 ' + VER + ' · 입력 해시 ' + x.slice(0, 16) + '… (같은 장부·같은 가정이면 같은 값이 나와요)' : '모델 ' + VER + ' · 이 브라우저에서는 입력 해시를 만들 수 없어요.'; });

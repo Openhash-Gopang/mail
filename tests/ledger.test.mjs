@@ -124,3 +124,14 @@ test('예상 소득세: 구간 경계 값과 지방소득세 10%, 0 이하는 0'
   assert.equal(L.incomeTax(14000000).tax, 840000); assert.equal(L.incomeTax(50000000).tax, 6240000);
   assert.equal(L.incomeTax(1000000).total, 66000); assert.equal(L.incomeTax(-5).total, 0); assert.equal(L.incomeTax(2000000000).tax, 834060000);
 });
+
+// ── 8단계: 시장 가격 신호 ──
+test('가격 신호: 구매 이력이 없으면 none, 같은 물건 재구매가 3개 미만이면 thin(값 없음), 3개 이상이면 변화율 중앙값', { skip }, () => {
+  assert.equal(env().NaviLedger.priceSignal().state, 'none');
+  const H = (name, price, d) => ({ name, price, d, seller: '' });
+  const thin = env({ 'navi-market-v2': { history: [H('청소기', 110, '2026-11-02'), H('청소기', 100, '2026-10-01'), H('텀블러', 5, '2026-11-01')] } }).NaviLedger.priceSignal();
+  assert.equal(thin.state, 'thin'); assert.equal(thin.n, 1);
+  const ok = env({ 'navi-market-v2': { history: [H('가', 120, '2026-11-03'), H('가', 100, '2026-10-01'), H('나', 110, '2026-11-03'), H('나', 100, '2026-10-02'), H('다', 90, '2026-11-04'), H('다', 100, '2026-10-03'), H('라', 500, '2026-11-01')] } }).NaviLedger.priceSignal();
+  assert.equal(ok.state, 'ok'); assert.equal(ok.n, 3); assert.equal(Math.round(ok.medianPct), 10); assert.equal(ok.items[0].name, '가');
+  assert.equal(env({ 'navi-market-v2': 'broken{' }).NaviLedger.priceSignal().state, 'none');
+});
