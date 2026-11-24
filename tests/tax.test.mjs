@@ -81,3 +81,16 @@ test('이름 "세무 회계" + desktop.html 연결 + 경로 + 범위 css + SP', 
   assert.ok(paths.includes('"tax-app.js"') && paths.includes('"tax.css"')); assert.ok(css.includes('.tx ') && css.includes('.tx-tl'));
   assert.ok(sp.includes('"n": "세무 회계"') && sp.includes('국세청 AI') && sp.includes('일련번호') && sp.includes('Openhash'));
 });
+
+test('화면: 전표를 처리하면 두 사람의 재무제표가 갱신되고 갱신일시·일련번호가 부기된다', { skip }, async () => {
+const p = page(), { doc, btn } = p;
+btn('예시 전표 받기').click(); btn('국세청 AI에 보내기').click(); await wait(400);
+const b = doc.getElementById('tx-stmt-b').textContent, s = doc.getElementById('tx-stmt-s').textContent, h = doc.getElementById('tx-hist').textContent;
+assert.ok(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(b) && b.includes('MK-') && s.includes('MK-')); // 갱신일시와 일련번호 부기
+assert.ok(b.includes('1,802,000') && b.includes('대차가 맞아요')); // 구매자: GDC 2,000,000 − 198,000
+assert.ok(s.includes('5,198,000') && s.includes('3,180,000') && s.includes('6,880,000') && s.includes('대차가 맞아요')); // 판매자: GDC·매출·자본
+assert.ok(h.includes('MK-') && h.includes('부가세예수금') && h.includes('부가세대급금') && h.includes('구매대금'));
+assert.ok(doc.querySelectorAll('#tx-stmts tr.hl').length > 0);
+assert.ok(doc.getElementById('tx-hops').children[2].textContent.includes('부가가치세법 제30조')); // 세법 참조
+assert.equal(p.fetched(), 0);
+});
