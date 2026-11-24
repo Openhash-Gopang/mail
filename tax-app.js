@@ -252,12 +252,19 @@ function ownBooks() {
 }
 function viewResult(r) {
   var k = [h('h3', { style:'margin-top:24px', text:'방금 처리한 전표 — ' + r.serial })];
-  k.push(h('ol', { class:'tx-tl', id:'tx-hops' }, r.hops.map(function (x) { return h('li', {}, [h('b', { text:x.who + ' → ' + x.to }), h('div', { text:x.text })]); })));
-  k.push(h('div', { class:'g2', style:'margin-top:12px' }, [ledgerCard(r.buyer, '구매자 장부', 'tx-led-b'), ledgerCard(r.seller, '판매자 장부', 'tx-led-s')])); k.push(stmtsView(r)); k.push(histCard());
+  var st = (S.stage == null) ? 3 : S.stage;
+  function stepCard(txt, label, id, next) { return h('div', { class:'card', style:'margin-top:12px', id:id + '-card' }, [h('div', { class:'sub', text:txt }), h('div', { class:'rowf', style:'margin-top:8px' }, [btn(label, 'fill', function () { S.stage = next; render(); }, id)])]); }
+  if (st < 1) k.push(stepCard('다음 단계는 국세청이 거래 당사자에게 서명된 거래 전표를 보냅니다.', '보내기', 'tx-step1', 1));
+  else {
+    k.push(h('ol', { class:'tx-tl', id:'tx-hops' }, r.hops.map(function (x) { return h('li', {}, [h('b', { text:x.who + ' → ' + x.to }), h('div', { text:x.text })]); })));
+    k.push(h('div', { class:'g2', id:'tx-slips', style:'margin-top:12px' }, [ledgerCard(r.buyer, '구매자 장부', 'tx-led-b'), ledgerCard(r.seller, '판매자 장부', 'tx-led-s')]));
+    if (st < 2) k.push(stepCard('전표를 거래 당사자의 회계사 AI에게 보냅니다.', '보내기', 'tx-step2', 2));
+    else { k.push(stmtsView(r)); if (st < 3) k.push(stepCard('거래 이력을 기록합니다.', '이력 기록', 'tx-step3', 3)); else k.push(histCard()); }
+  }
   var out = h('div', { id:'tx-trace', style:'margin-top:12px' });
   if (S.trc) out.appendChild(traceView(S.trc));
   var tam = h('div', { id:'tx-tam', style:'margin-top:12px' }); if (S.tam) tam.appendChild(S.tam);
-  k.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'진실성 확인 — 일련번호로 거슬러 올라가기' }), h('div', { class:'sub', text:'장부의 항목은 일련번호로 전표를 찾아가 서명·해시·금액을 다시 확인할 수 있어요.' }),
+  if (st >= 3) k.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'진실성 확인 — 일련번호로 거슬러 올라가기' }), h('div', { class:'sub', text:'장부의 항목은 일련번호로 전표를 찾아가 서명·해시·금액을 다시 확인할 수 있어요.' }),
     h('div', { class:'rowf', style:'margin-top:8px' }, [btn('일련번호로 확인', 'fill', doTrace, 'tx-trace-btn'), btn('장부를 몰래 고친다면?', '', doTamper, 'tx-tam-btn')]), out, tam]));
   if (S.rec.length > 1) k.push(h('div', { class:'sub', style:'margin-top:12px', text:'이전 거래 ' + (S.rec.length - 1) + '건: ' + S.rec.slice(1, 6).map(function (x) { return x.serial + ' ' + x.slip.what; }).join(' · ') }));
   k.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn(S.clr ? '정말 지울까요? 한 번 더 누르면 지워요' : '체험 기록 지우기', '', function () { if (!S.clr) { S.clr = true; render(); return; } S.rec = []; S.trc = null; S.tam = null; S.clr = false; save(); render(); }, 'tx-clear')]));
@@ -272,7 +279,7 @@ function send(x) {
   run(x.f, S.rec.length).then(function (res) {
     S.busy = false;
     if (!res.ok) { S.err = res.msg; render(); return; }
-    res.rec.src = x.n; res.rec.at = nowKst(); S.rec.unshift(res.rec); S.rec = S.rec.slice(0, MAXR); S.inbox = S.inbox.filter(function (y) { return y.n !== x.n; }); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
+    res.rec.src = x.n; res.rec.at = nowKst(); S.rec.unshift(res.rec); S.stage = 0; S.rec = S.rec.slice(0, MAXR); S.inbox = S.inbox.filter(function (y) { return y.n !== x.n; }); save(); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ }
   });
 }
 function doTrace() { var r = S.rec[0]; if (!r) return; if (window.NaviHist) NaviHist.push('tax', 'trace'); trace(r).then(function (t) { S.trc = t; S.tam = null; render(); }); }
