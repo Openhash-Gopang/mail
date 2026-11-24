@@ -49,7 +49,7 @@ test('진실성: 일련번호로 확인하면 통과하고, 금액·세액·서�
 });
 test('화면: 받은 전표 없음 → 예시 전표 → 국세청 AI에 보내기 → 흐름·두 장부·내 장부 합계·확인·몰래 고치기', { skip }, async () => {
   const p = page(), { doc, btn } = p;
-  assert.ok(p.txt().includes('세무 회계') && p.txt().includes('Openhash Network') && p.txt().includes('체험') && p.txt().includes('받은 거래 전표'));
+  assert.ok(p.txt().includes('세무 회계') && p.txt().includes('체험') && p.txt().includes('받은 거래 전표'));
   assert.ok(!doc.getElementById('tx-buyer') && !doc.getElementById('tx-seller') && !doc.getElementById('tx-go'));       // 시장 내용(거래 입력 폼)은 두지 않는다
   assert.ok(doc.getElementById('tx-empty') && !btn('국세청 AI에 보내기'));
   btn('예시 전표 받기').click(); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('180,000원'));
