@@ -226,7 +226,7 @@ function viewMain() {
   kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }),
     h('p', { class:'lead', text:'시장 인프라 AI가 거래 전표(6하 원칙)를 보내오면, 국세청 AI가 서명을 확인해 세액을 정하고 각자의 재무제표 SP가 거래 일련번호와 함께 장부에 반영해요. 이 화면은 그 전표를 받는 세무 회계 쪽입니다.' }));
   var box = [h('b', { text:'받은 거래 전표' + (P.length ? ' ' + P.length + '건' : '') })];
-  box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('예시 전표 받기(체험)', '', addSample, 'tx-sample')]));
+  box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [(function () { var b = btn('예시 전표 받기(체험)', '', addSample, 'tx-sample'); if (P.some(function (x) { return /^ex:/.test(x.n); })) b.disabled = true; return b; })()]));
   if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:'아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
   P.forEach(function (x, i) { box.push(h('div', { style:'margin-top:16px' }, [h('div', { text:slipLine(x.f) }), h('div', { class:'sub', text:'출처: ' + x.src }), h('div', { class:'rowf', style:'margin-top:10px' }, [btn('국세청 AI에 보내기', 'fill', function () { send(x); }, 'tx-send-' + i)])])); });
   kids.push(h('div', { class:'card col', style:'margin-top:12px' }, box));
@@ -237,6 +237,7 @@ function viewMain() {
   return kids;
 }
 function addSample() {
+  if (pending().some(function (x) { return /^ex:/.test(x.n); })) return;   // 처리하지 않은 예시 전표가 있으면 같은 전표를 또 받지 않는다
   var n = 'ex:' + Date.now().toString(36);
   S.inbox.unshift({ n:n, src:'예시 전표(체험)', f:{ buyer:'나', seller:'철수상회', when:kst(), where:'나비웹 시장 인프라', what:'무선 청소기', qty:'2', price:'90000', how:'GDC 결제', why:'예시 전표' } });
   S.inbox = S.inbox.slice(0, 20); save(); render();
