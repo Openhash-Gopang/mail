@@ -78,3 +78,27 @@ test('은행 재무제표: 매출원가가 반영되고 대차가 맞는다, 요
   assert.equal(b['현금(GDC)'] + b['상품(재고자산)'] + b['부가세대급금'] + b['비품'], b['미지급금'] + b['부가세예수금'] + b['자본금'] + b['이익잉여금']);
   const s = L.summary('나'); assert.equal(s.profit, 30000); assert.equal(s.profitKnown, true); assert.equal(s.cogs, 90000); assert.equal(s.totals.balanced, true);
 });
+
+// ── 4단계: 모의 증권 장부 ──
+import { webcrypto } from 'node:crypto';
+function envS() { const w = env(); Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true }); w.TextEncoder = TextEncoder; return w; }
+async function mk(w, steps) { const L = w.NaviLedger, st = { recs: [], alerts: [] }; st.recs.push(await L.secAppend(st, L.secGrant())); for (const t of steps) { const pl = L.secPlan(L.secState(st.recs), t, st.recs.length); if (!pl.ok) return { st, pl }; st.recs.push(await L.secAppend(st, pl.rec)); } return { st }; }
+test('모의 장부: 매수·매도 분개가 대차를 맞추고 처분손익·수수료가 계산된다', { skip }, async () => {
+  const w = envS(), L = w.NaviLedger;
+  const { st } = await mk(w, [{ kind: 'buy', sym: 'A', cls: '국내주식', qty: 10, px: 1000, d: '2026-11-25' }, { kind: 'sell', sym: 'A', cls: '국내주식', qty: 4, px: 1100, d: '2026-11-25' }]);
+  const s = L.secState(st.recs); assert.ok(s.balanced); assert.equal(s.realized, 400); assert.equal(s.positions[0].qty, 6);
+});
+test('모의 장부: 부족·초과 매도·±30% 이탈·소수 수량은 계획 단계에서 거절한다', { skip }, async () => {
+  const w = envS(), L = w.NaviLedger;
+  const a = await mk(w, [{ kind: 'buy', sym: 'A', cls: '국내주식', qty: 1, px: 100, d: 'x' }, { kind: 'buy', sym: 'A', cls: '국내주식', qty: 1, px: 200, d: 'x' }]); assert.equal(a.pl.ok, false); assert.ok(a.pl.alert);
+  assert.equal((await mk(w, [{ kind: 'sell', sym: 'A', cls: '국내주식', qty: 1, px: 100, d: 'x' }])).pl.ok, false);
+  assert.equal((await mk(w, [{ kind: 'buy', sym: 'A', cls: '국내주식', qty: 1.5, px: 100, d: 'x' }])).pl.ok, false);
+  assert.equal((await mk(w, [{ kind: 'buy', sym: '', cls: '국내주식', qty: 1, px: 100, d: 'x' }])).pl.ok, false);
+});
+test('모의 장부: 해시 이음 검증은 값 변조를 찾아낸다', { skip }, async () => {
+  const w = envS(), L = w.NaviLedger;
+  const { st } = await mk(w, [{ kind: 'buy', sym: 'A', cls: '국내주식', qty: 2, px: 100, d: 'x' }]);
+  assert.equal((await L.secVerify(st.recs)).ok, true);
+  const bad = JSON.parse(JSON.stringify(st.recs)); bad[1].qty = 3;
+  const v = await L.secVerify(bad); assert.equal(v.ok, false); assert.equal(v.bad, 1);
+});

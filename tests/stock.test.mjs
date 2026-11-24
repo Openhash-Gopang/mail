@@ -111,8 +111,8 @@ test('매도: 보유 수량보다 많으면 막는다', { skip }, () => {
 
 test('탭 이동: 모든 탭이 그려진다', { skip }, () => {
   const p = page('portfolio');
-  for (const v of ['portfolio', 'value', 'company', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
-  assert.equal(p.doc.querySelectorAll('.tab').length, 8);
+  for (const v of ['portfolio', 'value', 'company', 'order', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
+  assert.equal(p.doc.querySelectorAll('.tab').length, 9);
 });
 
 test('투자 점검·용어, 시세 서버 없음 안내', { skip }, () => {
@@ -192,4 +192,47 @@ test('내 가치 탭: 산 물건을 팔면 매출총이익으로 수익가치 �
   const buy = sale('MK-1', '무선 청소기', 2, 180000, '나', '철수상회'), sell = sale('MK-2', '무선 청소기', 1, 120000, '영희', '나');
   const p = page('value', { 'navi-tax-v2': { rec: [sell, buy], inbox: [] } });
   assert.match(p.doc.getElementById('stk-v-range').textContent, /~/); assert.match(p.txt(), /매출총이익 30,000원/); assert.match(p.txt(), /매출 120,000 − 매출원가 90,000/);
+});
+
+// ── 4단계: 모의 주문·체결 ──
+const tick = () => new Promise((r) => setTimeout(r, 30));
+const fill = (p, sym, qty, px) => { type(p, 'stk-o-sym', sym); type(p, 'stk-o-qty', qty); type(p, 'stk-o-px', px); };
+test('모의 주문: 계좌 열기 → 매수 → 매도, 보유·손익·대차가 전표에서 계산된다', { skip }, async () => {
+  const p = page('order'); assert.ok(p.btn('모의 계좌 열기'));
+  p.btn('모의 계좌 열기').click(); await tick();
+  assert.ok(p.doc.getElementById('stk-o-ledger'));
+  fill(p, '삼성전자', '10', '70000'); p.btn('주문하기').click(); await tick();
+  assert.match(p.doc.getElementById('stk-o-msg').textContent, /매수 체결/);
+  p.btn('매도').click();
+  fill(p, '삼성전자', '4', '72000'); p.btn('주문하기').click(); await tick();
+  assert.match(p.doc.getElementById('stk-o-msg').textContent, /매도 체결/);
+  assert.match(p.doc.getElementById('stk-o-t3').textContent, /맞아요/);
+  assert.equal(JSON.parse(p.w.localStorage.getItem('navi-sec-v1')).recs.length, 3);
+  assert.equal(p.fetched(), 0);
+});
+test('모의 주문: 모의 현금 부족·보유 초과 매도·직전가 ±30% 이탈은 막고 이탈은 감독 알림에 남긴다', { skip }, async () => {
+  const p = page('order'); p.btn('모의 계좌 열기').click(); await tick();
+  fill(p, 'A', '1', '100'); p.btn('주문하기').click(); await tick();
+  fill(p, 'A', '1', '200'); p.btn('주문하기').click(); await tick();
+  assert.equal(p.doc.getElementById('stk-o-msg').getAttribute('role'), 'alert');
+  assert.ok(p.doc.getElementById('stk-o-alerts').querySelectorAll('.kv').length >= 1);
+  p.btn('매도').click(); fill(p, 'A', '5', '100'); p.btn('주문하기').click(); await tick();
+  assert.equal(p.doc.getElementById('stk-o-msg').getAttribute('role'), 'alert');
+  p.btn('매수').click(); fill(p, 'B', '1', '999999999999'); p.btn('주문하기').click(); await tick();
+  assert.equal(p.doc.getElementById('stk-o-msg').getAttribute('role'), 'alert');
+  assert.equal(JSON.parse(p.w.localStorage.getItem('navi-sec-v1')).recs.length, 2);
+});
+test('모의 주문: 장부 확인은 통과하고, 몰래 고치면 몇 번째 전표인지 드러난다', { skip }, async () => {
+  const p = page('order'); p.btn('모의 계좌 열기').click(); await tick();
+  fill(p, 'A', '1', '100'); p.btn('주문하기').click(); await tick();
+  p.btn('장부 확인').click(); await tick();
+  assert.match(p.doc.getElementById('stk-o-ver-res').textContent, /모든 전표가 맞아요/);
+  p.btn('장부를 몰래').click(); await tick();
+  assert.match(p.doc.getElementById('stk-o-ver-res').textContent, /번째 전표에서 바로 드러나요/);
+  assert.equal(JSON.parse(p.w.localStorage.getItem('navi-sec-v1')).recs.length, 2);
+});
+test('모의 주문: 포트폴리오에 모의 계좌 카드가 나오고 모의 거래임을 알린다', { skip }, async () => {
+  const p = page('order'); p.btn('모의 계좌 열기').click(); await tick();
+  assert.match(p.txt(), /진짜 GDC와 증권은 오가지 않고/);
+  p.S.view('portfolio'); assert.ok(p.doc.getElementById('stk-sim-card'));
 });

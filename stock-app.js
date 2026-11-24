@@ -8,19 +8,21 @@
  *    그래서 '기업 평가' 탭은 원칙을 설명하고, 사용자가 넣은 재무제표 값으로 같은 방식의 평가 지표를 계산한다(지어낸 기업 자료는 없다).
  *  - 시세 서버와 주문 기능이 없다. 이 화면은 주문을 보내지 않고, 시세를 지어내지 않는다. 현재가는 사용자가 직접 적는다.
  *  - 내 포트폴리오는 사용자가 적은 '거래 기록'에서 계산한다(평균단가법). 모든 기록은 이 브라우저(localStorage)에만 저장된다.
+ *  - '내 가치'는 공통 장부(ledger-book.js)에서 내 장부를 읽어 평가 v0 구간을 계산한다. 연결되지 않은 신호는 쓰지 않고 미연결로 적는다. 이익은 매출총이익(매출 − 매출원가)이다.
+ *  - '모의 주문'은 테스트 GDC로 거래를 장부 전표(분개·일련번호·해시 이음)로 남기는 연습이다. 실제 주문·결제가 아니며 은행 잔고와 섞이지 않는다. 체결가는 직접 적고, 감독 규칙(직전 체결가 ±30%·보유 수량·모의 현금)이 주문을 검사한다. 보유·손익은 이 전표에서만 계산한다.
  *  - 자산 배분·목표 계산기는 사용자가 넣은 값으로 계산만 한다. 예측이나 추천이 아니다. 특정 상품을 사라고 권하지 않는다.
  */
 (function () {
 'use strict';
 var KEY = 'navi-stock-v1', MAXT = 500, MAXW = 100;
 var CLS = ['국내주식', '해외주식', 'ETF·펀드', '채권', '부동산·리츠', '암호화폐', '원자재', '현금·예금', '기타'];
-var TABS = [['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['company', '기업 평가'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']];
+var TABS = [['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']];
 var VIEWS = TABS.map(function (t) { return t[0]; });
 var CONC = 30;   // 한 종목이 평가금액의 이 비율(%)을 넘으면 알려 준다(참고)
 var CHECKS = ['비상 자금(생활비 3~6개월분)은 따로 두었나요?', '투자 목적과 기간(언제 쓸 돈인지)을 적어 두었나요?', '한 종목에 넣을 최대 비중을 정해 두었나요?', '손실이 얼마까지 나면 어떻게 할지 미리 정해 두었나요?', '내가 이해하지 못하는 상품에는 투자하지 않기로 했나요?', '수수료·세금(양도세·배당세 등)을 확인했나요?', '빚을 내서 투자하지 않나요?'];
 var GLOSS = [['분산투자', '여러 종목·자산군·지역에 나누어 투자해 한 곳의 손실이 전체에 미치는 영향을 줄이는 방법입니다.'], ['리밸런싱', '시간이 지나 달라진 자산 비중을 처음 정한 목표 비중으로 되돌리는 조정입니다.'], ['평균단가법', '여러 번 나눠 산 종목의 평균 매수 가격을 구해 매도 때 손익을 계산하는 방법입니다. 이 화면도 이 방법을 씁니다.'], ['평가손익 · 실현손익', '평가손익은 아직 팔지 않은 종목의 현재가 기준 손익이고, 실현손익은 실제로 판 뒤 확정된 손익입니다.'], ['ETF', '여러 종목을 묶어 지수 등을 따라가도록 만든 펀드로, 주식처럼 거래소에서 사고팝니다.'], ['PER · PBR', 'PER은 주가를 주당순이익으로, PBR은 주가를 주당순자산으로 나눈 값으로 주가가 이익·자산에 비해 어느 수준인지 가늠하는 지표입니다.'], ['배당수익률', '1주당 배당금을 주가로 나눈 비율입니다. 배당은 회사 사정에 따라 줄거나 없어질 수 있습니다.'], ['채권', '정부나 기업이 돈을 빌리며 발행하는 증서로, 정해진 이자를 주고 만기에 원금을 갚기로 한 약속입니다. 발행자의 신용에 따라 위험이 다릅니다.'], ['신용등급', '채권 발행자가 이자와 원금을 갚을 능력을 등급으로 나타낸 것입니다. 등급이 낮을수록 보통 이자가 높고 위험도 큽니다.'], ['변동성', '가격이 오르내리는 폭입니다. 변동성이 크면 수익도 손실도 크게 날 수 있습니다.'], ['환율 위험', '해외 자산은 가격이 그대로여도 환율이 변하면 원화 가치가 달라집니다.'], ['복리', '이자에 다시 이자가 붙는 방식으로, 기간이 길수록 차이가 커집니다. 목표 계산기는 월 복리로 계산합니다.'], ['인플레이션(물가 상승)', '물가가 올라 같은 돈으로 살 수 있는 것이 줄어드는 현상입니다. 실질 가치는 물가 상승을 뺀 값입니다.'], ['유동성', '필요할 때 손해 없이 현금으로 바꿀 수 있는 정도입니다. 거래가 적은 자산은 팔고 싶을 때 못 팔 수 있습니다.'], ['레버리지', '빌린 돈으로 투자 규모를 키우는 것입니다. 이익도 손실도 커지며 손실이 원금보다 클 수 있습니다.'], ['시가총액', '주가에 발행 주식 수를 곱한 회사의 시장 가치입니다.'], ['호가', '사려는 가격(매수 호가)과 팔려는 가격(매도 호가)입니다.'], ['공매도', '주식을 빌려 먼저 팔고 나중에 사서 갚는 거래로, 가격이 내릴 때 이익이 나지만 오를 때 손실에는 한도가 없습니다.'], ['GDC 채권(설계 중)', '나비웹이 구상하는 GDC 기반 채권입니다. 아직 실제로 발행·거래되지 않는 개념 단계이며 이 화면에서는 거래할 수 없습니다.']];
 var M = null, LS = {};
-var S = { view:'portfolio', co:{ name:'', rev:'', op:'', ni:'', assets:'', debt:'', equity:'', shares:'', price:'', g:'3', r:'10' }, cos:[], cc:{ a:'', b:'', tol:'1' }, trades:[], px:{}, watch:[], target:{}, checks:{}, goal:{ p0:'', m:'', r:'5', y:'10', t:'', inf:'2' }, val:{ g:'3', r:'10' }, form:{ side:'B', d:'', sym:'', cls:'국내주식', qty:'', px:'', fee:'' }, wform:{ sym:'', cls:'국내주식', target:'', memo:'' }, err:{}, gq:'', msg:'' };
+var S = { view:'portfolio', co:{ name:'', rev:'', op:'', ni:'', assets:'', debt:'', equity:'', shares:'', price:'', g:'3', r:'10' }, cos:[], cc:{ a:'', b:'', tol:'1' }, trades:[], px:{}, watch:[], target:{}, checks:{}, goal:{ p0:'', m:'', r:'5', y:'10', t:'', inf:'2' }, val:{ g:'3', r:'10' }, sec:{ recs:[], alerts:[] }, secMsg:null, secVer:null, secBusy:false, order:{ side:'B', sym:'', cls:'국내주식', qty:'', px:'' }, form:{ side:'B', d:'', sym:'', cls:'국내주식', qty:'', px:'', fee:'' }, wform:{ sym:'', cls:'국내주식', target:'', memo:'' }, err:{}, gq:'', msg:'' };
 
 // ── 작은 도구 ──
 function h(tag, attrs, kids) {
@@ -190,7 +192,7 @@ function empty(t, b) { return h('div', { class:'card', style:'margin-top:16px' }
 function curPos() { var P = positions(S.trades); return { P:P, V:valued(P.pos, S.px) }; }
 function viewPortfolio() {
   var kids = head('내 포트폴리오', '거래 기록에서 계산한 보유 종목과 손익입니다. 현재가를 적으면 평가금액이 계산됩니다.'); kids.push(notice());
-  if (!S.trades.length) { kids.push(empty('아직 거래 기록이 없어요. 증권사에서 산 종목을 “거래 기록”에 적으면 여기에 모입니다.', btn('거래 기록하기', 'fill', function () { go('trades'); }))); kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 묻기', 'quiet', function () { ask('투자를 처음 시작하려면 무엇부터 알아야 하나요?'); })])); return kids; }
+  if (!S.trades.length) { kids.push(empty('아직 거래 기록이 없어요. 증권사에서 산 종목을 “거래 기록”에 적으면 여기에 모입니다.', btn('거래 기록하기', 'fill', function () { go('trades'); }))); var sc0 = simCard(); if (sc0) kids.push(sc0); kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 묻기', 'quiet', function () { ask('투자를 처음 시작하려면 무엇부터 알아야 하나요?'); })])); return kids; }
   var c = curPos(), V = c.V, P = c.P;
   kids.push(h('div', { class:'g4', style:'margin-top:4px' }, [['평가금액', V.rows.length && V.val ? won(V.val) + '원' : '—', ''], ['투자 원금', V.val ? won(V.cost) + '원' : '—', '현재가를 적은 종목 기준'], ['평가손익', V.val ? sgn(V.pl) + '원' : '—', V.val && V.cost ? pct(V.pl / V.cost) : ''], ['실현손익', sgn(P.realized) + '원', '수수료 ' + won(P.fees) + '원 포함']].map(function (x, i) { return h('div', { class:'tile' }, [h('div', { class:'k', text:x[0] }), h('div', { class:'num ' + (i === 2 ? cls(V.pl) : i === 3 ? cls(P.realized) : ''), id:'stk-t' + i, style:'font-size:20px;font-weight:700', text:x[1] }), x[2] ? h('div', { class:'sub', text:x[2] }) : null]); })));
   if (V.unpriced.length) kids.push(h('div', { class:'note', style:'margin-top:12px', text:'현재가를 적지 않은 ' + V.unpriced.length + '종목(' + V.unpriced.slice(0, 4).join(', ') + (V.unpriced.length > 4 ? ' 외' : '') + ')은 평가금액·손익에 넣지 않았습니다.' }));
@@ -212,7 +214,8 @@ function viewPortfolio() {
     var cl = Object.keys(V.byCls).sort(function (a, b) { return V.byCls[b] - V.byCls[a]; });
     if (cl.length) kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'자산군별 비중' }), h('div', {}, cl.map(function (k) { var v = V.byCls[k] / V.val * 100; return h('div', { class:'mrow' }, [h('div', { class:'nm', style:'flex-basis:96px', text:k }), h('div', { class:'tr' }, [h('em', { style:'width:' + v.toFixed(1) + '%;background:var(--pri)' })]), h('div', { class:'v', text:Math.round(v * 10) / 10 + '% · ' + won(V.byCls[k]) + '원' })]); })), h('div', { class:'rowf' }, [btn('목표 비중과 비교', 'sm', function () { go('alloc'); })])]));
   }
-  kids.push(h('div', { class:'card rowf', style:'margin-top:16px;justify-content:space-between' }, [h('div', { class:'col', style:'gap:2px;flex:1;min-width:220px' }, [h('b', { text:'재무제표로 기업을 평가해 보세요' }), h('span', { class:'sub', text:'나비웹에서는 모든 거래가 재무제표로 자동 기록되고, 상호 대조와 이상 탐지로 분식을 막는다는 원칙입니다.' })]), btn('내 가치 열기', 'sm', function () { go('value'); }), btn('기업 평가 열기', 'sm', function () { go('company'); })]));
+  var sc1 = simCard(); if (sc1) kids.push(sc1);
+kids.push(h('div', { class:'card rowf', style:'margin-top:16px;justify-content:space-between' }, [h('div', { class:'col', style:'gap:2px;flex:1;min-width:220px' }, [h('b', { text:'재무제표로 기업을 평가해 보세요' }), h('span', { class:'sub', text:'나비웹에서는 모든 거래가 재무제표로 자동 기록되고, 상호 대조와 이상 탐지로 분식을 막는다는 원칙입니다.' })]), btn('내 가치 열기', 'sm', function () { go('value'); }), btn('기업 평가 열기', 'sm', function () { go('company'); })]));
   kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('거래 기록 추가', 'fill', function () { go('trades'); }), btn('증권 AI에게 묻기', 'quiet', function () { ask('내 포트폴리오에서 점검해 볼 점을 알려 주세요'); })]));
   return kids;
 }
@@ -289,6 +292,68 @@ function viewValue() {
   kids.push(h('div', { class:'g2', style:'margin-top:16px;align-items:start' }, [out, form]));
   kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'sub', text:'개인의 적정 임금 구간은 경력·근속·신용 데이터가 연결된 뒤에 제공해요. 지금은 내 장부로 계산하는 가치만 보여 드려요.' })]));
   kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 계산 방법 묻기', 'quiet', function () { ask('내 가치 구간은 어떻게 계산했나요?'); })]));
+  return kids;
+}
+
+// ── 모의 주문·체결(테스트 GDC, 장부 전표) ──
+function simCard() {
+  var L = NL(); if (!L || !S.sec.recs.length) return null;
+  var st = L.secState(S.sec.recs);
+  return h('div', { class:'card col', id:'stk-sim-card', style:'margin-top:16px' }, [h('div', { class:'rowf', style:'justify-content:space-between' }, [h('b', { style:'font-size:17px', text:'모의 계좌 (장부에서 계산)' }), pill('모의', 'm')]),
+    h('div', {}, [['모의 현금(테스트 GDC)', won(st.cash) + '원'], ['투자자산 장부가', won(st.invest) + '원'], ['증권 처분손익', sgn(st.realized) + '원'], ['낸 수수료(예시 요율)', won(st.fees) + '원']].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { class:'num', text:x[1] })]); })),
+    st.positions.length ? h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['종목', '수량', '평균단가', '장부가', '마지막 체결가'].map(function (t, i) { return h('th', { class:i ? 'r' : '', text:t }); }))]),
+      h('tbody', {}, st.positions.map(function (p) { return h('tr', {}, [h('td', {}, [h('b', { text:p.sym })]), h('td', { class:'r num', text:String(p.qty) }), h('td', { class:'r num', text:won(p.avg) }), h('td', { class:'r num', text:won(p.cost) }), h('td', { class:'r num', text:won(st.last[p.sym]) })]); }))])]) : h('div', { class:'sub', text:'보유한 모의 종목이 없어요.' }),
+    h('div', { class:'rowf' }, [btn('모의 주문 열기', 'sm', function () { go('order'); })])]);
+}
+function openSim() {
+  var L = NL(); if (!L || S.secBusy) return; S.secBusy = true;
+  L.secAppend(S.sec, L.secGrant()).then(function (r) {
+    S.secBusy = false;
+    if (!r) S.secMsg = { t:'이 브라우저에서는 장부 해시를 만들 수 없어 모의 계좌를 열 수 없어요(보안 연결 필요).', bad:true };
+    else { S.sec.recs.push(r); L.secSave(S.sec); S.secMsg = { t:'모의 계좌를 열었어요. 테스트 GDC ' + won(L.SIM_GRANT) + '원 입금 전표 ' + r.serial }; }
+    render();
+  });
+}
+function placeOrder() {
+  var L = NL(); if (!L || S.secBusy) return; var f = S.order;
+  var plan = L.secPlan(L.secState(S.sec.recs), { kind:f.side === 'S' ? 'sell' : 'buy', sym:f.sym, cls:f.cls, qty:numOf(f.qty), px:numOf(f.px), d:kst() }, S.sec.recs.length);
+  S.secVer = null;
+  if (!plan.ok) { if (plan.alert) { S.sec.alerts.unshift(plan.alert); S.sec.alerts = S.sec.alerts.slice(0, 50); L.secSave(S.sec); } S.secMsg = { t:plan.msg, bad:true }; return render(); }
+  S.secBusy = true;
+  L.secAppend(S.sec, plan.rec).then(function (r) {
+    S.secBusy = false;
+    if (!r) { S.secMsg = { t:'이 브라우저에서는 장부 해시를 만들 수 없어 주문을 기록하지 못했어요.', bad:true }; return render(); }
+    S.sec.recs.push(r); L.secSave(S.sec); S.order = { side:f.side, sym:'', cls:f.cls, qty:'', px:'' };
+    S.secMsg = { t:(r.kind === 'buy' ? '매수' : '매도') + ' 체결(모의) — 전표 ' + r.serial + ' · 수수료 ' + won(r.fee) + '원' }; render();
+  });
+}
+function verifySim(tamper) {
+  var L = NL(); if (!L || !S.sec.recs.length) return; var recs = S.sec.recs;
+  if (tamper) { recs = JSON.parse(JSON.stringify(recs)); var i = recs.length - 1; if (recs[i].kind === 'grant') recs[i].amt += 1; else recs[i].qty += 1; }
+  L.secVerify(recs).then(function (v) { v.tamper = !!tamper; S.secVer = v; render(); });
+}
+function viewOrder() {
+  var kids = head('모의 주문·체결', '테스트 GDC로 증권을 사고파는 연습입니다. 거래가 장부 전표로 남고, 보유 종목과 손익이 이 장부에서 계산돼요.');
+  kids.push(h('div', { class:'note info', style:'margin:16px 0', text:'모의 거래입니다. 진짜 GDC와 증권은 오가지 않고, 시세 서버가 없어 체결가는 직접 적어요. 실제 증권 거래는 금융당국 인가 경로가 정해진 뒤에 열려요. 수수료율은 예시(기존 증권사의 1/10 가정, 기준 미확정)이고 증권거래세 등 세금은 아직 반영하지 않았어요. 나비는 특정 상품을 사라고 권하지 않습니다.' }));
+  var L = NL(); if (!L) { kids.push(h('div', { class:'note', role:'alert', text:'장부 모듈을 불러오지 못했어요. 새로고침해 주세요.' })); return kids; }
+  if (S.secMsg) kids.push(h('div', { class:S.secMsg.bad ? 'note' : 'note info', role:S.secMsg.bad ? 'alert' : 'status', id:'stk-o-msg', style:'margin-bottom:12px', text:S.secMsg.t }));
+  if (!S.sec.recs.length) { kids.push(h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'모의 계좌 열기' }), h('div', { class:'sub', text:'테스트 GDC ' + won(L.SIM_GRANT) + '원이 입금된 전표로 시작해요. 이 돈은 실제 GDC가 아니고 은행 잔고와도 섞이지 않아요.' }), h('div', { class:'rowf' }, [btn('모의 계좌 열기', 'fill', openSim)])])); return kids; }
+  var st = L.secState(S.sec.recs), f = S.order, setO = function (k) { return function (v) { f[k] = v; }; };
+  kids.push(h('div', { class:'g4' }, [['모의 현금', won(st.cash) + '원', '테스트 GDC'], ['투자자산 장부가', won(st.invest) + '원', ''], ['증권 처분손익', sgn(st.realized) + '원', '평균단가법'], ['대차', st.balanced ? '맞아요' : '맞지 않아요', '자산 = 자본 + 손익 − 수수료']].map(function (x, i) { return h('div', { class:'tile' }, [h('div', { class:'k', text:x[0] }), h('div', { class:'num', id:'stk-o-t' + i, style:'font-size:20px;font-weight:700', text:x[1] }), x[2] ? h('div', { class:'sub', text:x[2] }) : null]); })));
+  var seg = h('div', { class:'seg', role:'group', 'aria-label':'매수 매도' }, [['B', '매수'], ['S', '매도']].map(function (x) { return h('button', { type:'button', 'aria-pressed':String(f.side === x[0]), text:x[1], onclick:function () { f.side = x[0]; render(); } }); }));
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'주문' }), seg,
+    h('div', { class:'frm' }, [field('stk-o-sym', '종목', f.sym, { ph:'예: 삼성전자', max:30, set:setO('sym') }), clsSel('stk-o-cls', f.cls, setO('cls')), field('stk-o-qty', '수량(정수)', f.qty, { ph:'10', mode:'numeric', set:setO('qty') }), field('stk-o-px', '체결 가격(원, 직접 입력)', f.px, { ph:'72000', mode:'decimal', help:'직전 체결가에서 ±' + Math.round(L.DEV_LIMIT * 100) + '%를 넘으면 감독 규칙이 보류해요.', set:setO('px') })]),
+    h('div', { class:'rowf', style:'margin-top:16px' }, [btn('주문하기(모의)', 'fill', placeOrder)])]));
+  var recs = S.sec.recs.slice().reverse();
+  kids.push(h('div', { class:'card', style:'margin-top:16px;padding:0' }, [h('div', { style:'padding:14px 16px 0' }, [h('b', { style:'font-size:17px', text:'장부 전표' }), h('div', { class:'sub', text:'전표마다 앞 전표의 해시를 이어 붙여요. 최근 20건을 보여 드려요.' })]),
+    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'stk-o-ledger' }, [h('thead', {}, [h('tr', {}, ['일련번호', '일시', '구분', '종목', '수량', '가격', '분개', '해시'].map(function (t, i) { return h('th', { class:i > 3 && i < 6 ? 'r' : '', text:t }); }))]),
+      h('tbody', {}, recs.slice(0, 20).map(function (r) { return h('tr', {}, [h('td', { class:'num', text:r.serial }), h('td', { class:'num', text:r.at }), h('td', {}, [pill(r.kind === 'grant' ? '입금' : r.kind === 'buy' ? '매수' : '매도', r.kind === 'sell' ? 'm' : '')]), h('td', { text:r.sym || '' }), h('td', { class:'r num', text:r.qty ? String(r.qty) : '' }), h('td', { class:'r num', text:r.px ? won(r.px) : '' }),
+        h('td', { class:'sub', text:r.lines.map(function (l) { return (l[1] ? '차 ' : '대 ') + l[0] + ' ' + won(l[1] || l[2]); }).join(' · ') }), h('td', { class:'num', text:r.hash.slice(0, 8) })]); }))])])]));
+  var ver = h('div', { id:'stk-o-ver', style:'margin-top:12px' });
+  if (S.secVer) { var v = S.secVer; ver.appendChild(h('div', { class:v.tamper ? (v.ok ? 'note' : 'note info') : (v.ok ? 'note info' : 'note'), role:'status', id:'stk-o-ver-res', text:v.tamper ? '마지막 전표의 수량(또는 금액)을 몰래 1 올렸다고 가정해 다시 확인해 봤어요(실제 장부는 그대로예요). ' + (v.ok ? '그대로 통과했어요.' : '→ ' + (v.bad + 1) + '번째 전표에서 바로 드러나요: ' + v.why + '.') : (v.ok ? '모든 전표가 맞아요 — ' + v.n + '건의 해시 이음과 분개를 다시 계산해 확인했어요.' : (v.bad + 1) + '번째 전표가 맞지 않아요: ' + v.why + '.') })); }
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'장부 확인' }), h('div', { class:'sub', text:'전표가 몰래 바뀌었는지 해시 이음과 분개를 다시 계산해 확인해요.' }), h('div', { class:'rowf' }, [btn('장부 확인', 'fill', function () { verifySim(false); }), btn('장부를 몰래 고친다면?', 'quiet', function () { verifySim(true); })]), ver]));
+  kids.push(h('div', { class:'card col', style:'margin-top:16px', id:'stk-o-alerts' }, [h('b', { text:'감독 AI 알림' }), S.sec.alerts.length ? h('div', {}, S.sec.alerts.slice(0, 10).map(function (a) { return h('div', { class:'kv' }, [h('span', { text:a.at }), h('b', { text:a.msg })]); })) : h('div', { class:'sub', text:'아직 알림이 없어요. 주문은 규칙에 따라 자동으로 검사돼요(직전 체결가 ±' + Math.round(L.DEV_LIMIT * 100) + '% 이탈, 보유 수량 초과, 모의 현금 부족).' })]));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 묻기', 'quiet', function () { ask('모의 주문은 어떻게 장부에 기록되나요?'); })]));
   return kids;
 }
 
@@ -418,7 +483,7 @@ function viewLearn() {
 
 function render() {
   var root = $('stk-root'), tp = $('stk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
+  var kids = S.view === 'order' ? viewOrder() : S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   if (S.view === 'goal' && M.__goalOut) M.__goalOut();
 }
@@ -443,6 +508,7 @@ function nav(a) {
 function mount(el, o) {
   if (!el) return; o = o || {};
   M = el; el.textContent = ''; el.classList.add('stk'); S.trades = []; S.cos = []; S.px = {}; S.watch = []; S.target = {}; S.checks = {}; S.val = { g:'3', r:'10' }; S.err = {}; S.msg = ''; load();
+S.sec = NL() ? NL().secLoad() : { recs:[], alerts:[] }; S.secMsg = null; S.secVer = null; S.secBusy = false; S.order = { side:'B', sym:'', cls:'국내주식', qty:'', px:'' };
   [h('div', { id:'stk-top' }), h('div', { class:'wrap', id:'stk-root' })].forEach(function (x) { el.appendChild(x); });
   S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'portfolio'; render();
 }
