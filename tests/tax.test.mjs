@@ -5,13 +5,13 @@ import { webcrypto } from 'node:crypto';
 let JSDOM = null; try { ({ JSDOM } = await import('jsdom')); } catch (e) { /* jsdom 이 없으면 건너뛴다 */ }
 const skip = !JSDOM && 'jsdom 없음';
 const rd = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
-const app = rd('../tax-app.js'), css = rd('../tax.css'), d = rd('../desktop.html'), paths = rd('../ops/naviweb-proxy/mail-paths.js'), sp = rd('../infra-sp.js');
+const ledger = rd('../ledger-book.js'), app = rd('../tax-app.js'), css = rd('../tax.css'), d = rd('../desktop.html'), paths = rd('../ops/naviweb-proxy/mail-paths.js'), sp = rd('../infra-sp.js');
 const wait = (ms = 80) => new Promise((r) => setTimeout(r, ms));
 function page() {
   const dom = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true });
   const w = dom.window; let fetched = 0; w.fetch = () => { fetched++; return Promise.reject(new Error('no')); };
   Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true }); w.TextEncoder = TextEncoder; w.Element.prototype.scrollIntoView = () => {};
-  w.eval(app); const doc = w.document, asks = [];
+  w.eval(ledger); w.eval(app); const doc = w.document, asks = [];
   w.NaviTax.on('ask', (t) => asks.push(t)); w.NaviTax.mount(doc.getElementById('m'));
   const txt = () => doc.getElementById('tx-root').textContent;
   const btn = (t) => [...doc.querySelectorAll('button')].find((b) => b.textContent.trim().startsWith(t));
@@ -90,7 +90,7 @@ assert.ok(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(b) && b.includes('MK-') && 
 assert.ok(b.includes('1,802,000') && b.includes('대차가 맞아요')); // 구매자: GDC 2,000,000 − 198,000
 assert.ok(s.includes('5,198,000') && s.includes('3,180,000') && s.includes('6,880,000') && s.includes('대차가 맞아요')); // 판매자: GDC·매출·자본
 assert.ok(h.includes('MK-') && h.includes('부가세예수금') && h.includes('부가세대급금') && h.includes('구매대금'));
-assert.ok(doc.querySelectorAll('#tx-stmts tr.hl').length > 0);
-assert.ok(doc.getElementById('tx-hops').children[2].textContent.includes('부가가치세법 제30조')); // 세법 참조
+assert.ok(doc.querySelectorAll('#tx-stmts tr[style*="background"]').length > 0); // 바뀐 계정 줄 강조
+assert.ok(doc.getElementById('tx-hops').children[2].textContent.includes('제30조(세율')); // 세법 참조
 assert.equal(p.fetched(), 0);
 });
