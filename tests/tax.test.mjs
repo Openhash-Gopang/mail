@@ -58,7 +58,7 @@ test('vat: 납부와 환급', { skip }, () => {
 });
 
 test('화면: 회계 원리 · 설계 원칙 표시, 전송 없음', { skip }, () => {
-  const p = page(); assert.match(p.txt(), /거래 당사자가 전표를 내고 서로 검증/); assert.match(p.txt(), /설계 원칙/); assert.equal(p.fetched(), 0);
+  const p = page(); assert.match(p.txt(), /국세청 AI가 세액 결정/); assert.match(p.txt(), /거래 일련번호/); assert.match(p.txt(), /6하 원칙/); assert.match(p.txt(), /설계 원칙/); assert.equal(p.fetched(), 0);
 });
 
 test('화면: 전표 불일치와 공급망 1원 차이 경고', { skip }, () => {
