@@ -95,6 +95,7 @@ function _ihSend(text) {
   if (_ih.busy) { _ihNote('앞의 질문에 답하는 중입니다. 잠시만 기다려 주세요.'); return; }
   var P = _el('ichat-panel'); if (P && !P.classList.contains('open')) _ihToggle();
   _ihBubble('user', text); _ihKeep('user', text);
+  if (_ih.hook) { var hr = null; try { hr = _ih.hook(text, _ih.cfg.key); } catch (e) { hr = null; } if (typeof hr === 'string' && hr) { _ihBubble('assistant', hr, _orgMd(hr)); _ihKeep('assistant', hr); return; } }   // 화면이 직접 처리하는 말(예: 시장의 상품 찾기)은 SP 에 보내지 않고 화면 답을 보여 준다
   var wb = _ihBubble('assistant', '', '<span class="org-wait" role="status"><i aria-hidden="true">⏳</i><span>답변 준비 중<span class="org-dots"></span></span></span>');
   var id = 'ic' + Date.now(), m = { type: 'hondi-embed-sp-ask', id: id, text: text };
   _ih.busy = true; _ih.pending[id] = { el: wb, key: _ih.cfg.key };
@@ -117,5 +118,11 @@ function _ihAsk(text) {
   if (!_ih.active) return; var p = _el('ichat-panel'); if (p && !p.classList.contains('open')) _ihToggle();
   var i = _el('ichat-in'), t = typeof text === 'string' ? text.slice(0, 500) : ''; if (i && t) { i.value = t; try { i.focus(); } catch (x) {} }
 }
-window.InfraHost = { enter: _ihEnter, leave: _ihLeave, ask: _ihAsk, cur: function () { return _ih.active && _ih.cfg ? _ih.cfg.key : ''; }, active: function () { return _ih.active; } };
+/** 화면이 대화창에 말을 덧붙인다(예: 도우미가 찾아 온 후보). open 이면 대화창을 연다. */
+function _ihSay(text, open) {
+  if (!_ih.active || !text) return; text = String(text).slice(0, 4000);
+  _ihBubble('assistant', text, _orgMd(text)); _ihKeep('assistant', text);
+  var p = _el('ichat-panel'); if (open && p && !p.classList.contains('open')) _ihToggle();
+}
+window.InfraHost = { hook: function (f) { _ih.hook = typeof f === 'function' ? f : null; }, say: _ihSay, enter: _ihEnter, leave: _ihLeave, ask: _ihAsk, cur: function () { return _ih.active && _ih.cfg ? _ih.cfg.key : ''; }, active: function () { return _ih.active; } };
 })();

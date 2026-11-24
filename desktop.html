@@ -3732,7 +3732,7 @@ function _taxShow(view) {
   });
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
-const _MKT_V = '20261124i'; let _mktChat = false;
+const _MKT_V = '20261124j'; let _mktChat = false;
 function _mktLoad(cb) {
   if (window.NaviMarket) { cb(); return; }
   if (!document.getElementById('mkt-css')) { const l = document.createElement('link'); l.id = 'mkt-css'; l.rel = 'stylesheet'; l.href = 'market.css?v=' + _MKT_V; document.head.appendChild(l); }
@@ -3745,7 +3745,9 @@ function _mktShow(view) {
     const r = document.getElementById('mk-root-host'); if (!r || !window.NaviMarket) return;
     if (!r.dataset.on) {
       r.dataset.on = '1';
-      NaviMarket.on('ask', (t) => { _infraChatSync('mkt'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
+      NaviMarket.on('ask', (t) => { _infraChatSync('mkt'); if (window.InfraHost) InfraHost.ask(t); });
+      NaviMarket.on('say', (m) => { if (window.InfraHost && InfraHost.cur() === 'kmarket') InfraHost.say(m.text, m.open); });   // 도우미가 찾아 온 후보를 대화창에도 알린다
+      if (window.InfraHost) InfraHost.hook((text, key) => (key === 'kmarket' && window.NaviMarket ? NaviMarket.chat(text) : null));   // "무선 청소기 찾아줘"·"2번으로 해 줘"는 화면이 처리   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
       NaviMarket.mount(r, { view: view });
     } else if (view) NaviMarket.view(view);
   });

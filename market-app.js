@@ -210,7 +210,7 @@ F.snum = snum; F.norm = norm;
 var KEY = 'navi-market-v2', MAXP = 200;
 var M = null, LS = {};
 var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
-  auto:false, nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
+  auto:false, find:{ q:'', site:'coupang', st:'idle', msg:'' }, cands:[], nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
@@ -227,7 +227,7 @@ function safeImg(u) { u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/i.test
 function safeLink(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
 function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; if (window.NaviHist) NaviHist.push('market', n); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
-function reset(keepHistory) { S.tok++; S.nts = null; S.ntsMsg = null; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
+function reset(keepHistory) { S.tok++; S.find = { q:'', site:'coupang', st:'idle', msg:'' }; S.cands = []; S.nts = null; S.ntsMsg = null; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
 
 // ── 도우미(상품 페이지 읽기) ──
 var SLOT = '시장 상품 확인';
@@ -249,7 +249,7 @@ function takeProduct(d) {
   if (Number(d.count) > 0 && Number(d.count) <= 1e8) p.count = String(Math.round(Number(d.count)));
   if (Array.isArray(d.reviews)) p.reviews = d.reviews.slice(0, 5).map(function (x) { return clean(x, 120); }).filter(Boolean);
   if (clean(d.shipping, 80)) p.shipping = clean(d.shipping, 80);
-  if (Array.isArray(d.compare)) p.compare = d.compare.map(Number).filter(function (x) { return x > 0 && x <= 1e9; }).slice(0, 5);
+  if (Array.isArray(d.compare)) { var cm = d.compare.map(Number).filter(function (x) { return x > 0 && x <= 1e9; }).slice(0, 5); if (cm.length) p.compare = cm; }
   n = [p.name, p.price, p.img, p.as, p.rating].filter(Boolean).length;
   if (d.stage === 'core') S.read = { st:'wait', core:true, msg:'도우미가 상품 이름과 가격을 먼저 읽어 왔어요. 이름이 페이지 제목과 같은지 확인하고 고쳐도 돼요. 나머지(판매자·AS·리뷰)를 이어서 읽는 중이에요.' };
   else S.read = { st:'done', core:true, msg:'도우미가 상품 정보를 읽어 왔어요(' + n + '개 항목). 맞는지 확인하고 고쳐도 돼요.' };
@@ -259,7 +259,9 @@ function coreWait() { return typeof window !== 'undefined' && typeof window.__na
 function wireAgent() {
   if (agentWired || !window.NaviAgent || !NaviAgent.onData) return; agentWired = true;
   NaviAgent.onData(function (m) {
-    if (m.label !== SLOT || !M) return; takeProduct(m.data);
+    if (!M) return;
+    if (m.label === SLOT_FIND) { takeCands(m.data); render(); return; }
+    if (m.label !== SLOT) return; takeProduct(m.data);
     var ready = S.step === 0 && S.auto && clean(S.prod.name, 80) && snum(S.prod.price) >= 1, core = m.data && m.data.stage === 'core';
     if (ready && core) { clearTimeout(coreT); coreT = setTimeout(function () { if (M && S.step === 0 && S.auto) { S.auto = false; startReview(); } }, coreWait()); render(); }   // 이름·가격이 먼저 오면 보여 주고 나머지를 기다린다(오래 안 오면 있는 값으로 시작)
     else if (ready) { clearTimeout(coreT); S.auto = false; startReview(); } else render();
@@ -272,19 +274,100 @@ function verOk(v) {
   for (i = 0; i < b.length; i++) { var x = a[i] || 0; if (x !== b[i]) return x > b[i]; }
   return true;
 }
-function askAgent() {
-  var link = safeLink(S.prod.link);
-  if (!link) { S.err = '판매 사이트의 상품 링크(https://로 시작)를 먼저 넣어 주세요.'; render(); return; }
-  if (!window.NaviAgent || !NaviAgent.queue) { S.read = { st:'none', msg:'나비웹 도우미를 쓸 수 없는 화면이에요. 아래 칸에 직접 넣어도 돼요.' }; render(); return; }
-  wireAgent(); S.auto = true; S.read = { st:'wait', msg:'나비웹 도우미에게 맡겼어요. 판매 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 읽은 값은 이 화면에 채워져요.' }; S.err = ''; render();
+// 도우미에게 일을 맡기는 공통 절차: 연결 확인(세 번까지) → 버전 확인 → 맡기기. 실패하면 setSt('none', 이유)로 알리고 fail()을 부른다.
+function agentJob(job, what, setSt, fail) {
+  function bad(msg) { setSt('none', msg); if (fail) fail(); else render(); return null; }
+  if (!window.NaviAgent || !NaviAgent.queue) { bad('나비웹 도우미를 쓸 수 없는 화면이에요. 아래 칸에 직접 넣어도 돼요.'); return; }
+  wireAgent(); S.err = '';
   function probe(n) { return NaviAgent.detect().then(function (info) { return info || (n > 1 ? new Promise(function (r) { setTimeout(r, 700); }).then(function () { return probe(n - 1); }) : null); }); }   // 확장 서비스 워커가 깨어나는 동안 첫 응답이 늦을 수 있어 세 번까지 묻는다
   probe(3).then(function (info) {
-    if (!info) { var mark = NaviAgent.installedMark ? NaviAgent.installedMark() : ''; S.read = { st:'none', msg:mark ? '나비웹 도우미가 설치되어 있지만 이 화면과 연결되지 않았어요. 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' : '나비웹 도우미가 설치되어 있지 않거나 이 화면에 연결되지 않았어요. 방금 설치했거나 켰다면 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
-    if (!verOk(info.version)) { S.read = { st:'none', msg:'나비웹 도우미가 오래된 버전(' + (info.version || '알 수 없음') + ')이에요. 상품 읽기는 ' + MINVER + ' 이상이 필요해요. 크롬 주소창에 chrome://extensions 를 열어 나비웹 도우미를 업데이트한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' }; render(); return null; }
-    return NaviAgent.queue({ goal:goalFor(link), url:link, slot:SLOT, title:'상품 확인' }).then(function (ok) {
-      if (!ok || ok.ok === false) { S.read = { st:'none', msg:'도우미에게 맡기지 못했어요. 아래 칸에 직접 넣어도 돼요.' }; render(); }
-    });
+    if (!info) { var mark = NaviAgent.installedMark ? NaviAgent.installedMark() : ''; return bad(mark ? '나비웹 도우미가 설치되어 있지만 이 화면과 연결되지 않았어요. 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.' : '나비웹 도우미가 설치되어 있지 않거나 이 화면에 연결되지 않았어요. 방금 설치했다면 이 화면을 새로고침(F5)한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.'); }
+    if (!verOk(info.version)) return bad('나비웹 도우미가 오래된 버전(' + (info.version || '알 수 없음') + ')이에요. ' + what + '는 ' + MINVER + ' 이상이 필요해요. 크롬 주소창에 chrome://extensions 를 열어 나비웹 도우미를 업데이트한 뒤 다시 눌러 주세요. 아래 칸에 직접 넣어도 돼요.');
+    return NaviAgent.queue(job).then(function (ok) { if (!ok || ok.ok === false) bad('도우미에게 맡기지 못했어요. 아래 칸에 직접 넣어도 돼요.'); });
   });
+}
+function askAgent(fallbackStart) {
+  var link = safeLink(S.prod.link);
+  if (!link) { S.err = '판매 사이트의 상품 링크(https://로 시작)를 먼저 넣어 주세요.'; render(); return; }
+  S.auto = true; S.read = { st:'wait', msg:'나비웹 도우미에게 맡겼어요. 판매 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 읽은 값은 이 화면에 채워져요.' }; render();
+  agentJob({ goal:goalFor(link), url:link, slot:SLOT, title:'상품 확인' }, '상품 읽기', function (st, msg) { S.read = { st:st, msg:msg }; },
+    fallbackStart ? function () { S.auto = false; startReview(); } : null);   // 고른 후보는 도우미 없이도 있는 값으로 검토를 시작한다
+}
+
+// ── 상품 찾기: 사용자가 원하는 상품을 도우미가 온라인 시장에서 찾아 후보 몇 개와 장단점을 가져온다 ──
+var SLOT_FIND = '시장 상품 찾기';
+var SITES = { coupang:['쿠팡', 'https://www.coupang.com/np/search?q='], naver:['네이버 쇼핑', 'https://search.shopping.naver.com/search/all?query='], danawa:['다나와', 'https://search.danawa.com/dsearch.php?query='] };
+function searchUrl(site, q) { var s = SITES[site] || SITES.coupang; return s[1] + encodeURIComponent(q); }
+function goalFind(q, site, url) {
+  return '사용자가 사려는 상품 「' + q + '」을 ' + (SITES[site] || SITES.coupang)[0] + '(' + url + ')에서 찾아 주세요. 로그인이 필요하면 사용자가 로그인하도록 넘기고, 로그인하면 이어서 진행해 주세요. ' +
+    '검색 결과에서 서로 다른 후보 3~5개를 골라 주세요(광고 표시가 붙은 것보다 평점·리뷰가 충분한 것을 먼저, 가격대는 다양하게). 후보마다 상품명(페이지 제목 그대로)·가격(원, 숫자)·대표 이미지 주소(https)·상품 링크(https)·판매자·평점(1~5)·리뷰 건수·장점 최대 3개·단점 최대 3개(리뷰와 상품 설명에서 읽은 것만, 짧게)를 읽어 ' +
+    'report_data(kind: product, data: { stage: "candidates", candidates: [ { name, price, image, link, seller, rating, count, pros, cons, shipping } ] })로 한 번에 보내 주세요. 화면에서 찾지 못한 값은 비우고 지어내지 마세요. 구매·장바구니·결제는 하지 마세요.';
+}
+function takeCands(d) {
+  var a = d && Array.isArray(d.candidates) ? d.candidates : []; if (!a.length) return;
+  var out = a.slice(0, 5).map(function (c) {
+    c = c && typeof c === 'object' ? c : {}; var nm = clean(c.name, 80), pr = Math.round(Number(c.price));
+    if (!nm || !(pr >= 1 && pr <= 1e9)) return null;
+    var r = Number(c.rating), n = Math.round(Number(c.count));
+    return { name:nm, price:pr, img:safeImg(c.image), link:safeLink(c.link), seller:clean(c.seller, 30), rating:r >= 1 && r <= 5 ? String(Math.round(r * 10) / 10) : '', count:n > 0 && n <= 1e8 ? String(n) : '', shipping:clean(c.shipping, 80),
+      pros:(Array.isArray(c.pros) ? c.pros : []).slice(0, 3).map(function (x) { return clean(x, 80); }).filter(Boolean), cons:(Array.isArray(c.cons) ? c.cons : []).slice(0, 3).map(function (x) { return clean(x, 80); }).filter(Boolean) };
+  }).filter(Boolean);
+  if (!out.length) { S.find.st = 'none'; S.find.msg = '도우미가 후보를 읽어 오지 못했어요. 찾을 상품 이름을 바꿔 다시 해 보거나 아래에 링크를 넣어 주세요.'; return; }
+  S.cands = out; emit('say', { text:candSummary(), open:!!S.find.fromChat }); S.find.st = 'done'; S.find.msg = '도우미가 후보 ' + out.length + '개를 찾아 왔어요. 장단점은 도우미가 판매 페이지에서 읽은 내용이라 정확하지 않을 수 있어요.';
+}
+function recIndex() {
+  var best = -1, bi = -1, lo = 0, i;
+  S.cands.forEach(function (x, j) { var r = Number(x.rating), n = Number(x.count); if (r > best && n >= 20) { best = r; bi = j; } if (x.price < S.cands[lo].price) lo = j; });
+  return bi >= 0 ? { i:bi, why:'리뷰 20건 이상 중 평점이 가장 높아요' } : { i:lo, why:'평점·리뷰 정보가 부족해 가장 저렴한 걸 골랐어요' };
+}
+function candSummary() {
+  var L = ['후보 ' + S.cands.length + '개를 찾았어요.', ''], r = recIndex();
+  S.cands.forEach(function (c, i) {
+    L.push((i + 1) + '. **' + c.name + '** — ' + won(c.price) + '원' + (c.seller ? ' · ' + c.seller : '') + (Number(c.rating) ? ' · 평점 ' + c.rating + (c.count ? '(' + won(Number(c.count)) + '건)' : '') : ''));
+    if (c.pros.length) L.push('   - 장점: ' + c.pros.join(', ')); if (c.cons.length) L.push('   - 단점: ' + c.cons.join(', '));
+  });
+  L.push('', '추천: **' + (r.i + 1) + '번** — ' + r.why + '. 평점·리뷰 건수·가격만 본 간단한 추천이고, 장단점은 판매 페이지에서 읽은 내용이라 정확하지 않을 수 있어요.', '몇 번으로 구매 검토를 할까요? 예: “' + (r.i + 1) + '번으로 해 줘” (시장 화면의 “이 상품으로 구매 검토” 단추도 돼요)');
+  return L.join('\n');
+}
+// 대화창 말에서 상품 요청·후보 선택을 알아듣는다(시장 SP는 직접 검색하지 못하므로, 화면의 도우미 검색을 실행하고 결과를 알려 준다)
+F.parseWant = function (s) {
+  s = String(s || '').trim(); if (!s) return null;
+  var pk = s.match(/^([1-5])\s*번/); if (pk) return { pick:Number(pk[1]) - 1 };
+  var vi = s.search(/찾아|검색|추천|골라|알아봐|사고\s*싶|사려고|사려는|구하고\s*싶/); if (vi < 0) return null;
+  var site = /네이버/.test(s) ? 'naver' : /다나와/.test(s) ? 'danawa' : /쿠팡/.test(s) ? 'coupang' : '';
+  var q = s.slice(0, vi).replace(/(온라인|인터넷|쇼핑몰|쇼핑|쿠팡|네이버|다나와)\s*(에서|으로|에)?/g, ' ').replace(/(좀|제발|혹시|제가|내가|저는|나는)\s/g, ' ').replace(/\s*(을|를|이|가|은|는|에|도)\s*$/, '').replace(/(상품|제품|물건)\s*$/, '').replace(/\s+/g, ' ').trim();
+  q = q.replace(/\s*(을|를)\s*$/, '').trim(); if (q.length < 2 || q.length > 60) return null;
+  return { q:q, site:site };
+};
+function chat(text) {
+  var w = F.parseWant(text); if (!w || !M) return null;
+  if (w.pick != null) {
+    if (!S.cands.length) return '아직 고를 후보가 없어요. 먼저 “무선 청소기 찾아줘”처럼 사려는 상품을 말해 주세요.';
+    if (w.pick >= S.cands.length) return '후보는 1번부터 ' + S.cands.length + '번까지예요.';
+    var c = S.cands[w.pick]; pickCand(w.pick); return '「' + c.name + '」(' + won(c.price) + '원)으로 구매 검토를 시작할게요. 도우미가 이 상품 페이지에서 판매자 신뢰도·AS·리뷰를 더 읽어 와요. 진행은 시장 화면에서 단계별로 보여 드려요.';
+  }
+  if (w.site) S.find.site = w.site; S.find.q = w.q; S.find.fromChat = true; askFind();
+  return '「' + w.q + '」을 ' + SITES[S.find.site][0] + '에서 찾도록 나비웹 도우미에게 맡겼어요. 사이트가 열리면 로그인이 필요할 때만 직접 해 주세요. 후보가 오면 장단점과 함께 여기로 알려 드릴게요. 저는 직접 인터넷을 검색하지 못하고, 도우미가 읽어 온 내용만 전해요.';
+}
+function candTags(i) {
+  var tags = [], c = S.cands, me = c[i], low = Math.min.apply(null, c.map(function (x) { return x.price; })), best = -1, bi = -1;
+  if (me.price === low && c.length > 1) tags.push('가장 저렴');
+  c.forEach(function (x, j) { var r = Number(x.rating), n = Number(x.count); if (r > best && n >= 20) { best = r; bi = j; } });
+  if (bi === i) tags.push('평점 최고(20건 이상 중)');
+  return tags;
+}
+function askFind() {
+  var q = clean(S.find.q, 60); if (q.length < 2) { S.err = '찾을 상품을 두 글자 이상 적어 주세요. 예: 무선 청소기'; render(); return; }
+  if (S.step !== 0) { var q0 = S.find.q, s0 = S.find.site, fc = S.find.fromChat; reset(); S.find.q = q0; S.find.site = s0; S.find.fromChat = fc; }
+  var url = searchUrl(S.find.site, q); S.cands = []; S.find.st = 'wait'; S.find.msg = '나비웹 도우미에게 맡겼어요. 쇼핑 사이트가 열리면 로그인이 필요한 경우에만 직접 로그인해 주세요. 찾은 후보는 이 화면에 나와요.'; S.err = ''; render();
+  agentJob({ goal:goalFind(q, S.find.site, url), url:url, slot:SLOT_FIND, title:'상품 찾기' }, '상품 찾기', function (st, msg) { S.find.st = st; S.find.msg = msg; });
+}
+function pickCand(i) {
+  var c = S.cands[i]; if (!c) return;
+  S.prod = { name:c.name, price:String(c.price), img:c.img, link:c.link, seller:c.seller, sellerTrust:'', as:'', rating:c.rating, count:c.count, reviews:[], shipping:c.shipping,
+    compare:S.cands.filter(function (x, j) { return j !== i; }).map(function (x) { return x.price; }).slice(0, 5), pros:c.pros, cons:c.cons };
+  S.read = { st:'idle', msg:'' }; S.err = '';
+  if (c.link && window.NaviAgent && NaviAgent.queue) askAgent(true); else startReview();   // 고른 상품의 AS·판매자 신뢰도·리뷰는 도우미가 그 페이지에서 더 읽어 온다
 }
 
 // ── 화면 ──
@@ -348,11 +431,39 @@ function helperProg() {
     return h('li', { class:x[1] }, [h('i', { text:x[1] === 'done' ? '✓' : x[1] === 'now' ? '●' : String(i + 1) }), h('div', { class:'col' }, [h('span', { text:x[0] + (x[1] === 'now' ? ' — 진행 중' : '') })])]);
   }))]);
 }
+function findProg() {
+  var s = S.find.st; if (s !== 'wait' && s !== 'done') return null;
+  var rows = [['도우미에게 맡김', 'done'], ['쇼핑 사이트 열기 · 로그인(필요할 때만 직접)', s === 'done' ? 'done' : 'now'], ['검색 결과에서 후보·장단점 읽기' + (s === 'done' ? ' — ' + S.cands.length + '개' : ''), s === 'done' ? 'done' : 'wait']];
+  return h('div', { class:'card', style:'margin-top:12px', id:'mk-fprog' }, [h('b', { text:'도우미 진행(상품 찾기)' }), h('ol', { class:'mk-prog' }, rows.map(function (x, i) {
+    return h('li', { class:x[1] }, [h('i', { text:x[1] === 'done' ? '✓' : x[1] === 'now' ? '●' : String(i + 1) }), h('div', { class:'col' }, [h('span', { text:x[0] + (x[1] === 'now' ? ' — 진행 중' : '') })])]);
+  }))]);
+}
+function findBar() {
+  var sel = h('select', { id:'mk-site', 'aria-label':'찾을 쇼핑 사이트' }, Object.keys(SITES).map(function (k) { return h('option', { value:k, text:SITES[k][0], selected:k === S.find.site ? '' : null }); }));
+  sel.onchange = function () { S.find.site = sel.value; };
+  return h('div', { class:'mk-fbar', id:'mk-fbar' }, [inp('mk-q', '사려는 상품을 말해 주세요 — 도우미가 온라인 시장에서 후보를 찾아 와요', S.find.q, function (v) { S.find.q = v; }, { ph:'예: 무선 청소기 · 100mm 그라인더 · 에어프라이어', max:'60', enter:function () { if (S.find.st !== 'wait') askFind(); } }),
+    h('div', { class:'rowf' }, [sel, btn('상품 찾아오기', 'fill', function () { askFind(); }, 'mk-find')])]);
+}
+function viewFind() {
+  var kids = [];
+  if (S.find.msg) kids.push(note(S.find.msg, S.find.st === 'none', 'mk-find-msg'));
+  kids.push(findProg());
+  if (S.cands.length) kids.push(h('div', { id:'mk-cands', class:'col', style:'margin-top:12px;gap:12px' }, S.cands.map(function (c, i) {
+    var tg = candTags(i), pr = Number(c.rating) ? '평점 ' + c.rating + (c.count ? ' · 리뷰 ' + won(Number(c.count)) + '건' : '') : '평점 정보 없음';
+    return h('div', { class:'card prod', id:'mk-cand-' + i }, [c.img ? h('img', { src:c.img, alt:'상품 이미지', referrerpolicy:'no-referrer' }) : h('div', { class:'noimg', text:'이미지 없음' }),
+      h('div', { class:'col', style:'flex:1' }, [h('b', { text:c.name }), h('div', { class:'sub', text:won(c.price) + '원' + (c.seller ? ' · ' + c.seller : '') + ' · ' + pr + (tg.length ? ' · ' + tg.join(' · ') : '') }),
+        c.pros.length ? h('ul', { class:'pros' }, c.pros.map(function (x) { return h('li', { text:'✓ 장점: ' + x }); })) : null,
+        c.cons.length ? h('ul', { class:'cons' }, c.cons.map(function (x) { return h('li', { text:'⚠ 단점: ' + x }); })) : null,
+        btn('이 상품으로 구매 검토', 'fill', function () { pickCand(i); }, 'mk-pick-' + i)])]);
+  })));
+  return kids;
+}
 function viewStart() {
   var p = S.prod, kids = [];
   kids.push(h('h2', { text:'살 물건을 알려 주세요' }), h('p', { class:'lead', text:'판매 사이트의 상품 링크를 넣고 "도우미로 읽어 오기"를 누르면, 나비웹 도우미가 그 사이트를 열어 이미지·가격·AS·리뷰를 읽어 와요. 로그인은 직접 해 주세요. 직접 넣어도 돼요.' }));
+  kids = kids.concat(viewFind()); kids.push(h('h3', { style:'margin-top:24px', text:'또는 상품 링크로 시작' }));
   kids.push(inp('mk-link', '판매 사이트 상품 링크', p.link, function (v) { p.link = v; }, { ph:'https://…', max:'500', enter:function () { if (S.read.st !== 'wait') askAgent(); } }));
-  var rowb = [btn('도우미로 읽어 오기', 'fill', askAgent, 'mk-read')];
+  var rowb = [btn('도우미로 읽어 오기', 'fill', function () { askAgent(false); }, 'mk-read')];
   kids.push(h('div', { class:'rowf' }, rowb));
   if (S.read.msg) kids.push(note(S.read.msg, S.read.st === 'none', 'mk-read-msg'));
   kids.push(helperProg());
@@ -591,7 +702,7 @@ function viewDone() {
 
 function render() {
   var root = $('mk-root'), tp = $('mk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top';
-  tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), steps()]));
+  tp.appendChild(h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 시장' })])]), findBar(), steps()]));
   if (S.step >= 1 && S.step !== 8) root.appendChild(progCard(false));
   var v = [viewStart, viewDup, viewNeed, viewNeed, viewTrust, viewAs, viewCompare, viewDeal, viewFinal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });
@@ -610,7 +721,7 @@ function mount(el) {
 }
 if (window.NaviHist) NaviHist.on('market', 'mkt', function (sub) { if (!M) return; S.tok++; S.step = typeof sub === 'number' && sub >= 0 && sub <= LAST ? sub : 0; S.err = ''; S.info = ''; render(); });   // 브라우저 뒤로·앞으로 가기로 단계를 옮긴다
 window.NaviMarket = {
-  mount:mount,
+  mount:mount, chat:chat, find:function (q) { if (M) { S.find.q = clean(q, 60); askFind(); } }, pick:function (i) { if (M) pickCand(i); },
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function () { if (M) { S.step = 0; render(); } },
   flow:F,

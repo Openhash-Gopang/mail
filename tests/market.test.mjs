@@ -100,6 +100,52 @@ test('도우미: 링크 없으면 안내, 있으면 맡기고, 읽어 온 값은
   cb({ label: '시장 상품 확인', data: { name: '이름만 있음' } }); assert.ok(q2.txt().includes('살 물건을 알려 주세요') && q2.doc.getElementById('mk-name').value === '이름만 있음', '가격이 없으면 자동으로 넘어가지 않는다');
   cb({ label: '시장 상품 확인', data: { price: 5000 } }); assert.ok(q2.txt().includes('비슷한 걸 산 적이 있는지'));
 });
+test('상품 찾기: 대화 말에서 상품 요청·번호 선택을 알아듣는다', { skip }, () => {
+  const F = api().flow;
+  assert.deepEqual({ ...F.parseWant('무선 청소기 찾아줘') }, { q: '무선 청소기', site: '' });
+  assert.equal(F.parseWant('에어프라이어를 사고 싶어요').q, '에어프라이어');
+  assert.deepEqual({ ...F.parseWant('네이버에서 100mm 그라인더 추천해 줘') }, { q: '100mm 그라인더', site: 'naver' });
+  assert.deepEqual({ ...F.parseWant('2번으로 해 줘') }, { pick: 1 });
+  assert.equal(F.parseWant('이 가격이 적당한지 어떻게 판단하죠?'), null); assert.equal(F.parseWant('이 노트북을 지금 사도 될까요?'), null); assert.equal(F.parseWant('찾아줘'), null);
+});
+test('상품 찾기: 상단 입력 → 도우미가 후보를 찾아 옴 → 장단점 나열 → 고르면 구매 검토로 이어진다', { skip }, async () => {
+  let cb = null; const jobs = [];
+  const agent = { onData: (f) => { cb = f; }, detect: () => Promise.resolve({ version: '0.6.41' }), queue: (j) => { jobs.push(j); return Promise.resolve({ ok: true }); } };
+  const p = page(agent); const says = []; p.N.on('say', (m) => says.push(m));
+  assert.ok(p.doc.querySelector('#mk-top #mk-q'), '입력 필드는 페이지 맨 위에 있다');
+  p.btn('상품 찾아오기').click(); assert.ok(p.txt().includes('두 글자 이상') || p.doc.body.textContent.includes('두 글자 이상')); assert.equal(jobs.length, 0);
+  p.type('mk-q', '무선 청소기'); p.btn('상품 찾아오기').click(); await wait(30);
+  assert.equal(jobs.length, 1); assert.ok(jobs[0].url.startsWith('https://www.coupang.com/np/search?q=') && jobs[0].slot === '시장 상품 찾기' && jobs[0].goal.includes('candidates') && jobs[0].goal.includes('결제는 하지 마세요'));
+  assert.ok(p.doc.getElementById('mk-fprog').textContent.includes('진행 중'));
+  cb({ label: '시장 상품 찾기', data: { stage: 'candidates', candidates: [
+    { name: 'A사 무선 청소기 A200', price: 189000, image: 'javascript:x', link: 'https://www.coupang.com/vp/products/1', seller: 'A몰', rating: 4.6, count: 230, pros: ['흡입력이 좋아요', '가벼워요'], cons: ['배터리 40분'] },
+    { name: 'B사 무선 청소기 B100', price: 129000, link: 'http://evil.test/x', rating: 4.1, count: 12, pros: ['저렴'], cons: ['소음'] },
+    { name: '', price: 1 }, { name: '가격 없음', price: 0 },
+    { name: 'C사 무선 청소기 C300', price: 249000, link: 'https://www.coupang.com/vp/products/3', rating: 4.8, count: 900, pros: [], cons: [] }] } });
+  assert.equal(p.doc.querySelectorAll('[id^=mk-cand-]').length, 3, '이름·가격이 없는 후보는 거른다');
+  const c0 = p.doc.getElementById('mk-cand-0').textContent; assert.ok(c0.includes('✓ 장점: 흡입력이 좋아요') && c0.includes('⚠ 단점: 배터리 40분') && c0.includes('189,000원'));
+  assert.ok(p.doc.getElementById('mk-cand-1').textContent.includes('가장 저렴')); assert.ok(p.doc.getElementById('mk-cand-2').textContent.includes('평점 최고'));
+  assert.equal(p.doc.querySelector('#mk-cand-0 img'), null, '이미지 주소가 https 가 아니면 쓰지 않는다');
+  assert.equal(says.length, 1); assert.ok(says[0].text.includes('후보 3개') && says[0].text.includes('추천: **3번**') && says[0].text.includes('장점: 흡입력이 좋아요'));
+  p.doc.getElementById('mk-pick-0').click(); await wait(30);
+  assert.equal(jobs.length, 2); assert.ok(jobs[1].slot === '시장 상품 확인' && jobs[1].url === 'https://www.coupang.com/vp/products/1', '고른 상품 페이지에서 나머지를 더 읽어 온다');
+  assert.ok(p.doc.getElementById('mk-name').value === 'A사 무선 청소기 A200' && p.doc.getElementById('mk-price').value === '189000');
+  p.w.__naviMarketCoreWait = 0; cb({ label: '시장 상품 확인', data: { stage: 'detail', as: '1년 무상 AS', sellerTrust: '우수 판매자' } }); await wait(40);
+  assert.ok(p.txt().includes('비슷한 걸 산 적이 있는지') || p.doc.getElementById('mk-prog'), '검토가 이어진다');
+  await wait(300); assert.ok(p.doc.getElementById('mk-prog').textContent.includes('필요도'));
+});
+test('상품 찾기: 대화창에서 말하면 화면의 도우미 검색이 실행된다 · 후보 번호로 고른다', { skip }, async () => {
+  let cb = null; const jobs = [];
+  const p = page({ onData: (f) => { cb = f; }, detect: () => Promise.resolve({ version: '0.6.41' }), queue: (j) => { jobs.push(j); return Promise.resolve({ ok: true }); } });
+  assert.equal(p.N.chat('이 가격이 적당한지 어떻게 판단하죠?'), null);
+  assert.ok(p.N.chat('2번으로 해 줘').includes('아직 고를 후보가 없어요'));
+  const r = p.N.chat('다나와에서 에어프라이어 찾아줘'); assert.ok(r.includes('다나와') && r.includes('직접 인터넷을 검색하지 못')); await wait(30);
+  assert.ok(jobs[0].url.startsWith('https://search.danawa.com/') && jobs[0].url.includes(encodeURIComponent('에어프라이어')));
+  const says = []; p.N.on('say', (m) => says.push(m));
+  cb({ label: '시장 상품 찾기', data: { stage: 'candidates', candidates: [{ name: '에어프라이어 X', price: 80000, link: 'https://shop.example/x', rating: 4.5, count: 100 }, { name: '에어프라이어 Y', price: 60000 }] } });
+  assert.equal(says.length, 1); assert.equal(says[0].open, true, '대화창에서 시작했으면 결과 알림으로 대화창을 연다');
+  assert.ok(p.N.chat('3번').includes('1번부터 2번')); assert.ok(p.N.chat('1번으로 해 줘').includes('에어프라이어 X')); await wait(30); assert.equal(jobs[1].slot, '시장 상품 확인');
+});
 test('도우미가 없으면 직접 넣으라고 안내한다', { skip }, async () => {
   const p = page(); p.type('mk-link', 'https://shop.example/p/1'); p.btn('도우미로 읽어 오기').click(); assert.ok(p.txt().includes('직접 넣어도 돼요'));
   const q = page({ onData() {}, detect: () => Promise.resolve(null), queue: () => Promise.resolve({ ok: true }) }); q.type('mk-link', 'https://shop.example/p/1'); q.btn('도우미로 읽어 오기').click(); await wait(2500); assert.ok(q.txt().includes('설치되어 있지 않거나') && q.txt().includes('새로고침(F5)'));
