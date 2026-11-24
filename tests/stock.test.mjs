@@ -111,8 +111,8 @@ test('매도: 보유 수량보다 많으면 막는다', { skip }, () => {
 
 test('탭 이동: 모든 탭이 그려진다', { skip }, () => {
   const p = page('portfolio');
-  for (const v of ['portfolio', 'value', 'company', 'order', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
-  assert.equal(p.doc.querySelectorAll('.tab').length, 9);
+  for (const v of ['portfolio', 'value', 'wage', 'company', 'order', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
+  assert.equal(p.doc.querySelectorAll('.tab').length, 10);
 });
 
 test('투자 점검·용어, 시세 서버 없음 안내', { skip }, () => {
@@ -235,4 +235,20 @@ test('모의 주문: 포트폴리오에 모의 계좌 카드가 나오고 모의
   const p = page('order'); p.btn('모의 계좌 열기').click(); await tick();
   assert.match(p.txt(), /진짜 GDC와 증권은 오가지 않고/);
   p.S.view('portfolio'); assert.ok(p.doc.getElementById('stk-sim-card'));
+});
+
+// ── 6단계: 내 임금 ──
+test('내 임금: 기록이 없으면 흐름을 만들어 보여 주지 않고, 적으면 구간·평균·시계열이 나온다', { skip }, () => {
+  const p = page('wage'); assert.ok(p.doc.getElementById('stk-w-empty')); assert.ok(!p.doc.getElementById('stk-w-res')); assert.match(p.txt(), /공정 임금 구간.은 내지 않아요/);
+  for (const [m, a] of [['2026-09', '3,000,000'], ['2026-10', '3,300,000'], ['2026-11', '3,600,000']]) { type(p, 'stk-w-m', m); type(p, 'stk-w-amt', a); p.btn('적기').click(); }
+  assert.match(p.doc.getElementById('stk-w-range').textContent, /3,000,000 ~ 3,600,000원/); assert.match(p.txt(), /평균\s*3,300,000원/); assert.match(p.txt(), /6개월 이상 적으면/);
+  assert.equal(p.doc.getElementById('stk-w-tbl').querySelectorAll('tbody tr').length, 3); assert.equal(p.fetched(), 0);
+});
+test('내 임금: 중복 월·미래 월·잘못된 금액은 막고, 증감은 6개월 이상일 때만 계산한다', { skip }, () => {
+  const p = page('wage'), add = (m, a) => { type(p, 'stk-w-m', m); type(p, 'stk-w-amt', a); p.btn('적기').click(); return p.doc.getElementById('stk-w-msg'); };
+  add('2026-11', '100'); assert.equal(add('2026-11', '200').getAttribute('role'), 'alert');
+  assert.equal(add('2099-01', '100').getAttribute('role'), 'alert'); assert.equal(add('2026-10', '0').getAttribute('role'), 'alert'); assert.equal(add('26-10', '100').getAttribute('role'), 'alert');
+  const N = api(); assert.equal(N.wageStats([]), null);
+  const rows = ['01', '02', '03', '04', '05', '06'].map((m, i) => ({ m: '2026-' + m, amt: i < 3 ? 1000 : 1100 })); const s = N.wageStats(rows);
+  assert.equal(Math.round(s.change * 10) / 10, 10); assert.equal(s.lo, 1000); assert.equal(s.hi, 1100);
 });
