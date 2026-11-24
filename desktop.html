@@ -3732,7 +3732,7 @@ function _taxShow(view) {
   });
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
-const _MKT_V = '20261124c'; let _mktChat = false;
+const _MKT_V = '20261124d'; let _mktChat = false;
 function _mktLoad(cb) {
   if (window.NaviMarket) { cb(); return; }
   if (!document.getElementById('mkt-css')) { const l = document.createElement('link'); l.id = 'mkt-css'; l.rel = 'stylesheet'; l.href = 'market.css?v=' + _MKT_V; document.head.appendChild(l); }

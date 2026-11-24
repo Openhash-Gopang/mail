@@ -77,9 +77,11 @@ test('도우미: 링크 없으면 안내, 있으면 맡기고, 읽어 온 값은
   assert.ok(p.txt().includes('나비웹 도우미에게 맡겼어요'));
   cb({ label: '다른 항목', data: { name: '무시돼야 함', price: 1 } }); assert.equal(p.doc.getElementById('mk-name').value, '');
   cb({ label: '시장 상품 확인', data: { name: '무선 청소기', price: 189000, image: 'javascript:alert(1)', seller: '예시몰', as: '1년 무상 AS', rating: 4.6, count: 230, reviews: ['좋아요'], compare: [185000, 190000, 'x', 192000] } });
-  assert.equal(p.doc.getElementById('mk-name').value, '무선 청소기'); assert.equal(p.doc.getElementById('mk-price').value, '189000'); assert.equal(p.doc.querySelector('img'), null);
-  assert.ok(p.txt().includes('도우미가 상품 정보를 읽어 왔어요'));
-  cb({ label: '시장 상품 확인', data: { image: 'https://img.example/a.jpg' } }); assert.equal(p.doc.querySelector('img').getAttribute('src'), 'https://img.example/a.jpg');
+  assert.ok(p.txt().includes('비슷한 걸 산 적이 있는지'), '이름·가격을 읽어 오면 검토 시작이 자동으로 눌린다'); assert.ok(p.txt().includes('무선 청소기') && p.txt().includes('189,000원')); assert.equal(p.doc.querySelector('img'), null);
+  cb({ label: '시장 상품 확인', data: { image: 'https://img.example/a.jpg' } }); assert.equal(p.doc.querySelector('img').getAttribute('src'), 'https://img.example/a.jpg'); assert.ok(p.txt().includes('비슷한 걸 산 적이 있는지'));
+  const q2 = page({ onData: (f) => { cb = f; }, detect: () => Promise.resolve({}), queue: () => Promise.resolve({ ok: true }) }); q2.type('mk-link', 'https://shop.example/p/2'); q2.btn('도우미로 읽어 오기').click(); await wait(30);
+  cb({ label: '시장 상품 확인', data: { name: '이름만 있음' } }); assert.ok(q2.txt().includes('살 물건을 알려 주세요') && q2.doc.getElementById('mk-name').value === '이름만 있음', '가격이 없으면 자동으로 넘어가지 않는다');
+  cb({ label: '시장 상품 확인', data: { price: 5000 } }); assert.ok(q2.txt().includes('비슷한 걸 산 적이 있는지'));
 });
 test('도우미가 없으면 직접 넣으라고 안내한다', { skip }, async () => {
   const p = page(); p.type('mk-link', 'https://shop.example/p/1'); p.btn('도우미로 읽어 오기').click(); assert.ok(p.txt().includes('직접 넣어도 돼요'));
