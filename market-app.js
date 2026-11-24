@@ -197,6 +197,9 @@ F.report = function (p) {
   var r = Number(p.rating), c = Number(p.count);
   if (r >= 1 && r <= 5 && c > 0) { var good = r >= 4 && c >= 20; L.push({ k:'고객 리뷰', ok:good, text:'평점 ' + r.toFixed(1) + ' · ' + won(c) + '건 — ' + (good ? '만족 수준(4.0점·20건 이상)을 넘어요' : '만족 수준(4.0점·20건 이상)에 못 미쳐요') }); if (!good) warn++; }
   else { L.push({ k:'고객 리뷰', ok:null, text:'평점·리뷰 건수를 읽지 못해 판단을 보류해요' }); hold++; }
+  var st = clean(p.sellerTrust, 120), sn = clean(p.seller, 30);
+  if (st) L.push({ k:'판매자 신뢰도', ok:!/낮|불량|주의|신고|분쟁/.test(st), text:(sn ? sn + ' — ' : '') + st }); else { L.push({ k:'판매자 신뢰도', ok:null, text:(sn ? sn + ': ' : '') + '판매자 평점·등급을 읽지 못해 판단을 보류해요' }); hold++; }
+  if (L[L.length - 1].ok === false) warn++;
   var verdict = warn ? 'caution' : hold ? 'hold' : 'ok';
   return { lines:L, verdict:verdict, title:verdict === 'ok' ? '가격이 공정하고 만족도가 충분해요' : verdict === 'caution' ? '확인이 필요한 점이 있어요(' + warn + '건)' : '근거가 부족한 항목이 있어요(' + hold + '건 보류)', median:med };
 };
@@ -205,8 +208,8 @@ F.snum = snum; F.norm = norm;
 // ── 저장(이 브라우저, 체험용) ──
 var KEY = 'navi-market-v2', MAXP = 200;
 var M = null, LS = {};
-var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
-  auto:false, history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
+var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
+  auto:false, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
@@ -222,14 +225,14 @@ function note(t, bad, id) { return h('div', { class:bad ? 'note' : 'note info', 
 function safeImg(u) { u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/i.test(u) || /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u) ? u : ''; }
 function safeLink(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
-function go(n) { S.step = n; S.err = ''; S.info = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
-function reset(keepHistory) { S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; S.err = ''; S.info = ''; render(); }
+function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
+function reset(keepHistory) { S.tok++; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; S.err = ''; S.info = ''; render(); }
 
 // ── 도우미(상품 페이지 읽기) ──
 var SLOT = '시장 상품 확인';
 function goalFor(link) {
   return '이 상품 페이지(' + link + ')를 열어 상품 정보를 확인해 주세요. 로그인이 필요하면 사용자가 로그인하도록 넘기고, 로그인하면 이어서 진행해 주세요. ' +
-    '상품명·판매 가격(원)·대표 이미지 주소·판매자·AS(반품·교환·보증) 안내·고객 리뷰 평점(1~5)과 건수·대표 리뷰 요약 최대 5개·배송 방식과 기간·같은 상품의 다른 판매처 가격(찾을 수 있으면 최대 5개)을 읽어 ' +
+    '상품명·판매 가격(원)·대표 이미지 주소·판매자와 판매자 신뢰도(판매자 평점·등급·운영 기간·분쟁 여부, 화면에 있는 말 그대로)·AS(반품·교환·보증) 안내·고객 리뷰 평점(1~5)과 건수·대표 리뷰 요약 최대 5개·배송 방식과 기간·같은 상품의 다른 판매처 가격(찾을 수 있으면 최대 5개)을 읽어 ' +
     'report_data(kind: product)로 나비웹에 한 번에 보내 주세요. 화면에서 찾지 못한 값은 비우고 지어내지 마세요. 구매·장바구니·결제는 하지 마세요.';
 }
 function takeProduct(d) {
@@ -238,6 +241,7 @@ function takeProduct(d) {
   if (Number(d.price) > 0 && Number(d.price) <= 1e9) p.price = String(Math.round(Number(d.price)));
   if (safeImg(d.image)) p.img = safeImg(d.image);
   if (clean(d.seller, 30)) p.seller = clean(d.seller, 30);
+  if (clean(d.sellerTrust, 120)) p.sellerTrust = clean(d.sellerTrust, 120);
   if (clean(d.as, 200)) p.as = clean(d.as, 200);
   if (Number(d.rating) >= 1 && Number(d.rating) <= 5) p.rating = String(Math.round(Number(d.rating) * 10) / 10);
   if (Number(d.count) > 0 && Number(d.count) <= 1e8) p.count = String(Math.round(Number(d.count)));
@@ -310,25 +314,38 @@ function viewStart() {
   kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('검토 시작', 'fill', startReview, 'mk-start')]));
   return kids;
 }
+var DELAY = (typeof window !== 'undefined' && typeof window.__naviMarketDelay === 'number') ? window.__naviMarketDelay : 900;
+/** 단계 사이는 자동으로 넘어간다. 잠깐 멈춰 지금 단계를 보여 준 뒤 이어 가고, 그 사이 화면이 바뀌었거나 새로 시작했으면 이어 가지 않는다. */
+function later(fn) { var k = S.tok; setTimeout(function () { if (M && S.tok === k) fn(); }, DELAY); }
+function openAsk(title, text, opts) { S.ask = { title:title, text:text, opts:opts }; render(); }
+function closeAsk(fn) { return function () { S.ask = null; if (fn) fn(); else render(); }; }
+function modal() {
+  var a = S.ask; if (!a) return null;
+  var first = null, dlg = h('div', { class:'mk-dlg', role:'dialog', 'aria-modal':'true', 'aria-labelledby':'mk-ask-t' }, [h('b', { id:'mk-ask-t', text:a.title }), h('div', { id:'mk-ask-x', text:a.text }),
+    h('div', { class:'rowf', style:'margin-top:16px' }, a.opts.map(function (o, i) { var b = btn(o.t, o.c || '', closeAsk(o.fn), o.id); if (i === 0) first = b; return b; }))]);
+  setTimeout(function () { try { first.focus(); } catch (e) { /* 포커스 불가 */ } }, 0);
+  return h('div', { class:'mk-ov' }, [dlg]);
+}
 function startReview() {
   S.auto = false; var p = S.prod, price = snum(p.price);
   if (!clean(p.name, 80)) { S.err = '상품 이름을 넣어 주세요(도우미가 읽어 왔다면 확인해 주세요).'; return render(); }
   if (!(price >= 1 && price <= 1e9)) { S.err = '가격을 1원 이상 숫자로 넣어 주세요.'; return render(); }
-  S.dup = F.similar(p.name, S.history); S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.err = '';
+  S.dup = F.similar(p.name, S.history); S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.err = ''; S.ask = null; S.payMsg = null; S.bal = '';
   go(1);
+  later(function () {
+    if (!S.dup.length) { toNeed(); return; }
+    openAsk('비슷한 구매 기록이 있어요', '「' + S.dup[0].name + '」(' + won(S.dup[0].price) + '원' + (S.dup[0].d ? ', ' + S.dup[0].d : '') + ')을 이미 산 적이 있어요. 중복일 수 있어 멈췄어요. 그래도 사시겠어요?',
+      [{ t:'구매 원함', c:'fill', id:'mk-want', fn:function () { S.dupOverride = true; toNeed(); } }, { t:'그만두기', fn:function () { reset(); } }]);
+  });
 }
 function viewDup() {
   var kids = [h('h2', { text:'먼저, 비슷한 걸 산 적이 있는지 볼게요' }), prodCard()];
   kids.push(h('p', { class:'sub', text:'내 데이터 금고(PDV)의 구매 기록 ' + S.history.length + '건에서 찾았어요.' }));
   if (S.dup.length) {
-    kids.push(note('비슷한 구매 기록이 있어요. 중복일 수 있어 여기서 멈췄어요.', true, 'mk-dup'));
+    kids.push(note('비슷한 구매 기록이 있어요. 중복일 수 있어 여기서 멈추고 물어볼게요.', true, 'mk-dup'));
     kids.push(h('div', { class:'card', style:'padding:0' }, [h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['상품', '가격', '산 날'].map(function (t) { return h('th', { text:t }); }))]),
       h('tbody', {}, S.dup.slice(0, 5).map(function (x) { return h('tr', {}, [h('td', { text:x.name }), h('td', { text:won(x.price) + '원' }), h('td', { text:x.d || '-' })]); }))])])]));
-    kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('구매 원함', 'fill', function () { S.dupOverride = true; toNeed(); }, 'mk-want'), btn('그만두기', '', function () { reset(); })]));
-  } else {
-    kids.push(note('비슷한 구매 기록이 없어요. 다음 단계로 넘어가요.', false, 'mk-nodup'));
-    kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('다음', 'fill', function () { toNeed(); }, 'mk-next1'), btn('그만두기', '', function () { reset(); })]));
-  }
+  } else kids.push(note('비슷한 구매 기록이 없어요. 다음 단계로 넘어가요.', false, 'mk-nodup'));
   kids.push(pdvCard());
   return kids;
 }
@@ -348,26 +365,42 @@ function pdvCard() {
   if (S.info) d.appendChild(note(S.info, true)); d.open = !!S.info;
   return d;
 }
-function toNeed() { S.need = F.need({ name:S.prod.name, price:snum(S.prod.price), memo:S.memo, history:S.history, dupOverride:S.dupOverride }); go(2); }
+function toNeed() {
+  S.need = F.need({ name:S.prod.name, price:snum(S.prod.price), memo:S.memo, history:S.history, dupOverride:S.dupOverride }); go(2);
+  later(function () {
+    if (S.need.score >= 3) { toReport(); return; }
+    openAsk('필요도가 낮아요(' + S.need.score + ' / 5 · ' + S.need.label + ')', S.need.reasons.join(' / ') + ' — 그래도 계속 볼까요?',
+      [{ t:'계속 진행', c:'fill', id:'mk-go2', fn:function () { toReport(); } }, { t:'그만두기', fn:function () { reset(); } }]);
+  });
+}
 function viewNeed() {
   var n = S.need, kids = [h('h2', { text:'이 물건이 나에게 필요할까요?' }), prodCard()];
   kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'k', text:'필요도 (5 매우 적절 · 1 불필요)' }), h('div', { class:'num', id:'mk-score', style:'font-size:34px;font-weight:700', text:n.score + ' / 5' }), h('div', { class:'sub', id:'mk-score-label', text:n.label }),
     h('ul', {}, n.reasons.map(function (r) { return h('li', { text:r }); }))]));
-  kids.push(h('p', { class:'sub', text:'체험용 규칙으로 계산한 점수예요. 실제로는 시장 SP가 PDV의 업무·일상 전체를 분석해 판단해요. 결정은 늘 내가 해요.' }));
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('계속 진행', 'fill', function () { S.rep = F.report({ price:snum(S.prod.price), compare:S.prod.compare, as:S.prod.as, rating:S.prod.rating, count:S.prod.count }); go(3); }, 'mk-go2'), btn('그만두기', '', function () { reset(); })]));
+  kids.push(h('p', { class:'sub', text:'체험용 규칙으로 계산한 점수예요. 실제로는 시장 SP가 PDV의 업무·일상 전체를 분석해 판단해요. 3점 이상이면 자동으로 이어 가고, 낮으면 물어봐요.' }));
   return kids;
+}
+function toReport() {
+  var p = S.prod; S.rep = F.report({ price:snum(p.price), compare:p.compare, as:p.as, seller:p.seller, sellerTrust:p.sellerTrust, rating:p.rating, count:p.count }); go(3);
+  later(function () { askBuy(); });
+}
+function askBuy() {
+  var r = S.rep, brief = r.lines.map(function (l) { return (l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k + ': ' + l.text; }).join('\n');
+  openAsk('구매할까요? — ' + r.title, '「' + clean(S.prod.name, 40) + '」 ' + won(snum(S.prod.price)) + '원\n' + brief,
+    [{ t:'구매', c:'fill', id:'mk-buy', fn:function () { startDeal(); } }, { t:'그만두기', fn:function () { reset(); } }, { t:'보고서 더 보기', id:'mk-more' }]);
 }
 function viewReport() {
   var r = S.rep, p = S.prod, kids = [h('h2', { text:'가격·AS·리뷰 평가 보고서' }), prodCard()];
   kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('b', { id:'mk-verdict', text:r.title }), h('div', {}, r.lines.map(function (l) {
     return h('div', { class:'kv', style:'align-items:flex-start' }, [h('span', { text:(l.ok === true ? '✓ ' : l.ok === false ? '⚠ ' : '… ') + l.k }), h('span', { style:'text-align:right', text:l.text })]); }))]));
   if (p.reviews && p.reviews.length) kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'대표 리뷰' }), h('ul', {}, p.reviews.map(function (x) { return h('li', { text:x }); }))]));
-  if (!p.as || !p.rating || p.compare.length < 3) kids.push(h('details', { class:'card', style:'margin-top:12px' }, [h('summary', { text:'보고서에 빠진 값 직접 넣기' }),
+  if (!p.as || !p.sellerTrust || !p.rating || p.compare.length < 3) kids.push(h('details', { class:'card', style:'margin-top:12px' }, [h('summary', { text:'보고서에 빠진 값 직접 넣기' }),
+    inp('mk-trust', '판매자 신뢰도(평점·등급 등)', p.sellerTrust, function (v) { p.sellerTrust = v; }, { max:'120' }),
     inp('mk-as', 'AS·반품·교환 안내', p.as, function (v) { p.as = v; }, { max:'200' }),
     h('div', { class:'g2' }, [inp('mk-rating', '리뷰 평점(1~5)', p.rating, function (v) { p.rating = v; }, { max:'4' }), inp('mk-count', '리뷰 건수', p.count, function (v) { p.count = v; }, { max:'8', mode:'numeric' })]),
     inp('mk-cmp', '다른 판매처 가격(원, 쉼표로 3개 이상)', p.compare.join(', '), function (v) { p.compare = v.split(/[\s,]+/).map(snum).filter(function (x) { return x >= 1; }).slice(0, 5); }, { max:'80' }),
-    btn('보고서 다시 만들기', '', function () { S.rep = F.report({ price:snum(p.price), compare:p.compare, as:p.as, rating:p.rating, count:p.count }); render(); }, 'mk-remake')]));
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('구매', 'fill', startDeal, 'mk-buy'), btn('그만두기', '', function () { reset(); })]));
+    btn('보고서 다시 만들기', '', function () { S.rep = F.report({ price:snum(p.price), compare:p.compare, as:p.as, seller:p.seller, sellerTrust:p.sellerTrust, rating:p.rating, count:p.count }); render(); }, 'mk-remake')]));
+  if (!S.ask) kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('구매', 'fill', startDeal, 'mk-buy-inline'), btn('그만두기', '', function () { reset(); })]));
   return kids;
 }
 // 판매자 나비와의 협의(체험용): 시장 SP가 보내는 말과 판매자 나비의 응답을 보여 준다. 판매자 나비 응답은 실제 연결 전이라 이 화면이 만든 체험용 값이다.
@@ -377,57 +410,65 @@ function startDeal() {
     talk:[['시장 SP → 판매자 나비', '「' + clean(p.name, 40) + '」 1개를 ' + won(price) + '원에 사려고 합니다. 결제는 GDC로, 배송은 택배를 원합니다. 조건을 알려 주세요.'],
           ['판매자 나비(체험용 응답)', '가격 ' + won(price) + '원, 수량 1개 확인했습니다. 결제는 GDC 서명 결제로 받겠습니다. 배송: ' + (clean(p.shipping, 60) || '택배') + '.']] };
   go(4);
+  later(function () {
+    var d = S.deal;
+    openAsk('이 조건으로 결제할까요?', '판매자 ' + d.seller + ' · ' + won(d.price) + '원 × 1개 · 결제 ' + d.pay + ' · 배송 ' + d.ship + ' · 구매 조건 ' + d.cond,
+      [{ t:'승인', c:'fill', id:'mk-approve', fn:function () { go(5); later(autoPay); } }, { t:'취소', fn:function () { reset(); } }]);
+  });
 }
 function viewDeal() {
   var d = S.deal, kids = [h('h2', { text:'판매자 나비와 조건을 맞췄어요' }), prodCard()];
   kids.push(h('div', { class:'card col', style:'margin-top:16px', id:'mk-talk' }, d.talk.map(function (t) { return h('div', {}, [h('b', { text:t[0] }), h('div', { text:t[1] })]); })));
   kids.push(note('판매자 나비는 아직 연결되어 있지 않아, 위 응답은 이 화면이 만든 체험용이에요.', false));
   kids.push(h('div', { class:'card', style:'margin-top:12px' }, [h('b', { text:'최종 보고' })].concat([['판매자', d.seller], ['금액', won(d.price) + '원 × ' + d.qty + '개'], ['결제', d.pay], ['배송', d.ship], ['구매 조건', d.cond]].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('span', { text:x[1] })]); }))));
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('승인', 'fill', function () { go(5); }, 'mk-approve'), btn('취소', '', function () { reset(); })]));
   return kids;
 }
-function viewPay() {
-  var d = S.deal, kids = [h('h2', { text:'결제하고 장부에 남겨요' }), prodCard()], bal = h('div', { id:'mk-pay-bal' }), msg = h('div', { id:'mk-pay-msg', style:'margin-top:12px' }), tl = h('div', { id:'mk-pay-done' });
-  function say(text, bad) { msg.textContent = ''; if (text) msg.appendChild(note(text, bad)); }
-  if (!subtle()) kids.push(note('이 브라우저에서는 서명·해시 기능(보안 연결 필요)을 쓸 수 없어 결제를 체험할 수 없어요.', true));
-  kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('b', { text:'결제 금액' }), h('div', { class:'num', id:'mk-pay-amt', style:'font-size:26px;font-weight:700', text:gdc(d.price) }), h('div', { class:'sub', text:'체험용으로 1원을 1 GDC로 봐요.' }), bal]));
-  kids.push(h('div', { class:'sub', style:'margin-top:8px', text:'승인하면 구매자(나)와 판매자가 같은 내용에 각자 서명하고(상호 인증), 장부로 내 잔고를 다시 계산해 확인한 뒤(잔고 검증), 이전 블록에 이어 붙여 기록해요(장부 기록).' }));
-  var dep = h('div', { class:'rowf', id:'mk-pay-dep', style:'display:none;margin-top:12px' });
-  kids.push(dep);
-  kids.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('승인하고 결제', 'fill', pay, 'mk-pay'), btn('취소', '', function () { reset(); })]), msg, tl);
-  function refresh() {
-    verifyLedger(S.ledger).then(function (r) {
-      bal.textContent = ''; dep.textContent = '';
-      var have = r.ok ? (r.bal['나'] || 0) : 0;
-      bal.appendChild(h('div', { class:'kv' }, [h('span', { text:'내 잔고(장부 기준)' }), h('b', { id:'mk-pay-have', text:r.ok ? gdc(have) : '장부 이상' })]));
-      if (!r.ok) { say('장부에 이상이 있어 결제할 수 없어요(' + r.bad + '번 블록). 체험용 장부를 지우고 다시 해 보세요.', true); return; }
-      if (have < d.price) {
-        dep.style.display = ''; var amt = h('input', { id:'mk-dep-amt', type:'text', value:String(d.price - have), inputmode:'numeric', maxlength:'12', 'aria-label':'체험용 입금액' });
-        dep.appendChild(amt); dep.appendChild(btn('체험용 입금 기록', '', function () {
-          appendDeposit(S.ledger, '나', amt.value).then(function (res) { if (!res.ok) { say(res.msg, true); return; } S.ledger.push(res.block); save(); say('체험용 입금을 장부에 기록했어요.', false); refresh(); }).catch(function () { say('기록하지 못했어요.', true); });
-        }, 'mk-dep'));
-        dep.appendChild(h('span', { class:'sub', text:'잔고가 모자라요. 실제 GDC 연결 전이라 체험용으로 입금해요.' }));
-      } else dep.style.display = 'none';
-    }).catch(function () { say('장부를 확인하지 못했어요(이 브라우저에서는 해시 기능을 쓸 수 없어요).', true); });
-  }
-  function pay() {
-    var t = { item:clean(S.prod.name, 40), qty:'1', price:String(d.price), buyer:'나', seller:d.seller === '나' ? '판매자' : d.seller, d:kst(), n:uid() };
-    if (!parseSlip(t)) { say('결제 내용을 확인해 주세요(품목·금액·판매자 이름).', true); return; }
-    var text = canonTerms(t);
-    Promise.all([ensureKey('b'), ensureKey('s')]).then(function (ks) {
-      return Promise.all([signText(ks[0].priv, text), signText(ks[1].priv, text)]).then(function (sg) {
-        return appendTrade(S.ledger, { terms:t, pub:ks[0].pub, sig:sg[0] }, { terms:t, pub:ks[1].pub, sig:sg[1] }).then(function (res) {
-          if (!res.ok) { say(res.msg, true); return; }
-          S.ledger.push(res.block);
-          var total = res.total, left = res.buyerLeft;
-          S.fin.unshift({ d:kst(), item:t.item, amt:total, left:left }); S.fin = S.fin.slice(0, MAXP);                          // 재무제표 SP: 장부(지출) 갱신
-          S.history.unshift({ name:t.item, price:total, d:kst(), seller:t.seller }); S.history = S.history.slice(0, MAXP);       // 나만의 AI 비서: PDV에 기록
-          save(); S.done = { total:total, left:left, n:S.ledger.length, seller:t.seller, item:t.item }; go(6);
-        });
+// 승인 뒤에는 결제까지 자동으로 이어 간다. 잔고가 모자랄 때만 체험용 입금을 물어본다.
+function autoPay() {
+  var d = S.deal; if (!d) return;
+  if (!subtle()) { S.payMsg = { t:'이 브라우저에서는 서명·해시 기능(보안 연결 필요)을 쓸 수 없어 결제를 체험할 수 없어요.', bad:true }; render(); return; }
+  S.payMsg = null;
+  verifyLedger(S.ledger).then(function (r) {
+    var have = r.ok ? (r.bal['나'] || 0) : 0; S.bal = r.ok ? gdc(have) : '장부 이상';
+    if (!r.ok) { S.payMsg = { t:'장부에 이상이 있어 결제할 수 없어요(' + r.bad + '번 블록). 체험용 장부를 지우고 다시 해 보세요.', bad:true }; render(); return; }
+    if (have < d.price) {
+      var need = d.price - have;
+      render(); openAsk('잔고가 모자라요', '내 잔고 ' + gdc(have) + ', 결제 금액 ' + gdc(d.price) + '. 실제 GDC 연결 전이라 체험용으로 ' + gdc(need) + '을 입금하고 이어서 결제할까요?',
+        [{ t:'체험용 입금 후 결제', c:'fill', id:'mk-dep', fn:function () {
+          appendDeposit(S.ledger, '나', String(need)).then(function (res) { if (!res.ok) { S.payMsg = { t:res.msg, bad:true }; render(); return; } S.ledger.push(res.block); save(); S.bal = gdc(d.price); doPay(); })
+            .catch(function () { S.payMsg = { t:'입금을 기록하지 못했어요.', bad:true }; render(); }); } },
+         { t:'취소', fn:function () { reset(); } }]);
+      return;
+    }
+    render(); doPay();
+  }).catch(function () { S.payMsg = { t:'장부를 확인하지 못했어요(이 브라우저에서는 해시 기능을 쓸 수 없어요).', bad:true }; render(); });
+}
+function doPay() {
+  var d = S.deal, t = { item:clean(S.prod.name, 40), qty:'1', price:String(d.price), buyer:'나', seller:d.seller === '나' ? '판매자' : d.seller, d:kst(), n:uid() };
+  if (!parseSlip(t)) { S.payMsg = { t:'결제 내용을 확인해 주세요(품목·금액·판매자 이름).', bad:true }; render(); return; }
+  var text = canonTerms(t);
+  Promise.all([ensureKey('b'), ensureKey('s')]).then(function (ks) {
+    return Promise.all([signText(ks[0].priv, text), signText(ks[1].priv, text)]).then(function (sg) {
+      return appendTrade(S.ledger, { terms:t, pub:ks[0].pub, sig:sg[0] }, { terms:t, pub:ks[1].pub, sig:sg[1] }).then(function (res) {
+        if (!res.ok) { S.payMsg = { t:res.msg, bad:true }; render(); return; }
+        S.ledger.push(res.block);
+        var total = res.total, left = res.buyerLeft;
+        S.fin.unshift({ d:kst(), item:t.item, amt:total, left:left }); S.fin = S.fin.slice(0, MAXP);                          // 재무제표 SP: 장부(지출) 갱신
+        S.history.unshift({ name:t.item, price:total, d:kst(), seller:t.seller }); S.history = S.history.slice(0, MAXP);       // 나만의 AI 비서: PDV에 기록
+        save(); S.done = { total:total, left:left, n:S.ledger.length, seller:t.seller, item:t.item }; go(6);
       });
-    }).catch(function () { say('결제하지 못했어요(이 브라우저에서는 서명·해시 기능을 쓸 수 없어요).', true); });
-  }
-  refresh();
+    });
+  }).catch(function () { S.payMsg = { t:'결제하지 못했어요(이 브라우저에서는 서명·해시 기능을 쓸 수 없어요).', bad:true }; render(); });
+}
+function viewPay() {
+  var d = S.deal, kids = [h('h2', { text:'결제하고 장부에 남겨요' }), prodCard()];
+  kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('b', { text:'결제 금액' }), h('div', { class:'num', id:'mk-pay-amt', style:'font-size:26px;font-weight:700', text:gdc(d.price) }), h('div', { class:'sub', text:'체험용으로 1원을 1 GDC로 봐요.' }),
+    S.bal ? h('div', { class:'kv' }, [h('span', { text:'내 잔고(장부 기준)' }), h('b', { id:'mk-pay-have', text:S.bal })]) : null]));
+  kids.push(h('div', { class:'sub', style:'margin-top:8px', text:'승인했으니 구매자(나)와 판매자가 같은 내용에 각자 서명하고(상호 인증), 장부로 내 잔고를 다시 계산해 확인한 뒤(잔고 검증), 이전 블록에 이어 붙여 기록해요(장부 기록).' }));
+  if (S.payMsg) {
+    kids.push(h('div', { id:'mk-pay-msg', style:'margin-top:12px' }, [note(S.payMsg.t, S.payMsg.bad)]));
+    kids.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('결제 다시 시도', 'fill', function () { autoPay(); }, 'mk-pay'), btn('취소', '', function () { reset(); })]));
+  } else if (!S.ask) kids.push(h('div', { class:'sub', id:'mk-pay-wait', style:'margin-top:12px', text:'결제하고 있어요…' }));
   return kids;
 }
 function viewDone() {
@@ -449,6 +490,7 @@ function render() {
   var v = [viewStart, viewDup, viewNeed, viewReport, viewDeal, viewPay, viewDone][S.step] || viewStart;
   v().forEach(function (k) { if (k) root.appendChild(k); });
   root.appendChild(h('div', { class:'rowf', style:'margin-top:24px' }, [btn('시장 SP에게 물어보기', '', function () { emit('ask', '지금 보고 있는 구매 검토 단계에서 무엇을 확인하면 좋을지 알려 줘'); })]));
+  var m = modal(); if (m) root.appendChild(m);
 }
 function nav(a) {
   var d = a && typeof a['do'] === 'string' ? a['do'] : '';
