@@ -102,3 +102,25 @@ test('모의 장부: 해시 이음 검증은 값 변조를 찾아낸다', { skip
   const bad = JSON.parse(JSON.stringify(st.recs)); bad[1].qty = 3;
   const v = await L.secVerify(bad); assert.equal(v.ok, false); assert.equal(v.bad, 1);
 });
+
+// ── 5단계: 판매비·관리비·세금 ──
+test('판관비: 적으면 영업이익이 줄고, 은행·세무 장부 모두 대차가 맞는다', { skip }, () => {
+  const w = env({ 'navi-wallet-v1': { bal: 3000000, at: 'x' } }), L = w.NaviLedger;
+  const rs = [rec('MK-1', '2026-11-25 09:00:00', '철수상회', '나', 500000)]; const base = L.profitInfo('나', rs);
+  assert.equal(L.expAdd('임차료', '100000', '11월').ok, true);
+  const p = L.profitInfo('나', rs); assert.equal(p.opex, 100000); assert.equal(p.op, base.gross - 100000);
+  const bw = L.walletBook(rs.slice().reverse(), 3000000); assert.equal(bw['판매비와관리비'], 100000);
+  const A = bw['현금(GDC)'] + bw['상품(재고자산)'] + bw['부가세대급금'] + bw['비품'], LE = bw['미지급금'] + bw['부가세예수금'] + bw['자본금'] + bw['이익잉여금']; assert.equal(A, LE);
+  const tb = L.bookOf('나', rs, { cashEnd: 3000000, all: rs }); assert.ok(L.totals(tb).balanced);
+  assert.ok(L.totals(L.bookOf('나', rs)).balanced);
+});
+test('판관비: 잘못된 입력(분류·0·소수·음수)은 거절하고 다른 사람 장부에는 쓰지 않는다', { skip }, () => {
+  const L = env().NaviLedger;
+  for (const [c, a] of [['없는분류', '100'], ['임차료', '0'], ['임차료', '1.5'], ['임차료', '-5'], ['임차료', 'abc']]) assert.equal(L.expAdd(c, a, '').ok, false);
+  assert.equal(L.expTotal(), 0); L.expAdd('급여', '1000', ''); assert.equal(L.profitInfo('철수상회', []).opex, 0);
+});
+test('예상 소득세: 구간 경계 값과 지방소득세 10%, 0 이하는 0', { skip }, () => {
+  const L = env().NaviLedger;
+  assert.equal(L.incomeTax(14000000).tax, 840000); assert.equal(L.incomeTax(50000000).tax, 6240000);
+  assert.equal(L.incomeTax(1000000).total, 66000); assert.equal(L.incomeTax(-5).total, 0); assert.equal(L.incomeTax(2000000000).tax, 834060000);
+});

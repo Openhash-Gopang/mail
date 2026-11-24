@@ -144,7 +144,7 @@ const rec = (serial, supply = 180000) => { const tax = Math.round(supply * 0.1);
 test('valueOf: 이익이 있으면 수익가치 시나리오의 최소~최대 구간', { skip }, () => {
   const v = api().valueOf(SM({ sales: 1000000, profit: 1000000, profitKnown: true }), { g: '3', r: '10' });
   assert.equal(v.mode, 'range'); assert.equal(v.sc.length, 3);
-  assert.equal(Math.round(v.low), 10200000); assert.equal(Math.round(v.high), 26000000); assert.equal(v.ver, 'v0');
+  assert.equal(Math.round(v.low), 10200000); assert.equal(Math.round(v.high), 26000000); assert.equal(v.ver, 'v1');
 });
 test('valueOf: 이익이 없으면 구간을 내지 않고 순자산만, 요구수익률 ≤ 성장률인 시나리오는 뺀다', { skip }, () => {
   const N = api(), a = N.valueOf(SM(), { g: '3', r: '10' });
@@ -159,7 +159,7 @@ test('hashOf: 같은 입력은 같은 해시, 가정이 다르면 다른 해시'
   assert.match(a, /^[0-9a-f]{64}$/); assert.equal(a, b); assert.notEqual(a, c);
 });
 test('내 가치 탭: 장부가 없으면 만들어 보여 주지 않고 안내한다', { skip }, () => {
-  const p = page('value'); assert.match(p.txt(), /평가 v0/); assert.match(p.txt(), /아직 내 장부에 거래가 없어요/); assert.ok(!p.doc.getElementById('stk-v-res'));
+  const p = page('value'); assert.match(p.txt(), /평가 v1/); assert.match(p.txt(), /아직 내 장부에 거래가 없어요/); assert.ok(!p.doc.getElementById('stk-v-res'));
 });
 test('내 가치 탭: 장부가 있으면 순자산·미연결 신호·해시를 보여 주고, 평가 정보는 당사자(나) 것만 쓴다', { skip }, async () => {
   const p = page('value', { 'navi-tax-v2': { rec: [rec('MK-1')], inbox: [] }, 'navi-wallet-v1': { bal: 5200, at: '2026-11-25T01:00:00Z' } });
@@ -188,10 +188,10 @@ test('valueOf: 원가를 알 수 없는 매출이 있으면 이익을 쓰지 않
 const sale = (serial, what, qty, supply, buyer, seller) => { const tax = Math.round(supply * 0.1); return { serial, at: '2026-11-25 12:00:00', hash: 'h', slip: { what, qty, supply, price: supply / qty },
   buyer: { side: 'buyer', owner: buyer, lines: [['상품(재고자산)', supply, 0], ['부가세대급금', tax, 0], ['현금(GDC)', 0, supply + tax]] },
   seller: { side: 'seller', owner: seller, lines: [['현금(GDC)', supply + tax, 0], ['매출', 0, supply], ['부가세예수금', 0, tax]] } }; };
-test('내 가치 탭: 산 물건을 팔면 매출총이익으로 수익가치 구간이 나온다', { skip }, () => {
+test('내 가치 탭: 산 물건을 팔면 세후 영업이익으로 수익가치 구간이 나온다', { skip }, () => {
   const buy = sale('MK-1', '무선 청소기', 2, 180000, '나', '철수상회'), sell = sale('MK-2', '무선 청소기', 1, 120000, '영희', '나');
   const p = page('value', { 'navi-tax-v2': { rec: [sell, buy], inbox: [] } });
-  assert.match(p.doc.getElementById('stk-v-range').textContent, /~/); assert.match(p.txt(), /매출총이익 30,000원/); assert.match(p.txt(), /매출 120,000 − 매출원가 90,000/);
+  assert.match(p.doc.getElementById('stk-v-range').textContent, /~/); assert.match(p.txt(), /세후 영업이익 28,020원/); assert.match(p.txt(), /매출 120,000 − 매출원가 90,000/);
 });
 
 // ── 4단계: 모의 주문·체결 ──

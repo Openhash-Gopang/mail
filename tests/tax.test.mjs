@@ -94,3 +94,13 @@ assert.ok(doc.querySelectorAll('#tx-stmts tr[style*="background"]').length > 0);
 assert.ok(doc.getElementById('tx-hops').children[2].textContent.includes('제30조(세율')); // 세법 참조
 assert.equal(p.fetched(), 0);
 });
+
+test('판관비 적기: 거래 뒤 카드가 나오고, 적으면 합계가 쌓이며 잘못된 금액은 막는다', { skip }, async () => {
+  const p = page(); p.btn('거래 전표 받기').click(); await wait(500); p.btn('국세청 AI에 보내기').click(); await wait(600);
+  assert.ok(p.doc.getElementById('tx-exp'));
+  p.type('tx-e-amt', '0'); p.btn('적기').click(); assert.equal(p.doc.getElementById('tx-e-msg').getAttribute('role'), 'alert');
+  p.type('tx-e-amt', '120,000'); p.type('tx-e-memo', '11월 월세'); p.btn('적기').click();
+  assert.match(p.doc.getElementById('tx-e-msg').textContent, /EX-0001 임차료 120,000원/); assert.match(p.doc.getElementById('tx-exp').textContent, /내가 적은 기록/);
+  assert.equal(JSON.parse(p.w.localStorage.getItem('navi-exp-v1')).items.length, 1); assert.equal(p.fetched(), 0);
+  p.btn('체험 기록 지우기').click(); p.btn('정말 지울까요').click(); assert.equal(p.w.localStorage.getItem('navi-exp-v1'), null);
+});

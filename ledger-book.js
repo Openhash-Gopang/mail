@@ -69,6 +69,34 @@ function costFlow(owner, rs) {
   });
   return { cogs:cogs, uncoveredRevenue:unc };
 }
+
+// ── 판매비와관리비(판관비)·세금 — 증권 AI 갱신 5단계 ──
+// 판관비는 사용자가 세무 회계 화면에서 적는 "자기 기록"이다(임차료·급여 등). 시장이 서명한 거래 전표가 아니므로 화면에 그렇게 표시한다.
+// 이미 은행 잔고에 반영된 지급으로 보아 현금 계정은 그대로 두고, 기초 자본에 더하고 이익잉여금에서 뺀다(대차 유지).
+// 세금은 종합소득세 누진세율(2023년 이후 8단계)에 지방소득세 10%를 더한 "참고용 예상액"이다. 공제·감면·신고 의무는 반영하지 않고, 징수하지도 않는다.
+var EXP_KEY = 'navi-exp-v1', EXP_MAX = 200, EXP_CATS = ['임차료', '급여', '광고선전비', '통신·공과금', '기타'];
+function expLoad() {
+  try { var v = JSON.parse(localStorage.getItem(EXP_KEY) || 'null'); return v && Array.isArray(v.items) ? v.items.filter(function (x) { return x && EXP_CATS.indexOf(x.cat) >= 0 && isFinite(Number(x.amt)) && Number(x.amt) > 0 && typeof x.at === 'string'; }).slice(0, EXP_MAX) : []; } catch (e) { return []; }
+}
+function expTotal() { return expLoad().reduce(function (a, x) { return a + Number(x.amt); }, 0); }
+/** 판관비 한 건을 적는다(추가만 가능: 고치려면 지우개가 아니라 새 기록). 반환: { ok, msg, item } */
+function expAdd(cat, amt, memo) {
+  var n = Number(amt), items = expLoad();
+  if (EXP_CATS.indexOf(cat) < 0) return { ok:false, msg:'분류를 골라 주세요.' };
+  if (!(n > 0) || n !== Math.floor(n) || n > 10000000000) return { ok:false, msg:'금액은 1원 이상 정수로 적어 주세요.' };
+  if (items.length >= EXP_MAX) return { ok:false, msg:'기록은 ' + EXP_MAX + '건까지 담을 수 있어요.' };
+  var it = { id:'EX-' + String(items.length + 1).padStart(4, '0'), at:kstNow(), cat:cat, amt:n, memo:String(memo || '').slice(0, 40) };
+  items.unshift(it); try { localStorage.setItem(EXP_KEY, JSON.stringify({ items:items })); } catch (e) { return { ok:false, msg:'이 브라우저에 저장하지 못했어요.' }; }
+  return { ok:true, item:it };
+}
+function expClear() { try { localStorage.removeItem(EXP_KEY); return true; } catch (e) { return false; } }
+var TAX_BR = [[14e6, .06, 0], [50e6, .15, 1260000], [88e6, .24, 5760000], [150e6, .35, 15440000], [300e6, .38, 19940000], [500e6, .40, 25940000], [1000e6, .42, 35940000], [Infinity, .45, 65940000]];
+/** 종합소득세 참고 예상액(공제 없음) + 지방소득세 10%. 소득이 0 이하면 0. */
+function incomeTax(income) {
+  var y = Math.floor(num(income)); if (!(y > 0)) return { base:0, tax:0, local:0, total:0 };
+  var b = TAX_BR.filter(function (x) { return y <= x[0]; })[0], t = Math.max(0, Math.round(y * b[1] - b[2])), lc = Math.round(t * 0.1);
+  return { base:y, tax:t, local:lc, total:t + lc };
+}
 /** 장부 계산: 시작 장부 + 전표 증감. opt.cashEnd(은행 잔고)와 opt.all(전체 전표)을 주면 "나"의 현금이 그 잔고로 끝나도록 시작 현금을 맞춘다. */
 function bookOf(owner, rs, opt) {
   var b = {}, base = owner === '나' ? DRAFT_ME : DRAFT_SHOP, k; for (k in base) b[k] = base[k];
@@ -78,12 +106,21 @@ function bookOf(owner, rs, opt) {
   (rs || []).forEach(function (r) { var d = deltas(owner, r); for (k in d) b[k] = (b[k] || 0) + d[k]; });
   var cf = costFlow(owner, rs);   // 판 만큼의 원가: 재고자산과 이익잉여금이 함께 줄어 대차는 그대로 맞는다
   if (cf.cogs > 0) { b['매출원가'] = cf.cogs; b['상품(재고자산)'] = (b['상품(재고자산)'] || 0) - cf.cogs; b['이익잉여금'] = (b['이익잉여금'] || 0) - cf.cogs; }
+  if (owner === '나') {
+    var ox = expTotal();
+    if (ox > 0) {
+      b['판매비와관리비'] = ox; b['이익잉여금'] = (b['이익잉여금'] || 0) - ox;
+      if (opt && isFinite(Number(opt.cashEnd)) && Number(opt.cashEnd) >= 0) b['자본금'] += ox;   // 잔고는 이미 지급 뒤의 값: 기초 자본이 그만큼 더 컸다
+      else b['GDC 잔액'] = (b['GDC 잔액'] || 0) - ox;                                            // 잔고를 모를 때는 시작 현금에서 지급한 것으로 본다
+    }
+  }
   return b;
 }
 /** 손익 요약: 매출·매출원가·매출총이익과 "원가를 모두 아는가". 가상 초안의 기존 매출은 원가를 알 수 없어 미확인으로 본다. */
 function profitInfo(owner, rs) {
   var b = bookOf(owner, rs), cf = costFlow(owner, rs), baseSales = (owner === '나' ? DRAFT_ME : DRAFT_SHOP)['매출'] || 0, sales = num(b['매출']), unc = cf.uncoveredRevenue + baseSales;
-  return { sales:sales, cogs:cf.cogs, gross:sales - cf.cogs, uncovered:unc, known:sales > 0 && unc === 0 };
+  var known = sales > 0 && unc === 0, gross = sales - cf.cogs, ox = owner === '나' ? expTotal() : 0, op = gross - ox, tx = owner === '나' && known ? incomeTax(op) : null;
+  return { sales:sales, cogs:cf.cogs, gross:gross, uncovered:unc, known:known, opex:ox, op:op, tax:tx, net:tx ? op - tx.total : null };
 }
 function totals(b) {
   var s = function (list) { return list.reduce(function (a, k) { return a + num(b[k]); }, 0); }, A = s(ASSETS), L = s(LIABS), E = s(EQUITY);
@@ -106,7 +143,8 @@ function walletBook(rs, bal) {
   });
   var cf = costFlow('나', (rs || []).slice().reverse());   // recs() 는 최신이 앞이라 시간 순서로 뒤집어 원가를 파생한다
   b['매출원가'] = cf.cogs; b['상품(재고자산)'] -= cf.cogs; b['이익잉여금'] -= cf.cogs;
-  b['현금(GDC)'] = num(bal); b['자본금'] = (num(bal) - dCash) + b['비품'];
+  var ox = expTotal(); b['판매비와관리비'] = ox; b['이익잉여금'] -= ox;
+  b['현금(GDC)'] = num(bal); b['자본금'] = (num(bal) - dCash) + b['비품'] + ox;
   b.marks = marks; return b;
 }
 /** 내 장부 요약: 증권 화면이 가치 평가에 쓴다. 전표가 없으면 null(지어내지 않는다). */
@@ -116,7 +154,8 @@ function summary(owner) {
   var chron = rs.slice().reverse(), b = bookOf(owner, chron, owner === '나' && w ? { cashEnd:w.bal, all:chron } : null), t = totals(b), pi = profitInfo(owner, chron);
   return { owner:owner, book:b, totals:t, serials:chron.map(function (r) { return r.serial; }), n:chron.length, asOf:chron[chron.length - 1].at || '', walletAt:owner === '나' && w ? w.at : '', usesWallet:owner === '나' && !!w,
     sales:num(b['매출']), equity:t.E, assets:t.A, debt:t.L,
-    cogs:pi.cogs, profit:pi.gross, profitKnown:pi.known, uncoveredRevenue:pi.uncovered };
+    cogs:pi.cogs, profit:pi.gross, profitKnown:pi.known, uncoveredRevenue:pi.uncovered,
+    opex:pi.opex, opProfit:pi.op, taxEst:pi.tax, earnNet:pi.net };
 }
 
 // ── 모의 증권 장부(테스트 GDC) — 증권 AI 갱신 4단계 ──
@@ -203,5 +242,6 @@ function secVerify(recs) {
   return step();
 }
 window.NaviLedger = { ASSETS:ASSETS, LIABS:LIABS, EQUITY:EQUITY, LMAP:LMAP, recs:recs, wallet:wallet, saveWallet:saveWallet, deltas:deltas, cashDelta:cashDelta, costFlow:costFlow, profitInfo:profitInfo, bookOf:bookOf, totals:totals, walletBook:walletBook, summary:summary,
-  SIM_GRANT:SIM_GRANT, FEE_RATE:FEE_RATE, DEV_LIMIT:DEV_LIMIT, SEC_ACCOUNTS:{ cash:SEC_CASH, inv:SEC_INV, cap:SEC_CAP, pl:SEC_PL, fee:SEC_FEE }, secLoad:secLoad, secSave:secSave, secState:secState, secLines:secLines, secPlan:secPlan, secGrant:secGrant, secAppend:secAppend, secVerify:secVerify, secFee:secFee };
+  SIM_GRANT:SIM_GRANT, FEE_RATE:FEE_RATE, DEV_LIMIT:DEV_LIMIT, SEC_ACCOUNTS:{ cash:SEC_CASH, inv:SEC_INV, cap:SEC_CAP, pl:SEC_PL, fee:SEC_FEE }, secLoad:secLoad, secSave:secSave, secState:secState, secLines:secLines, secPlan:secPlan, secGrant:secGrant, secAppend:secAppend, secVerify:secVerify, secFee:secFee,
+  EXP_CATS:EXP_CATS, expLoad:expLoad, expAdd:expAdd, expTotal:expTotal, expClear:expClear, incomeTax:incomeTax };
 })();

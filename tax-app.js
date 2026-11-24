@@ -202,7 +202,7 @@ rows.push(h('tr', {}, [h('td', { colspan:'5', class:'sub', text:g[0] })]));
 g[1].forEach(function (a) { rows.push(row(a)); }); rows.push(g[2].tr);
 });
 var s0 = bf['매출'] || 0, s1 = af['매출'] || 0, c0 = bf['매출원가'] || 0, c1 = af['매출원가'] || 0, ok = A.y === L.y + E.y, pi = NL.profitInfo(owner, mine);
-var costNote = pi.known ? '매출원가는 같은 품목을 산 이력(장부)에서 파생했어요. 판매비·관리비·세금은 아직 반영하지 않아요.' : (pi.sales > 0 ? '매출원가는 장부의 매입 이력이 있는 판매만 계산해요. 이 장부에는 원가를 알 수 없는 매출(가상 초안의 기존 매출, 산 이력이 없는 판매)이 ' + won(pi.uncovered) + '원 있어 원가 미확인이에요.' : '아직 매출이 없어요.');
+var costNote = pi.known ? '매출원가는 같은 품목을 산 이력(장부)에서 파생했어요.' + (owner === '나' ? (pi.opex > 0 ? ' 판매비와관리비 ' + won(pi.opex) + '원(내가 적은 기록)을 뺀 영업이익은 ' + won(pi.op) + '원, 참고용 예상 소득세(지방소득세 포함)는 ' + won(pi.tax.total) + '원이에요(공제·감면 미반영, 징수 아님).' : ' 아래에서 판매비·관리비를 적으면 영업이익과 참고용 예상 소득세가 나와요.') : ' 상대방의 판매비·관리비·세금은 알 수 없어 반영하지 않아요.') : (pi.sales > 0 ? '매출원가는 장부의 매입 이력이 있는 판매만 계산해요. 이 장부에는 원가를 알 수 없는 매출(가상 초안의 기존 매출, 산 이력이 없는 판매)이 ' + won(pi.uncovered) + '원 있어 원가 미확인이에요.' : '아직 매출이 없어요.');
 return h('div', { class:'card', id:id, style:'padding:0' }, [
 h('div', { style:'padding:12px 16px' }, [h('b', { text:role + ' ' + owner + ' — 재무제표 갱신' }), h('div', { class:'sub', text:'체험용 가상 초안에서 시작 · 일련번호 ' + last.serial + ' · ' + (last.at || '갱신일시 기록 없음') })]),
 h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['대차대조표', '전', '증감', '후', '부기(갱신일시 · 일련번호)']), h('tbody', {}, rows)])]),
@@ -282,10 +282,18 @@ function viewResult(r) {
   return k;
 }
 /** 화면 맨 아래: 이전 거래 요약과 체험 기록 지우기(장부 합계 다음에 둔다). */
+function expCard() {
+  var L = NL; if (!L) return null; var items = L.expLoad(), tot = L.expTotal();
+  var f = S.exp, sel = h('select', { id:'tx-e-cat', 'aria-label':'분류', onchange:function () { f.cat = this.value; } }, L.EXP_CATS.map(function (c) { var o = h('option', { value:c, text:c }); if (c === f.cat) o.selected = true; return o; }));
+  var amt = h('input', { id:'tx-e-amt', type:'text', inputmode:'numeric', placeholder:'금액(원)', value:f.amt, 'aria-label':'금액', oninput:function () { f.amt = this.value; } }), memo = h('input', { id:'tx-e-memo', type:'text', maxlength:'40', placeholder:'메모(선택)', value:f.memo, 'aria-label':'메모', oninput:function () { f.memo = this.value; } });
+  return h('div', { class:'card col', id:'tx-exp', style:'margin-top:12px' }, [h('b', { text:'판매비·관리비 적기' }), h('div', { class:'sub', text:'임차료·급여처럼 거래 전표가 없는 비용을 적어요. 시장이 서명한 전표가 아니라 내가 적는 기록이라 그렇게 표시되고, 적은 뒤에는 고칠 수 없어요(추가만 가능). 은행 잔고에는 이미 반영된 지급으로 봅니다.' }), h('div', { class:'rowf' }, [sel, amt, memo, btn('적기', 'fill', function () { var r = L.expAdd(f.cat, String(f.amt).replace(/,/g, ''), f.memo); S.expMsg = r.ok ? { t:r.item.id + ' ' + r.item.cat + ' ' + won(r.item.amt) + '원을 적었어요.' } : { t:r.msg, bad:true }; if (r.ok) { f.amt = ''; f.memo = ''; } render(); }, 'tx-e-add')]),
+    S.expMsg ? h('div', { class:S.expMsg.bad ? 'note' : 'note info', role:S.expMsg.bad ? 'alert' : 'status', id:'tx-e-msg', text:S.expMsg.t }) : null,
+    items.length ? h('div', {}, [h('div', { class:'sub', text:'합계 ' + won(tot) + '원 · 최근 ' + Math.min(items.length, 5) + '건 (내가 적은 기록)' })].concat(items.slice(0, 5).map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x.id + ' ' + x.at + ' ' + x.cat + (x.memo ? ' · ' + x.memo : '') }), h('b', { class:'num', text:won(x.amt) + '원' })]); }))) : h('div', { class:'sub', text:'아직 적은 비용이 없어요.' })]);
+}
 function viewTail() {
-  var k = [];
+  var k = []; var ec = expCard(); if (ec) k.push(ec);
   if (S.rec.length > 1) k.push(h('div', { class:'sub', style:'margin-top:12px', text:'이전 거래 ' + (S.rec.length - 1) + '건: ' + S.rec.slice(1, 6).map(function (x) { return x.serial + ' ' + x.slip.what; }).join(' · ') }));
-  k.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn(S.clr ? '정말 지울까요? 한 번 더 누르면 지워요' : '체험 기록 지우기', '', function () { if (!S.clr) { S.clr = true; render(); return; } S.rec = []; S.inbox = S.inbox.filter(function (y) { return !/^ex:/.test(y.n); }); S.stage = null; S.trc = null; S.tam = null; S.clr = false; save(); render(); }, 'tx-clear')]));
+  k.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn(S.clr ? '정말 지울까요? 한 번 더 누르면 지워요' : '체험 기록 지우기', '', function () { if (!S.clr) { S.clr = true; render(); return; } S.rec = []; S.inbox = S.inbox.filter(function (y) { return !/^ex:/.test(y.n); }); S.stage = null; S.trc = null; S.tam = null; S.clr = false; if (NL) NL.expClear(); S.expMsg = null; save(); render(); }, 'tx-clear')]));
   return k;
 }
 function traceView(t) {
@@ -320,7 +328,7 @@ function nav(a) {
   emit('result', { ok:false, msg:'지원하지 않는 요청입니다.', view:'main' });
 }
 function mount(el) {
-  if (!el) return; M = el; el.textContent = ''; el.classList.add('tx'); S.rec = []; S.inbox = []; S.err = ''; S.trc = null; S.tam = null; load();
+  if (!el) return; M = el; el.textContent = ''; el.classList.add('tx'); S.exp = { cat:'임차료', amt:'', memo:'' }; S.expMsg = null; S.rec = []; S.inbox = []; S.err = ''; S.trc = null; S.tam = null; load();
   [h('div', { id:'tx-top' }), h('div', { class:'wrap', id:'tx-root' })].forEach(function (x) { el.appendChild(x); }); render();
 }
 if (window.NaviHist) NaviHist.on('tax', 'tax', function (sub) { if (!M) return; S.trc = null; S.tam = null; if (sub === 'trace') doTrace(); else if (sub === 'tamper') doTamper(); else render(); });   // 뒤로 가면 확인 결과를 닫고, 앞으로 가면 다시 보인다
