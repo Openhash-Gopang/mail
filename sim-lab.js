@@ -167,17 +167,22 @@ var PAGES = {
   stock:{ name:'증권', tabs:[['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['wage', '내 임금'], ['explore', '종목 탐색'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']] },
   bank:{ name:'은행', tabs:[['wallet', '내 지갑'], ['topup', '충전·입금'], ['pay', '송금·결제'], ['history', '거래 내역'], ['save', '예금·대출'], ['credit', '신용·채권']] },
   tax:{ name:'세무 회계', tabs:[['slip', '거래 전표'], ['vat', '부가세'], ['stmts', '재무제표'], ['exp', '판관비'], ['inc', '소득세']] },
+  pdv:{ name:'내 기록', tabs:[['vault', '내 데이터 금고'], ['tx', '거래'], ['is', '손익'], ['bs', '재무상태'], ['cf', '현금흐름'], ['fa', '재무분석'], ['docs', '서류']] },
+  myforms:{ name:'내 서류함', tabs:[['forms', '양식 보관·재사용']] },
+  othersite:{ name:'다른 사이트 입력', tabs:[['steps', '옮겨 적기 순서']] },
+  docs:{ name:'서류 작성', tabs:[['write', '작성 전 과정'], ['drafts', 'Draft'], ['done', '작성한 서류']] },
   learn:{ name:'교육', tabs:[['subjects', '내 수업'], ['plan', '진행 현황'], ['history', '학습 기록'], ['report', '학습 보고서'], ['career', '진로 추천']] },
   insure:{ name:'보험', tabs:[['mine', '내 보험'], ['rate', '요율 원리'], ['data', '상품과 공개 데이터'], ['claims', '청구 기록'], ['learn', '점검·용어']] },
   market:{ name:'시장', tabs:[['s0', '상품 이름'], ['s1', '구매 이력'], ['s2', '필요도'], ['s3', '구매 의사'], ['s4', '의견'], ['s5', 'AS 평가'], ['s6', '가격 비교'], ['s7', '판매자 협의'], ['s8', '최종 확인'], ['s9', '결제'], ['s10', '국세청 보고'], ['sell', '판매']] }
 };
 var LEAD = {
+  pdv:'가상 월별 기록으로 내 기록(PDV)의 금고·거래·재무제표·서류 화면이 어떻게 이어지는지 해 볼 수 있어요.', myforms:'가상 양식으로 서류함에 담고 다시 쓰는 흐름을 해 볼 수 있어요.', othersite:'다른 사이트에 옮겨 적을 때 도우미와 사용자가 맡는 일을 순서대로 해 볼 수 있어요.', docs:'가상 서류로 작성 → 준법 점검 → 확정 → 보관까지 한 바퀴를 해 볼 수 있어요.',
   learn:'가상 학습자 한 명의 정답률·학습 기록으로 수업 조정, 진행 확인, 이상 탐지, 보고서를 해 볼 수 있어요.',
   insure:'가상 가입자·사고·청구로 보험료와 요율, 청구 심사가 어떻게 돌아가는지 해 볼 수 있어요. 요율은 모두 예시예요.',
   market:'가상 상품과 판매처 가격으로 구매 단계를 하나씩 해 볼 수 있어요.', tax:'가상 거래로 전표·부가세·재무제표·소득세가 어떻게 이어지는지 해 볼 수 있어요.',
   bank:'가상 월별 수입·지출로 지갑·충전·결제·내역·예금·신용을 해 볼 수 있어요.', stock:'가상 기업과 시세로 증권 화면의 각 탭을 해 볼 수 있어요. 모든 요율·가정은 예시예요.'
 };
-var DEF = { learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
+var DEF = { pdv:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, myforms:{}, othersite:{}, docs:{}, learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
 var X = {   // 탭별 보조 입력의 기본값
   pi:'0', q:'', need:'3', bud:'', ask:'', my:'', bal:'5000000', co:'0', g:'3', r:'10', w:'3000000', wa:'60', wb:'30', sv:'300000', yr:'10', tg:'100000000', px:'10', tp:'1000000', ti:'3', dp:'10000000', rt:'3', dm:'12'
 };
@@ -406,16 +411,76 @@ BODY.learn = function (box, s, tab) {
     box.appendChild(sumBox('sim-e-car', ['가상 성적 상위 2과목: ' + top.map(function (x) { return x.name; }).join(', '), ['살펴볼 분야: ', h('b', { text:top.map(function (x) { return MAP[x.name]; }).join(', ') })], '성적만으로 진로를 정할 수는 없어요. 관심과 경험이 함께 있어야 해요.']));
   }
 };
+
+/** 서류함·외부 입력·서류 작성용 가상 데이터. */
+var FORMS = ['임대차 계약서', '근로계약서', '정보공개 청구서', '사업자 등록 신청서', '위임장', '이의신청서'];
+var FIELD_POOL = ['성명', '주민등록번호 앞자리', '주소', '연락처', '날짜', '금액', '사업자명', '서명란'];
+function formsGen(seed, o) {
+  var r = rng(seed), out = FORMS.map(function (nm) { var n = 3 + Math.floor(r() * 5), f = [], i; for (i = 0; i < n; i++) { var k = FIELD_POOL[Math.floor(r() * FIELD_POOL.length)]; if (f.indexOf(k) < 0) f.push(k); } return { name:nm, fields:f, uses:Math.floor(r() * 9) }; });
+  return { seed:seed, forms:out };
+}
+function docsGen(seed, o) {
+  var r = rng(seed), kinds = ['임대차 계약서', '근로계약서', '정보공개 청구서', '위임장', '이의신청서', '확인서'], issues = ['날짜가 빠졌어요', '금액 표기가 숫자와 한글이 달라요', '서명란이 비었어요', '당사자 주소가 없어요', '문제 없음'], out = kinds.map(function (k, i) { return { id:'D' + (i + 1), kind:k, saved:'11-' + String(10 + Math.floor(r() * 15)).padStart(2, '0'), issue:issues[Math.floor(r() * issues.length)], done:r() < 0.5 }; });
+  return { seed:seed, docs:out };
+}
+var QZ = function (box, id, QS) { QS.forEach(function (q, qi) { var res = h('div', { class:'sub', id:id + qi }); box.appendChild(h('div', { class:'box' }, [h('b', { text:(qi + 1) + '. ' + q[0] })].concat(q[1].map(function (tx, ti) { return h('div', {}, [h('button', { type:'button', text:tx, onclick:function () { res.textContent = ti === q[2] ? '맞아요.' : '다시 생각해 보세요.'; res.className = 'sub ' + (ti === q[2] ? 'ok' : 'bad'); } })]); })).concat([res]))); }); };
+BODY.pdv = function (box, s, tab) {
+  var d = s.data, o = s.opt, inc = 0, out = 0, ents = d.ents.filter(function (e) { return e.ok; });
+  ents.forEach(function (e) { if (e.amt > 0) inc += e.amt; else out -= e.amt; });
+  var inputs = h('div', { class:'row' }, [fld('sm-mo', '기간(개월)', o.months), fld('sm-st', '시작 잔고(원)', o.start), fld('sm-in', '월 수입(원)', o.income), fld('sm-fx', '월 고정 지출(원)', o.fixed), fld('sm-vol', '수입 변동(%)', o.vol)]);
+  if (tab === 'vault') {
+    box.appendChild(h('div', { class:'sub', text:'기록은 앞 기록의 지문을 이어 붙여 쌓여요. 한 곳을 몰래 바꾸면 뒤 기록과 맞지 않아 드러나요. 가상 장부로 시험해 보세요.' }));
+    box.appendChild(h('div', { class:'row' }, [h('button', { type:'button', id:'sim-chain', text:'변조 시험 하기', onclick:function () { var el = document.getElementById('sim-s-chain'); if (el) el.textContent = '시험 중…'; chainTest(s.seed, 30).then(function (rs) { var e2 = document.getElementById('sim-s-chain'); if (e2) e2.textContent = rs ? rs.records + '건짜리 장부에서 변조 ' + rs.trials + '번 중 ' + rs.detected + '번 잡았어요. 맨 끝 전표를 지우면 이 장부만으로는 못 잡아요(바깥에 기준 해시를 따로 둬야 해요).' : '시험 모듈이 없어요.'; }); } })]));
+    box.appendChild(h('div', { class:'sub', id:'sim-s-chain' }));
+  }
+  if (tab === 'tx') { box.appendChild(inputs); box.appendChild(tbl(['월', '항목', '금액', '결과'], d.ents.slice(0, 24).map(function (e) { return [e.ym, e.what, won(e.amt) + '원', { t:e.ok ? '기록됨' : '잔액 부족', c:e.ok ? 'ok' : 'bad' }]; }), [2])); }
+  if (tab === 'is') { box.appendChild(inputs); box.appendChild(sumBox('sim-p-is', ['수입 합계 ' + won(inc) + '원 · 지출 합계 ' + won(out) + '원', ['순이익 ', h('b', { text:won(inc - out) + '원' })], '가상 기록으로 만든 간이 손익이에요(K-IFRS 서식 아님).'])); }
+  if (tab === 'bs') { box.appendChild(inputs); box.appendChild(sumBox('sim-p-bs', ['자산(기말 잔고) ' + won(d.end) + '원 = 부채 0원 + 자본 ' + won(d.end) + '원', '장부 대조: ' + (d.reconciled ? '시작 잔고 + 입출금 = 기말 잔고 ✓' : '맞지 않아요')])); }
+  if (tab === 'cf') { box.appendChild(inputs); box.appendChild(sumBox('sim-p-cf', ['기초 ' + won(d.start) + '원 + 들어온 돈 ' + won(inc) + '원 − 나간 돈 ' + won(out) + '원 = 기말 ' + won(d.end) + '원'])); }
+  if (tab === 'fa') { box.appendChild(inputs); box.appendChild(sumBox('sim-p-fa', ['지출/수입 비율 ' + (inc ? pc(out / inc) : '—') + ' · 저축률 ' + (inc ? pc((inc - out) / inc) : '—'), '가장 낮았던 잔고 ' + won(d.min) + '원 · 잔액 부족 ' + d.rejected + '건', d.min < 0 ? '잔고가 마이너스였어요.' : '잔고는 계속 0원 이상이었어요.'])); }
+  if (tab === 'docs') {
+    var days = [12, 45, 120, 3, 200], names = ['등본', '재직증명서', '납세증명서', '인감증명서', '사업자등록증'];
+    box.appendChild(tbl(['서류', '남은 유효 기간(일)', '상태'], names.map(function (n, i) { var soon = days[i] <= 14; return [n, days[i], { t:soon ? '곧 만료' : '유효', c:soon ? 'bad' : 'ok' }]; }), [1]));
+    box.appendChild(h('div', { class:'sub', text:'가상 서류예요. 14일 이하로 남으면 곧 만료로 표시해요(연습용 기준).' }));
+  }
+};
+BODY.myforms = function (box, s, tab) {
+  var d = s.data; box.appendChild(h('div', { class:'row' }, [h('span', { class:'sub', text:'양식을 올리면 항목을 알아보고, 다음에 쓸 때 기억해 둔 값으로 채워 줘요(가상).' })]));
+  box.appendChild(tbl(['양식', '알아본 항목', '쓴 횟수', '다음 작성'], d.forms.map(function (f) { return [f.name, f.fields.join(', '), f.uses + '번', { t:f.uses >= 3 ? '자주 쓰는 양식 위로' : '보관', c:f.uses >= 3 ? 'ok' : '' }]; }), [2]));
+  box.appendChild(sumBox('sim-f-sum', ['자주 쓰는(3번 이상) 양식 ' + d.forms.filter(function (f) { return f.uses >= 3; }).length + '개가 목록 위로 올라와요.', '서명란·주민번호는 값을 대신 채우지 않고 사용자가 직접 입력하게 비워 두는 연습을 해 보세요.']));
+};
+BODY.othersite = function (box, s, tab) {
+  var STEPS = [['사이트 주소 정하기', '도우미'], ['나비웹 도우미 연결 확인', '도우미'], ['적어 둔 값을 입력 칸에 옮겨 적기', '도우미'], ['로그인', '사용자'], ['내용 확인 후 제출', '사용자']];
+  s.st = s.st == null ? 0 : s.st;
+  box.appendChild(h('div', { class:'sub', text:'가상 사이트(그림 없이 순서만)에서 누가 무엇을 하는지 연습해요. 로그인과 마지막 제출은 언제나 사용자가 직접 해요.' }));
+  box.appendChild(tbl(['단계', '내용', '맡은 쪽', '상태'], STEPS.map(function (x, i) { return [i + 1, x[0], x[1], { t:i < s.st ? '끝' : i === s.st ? '지금' : '대기', c:i < s.st ? 'ok' : i === s.st ? 'bad' : '' }]; })));
+  box.appendChild(h('div', { class:'row' }, [h('button', { type:'button', id:'sim-ost-next', class:'pri', text:s.st >= STEPS.length ? '처음부터 다시' : (STEPS[s.st][1] === '사용자' ? '사용자가 했다고 치고 다음' : '다음 단계'), onclick:function () { s.st = s.st >= STEPS.length ? 0 : s.st + 1; ST._redraw(); } })]));
+  box.appendChild(h('div', { class:'sub', id:'sim-ost-sum', text:s.st >= STEPS.length ? '끝났어요. 제출 버튼은 한 번도 도우미가 누르지 않았어요.' : '지금 단계: ' + STEPS[s.st][0] + ' (' + STEPS[s.st][1] + ')' }));
+};
+BODY.docs = function (box, s, tab) {
+  var d = s.data;
+  if (tab === 'write') {
+    var STEPS = ['서류 종류 고르기', '사실관계 입력', 'AI가 초안 쓰기', '작성 시점 준법 점검', '고쳐서 확정', '작성한 서류에 보관'];
+    s.st = s.st == null ? 0 : s.st; var sample = d.docs[0];
+    box.appendChild(tbl(['단계', '내용', '상태'], STEPS.map(function (x, i) { return [i + 1, x, { t:i < s.st ? '끝' : i === s.st ? '지금' : '대기', c:i < s.st ? 'ok' : i === s.st ? 'bad' : '' }]; })));
+    box.appendChild(h('div', { class:'row' }, [h('button', { type:'button', id:'sim-w-next', class:'pri', text:s.st >= STEPS.length ? '처음부터 다시' : '다음 단계', onclick:function () { s.st = s.st >= STEPS.length ? 0 : s.st + 1; ST._redraw(); } })]));
+    box.appendChild(sumBox('sim-w-sum', [s.st === 3 ? '준법 점검: 「' + sample.kind + '」 — ' + sample.issue + (sample.issue === '문제 없음' ? '' : ' → 고친 뒤에 확정해요.') : '지금: ' + (STEPS[s.st] || '완료'), '서류 내용은 가상이고, 법적 효력이 없어요.']));
+  }
+  if (tab === 'drafts') box.appendChild(tbl(['서류', '자동 저장', '남은 문제'], d.docs.filter(function (x) { return !x.done; }).map(function (x) { return [x.kind, x.saved, { t:x.issue, c:x.issue === '문제 없음' ? 'ok' : 'bad' }]; })));
+  if (tab === 'done') box.appendChild(tbl(['서류', '확정일', '점검 결과'], d.docs.filter(function (x) { return x.done; }).map(function (x) { return [x.kind, x.saved, { t:x.issue === '문제 없음' ? '통과' : '고친 뒤 확정', c:'ok' }]; })));
+  if (tab !== 'write') box.appendChild(h('div', { class:'sub', text:'Draft는 작성 중 자동 저장된 것, 작성한 서류는 확정한 것이에요. 가상 목록이에요.' }));
+};
 function readOpt(kind) {
   var s = ST[kind], o = s.opt, g = function (id, d) { var e = document.getElementById(id); return e ? String(e.value).replace(/,/g, '') : d; };
   if (kind === 'market') { o.n = g('sm-n', o.n); o.spread = g('sm-sp', o.spread); o.odd = g('sm-odd', o.odd); o.pi = g('sm-pi', o.pi || '0'); }
+  if (kind === 'pdv') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'learn') { o.weeks = g('sm-wk', o.weeks); }
   if (kind === 'insure') { o.n = g('sm-n', o.n); o.rate = g('sm-rate', o.rate); o.prem = g('sm-prem', o.prem); o.cov = g('sm-cov', o.cov); }
   if (kind === 'tax') { o.n = g('sm-n', o.n); o.opex = g('sm-opex', o.opex); }
   if (kind === 'bank') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'stock') { o.n = g('sm-n', o.n); o.ft = g('sm-ft', o.ft); o.fa = g('sm-fa', o.fa); o.fc = g('sm-fc', o.fc); o.fr = g('sm-fr', o.fr); o.br = g('sm-br', o.br); o.co = g('sm-co', o.co || '0'); o.w = g('sm-w', o.w || X.w); s.f = { sector:g('sm-sec', s.f.sector), region:g('sm-reg', s.f.region), size:g('sm-sz', s.f.size) }; }
 }
-function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
+function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
   ST._redraw = null; document.removeEventListener('keydown', onKey, true);
@@ -449,5 +514,5 @@ function open(kind, tab) {
   requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
   var c = document.getElementById('sim-close'); if (c) c.focus(); return true;
 }
-window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
+window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ forms:formsGen, docs:docsGen, learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
 })();

@@ -2213,7 +2213,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     
 <!-- PDV(내 기록): 끼움 화면 없이 pdv-panel.js 가 #pdv-root 에 직접 그린다 -->
     <section id="set-sec-pdv" class="set-sec">
-<div class="m3-head"><h3>내 기록</h3><p>내 데이터 금고(PDV)에 쌓인 기록을 봅니다.</p></div>
+<div class="m3-head"><h3>내 기록</h3><p>내 데이터 금고(PDV)에 쌓인 기록을 봅니다.</p><button type="button" class="mfb-btn" id="pdv-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('pdv','vault')">시뮬레이션</button></div>
 <div class="ps-bread">폰에서는 <b>⚙ 설정 → 내 기록</b></div>
       <div id="pdv-root" class="pdvp"></div>
     </section>
@@ -2491,7 +2491,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-docdrafts" class="tab-panel">
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
-      <h2>서류 Draft</h2>
+      <h2>서류 Draft</h2><button type="button" class="mfb-btn" id="docs-sim-drafts" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('docs','drafts')">시뮬레이션</button>
       <div class="sub">작성 중 나간 서류가 이 기기에 자동 저장됩니다. 요청문과 받아 둔 Word 파일이 보관되며 입력칸은 복원되지 않습니다. 다른 기기와는 동기화되지 않습니다.</div>
       <div id="docdrafts-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="docdrafts-empty" style="display:none;font-size:14px;color:var(--hint)">저장된 서류 Draft가 없습니다.</div>
@@ -2501,7 +2501,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-docdone" class="tab-panel">
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
-      <h2>작성한 서류</h2>
+      <h2>작성한 서류</h2><button type="button" class="mfb-btn" id="docs-sim-done" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('docs','done')">시뮬레이션</button>
       <div class="sub">서류 화면에서 "작성 완료로 저장"을 누르거나 서류를 메일에 첨부하면 이곳에 보관됩니다(이 기기의 PDV).</div>
       <div id="docdone-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="docdone-empty" style="display:none;font-size:14px;color:var(--hint)">아직 작성한 서류가 없습니다.</div>
@@ -2512,7 +2512,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-othersite" class="tab-panel">
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card" style="max-width:760px;margin-left:auto;margin-right:auto">
-      <div class="gl-head"><h2>어느 사이트에 입력할까요?</h2></div>
+      <div class="gl-head"><h2>어느 사이트에 입력할까요?</h2><span class="gl-sp"></span><button type="button" class="mfb-btn" id="othersite-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('othersite','steps')">시뮬레이션</button></div>
       <div class="sub" id="ots-sub">종이 서류 사진이나 적어 둔 내용을, 다른 사이트의 입력 칸에 나비웹 도우미가 옮겨 적습니다. 로그인과 마지막 제출은 사용자가 직접 합니다.</div>
       <div id="ots-agent" class="hint" role="status" style="margin:10px 0"></div>
       <label for="ots-url" style="display:block;font-size:14px;font-weight:600;margin:12px 0 4px">사이트 주소</label>
@@ -2533,7 +2533,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-myforms" class="tab-panel">
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
-      <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
+      <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn" id="myforms-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('myforms','forms')">시뮬레이션</button><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
       <div class="sub">자주 쓰는 양식과 올린 양식이 이 기기에 보관됩니다. 누르면 바로 열리며, 작성 중 “내 서류함에 담기”로 추가할 수 있습니다.</div>
       <div id="mf-new" hidden></div>
       <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
@@ -3562,11 +3562,13 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
-const _SIM_V = '20261125e';
+const _SIM_V = '20261125f';
+// 내 기록(PDV) 안의 탭을 옮기면 시뮬레이션 패널도 그 탭으로 따라간다(PDV 탭 id: t-vault·t-tx·t-is…)
+document.addEventListener('click', (e) => { const b = e.target && e.target.closest && e.target.closest('#pdv-root [role=tab]'); if (b && b.id && window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('pdv', b.id.replace(/^t-/, '')); });
 window._simOpen = function (kind, tab) {   // 가상 데이터 시뮬레이션은 팝업이 아니라 페이지 오른쪽에서 밀려 나오는 패널로 열고, 탭마다 다른 시뮬레이션을 보여 준다
   const go = () => { if (window.NaviSim) window.NaviSim.open(kind, tab); };
   if (window.NaviSim) { go(); return; }
-  const need = (kind === 'tax' || kind === 'stock') ? _ledgerLoad : (cb) => cb();   // 세무·증권 계산은 공통 장부 규칙을 쓴다
+  const need = (kind === 'tax' || kind === 'stock' || kind === 'pdv') ? _ledgerLoad : (cb) => cb();   // 세무·증권 계산은 공통 장부 규칙을 쓴다
   need(() => {
     let sc = document.getElementById('sim-js');
     if (!sc) { sc = document.createElement('script'); sc.id = 'sim-js'; sc.src = 'sim-lab.js?v=' + _SIM_V; document.head.appendChild(sc); }
