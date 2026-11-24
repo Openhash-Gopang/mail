@@ -282,6 +282,7 @@ function steps() {
 function inp(id, label, val, set, o) {
   o = o || {}; var e = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '200', inputmode:o.mode || '', autocomplete:'off' });
   e.oninput = function () { set(e.value); };
+  if (o.enter) e.onkeydown = function (ev) { if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); set(e.value); o.enter(); } };
   return h('div', { class:'field' }, [h('label', { for:id, text:label }), e, o.help ? h('div', { class:'help', text:o.help }) : null]);
 }
 function prodCard() {
@@ -293,7 +294,7 @@ function prodCard() {
 function viewStart() {
   var p = S.prod, kids = [];
   kids.push(h('h2', { text:'살 물건을 알려 주세요' }), h('p', { class:'lead', text:'판매 사이트의 상품 링크를 넣고 "도우미로 읽어 오기"를 누르면, 나비웹 도우미가 그 사이트를 열어 이미지·가격·AS·리뷰를 읽어 와요. 로그인은 직접 해 주세요. 직접 넣어도 돼요.' }));
-  kids.push(inp('mk-link', '판매 사이트 상품 링크', p.link, function (v) { p.link = v; }, { ph:'https://…', max:'500' }));
+  kids.push(inp('mk-link', '판매 사이트 상품 링크', p.link, function (v) { p.link = v; }, { ph:'https://…', max:'500', enter:function () { if (S.read.st !== 'wait') askAgent(); } }));
   var rowb = [btn('도우미로 읽어 오기', 'fill', askAgent, 'mk-read')];
   kids.push(h('div', { class:'rowf' }, rowb));
   if (S.read.msg) kids.push(note(S.read.msg, S.read.st === 'none', 'mk-read-msg'));
