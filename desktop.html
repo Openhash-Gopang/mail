@@ -3544,7 +3544,7 @@ function _infraExGo(name, go) {
 }
 // 나비웹 학습(2026-11-22 → 11-23): '내 수업'·'학습 기록' 칩 → 학습 포털을 이 문서 안에 직접 그려 연다(iframe 없음 — learn.css·learn-app.js, 모양은 설정 페이지와 같은 Material 3).
 // 안쪽 '교수에게 말하기'는 교육 인프라 입력란으로 돌아와 말을 채워 준다(보내지는 않는다).
-const _LEARN_V = '20261123c';
+const _LEARN_V = '20261125a';
 function _learnLoad(cb) {
   if (window.NaviLearn) { cb(); return; }
   if (!document.getElementById('learn-css')) { const l = document.createElement('link'); l.id = 'learn-css'; l.rel = 'stylesheet'; l.href = 'learn.css?v=' + _LEARN_V; document.head.appendChild(l); }
@@ -3562,7 +3562,7 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
-const _SIM_V = '20261125d';
+const _SIM_V = '20261125e';
 window._simOpen = function (kind, tab) {   // 가상 데이터 시뮬레이션은 팝업이 아니라 페이지 오른쪽에서 밀려 나오는 패널로 열고, 탭마다 다른 시뮬레이션을 보여 준다
   const go = () => { if (window.NaviSim) window.NaviSim.open(kind, tab); };
   if (window.NaviSim) { go(); return; }

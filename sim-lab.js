@@ -167,15 +167,17 @@ var PAGES = {
   stock:{ name:'증권', tabs:[['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['wage', '내 임금'], ['explore', '종목 탐색'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']] },
   bank:{ name:'은행', tabs:[['wallet', '내 지갑'], ['topup', '충전·입금'], ['pay', '송금·결제'], ['history', '거래 내역'], ['save', '예금·대출'], ['credit', '신용·채권']] },
   tax:{ name:'세무 회계', tabs:[['slip', '거래 전표'], ['vat', '부가세'], ['stmts', '재무제표'], ['exp', '판관비'], ['inc', '소득세']] },
+  learn:{ name:'교육', tabs:[['subjects', '내 수업'], ['plan', '진행 현황'], ['history', '학습 기록'], ['report', '학습 보고서'], ['career', '진로 추천']] },
   insure:{ name:'보험', tabs:[['mine', '내 보험'], ['rate', '요율 원리'], ['data', '상품과 공개 데이터'], ['claims', '청구 기록'], ['learn', '점검·용어']] },
   market:{ name:'시장', tabs:[['s0', '상품 이름'], ['s1', '구매 이력'], ['s2', '필요도'], ['s3', '구매 의사'], ['s4', '의견'], ['s5', 'AS 평가'], ['s6', '가격 비교'], ['s7', '판매자 협의'], ['s8', '최종 확인'], ['s9', '결제'], ['s10', '국세청 보고'], ['sell', '판매']] }
 };
 var LEAD = {
+  learn:'가상 학습자 한 명의 정답률·학습 기록으로 수업 조정, 진행 확인, 이상 탐지, 보고서를 해 볼 수 있어요.',
   insure:'가상 가입자·사고·청구로 보험료와 요율, 청구 심사가 어떻게 돌아가는지 해 볼 수 있어요. 요율은 모두 예시예요.',
   market:'가상 상품과 판매처 가격으로 구매 단계를 하나씩 해 볼 수 있어요.', tax:'가상 거래로 전표·부가세·재무제표·소득세가 어떻게 이어지는지 해 볼 수 있어요.',
   bank:'가상 월별 수입·지출로 지갑·충전·결제·내역·예금·신용을 해 볼 수 있어요.', stock:'가상 기업과 시세로 증권 화면의 각 탭을 해 볼 수 있어요. 모든 요율·가정은 예시예요.'
 };
-var DEF = { insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
+var DEF = { learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
 var X = {   // 탭별 보조 입력의 기본값
   pi:'0', q:'', need:'3', bud:'', ask:'', my:'', bal:'5000000', co:'0', g:'3', r:'10', w:'3000000', wa:'60', wb:'30', sv:'300000', yr:'10', tg:'100000000', px:'10', tp:'1000000', ti:'3', dp:'10000000', rt:'3', dm:'12'
 };
@@ -370,15 +372,50 @@ BODY.market = function (box, s, tab) {
   if (tab === 's10') { var b10 = pickBest(); box.appendChild(sumBox('sim-m-t', b10 ? ['결제액 ' + P(b10.price) + ' = 공급가액 ' + P(Math.round(b10.price / 1.1)) + ' + 부가세 ' + P(b10.price - Math.round(b10.price / 1.1)), '가상 보고예요. 실제 국세청에는 가지 않아요.'] : ['보고할 거래가 없어요.'])); }
   if (tab === 'sell') { var my = num('sm-my', band.mid); box.appendChild(h('div', { class:'row' }, [fld('sm-my', '내 판매 가격(원)', String(my))])); box.appendChild(sumBox('sim-m-s', ['내 가격 ' + P(my) + ' → ', [h('b', { class:verdict(my) === '적정' ? 'ok' : 'bad', text:verdict(my) })], '경쟁 판매처 가격: ' + rw.offers.map(function (x) { return P(x.price); }).join(', ')])); }
 };
+/** 교육: 가상 학습자 한 명의 과목별 주간 정답률과 하루 학습 기록. */
+var SUBJ = ['국어', '수학', '영어', '과학', '사회'];
+function learn(seed, o) {
+  o = o || {}; var r = rng(seed), weeks = ci(o.weeks, 2, 26, 8), base = SUBJ.map(function () { return 0.45 + r() * 0.4; }), rows = [], logs = [], w, i, d = 0;
+  SUBJ.forEach(function (nm, si) { var sc = [], cur = base[si]; for (w = 0; w < weeks; w++) { cur = Math.min(0.99, Math.max(0.1, cur + 0.02 + gauss(r) * 0.04)); sc.push(cur); } rows.push({ name:nm, scores:sc, target:0.8 }); });
+  for (i = 0; i < 20; i++) { var burst = r() < 0.12; logs.push({ day:'11-' + String(i + 1).padStart(2, '0'), min:burst ? Math.round(240 + r() * 120) : Math.round(20 + r() * 50), subject:SUBJ[Math.floor(r() * 5)], fastCorrect:burst ? Math.round(10 + r() * 10) : Math.floor(r() * 3) }); }
+  return { seed:seed, weeks:weeks, rows:rows, logs:logs };
+}
+BODY.learn = function (box, s, tab) {
+  var d = s.data, o = s.opt, last = function (x) { return x.scores[x.scores.length - 1]; };
+  var wk = h('div', { class:'row' }, [fld('sm-wk', '기간(주)', o.weeks)]);
+  if (tab === 'subjects') {
+    var lvl = function (a) { return a >= 0.85 ? '한 단계 어렵게' : a < 0.6 ? '한 단계 쉽게' : '그대로'; };
+    box.appendChild(wk); box.appendChild(tbl(['과목', '최근 정답률', '다음 수업'], d.rows.map(function (x) { return [x.name, pc(last(x)), lvl(last(x))]; }), [1]));
+    box.appendChild(h('div', { class:'sub', id:'sim-e-sub', text:'규칙(연습용): 정답률 85% 이상이면 어렵게, 60% 미만이면 쉽게. 1:1로 난이도를 맞추는 원리만 보여 줘요.' }));
+  }
+  if (tab === 'plan') {
+    box.appendChild(wk); box.appendChild(tbl(['과목', '목표', '지금', '상태'], d.rows.map(function (x) { var a = last(x), late = a < x.target - 0.1; return [x.name, pc(x.target), pc(a), { t:late ? '지연' : '순조', c:late ? 'bad' : 'ok' }]; }), [1, 2]));
+    box.appendChild(h('div', { class:'sub', text:'목표(80%)에서 10%p 넘게 모자라면 지연으로 표시해요.' }));
+  }
+  if (tab === 'history') {
+    var ms = d.logs.map(function (l) { return l.min; }), bd = bandOf(ms), odd = d.logs.filter(function (l) { return l.min > bd.hi || l.fastCorrect >= 10; });
+    box.appendChild(tbl(['날짜', '과목', '학습(분)', '아주 빠른 정답', '확인'], d.logs.map(function (l) { var f = odd.indexOf(l) >= 0; return [l.day, l.subject, l.min, l.fastCorrect, { t:f ? '추가 확인' : '정상', c:f ? 'bad' : 'ok' }]; }), [2, 3]));
+    box.appendChild(h('div', { class:'sub', id:'sim-e-hist', text:'하루 학습 시간이 평소 구간(' + won(bd.lo) + '~' + won(bd.hi) + '분)을 넘거나, 아주 빠른 정답이 10번 이상이면 추가 확인(몰아치기·답 복사 가능성). 의심일 뿐 단정은 아니에요. 추가 확인 ' + odd.length + '건.' }));
+  }
+  if (tab === 'report') {
+    box.appendChild(wk); var sorted = d.rows.slice().sort(function (a, b) { return last(a) - last(b); });
+    box.appendChild(sumBox('sim-e-rep', ['평균 정답률 ' + pc(d.rows.reduce(function (a, x) { return a + last(x); }, 0) / d.rows.length), '보충이 필요한 과목: ' + sorted.slice(0, 2).map(function (x) { return x.name + '(' + pc(last(x)) + ')'; }).join(', '), '잘하는 과목: ' + sorted.slice(-1).map(function (x) { return x.name + '(' + pc(last(x)) + ')'; }).join(', ')]));
+  }
+  if (tab === 'career') {
+    var MAP = { 국어:'글쓰기·미디어', 수학:'데이터·공학', 영어:'국제·번역', 과학:'연구·의료', 사회:'법·행정' }, top = d.rows.slice().sort(function (a, b) { return last(b) - last(a); }).slice(0, 2);
+    box.appendChild(sumBox('sim-e-car', ['가상 성적 상위 2과목: ' + top.map(function (x) { return x.name; }).join(', '), ['살펴볼 분야: ', h('b', { text:top.map(function (x) { return MAP[x.name]; }).join(', ') })], '성적만으로 진로를 정할 수는 없어요. 관심과 경험이 함께 있어야 해요.']));
+  }
+};
 function readOpt(kind) {
   var s = ST[kind], o = s.opt, g = function (id, d) { var e = document.getElementById(id); return e ? String(e.value).replace(/,/g, '') : d; };
   if (kind === 'market') { o.n = g('sm-n', o.n); o.spread = g('sm-sp', o.spread); o.odd = g('sm-odd', o.odd); o.pi = g('sm-pi', o.pi || '0'); }
+  if (kind === 'learn') { o.weeks = g('sm-wk', o.weeks); }
   if (kind === 'insure') { o.n = g('sm-n', o.n); o.rate = g('sm-rate', o.rate); o.prem = g('sm-prem', o.prem); o.cov = g('sm-cov', o.cov); }
   if (kind === 'tax') { o.n = g('sm-n', o.n); o.opex = g('sm-opex', o.opex); }
   if (kind === 'bank') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'stock') { o.n = g('sm-n', o.n); o.ft = g('sm-ft', o.ft); o.fa = g('sm-fa', o.fa); o.fc = g('sm-fc', o.fc); o.fr = g('sm-fr', o.fr); o.br = g('sm-br', o.br); o.co = g('sm-co', o.co || '0'); o.w = g('sm-w', o.w || X.w); s.f = { sector:g('sm-sec', s.f.sector), region:g('sm-reg', s.f.region), size:g('sm-sz', s.f.size) }; }
 }
-function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
+function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
   ST._redraw = null; document.removeEventListener('keydown', onKey, true);
@@ -412,5 +449,5 @@ function open(kind, tab) {
   requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
   var c = document.getElementById('sim-close'); if (c) c.focus(); return true;
 }
-window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
+window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
 })();

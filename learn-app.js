@@ -193,7 +193,7 @@ var TABS = [['subjects','내 수업'],['plan','진행 현황'],['history','학�
 function topbar() {
   var act = { course:'subjects', week:'subjects', quiz:'subjects' }[S.view] || S.view;
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 교육' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 교육' })]), h('button', { type:'button', class:'btn quiet', id:'learn-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('learn', S.view); } })]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { class:'tab', role:'tab', 'aria-selected':String(act === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 
@@ -705,7 +705,7 @@ function viewCareer() {
   return kids;
 }
 function render() {
-  var root = $('lrn-root'), tp = $('lrn-top'); root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
+  var root = $('lrn-root'), tp = $('lrn-top'); root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('learn', /^(course|week|quiz)$/.test(S.view) ? 'subjects' : S.view);
   var kids = S.view === 'course' ? viewCourse() : S.view === 'week' ? viewWeek() : S.view === 'quiz' ? viewQuiz() : S.view === 'history' ? viewHistory() : S.view === 'report' ? viewReport() : S.view === 'career' ? viewCareer() : S.view === 'plan' ? viewPlan() : viewSubjects();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   postState();
