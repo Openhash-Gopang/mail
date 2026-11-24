@@ -19,7 +19,7 @@ var COL = ['#3B7DDD', '#0F8F7E', '#E8710A', '#7C4DDB', '#C2410C', '#4B5563', '#B
 var RANGES = [['today', '오늘'], ['7', '7일'], ['30', '30일'], ['90', '90일']];
 var CHG = { pending:'입금 대기', matched:'충전 완료', expired:'만료', cancelled:'취소' };
 var M = null, LS = {};
-var S = { view:'wallet', guid:'', proxy:'', fetch:null, st:'idle', at:0, bal:null, quota:null, usage:null, series:null, charges:null, errs:[], range:'7', pay:{ code:'', amt:'', memo:'' }, calc:{ kind:'save', p:'', r:'', m:'12' }, onPlans:null, plans:null };
+var S = { view:'wallet', guid:'', proxy:'', fetch:null, st:'idle', at:0, bal:null, quota:null, usage:null, series:null, charges:null, errs:[], range:'7', pay:{ code:'', amt:'', memo:'' }, sim:false, calc:{ kind:'save', p:'', r:'', m:'12' }, onPlans:null, plans:null };
 
 // ── 작은 도구 ──
 function h(tag, attrs, kids) {
@@ -237,9 +237,40 @@ function field(id, label, val, o) {
   inp.oninput = function () { o.set(inp.value); var f = payOk(); var b = $('bnk-pay-go'); if (b) b.disabled = !f; var er = $(id + '-h'); var ee = payErr()[o.key]; if (er) { er.className = ee ? 'err' : 'help'; er.textContent = ee || o.help; } inp.setAttribute('aria-invalid', ee ? 'true' : 'false'); };
   return h('div', { class:'field' }, [h('label', { for:id, text:label }), inp, h('div', { id:id + '-h', class:e ? 'err' : 'help', text:e || o.help })]);
 }
+// ── 송금·결제 시뮬레이션: 가상 판매자·구매자 재무제표가 구매 즉시 바뀌는 모습(실제 돈·실제 장부와 무관한 연습용 값) ──
+var SIM = { item:'원두 10봉', amt:15000,
+  buyer:{ name:'가상 구매자 (작은 카페)', role:'구매자', bs:[['현금(GDC)', 200000, 185000], ['상품(재고자산)', 50000, 65000]], eq:[['자본금', 250000, 250000]], pl:null },
+  seller:{ name:'가상 판매자 (해든 로스터리)', role:'판매자', bs:[['현금(GDC)', 500000, 515000], ['상품(재고자산)', 100000, 91000]], eq:[['자본금', 500000, 500000], ['이익잉여금', 100000, 106000]], pl:[['매출', 0, 15000], ['매출원가', 0, 9000], ['순이익', 0, 6000]] } };
+function simCol(p) {
+  var n = 0;
+  function sg(v) { return v ? (v > 0 ? '+' : '−') + won(Math.abs(v)) : ''; }
+  function tr(a, x, y, cls) { var dl = y - x; if (dl && !cls) n++; return h('tr', { class:cls || (dl ? 'hl' : 'dim') }, [h('td', { text:a }), h('td', { class:'r num', text:won(x) }), h('td', { class:'r num', text:won(y) }), h('td', { class:'r num chg' + (dl < 0 ? ' neg' : ''), text:sg(dl) })]); }
+  function sec(t) { return h('tr', { class:'sec' }, [h('td', { text:t, colspan:'4' })]); }
+  function sum(a, list) { var x = 0, y = 0; list.forEach(function (r) { x += r[1]; y += r[2]; }); return [tr(a, x, y, 'sum'), x, y]; }
+  var rows = [h('tr', { class:'sec' }, [h('td', { text:'대차대조표' }), h('td', { class:'r', text:'구매 전' }), h('td', { class:'r', text:'구매 후' }), h('td', { class:'r', text:'바뀐 만큼' })])];
+  rows.push(sec('자산')); p.bs.forEach(function (r) { rows.push(tr(r[0], r[1], r[2])); });
+  var A = sum('자산 합계', p.bs); rows.push(A[0]);
+  rows.push(sec('자본')); p.eq.forEach(function (r) { rows.push(tr(r[0], r[1], r[2])); });
+  var E = sum('자본 합계', p.eq); rows.push(E[0]);
+  if (p.pl) { rows.push(sec('손익계산서')); p.pl.forEach(function (r) { rows.push(tr(r[0], r[1], r[2])); }); }
+  var ok = A[1] === E[1] && A[2] === E[2];
+  return h('div', { class:'stcol', id:'bnk-sim-' + (p.role === '구매자' ? 'buyer' : 'seller') }, [h('div', { class:'sth', text:p.role + ' — ' + p.name }), h('table', { class:'stbl' }, [h('tbody', {}, rows)]),
+    h('div', { class:'sub' }, [h('span', { class:'stok', text:ok ? '대차가 맞아요' : '대차가 안 맞아요' }), h('span', { text:' · 바뀐 줄 ' + n + '개' + (p.pl ? '' : ' · 손익계산서는 변동 없어요(재고만 바뀜)') })])]);
+}
+function simCard() {
+  var on = S.sim, b = btn(on ? '시뮬레이션 닫기' : '시뮬레이션', on ? 'quiet' : 'fill', function () { S.sim = !S.sim; render(); }); b.id = 'bnk-sim-go';
+  var kids = [h('div', { class:'rowf', style:'justify-content:space-between;align-items:center;gap:12px' }, [h('div', {}, [h('b', { style:'font-size:17px', text:'시뮬레이션 — 물건을 사는 즉시 두 재무제표가 바뀌어요' }), h('div', { class:'sub', text:'가상의 판매자와 구매자로 보여 주는 연습입니다. 실제 돈과 내 장부는 바뀌지 않아요.' })]), b])];
+  if (on) {
+    kids.push(h('div', { class:'note info', id:'bnk-sim-deal', style:'margin-top:12px', text:SIM.buyer.name + '가 ' + SIM.seller.name + '에서 ' + SIM.item + '을 ' + won(SIM.amt) + ' GDC에 샀어요. 결제되는 즉시 두 장부가 아래처럼 바뀝니다. 색이 칠해진 줄이 이번 거래로 바뀐 줄이에요.' }));
+    kids.push(h('div', { class:'g2 eq', style:'margin-top:8px' }, [simCol(SIM.buyer), simCol(SIM.seller)]));
+    kids.push(h('div', { class:'sub', text:'구매자는 GDC가 줄고 상품이 늘었어요. 판매자는 GDC가 늘고, 팔린 상품 원가 9,000 GDC만큼 재고가 줄고, 남은 이익 6,000 GDC가 이익잉여금에 쌓였어요.' }));
+  }
+  return h('div', { class:'card col', id:'bnk-sim', style:'margin-top:8px' }, kids);
+}
 function viewPay() {
   var kids = head('송금·결제', '나비 코드(10자리)로 GDC를 주고받습니다. 카드 수수료가 없는 GDC 지갑 간 직접 이체입니다.'), st = status(); if (st) kids.push(st);
   kids.push(soon('실제 결제는 폰의 나비웹 앱에서 합니다. 이 화면은 코드·금액을 미리 확인해 두는 용도이며 돈이 움직이지 않습니다.'));
+  kids.push(simCard());
   var er = payErr(), p = S.pay;
   var f1 = h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'결제하기 (사는 사람)' }),
     field('bnk-code', '나비 코드 (10자리)', p.code, { key:'code', err:er.code, ph:'0000000000', max:10, mode:'numeric', cls:'code', help:'판매자가 보여 준 코드입니다.', set:function (v) { S.pay.code = v.replace(/\D/g, ''); } }),
