@@ -14,13 +14,13 @@
 'use strict';
 var KEY = 'navi-stock-v1', MAXT = 500, MAXW = 100;
 var CLS = ['국내주식', '해외주식', 'ETF·펀드', '채권', '부동산·리츠', '암호화폐', '원자재', '현금·예금', '기타'];
-var TABS = [['portfolio', '내 포트폴리오'], ['company', '기업 평가'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']];
+var TABS = [['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['company', '기업 평가'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']];
 var VIEWS = TABS.map(function (t) { return t[0]; });
 var CONC = 30;   // 한 종목이 평가금액의 이 비율(%)을 넘으면 알려 준다(참고)
 var CHECKS = ['비상 자금(생활비 3~6개월분)은 따로 두었나요?', '투자 목적과 기간(언제 쓸 돈인지)을 적어 두었나요?', '한 종목에 넣을 최대 비중을 정해 두었나요?', '손실이 얼마까지 나면 어떻게 할지 미리 정해 두었나요?', '내가 이해하지 못하는 상품에는 투자하지 않기로 했나요?', '수수료·세금(양도세·배당세 등)을 확인했나요?', '빚을 내서 투자하지 않나요?'];
 var GLOSS = [['분산투자', '여러 종목·자산군·지역에 나누어 투자해 한 곳의 손실이 전체에 미치는 영향을 줄이는 방법입니다.'], ['리밸런싱', '시간이 지나 달라진 자산 비중을 처음 정한 목표 비중으로 되돌리는 조정입니다.'], ['평균단가법', '여러 번 나눠 산 종목의 평균 매수 가격을 구해 매도 때 손익을 계산하는 방법입니다. 이 화면도 이 방법을 씁니다.'], ['평가손익 · 실현손익', '평가손익은 아직 팔지 않은 종목의 현재가 기준 손익이고, 실현손익은 실제로 판 뒤 확정된 손익입니다.'], ['ETF', '여러 종목을 묶어 지수 등을 따라가도록 만든 펀드로, 주식처럼 거래소에서 사고팝니다.'], ['PER · PBR', 'PER은 주가를 주당순이익으로, PBR은 주가를 주당순자산으로 나눈 값으로 주가가 이익·자산에 비해 어느 수준인지 가늠하는 지표입니다.'], ['배당수익률', '1주당 배당금을 주가로 나눈 비율입니다. 배당은 회사 사정에 따라 줄거나 없어질 수 있습니다.'], ['채권', '정부나 기업이 돈을 빌리며 발행하는 증서로, 정해진 이자를 주고 만기에 원금을 갚기로 한 약속입니다. 발행자의 신용에 따라 위험이 다릅니다.'], ['신용등급', '채권 발행자가 이자와 원금을 갚을 능력을 등급으로 나타낸 것입니다. 등급이 낮을수록 보통 이자가 높고 위험도 큽니다.'], ['변동성', '가격이 오르내리는 폭입니다. 변동성이 크면 수익도 손실도 크게 날 수 있습니다.'], ['환율 위험', '해외 자산은 가격이 그대로여도 환율이 변하면 원화 가치가 달라집니다.'], ['복리', '이자에 다시 이자가 붙는 방식으로, 기간이 길수록 차이가 커집니다. 목표 계산기는 월 복리로 계산합니다.'], ['인플레이션(물가 상승)', '물가가 올라 같은 돈으로 살 수 있는 것이 줄어드는 현상입니다. 실질 가치는 물가 상승을 뺀 값입니다.'], ['유동성', '필요할 때 손해 없이 현금으로 바꿀 수 있는 정도입니다. 거래가 적은 자산은 팔고 싶을 때 못 팔 수 있습니다.'], ['레버리지', '빌린 돈으로 투자 규모를 키우는 것입니다. 이익도 손실도 커지며 손실이 원금보다 클 수 있습니다.'], ['시가총액', '주가에 발행 주식 수를 곱한 회사의 시장 가치입니다.'], ['호가', '사려는 가격(매수 호가)과 팔려는 가격(매도 호가)입니다.'], ['공매도', '주식을 빌려 먼저 팔고 나중에 사서 갚는 거래로, 가격이 내릴 때 이익이 나지만 오를 때 손실에는 한도가 없습니다.'], ['GDC 채권(설계 중)', '나비웹이 구상하는 GDC 기반 채권입니다. 아직 실제로 발행·거래되지 않는 개념 단계이며 이 화면에서는 거래할 수 없습니다.']];
 var M = null, LS = {};
-var S = { view:'portfolio', co:{ name:'', rev:'', op:'', ni:'', assets:'', debt:'', equity:'', shares:'', price:'', g:'3', r:'10' }, cos:[], cc:{ a:'', b:'', tol:'1' }, trades:[], px:{}, watch:[], target:{}, checks:{}, goal:{ p0:'', m:'', r:'5', y:'10', t:'', inf:'2' }, form:{ side:'B', d:'', sym:'', cls:'국내주식', qty:'', px:'', fee:'' }, wform:{ sym:'', cls:'국내주식', target:'', memo:'' }, err:{}, gq:'', msg:'' };
+var S = { view:'portfolio', co:{ name:'', rev:'', op:'', ni:'', assets:'', debt:'', equity:'', shares:'', price:'', g:'3', r:'10' }, cos:[], cc:{ a:'', b:'', tol:'1' }, trades:[], px:{}, watch:[], target:{}, checks:{}, goal:{ p0:'', m:'', r:'5', y:'10', t:'', inf:'2' }, val:{ g:'3', r:'10' }, form:{ side:'B', d:'', sym:'', cls:'국내주식', qty:'', px:'', fee:'' }, wform:{ sym:'', cls:'국내주식', target:'', memo:'' }, err:{}, gq:'', msg:'' };
 
 // ── 작은 도구 ──
 function h(tag, attrs, kids) {
@@ -55,7 +55,8 @@ function load() {
     S.cos = (Array.isArray(v.cos) ? v.cos : []).map(function (c) { if (!c || typeof c !== 'object' || !c.v || typeof c.v !== 'object') return null; var o = { id:clean(c.id, 20) || uid(), name:clean(c.name, 30) || '이름 없음', v:{} }; Object.keys(S.co).forEach(function (k) { o.v[k] = typeof c.v[k] === 'string' ? c.v[k].slice(0, k === 'name' ? 30 : 20) : ''; }); return o; }).filter(Boolean).slice(0, 20);
     if (v.target && typeof v.target === 'object') CLS.forEach(function (c) { var n = Number(v.target[c]); if (isFinite(n) && n > 0 && n <= 100) S.target[c] = n; });
     if (v.checks && typeof v.checks === 'object') CHECKS.forEach(function (_, i) { if (v.checks[i]) S.checks[i] = 1; });
-    if (v.goal && typeof v.goal === 'object') Object.keys(S.goal).forEach(function (k) { if (typeof v.goal[k] === 'string') S.goal[k] = v.goal[k].slice(0, 14); });
+    if (v.val && typeof v.val === 'object') ['g', 'r'].forEach(function (k) { if (typeof v.val[k] === 'string') S.val[k] = v.val[k].slice(0, 6); });
+if (v.goal && typeof v.goal === 'object') Object.keys(S.goal).forEach(function (k) { if (typeof v.goal[k] === 'string') S.goal[k] = v.goal[k].slice(0, 14); });
   } catch (e) {}
 }
 function fixTrade(t) {
@@ -64,7 +65,7 @@ function fixTrade(t) {
   if (!sym || !(q > 0) || q > 1e12 || !(p >= 0) || p > 1e12 || !(f >= 0) || f > 1e12 || !/^\d{4}-\d{2}-\d{2}$/.test(t.d) || (t.side !== 'B' && t.side !== 'S')) return null;
   return { id:clean(t.id, 20) || uid(), d:t.d, side:t.side, sym:sym, cls:CLS.indexOf(t.cls) >= 0 ? t.cls : '기타', qty:q, px:p, fee:f };
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ co:S.co, cos:S.cos, trades:S.trades, px:S.px, watch:S.watch, target:S.target, checks:S.checks, goal:S.goal })); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ co:S.co, cos:S.cos, trades:S.trades, px:S.px, watch:S.watch, target:S.target, checks:S.checks, goal:S.goal, val:S.val })); } catch (e) {} }
 
 // ── 계산(순수 함수) ──
 /** 거래 기록 → 보유 종목(평균단가법). 보유보다 많이 판 기록은 건너뛰고 bad 에 id 를 모은다. */
@@ -130,6 +131,29 @@ function crossCheck(a, b, tolPct) {
   return { diff:diff, rate:rate, ok:rate * 100 <= t };
 }
 
+// ── 내 가치 평가 v0(장부 기반) ──
+var VER = 'v0';
+// 증권 AI가 최종적으로 종합하려는 신호 중 아직 연결된 데이터가 없는 것 — 지어내지 않고 "미연결"로 보여 준다.
+var GAPS = ['통화량(한국은행 발행·시중 유통)', '글로벌·국내 경제 구조 변화', '업종 사이클(성장·사양 산업)', '경영진·임직원 경력·신용도·근속', '세금 납부액 시계열', '인구 구조'];
+function NL() { return window.NaviLedger || null; }
+/** 장부 요약(NaviLedger.summary) + 가정(이익 성장률 g, 요구 수익률 r, %) → 가치 구간.
+ *  이익이 있으면 수익가치 시나리오 3개(낮은·입력·높은 가정)의 최소~최대. 이익 근거가 없으면 구간 대신 순자산(장부가)만 낸다.
+ *  이익은 아직 순이익이 아니라 장부의 '매출 누계'(원가·비용 미반영)를 대용값으로 쓴다. */
+function valueOf(sm, a) {
+  if (!sm || !sm.totals || !isFinite(sm.equity)) return null;
+  var g = snum(a && a.g), r = snum(a && a.r), earn = sm.sales > 0 ? sm.sales : 0, sc = [];
+  if (earn > 0 && isFinite(g) && isFinite(r)) [[g - 1, r + 2, '낮은 가정'], [g, r, '입력값'], [g + 1, r - 2, '높은 가정']].forEach(function (x) { if (x[1] > x[0] && x[1] <= 100 && x[0] > -50) sc.push({ g:x[0], r:x[1], name:x[2], v:earn * (1 + x[0] / 100) / ((x[1] - x[0]) / 100) }); });
+  var vs = sc.map(function (x) { return x.v; });
+  return { ver:VER, owner:sm.owner, asOf:sm.asOf, serials:sm.serials, n:sm.n, equity:sm.equity, assets:sm.assets, debt:sm.debt, earn:earn, sc:sc, mode:vs.length ? 'range' : 'asset', low:vs.length ? Math.min.apply(null, vs) : sm.equity, high:vs.length ? Math.max.apply(null, vs) : sm.equity, g:g, r:r, balanced:sm.totals.balanced };
+}
+/** 같은 입력(전표 일련번호·장부 값·가정·모델 버전)이면 같은 해시 — 평가를 다시 계산해 맞춰 볼 수 있게 한다. 해시 기능이 없으면 null. */
+function hashOf(v) {
+  var sb = null; try { sb = window.crypto && window.crypto.subtle; } catch (e) { sb = null; }
+  if (!sb || !v || typeof TextEncoder === 'undefined') return Promise.resolve(null);
+  var t = JSON.stringify([v.ver, v.owner, v.serials, v.equity, v.assets, v.debt, v.earn, v.g, v.r]);
+  return sb.digest('SHA-256', new TextEncoder().encode(t)).then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join(''); }, function () { return null; });
+}
+
 // ── 그림 ──
 function sv(tag, a, kids) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag), k; for (k in (a || {})) e.setAttribute(k, a[k]); (kids || []).forEach(function (c) { e.appendChild(c); }); return e; }
 function bars(vals, labels, color) {
@@ -188,7 +212,7 @@ function viewPortfolio() {
     var cl = Object.keys(V.byCls).sort(function (a, b) { return V.byCls[b] - V.byCls[a]; });
     if (cl.length) kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'자산군별 비중' }), h('div', {}, cl.map(function (k) { var v = V.byCls[k] / V.val * 100; return h('div', { class:'mrow' }, [h('div', { class:'nm', style:'flex-basis:96px', text:k }), h('div', { class:'tr' }, [h('em', { style:'width:' + v.toFixed(1) + '%;background:var(--pri)' })]), h('div', { class:'v', text:Math.round(v * 10) / 10 + '% · ' + won(V.byCls[k]) + '원' })]); })), h('div', { class:'rowf' }, [btn('목표 비중과 비교', 'sm', function () { go('alloc'); })])]));
   }
-  kids.push(h('div', { class:'card rowf', style:'margin-top:16px;justify-content:space-between' }, [h('div', { class:'col', style:'gap:2px;flex:1;min-width:220px' }, [h('b', { text:'재무제표로 기업을 평가해 보세요' }), h('span', { class:'sub', text:'나비웹에서는 모든 거래가 재무제표로 자동 기록되고, 상호 대조와 이상 탐지로 분식을 막는다는 원칙입니다.' })]), btn('기업 평가 열기', 'sm', function () { go('company'); })]));
+  kids.push(h('div', { class:'card rowf', style:'margin-top:16px;justify-content:space-between' }, [h('div', { class:'col', style:'gap:2px;flex:1;min-width:220px' }, [h('b', { text:'재무제표로 기업을 평가해 보세요' }), h('span', { class:'sub', text:'나비웹에서는 모든 거래가 재무제표로 자동 기록되고, 상호 대조와 이상 탐지로 분식을 막는다는 원칙입니다.' })]), btn('내 가치 열기', 'sm', function () { go('value'); }), btn('기업 평가 열기', 'sm', function () { go('company'); })]));
   kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('거래 기록 추가', 'fill', function () { go('trades'); }), btn('증권 AI에게 묻기', 'quiet', function () { ask('내 포트폴리오에서 점검해 볼 점을 알려 주세요'); })]));
   return kids;
 }
@@ -231,6 +255,41 @@ function coOut(R) {
   if (R.iv != null) k.push(h('div', { class:'card col' }, [h('b', { text:'간이 내재가치(가정에 따른 계산)' }), h('div', { class:'num', id:'stk-c-iv', style:'font-size:22px;font-weight:700', text:won(R.iv) + '원' }), h('div', { class:'sub', text:'순이익이 매년 성장률만큼 늘고 요구 수익률로 할인한다는 가정(순이익 × (1+g) ÷ (r−g))입니다.' + (R.ivps != null ? ' 주당 ' + won(R.ivps) + '원' + (R.gap != null ? ', 현재 주가보다 ' + pct(Math.abs(R.gap)) + (R.gap >= 0 ? ' 높게' : ' 낮게') + ' 계산돼요.' : '.') : '') }), h('div', { class:'sub', text:'가정이 조금만 달라져도 값이 크게 변해요. 매수·매도 권유가 아니에요.' })]));
   else k.push(h('div', { class:'sub', text:'간이 내재가치는 순이익이 0보다 크고 요구 수익률이 성장률보다 클 때 계산돼요.' }));
   return k;
+}
+
+// ── 내 가치 ──
+function valOut(sm) {
+  var v = valueOf(sm, S.val), k = [];
+  if (!v) return [h('div', { class:'note', text:'지금 값으로는 계산할 수 없어요.' })];
+  var tile = v.mode === 'range'
+    ? h('div', { class:'card col', id:'stk-v-res' }, [h('b', { style:'font-size:17px', text:'내 가치 구간 (' + VER + ')' }), h('div', { class:'num', id:'stk-v-range', style:'font-size:24px;font-weight:700', text:won(v.low) + ' ~ ' + won(v.high) + '원' }),
+        h('div', { class:'sub', text:'수익가치 시나리오 ' + v.sc.length + '개(' + v.sc.map(function (x) { return x.name + ' 성장 ' + x.g + '%·수익률 ' + x.r + '%'; }).join(' / ') + ')의 최소~최대입니다. 구간의 폭은 가정의 차이일 뿐 데이터 충분도를 뜻하지 않아요.' })])
+    : h('div', { class:'card col', id:'stk-v-res' }, [h('b', { style:'font-size:17px', text:'구간을 낼 수 없어요 — 순자산(장부가)만 보여 드려요' }), h('div', { class:'num', id:'stk-v-range', style:'font-size:24px;font-weight:700', text:won(v.equity) + '원' }),
+        h('div', { class:'sub', text:'이익 근거가 없어(장부의 매출 누계 ' + won(v.earn) + '원) 수익가치를 계산할 수 없어요. 순자산은 자산 합계 ' + won(v.assets) + '원 − 부채 합계 ' + won(v.debt) + '원입니다. 거래가 쌓이면 구간이 나와요.' })]);
+  k.push(tile);
+  k.push(h('div', { class:'card col' }, [h('b', { text:'이 평가에 쓴 신호' }), h('div', {}, [
+    ['재무(내 장부)', '연결됨 · 자산 ' + won(v.assets) + ' / 부채 ' + won(v.debt) + ' / 자본 ' + won(v.equity) + '원' + (v.balanced ? '' : ' (대차 불일치)')],
+    ['이익', v.earn > 0 ? '매출 누계 ' + won(v.earn) + '원 — 순이익이 아니라 대용값(원가·비용 미반영)' : '근거 없음']].concat(GAPS.map(function (g) { return [g, '데이터 미연결 — 쓰지 않았어요']; })).map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); }))]));
+  k.push(h('div', { class:'sub', id:'stk-v-hash', text:'입력 해시 계산 중…' }));
+  hashOf(v).then(function (x) { var e = $('stk-v-hash'); if (e) e.textContent = x ? '모델 ' + VER + ' · 입력 해시 ' + x.slice(0, 16) + '… (같은 장부·같은 가정이면 같은 값이 나와요)' : '모델 ' + VER + ' · 이 브라우저에서는 입력 해시를 만들 수 없어요.'; });
+  return k;
+}
+function viewValue() {
+  var kids = head('내 가치', '내 장부로 계산한 내 가치입니다. 평가 정보는 나만 볼 수 있고, 내가 고르기 전에는 공개되지 않아요.');
+  kids.push(h('div', { class:'note info', style:'margin:16px 0', text:'평가 ' + VER + '입니다. 장부에 있는 값과 아래에 내가 넣는 가정만으로 계산해요. 통화량·업종·인력 같은 신호는 아직 연결되어 있지 않아 쓰지 않았어요. 매수·매도 권유나 가격 예측이 아니에요.' }));
+  var L = NL(), sm = L ? L.summary('나') : null;
+  if (!L) { kids.push(h('div', { class:'note', role:'alert', text:'장부 모듈을 불러오지 못했어요. 새로고침해 주세요.' })); return kids; }
+  if (!sm) { kids.push(empty('아직 내 장부에 거래가 없어요. 시장에서 거래하고 세무 회계에서 전표를 처리하면 장부가 만들어지고, 그러면 여기서 내 가치를 계산해요.')); kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 묻기', 'quiet', function () { ask('내 가치는 어떤 자료로 계산되나요?'); })])); return kids; }
+  kids.push(h('div', { class:'card col', id:'stk-v-book' }, [h('b', { text:'내 장부 상태' }), h('div', {}, [['반영된 전표', sm.n + '건'], ['가장 최근 반영', (sm.asOf || '갱신일시 기록 없음') + ' · ' + sm.serials[sm.serials.length - 1]], ['현금 계정', sm.usesWallet ? '은행 GDC 잔액과 같아요(은행 화면에서 읽은 값)' : '체험용 가상 초안 값이에요 — 은행 화면을 열면 은행 잔고와 같아져요'], ['대차', sm.totals.balanced ? '맞아요' : '맞지 않아요']].map(function (x) { return h('div', { class:'kv' }, [h('span', { text:x[0] }), h('b', { text:x[1] })]); }))]));
+  var set = function (key) { return function (x) { S.val[key] = x; save(); upd(); }; }, out = h('div', { class:'col', id:'stk-v-out', style:'gap:16px' });
+  function upd() { out.textContent = ''; valOut(sm).forEach(function (x) { out.appendChild(x); }); }
+  upd();
+  var form = h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'내 가정' }), h('div', { class:'frm' }, [field('stk-v-g', '이익 성장률 가정(%/년)', S.val.g, { ph:'3', mode:'decimal', max:6, set:set('g') }), field('stk-v-r', '요구 수익률 가정(%/년)', S.val.r, { ph:'10', mode:'decimal', max:6, help:'성장률보다 커야 수익가치가 계산돼요.', set:set('r') })]),
+    h('div', { class:'sub', text:'이익이 있을 때만 쓰이는 가정입니다. 미래 전망은 평가하는 사람이 정해야 하는 값이라 기본값(3%, 10%)은 예시일 뿐이에요.' })]);
+  kids.push(h('div', { class:'g2', style:'margin-top:16px;align-items:start' }, [out, form]));
+  kids.push(h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'sub', text:'개인의 적정 임금 구간은 경력·근속·신용 데이터가 연결된 뒤에 제공해요. 지금은 내 장부로 계산하는 가치만 보여 드려요.' })]));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 계산 방법 묻기', 'quiet', function () { ask('내 가치 구간은 어떻게 계산했나요?'); })]));
+  return kids;
 }
 
 // ── 거래 기록 ──
@@ -359,7 +418,7 @@ function viewLearn() {
 
 function render() {
   var root = $('stk-root'), tp = $('stk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
+  var kids = S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   if (S.view === 'goal' && M.__goalOut) M.__goalOut();
 }
@@ -383,7 +442,7 @@ function nav(a) {
 
 function mount(el, o) {
   if (!el) return; o = o || {};
-  M = el; el.textContent = ''; el.classList.add('stk'); S.trades = []; S.cos = []; S.px = {}; S.watch = []; S.target = {}; S.checks = {}; S.err = {}; S.msg = ''; load();
+  M = el; el.textContent = ''; el.classList.add('stk'); S.trades = []; S.cos = []; S.px = {}; S.watch = []; S.target = {}; S.checks = {}; S.val = { g:'3', r:'10' }; S.err = {}; S.msg = ''; load();
   [h('div', { id:'stk-top' }), h('div', { class:'wrap', id:'stk-root' })].forEach(function (x) { el.appendChild(x); });
   S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'portfolio'; render();
 }
@@ -391,7 +450,7 @@ window.NaviStock = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
-  positions:positions, valued:valued, evalCo:evalCo, crossCheck:crossCheck, fv:fv, needMonthly:needMonthly, goalCalc:goalCalc,
+  positions:positions, valued:valued, evalCo:evalCo, valueOf:valueOf, hashOf:hashOf, crossCheck:crossCheck, fv:fv, needMonthly:needMonthly, goalCalc:goalCalc,
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
