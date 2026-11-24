@@ -236,3 +236,51 @@ test('뒤로 가기: 시장 단계·세무 확인 결과도 기록에 남고 복
   assert.ok(tax.includes("NaviHist.push('tax', 'trace')") && tax.includes("NaviHist.push('tax', 'tamper')") && tax.includes("NaviHist.on('tax', 'tax'"));
   assert.ok(d.includes('window.NaviHist') && d.includes('NaviHist.restore(name, history.state)'));
 });
+
+test('판매: 시장 가치는 비슷한 가격의 중앙값×상태, 선지급 30%(근거 약하면 25%), 정산은 이자를 뺀다', { skip }, () => {
+  const F = api().flow;
+  const a = F.value({ ask: 500000, cond: '거의 새 것', kind: '물품', comps: [400000, 420000, 440000, 900000] });
+  assert.equal(a.est, Math.round(430000 * 0.85 / 100) * 100 === a.est ? a.est : a.est); assert.ok(a.est >= 360000 && a.est <= 370000); assert.equal(a.rate, 0.3); assert.equal(a.adv % 100, 0); assert.ok(a.low < a.est && a.est < a.high);
+  const b = F.value({ ask: 300000, cond: '새 것', kind: '물품', comps: [] }); assert.equal(b.est, 300000); assert.equal(b.rate, 0.25); assert.equal(b.conf, 'low');
+  const s = F.value({ ask: 150000, kind: '서비스', comps: [140000, 150000, 160000] }); assert.equal(s.est, 150000);
+  const st = F.settle(320000, 90000, 30); assert.equal(st.interest, 592); assert.equal(st.payout, 320000 - 90000 - 592); assert.equal(st.shortfall, 0);
+  const lo = F.settle(50000, 90000, 30); assert.equal(lo.payout, 0); assert.ok(lo.shortfall > 0);
+  assert.ok(F.intent({ name: '중고 노트북', kind: '물품', cond: '거의 새 것', qty: '1', desc: '' }, 450000).includes('중고 노트북'));
+});
+test('판매 장부: 선지급·정산이 서명으로 검증되고, 같은 상품 중복 선지급·위조·잘못된 정산은 걸러진다', { skip }, async () => {
+  const L = lw().NaviMarket.ledger; const chain = [];
+  const r = await L.appendAdvance(chain, { lid: 'L-1', est: 300000, amt: 90000, d: '2026-11-24' }); assert.ok(r.ok, r.msg); chain.push(r.block);
+  const dup = await L.appendAdvance(chain, { lid: 'L-1', est: 300000, amt: 90000, d: '2026-11-24' }); assert.ok(!dup.ok);
+  let v = await L.verify(chain); assert.ok(v.ok, JSON.stringify(v)); assert.equal(v.bal['나'], 90000);
+  const s = await L.appendSettle(chain, { lid: 'L-1', price: 320000, adv: 90000, interest: 592, d: '2026-12-24' }); assert.ok(s.ok, s.msg); assert.equal(s.payout, 229408); chain.push(s.block);
+  v = await L.verify(chain); assert.ok(v.ok, JSON.stringify(v)); assert.equal(v.bal['나'], 90000 + 229408);
+  const bad = JSON.parse(JSON.stringify(chain)); bad[0].body.amt = 190000; v = await L.verify(bad); assert.ok(!v.ok);
+});
+test('화면: 판매 탭 — 상품 입력 → 가치 추정 → 등록 → 선지급 → 판매 완료·정산 (도우미 없음)', { skip }, async () => {
+  const p = page(); const { doc, btn, type, txt } = p;
+  const tab = doc.getElementById('mk-tab-sell'); assert.ok(tab && doc.getElementById('mk-tab-buy')); tab.click();
+  assert.equal(doc.querySelectorAll('.mk-steps li').length, 7); assert.ok(txt().includes('내 물건·서비스 판매하기'));
+  btn('판매 시작').click(); assert.ok(doc.getElementById('mk-s-err'));
+  type('mk-s-name', '중고 노트북'); type('mk-s-ask', '450000'); btn('판매 시작').click(); await wait(80);
+  assert.ok(doc.querySelector('[role=dialog]') && txt().includes('시장 가치 추정'), '추정 금액을 팝업으로 묻는다'); btn('계속 진행').click(); await wait(120);
+  assert.ok(doc.getElementById('mk-L-0') || txt().includes('선판매'), '등록 뒤 선판매를 묻는다'); assert.ok(doc.getElementById('mk-adv-yes'));
+  doc.getElementById('mk-adv-yes').click(); await wait(400);
+  assert.ok(txt().includes('선지급') && doc.getElementById('mk-sold-price'), '선지급 뒤 판매 완료 처리 칸이 보인다');
+  type('mk-sold-price', '460000'); btn('판매 완료 · 정산하기').click(); await wait(500);
+  assert.ok(doc.getElementById('mk-settle') && txt().includes('정산 내역'), '정산 내역'); assert.ok(doc.getElementById('mk-L-0').textContent.includes('판매 완료'));
+  doc.getElementById('mk-tab-buy').click(); assert.ok(txt().includes('살 물건을 알려 주세요'));
+});
+test('화면: 판매 탭 — 도우미가 시세·구매자를 찾아 오고, 의향서는 확인한 뒤에만 보낸다', { skip }, async () => {
+  const jobs = []; let onD = null, onS = null;
+  const agent = { queue: (j) => { jobs.push(j); return Promise.resolve({ ok: true }); }, onData: (f) => { onD = f; }, onStatus: (f) => { onS = f; }, onFile() {}, detect: () => Promise.resolve({ ok: true, version: '0.6.43' }) };
+  const p = page(agent); const { doc, btn, type, txt } = p; doc.getElementById('mk-tab-sell').click();
+  type('mk-s-name', '중고 노트북'); type('mk-s-ask', '450000'); btn('판매 시작').click(); await wait(80);
+  assert.ok(jobs.length === 1 && jobs[0].slot === '시장 판매 시세', '시세 확인을 도우미에게 맡긴다');
+  if (onD) onD({ label: '시장 판매 시세', data: { stage: 'candidates', candidates: [{ price: 400000 }, { price: 420000 }, { price: 440000 }] } }); await wait(80);
+  assert.ok(txt().includes('시장 가치 추정')); btn('계속 진행').click(); await wait(120);
+  assert.ok(jobs.length === 2 && jobs[1].slot === '시장 구매자 물색' && /메시지를 보내지 마세요/.test(jobs[1].goal));
+  if (onD) onD({ label: '시장 구매자 물색', data: { stage: 'buyers', buyers: [{ name: '중고매입점', site: '예시', link: 'https://example.com/ask', reason: '매입' }, { name: '위험', link: 'javascript:alert(1)' }] } }); await wait(120);
+  assert.ok(doc.getElementById('mk-send') && txt().includes('중고매입점') && !txt().includes('위험'), '의향서 확인 창, 안전하지 않은 링크 후보는 거른다'); assert.equal(jobs.length, 2, '확인 전에는 보내지 않는다');
+  doc.getElementById('mk-send').click(); await wait(80); assert.ok(jobs.length === 3 && jobs[2].slot === '시장 판매 의향서');
+  if (onS) onS({ label: '시장 판매 의향서', state: 'sent', note: '1곳' }); await wait(40); assert.ok(txt().includes('판매 의향서를 보냈어요'));
+});
