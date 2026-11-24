@@ -155,3 +155,13 @@
 .bnk .stbl tr.sec td{background:var(--soft);color:var(--on2);font-size:12.5px;font-weight:600;padding:4px 12px;border-top:0}
 .bnk .stbl tr.hl td{background:color-mix(in srgb,var(--pri) 10%,transparent)}
 .bnk .stbl tr.tot td{font-weight:600;border-top:1px solid var(--m3-outline)}
+/* 송금·결제 시뮬레이션: 바뀐 줄에 초점(바뀌지 않은 줄은 흐리게) */
+.bnk #bnk-sim .stbl{font-size:13px}
+.bnk #bnk-sim .stbl td{padding:6px 8px}
+.bnk #bnk-sim .stbl tr.sec td.r{text-align:right}
+.bnk #bnk-sim .stbl tr.dim td{color:var(--on2)}
+.bnk #bnk-sim .stbl tr.hl td{font-weight:600}
+.bnk #bnk-sim .stbl tr.sum td{font-weight:600;border-top:1px solid var(--m3-outline)}
+.bnk #bnk-sim .stbl td.chg{color:var(--m);font-weight:700;white-space:nowrap}
+.bnk #bnk-sim .stbl td.chg.neg{color:var(--l)}
+.bnk #bnk-sim .stcol>.sub{padding:8px 12px}
