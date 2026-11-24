@@ -1,17 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { webcrypto } from 'node:crypto';
 let JSDOM = null; try { ({ JSDOM } = await import('jsdom')); } catch (e) { /* jsdom 이 없으면 건너뛴다 */ }
 const skip = !JSDOM && 'jsdom 없음';
 const app = readFileSync(new URL('../stock-app.js', import.meta.url), 'utf8');
+const ledger = readFileSync(new URL('../ledger-book.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../stock.css', import.meta.url), 'utf8');
 const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
 const paths = readFileSync(new URL('../ops/naviweb-proxy/mail-paths.js', import.meta.url), 'utf8');
 
-function page(view) {
+function page(view, store = {}) {
   const dom = new JSDOM('<!DOCTYPE html><div id="m"></div>', { runScripts: 'outside-only', url: 'https://naviweb.kr/', pretendToBeVisual: true });
   const w = dom.window; let fetched = 0; w.fetch = () => { fetched++; return Promise.reject(new Error('no')); };
-  w.eval(app); const doc = w.document, asks = [];
+  Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true }); w.TextEncoder = TextEncoder;
+  for (const k of Object.keys(store)) w.localStorage.setItem(k, JSON.stringify(store[k]));
+  w.eval(ledger); w.eval(app); const doc = w.document, asks = [];
   w.NaviStock.on('ask', (t) => asks.push(t));
   w.NaviStock.mount(doc.getElementById('m'), { view });
   const txt = () => doc.getElementById('stk-root').textContent;
@@ -19,7 +23,7 @@ function page(view) {
   return { w, doc, asks, txt, btn, fetched: () => fetched, S: w.NaviStock };
 }
 const type = (p, id, v) => { const i = p.doc.getElementById(id); i.value = v; i.dispatchEvent(new p.w.Event('input', { bubbles: true })); };
-const api = () => { const w = new JSDOM('', { runScripts: 'outside-only' }).window; w.eval(app); return w.NaviStock; };
+const api = () => { const w = new JSDOM('', { runScripts: 'outside-only' }).window; Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true }); w.TextEncoder = TextEncoder; w.eval(app); return w.NaviStock; };
 
 test('positions: 평균단가·실현손익·수수료·초과 매도', { skip }, () => {
   const N = api();
@@ -107,8 +111,8 @@ test('매도: 보유 수량보다 많으면 막는다', { skip }, () => {
 
 test('탭 이동: 모든 탭이 그려진다', { skip }, () => {
   const p = page('portfolio');
-  for (const v of ['portfolio', 'company', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
-  assert.equal(p.doc.querySelectorAll('.tab').length, 7);
+  for (const v of ['portfolio', 'value', 'company', 'trades', 'watch', 'alloc', 'goal', 'learn']) { p.S.view(v); assert.ok(p.txt().length > 20, v); }
+  assert.equal(p.doc.querySelectorAll('.tab').length, 8);
 });
 
 test('투자 점검·용어, 시세 서버 없음 안내', { skip }, () => {
@@ -129,4 +133,50 @@ test('desktop.html 연결과 배포 목록', () => {
   assert.match(d, /kstock[\s\S]{0,40}&&[\s\S]{0,10}!_stockChat|!_stockChat/);
   assert.match(d, /stock:/); assert.match(d, /stock-app\.js/); assert.match(d, /stock\.css/);
   assert.match(paths, /"stock-app\.js"/); assert.match(paths, /"stock\.css"/);
+});
+
+// ── 내 가치 평가 v0 ──
+const SM = (o = {}) => ({ owner: '나', asOf: '2026-11-25 10:00:00', serials: ['MK-1'], n: 1, equity: 3000000, assets: 3200000, debt: 200000, sales: 0, totals: { balanced: true }, ...o });
+const rec = (serial, supply = 180000) => { const tax = Math.round(supply * 0.1); return { serial, at: '2026-11-25 10:00:00', hash: 'h',
+  buyer: { side: 'buyer', owner: '나', lines: [['상품(재고자산)', supply, 0], ['부가세대급금', tax, 0], ['현금(GDC)', 0, supply + tax]] },
+  seller: { side: 'seller', owner: '철수상회', lines: [['현금(GDC)', supply + tax, 0], ['매출', 0, supply], ['부가세예수금', 0, tax]] } }; };
+
+test('valueOf: 이익이 있으면 수익가치 시나리오의 최소~최대 구간', { skip }, () => {
+  const v = api().valueOf(SM({ sales: 1000000 }), { g: '3', r: '10' });
+  assert.equal(v.mode, 'range'); assert.equal(v.sc.length, 3);
+  assert.equal(Math.round(v.low), 10200000); assert.equal(Math.round(v.high), 26000000); assert.equal(v.ver, 'v0');
+});
+test('valueOf: 이익이 없으면 구간을 내지 않고 순자산만, 요구수익률 ≤ 성장률인 시나리오는 뺀다', { skip }, () => {
+  const N = api(), a = N.valueOf(SM(), { g: '3', r: '10' });
+  assert.equal(a.mode, 'asset'); assert.equal(a.low, 3000000); assert.equal(a.high, 3000000);
+  const b = N.valueOf(SM({ sales: 1000000 }), { g: '9', r: '10' }); // 낮은(8,12)·입력(9,10)만 성립, 높은(10,8)은 r ≤ g 라 제외
+  assert.equal(b.sc.length, 2); assert.equal(N.valueOf(SM({ sales: 1000000 }), { g: '10', r: '10' }).sc.length, 1); // 낮은 가정(9, 12)만 성립
+  assert.equal(N.valueOf(SM({ sales: 1000000 }), { g: '20', r: '10' }).mode, 'asset'); // 성립하는 시나리오가 없으면 구간을 내지 않는다
+  assert.equal(N.valueOf(null, {}), null);
+});
+test('hashOf: 같은 입력은 같은 해시, 가정이 다르면 다른 해시', { skip }, async () => {
+  const N = api(), a = await N.hashOf(N.valueOf(SM({ sales: 1 }), { g: '3', r: '10' })), b = await N.hashOf(N.valueOf(SM({ sales: 1 }), { g: '3', r: '10' })), c = await N.hashOf(N.valueOf(SM({ sales: 1 }), { g: '4', r: '10' }));
+  assert.match(a, /^[0-9a-f]{64}$/); assert.equal(a, b); assert.notEqual(a, c);
+});
+test('내 가치 탭: 장부가 없으면 만들어 보여 주지 않고 안내한다', { skip }, () => {
+  const p = page('value'); assert.match(p.txt(), /평가 v0/); assert.match(p.txt(), /아직 내 장부에 거래가 없어요/); assert.ok(!p.doc.getElementById('stk-v-res'));
+});
+test('내 가치 탭: 장부가 있으면 순자산·미연결 신호·해시를 보여 주고, 평가 정보는 당사자(나) 것만 쓴다', { skip }, async () => {
+  const p = page('value', { 'navi-tax-v2': { rec: [rec('MK-1')], inbox: [] }, 'navi-wallet-v1': { bal: 5200, at: '2026-11-25T01:00:00Z' } });
+  const t = p.txt(); assert.match(t, /구간을 낼 수 없어요/); assert.match(p.doc.getElementById('stk-v-range').textContent, /원$/);
+  assert.match(p.doc.getElementById('stk-v-book').textContent, /은행 GDC 잔액과 같아요/);
+  for (const g of ['통화량', '업종 사이클', '경영진·임직원', '인구 구조']) assert.ok(t.includes(g), g);
+  assert.ok(t.includes('데이터 미연결')); assert.ok(!t.includes('철수상회'));
+  await new Promise((r) => setTimeout(r, 60)); assert.match(p.doc.getElementById('stk-v-hash').textContent, /입력 해시 [0-9a-f]{16}/);
+  assert.equal(p.fetched(), 0);
+});
+test('내 가치 탭: 가정을 바꾸면 저장되고, 말로 이동(nav)도 된다', { skip }, () => {
+  const p = page('portfolio', { 'navi-tax-v2': { rec: [rec('MK-1')], inbox: [] } });
+  p.S.nav({ do: 'value' }); assert.match(p.txt(), /내 장부 상태/);
+  type(p, 'stk-v-g', '5'); assert.equal(JSON.parse(p.w.localStorage.getItem('navi-stock-v1')).val.g, '5');
+  assert.ok(p.btn('증권 AI에게 계산 방법 묻기')); p.btn('증권 AI에게 계산 방법 묻기').click(); assert.match(p.asks[0], /내 가치 구간/);
+});
+test('desktop.html: 증권 화면도 공통 장부를 먼저 불러온다, 증권 SP에 내 가치 원칙이 있다', () => {
+  assert.match(d, /function _stockLoad\(cb\) \{ _ledgerLoad\(\(\) => _stockLoad2\(cb\)\); \}/);
+  assert.match(readFileSync(new URL('../infra-sp.js', import.meta.url), 'utf8'), /'내 가치' 탭은 공통 장부에서 내 장부를 읽어/);
 });
