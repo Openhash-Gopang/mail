@@ -138,3 +138,12 @@
 .tx .tx-tl{list-style:none;margin:12px 0 0;padding:0 0 0 14px;border-left:2px solid var(--p,#1a73e8)}
 .tx .tx-tl li{position:relative;padding:0 0 12px 12px}
 .tx .tx-tl li::before{content:'';position:absolute;left:-21px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--p,#1a73e8)}
+
+/* 재무제표 갱신·갱신 이력 (Material Design 3): 표 머리 톤 · 구간 행 톤 · 바뀐 행은 성공 톤 · 합계는 윤곽선 위 굵은 글씨 */
+.tx .g2.tx-eq{grid-template-columns:minmax(0,1fr)}
+.tx .tbl tr.sec td{background:var(--soft);color:var(--on2);font-size:12.5px;font-weight:600;padding:6px 12px}
+.tx .tbl tr.hl td{background:color-mix(in srgb,var(--m) 10%,transparent)}
+.tx .tbl tr.tot td{font-weight:600;border-top:1px solid var(--m3-outline)}
+.tx .tbl th.r{text-align:right}
+.tx .tbl td.sub{white-space:nowrap}
+.tx .tbl td.sub .pill{margin-left:4px}
