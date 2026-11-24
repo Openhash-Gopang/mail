@@ -226,14 +226,15 @@ function safeImg(u) { u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/i.test
 function safeLink(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
 function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; if (window.NaviHist) NaviHist.push('market', n); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
-function reset(keepHistory) { S.tok++; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; S.err = ''; S.info = ''; render(); }
+function reset(keepHistory) { S.tok++; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
 
 // ── 도우미(상품 페이지 읽기) ──
 var SLOT = '시장 상품 확인';
 function goalFor(link) {
   return '이 상품 페이지(' + link + ')를 열어 상품 정보를 확인해 주세요. 로그인이 필요하면 사용자가 로그인하도록 넘기고, 로그인하면 이어서 진행해 주세요. ' +
-    '상품명·판매 가격(원)·대표 이미지 주소·판매자와 판매자 신뢰도(판매자 평점·등급·운영 기간·분쟁 여부, 화면에 있는 말 그대로)·AS(반품·교환·보증) 안내·고객 리뷰 평점(1~5)과 건수·대표 리뷰 요약 최대 5개·배송 방식과 기간·같은 상품의 다른 판매처 가격(찾을 수 있으면 최대 5개)을 읽어 ' +
-    'report_data(kind: product)로 나비웹에 한 번에 보내 주세요. 화면에서 찾지 못한 값은 비우고 지어내지 마세요. 구매·장바구니·결제는 하지 마세요.';
+    '첫째, 상품명을 읽어 주세요. 상품명은 페이지에 보이는 제목을 줄이거나 바꾸지 말고 글자 그대로(브랜드·모델명·수량 포함) 옮기고, 판매 가격(원)·대표 이미지 주소·판매자와 함께 report_data(kind: product, data.stage: core)로 먼저 보내 주세요. ' +
+    '둘째, 이어서 판매자 신뢰도(판매자 평점·등급·운영 기간·분쟁 여부, 화면에 있는 말 그대로)·AS(반품·교환·보증) 안내·고객 리뷰 평점(1~5)과 건수·대표 리뷰 요약 최대 5개·배송 방식과 기간·같은 상품의 다른 판매처 가격(찾을 수 있으면 최대 5개)을 읽어 report_data(stage: detail)로 보내 주세요. ' +
+    '화면에서 찾지 못한 값은 비우고 지어내지 마세요. 구매·장바구니·결제는 하지 마세요.';
 }
 function takeProduct(d) {
   d = d && typeof d === 'object' ? d : {}; var p = S.prod, n;
@@ -249,14 +250,21 @@ function takeProduct(d) {
   if (clean(d.shipping, 80)) p.shipping = clean(d.shipping, 80);
   if (Array.isArray(d.compare)) p.compare = d.compare.map(Number).filter(function (x) { return x > 0 && x <= 1e9; }).slice(0, 5);
   n = [p.name, p.price, p.img, p.as, p.rating].filter(Boolean).length;
-  S.read = { st:'done', msg:'도우미가 상품 정보를 읽어 왔어요(' + n + '개 항목). 맞는지 확인하고 고쳐도 돼요.' };
+  if (d.stage === 'core') S.read = { st:'wait', core:true, msg:'도우미가 상품 이름과 가격을 먼저 읽어 왔어요. 이름이 페이지 제목과 같은지 확인하고 고쳐도 돼요. 나머지(판매자·AS·리뷰)를 이어서 읽는 중이에요.' };
+  else S.read = { st:'done', core:true, msg:'도우미가 상품 정보를 읽어 왔어요(' + n + '개 항목). 맞는지 확인하고 고쳐도 돼요.' };
 }
-var agentWired = false;
+var agentWired = false, coreT = 0;
+function coreWait() { return typeof window !== 'undefined' && typeof window.__naviMarketCoreWait === 'number' ? window.__naviMarketCoreWait : 90000; }
 function wireAgent() {
   if (agentWired || !window.NaviAgent || !NaviAgent.onData) return; agentWired = true;
-  NaviAgent.onData(function (m) { if (m.label !== SLOT || !M) return; takeProduct(m.data); if (S.step === 0 && S.auto && clean(S.prod.name, 80) && snum(S.prod.price) >= 1) { S.auto = false; startReview(); } else render(); });   // 도우미가 이름·가격을 읽어 오면 "검토 시작"을 자동으로 누른다
+  NaviAgent.onData(function (m) {
+    if (m.label !== SLOT || !M) return; takeProduct(m.data);
+    var ready = S.step === 0 && S.auto && clean(S.prod.name, 80) && snum(S.prod.price) >= 1, core = m.data && m.data.stage === 'core';
+    if (ready && core) { clearTimeout(coreT); coreT = setTimeout(function () { if (M && S.step === 0 && S.auto) { S.auto = false; startReview(); } }, coreWait()); render(); }   // 이름·가격이 먼저 오면 보여 주고 나머지를 기다린다(오래 안 오면 있는 값으로 시작)
+    else if (ready) { clearTimeout(coreT); S.auto = false; startReview(); } else render();
+  });   // 도우미가 이름·가격을 읽어 오면 "검토 시작"을 자동으로 누른다
 }
-var MINVER = '0.6.40';   // 상품 주소 전달(url)과 읽은 값 보내기(report_data)가 들어간 확장 버전. 이보다 낮으면 빈 페이지만 열리고 값이 오지 않는다.
+var MINVER = '0.6.41';   // 상품 주소 전달(url)과 읽은 값 보내기(report_data)가 들어간 확장 버전. 이보다 낮으면 빈 페이지만 열리고 값이 오지 않는다.
 function verOk(v) {
   var a = String(v || '').split('.').map(Number), b = MINVER.split('.').map(Number), i;
   if (a.length < 2 || a.some(function (x) { return !isFinite(x); })) return false;
@@ -324,7 +332,9 @@ function progCard(detail) {
 // 시작 화면: 도우미가 맡은 일을 어디까지 했는지
 function helperProg() {
   var s = S.read.st; if (s !== 'wait' && s !== 'done') return null;
-  var rows = [['도우미에게 맡김', 'done'], ['판매 사이트 열기 · 로그인(필요할 때만 직접)', s === 'done' ? 'done' : 'now'], ['상품 이름·가격·AS·리뷰·판매자 읽어 보내기', s === 'done' ? 'done' : 'wait']];
+  var core = s === 'done' || !!S.read.core, nm = clean(S.prod.name, 60), rows = [['도우미에게 맡김', 'done'], ['판매 사이트 열기 · 로그인(필요할 때만 직접)', core ? 'done' : 'now'],
+    ['상품 이름·가격 읽기' + (core && nm ? ' — ' + nm + (isFinite(snum(S.prod.price)) && snum(S.prod.price) ? ' · ' + won(snum(S.prod.price)) + '원' : '') : ''), core ? 'done' : 'wait'],
+    ['판매자·AS·리뷰·다른 판매처 가격 읽기', s === 'done' ? 'done' : core ? 'now' : 'wait']];
   return h('div', { class:'card', style:'margin-top:12px', id:'mk-hprog' }, [h('b', { text:'도우미 진행' }), h('ol', { class:'mk-prog' }, rows.map(function (x, i) {
     return h('li', { class:x[1] }, [h('i', { text:x[1] === 'done' ? '✓' : x[1] === 'now' ? '●' : String(i + 1) }), h('div', { class:'col' }, [h('span', { text:x[0] + (x[1] === 'now' ? ' — 진행 중' : '') })])]);
   }))]);
@@ -338,7 +348,7 @@ function viewStart() {
   if (S.read.msg) kids.push(note(S.read.msg, S.read.st === 'none', 'mk-read-msg'));
   kids.push(helperProg());
   kids.push(h('div', { class:'g2', style:'margin-top:16px' }, [
-    inp('mk-name', '상품 이름', p.name, function (v) { p.name = v; }, { ph:'예: 무선 청소기', max:'80' }),
+    inp('mk-name', '상품 이름', p.name, function (v) { p.name = v; }, { ph:'예: 무선 청소기', max:'80', help:'가장 먼저 정확해야 하는 값이에요. 판매 페이지 제목과 같은지 확인해 주세요.' }),
     inp('mk-price', '가격(원)', p.price, function (v) { p.price = v; }, { ph:'예: 189000', mode:'numeric', max:'12' })]));
   var fi = h('input', { id:'mk-imgfile', type:'file', accept:'image/png,image/jpeg,image/webp', 'aria-label':'상품 이미지 올리기' });
   fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f || f.size > 1500000) { S.err = '이미지는 1.5MB 이하만 올릴 수 있어요.'; render(); return; } var r = new FileReader(); r.onload = function () { p.img = String(r.result); S.err = ''; render(); }; r.readAsDataURL(f); };
