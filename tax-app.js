@@ -226,9 +226,9 @@ function viewMain() {
   kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }),
     h('p', { class:'lead', text:'시장 인프라 AI가 거래 전표(6하 원칙)를 보내오면, 국세청 AI가 서명을 확인해 세액을 정하고 각자의 재무제표 SP가 거래 일련번호와 함께 장부에 반영해요. 이 화면은 그 전표를 받는 세무 회계 쪽입니다.' }));
   var box = [h('b', { text:'받은 거래 전표' + (P.length ? ' ' + P.length + '건' : '') })];
-  if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:'아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
-  P.forEach(function (x, i) { box.push(h('div', { class:'rowf', style:'justify-content:space-between;align-items:center;gap:12px;margin-top:8px' }, [h('div', {}, [h('div', { text:slipLine(x.f) }), h('div', { class:'sub', text:'출처: ' + x.src })]), btn('국세청 AI에 보내기', 'fill', function () { send(x); }, 'tx-send-' + i)])); });
   box.push(h('div', { class:'rowf', style:'margin-top:12px' }, [btn('예시 전표 받기(체험)', '', addSample, 'tx-sample')]));
+  if (!P.length) box.push(h('div', { class:'sub', id:'tx-empty', text:'아직 받은 전표가 없어요. 시장 화면에서 구매를 마치면 전표가 여기에 도착해요.' }));
+  P.forEach(function (x, i) { box.push(h('div', { style:'margin-top:16px' }, [h('div', { text:slipLine(x.f) }), h('div', { class:'sub', text:'출처: ' + x.src }), h('div', { class:'rowf', style:'margin-top:10px' }, [btn('국세청 AI에 보내기', 'fill', function () { send(x); }, 'tx-send-' + i)])])); });
   kids.push(h('div', { class:'card col', style:'margin-top:12px' }, box));
   if (S.err) kids.push(note(S.err, true, 'tx-err'));
   kids.push(h('div', { class:'note info', style:'margin-top:12px', id:'tx-scope', text:'시장 인프라 AI·국세청 AI·시장 SP·나만의 AI 비서·재무제표 SP는 아직 서로 연결되어 있지 않아서, 이 화면이 한 브라우저 안에서 모두를 대신해 보여 줘요. 서명은 이 화면이 만든 임시 키로 하며 실제 신원 인증이 아니에요. 시장 화면의 구매 금액을 공급가액으로 보고 부가가치세 10%를 체험 값으로 계산해요. 편의상 Openhash Network 해시 등록은 생략했어요. 신고·납부는 하지 않고 어떤 정보도 밖으로 보내지 않아요.' }));
