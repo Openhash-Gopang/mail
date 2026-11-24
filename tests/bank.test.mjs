@@ -42,7 +42,7 @@ test('내 지갑: 잔액·무료 한도·이번 달 청구액을 서버 값으�
 test('내 지갑: 재무제표의 현금 계정은 GDC 잔액과 같고 대차가 맞는다', { skip }, async () => {
   const p = page(); await p.until(/5,200/);
   const s = p.doc.getElementById('bnk-stmt').textContent;
-  assert.ok(s.includes('현금(GDC)') && s.includes('5,200') && s.includes('= 은행 GDC 잔액') && s.includes('대차가 맞아요'));
+  assert.ok(s.includes('현금(GDC)') && s.includes('5,200') && s.includes('= 은행 잔고') && s.includes('대차가 맞아요'));
 });
 test('잔액이 1,000 GDC 이하이면 충전을 권한다', { skip }, async () => {
   const dom = page(); await dom.until(/5,200/);
