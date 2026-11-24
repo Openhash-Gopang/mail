@@ -93,7 +93,16 @@
       cb({ label: String(m.label || ''), state: String(m.state || ''), note: String(m.note || '') });
     });
   }
-  var api = { installedMark: installedMark, onStatus: onStatus, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
+  // 확장이 화면에서 읽어 보낸 정보(예: 시장의 상품 정보): { label, data } — 값은 받는 쪽에서 다시 걸러서 쓴다.
+  function onData(cb) {
+    if (typeof window === 'undefined' || !window.addEventListener) return;
+    window.addEventListener('message', function (e) {
+      var m = e.data;
+      if (e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-agent' || m.type !== 'agent-data' || !m.data || typeof m.data !== 'object') return;
+      cb({ label: String(m.label || ''), data: m.data });
+    });
+  }
+  var api = { installedMark: installedMark, onStatus: onStatus, onData: onData, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);

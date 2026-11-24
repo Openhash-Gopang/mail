@@ -269,6 +269,13 @@ async function host(playbook) {
         await deliverToNavi({ kind: 'status', label: state.slot, state: st, note: String(input.note || '').slice(0, 200) });
         return { text: '나비웹 화면에 알렸습니다: ' + st };
       }
+      if (name === 'report_data') {   // 읽은 상품 정보를 나비웹 시장 화면으로 보낸다(값은 나비웹 쪽에서 다시 걸러서 쓴다)
+        if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 보낼 곳이 없습니다.' };
+        const d = input && input.data && typeof input.data === 'object' ? input.data : null;
+        if (!d || input.kind !== 'product') return { text: '보낼 상품 정보가 없습니다. kind 는 product, data 에 읽은 값을 넣으세요.' };
+        await deliverToNavi({ kind: 'data', label: state.slot, data: d });
+        return { text: '나비웹 시장 화면으로 상품 정보를 보냈습니다. 사용자에게 다시 묻지 말고 작업을 마치세요(구매·결제는 하지 않습니다).' };
+      }
       if (name === 'pdv_get') {
         const r = await pdvCall('get', { keys: Array.isArray(input.keys) ? input.keys.slice(0, 5) : [] });
         if (!r || !r.ok) return { text: '내 데이터 금고를 읽지 못했습니다(나비웹 화면이 닫혀 있거나 금고 중계가 아직 지원하지 않습니다). 사용자에게 ask_input 으로 물으세요.' };
@@ -343,7 +350,7 @@ async function host(playbook) {
 async function deliverToNavi(msg) {
   const { naviTabId } = (chrome.storage.session && await chrome.storage.session.get('naviTabId')) || {};
   if (naviTabId == null) throw new Error('나비웹 화면을 찾지 못했습니다. 나비웹에서 다시 맡겨 주세요.');
-  await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : 'deliver', label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
+  await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : msg.kind === 'data' ? 'data' : 'deliver', data: msg.data, label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
 }
 // 기관 사이트(정부24 등)를 열었다고 나비웹 서류 화면에 알린다. 작업 하나에 한 번만.
 function notifyOpened(url) {
