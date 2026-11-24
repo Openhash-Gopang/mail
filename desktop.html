@@ -3561,6 +3561,18 @@ function _learnShow(view, then) {
   });
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
+// 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
+const _SIM_V = '20261125a';
+window._simOpen = function (kind) {
+  const go = () => { if (window.NaviSim) window.NaviSim.open(kind); };
+  if (window.NaviSim) { go(); return; }
+  const need = (kind === 'tax' || kind === 'stock') ? _ledgerLoad : (cb) => cb();   // 세무·증권 계산은 공통 장부 규칙을 쓴다
+  need(() => {
+    let sc = document.getElementById('sim-js');
+    if (!sc) { sc = document.createElement('script'); sc.id = 'sim-js'; sc.src = 'sim-lab.js?v=' + _SIM_V; document.head.appendChild(sc); }
+    sc.addEventListener('load', go, { once: true });
+  });
+};
 // 공통 장부(2026-11-25): 세무 회계·은행·증권 화면이 같은 장부 계산(ledger-book.js)을 쓰도록, 세 화면은 이 파일을 먼저 불러온 뒤 열린다.
 const _LEDGER_V = '20261125e';
 function _ledgerLoad(cb) {
@@ -3571,7 +3583,7 @@ function _ledgerLoad(cb) {
 }
 // 나비웹 은행(2026-11-23): 인프라 AI → 은행을 고르면 은행 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — bank.css·bank-app.js, Material 3).
 // 읽기 전용(잔액·무료 한도·사용·충전 내역). 돈은 옮기지 않으며 송금·결제는 폰 앱으로 안내한다. 안쪽 '은행 AI에게 묻기'는 기존 은행 대화창으로 말을 채워 준다(보내지는 않는다).
-const _BANK_V = '20261125c'; let _bankChat = false;
+const _BANK_V = '20261125d'; let _bankChat = false;
 function _bankLoad(cb) { _ledgerLoad(() => _bankLoad2(cb)); }
 function _bankLoad2(cb) {
   if (window.NaviBank) { cb(); return; }
@@ -3593,7 +3605,7 @@ function _bankShow(view) {
 function _bankOpen(view) { _switchTab('bank'); _bankShow(view); }
 // 나비웹 증권(2026-11-23): 인프라 AI → 증권을 고르면 증권 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — stock.css·stock-app.js, Material 3).
 // 시세·주문 서버가 없어 주문은 보내지 않고 시세는 보여 주지 않는다(현재가는 직접 입력). 기록은 이 브라우저에만 저장. 안쪽 '증권 AI에게 묻기'는 기존 증권 대화창으로 말을 채워 준다(보내지는 않는다).
-const _STOCK_V = '20261125g'; let _stockChat = false;
+const _STOCK_V = '20261125h'; let _stockChat = false;
 function _stockLoad(cb) { _ledgerLoad(() => _stockLoad2(cb)); }
 function _stockLoad2(cb) {
   if (window.NaviStock) { cb(); return; }
@@ -3723,7 +3735,7 @@ function _medShow(view) {
   });
 }
 function _medOpen(view) { _switchTab('med'); _medShow(view); }
-const _TAX_V = '20261125c'; let _taxChat = false;
+const _TAX_V = '20261125d'; let _taxChat = false;
 function _taxLoad(cb) { _ledgerLoad(() => _taxLoad2(cb)); }
 function _taxLoad2(cb) {
   if (window.NaviTax) { cb(); return; }
@@ -3743,7 +3755,7 @@ function _taxShow(view) {
   });
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
-const _MKT_V = '20261124l'; let _mktChat = false;
+const _MKT_V = '20261125s'; let _mktChat = false;
 function _mktLoad(cb) {
   if (window.NaviMarket) { cb(); return; }
   if (!document.getElementById('mkt-css')) { const l = document.createElement('link'); l.id = 'mkt-css'; l.rel = 'stylesheet'; l.href = 'market.css?v=' + _MKT_V; document.head.appendChild(l); }
