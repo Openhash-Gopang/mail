@@ -279,7 +279,7 @@ F.snum = snum; F.norm = norm;
 var KEY = 'navi-market-v2', MAXP = 200;
 var M = null, LS = {};
 var S = { step:0, prod:{ name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] },
-  mode:'buy', sell:null, listings:[], auto:false, find:{ q:'', site:'coupang', st:'idle', msg:'' }, cands:[], nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
+  mode:'buy', sell:null, listings:[], auto:false, find:{ q:'', site:'web', st:'idle', msg:'' }, cands:[], nts:null, ntsMsg:null, tok:0, ask:null, payMsg:null, bal:'', history:[], memo:'', fin:[], ledger:[], dup:[], dupOverride:false, need:null, rep:null, deal:null, done:null, read:{ st:'idle', msg:'' }, err:'', info:'' };
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
@@ -297,7 +297,7 @@ function safeImg(u) { u = String(u || ''); return /^https:\/\/[^\s"'<>]+$/i.test
 function safeLink(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
 function go(n) { S.tok++; S.step = n; S.err = ''; S.info = ''; if (window.NaviHist) NaviHist.push('market', n); render(); try { M.scrollIntoView({ block:'start' }); } catch (e) { /* 스크롤 불가 */ } }
-function reset(keepHistory) { S.tok++; S.find = { q:'', site:'coupang', st:'idle', msg:'' }; S.cands = []; S.nts = null; S.ntsMsg = null; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
+function reset(keepHistory) { S.tok++; S.find = { q:'', site:'web', st:'idle', msg:'' }; S.cands = []; S.nts = null; S.ntsMsg = null; S.ask = null; S.payMsg = null; S.bal = ''; S.step = 0; S.prod = { name:'', price:'', img:'', link:'', seller:'', sellerTrust:'', as:'', rating:'', count:'', reviews:[], shipping:'', compare:[] }; S.dup = []; S.dupOverride = false; S.need = null; S.rep = null; S.deal = null; S.done = null; S.read = { st:'idle', msg:'' }; clearTimeout(coreT); S.err = ''; S.info = ''; render(); }
 
 // ── 도우미(상품 페이지 읽기) ──
 var SLOT = '시장 상품 확인';
@@ -373,10 +373,11 @@ function askAgent(fallbackStart) {
 
 // ── 상품 찾기: 사용자가 원하는 상품을 도우미가 온라인 시장에서 찾아 후보 몇 개와 장단점을 가져온다 ──
 var SLOT_FIND = '시장 상품 찾기';
-var SITES = { coupang:['쿠팡', 'https://www.coupang.com/np/search?q='], naver:['네이버 쇼핑', 'https://search.shopping.naver.com/search/all?query='], danawa:['다나와', 'https://search.danawa.com/dsearch.php?query='] };
-function searchUrl(site, q) { var s = SITES[site] || SITES.coupang; return s[1] + encodeURIComponent(q); }
+var SITES = { web:['웹 전체', 'https://www.google.com/search?q='], coupang:['쿠팡', 'https://www.coupang.com/np/search?q='], naver:['네이버 쇼핑', 'https://search.shopping.naver.com/search/all?query='], danawa:['다나와', 'https://search.danawa.com/dsearch.php?query='] };
+function searchUrl(site, q) { var s = SITES[site] || SITES.web; if (!SITES[site] || site === 'web') q = q + ' 구매'; return s[1] + encodeURIComponent(q); }   // 쇼핑몰을 지정하지 않으면(기본) 웹 전체를 검색한다
 function goalFind(q, site, url) {
-  return '사용자가 사려는 상품 「' + q + '」을 ' + (SITES[site] || SITES.coupang)[0] + '(' + url + ')에서 찾아 주세요. 로그인이 필요하면 사용자가 로그인하도록 넘기고, 로그인하면 이어서 진행해 주세요. ' +
+  var web = !SITES[site] || site === 'web';
+  return '사용자가 사려는 상품 「' + q + '」을 ' + (web ? '웹 전체에서(특정 쇼핑몰을 정하지 않았으니 검색 결과(' + url + ')와 쇼핑·가격 비교 결과를 이용해 여러 쇼핑몰의 판매 페이지에서 골고루. 상품 링크는 실제 판매 페이지여야 하고 블로그·광고성 글은 피해 주세요)' : (SITES[site] || SITES.web)[0] + '(' + url + ')에서') + ' 찾아 주세요. 로그인이 필요하면 사용자가 로그인하도록 넘기고, 로그인하면 이어서 진행해 주세요. ' +
     '검색 결과에서 서로 다른 후보 3~5개를 골라 주세요(광고 표시가 붙은 것보다 평점·리뷰가 충분한 것을 먼저, 가격대는 다양하게). 후보마다 상품명(페이지 제목 그대로)·가격(원, 숫자)·대표 이미지 주소(https)·상품 링크(https)·판매자·평점(1~5)·리뷰 건수·장점 최대 3개·단점 최대 3개(리뷰와 상품 설명에서 읽은 것만, 짧게)를 읽어 ' +
     'report_data(kind: product, data: { stage: "candidates", candidates: [ { name, price, image, link, seller, rating, count, pros, cons, shipping } ] })로 한 번에 보내 주세요. 화면에서 찾지 못한 값은 비우고 지어내지 마세요. 구매·장바구니·결제는 하지 마세요.';
 }
@@ -424,7 +425,7 @@ function chat(text) {
     var c = S.cands[w.pick]; pickCand(w.pick); return '「' + c.name + '」(' + won(c.price) + '원)으로 구매 검토를 시작할게요. 도우미가 이 상품 페이지에서 판매자 신뢰도·AS·리뷰를 더 읽어 와요. 진행은 시장 화면에서 단계별로 보여 드려요.';
   }
   if (w.site) S.find.site = w.site; S.find.q = w.q; S.find.fromChat = true; askFind();
-  return '「' + w.q + '」을 ' + SITES[S.find.site][0] + '에서 찾도록 나비웹 도우미에게 맡겼어요. 사이트가 열리면 로그인이 필요할 때만 직접 해 주세요. 후보가 오면 장단점과 함께 여기로 알려 드릴게요. 저는 직접 인터넷을 검색하지 못하고, 도우미가 읽어 온 내용만 전해요.';
+  return '「' + w.q + '」을 ' + (S.find.site === 'web' ? '웹 전체' : SITES[S.find.site][0]) + '에서 찾도록 나비웹 도우미에게 맡겼어요. 사이트가 열리면 로그인이 필요할 때만 직접 해 주세요. 후보가 오면 장단점과 함께 여기로 알려 드릴게요. 저는 직접 인터넷을 검색하지 못하고, 도우미가 읽어 온 내용만 전해요.';
 }
 function candTags(i) {
   var tags = [], c = S.cands, me = c[i], low = Math.min.apply(null, c.map(function (x) { return x.price; })), best = -1, bi = -1;
@@ -516,7 +517,7 @@ function findProg() {
   }))]);
 }
 function findBar() {
-  var sel = h('select', { id:'mk-site', 'aria-label':'찾을 쇼핑 사이트' }, Object.keys(SITES).map(function (k) { return h('option', { value:k, text:SITES[k][0], selected:k === S.find.site ? '' : null }); }));
+  var sel = h('select', { id:'mk-site', 'aria-label':'찾을 쇼핑몰(선택, 기본은 웹 전체)', title:'쇼핑몰을 고르지 않으면 웹 전체에서 찾아요' }, Object.keys(SITES).map(function (k) { return h('option', { value:k, text:SITES[k][0], selected:k === S.find.site ? '' : null }); }));
   sel.onchange = function () { S.find.site = sel.value; };
   return h('div', { class:'mk-fbar', id:'mk-fbar' }, [inp('mk-q', '사려는 상품을 말해 주세요 — 도우미가 온라인 시장에서 후보를 찾아 와요', S.find.q, function (v) { S.find.q = v; }, { ph:'예: 무선 청소기 · 100mm 그라인더 · 에어프라이어', max:'60', enter:function () { if (S.find.st !== 'wait') askFind(); } }),
     h('div', { class:'rowf' }, [sel, btn('상품 찾아오기', 'fill', function () { askFind(); }, 'mk-find')])]);
