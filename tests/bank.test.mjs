@@ -80,6 +80,16 @@ test('말로 이동: 송금 값은 채워 두기만 하고, 모르는 조작은 
   p.nav({ do: 'transfer' }); assert.equal(p.out.pop().ok, false);
   p.nav({ do: 'history', range: '30' }); assert.equal(p.out.pop().ok, true); assert.equal(p.doc.querySelector('.seg [aria-pressed=true]').textContent, '30일');
 });
+test('송금·결제: 시뮬레이션 — 가상 구매자·판매자 재무제표가 구매 즉시 갱신된 결과로 나온다', { skip }, async () => {
+  const p = page(); await p.until(/5,200/); p.nav({ do: 'pay' });
+  assert.ok(!p.doc.getElementById('bnk-sim-deal'));
+  p.doc.getElementById('bnk-sim-go').click();
+  const b = p.doc.getElementById('bnk-sim-buyer').textContent, s = p.doc.getElementById('bnk-sim-seller').textContent;
+  assert.ok(b.includes('185,000') && b.includes('65,000') && b.includes('대차가 맞아요'));
+  assert.ok(s.includes('515,000') && s.includes('이익잉여금') && s.includes('106,000') && s.includes('대차가 맞아요'));
+  assert.equal(p.doc.querySelectorAll('#bnk-sim tr.hl').length, 8);   // 바뀐 줄: 구매자 2 + 판매자 대차 3·손익 3
+  p.doc.getElementById('bnk-sim-go').click(); assert.ok(!p.doc.getElementById('bnk-sim-deal'));
+});
 test('거래 내역: 기간별 합계·분야별·청구서·모델별·충전 내역', { skip }, async () => {
   const p = page(); await p.until(/5,200/); p.nav({ do: 'history', range: '7' });
   assert.match(p.txt(), /청구액700원/); assert.match(p.txt(), /API 요청70/); assert.match(p.txt(), /나비 대화·서류 작성·전문가 AI/); assert.match(p.txt(), /K-Law\(법률\)/);
