@@ -149,3 +149,9 @@
 .mkt .mk-dlg{background:var(--bg,#fff);color:inherit;border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px}
 .mkt .mk-dlg b{font-size:18px}
 .mkt .mk-dlg #mk-ask-x{white-space:pre-line}
+
+.mkt .mk-prog{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.mkt .mk-prog li{display:flex;gap:10px;align-items:flex-start;color:var(--sub,#5f6368);font-size:14px}
+.mkt .mk-prog li i{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-style:normal;font-size:12px;border:1px solid currentColor}
+.mkt .mk-prog li.done{color:var(--on,#212529)}.mkt .mk-prog li.done i{background:var(--pri,#3b82f6);border-color:var(--pri,#3b82f6);color:#fff}
+.mkt .mk-prog li.now{color:var(--pri,#3b82f6);font-weight:600}
