@@ -147,3 +147,7 @@
 .tx .tbl th.r{text-align:right}
 .tx .tbl td.sub{white-space:nowrap}
 .tx .tbl td.sub .pill{margin-left:4px}
+/* 재무제표 두 칸은 구매자·판매자를 1:1로 */
+.tx #tx-stmts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tx #tx-stmts .tbl td.sub{white-space:normal}
+@media (max-width:860px){.tx #tx-stmts{grid-template-columns:minmax(0,1fr)}}
