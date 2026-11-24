@@ -1,6 +1,7 @@
 /* ledger-book.js — 나비웹 공통 장부(시장 → 세무 회계 → 은행 → 증권이 같은 장부를 같은 방식으로 읽는다).
  * 사용: NaviLedger.recs() · .bookOf(owner, recs, opt) · .walletBook(recs, bal) · .totals(book) · .saveWallet(bal) · .wallet()
- * 전역은 NaviLedger 하나만 쓴다. 이 파일은 화면을 그리지 않고 읽기·계산만 한다(저장은 saveWallet 한 곳뿐).
+ *       모의 증권 장부: .secLoad() · .secSave(st) · .secState(recs) · .secPlan(state, t) · .secGrant() · .secAppend(st, rec) · .secVerify(recs)
+ * 전역은 NaviLedger 하나만 쓴다. 이 파일은 화면을 그리지 않고 읽기·계산만 한다(저장은 saveWallet 과 모의 증권 장부 secSave 두 곳뿐).
  *
  * 왜 따로 두었나(주피터 지시 2026-11-25): 은행의 현금 계정은 장부의 현금 계정이고 세무 회계의 재무제표와 같은 값이어야 한다.
  * 이전에는 세무 화면(tax-app.js)과 은행 화면(bank-app.js)이 같은 장부를 각자 계산해 시작 값(현금 2,000,000 대 서버 잔액)이 달랐다.
@@ -117,5 +118,90 @@ function summary(owner) {
     sales:num(b['매출']), equity:t.E, assets:t.A, debt:t.L,
     cogs:pi.cogs, profit:pi.gross, profitKnown:pi.known, uncoveredRevenue:pi.uncovered };
 }
-window.NaviLedger = { ASSETS:ASSETS, LIABS:LIABS, EQUITY:EQUITY, LMAP:LMAP, recs:recs, wallet:wallet, saveWallet:saveWallet, deltas:deltas, cashDelta:cashDelta, costFlow:costFlow, profitInfo:profitInfo, bookOf:bookOf, totals:totals, walletBook:walletBook, summary:summary };
+
+// ── 모의 증권 장부(테스트 GDC) — 증권 AI 갱신 4단계 ──
+// 실제 GDC·증권이 오가지 않는다. 증권 화면의 모의 주문이 만드는 전표를 같은 분개 형식(계정·차변·대변)과 일련번호로 남기고,
+// 전표마다 앞 전표의 해시를 이어 붙여(해시 이음) 몰래 고치면 드러나게 한다. 보유 종목·손익은 이 전표에서만 계산한다.
+// 모의 계좌는 실제 은행 장부(현금(GDC))와 섞이지 않는다: 계정 이름이 달라 은행·세무 재무제표에는 들어가지 않는다.
+var SEC_KEY = 'navi-sec-v1', SIM_GRANT = 10000000, FEE_RATE = 0.000015, DEV_LIMIT = 0.3, SEC_MAX = 500;
+var SEC_CASH = '모의 현금(테스트 GDC)', SEC_INV = '투자자산(증권·모의)', SEC_CAP = '모의 자본금', SEC_PL = '증권 처분손익', SEC_FEE = '증권 수수료';
+function kstDate() { return new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul' }).format(new Date()); }
+function kstNow() { var m = {}; new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).formatToParts(new Date()).forEach(function (x) { m[x.type] = x.value; }); return m.year + '-' + m.month + '-' + m.day + ' ' + (m.hour === '24' ? '00' : m.hour) + ':' + m.minute + ':' + m.second; }
+function goodSec(r) { return !!r && typeof r.serial === 'string' && (r.kind === 'grant' || r.kind === 'buy' || r.kind === 'sell') && Array.isArray(r.lines) && r.lines.every(isLine) && typeof r.hash === 'string' && typeof r.prev === 'string' && typeof r.at === 'string'; }
+function secLoad() {
+  try { var v = JSON.parse(localStorage.getItem(SEC_KEY) || 'null'); return { recs:v && Array.isArray(v.recs) ? v.recs.filter(goodSec) : [], alerts:v && Array.isArray(v.alerts) ? v.alerts.filter(function (a) { return a && typeof a.msg === 'string'; }).slice(0, 50) : [] }; } catch (e) { return { recs:[], alerts:[] }; }
+}
+function secSave(st) { try { localStorage.setItem(SEC_KEY, JSON.stringify({ recs:st.recs, alerts:st.alerts })); return true; } catch (e) { return false; } }
+function secFee(amt) { return Math.round(amt * FEE_RATE); }
+/** 전표 목록(오래된 것부터) → 현금·보유 종목(평균단가법)·처분손익·수수료. 대차(자산 = 자본 + 처분손익 − 수수료)도 함께 낸다. */
+function secState(recs) {
+  var st = { cash:0, hold:{}, realized:0, fees:0, grant:0, last:{} };
+  (recs || []).forEach(function (r) {
+    if (r.kind === 'grant') { st.cash += num(r.amt); st.grant += num(r.amt); return; }
+    var q = num(r.qty), px = num(r.px), f = num(r.fee), amt = Math.round(q * px), h = st.hold[r.sym] || (st.hold[r.sym] = { sym:r.sym, cls:r.cls, qty:0, cost:0 });
+    st.last[r.sym] = px; st.fees += f;
+    if (r.kind === 'buy') { h.qty += q; h.cost += amt; st.cash -= amt + f; }
+    else { var out = h.qty > 0 ? Math.round(h.cost / h.qty * q) : 0; st.realized += amt - out; st.cash += amt - f; h.qty -= q; h.cost -= out; if (h.qty <= 1e-9) { h.qty = 0; h.cost = 0; } }
+  });
+  var inv = 0; Object.keys(st.hold).forEach(function (k) { inv += st.hold[k].cost; });
+  st.invest = inv; st.balanced = st.cash + inv === st.grant + st.realized - st.fees;
+  st.positions = Object.keys(st.hold).map(function (k) { var h = st.hold[k]; h.avg = h.qty > 0 ? h.cost / h.qty : 0; return h; }).filter(function (h) { return h.qty > 0; });
+  return st;
+}
+/** 주문 한 건의 분개. 산 것: 투자자산 차변 · 수수료 차변 / 모의 현금 대변. 판 것: 모의 현금 차변 · 수수료 차변 / 투자자산(평균 장부가) 대변 · 처분손익 대변(손실이면 차변). */
+function secLines(st, kind, sym, qty, px) {
+  var amt = Math.round(qty * px), fee = secFee(amt), h = st.hold[sym], cost = 0, lines;
+  if (kind === 'buy') lines = [[SEC_INV, amt, 0], [SEC_FEE, fee, 0], [SEC_CASH, 0, amt + fee]];
+  else {
+    cost = h && h.qty > 0 ? Math.round(h.cost / h.qty * qty) : 0; var gain = amt - cost;
+    lines = [[SEC_CASH, amt - fee, 0], [SEC_FEE, fee, 0], [SEC_INV, 0, cost]]; lines.push(gain >= 0 ? [SEC_PL, 0, gain] : [SEC_PL, -gain, 0]);
+  }
+  return { amt:amt, fee:fee, cost:cost, lines:lines.filter(function (l) { return l[1] || l[2]; }) };
+}
+/** 주문 검사와 분개 만들기. 감독 규칙: 직전 체결가에서 DEV_LIMIT(30%) 넘게 벗어난 가격은 보류하고 alert 를 돌려준다. t = { kind:'buy'|'sell', sym, cls, qty, px, d } */
+function secPlan(st, t, count) {
+  var sym = String(t && t.sym || '').replace(/[\u0000-\u001f<>]+/g, ' ').trim().slice(0, 30), q = Number(t && t.qty), px = Number(t && t.px);
+  if (!sym) return { ok:false, msg:'종목 이름을 적어 주세요.' };
+  if (!(q > 0) || q > 1e9 || Math.round(q) !== q) return { ok:false, msg:'수량은 1 이상의 정수로 적어 주세요.' };
+  if (!(px > 0) || px > 1e10) return { ok:false, msg:'체결 가격(원)을 0보다 크게 적어 주세요.' };
+  if (count != null && count >= SEC_MAX) return { ok:false, msg:'모의 장부는 전표 ' + SEC_MAX + '건까지 둘 수 있어요.' };
+  var last = st.last[sym];
+  if (last && Math.abs(px / last - 1) > DEV_LIMIT) { var dev = Math.round((px / last - 1) * 1000) / 10; return { ok:false, msg:'이상 징후: ' + sym + '의 직전 체결가 ' + Math.round(last).toLocaleString('ko-KR') + '원보다 ' + Math.abs(dev) + '% ' + (dev > 0 ? '높은' : '낮은') + ' 가격이라 감독 규칙이 주문을 보류했어요(허용 ±' + DEV_LIMIT * 100 + '%).', alert:{ at:kstNow(), sym:sym, msg:sym + ' 주문 보류: 직전 체결가 대비 ' + dev + '%', rule:'직전 체결가 ±' + DEV_LIMIT * 100 + '%' } }; }
+  var kind = t.kind === 'sell' ? 'sell' : 'buy', h = st.hold[sym], L = secLines(st, kind, sym, q, px);
+  if (kind === 'buy' && st.cash < L.amt + L.fee) return { ok:false, msg:'모의 현금이 모자라요(필요 ' + (L.amt + L.fee).toLocaleString('ko-KR') + '원, 있는 돈 ' + Math.round(st.cash).toLocaleString('ko-KR') + '원).' };
+  if (kind === 'sell' && !(h && h.qty >= q)) return { ok:false, msg:'보유한 수량보다 많이 팔 수 없어요(보유 ' + (h ? h.qty : 0) + ').' };
+  return { ok:true, rec:{ kind:kind, sym:sym, cls:t.cls || '기타', qty:q, px:px, fee:L.fee, amt:L.amt, lines:L.lines, d:t.d || kstDate() }, fee:L.fee };
+}
+function secGrant() { return { kind:'grant', amt:SIM_GRANT, lines:[[SEC_CASH, SIM_GRANT, 0], [SEC_CAP, 0, SIM_GRANT]], d:kstDate() }; }
+function secSerial(recs, d) { return 'SC-' + String(d).replace(/-/g, '') + '-' + String(recs.length + 1).padStart(5, '0'); }
+function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join(''); }
+function secHash(r) {
+  var sb = null; try { sb = window.crypto && window.crypto.subtle; } catch (e) { sb = null; }
+  if (!sb || typeof TextEncoder === 'undefined') return Promise.resolve(null);
+  return sb.digest('SHA-256', new TextEncoder().encode(JSON.stringify([r.serial, r.at, r.kind, r.sym || '', r.qty || 0, r.px || 0, r.fee || 0, r.amt || 0, r.lines, r.prev || '']))).then(hex, function () { return null; });
+}
+/** 계획된 전표에 일련번호·일시·앞 전표 해시·자기 해시를 붙인다(저장은 호출한 쪽이 한다). 해시를 못 만들면 null. */
+function secAppend(st, rec) {
+  var prev = st.recs.length ? st.recs[st.recs.length - 1].hash : '', r = {}, k; for (k in rec) r[k] = rec[k];
+  r.serial = secSerial(st.recs, rec.d); r.at = kstNow(); r.prev = prev;
+  return secHash(r).then(function (x) { if (!x) return null; r.hash = x; return r; });
+}
+/** 장부 확인: 해시 이음(앞 전표 해시·자기 해시)과 분개(같은 주문에서 다시 만든 값)가 모두 맞는지. */
+function secVerify(recs) {
+  recs = recs || []; var i = 0;
+  function step() {
+    if (i >= recs.length) return Promise.resolve({ ok:true, n:recs.length, bad:-1, why:'' });
+    var r = recs[i], prev = i ? recs[i - 1].hash : '', at = i;
+    if (r.prev !== prev) return Promise.resolve({ ok:false, n:recs.length, bad:at, why:'앞 전표와의 해시 이음이 끊겼어요' });
+    return secHash(r).then(function (x) {
+      if (!x) return { ok:false, n:recs.length, bad:at, why:'이 브라우저에서는 해시를 만들 수 없어요' };
+      if (x !== r.hash) return { ok:false, n:recs.length, bad:at, why:'전표 내용이 기록된 해시와 달라요' };
+      if (r.kind !== 'grant') { var L = secLines(secState(recs.slice(0, at)), r.kind, r.sym, r.qty, r.px); if (JSON.stringify(L.lines) !== JSON.stringify(r.lines) || L.fee !== r.fee || L.amt !== r.amt) return { ok:false, n:recs.length, bad:at, why:'분개가 주문 내용에서 다시 만든 값과 달라요' }; }
+      i++; return step();
+    });
+  }
+  return step();
+}
+window.NaviLedger = { ASSETS:ASSETS, LIABS:LIABS, EQUITY:EQUITY, LMAP:LMAP, recs:recs, wallet:wallet, saveWallet:saveWallet, deltas:deltas, cashDelta:cashDelta, costFlow:costFlow, profitInfo:profitInfo, bookOf:bookOf, totals:totals, walletBook:walletBook, summary:summary,
+  SIM_GRANT:SIM_GRANT, FEE_RATE:FEE_RATE, DEV_LIMIT:DEV_LIMIT, SEC_ACCOUNTS:{ cash:SEC_CASH, inv:SEC_INV, cap:SEC_CAP, pl:SEC_PL, fee:SEC_FEE }, secLoad:secLoad, secSave:secSave, secState:secState, secLines:secLines, secPlan:secPlan, secGrant:secGrant, secAppend:secAppend, secVerify:secVerify, secFee:secFee };
 })();
