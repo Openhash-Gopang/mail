@@ -165,3 +165,11 @@
 .bnk #bnk-sim .stbl td.chg{color:var(--m);font-weight:700;white-space:nowrap}
 .bnk #bnk-sim .stbl td.chg.neg{color:var(--l)}
 .bnk #bnk-sim .stcol>.sub{padding:8px 12px}
+/* 거래 내역·신용 등급·대출 시뮬레이션: 표와 단색 차트 */
+.bnk #bnk-hsim .stbl,.bnk #bnk-csim .stbl,.bnk #bnk-lsim .stbl{font-size:13px}
+.bnk #bnk-hsim .stbl td,.bnk #bnk-csim .stbl td,.bnk #bnk-lsim .stbl td{padding:6px 8px}
+.bnk #bnk-csim .stbl tr.tot td,.bnk #bnk-lsim .stbl tr.tot td{font-weight:600;border-top:1px solid var(--m3-outline)}
+.bnk #bnk-csim .stbl tr.hl td,.bnk #bnk-lsim .stbl tr.hl td{font-weight:700;background:var(--soft)}
+.bnk #bnk-lsim .stbl tr.dim td{color:var(--on2)}
+.bnk #bnk-csim .stbl tr.sec td{color:var(--on2);font-weight:600}
+.bnk #bnk-hsim svg text,.bnk #bnk-csim svg text,.bnk #bnk-lsim svg text{font-family:inherit}
