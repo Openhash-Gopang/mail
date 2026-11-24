@@ -24,8 +24,9 @@
 storage: 나비웹에서 맡긴 작업(절차 이름·지시문)과 설정을 임시 저장하기 위해. 세션 저장소에는 나비웹 로그인 토큰을 브라우저를 닫을 때까지만 둔다.
 sidePanel: 진행 상황과 사용자 승인(허용/확인/직접 진행) 창을 표시하기 위해.
 downloads: 서류 발급 결과를 사용자가 내려받으면 내려받기 기록에서 그 파일의 주소를 확인해, 파일을 나비웹 화면으로 전달하기 위해. 파일 내용은 AI 모델로 보내지 않는다.
-optional_host_permissions(https://*/*): 맡긴 작업이 여러 사이트에 걸치므로, 사용자가 사이트별로 직접 허용한 경우에만 그 사이트에서 동작하기 위해. 설치 시에는 부여되지 않는다.
-host_permissions(naviweb.kr, hondi.net): 나비웹 화면에서 확장 프로그램 설치 여부 확인과 작업 맡기기 신호를 받기 위해.
+debugger(영문 입력용): The debugger permission is used only for two actions on the tab the user handed to the extension, and only while that task is running: (1) Input.dispatchMouseEvent: to perform a real (trusted) mouse click on an issue/print button, because Korean government and certificate sites (e.g. iros.go.kr, gov.kr) ignore synthetic JavaScript clicks on those buttons. (2) Page.printToPDF: to save the currently displayed issued document as a PDF file when the site offers no download link. The debugger is attached only to the task tab, sends one command, and is detached immediately afterwards. It is never used to read network traffic, cookies, passwords or page storage, and nothing obtained through it is sent to any server other than the user's own naviweb.kr page.
+host_permissions(https://*/*): 맡긴 작업이 정부·기관 등 여러 사이트에 걸쳐 사이트 목록을 미리 정할 수 없어서. 사용자가 나비웹에서 시작한 작업의 탭에서만 동작하고, 처음 가는 사이트는 사용자가 사이드 패널에서 허용한 뒤에만 진행한다. (영문: Tasks handed over by the user span many government and institution sites that cannot be listed in advance. The extension acts only on the tab of a task the user started from naviweb.kr and operates on a site only after the user allows it in the side panel.)
+content_scripts(naviweb.kr, *.naviweb.kr, *.hondi.net): 나비웹 화면에서 확장 프로그램 설치 여부 확인과 작업 맡기기 신호를 받기 위해.
 원격 코드 없음: 모든 코드는 패키지에 포함되어 있다. AI 모델 응답은 데이터(도구 호출 정보)로만 쓰이고 코드로 실행되지 않는다.</pre>
 <h2>단일 목적 설명</h2>
 <pre>나비웹에서 맡긴 웹 사이트 작업을 사용자 승인 아래 대신 진행한다.</pre>
