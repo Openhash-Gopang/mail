@@ -1317,7 +1317,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .simbtn.simbtn{min-height:30px!important;height:30px;padding:0 12px!important;font-size:13px!important;line-height:1;border-radius:99px;white-space:nowrap;flex:0 0 auto;margin:0;cursor:pointer}
 .brand:has(> .simbtn){display:flex;align-items:center;justify-content:space-between;gap:12px}
 .m3-head:has(> .simbtn){position:relative;padding-right:110px}.m3-head > .simbtn{position:absolute;right:0;top:0}
-.gl-head > .simbtn{margin-left:auto}</style>
+.gl-head > .simbtn{margin-left:auto}
+.settings-head:has(> .simbtn){display:flex;align-items:center;justify-content:space-between;gap:12px}</style>
 </head>
 <body>
 <button type="button" id="hd-pull" aria-label="상단 메뉴 막대 보이기 — 아래로 끌어 내리세요" title="아래로 끌어 내리면 상단 막대가 보입니다"></button>
@@ -2106,7 +2107,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-settings" class="tab-panel">
     <div class="settings-head">
       <h2>설정</h2>
-      
+      <button type="button" class="mfb-btn simbtn" id="settings-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('settings',_SET_CUR_SEC())">시뮬레이션</button>
     </div>
     <div class="set-tabs" role="tablist" aria-label="설정 항목">
       <button type="button" role="tab" id="set-tab-account" class="active" aria-selected="true" onclick="_settingsSwitch('account')">계정</button>
@@ -3567,7 +3568,7 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
-const _SIM_V = '20261125g';
+const _SIM_V = '20261125h';
 // 내 기록(PDV) 안의 탭을 옮기면 시뮬레이션 패널도 그 탭으로 따라간다(PDV 탭 id: t-vault·t-tx·t-is…)
 document.addEventListener('click', (e) => { const b = e.target && e.target.closest && e.target.closest('#pdv-root [role=tab]'); if (b && b.id && window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('pdv', b.id.replace(/^t-/, '')); });
 window._simOpen = function (kind, tab) {   // 가상 데이터 시뮬레이션은 팝업이 아니라 페이지 오른쪽에서 밀려 나오는 패널로 열고, 탭마다 다른 시뮬레이션을 보여 준다
@@ -7102,8 +7103,10 @@ async function _rnSave() {
   catch (e) { _rnHelp(e.message, 'err'); }
   b.disabled = false;
 }
+function _SET_CUR_SEC() { const ts = document.getElementById('tab-settings'); return (ts && ts.getAttribute('data-sec')) || 'account'; }
 function _settingsSwitch(name) {
   if (!_SET_SECTIONS.includes(name)) name = 'account';
+  if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('settings', name);   // 시뮬레이션 패널이 열려 있으면 이 탭의 시뮬레이션으로 따라간다
   if (name === 'gdc') _gdcLoad();   // GDC 잔액·사용량(그래프)
   if (name === 'pdv' && window._pdvMount) window._pdvMount();   // 내 기록(PDV) — iframe 없이 직접 그린다(pdv-panel.js)
   if (name === 'profile') _rnLoad();   // 실명 칸(입금자 확인용)
