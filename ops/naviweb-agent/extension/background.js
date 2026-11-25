@@ -17,6 +17,12 @@ async function cfg() {
   return { gateway: (o.gateway || DEFAULT_GATEWAY).replace(/\/$/, ''), token: o.token || '', userToken: s.userToken || '', provider: o.provider || '' };
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// 0.7.1: 작업 진행 단계를 서비스 워커 콘솔과 나비웹 화면(onStatus, state:'step')에 남긴다 — 어디서 멈췄는지 바로 보이도록.
+function trace(text) {
+  const t = String(text || '').slice(0, 180); if (!t) return;
+  try { console.log('[도우미]', t); } catch { /* 콘솔 없음 */ }
+  try { deliverToNavi({ kind: 'status', label: (state && state.slot) || '도우미', state: 'step', note: t }).catch(() => {}); } catch { /* 나비웹 탭 없음 */ }
+}
 
 // 사이트별 접근 허용: 처음 가는 사이트는 브라우저의 허용 창(사용자 승인)을 거쳐야 읽고 조작할 수 있다.
 async function ensureHost(tabId) {
@@ -25,6 +31,7 @@ async function ensureHost(tabId) {
   if (u.protocol !== 'https:') throw new Error('https 사이트만 조작할 수 있습니다.');
   const origins = [`https://${u.hostname}/*`];
   if (await chrome.permissions.contains({ origins })) return;
+  trace(u.hostname + ' 접근 허용 창을 띄웁니다. 허용을 눌러 주세요.');
   if (!(await ask('permit', u.hostname))) { state.abort = true; throw new Error(`${u.hostname} 접근을 허용하지 않아 중단합니다.`); }
   if (!(await chrome.permissions.contains({ origins }))) { state.abort = true; throw new Error(`${u.hostname} 접근 권한을 받지 못해 중단합니다.`); }
 }
@@ -230,11 +237,11 @@ async function host(playbook) {
   const c = await cfg();
   const mine = state;
   return {
-    progress: (t) => { if (!mine.abort) overlay('busy', t); },
+    progress: (t) => { trace(t); if (!mine.abort) overlay('busy', t); },
     fetchJob: () => !!mine.slot,   // "도우미가 가져오기"(항목 지정)로 시작한 작업
     aborted: () => mine.abort,   // 이 작업의 중단 표시(새 작업이 state 를 바꿔도 옛 작업은 자기 표시를 본다)
     inbox: () => state.inbox.shift() || null,
-    log: (e) => say({ type: 'log', e }),
+    log: (e) => { try { if (e && (e.kind === 'tool' || e.kind === 'say' || e.kind === 'error')) trace((e.name ? e.name + ': ' : '') + (e.text || e.summary || e.result || '')); } catch { /* 기록 실패는 무시 */ } say({ type: 'log', e }); },
     async callModel(body) {
       const r = await postStep(c, body, (n) => { if (!mine.abort) overlay('busy', `도우미 서버 연결을 다시 시도하는 중입니다 (${n}/3)`); });
       const j = await r.json().catch(() => ({}));
@@ -341,7 +348,9 @@ async function host(playbook) {
       }
       if (name === 'upload_attached_file') {   // 나비웹이 맡긴 파일을 이 사이트의 올리기 칸에 넣는다(파일 내용은 AI 에게 보내지 않는다)
         const a = state.attach; if (!a) return { text: '이 작업에는 나비웹이 맡긴 파일이 없습니다.' };
+        trace('파일 올리기 칸에 넣는 중: ' + a.name);
         const r = await toTab('upload_attached_file', { ...(input || {}), name: a.name, mime: a.mime, b64: a.b64 });
+        trace('파일 넣기 결과: ' + String(r.text || '').slice(0, 120));
         return { text: String(r.text || '파일을 넣었습니다.') };
       }
       if (name === 'wait') { await wait(Math.min(10, Number(input.seconds) || 1) * 1000); return { text: '대기 완료' }; }
@@ -425,6 +434,7 @@ async function runJob(m) {
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
       state.tabId = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
+      trace('0.7.1 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
@@ -432,7 +442,7 @@ async function runJob(m) {
       say({ type: 'done', res });
       if (res && res.done) await overlay('done', String(res.text || '작업을 마쳤습니다.').replace(/[#*`]/g, '').slice(0, 300));
       else await overlay(res && res.reason === 'aborted' ? 'off' : 'error', '작업을 끝내지 못했습니다. 나비웹 화면에서 다시 맡겨 주세요.');
-    } catch (e) { say({ type: 'error', text: e.message }); await overlay('error', e.message); }
+    } catch (e) { trace('오류: ' + e.message); say({ type: 'error', text: e.message }); await overlay('error', e.message); }
     clearInterval(keep); me.running = false;   // 새 작업이 이미 state 를 바꿨다면 그 작업의 표시는 건드리지 않는다
   }
 // 설치·업데이트·브라우저 시작 때 이미 열려 있는 나비웹 탭에도 다리(bridge.js)를 바로 넣는다.
