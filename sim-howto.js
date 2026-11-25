@@ -39,44 +39,63 @@ var CSS = '.nhow-pn{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw)
   + '.nhow-pn .ordl{display:flex;flex-wrap:wrap;gap:6px}.nhow-pn .ordl button{border-radius:10px;text-align:left}.nhow-pn .ordl button.used{background:#e3f6ec;border-color:#1e8a5a}.nhow-pn .seq{margin:6px 0;padding-left:20px;font-size:13px}'
   + '@media (prefers-reduced-motion:reduce){.nhow-pn{transition:none}}';
 
+CSS += '.nhow-pn .hd>div:first-child{align-items:flex-start}.nhow-pn .hd h2{min-width:0;overflow-wrap:anywhere}.nhow-pn #hw-close{flex:none;white-space:nowrap}'
+  + '.nhow-pn details.how{margin:6px 0 0}.nhow-pn details.how summary{cursor:pointer;font-size:12.5px;font-weight:700;color:#1a4fa3}.nhow-pn details.how .role{margin-top:6px}'
+  + '.nhow-pn .fbslot:empty{display:none}.nhow-pn .fbslot{margin:0 0 8px}.nhow-pn .ordl button[hidden]{display:none}.nhow-pn .pos{margin:8px 0 6px;font-size:13px;font-weight:700;color:#174ea6}'
+  + '.nhow-pn .seq{list-style:none;counter-reset:s;margin:6px 0;padding:0}.nhow-pn .seq li{counter-increment:s;margin:4px 0;padding:6px 10px;border-radius:10px;background:#e3f6ec;border:1px solid #1e8a5a;font-size:13px}.nhow-pn .seq li:before{content:counter(s)". ";font-weight:700;color:#146c43}';
+
 var SC = {};     // 장 id → 시나리오
 var PN = null, CUR = null, prevFocus = null, SV = null;
-// SV = { id, seed, salt, i, res:[{tries, first, done}] }
+// SV = { id, seed, i, res:[{tries, first, done, salt, why}] } — 단계마다 자기 salt(다시 해 보기)와 결과를 따로 가진다
 function S(id, o) { o.id = id; SC[id] = o; }
 var onQuizCb = null;
+function newRes(salt) { return { tries: 0, first: null, done: false, salt: salt || 0, why: '' }; }
 
-/* ── 단계 유형별 그리기 ───────────────────────────────────────────── */
-function rngFor(i) { return mk(SV.seed * 31 + i * 7919 + SV.salt * 104729 + 17); }
-function pickItem(step, i) { if (step.gen) return step.gen(rngFor(i)); if (step.v) return step.v[(SV.seed + i + SV.salt) % step.v.length]; return step; }
-function note(box, cls, txt) { var o = box.querySelector('.fb'); if (o) o.remove(); box.appendChild(h('div', { class: 'fb ' + cls, role: 'status', text: txt })); }
+/* ── 공통 틀: 질문 → 피드백 자리 → 풀이 영역. 피드백은 항상 질문 바로 아래에 보인다 ── */
+function rngFor(i, off) { return mk(SV.seed * 31 + (i + (off || 0)) * 7919 + SV.res[i].salt * 104729 + 17); }
+function pickItem(step, i) { if (step.gen) return step.gen(rngFor(i)); if (step.v) return step.v[(SV.seed + i + SV.res[i].salt) % step.v.length]; return step; }
+function hdr(box, it) {
+  box.appendChild(h('div', { class: 'q', text: it.q }));
+  if (it.facts) box.appendChild(h('div', { class: 'sub', text: it.facts }));
+  box.appendChild(h('div', { class: 'fbslot', role: 'status', 'aria-live': 'polite' }));
+}
+function note(box, cls, txt) {
+  var s = box.querySelector('.fbslot');
+  if (!s) { s = h('div', { class: 'fbslot', role: 'status', 'aria-live': 'polite' }); box.insertBefore(s, box.children[1] || null); }
+  s.className = 'fbslot fb ' + cls; s.textContent = txt;
+  if (s.scrollIntoView) { try { s.scrollIntoView({ block: 'nearest' }); } catch (e) { /* 스크롤 불가는 무시 */ } }
+}
+function nextBtn(i) { var nxt = i + 1 < SC[SV.id].steps.length; return h('button', { type: 'button', class: 'pri', id: 'hw-next', text: nxt ? '다음 단계' : '결과 보기', onclick: function () { SV.i = i + 1; render(); } }); }
 function finish(i, box, why) {
-  var R = SV.res[i]; R.done = true; if (why) note(box, 'ok', '✔ ' + why);
-  var nxt = i + 1 < SC[SV.id].steps.length;
-  box.appendChild(h('div', { class: 'row' }, [h('button', { type: 'button', class: 'pri', id: 'hw-next', text: nxt ? '다음 단계' : '결과 보기', onclick: function () { SV.i = i + 1; render(); } })]));
+  var R = SV.res[i]; R.done = true; R.why = why || '';
+  if (why) note(box, 'ok', '✔ ' + why);
+  box.appendChild(h('div', { class: 'row' }, [nextBtn(i)]));
   dots();
 }
+/* 같은 단계를 새 상황으로 다시: 이 단계의 상황만 바꾸고 다른 단계는 그대로 둔다(시도 횟수·처음 맞힘은 이어 센다) */
+function redo(i) { var R = SV.res[i]; R.salt++; R.done = false; R.why = ''; render(); }
 function again(i, box) {
   if (box.querySelector('.hw-again')) return;
-  box.appendChild(h('div', { class: 'row hw-again' }, [h('button', { type: 'button', id: 'hw-again', text: '다른 상황으로 한 번 더', onclick: function () { SV.salt++; SV.res[i] = { tries: SV.res[i].tries, first: SV.res[i].first, done: false }; render(); } })]));
+  box.appendChild(h('div', { class: 'row hw-again' }, [h('button', { type: 'button', id: 'hw-again', text: '다른 상황으로 한 번 더', onclick: function () { redo(i); } })]));
 }
 var TYPES = {};
 TYPES.pick = function (step, i, box) {
-  var it = pickItem(step, i), r = rngFor(i + 100), idx = it.opts.map(function (_, k) { return k; }), ord = it.fixed ? idx : shuf(idx, r), R = SV.res[i];
-  box.appendChild(h('div', { class: 'q', text: it.q }));
+  var it = pickItem(step, i), r = rngFor(i, 100), idx = it.opts.map(function (_, k) { return k; }), ord = it.fixed ? idx : shuf(idx, r), R = SV.res[i];
+  hdr(box, it);
   var wrap = h('div', { class: 'opts' });
   ord.forEach(function (k) {
     wrap.appendChild(h('button', { type: 'button', 'data-k': String(k), text: it.opts[k], onclick: function () {
       if (R.done) return; R.tries++;
       var okk = Array.isArray(it.a) ? it.a.indexOf(k) >= 0 : it.a === k;
       if (okk) { if (R.first == null) R.first = true; Array.prototype.forEach.call(wrap.children, function (b) { b.disabled = true; }); finish(i, box, it.why); }
-      else { if (R.first == null) R.first = false; note(box, 'no', '아니에요. ' + ((it.no && it.no[k]) || '다시 골라 보세요.')); if (R.tries >= 2) { note(box, 'no', '아니에요. ' + ((it.no && it.no[k]) || '다시 골라 보세요.') + ' (힌트: ' + (it.hint || it.why) + ')'); again(i, box); } }
+      else { if (R.first == null) R.first = false; var m = '아니에요. ' + ((it.no && it.no[k]) || '다시 골라 보세요.'); note(box, 'no', R.tries >= 2 ? m + ' (힌트: ' + (it.hint || it.why) + ')' : m); if (R.tries >= 2) again(i, box); }
     } }));
   });
   box.appendChild(wrap);
 };
 TYPES.sort = function (step, i, box) {
-  var it = pickItem(step, i), r = rngFor(i + 100), order = shuf(it.items.map(function (_, k) { return k; }), r), R = SV.res[i], pick = {}, rows = {};
-  box.appendChild(h('div', { class: 'q', text: it.q }));
+  var it = pickItem(step, i), r = rngFor(i, 100), order = shuf(it.items.map(function (_, k) { return k; }), r), R = SV.res[i], pick = {}, rows = {};
+  hdr(box, it);
   order.forEach(function (k) {
     var row = h('div', { class: 'sorti', 'data-k': String(k) }, [h('div', { class: 't', text: it.items[k][0] })]);
     it.buckets.forEach(function (b, bi) { row.appendChild(h('button', { type: 'button', 'data-b': String(bi), text: b, onclick: function () { if (R.done) return; pick[k] = bi; Array.prototype.forEach.call(row.querySelectorAll('button'), function (x) { x.className = x.getAttribute('data-b') === String(bi) ? 'cur' : ''; }); row.className = 'sorti'; } })); });
@@ -85,26 +104,28 @@ TYPES.sort = function (step, i, box) {
   box.appendChild(h('div', { class: 'row' }, [h('button', { type: 'button', class: 'pri', id: 'hw-check', text: '확인', onclick: function () {
     if (R.done) return; if (Object.keys(pick).length < it.items.length) { note(box, 'nt', '모든 항목을 하나씩 골라 주세요.'); return; }
     R.tries++; var bad = 0; it.items.forEach(function (x, k) { var okk = pick[k] === x[1]; rows[k].className = 'sorti ' + (okk ? 'good' : 'bad'); if (!okk) bad++; });
-    if (!bad) { if (R.first == null) R.first = true; finish(i, box, it.why); }
+    if (!bad) { if (R.first == null) R.first = true; Array.prototype.forEach.call(box.querySelectorAll('.sorti button'), function (b) { b.disabled = true; }); finish(i, box, it.why); }
     else { if (R.first == null) R.first = false; note(box, 'no', bad + '개가 달라요. 붉게 표시된 줄만 다시 골라 확인해 보세요.'); if (R.tries >= 2) again(i, box); }
   } })]));
 };
+/* 순서 맞추기: 고른 순서가 위에 쌓이고, 고른 항목은 선택지에서 빠진다. 틀리면 그 항목이 몇 번째 단계인지 알려 준다. */
 TYPES.order = function (step, i, box) {
-  var it = pickItem(step, i), r = rngFor(i + 100), R = SV.res[i], n = it.items.length, nextIdx = 0, shown = shuf(it.items.map(function (_, k) { return k; }), r), list = h('ol', { class: 'seq' });
-  box.appendChild(h('div', { class: 'q', text: it.q })); box.appendChild(h('div', { class: 'sub', text: '맨 처음 할 일부터 차례로 눌러 보세요.' }));
-  var wrap = h('div', { class: 'ordl' });
+  var it = pickItem(step, i), r = rngFor(i, 100), R = SV.res[i], n = it.items.length, nextIdx = 0, shown = shuf(it.items.map(function (_, k) { return k; }), r), list = h('ol', { class: 'seq' }), pos = h('div', { class: 'pos' }), wrap = h('div', { class: 'ordl' });
+  hdr(box, it); box.appendChild(h('div', { class: 'sub', text: '처음 할 일부터 한 단계씩 골라 보세요. 고른 순서가 아래에 쌓여요.' }));
+  function setPos() { pos.textContent = nextIdx < n ? (nextIdx + 1) + '번째로 할 일을 고르세요 (' + nextIdx + '/' + n + ')' : '순서를 모두 맞혔어요 (' + n + '/' + n + ')'; }
+  function put(k) { var b = wrap.querySelector('button[data-k="' + k + '"]'); if (b) b.hidden = true; list.appendChild(h('li', { text: it.items[k] })); }
   shown.forEach(function (k) {
-    wrap.appendChild(h('button', { type: 'button', 'data-k': String(k), text: it.items[k], onclick: function (ev) {
-      if (R.done) return; var b = ev.currentTarget; if (b.className === 'used') return;
-      if (k === nextIdx) { b.className = 'used'; list.appendChild(h('li', { text: it.items[k] })); nextIdx++; if (R.first == null && R.tries === 0) R.first = true; if (nextIdx === n) { if (R.first == null) R.first = false; Array.prototype.forEach.call(wrap.children, function (x) { x.disabled = true; }); finish(i, box, it.why); } }
-      else { R.tries++; R.first = false; note(box, 'no', '아직은 이 단계가 아니에요. ' + (it.hint || '앞에 먼저 해야 할 일이 있어요.')); if (R.tries >= 3) again(i, box); }
+    wrap.appendChild(h('button', { type: 'button', 'data-k': String(k), text: it.items[k], onclick: function () {
+      if (R.done) return;
+      if (k === nextIdx) { put(k); nextIdx++; if (R.first == null && R.tries === 0) R.first = true; setPos(); note(box, 'nt', ''); if (nextIdx === n) { Array.prototype.forEach.call(wrap.children, function (x) { x.disabled = true; }); finish(i, box, it.why); } }
+      else { R.tries++; R.first = false; note(box, 'no', '아니에요. 그 일은 ' + (k + 1) + '번째 단계예요(지금은 ' + (nextIdx + 1) + '번째를 고를 차례). ' + (k > nextIdx ? '그 전에 해야 할 일이 더 있어요.' : '') + (it.hint ? ' ' + it.hint : '')); if (R.tries >= 3 && !box.querySelector('.hw-again')) box.appendChild(h('div', { class: 'row hw-again' }, [h('button', { type: 'button', id: 'hw-show', text: '정답 순서 보기', onclick: function () { for (var q = nextIdx; q < n; q++) put(q); nextIdx = n; setPos(); Array.prototype.forEach.call(wrap.children, function (x) { x.disabled = true; }); box.querySelector('.hw-again').remove(); finish(i, box, it.why); } }), h('button', { type: 'button', id: 'hw-again', text: '다른 상황으로 한 번 더', onclick: function () { redo(i); } })])); }
     } }));
   });
-  box.appendChild(wrap); box.appendChild(list);
+  setPos(); box.appendChild(list); box.appendChild(pos); box.appendChild(wrap);
 };
 TYPES.zone = function (step, i, box) {
   var it = pickItem(step, i), L = step.lay || it.lay, R = SV.res[i];
-  box.appendChild(h('div', { class: 'q', text: it.q }));
+  hdr(box, it);
   var g = h('div', { class: 'lay', style: 'grid-template-columns:' + L.cols + ';grid-template-areas:' + L.areas.map(function (a) { return '"' + a + '"'; }).join(' ') });
   L.cells.forEach(function (c) {
     g.appendChild(h('button', { type: 'button', 'data-z': c[0], style: 'grid-area:' + c[0], text: c[1], onclick: function (ev) {
@@ -117,7 +138,7 @@ TYPES.zone = function (step, i, box) {
 };
 TYPES.calc = function (step, i, box) {
   var it = pickItem(step, i), R = SV.res[i], inp = h('input', { type: 'text', inputmode: 'decimal', id: 'hw-ans', 'aria-label': '답', placeholder: '숫자만' });
-  box.appendChild(h('div', { class: 'q', text: it.q })); if (it.facts) box.appendChild(h('div', { class: 'sub', text: it.facts }));
+  hdr(box, it);
   var go = function () {
     if (R.done) return; var v = Number(String(inp.value).replace(/[,\s원%GDC분시간]/gi, '')); if (!isFinite(v) || inp.value === '') { note(box, 'nt', '숫자를 적어 주세요.'); return; } R.tries++;
     if (Math.abs(v - it.a) <= (it.tol || 0)) { if (R.first == null) R.first = true; inp.disabled = true; finish(i, box, it.why + ' (답: ' + (it.show || won(it.a) + (it.unit || '')) + ')'); }
@@ -128,7 +149,7 @@ TYPES.calc = function (step, i, box) {
 };
 TYPES.text = function (step, i, box) {
   var it = pickItem(step, i), R = SV.res[i], inp = h('input', { type: 'text', id: 'hw-ans', 'aria-label': '답', placeholder: it.ph || '' });
-  box.appendChild(h('div', { class: 'q', text: it.q })); if (it.facts) box.appendChild(h('div', { class: 'sub', text: it.facts }));
+  hdr(box, it);
   var go = function () {
     if (R.done) return; var v = String(inp.value).replace(/[\s-]/g, ''); if (!v) { note(box, 'nt', '적어 주세요.'); return; } R.tries++;
     if (it.check(v)) { if (R.first == null) R.first = true; inp.disabled = true; finish(i, box, it.why); }
@@ -139,19 +160,27 @@ TYPES.text = function (step, i, box) {
 };
 TYPES.chain = function (step, i, box) {
   var it = pickItem(step, i), R = SV.res[i], rows = it.rows, tried = {}, cnt = 0, out = h('div');
-  box.appendChild(h('div', { class: 'q', text: it.q })); box.appendChild(h('div', { class: 'sub', text: '기록은 앞 기록의 지문을 이어 쌓여요. 줄 하나를 몰래 고쳐 보고, 어디부터 지문이 어긋나는지 보세요(서로 다른 줄을 2번 해 보면 끝나요).' }));
+  hdr(box, it); box.appendChild(h('div', { class: 'sub', text: '기록은 앞 기록의 지문을 이어 쌓여요. 줄 하나를 몰래 고쳐 보고, 어디부터 지문이 어긋나는지 보세요(서로 다른 줄을 2번 해 보면 끝나요).' }));
   var draw = function (fix) {
     out.textContent = ''; var prev = '00000000', good = [], bad = -1, sh = rows.map(function (x, k) { return fix === k ? x + ' (고침)' : x; });
     rows.forEach(function (x) { prev = fnv(prev + x); good.push(prev); }); prev = '00000000';
     sh.forEach(function (x, k) { var hh = fnv(prev + x); if (hh !== good[k] && bad < 0) bad = k; prev = good[k]; });
     var tb = h('table', {}, [h('tr', {}, [h('th', { text: '번호' }), h('th', { text: '기록' }), h('th', { text: '지문' }), h('th', { text: '' })])]);
-    sh.forEach(function (x, k) { tb.appendChild(h('tr', {}, [h('td', { text: String(k + 1) }), h('td', { text: x }), h('td', { class: 'mono' + (bad >= 0 && k >= bad ? ' bad' : ''), text: good[k] }), h('td', {}, [h('button', { type: 'button', 'data-fix': String(k), text: '몰래 고치기', onclick: function () { if (R.done) return; if (!tried[k]) { tried[k] = 1; cnt++; } draw(k); if (cnt >= 2) { R.tries++; if (R.first == null) R.first = true; if (!box.querySelector('#hw-next')) finish(i, box, it.why); } } })])])); });
+    sh.forEach(function (x, k) { tb.appendChild(h('tr', {}, [h('td', { text: String(k + 1) }), h('td', { text: x }), h('td', { class: 'mono' + (bad >= 0 && k >= bad ? ' bad' : ''), text: good[k] }), h('td', {}, [h('button', { type: 'button', 'data-fix': String(k), text: '몰래 고치기', onclick: function () { if (R.done) return; if (!tried[k]) { tried[k] = 1; cnt++; } draw(k); if (cnt >= 2) { R.tries++; if (R.first == null) R.first = true; finish(i, box, it.why); } } })])])); });
     out.appendChild(tb);
     out.appendChild(h('div', { class: 'fb ' + (bad >= 0 ? 'no' : 'nt'), id: 'hw-chain', text: bad >= 0 ? (bad + 1) + '번째 기록부터 지문이 앞 기록과 맞지 않아요. 고친 흔적이 드러나요.' : '아직 아무것도 고치지 않았어요. 모든 지문이 이어져 있어요.' }));
   };
   draw(-1); box.appendChild(out);
 };
-TYPES.live = function (step, i, box) { var R = SV.res[i]; step.live(box, { seed: SV.seed + SV.salt, rng: rngFor(i), done: function (why) { if (R.done) return; R.tries++; if (R.first == null) R.first = true; finish(i, box, why); }, h: h, won: won, mk: mk, shuf: shuf, fnv: fnv, ri: ri }); };
+TYPES.live = function (step, i, box) { var R = SV.res[i]; step.live(box, { seed: SV.seed + R.salt, rng: rngFor(i), done: function (why) { if (R.done) return; R.tries++; if (R.first == null) R.first = true; finish(i, box, why); }, h: h, won: won, mk: mk, shuf: shuf, fnv: fnv, ri: ri }); };
+
+/* 이미 마친 단계를 다시 열면: 처음 상태로 되돌려 놓지 않고, 마친 결과와 풀이를 보여 준다 */
+function doneCard(card, st, i) {
+  var it = st.k === 'live' ? { q: st.name } : pickItem(st, i), R = SV.res[i];
+  card.appendChild(h('div', { class: 'q', text: it.q }));
+  card.appendChild(h('div', { class: 'fb ok', id: 'hw-done', text: '✔ 이미 마친 단계예요. ' + (R.why || '') }));
+  card.appendChild(h('div', { class: 'row' }, [h('button', { type: 'button', id: 'hw-redo', text: '새 상황으로 다시 해 보기', onclick: function () { redo(i); } }), nextBtn(i)]));
+}
 
 /* ── 패널 ───────────────────────────────────────────────────────── */
 function dots() {
@@ -167,18 +196,18 @@ function summary(box, sc) {
   box.appendChild(tb);
   box.appendChild(h('div', { class: 'fb nt', id: 'hw-metric', text: '점검 지표(가상 · 이 패널 안에서만 센 값, 저장·전송 안 함): 처음에 맞힌 단계 ' + first + '/' + tot + ', ' + (worst ? '가장 많이 헤맨 단계 ' + worst.n + '번(' + worst.name + ', ' + worst.t + '번 시도)' : '헤맨 단계 없음') + '. 실제로 상용화 전에 재 볼 것: 단계별 완료율, 가장 많이 막힌 단계, 한 번에 이해한 비율.' }));
   box.appendChild(h('div', { class: 'sub', text: '이 결과는 장 완료·퀴즈 점수·학습 기록에 들어가지 않아요. 장을 완료하려면 본문 아래의 퀴즈를 푸세요.' }));
-  var row = h('div', { class: 'row' }, [h('button', { type: 'button', class: 'pri', id: 'hw-restart', text: '새 상황으로 다시 하기', onclick: function () { SV.salt++; SV.i = 0; SV.res = sc.steps.map(function () { return { tries: 0, first: null, done: false }; }); render(); } })]);
+  var row = h('div', { class: 'row' }, [h('button', { type: 'button', class: 'pri', id: 'hw-restart', text: '새 상황으로 다시 하기', onclick: function () { SV.i = 0; SV.res = sc.steps.map(function (_, k) { return newRes(SV.res[k].salt + 1); }); render(); } })]);
   if (onQuizCb) row.appendChild(h('button', { type: 'button', id: 'hw-quiz', text: '이 장의 퀴즈로 가기', onclick: function () { close(); try { onQuizCb(SV ? SV.id : sc.id); } catch (e) { /* 무시 */ } } }));
   if (sc.page && typeof window._simOpen === 'function') row.appendChild(h('button', { type: 'button', id: 'hw-page', text: '이 장과 짝인 나비웹 화면 시뮬레이션', onclick: function () { var p = sc.page; close(); setTimeout(function () { try { window._simOpen(p[0], p[1]); } catch (e) { /* 무시 */ } }, 260); } }));
   box.appendChild(row);
 }
 function render() {
-  if (!PN || !SV) return; var sc = SC[SV.id], box = D.getElementById('hw-body'); if (!box) return; box.textContent = '';
+  if (!PN || !SV) return; var sc = SC[SV.id], box = D.getElementById('hw-body'); if (!box) return; box.textContent = ''; box.scrollTop = 0;
   dots();
   if (SV.i >= sc.steps.length) { summary(box, sc); return; }
   var st = sc.steps[SV.i]; box.appendChild(h('div', { class: 'sub', text: (SV.i + 1) + '/' + sc.steps.length + ' · ' + st.name }));
-  var card = h('div', { class: 'card', id: 'hw-card' }); TYPES[st.k](st, SV.i, card); box.appendChild(card);
-  if (SV.res[SV.i].done) { var nxt = SV.i + 1 < sc.steps.length; card.appendChild(h('div', { class: 'row' }, [h('button', { type: 'button', class: 'pri', id: 'hw-next', text: nxt ? '다음 단계' : '결과 보기', onclick: function () { SV.i++; render(); } })])); }
+  var card = h('div', { class: 'card', id: 'hw-card' }); box.appendChild(card);
+  if (SV.res[SV.i].done) doneCard(card, st, SV.i); else TYPES[st.k](st, SV.i, card);
 }
 function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
 function onOutside(e) {
@@ -194,18 +223,20 @@ function close() {
 function open(id, seed) {
   var sc = SC[id]; if (!sc) return false; if (PN) close();
   if (!D.getElementById('nhow-css')) { var st = D.createElement('style'); st.id = 'nhow-css'; st.textContent = CSS; D.head.appendChild(st); }
-  SV = { id: id, seed: seed != null ? seed : ((Date.now() / 1000) | 0) % 100000, salt: 0, i: 0, res: sc.steps.map(function () { return { tries: 0, first: null, done: false }; }) }; CUR = id; prevFocus = D.activeElement;
+  SV = { id: id, seed: seed != null ? seed : ((Date.now() / 1000) | 0) % 100000, i: 0, res: sc.steps.map(function () { return newRes(0); }) }; CUR = id; prevFocus = D.activeElement;
   var hd = h('div', { class: 'hd' }, [
     h('div', { style: 'display:flex;justify-content:space-between;gap:8px' }, [h('h2', { id: 'hw-title' }, [sc.n + '장 · ' + sc.short + ' 시뮬레이션', h('span', { class: 'bd', text: '가상 상황' })]), h('button', { type: 'button', id: 'hw-close', text: '닫기', onclick: close })]),
-    h('div', { class: 'role' }, [
-      h('div', {}, [h('b', { text: '연습 예제 ' }), '실제 화면에서 한 번 직접 해 보기']),
-      h('div', {}, [h('b', { text: '퀴즈 ' }), '개념 확인 · 장 완료에 반영']),
-      h('div', {}, [h('b', { class: 'me', text: '시뮬레이션' }), ' 가상 상황에서 틀려 보며 반복 · 어디에도 반영되지 않음'])]),
-    h('div', { class: 'sub', text: sc.focus }),
+    h('details', { class: 'how' }, [h('summary', { text: '이 시뮬레이션이 맡는 일' }),
+      h('div', { class: 'role' }, [
+        h('div', {}, [h('b', { text: '연습 예제 ' }), '실제 화면에서 한 번 직접 해 보기']),
+        h('div', {}, [h('b', { text: '퀴즈 ' }), '개념 확인 · 장 완료에 반영']),
+        h('div', {}, [h('b', { class: 'me', text: '시뮬레이션' }), ' 가상 상황에서 틀려 보며 반복 · 어디에도 반영되지 않음'])]),
+      h('div', { class: 'sub', text: sc.focus })]),
     h('div', { id: 'hw-dots', class: 'dots', role: 'group', 'aria-label': '단계' })]);
   PN = h('aside', { class: 'nhow-pn', id: 'nhow-pn', role: 'complementary', 'aria-labelledby': 'hw-title' }, [hd, h('div', { id: 'hw-body', class: 'bdy' })]);
   D.body.appendChild(PN); D.addEventListener('keydown', onKey, true); setTimeout(function () { if (PN) D.addEventListener('click', onOutside, true); }, 0);
-  render(); requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
+  render();
+  if (window.requestAnimationFrame) window.requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); else PN.classList.add('on');
   var c = D.getElementById('hw-close'); if (c) c.focus(); return true;
 }
 
