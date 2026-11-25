@@ -167,6 +167,8 @@ var PAGES = {
   stock:{ name:'증권', tabs:[['portfolio', '내 포트폴리오'], ['value', '내 가치'], ['wage', '내 임금'], ['explore', '종목 탐색'], ['company', '기업 평가'], ['order', '모의 주문'], ['trades', '거래 기록'], ['watch', '관심 종목'], ['alloc', '자산 배분'], ['goal', '목표 계산기'], ['learn', '투자 점검·용어']] },
   bank:{ name:'은행', tabs:[['wallet', '내 지갑'], ['topup', '충전·입금'], ['pay', '송금·결제'], ['history', '거래 내역'], ['save', '예금·대출'], ['credit', '신용·채권']] },
   tax:{ name:'세무 회계', tabs:[['slip', '거래 전표'], ['vat', '부가세'], ['stmts', '재무제표'], ['exp', '판관비'], ['inc', '소득세']] },
+  mail:{ name:'메일', tabs:[['compose', '편지쓰기'], ['drafts', 'Draft'], ['sent', '보낸메일함'], ['inbox', '받은메일함'], ['tags', '태그별 보관함']] },
+  guide:{ name:'나비 길잡이', tabs:[['new', '새 과제'], ['prog', '진행 중'], ['done', '완료']] },
   settings:{ name:'설정', tabs:[['account', '계정'], ['profile', '프로필'], ['ai', 'AI 비서'], ['gdc', 'GDC 지갑'], ['skin', '화면'], ['phone', '폰 전용'], ['signature', '서명'], ['autoreply', '부재중 자동응답']] },
   pdv:{ name:'내 기록', tabs:[['vault', '내 데이터 금고'], ['tx', '거래'], ['is', '손익'], ['bs', '재무상태'], ['cf', '현금흐름'], ['fa', '재무분석'], ['docs', '서류']] },
   myforms:{ name:'내 서류함', tabs:[['forms', '양식 보관·재사용']] },
@@ -177,6 +179,7 @@ var PAGES = {
   market:{ name:'시장', tabs:[['s0', '상품 이름'], ['s1', '구매 이력'], ['s2', '필요도'], ['s3', '구매 의사'], ['s4', '의견'], ['s5', 'AS 평가'], ['s6', '가격 비교'], ['s7', '판매자 협의'], ['s8', '최종 확인'], ['s9', '결제'], ['s10', '국세청 보고'], ['sell', '판매']] }
 };
 var LEAD = {
+  mail:'가상 주소록과 가상 메일로 편지 쓰기·보관함·태그 분류를 해 볼 수 있어요. 실제로 발송되지 않아요.', guide:'가상 과제로 할 일 나누기, 진행 확인, 성패와 원인 기록을 해 볼 수 있어요.',
   settings:'가상 값으로 설정의 각 탭을 미리 해 볼 수 있어요. 여기서 바꾼 것은 실제 설정에 반영되지 않아요.',
   pdv:'가상 월별 기록으로 내 기록(PDV)의 금고·거래·재무제표·서류 화면이 어떻게 이어지는지 해 볼 수 있어요.', myforms:'가상 양식으로 서류함에 담고 다시 쓰는 흐름을 해 볼 수 있어요.', othersite:'다른 사이트에 옮겨 적을 때 도우미와 사용자가 맡는 일을 순서대로 해 볼 수 있어요.', docs:'가상 서류로 작성 → 준법 점검 → 확정 → 보관까지 한 바퀴를 해 볼 수 있어요.',
   learn:'가상 학습자 한 명의 정답률·학습 기록으로 수업 조정, 진행 확인, 이상 탐지, 보고서를 해 볼 수 있어요.',
@@ -184,7 +187,7 @@ var LEAD = {
   market:'가상 상품과 판매처 가격으로 구매 단계를 하나씩 해 볼 수 있어요.', tax:'가상 거래로 전표·부가세·재무제표·소득세가 어떻게 이어지는지 해 볼 수 있어요.',
   bank:'가상 월별 수입·지출로 지갑·충전·결제·내역·예금·신용을 해 볼 수 있어요.', stock:'가상 기업과 시세로 증권 화면의 각 탭을 해 볼 수 있어요. 모든 요율·가정은 예시예요.'
 };
-var DEF = { settings:{}, pdv:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, myforms:{}, othersite:{}, docs:{}, learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
+var DEF = { mail:{}, guide:{}, settings:{}, pdv:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, myforms:{}, othersite:{}, docs:{}, learn:{ weeks:'8' }, insure:{ n:'500', rate:'4', prem:'20000', cov:'10000000' }, market:{ n:'6', spread:'8', odd:'15' }, tax:{ n:'14', opex:'0' }, bank:{ months:'12', start:'1000000', income:'2800000', fixed:'1900000', vol:'20' }, stock:{ n:'12', ft:'1000', fa:'500000', fc:'5000000', fr:'0.0015', br:'0.015' } };
 var X = {   // 탭별 보조 입력의 기본값
   pi:'0', q:'', need:'3', bud:'', ask:'', my:'', bal:'5000000', co:'0', g:'3', r:'10', w:'3000000', wa:'60', wb:'30', sv:'300000', yr:'10', tg:'100000000', px:'10', tp:'1000000', ti:'3', dp:'10000000', rt:'3', dm:'12'
 };
@@ -546,6 +549,59 @@ BODY.settings = function (box, s, tab) {
     box.appendChild(sumBox('sim-ar-sum', ['가상 메일 ' + d.mails.length + '통 중 ' + hit.length + '통에 자동응답이 나가요. 문구: 「' + msg + '」']));
   }
 };
+
+/** 메일·길잡이용 가상 데이터. */
+var TAGR = [['세금', '세무'], ['청구', '결제'], ['회의', '일정'], ['광고', '광고']];
+function mailGen(seed, o) {
+  var r = rng(seed), subs = ['세금 신고 안내', '청구서 도착', '회의 일정 조율', '신제품 광고', '서류 보완 요청', '안부 인사', '결제 완료 알림', '회의록 공유', '광고: 특가 안내', '계약서 확인 부탁'], people = ['김가온', '이나래', '박하늘', '최보라', '정한결', '오다온', '한결', '서아름'], who = function () { return people[Math.floor(r() * people.length)]; };
+  var tag = function (s) { var t = TAGR.filter(function (x) { return s.indexOf(x[0]) >= 0; })[0]; return t ? t[1] : '기타'; };
+  var inbox = subs.map(function (s, i) { return { from:who(), subj:s, tag:tag(s), read:r() < 0.5, day:25 - (i % 5) }; });
+  var sent = [0, 1, 2, 3, 4, 5].map(function (i) { return { to:who(), subj:subs[(i * 3) % subs.length], opened:r() < 0.6 }; });
+  var drafts = [0, 1, 2, 3, 4].map(function (i) { return { subj:subs[(i * 2 + 1) % subs.length], saved:'11-' + (20 + Math.floor(r() * 6)) }; });
+  return { seed:seed, people:people, inbox:inbox, sent:sent, drafts:drafts, tagOf:tag };
+}
+BODY.mail = function (box, s, tab) {
+  var d = s.data, sv = function (id, def) { var c = cur(id); return c === '' ? def : c; };
+  if (tab === 'compose') {
+    var to = String(sv('sm-mt', '김가온')), sj = String(sv('sm-ms', '서류 보냅니다')), bd = String(sv('sm-mb', '첨부한 서류를 확인해 주세요.')), at = String(sv('sm-ma', '0')), known = d.people.indexOf(to) >= 0, warn = bd.indexOf('첨부') >= 0 && at !== '1';
+    box.appendChild(h('div', { class:'row' }, [fld('sm-mt', '받는 사람(정확히 입력)', to), fld('sm-ms', '제목', sj), fld('sm-mb', '본문', bd), fld('sm-ma', '첨부 파일', at, { opts:[['0', '없음'], ['1', '1개 첨부']] })]));
+    ['sm-mt', 'sm-ms', 'sm-mb'].forEach(function (x) { var e = document.getElementById(x); if (e) e.removeAttribute('inputmode'); }); var sa = document.getElementById('sm-ma'); if (sa) sa.value = at;
+    box.appendChild(sumBox('sim-m-chk', ['받는 사람: ', [h('b', { class:known ? 'ok' : 'bad', text:known ? '찾았어요' : '정확히 일치하는 사람이 없어요(비슷한 이름은 찾아 주지 않아요)' })], warn ? '본문에 「첨부」가 있는데 첨부 파일이 없어요. 보내기 전에 확인하세요.' : '보내기 전 점검 통과', '가상 편지예요. 실제로 발송되지 않아요.']));
+    box.appendChild(h('div', { class:'sub', text:'가상 주소록: ' + d.people.join(', ') }));
+  }
+  if (tab === 'drafts') box.appendChild(tbl(['제목', '자동 저장'], d.drafts.map(function (x) { return [x.subj, x.saved]; })));
+  if (tab === 'sent') { box.appendChild(tbl(['받는 사람', '제목', '열어 봄'], d.sent.map(function (x) { return [x.to, x.subj, { t:x.opened ? '열어 봤어요' : '아직', c:x.opened ? 'ok' : '' }]; }))); box.appendChild(h('div', { class:'sub', text:'열람 표시는 가상 값이에요.' })); }
+  if (tab === 'inbox') {
+    var un = d.inbox.filter(function (x) { return !x.read; }).length;
+    box.appendChild(h('div', { class:'sub', id:'sim-m-inbox', text:'받은 메일 ' + d.inbox.length + '통 중 안 읽은 메일 ' + un + '통. 제목의 낱말로 태그를 붙여요(연습용 규칙).' }));
+    box.appendChild(tbl(['보낸이', '제목', '태그', '읽음'], d.inbox.map(function (x) { return [x.from, x.subj, x.tag, { t:x.read ? '읽음' : '안 읽음', c:x.read ? '' : 'bad' }]; })));
+  }
+  if (tab === 'tags') {
+    var cnt = {}; d.inbox.forEach(function (x) { cnt[x.tag] = (cnt[x.tag] || 0) + 1; });
+    box.appendChild(tbl(['태그', '메일 수'], Object.keys(cnt).map(function (k) { return [k, cnt[k]]; }), [1]));
+    box.appendChild(h('div', { class:'sub', text:'규칙: 제목에 세금·청구·회의·광고가 있으면 해당 태그, 아니면 기타.' }));
+  }
+};
+BODY.guide = function (box, s, tab) {
+  var d = s.data, sv = function (id, def) { var c = cur(id); return c === '' ? def : c; }, r = rng(s.seed + 71);
+  if (tab === 'new') {
+    var goal = String(sv('sm-gg', '사업자 등록하기')), days = ci(num('sm-gd', 14), 4, 90, 14), st = ['자료 모으기', '초안 만들기', '검토받기', '제출하기'];
+    box.appendChild(h('div', { class:'row' }, [fld('sm-gg', '이루고 싶은 일', goal), fld('sm-gd', '기한(일)', String(days))])); var ge = document.getElementById('sm-gg'); if (ge) ge.removeAttribute('inputmode');
+    box.appendChild(tbl(['할 일', '기한(오늘부터)'], st.map(function (x, i) { return [x, Math.round(days * (i + 1) / st.length) + '일째']; }), [1]));
+    box.appendChild(sumBox('sim-gd-new', ['「' + goal + '」 과제를 ' + st.length + '단계로 나눴어요(연습용 고정 틀).', '실제 길잡이는 대화로 일에 맞는 할 일을 추천해요.']));
+  }
+  if (tab === 'prog') {
+    var names = ['세금 신고', '이사 신고', '임대차 계약', '보험 청구', '정보공개 청구'], rows = names.map(function (n) { var el = 0.2 + r() * 0.7, pg = Math.max(0, Math.min(1, el + (r() - 0.6) * 0.5)); return { n:n, el:el, pg:pg, late:pg < el - 0.2 }; });
+    box.appendChild(tbl(['과제', '경과', '진행', '상태'], rows.map(function (x) { return [x.n, pc(x.el), pc(x.pg), { t:x.late ? '늦어지고 있어요' : '순조', c:x.late ? 'bad' : 'ok' }]; }), [1, 2]));
+    box.appendChild(h('div', { class:'sub', id:'sim-gd-prog', text:'진행이 경과보다 20%p 넘게 뒤처지면 알려요. 늦어지는 과제 ' + rows.filter(function (x) { return x.late; }).length + '개.' }));
+  }
+  if (tab === 'done') {
+    var CAUSE = ['서류 보완', '기한 놓침', '준비 부족', '잘 풀림'], recs = [0, 1, 2, 3, 4, 5].map(function (i) { var ok = r() < 0.55; return { n:'과제 ' + (i + 1), ok:ok, why:ok ? '잘 풀림' : CAUSE[Math.floor(r() * 3)] }; }), cs = {};
+    recs.filter(function (x) { return !x.ok; }).forEach(function (x) { cs[x.why] = (cs[x.why] || 0) + 1; });
+    box.appendChild(tbl(['과제', '결과', '원인·교훈'], recs.map(function (x) { return [x.n, { t:x.ok ? '성공' : '실패', c:x.ok ? 'ok' : 'bad' }, x.why]; })));
+    box.appendChild(sumBox('sim-gd-done', ['성공 ' + recs.filter(function (x) { return x.ok; }).length + '건 / ' + recs.length + '건', Object.keys(cs).length ? '실패에서 가장 많은 원인: ' + Object.keys(cs).sort(function (a, b) { return cs[b] - cs[a]; })[0] : '실패가 없었어요.', '이 기록이 다음 과제를 세울 때 참고돼요.']));
+  }
+};
 function readOpt(kind) {
   var s = ST[kind], o = s.opt, g = function (id, d) { var e = document.getElementById(id); return e ? String(e.value).replace(/,/g, '') : d; };
   if (kind === 'market') { o.n = g('sm-n', o.n); o.spread = g('sm-sp', o.spread); o.odd = g('sm-odd', o.odd); o.pi = g('sm-pi', o.pi || '0'); }
@@ -556,7 +612,7 @@ function readOpt(kind) {
   if (kind === 'bank') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'stock') { o.n = g('sm-n', o.n); o.ft = g('sm-ft', o.ft); o.fa = g('sm-fa', o.fa); o.fc = g('sm-fc', o.fc); o.fr = g('sm-fr', o.fr); o.br = g('sm-br', o.br); o.co = g('sm-co', o.co || '0'); o.w = g('sm-w', o.w || X.w); s.f = { sector:g('sm-sec', s.f.sector), region:g('sm-reg', s.f.region), size:g('sm-sz', s.f.size) }; }
 }
-function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, settings:settingsGen, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
+function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, settings:settingsGen, mail:mailGen, guide:docsGen, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
   ST._redraw = null; document.removeEventListener('keydown', onKey, true);
@@ -590,5 +646,5 @@ function open(kind, tab) {
   requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
   var c = document.getElementById('sim-close'); if (c) c.focus(); return true;
 }
-window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ settings:settingsGen, forms:formsGen, docs:docsGen, learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
+window.NaviSim = { open:open, close:close, tab:setTab, pages:PAGES, rng:rng, viab:{ feeModel:feeModel, detectTable:detectTable, backtest:backtest, chainTest:chainTest }, gen:{ mail:mailGen, settings:settingsGen, forms:formsGen, docs:docsGen, learn:learn, insure:insure, market:market, marketTick:marketTick, tax:tax, bank:bank, stock:stock, valueCo:valueCo, scan:scan, bandOf:bandOf } };
 })();

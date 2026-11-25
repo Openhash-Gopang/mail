@@ -2027,6 +2027,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-mail" class="tab-panel">
     <div class="pg-bar" data-pgbar="mail"></div>
     <div class="card">
+      <div class="gl-head" style="margin-bottom:8px"><h2>메일</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="mail-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('mail','compose')">시뮬레이션</button></div>
       <div class="mail-subnav">
         <button type="button" id="mail-subnav-compose" class="active" onclick="_mailSwitchSub('compose')">편지쓰기</button>
         <button type="button" id="mail-subnav-drafts" onclick="_mailSwitchSub('drafts')">Draft</button>
@@ -2551,7 +2552,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-gprog" class="tab-panel">
     <div id="gt-bar-gprog"></div>
     <div class="card">
-      <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
+      <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="guide-sim-prog" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('guide','prog')">시뮬레이션</button><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
       <div class="sub">아직 끝나지 않은 과제입니다. 누르면 대화와 계획서가 열립니다. <span id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</span></div>
       <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-notify-btn" onclick="_guideNotifyToggle()">브라우저 알림 켜기</button><span id="gl-notify-st"></span></div>
       <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-server-btn" onclick="_guideServerToggle()">서버 알림 켜기</button><span id="gl-server-st"></span></div>
@@ -2567,7 +2568,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-gdone" class="tab-panel">
     <div id="gt-bar-gdone"></div>
     <div class="card">
-      <h2>완료한 과제</h2>
+      <div class="gl-head"><h2>완료한 과제</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="guide-sim-done" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('guide','done')">시뮬레이션</button></div>
       <div class="sub">성공 여부와 원인·교훈이 기록된 과제입니다. 새 과제를 세울 때 참고됩니다.</div>
       <div id="gdone-empty" style="display:none;font-size:14px;color:var(--hint)">완료한 과제가 없습니다.</div>
       <div id="gdone-items"></div>
@@ -3568,7 +3569,7 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
-const _SIM_V = '20261125h';
+const _SIM_V = '20261125i';
 // 내 기록(PDV) 안의 탭을 옮기면 시뮬레이션 패널도 그 탭으로 따라간다(PDV 탭 id: t-vault·t-tx·t-is…)
 document.addEventListener('click', (e) => { const b = e.target && e.target.closest && e.target.closest('#pdv-root [role=tab]'); if (b && b.id && window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('pdv', b.id.replace(/^t-/, '')); });
 window._simOpen = function (kind, tab) {   // 가상 데이터 시뮬레이션은 팝업이 아니라 페이지 오른쪽에서 밀려 나오는 패널로 열고, 탭마다 다른 시뮬레이션을 보여 준다
@@ -6943,6 +6944,7 @@ function _mailSetBodyText(text) {
 }
 
 function _mailSwitchSub(name) {
+  if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('mail', name);   // 시뮬레이션 패널이 열려 있으면 이 보관함의 시뮬레이션으로 따라간다
   if (name !== 'compose') _sentCardHide('mail');
   document.querySelectorAll('.mail-sub').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.mail-subnav button').forEach(el => el.classList.remove('active'));
