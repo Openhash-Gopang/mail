@@ -174,9 +174,14 @@
 .emg .panel.closing{display:flex;animation:emg-slideout .22s ease-in forwards}
 @keyframes emg-slideout{from{transform:translateX(0)}to{transform:translateX(100%)}}
 @media (prefers-reduced-motion:reduce){.emg .panel.closing{animation:none}}
-.emg .panel.under{visibility:hidden}
 .emg .mini{display:flex;gap:3px;padding:8px 20px 0}
 .emg .mini i{flex:1;height:6px;background:var(--nb,#E4E8EE)}
 .emg .mini i.gap{margin-left:6px}
 .emg .mini i.done{background:var(--pri)}
 .emg .mini i.cur{background:color-mix(in srgb,var(--pri) 55%,#fff);outline:2px solid var(--pri);outline-offset:1px}
+/* 처음 눌러 볼 것을 알려 주는 깜박임과 다음 할 일 배너 */
+.emg .blink{animation:emg-blink 1.1s ease-in-out infinite;border-color:var(--pri)!important}
+@keyframes emg-blink{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pri) 55%,transparent);background-color:transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--pri) 0%,transparent);background-color:color-mix(in srgb,var(--pri) 18%,transparent)}}
+.emg .srow.blink{border-radius:0}
+.emg .hintbn{margin-top:4px;font-weight:600}
+@media (prefers-reduced-motion:reduce){.emg .blink{animation:none;background-color:color-mix(in srgb,var(--pri) 14%,transparent)}}

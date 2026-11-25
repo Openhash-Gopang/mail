@@ -143,23 +143,38 @@ test('시뮬레이션 버튼: 오른쪽 위에서 열면 1-1 부터 자동으로
   const seen = [id('emg-au-t').textContent.split(' ')[0]]; const holds = [];
   for (let k = 0; k < 40 && q.length; k++) { const ms = fire(q, 4000); if (ms === null) break; holds.push(ms); seen.push(id('emg-au-t').textContent.split(' ')[0]); if (id('emg-au-t').textContent.startsWith('4-4')) break; }
   assert.equal(new Set(seen).size, 19); assert.equal(seen[18], '4-4'); assert.ok(holds.every((m) => m >= 4000 && m <= 9000), holds.join());
-  assert.match(id('emg-s4-end').textContent, /처치가 시작됩니다/); assert.equal(id('emg-au-pause').disabled, true);
+  assert.match(id('emg-au-s4-end').textContent, /처치가 시작됩니다/); assert.equal(id('emg-au-pause').disabled, true);
   id('emg-back').click(); assert.ok(id('emg-apanel').classList.contains('closing'));
   while (q.length) q.shift().fn(); assert.equal(id('emg-apanel').classList.contains('open'), false); assert.equal(id('emg-back').classList.contains('on'), false); assert.equal(id('emg-sim').disabled, false);
   assert.equal(p.fetched(), 0);
 });
 
-test('시뮬레이션은 화면의 단계 목록과 완전히 분리되어 있다', { skip }, () => {
+test('시뮬레이션은 화면의 단계 목록·패널과 완전히 분리되어 있다', { skip }, () => {
   const p = page(); const q = fake(p); const id = (x) => p.doc.getElementById(x);
-  id('emg-row-1-1').click(); walk(p, 2); const cap = id('emg-bar-cap').textContent, sum = id('emg-draw-sum').previousSibling.textContent, ticks = p.doc.querySelectorAll('#emg-bar .tick.done').length, rows = [...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join();
-  assert.match(cap, /^3 \/ 19/); id('emg-sim').click();
+  id('emg-draw').click(); id('emg-row-1-1').click(); walk(p, 2);
+  const snap = () => ({ cap: id('emg-bar-cap').textContent, hint: id('emg-next-hint').textContent, done: p.doc.querySelectorAll('#emg-bar .tick.done').length, rows: [...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join(), panel: id('emg-panel').innerHTML, pills: id('emg-draw-sum').parentNode.querySelector('.rowf').textContent });
+  const before = snap(); assert.match(before.cap, /^3 \/ 19/); assert.match(id('emg-ph-n').textContent, /직접 따라가기/);
+  id('emg-sim').click(); assert.equal(id('emg-sim').disabled, true);
   for (let k = 0; k < 25 && q.length; k++) { fire(q, 4000); if (id('emg-au-t').textContent.startsWith('4-')) break; }
-  assert.equal(id('emg-bar-cap').textContent, cap); assert.equal(id('emg-draw-sum').previousSibling.textContent, sum); assert.equal(p.doc.querySelectorAll('#emg-bar .tick.done').length, ticks); assert.equal([...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join(), rows);
+  assert.deepEqual(snap(), before, '시뮬레이션이 도는 동안 페이지는 그대로');
+  assert.equal(id('emg-panel').classList.contains('open'), true, '페이지 패널은 닫히거나 비워지지 않는다');
   assert.equal(p.doc.querySelectorAll('[id]').length, new Set([...p.doc.querySelectorAll('[id]')].map((x) => x.id)).size, 'id 가 겹치면 안 된다');
-  id('emg-row-1-2').click(); assert.match(id('emg-au-t').textContent, /^4-/, '단계 목록을 눌러도 시뮬레이션은 따라가지 않는다');
+  id('emg-row-1-2').click(); assert.match(id('emg-au-t').textContent, /^4-/, '단계 목록을 눌러도 시뮬레이션은 따라가지 않는다'); assert.match(id('emg-ph-t').textContent, /^1-2/, '반대로 시뮬레이션은 페이지 패널을 움직이지 않는다');
+  id('emg-nextstep').click(); assert.match(id('emg-au-t').textContent, /^4-/);
+  const mid = snap();
   id('emg-au-close').click(); while (q.length) q.shift().fn();
-  assert.equal(id('emg-apanel').classList.contains('open'), false); assert.equal(id('emg-panel').classList.contains('open'), true); assert.match(id('emg-ph-t').textContent, /^1-2/);
-  assert.equal(id('emg-bar-cap').textContent.startsWith('2 / 19'), true);
+  assert.equal(id('emg-apanel').classList.contains('open'), false); assert.equal(id('emg-sim').disabled, false); assert.deepEqual(snap(), mid, '닫아도 페이지는 그대로');
+});
+
+test('새 사건 뽑기: 처음엔 깜박여 눌러 볼 곳을 알려 주고, 뽑은 뒤에는 다음 할 일 배너가 따라온다', { skip }, () => {
+  const p = page(); const id = (x) => p.doc.getElementById(x);
+  assert.ok(id('emg-draw').classList.contains('blink')); assert.equal(id('emg-next-hint'), null); assert.equal(p.doc.querySelector('.srow.blink'), null);
+  id('emg-draw').click(); assert.equal(id('emg-draw').classList.contains('blink'), false);
+  assert.match(id('emg-next-hint').textContent, /다음 할 일.*1-1 기기 호출/); assert.ok(id('emg-draw').parentNode.parentNode.contains(id('emg-next-hint')), '새 사건 뽑기 버튼 아래(같은 카드)에 놓인다'); assert.ok(id('emg-row-1-1').classList.contains('blink'));
+  id('emg-row-1-1').click(); assert.match(id('emg-next-hint').textContent, /다음 ▶ 1-2 메시지 구성/); assert.equal(id('emg-row-1-1').classList.contains('blink'), false);
+  id('emg-pclose').click(); assert.match(id('emg-next-hint').textContent, /“1-1 기기 호출”을 눌러 이어 가세요/);
+  id('emg-row-1-1').click(); walk(p, 18); assert.match(id('emg-next-hint').textContent, /새 사건 뽑기/);
+  id('emg-draw').click(); assert.match(id('emg-next-hint').textContent, /1-1 기기 호출/); assert.equal(id('emg-panel').classList.contains('open'), false);
 });
 
 test('시뮬레이션: 멈추기·이어서, 새 무작위 사건, 닫기 버튼, 3-5 사건이 무작위로 일어남', { skip }, () => {
@@ -167,7 +182,7 @@ test('시뮬레이션: 멈추기·이어서, 새 무작위 사건, 닫기 버튼
   id('emg-au-pause').click(); assert.equal(q.length, 0); assert.match(id('emg-au-n').textContent, /멈춤/); id('emg-au-pause').click(); assert.ok(q.length > 0);
   id('emg-au-restart').click(); assert.match(id('emg-au-t').textContent, /^1-1/);
   for (let k = 0; k < 40 && !id('emg-au-t').textContent.startsWith('3-5'); k++) fire(q, 4000);
-  assert.match(id('emg-au-t').textContent, /^3-5/); const ev = q.find((x) => x.ms === 2200); if (ev) { fire(q, 2200); assert.ok(id('emg-ev-new')); } else assert.equal(id('emg-ev-new'), null);
+  assert.match(id('emg-au-t').textContent, /^3-5/); const ev = q.find((x) => x.ms === 2200); if (ev) { fire(q, 2200); assert.ok(id('emg-au-ev-new')); } else assert.equal(id('emg-au-ev-new'), null);
   id('emg-au-close').click(); while (q.length) q.shift().fn(); assert.equal(id('emg-apanel').classList.contains('open'), false);
   let evs = 0; for (let r = 0; r < 30; r++) { const pp = page(); const qq = fake(pp); pp.doc.getElementById('emg-sim').click(); for (let k = 0; k < 40 && !pp.doc.getElementById('emg-au-t').textContent.startsWith('3-5'); k++) fire(qq, 4000); if (qq.some((x) => x.ms === 2200)) evs++; }
   assert.ok(evs > 0 && evs < 30, String(evs));
