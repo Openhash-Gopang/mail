@@ -187,6 +187,7 @@
 .emg .blink{animation:emg-blink 1.1s ease-in-out infinite;border-color:var(--pri)!important}
 @keyframes emg-blink{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pri) 55%,transparent);background-color:transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--pri) 0%,transparent);background-color:color-mix(in srgb,var(--pri) 18%,transparent)}}
 .emg .srow.blink{border-radius:0}
+.emg .blink.slow{animation-duration:2.6s}
 .emg .hintbn{margin-top:4px;font-weight:600}
 @media (prefers-reduced-motion:reduce){.emg .blink{animation:none;background-color:color-mix(in srgb,var(--pri) 14%,transparent)}}
 /* 나비웹 상단 헤더(높이 54px, 가려지면 0)에 막대·패널이 가려지지 않게 한다 */
