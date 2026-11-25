@@ -44,6 +44,35 @@
     for (var i = 0; i < RULES.length; i++) if (RULES[i].re.test(t)) return { playbook: RULES[i].playbook, title: RULES[i].title, goal: RULES[i].goal };
     return null;
   }
+  // ── 홈 입력창의 발급 요청(2026-11-26) ─────────────────────────────
+  // "등본 발급해 줘"처럼 기관 발급 서류를 지금 발급해 달라는 분명한 지시만 잡는다. 질문·설명 요청·부정·여러 서류·등기부는 null → 기본 AI 비서가 판단한다.
+  var HOME_SLOT_MARK = ' (홈 요청)';
+  var ISSUE_DOCS = /주민\s*등록\s*(?:표\s*)?(?:등\s*[·ㆍ,.]?\s*초본|등본|초본)|가족\s*관계\s*증명서|혼인\s*관계\s*증명서|기본\s*증명서|지방세\s*(?:납세|완납)\s*증명서?|(?:국세\s*)?(?:납세|완납)\s*증명서?|소득\s*금액\s*증명(?:원|서)?|사업자\s*등록\s*증명(?:원|서)?|병적\s*증명서|건강\s*보험\s*자격\s*득실\s*확인서|국민\s*연금\s*가입\s*(?:자\s*)?증명서?|토지\s*대장|건축물\s*대장|등본|초본/g;
+  var ISSUE_ORDER = /(?:발급|발행|출력)\s*(?:좀\s*)?(?:받아\s*)?(?:해\s*(?:줘|주세요|줄래|주라|주십시오|달라|라)?|해$|줘|주세요|부탁|신청해|받아\s*(?:줘|주세요|와)|받고\s*싶|받아야\s*(?:해|돼|함)|하자|$)|(?:발급|발행)\s*받아\s*$|(?:떼|뽑아)\s*(?:어\s*)?(?:좀\s*)?(?:줘|주세요|줄래|주라|와|달라)|떼\s*(?:야\s*(?:해|돼)|고\s*싶)/;
+  var ISSUE_NOT = /[?？]|어떻게|방법|뭐|무엇|무슨|얼마|수수료|비용|언제|어디|왜|차이|가능|안\s*(?:돼|되|나)|하지\s*마|말고|취소|메일|편지|보내|제출|작성|위임/;
+  var NOT_RESIDENT = /등기|법인|부동산|제적|호적/;
+  function issueIntent(text) {
+    var t = String(text || '').trim();
+    if (!t || t.length > 80 || /\n/.test(t) || ISSUE_NOT.test(t) || !ISSUE_ORDER.test(t)) return null;
+    var found = t.match(ISSUE_DOCS); if (!found || found.length !== 1) return null;
+    var doc = found[0].replace(/\s+/g, ' ').trim();
+    if (/등본$|초본$/.test(doc) && NOT_RESIDENT.test(t)) return null;
+    if (doc === '등본' || doc === '초본') {
+      // "○○ 등본"의 앞말이 다른 장부 이름이면 주민등록 서류로 넘겨짚지 않는다
+      if (/(?:대장|증명서|등록원부|회의록|판결|결정|조서)\s*$/.test(t.slice(0, t.indexOf(doc)))) return null;
+      doc = '주민등록표 ' + doc;
+    }
+    var plan = slotPlan(doc);
+    if (!plan || !plan.url) return null;
+    return { doc: doc, plan: plan };
+  }
+  // 홈에서 맡길 일(job). slot 이 있어야 도우미가 발급 파일을 나비웹으로 돌려보낸다.
+  function homeJob(doc, plan, userText) {
+    var said = String(userText || '').replace(/\d{6}\s*-?\s*[1-8]\d{6}/g, '(가림)').trim().slice(0, 200);
+    return { playbook: plan.playbook || '', url: plan.url || '', slot: String(doc).slice(0, 100) + HOME_SLOT_MARK, title: String(doc).slice(0, 100) + ' 발급',
+      goal: String(plan.goal || '') + doc + '\n사용자 요청 원문: ' + said + '\n로그인·본인인증·결제만 사용자에게 넘기고, 이미 지시한 발급은 다시 묻지 마세요.' };
+  }
+  function homeDoc(label) { var s = String(label || ''); return s.slice(-HOME_SLOT_MARK.length) === HOME_SLOT_MARK ? s.slice(0, -HOME_SLOT_MARK.length) : ''; }
   var seq = 0, pending = {};
   function call(type, data, timeout) {
     return new Promise(function (resolve) {
@@ -102,7 +131,7 @@
       cb({ label: String(m.label || ''), data: m.data });
     });
   }
-  var api = { installedMark: installedMark, onStatus: onStatus, onData: onData, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
+  var api = { issueIntent: issueIntent, homeJob: homeJob, homeDoc: homeDoc, installedMark: installedMark, onStatus: onStatus, onData: onData, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);
