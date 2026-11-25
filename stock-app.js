@@ -178,6 +178,14 @@ function topbar() {
 }
 function head(title, lead) { return [h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null]; }
 function go(v) { S.view = v; S.err = {}; S.msg = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) {} }
+function premise() {
+  var L = ['나비웹 시장은 은행·국세청·회계·세무 위에 선 공정한 시장입니다. 사는 쪽과 파는 쪽 모두 공정한 시장 가치(FMV)로 거래해요.',
+    'AI와 오픈해시로 장부에는 진실만 기록되고 고칠 수 없습니다. 거래는 국세청의 세액 결정을 거쳐 각 당사자의 재무제표로 이어지므로 분식 회계가 불가능해요.',
+    '그래서 재무제표만으로 가장 공정한 기업 가치를 알 수 있고, 이를 바탕으로 증권(주식·채권·파생·옵션)을 발행합니다. 개인의 가치는 PDV(노동력의 시장 가치인 임금), 기업의 가치는 재무제표에서 나와요.',
+    '나비웹 이용자는 모두 사실상 상장 기업처럼, 무상 재무제표와 공정한 시장 가치를 받습니다.',
+    '지금 화면은 이 전제를 따라가는 설계 단계의 모의 체험입니다. 파생·옵션, 거래소 체결·시세, 국세청 AI와의 재무제표 자동 연결은 아직 연결되어 있지 않아요.'];
+  return h('div', { class:'card col', id:'stk-premise', style:'margin:16px 0' }, [h('b', { style:'font-size:17px', text:'나비웹 증권의 전제 — 공정한 시장에서 출발해요' })].concat(L.map(function (t) { return h('div', { class:'sub', text:t }); })));
+}
 function notice() { return h('div', { class:'note info', style:'margin:16px 0', text:'이 화면은 주문을 보내지 않고 시세를 보여 주지 않습니다. 현재가는 직접 적고, 기록은 이 브라우저에만 저장됩니다. 계산 결과는 참고용 정보이며 투자 결정과 책임은 본인에게 있습니다. 나비는 특정 상품을 사라고 권하지 않습니다.' }); }
 function field(id, label, val, o) {
   o = o || {}; var e = o.err, inp = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '60', inputmode:o.mode || '', autocomplete:'off', 'aria-invalid':e ? 'true' : 'false' });
@@ -193,7 +201,7 @@ function empty(t, b) { return h('div', { class:'card', style:'margin-top:16px' }
 // ── 내 포트폴리오 ──
 function curPos() { var P = positions(S.trades); return { P:P, V:valued(P.pos, S.px) }; }
 function viewPortfolio() {
-  var kids = head('내 포트폴리오', '거래 기록에서 계산한 보유 종목과 손익입니다. 현재가를 적으면 평가금액이 계산됩니다.'); kids.push(notice());
+  var kids = head('내 포트폴리오', '거래 기록에서 계산한 보유 종목과 손익입니다. 현재가를 적으면 평가금액이 계산됩니다.'); kids.push(premise()); kids.push(notice());
   if (!S.trades.length) { kids.push(empty('아직 거래 기록이 없어요. 증권사에서 산 종목을 “거래 기록”에 적으면 여기에 모입니다.', btn('거래 기록하기', 'fill', function () { go('trades'); }))); var sc0 = simCard(); if (sc0) kids.push(sc0); kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('증권 AI에게 묻기', 'quiet', function () { ask('투자를 처음 시작하려면 무엇부터 알아야 하나요?'); })])); return kids; }
   var c = curPos(), V = c.V, P = c.P;
   kids.push(h('div', { class:'g4', style:'margin-top:4px' }, [['평가금액', V.rows.length && V.val ? won(V.val) + '원' : '—', ''], ['투자 원금', V.val ? won(V.cost) + '원' : '—', '현재가를 적은 종목 기준'], ['평가손익', V.val ? sgn(V.pl) + '원' : '—', V.val && V.cost ? pct(V.pl / V.cost) : ''], ['실현손익', sgn(P.realized) + '원', '수수료 ' + won(P.fees) + '원 포함']].map(function (x, i) { return h('div', { class:'tile' }, [h('div', { class:'k', text:x[0] }), h('div', { class:'num ' + (i === 2 ? cls(V.pl) : i === 3 ? cls(P.realized) : ''), id:'stk-t' + i, style:'font-size:20px;font-weight:700', text:x[1] }), x[2] ? h('div', { class:'sub', text:x[2] }) : null]); })));
