@@ -2600,6 +2600,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
   </div>
   <div id="tab-expert100k" class="tab-panel">
+    <div class="gl-head" style="margin:0 0 4px"><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="cert-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('cert','exam')">시뮬레이션</button></div>
     <!-- 위쪽 탭: 새 탭은 '개요' 오른쪽에 단추(id="ex-tab-<키>")를 더하고, 아래 스크립트의 _EX_KEYS 에 같은 키를 넣는다. 전환 코드는 .wp-tab 전체를 훑으므로 따로 고칠 곳이 없다. -->
     <div class="wp-tabs" role="tablist" aria-label="10만 AI 전문가">
       <button type="button" role="tab" class="wp-tab active" id="ex-tab-overview" aria-selected="true" onclick="_exSwitch('overview')">개요</button>
@@ -3570,7 +3571,7 @@ function _learnShow(view, then) {
 }
 function _learnOpen(view) { _switchTab('learn'); _learnShow(view); }
 // 시뮬레이션(2026-11-25): 시장·세무 회계·은행·증권 화면의 '시뮬레이션' 버튼은 가상 데이터를 메모리에서만 만들어 규칙을 돌려 본다(실제 장부·잔고에 쓰지 않음).
-const _SIM_V = '20261125k';
+const _SIM_V = '20261125l';
 // 내 기록(PDV) 안의 탭을 옮기면 시뮬레이션 패널도 그 탭으로 따라간다(PDV 탭 id: t-vault·t-tx·t-is…)
 document.addEventListener('click', (e) => { const b = e.target && e.target.closest && e.target.closest('#pdv-root [role=tab]'); if (b && b.id && window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('pdv', b.id.replace(/^t-/, '')); });
 // 홈 화면(편지·서류·기관 AI가 같은 입력창을 쓴다): 지금 모드에 맞는 시뮬레이션을 연다
@@ -3731,7 +3732,7 @@ function _infraRender(key) {
   root.append(h1, lead, card);
 }
 function _infraOpen(key) { _infraVia = key; _infraRender(key); _switchTab('infra'); }
-const _MED_V = '20261123c'; let _medChat = false;
+const _MED_V = '20261125a'; let _medChat = false;
 function _medLoad(cb) {
   if (window.NaviMedical) { cb(); return; }
   if (!document.getElementById('med-css')) { const l = document.createElement('link'); l.id = 'med-css'; l.rel = 'stylesheet'; l.href = 'medical.css?v=' + _MED_V; document.head.appendChild(l); }
@@ -3831,7 +3832,7 @@ function _lgsShow(view) {
 function _lgsOpen(view) { _switchTab('lgs'); _lgsShow(view); }
 // 나비웹 행정(2026-11-23): 인프라 AI → 행정을 고르면 행정 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — public.css·public-app.js, Material 3).
 // 행정 인프라는 나비웹 도우미의 최종판 — 지금은 도우미가 기관 사이트에서 서류를 대신 채우고(로그인·최종 확인·결제는 사용자), 목표는 사용자 AI 비서와 기관 AI 비서의 handshake 다. 이 화면은 기관에 접속·제출·결제하지 않고 기록은 이 브라우저에만 저장한다.
-const _PUB_V = '20261123a'; let _pubChat = false;
+const _PUB_V = '20261125a'; let _pubChat = false;
 function _pubLoad(cb) {
   if (window.NaviPublic) { cb(); return; }
   if (!document.getElementById('pub-css')) { const l = document.createElement('link'); l.id = 'pub-css'; l.rel = 'stylesheet'; l.href = 'public.css?v=' + _PUB_V; document.head.appendChild(l); }

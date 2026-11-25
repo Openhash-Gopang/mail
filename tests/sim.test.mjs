@@ -102,13 +102,13 @@ test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 �
     S.open(k, pg.tabs[0][0]); const seen = new Set();
     for (const [id, label] of pg.tabs) {
       assert.equal(S.tab(k, id), true, k + id); const body = doc.getElementById('sim-body').textContent; assert.ok(body.length > 20, k + ':' + id + ' 비어 있음');
-      assert.match(doc.getElementById('sim-title-t').textContent, new RegExp(label)); seen.add(body); total++;
+      assert.ok(doc.getElementById('sim-title-t').textContent.includes(label), label); seen.add(body); total++;
       assert.equal(doc.getElementById('nsim-pn').querySelectorAll('.chips button.cur').length, 1);
     }
     assert.ok(seen.size >= pg.tabs.length - 2, k + ' 탭마다 내용이 달라야 해요');
     assert.equal(S.tab(k, '없는탭'), false); S.close();
   }
-  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3 + 8 + 5 + 3 + 6); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
+  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3 + 8 + 5 + 3 + 6 + 22); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
   S.open('stock', 'goal'); doc.getElementById('sm-sv').value = '500000'; doc.getElementById('sm-sv').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-g-sum').textContent, /목표를 넘긴/);
   S.open('stock', 'alloc'); doc.getElementById('sm-wa').value = '100'; doc.getElementById('sm-wa').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-a-sum').textContent, /현금 비중 0%/);
   S.open('market', 's3'); { let sd = 1; while (!(S.gen.market(sd, { n: 6, spread: 8, odd: 15 }).rows[0].band.lo > 1)) sd++; doc.getElementById('sm-seed').value = String(sd); doc.getElementById('sim-gen').click(); } doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
@@ -145,7 +145,7 @@ test('서류·기록 시뮬레이션: 서류함·외부 입력·서류 작성·P
 
 test('버튼 위치: 모든 화면의 시뮬레이션 버튼은 같은 작은 모양(simbtn)이고, 제목 줄 오른쪽 끝에 놓는 공통 규칙이 있다', { skip }, () => {
   for (const [src, n] of [[stockApp, 1], [bankApp, 1], [taxApp, 1], [mktApp, 2], [insApp, 1], [lrnApp, 1]]) assert.equal((src.match(/class:'btn quiet simbtn', id:'[a-z-]*sim/g) || []).length, n);
-  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 10);
+  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 11);
   assert.match(desk, /id="simbtn-css"/); assert.match(desk, /\.brand:has\(> \.simbtn\)\{display:flex/); assert.match(desk, /min-height:30px!important/);
 });
 
@@ -186,4 +186,21 @@ test('바깥 클릭: 패널 밖을 누르면 닫히고, 패널 안·시뮬레이
   click(doc.getElementById('sb')); assert.ok(doc.getElementById('nsim-pn'), '시뮬레이션 버튼은 유지');
   click(doc.getElementById('out')); assert.ok(!doc.getElementById('nsim-pn'), '바깥 클릭은 닫힘');
   S.open('bank', 'wallet'); click(doc.getElementById('out')); assert.ok(doc.getElementById('nsim-pn'), '열자마자 들어온 같은 클릭으로는 닫히지 않음'); await wait(); click(doc.getElementById('out')); assert.ok(!doc.getElementById('nsim-pn'));
+});
+
+test('나머지 시뮬레이션: 의료·행정·전문가 인증서·홈 확장·평생 기록이 입력에 따라 달라지고 화면에 버튼이 있다', { skip }, () => {
+  const { S, doc, w } = env(); const fire = (id, v) => { const e = doc.getElementById(id); e.value = v; e.dispatchEvent(new w.Event('change', { bubbles: true })); };
+  S.open('med', 'principle'); assert.match(doc.getElementById('sim-md-prin').textContent, /5건 미만/);
+  S.tab('med', 'submit'); fire('sm-sp', 'check'); assert.match(doc.getElementById('sim-md-sub').textContent, /혈액형/);
+  S.open('pub', 'request'); fire('sm-rd', '25'); assert.match(doc.getElementById('sim-pb-req').textContent, /12월 5일/);
+  S.tab('pub', 'log'); assert.match(doc.getElementById('sim-pb-log').textContent, /이어져/); fire('sm-lf', '1'); assert.match(doc.getElementById('sim-pb-log').textContent, /2번째 기록부터 지문이 맞지 않아요/);
+  S.tab('pub', 'delegate'); fire('sm-dd', '3'); fire('sm-de', '5'); assert.match(doc.getElementById('sim-pb-del').textContent, /위임이 끝났어요/);
+  S.open('cert', 'safety'); fire('sm-sa', '1'); assert.match(doc.getElementById('sim-c-safe').textContent, /사용자가 직접/); S.tab('cert', 'record'); assert.match(doc.getElementById('sim-e-hist').textContent, /추가 확인/);
+  S.open('home', 'signup'); const code = /인증번호 (\d{6})/.exec(doc.getElementById('sim-h-sms').textContent)[1]; fire('sm-sgc', code); assert.match(doc.getElementById('sim-h-auth').textContent, /가입 완료/); fire('sm-sgc', '000000'); assert.match(doc.getElementById('sim-h-auth').textContent, /맞지 않아요/);
+  S.tab('home', 'pclogin'); doc.getElementById('sim-h-auto').click(); assert.match(doc.getElementById('sim-h-auth').textContent, /로그인됐어요/);
+  S.tab('home', 'clean'); fire('sm-ck', 'smell'); assert.match(doc.getElementById('sim-h-clean').textContent, /시·군 환경과/);
+  S.tab('home', 'expert'); fire('sm-xg', '법률'); assert.match(doc.getElementById('sim-h-exp').textContent, /맞아요/);
+  S.tab('home', 'learnai'); fire('sm-ld', '30'); assert.match(doc.getElementById('sim-h-learn').textContent, /8\d\.\d%/);
+  S.open('pdv', 'life'); assert.match(doc.getElementById('sim-p-life').textContent, /허락 없이는 열리지 않아요/);
+  for (const id of ['cert-sim']) assert.ok(desk.includes('id="' + id + '"')); assert.match(rd('../medical-app.js'), /_simOpen\('med'/); assert.match(rd('../public-app.js'), /_simOpen\('pub'/);
 });
