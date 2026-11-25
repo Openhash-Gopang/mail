@@ -454,7 +454,7 @@ var STEPS = [
 var PLAN_AT = 10; // 3-1(지시서 발송)을 여는 순간 계획을 확정한다
 
 // ── 단계 이동(run 마다 따로) ──
-function openStep(R, i, re) { if (i < 0 || i >= STEPS.length || i > R.reached) return; if (i >= PLAN_AT) lock(R); R.cur = i; R.seen = true; re(); }
+function openStep(R, i, re) { if (i < 0 || i >= STEPS.length || i > R.reached) return; if (i >= PLAN_AT) lock(R); R.cur = i; R.seen = true; R.reached = Math.max(R.reached, Math.min(i + 1, STEPS.length - 1)); re(); }
 function advance(R, re) { var i = R.cur + 1; if (i >= STEPS.length) return; R.reached = Math.max(R.reached, i); openStep(R, i, re); }
 
 // ── 화면: 진행 막대 · 단계 목록 · 패널 ──
@@ -462,7 +462,7 @@ function progressBar() {
   var R = S.sim, cur = R.cur, wrap = h('div', { class:'bar', id:'emg-bar' });
   STAGES.forEach(function (name, si) {
     var ticks = []; STEPS.forEach(function (s, i) { if (s.st !== si) return;
-      var cl = 'tick ' + (i < R.reached ? 'done' : i === R.reached ? 'next' : 'lock') + (i === cur ? ' cur' : '');
+      var cl = 'tick ' + (i < R.reached ? 'done' : i === R.reached ? 'next' : 'lock') + (i === cur ? ' cur' : '') + (cur >= 0 && i === cur + 1 ? ' blink slow' : '');
       ticks.push(h('button', { type:'button', class:cl, id:'emg-tick-' + s.id, 'data-i':String(i), 'aria-label':s.id + ' ' + s.title, title:s.id + ' ' + s.title, 'aria-current':i === cur ? 'step' : null, disabled:i > R.reached ? true : null, onclick:function () { pickStep(R, i); } })); });
     wrap.appendChild(h('div', { class:'bseg' }, [h('div', { class:'bname', text:(si + 1) + '. ' + name }), h('div', { class:'bticks' }, ticks)]));
   });
@@ -472,7 +472,7 @@ function progressBar() {
 function nextHint() {
   var R = S.sim; if (!R.picked) return null;
   var last = R.cur === STEPS.length - 1, t = R.cur < 0 ? (!R.seen ? '새 사건이 뽑혔어요. 다음 할 일: 아래 단계 목록에서 깜박이는 “1-1 기기 호출”을 눌러 시작하세요.' : '다음 할 일: 단계 목록에서 “' + STEPS[R.reached].id + ' ' + STEPS[R.reached].title + '”을 눌러 이어 가세요. 이미 연 단계는 다시 볼 수 있어요.')
-    : last ? '끝까지 봤어요. 다음 할 일: “새 사건 뽑기”를 눌러 다른 사건으로 다시 해 보세요.' : '다음 할 일: 펼쳐진 패널 아래의 “다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title + '”을 눌러 한 단계씩 따라가세요.';
+    : last ? '끝까지 봤어요. 다음 할 일: “새 사건 뽑기”를 눌러 다른 사건으로 다시 해 보세요.' : '다음 할 일: 아래에서 천천히 깜박이는 “' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title + '” 단계를 눌러 한 단계씩 따라가세요.';
   return h('div', { class:'note info hintbn', id:'emg-next-hint', role:'status', text:t });
 }
 function summaryCard() {
@@ -487,7 +487,7 @@ function stepList() {
     out.appendChild(h('div', { class:'lab', text:(si + 1) + '. ' + name }));
     STEPS.forEach(function (s, i) { if (s.st !== si) return;
       var state = i === R.cur ? '보는 중' : i < R.reached ? '완료' : i === R.reached ? '열기' : '잠김', hintRow = R.picked && R.cur < 0 && !R.seen && i === 0;
-      out.appendChild(h('button', { type:'button', class:'srow' + (i === R.cur ? ' cur' : '') + (hintRow ? ' blink' : ''), id:'emg-row-' + s.id, 'data-i':String(i), disabled:i > R.reached ? true : null, 'aria-current':i === R.cur ? 'step' : null, onclick:function () { pickStep(R, i); } },
+      out.appendChild(h('button', { type:'button', class:'srow' + (i === R.cur ? ' cur' : '') + (hintRow ? ' blink' : '') + (R.cur >= 0 && i === R.cur + 1 ? ' blink slow' : ''), id:'emg-row-' + s.id, 'data-i':String(i), disabled:i > R.reached ? true : null, 'aria-current':i === R.cur ? 'step' : null, onclick:function () { pickStep(R, i); } },
         [h('span', { class:'sid', text:s.id }), h('span', { class:'stx' }, [h('b', { text:s.title }), h('span', { text:s.desc })]), h('span', { class:'sst', text:state })]));
       if (i === R.cur) { var ip = inlinePanel(); if (ip) out.appendChild(ip); } });
   });
@@ -503,7 +503,7 @@ function inlinePanel() {
     h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'직접 따라가기 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { R.cur = -1; S.wasOpen = false; render(); } })]),
     body,
     h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:R.cur === 0 ? true : null, onclick:function () { openStep(R, R.cur - 1, render); showPanel(); } }),
-      last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : h('button', { type:'button', class:'btn fill', id:'emg-nextstep', text:'다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title, onclick:function () { advance(R, render); showPanel(); } })])]);
+      last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : null])]);
   body.scrollTop = ps; return pn;
 }
 function showPanel() { var e = $('emg-ipanel'); try { if (e) e.scrollIntoView({ block:'nearest' }); } catch (x) {} }
