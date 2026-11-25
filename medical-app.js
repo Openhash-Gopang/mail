@@ -117,7 +117,7 @@ function rankCandidates(list) {
 
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 의료' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 의료' })]), h('button', { type:'button', class:'btn quiet simbtn', id:'med-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('med', S.view === 'all' ? 'profile' : S.view); } })]),
     h('div', { class:'tabs', role:S.view === 'all' ? 'navigation' : 'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:S.view === 'all' ? null : 'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function warn() {
@@ -244,7 +244,7 @@ function viewAll() {
   return out;
 }
 function render() {
-  var root = $('med-root'), tp = $('med-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
+  var root = $('med-root'), tp = $('med-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('med', S.view === 'all' ? 'profile' : S.view);
   var kids = S.view === 'all' ? viewAll() : S.view === 'submit' ? viewSubmit() : S.view === 'principle' ? viewPrinciple() : S.view === 'rank' ? viewRank() : S.view === 'visits' ? viewVisits() : viewProfile();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }

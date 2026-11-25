@@ -55,7 +55,7 @@ function head(title, lead) { return [h('h1', { text:title }), lead ? h('p', { cl
 function go(v) { S.view = v; S.err = {}; S.msg = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) {} }
 function topbar() {
   return h('div', { class:'topin' }, [
-    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 행정' })])]),
+    h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 행정' })]), h('button', { type:'button', class:'btn quiet simbtn', id:'pub-sim', text:'시뮬레이션', 'aria-label':'가상 데이터로 시뮬레이션', onclick:function () { if (window._simOpen) window._simOpen('pub', S.view === 'all' ? 'profile' : S.view); } })]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function notice() {
@@ -207,7 +207,7 @@ function viewLog() {
 }
 
 function render() {
-  var root = $('pb-root'), tp = $('pb-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
+  var root = $('pb-root'), tp = $('pb-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('pub', S.view);
   var kids = S.view === 'request' ? viewRequest() : S.view === 'principle' ? viewPrinciple() : S.view === 'connect' ? viewConnect() : S.view === 'delegate' ? viewDelegate() : S.view === 'log' ? viewLog() : viewHome();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
