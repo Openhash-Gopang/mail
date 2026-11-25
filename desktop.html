@@ -3140,7 +3140,7 @@ async function _homePlanAndRun(task, userText) {
 let _histOk = null;
 async function _histSupported() {
   if (_histOk !== null) return _histOk;
-  try { const r = await _drCall('caps', {}, 4000); _histOk = Array.isArray(r.kinds) && r.kinds.indexOf('history') >= 0; } catch (e) { return false; }   // 옛 중계는 모르는 종류를 '서류 초안'으로 저장하므로 지원할 때만 쓴다
+  try { const r = await _drCall('caps', {}, 8000); _histOk = Array.isArray(r.kinds) && r.kinds.indexOf('history') >= 0; } catch (e) { return false; }   // 옛 중계는 모르는 종류를 '서류 초안'으로 저장하므로 지원할 때만 쓴다
   return _histOk;
 }
 async function _histAdd(o) {
@@ -5840,6 +5840,7 @@ window.addEventListener('message', (e) => {
 });
 function _drCall(op, payload, ms) {
   return new Promise((resolve, reject) => {
+    if (!_dr.frame && document.body) _drInit();   // #myforms 같은 해시 진입은 DOMContentLoaded 전에 목록을 부른다
     if (!_dr.frame) { reject(new Error('NO_BRIDGE')); return; }
     const reqId = ++_dr.seq;
     const t = setTimeout(() => { delete _dr.pending[reqId]; reject(new Error('TIMEOUT')); }, ms || 6000);
@@ -6560,7 +6561,7 @@ async function _mfOpen(id) {
 async function _mfRender() {
   const loading = document.getElementById('mf-loading'), empty = document.getElementById('mf-empty'), box = document.getElementById('mf-items');
   if (!box) return;
-  loading.style.display = ''; empty.style.display = 'none'; box.innerHTML = '';
+  loading.style.display = ''; empty.style.display = 'none'; empty.textContent = '아직 보관한 양식이 없습니다.'; box.innerHTML = '';
   try {
     const r = await _drCall('list', { kind: 'form' });
     loading.style.display = 'none';
