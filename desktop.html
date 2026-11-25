@@ -3064,6 +3064,7 @@ function _agentOpenedNotice(s) {
 }
 function _agentOnStatus(s) {
   if (s.state === 'opened') { _agentOpenedNotice(s); return; }
+  if (s.state === 'step') { try { console.log('[도우미]', s.note); window.__agentSteps = (window.__agentSteps || []).concat([s.note]).slice(-30); } catch (e) { /* 기록만 */ } return; }   // 0.7.1 진행 단계 — 화면 상태는 건드리지 않는다
   const od = document.getElementById('agent-open-note'); if (od) od.remove();
   if (!['sent', 'pending', 'failed'].includes(s.state)) return;
   if (_docChat.on && window.DocHelper) {   // 서류 작성 도우미 세션 — 도우미 SP 가 다음 말에서 이 상태를 "지금 화면"으로 읽는다

@@ -731,3 +731,11 @@ test('0.7.0: 작성한 서류에 "기관에 올리기(도우미)" — 버전·�
   assert.match(d, /0\.7\.0 이상/); assert.match(d, /10 \* 1024 \* 1024/); assert.match(d, /file: \{ name: name, mime:/);
   const br = readFileSync(new URL('../agent-bridge.js', import.meta.url), 'utf8'); assert.match(br, /Object\.assign\(\{\}, job, \{ autostart: true \}\)/);
 });
+
+test('0.7.1: 진행 단계 trace — 서비스 워커 콘솔과 나비웹(step)에 남고 화면 상태를 건드리지 않는다', () => {
+  const rd = (f) => readFileSync(new URL('../ops/naviweb-agent/extension/' + f, import.meta.url), 'utf8');
+  const b = rd('background.js'), br = rd('bridge.js'), d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(b, /function trace\(/); assert.match(b, /접근 허용 창을 띄웁니다/); assert.match(b, /파일 넣기 결과/);
+  assert.match(br, /'opened', 'step'/); assert.match(d, /s\.state === 'step'/);
+  assert.equal(JSON.parse(rd('manifest.json')).version, '0.7.1');
+});
