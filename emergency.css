@@ -137,11 +137,11 @@
 
 /* 진행 막대 · 단계 목록 · slide out 패널(2026-11-25) */
 .emg .barwrap{position:sticky;top:0;z-index:20;background:var(--bg,#F7F9FC);padding:8px 0 10px;border-bottom:1px solid var(--line);margin:0 0 8px}
-.emg .bar{display:flex;gap:12px;flex-wrap:wrap}
-.emg .bseg{flex:1 1 140px;min-width:0}
+.emg .bar{display:grid;grid-template-columns:4fr 6fr 5fr 4fr;gap:12px}
+.emg .bseg{min-width:0}
 .emg .bname{font-size:12px;font-weight:600;color:var(--on2);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .emg .bticks{display:flex;gap:4px}
-.emg .tick{flex:1;min-width:8px;height:24px;min-height:0;padding:7px 0;border:0;border-radius:0;background:var(--nb,#E4E8EE);background-clip:content-box;cursor:pointer}
+.emg .tick{flex:1;min-width:0;height:24px;min-height:0;padding:7px 0;border:0;border-radius:0;background:var(--nb,#E4E8EE);background-clip:content-box;cursor:pointer}
 .emg .tick.done{background-color:var(--pri)}
 .emg .tick.next{background-color:color-mix(in srgb,var(--pri) 38%,#fff)}
 .emg .tick.cur{outline:2px solid var(--pri);outline-offset:-2px}
@@ -156,7 +156,7 @@
 .emg .stx b{font-size:15px;font-weight:600}
 .emg .stx span{font-size:13px;color:var(--on2)}
 .emg .sst{flex:none;font-size:12px;font-weight:600;color:var(--on2)}
-.emg .panel{position:fixed;top:60px;right:0;bottom:0;width:min(480px,100vw);background:var(--card);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.08);z-index:40;display:none;flex-direction:column}
+.emg .panel{position:fixed;top:54px;right:0;bottom:0;width:min(480px,100vw);background:var(--card);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.08);z-index:40;display:none;flex-direction:column}
 .emg .panel.open{display:flex}
 .emg .panel.anim{animation:emg-slide .22s ease-out}
 @keyframes emg-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -189,3 +189,6 @@
 .emg .srow.blink{border-radius:0}
 .emg .hintbn{margin-top:4px;font-weight:600}
 @media (prefers-reduced-motion:reduce){.emg .blink{animation:none;background-color:color-mix(in srgb,var(--pri) 14%,transparent)}}
+/* 나비웹 상단 헤더(높이 54px, 가려지면 0)에 막대·패널이 가려지지 않게 한다 */
+body:not(.hd-hidden) .emg .barwrap{top:54px}
+body.hd-hidden .emg .panel{top:0}
