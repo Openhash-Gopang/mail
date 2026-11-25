@@ -766,3 +766,9 @@ test('0.7.5: 같은 사이트 판정 — or.kr·go.kr 은 세 칸으로 보아 �
   assert.equal(site('https://www.seibro.or.kr/x'), site('https://seibro.or.kr/y'));
   assert.notEqual(site('https://www.nhis.or.kr'), site('https://nip.kdca.go.kr')); assert.equal(site('https://a.b.example.com'), 'example.com');
 });
+
+test('0.7.6: 작업 접수 응답을 먼저 보내고(맡기지 못했어요 오탐 방지), 나비웹 쪽 대기는 9초', () => {
+  const b = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8'), a = readFileSync(new URL('../agent-bridge.js', import.meta.url), 'utf8');
+  const i = b.indexOf('접수 응답을 먼저 보낸다'), j = b.indexOf('await stopCurrent();', i); assert.ok(i > 0 && j > i);
+  assert.match(a, /call\('agent-queue', \{ job: job \}, 9000\)/);
+});
