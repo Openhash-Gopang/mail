@@ -757,3 +757,12 @@ test('0.7.4: 파일 올리기는 사용자가 진행을 누르기 전에는 실�
   h = fakeHost([use('1', 'upload_attached_file', { ref: 'r' }), end('끝')], { ask: true });
   await runAgent({ goal: 'g', host: h }); assert.equal(h.calls.length, 1);
 });
+
+test('0.7.5: 같은 사이트 판정 — or.kr·go.kr 은 세 칸으로 보아 다른 기관 탭을 쓰지 않는다', () => {
+  const b = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  const m = /const SLD = (\/[^\n]*?\/);[^\n]*\n\s*(const site = [^\n]*)/.exec(b); assert.ok(m);
+  const site = new Function(m[1].startsWith('/') ? `const SLD = ${m[1]}; ${m[2]}; return site;` : '')();
+  assert.notEqual(site('https://cont.insure.or.kr'), site('https://www.seibro.or.kr'));
+  assert.equal(site('https://www.seibro.or.kr/x'), site('https://seibro.or.kr/y'));
+  assert.notEqual(site('https://www.nhis.or.kr'), site('https://nip.kdca.go.kr')); assert.equal(site('https://a.b.example.com'), 'example.com');
+});

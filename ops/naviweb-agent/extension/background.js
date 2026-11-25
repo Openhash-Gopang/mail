@@ -430,7 +430,8 @@ async function runJob(m) {
       // 나비웹 화면 자체를 조작하지 않는다. 자유 작업은 사용자가 보고 있는 외부 사이트 탭만 쓰고, 없으면 새 탭을 연다.
       const isNavi = (u) => { try { const h = new URL(u).hostname; return h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { return false; } };
       // 0.7.2: 맡긴 주소(m.url)가 있으면 그 사이트와 같은 사이트의 탭만 쓴다 — 예전에는 지금 보고 있던 아무 https 탭(예: claude.ai 대화)을 대상으로 잡아 엉뚱한 화면을 조작했다.
-      const site = (u) => { try { return new URL(u).hostname.split('.').slice(-2).join('.'); } catch { return ''; } };
+      const SLD = /^(co|or|go|ne|re|pe|ac|hs|ms|es|sc|kg|com|net|org|gov|edu)$/;   // 0.7.5: or.kr·go.kr 같은 두 단계 도메인은 세 칸으로 본다(예전엔 seibro.or.kr 과 cont.insure.or.kr 이 같은 사이트로 잡혔다)
+      const site = (u) => { try { const l = new URL(u).hostname.split('.'); return l.slice(l.length > 2 && SLD.test(l[l.length - 2]) ? -3 : -2).join('.'); } catch { return ''; } };
       const wantSite = hostAllowed(m.url) ? site(m.url) : '';
       const usable = (t) => t && /^https:/.test(t.url || '') && !isNavi(t.url) && okHost(t.url) && (!wantSite || site(t.url) === wantSite);
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
@@ -438,7 +439,7 @@ async function runJob(m) {
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
       state.tabId = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
-      trace('0.7.4 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
+      trace('0.7.5 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
