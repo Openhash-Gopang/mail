@@ -151,7 +151,7 @@ function scan(co, limit, upto) {
 // ── 화면: 페이지 안쪽에서 오른쪽으로 밀려 나오는 패널(슬라이드 아웃) ──
 function h(tag, a, kids) { var e = document.createElement(tag), k; for (k in (a || {})) { var v = a[k]; if (v == null || v === false) continue; if (k === 'text') e.textContent = v; else if (k.slice(0, 2) === 'on') e[k] = v; else e.setAttribute(k, v === true ? '' : v); } (kids || []).forEach(function (c) { if (c == null || c === false) return; e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }); return e; }
 function tbl(head, rows, rcols) { return h('div', { class:'tbw' }, [h('table', {}, [h('thead', {}, [h('tr', {}, head.map(function (t, i) { return h('th', { class:rcols && rcols.indexOf(i) >= 0 ? 'r' : '', text:t }); }))]), h('tbody', {}, rows.map(function (rw) { return h('tr', {}, rw.map(function (c, i) { var o = c && typeof c === 'object' ? c : { t:c }; return h('td', { class:(rcols && rcols.indexOf(i) >= 0 ? 'r ' : '') + (o.c || ''), text:String(o.t) }); })); }))])]); }
-function fld(id, label, val, o) { o = o || {}; var i = o.opts ? h('select', { id:id, 'aria-label':label, onchange:function () { if (ST._redraw) ST._redraw(); } }, o.opts.map(function (x) { return h('option', { value:x[0], text:x[1] }); })) : h('input', { id:id, type:'text', inputmode:'numeric', value:val, 'aria-label':label, onchange:function () { if (!/^sm-(n|sp|odd|mo|st|in|fx|vol|opex|seed)$/.test(id) && ST._redraw) ST._redraw(); } }); if (o.opts) i.value = val; return h('label', { for:id }, [label, i]); }
+function fld(id, label, val, o) { o = o || {}; var i = o.opts ? h('select', { id:id, 'aria-label':label, onchange:function () { if (ST._redraw) ST._redraw(); } }, o.opts.map(function (x) { return h('option', { value:x[0], text:x[1] }); })) : h('input', { id:id, type:'text', inputmode:'numeric', value:val, 'aria-label':label, onchange:function () { if (/^sm-(n|sp|odd|mo|st|in|fx|vol|opex|wk|rate|prem|cov)$/.test(id)) { if (ST._regen) ST._regen(); } else if (id !== 'sm-seed' && ST._redraw) ST._redraw(); } }); if (o.opts) i.value = val; return h('label', { for:id }, [label, i]); }
 function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
 var CSS = '.nsim-pn{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);z-index:9000;background:#fff;color:#1b1d21;box-shadow:-8px 0 28px rgba(0,0,0,.22);border-left:1px solid #d9dce1;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease;font:14px/1.5 system-ui,sans-serif}'
   + '.nsim-pn.on{transform:none}@media (prefers-reduced-motion:reduce){.nsim-pn{transition:none}}'
@@ -219,6 +219,14 @@ function insure(seed, o) {
   o = o || {}; var r = rng(seed), n = ci(o.n, 10, 20000, 500), rate = Math.min(60, Math.max(0, Number(o.rate) || 4)) / 100, prem = ci(o.prem, 0, 1e7, 20000), cov = ci(o.cov, 0, 1e10, 10000000), acc = 0, pay = 0, i;
   for (i = 0; i < n; i++) if (r() < rate) { acc++; pay += Math.round(cov * (0.2 + r() * 0.8) / 1000) * 1000; }
   var income = n * prem * 12; return { seed:seed, n:n, rate:rate, prem:prem, cov:cov, accidents:acc, payout:pay, income:income, lossRatio:income ? pay / income : null };
+}
+/** 기록이 앞 기록의 지문을 이어 쌓이는 모습과, 한 곳을 고쳤을 때 어디부터 어긋나는지를 보여 준다. rows: 문자열 배열. */
+function chainView(box, p, rows, what) {
+  var fix = ci(num('sm-' + p + 'fx', 0), 0, rows.length, 0), prev = '00000000', good = rows.map(function (x) { prev = fnv(prev + x); return prev; }), shown = rows.map(function (x, i) { return fix === i + 1 ? x + ' (고침)' : x; }), bad = -1; prev = '00000000';
+  shown.forEach(function (x, i) { var hh = fnv(prev + x); if (hh !== good[i] && bad < 0) bad = i; prev = good[i]; });
+  box.appendChild(h('div', { class:'row' }, [fld('sm-' + p + 'fx', what + ' 중 몰래 고칠 번호(0=안 고침)', String(fix))]));
+  box.appendChild(tbl(['번호', '기록', '지문'], shown.map(function (x, i) { return [i + 1, x, { t:good[i], c:bad >= 0 && i >= bad ? 'bad' : '' }]; })));
+  box.appendChild(h('div', { class:'sub', id:'sim-' + p + '-chk', text:bad >= 0 ? (bad + 1) + '번째 기록부터 지문이 앞 기록과 맞지 않아요. 고친 흔적이 드러나요.' : '모든 지문이 앞 기록과 이어져 있어요.' }));
 }
 var BODY = {};
 BODY.insure = function (box, s, tab) {
@@ -288,13 +296,16 @@ BODY.stock = function (box, s, tab) {
     box.appendChild(h('div', { class:'box', id:'sim-s-bt-box' }, [h('b', { text:'평가 구간 적중률 (성장 3%·요구수익률 10% 가정)' }), h('div', { class:'sub', id:'sim-s-bt', text:bt ? (bt.n ? '이익이 있는 기업 ' + bt.n + '곳 중 ' + bt.hit + '곳(' + pc(bt.rate) + ')의 "진짜 가치"가 구간 안에 들어왔어요. 구간 폭은 평균 ' + bt.avgWidth.toFixed(2) + '배예요. 진짜 가정은 성장 1~5%·요구수익률 8~12%에서 무작위로 정했어요.' : '이익이 있는 가상 기업이 없어 시험할 수 없어요.') : '' })]));
   }
   if (tab === 'order') {
-    var fm = feeModel(o), px = num('sm-px', 10);
+    var fm = feeModel(o);
     box.appendChild(h('div', { class:'row' }, [fld('sm-ft', '하루 거래 건수', o.ft), fld('sm-fa', '건당 평균 금액(원)', o.fa), fld('sm-fr', '우리 수수료율(%)', o.fr), fld('sm-br', '기존 증권사 수수료율(%) 가정', o.br), fld('sm-fc', '월 운영비(원) 가정', o.fc)]));
     box.appendChild(h('div', { class:'sub', id:'sim-s-fee', text:'월 거래대금 ' + won(fm.volume) + '원 → 수수료 수입 ' + won(fm.revenue) + '원, 월 운영비를 빼면 ' + (fm.profit >= 0 ? '+' : '−') + won(Math.abs(fm.profit)) + '원. 투자자는 기존보다 월 ' + won(fm.saving) + '원을 덜 냅니다. 손익분기는 월 거래대금 ' + (fm.breakEvenVolume == null ? '—' : won(fm.breakEvenVolume) + '원') + '. 요율·비용은 확정값이 아닌 가정이에요.' }));
-    box.appendChild(h('div', { class:'row' }, [fld('sm-px', '주문 가격이 어제보다 몇 % 달라졌나(%)', String(px))]));
-    box.appendChild(sumBox('sim-o-sum', ['감독 AI 한도 ±' + Math.round(lim * 100) + '% → ', [h('b', { class:Math.abs(px) / 100 > lim ? 'bad' : 'ok', text:Math.abs(px) / 100 > lim ? '주문 보류·확인 대상' : '모의 체결 가능' })]]));
+    var oi = ci(num('sm-oc', 0), 0, list.length - 1, 0), oc = list[oi].c, cp = oc.series[day], oq = ci(num('sm-oq', 10), 1, 100000, 10), op = num('sm-op', cp), amt = oq * op, fee = Math.round(amt * (Number(o.fr) || 0) / 100), dev = cp ? (op - cp) / cp : 0;
+    box.appendChild(h('div', { class:'row' }, [fld('sm-oc', '종목', String(oi), { opts:list.map(function (y, i) { return [String(i), y.c.name]; }) }), fld('sm-oq', '수량', String(oq)), fld('sm-op', '주문 가격(원)', String(op))])); var oe = document.getElementById('sm-oc'); if (oe) oe.value = String(oi);
+    box.appendChild(sumBox('sim-o-sum', [oc.name + ' ' + oq + '주 × ' + won(op) + '원 = 주문 금액 ' + won(amt) + '원 · 수수료 ' + won(fee) + '원', '현재가 ' + won(cp) + '원 대비 ' + (dev >= 0 ? '+' : '') + (dev * 100).toFixed(1) + '% → 감독 AI 한도 ±' + Math.round(lim * 100) + '% ', [h('b', { class:Math.abs(dev) > lim ? 'bad' : 'ok', text:Math.abs(dev) > lim ? '주문 보류·확인 대상' : '모의 체결 가능' })], '모의 주문이에요. 실제 체결·결제가 없어요.']));
   }
   if (tab === 'trades') {
+    var rt = rng(s.seed + 97), trows = list.slice(0, 8).map(function (x, i) { var q = 1 + Math.floor(rt() * 20) * 5, px = x.c.series[Math.min(day, x.c.series.length - 1)]; return (rt() < 0.7 ? '매수 ' : '매도 ') + x.c.name + ' ' + q + '주 × ' + won(px) + '원'; });
+    chainView(box, 'st', trows, '모의 거래');
     box.appendChild(h('div', { class:'sub', text:'이음 장부를 만들고 한 곳씩 몰래 바꿔 보며 검증이 잡아내는지 봅니다(수량·가격·분개 금액 변경, 중간 전표 삭제). 맨 끝 전표 삭제는 따로 확인합니다.' }));
     box.appendChild(h('div', { class:'row' }, [h('button', { type:'button', id:'sim-chain', text:'변조 시험 하기', onclick:function () { var el = document.getElementById('sim-s-chain'); if (el) el.textContent = '시험 중…'; chainTest(s.seed, 30).then(function (rs) { s.chain = rs; var e2 = document.getElementById('sim-s-chain'); if (e2) e2.textContent = rs ? rs.records + '건짜리 장부에서 변조 ' + rs.trials + '번 중 ' + rs.detected + '번 잡았어요.' + (rs.tailTruncationDetected ? '' : ' 맨 끝 전표를 지우면 이 장부만으로는 못 잡아요(바깥에 기준 해시를 따로 둬야 해요).') : '시험 모듈이 없어요.'; }); } })]));
     box.appendChild(h('div', { class:'sub', id:'sim-s-chain', text:s.chain ? s.chain.records + '건짜리 장부에서 변조 ' + s.chain.trials + '번 중 ' + s.chain.detected + '번 잡았어요.' : '' }));
@@ -313,7 +324,7 @@ BODY.stock = function (box, s, tab) {
     box.appendChild(sumBox('sim-a-sum', ['현금 비중 ' + wc + '% · 1천만 원을 10년 두었을 때 가상 200번의 결과', ['나쁜 10% 경우 ', h('b', { text:won(tr.p10) + '원' }), ' · 중간 ', h('b', { text:won(tr.p50) + '원' }), ' · 좋은 10% 경우 ', h('b', { text:won(tr.p90) + '원' })], '가정: 주식 연 7%·변동 18%, 채권 3%·6%, 현금 2%. 모두 예시 값이고 합산은 단순화했어요.']));
   }
   if (tab === 'goal') {
-    var sv = num('sm-sv', 300000), yr = ci(num('sm-yr', 10), 1, 40, 10), rt = num('sm-grt', 5) / 100, tg = num('sm-tg', 100000000), t2 = trials(s.seed, { start:0, monthly:sv, years:yr, mu:rt, sigma:0.12 });
+    var sv = num('sm-sv', 300000), yr = ci(num('sm-yr', 10), 1, 40, 10), rt = num('sm-grt', 5) / 100, tg = num('sm-tg', 50000000), t2 = trials(s.seed, { start:0, monthly:sv, years:yr, mu:rt, sigma:0.12 });
     var hit = t2.all.filter(function (v) { return v >= tg; }).length;
     box.appendChild(h('div', { class:'row' }, [fld('sm-sv', '월 저축(원)', String(sv)), fld('sm-yr', '기간(년)', String(yr)), fld('sm-grt', '연 수익률 가정(%)', String(rt * 100)), fld('sm-tg', '목표 금액(원)', String(tg))]));
     box.appendChild(sumBox('sim-g-sum', ['가상 200번 중 목표를 넘긴 경우 ' + hit + '번(' + Math.round(hit / 2) + '%)', ['나쁜 10% 경우 ', h('b', { text:won(t2.p10) + '원' }), ' · 중간 ', h('b', { text:won(t2.p50) + '원' }), ' · 좋은 10% 경우 ', h('b', { text:won(t2.p90) + '원' })], '수익률은 약속된 값이 아니라 가정이에요. 변동 12%로 흔들어 봤어요.']));
@@ -380,7 +391,8 @@ BODY.market = function (box, s, tab) {
   if (tab === 's2') { var nd = ci(num('sm-need', 3), 1, 5, 3); box.appendChild(h('div', { class:'row' }, [fld('sm-need', '필요도(1~5)', String(nd))])); box.appendChild(sumBox('sim-m-n', ['필요도 ' + nd + ' → ', [h('b', { text:nd >= 4 ? '급해요: 가격 구간 안이면 바로 진행' : nd <= 2 ? '급하지 않아요: 구간 아래로 내려갈 때까지 기다려도 돼요' : '보통: 가격 비교 뒤 결정' })], '연습용 단순 규칙이에요.'])); }
   if (tab === 's3') { var bud = num('sm-bud', band.mid); box.appendChild(h('div', { class:'row' }, [fld('sm-bud', '내 예산(원)', String(bud))])); box.appendChild(sumBox('sim-m-b', ['예산 ' + P(bud) + ' → ', [h('b', { class:verdict(bud) === '적정' ? 'ok' : 'bad', text:bud < band.lo ? '구간보다 낮아 이 값에는 살 곳이 없을 수 있어요' : bud > band.hi ? '구간보다 높아요. 더 싼 곳이 있어요' : '구간 안이에요' })]])); }
   if (tab === 's4') { var ops = [0, 1, 2, 3, 4, 5, 6, 7].map(function () { return 3 + Math.round(r() * 2); }); ops.push(1); ops.push(5); var m = ops.reduce(function (a, b) { return a + b; }, 0) / ops.length, sorted = ops.slice().sort(function (a, b) { return a - b; }), tm = sorted.slice(1, -1).reduce(function (a, b) { return a + b; }, 0) / (sorted.length - 2); box.appendChild(sumBox('sim-m-o', ['가상 별점 ' + ops.join(', '), '평균 ' + m.toFixed(2) + '점 · 가장 낮은 값과 높은 값을 뺀 평균 ' + tm.toFixed(2) + '점', '극단 의견 하나가 평균을 흔드는 정도를 봐요.'])); }
-  if (tab === 's5') { var as = rw.offers.map(function (x) { return { x:x, as:1 + Math.floor(r() * 5) }; }); box.appendChild(tbl(['판매처', '가격', '판정', 'AS 점수'], as.map(function (a) { return [a.x.seller, P(a.x.price), { t:a.x.v, c:a.x.v === '적정' ? 'ok' : 'bad' }, a.as + '점']; }), [1, 3])); }
+  if (tab === 's5') { var as = rw.offers.map(function (x) { return { x:x, as:1 + Math.floor(r() * 5) }; }); var bestAs = as.filter(function (a) { return a.x.v === '적정'; }).sort(function (a, b) { return b.as - a.as || a.x.price - b.x.price; })[0]; box.appendChild(sumBox('sim-m-as', [bestAs ? '가격이 적정하면서 AS 점수가 가장 높은 곳: ' + bestAs.x.seller + ' (' + P(bestAs.x.price) + ', AS ' + bestAs.as + '점)' : '적정 가격 판매처가 없어요.', '싼 곳이 늘 좋은 곳은 아니에요. 가격과 AS를 함께 봐요(연습용).']));
+  if (tab === 's5') box.appendChild(tbl(['판매처', '가격', '판정', 'AS 점수'], as.map(function (a) { return [a.x.seller, P(a.x.price), { t:a.x.v, c:a.x.v === '적정' ? 'ok' : 'bad' }, a.as + '점']; }), [1, 3])); }
   if (tab === 's6') box.appendChild(tbl(['판매처', '가격', '판정'], rw.offers.map(function (x) { return [x.seller, P(x.price), { t:x.v, c:x.v === '적정' ? 'ok' : 'bad' }]; }), [1]));
   if (tab === 's7') { var ask = num('sm-ask', band.mid); box.appendChild(h('div', { class:'row' }, [fld('sm-ask', '내가 제안할 가격(원)', String(ask))])); box.appendChild(sumBox('sim-m-a', ['제안 ' + P(ask) + ' → ', [h('b', { class:ask > band.hi ? 'bad' : 'ok', text:ask > band.hi ? '구간을 넘어서 받아들이기 어려워요(연습 규칙)' : ask < band.lo ? '너무 낮아 판매자가 거절할 수 있어요' : '합의할 만한 가격이에요' })]])); }
   if (tab === 's8') { var b = pickBest(); box.appendChild(sumBox('sim-m-f', b ? ['가장 싼 적정 가격: ' + b.seller + ' ' + P(b.price), '가격 판정 ✓ · 구간 안 ✓ · 최종 확인 뒤 결제로 넘어가요'] : ['적정 가격 판매처가 없어요. 다른 데이터로 다시 해 보세요.'])); }
@@ -440,6 +452,7 @@ BODY.pdv = function (box, s, tab) {
   ents.forEach(function (e) { if (e.amt > 0) inc += e.amt; else out -= e.amt; });
   var inputs = h('div', { class:'row' }, [fld('sm-mo', '기간(개월)', o.months), fld('sm-st', '시작 잔고(원)', o.start), fld('sm-in', '월 수입(원)', o.income), fld('sm-fx', '월 고정 지출(원)', o.fixed), fld('sm-vol', '수입 변동(%)', o.vol)]);
   if (tab === 'vault') {
+    chainView(box, 'pv', ents.slice(0, 8).map(function (e) { return e.ym + ' ' + e.what + ' ' + won(e.amt) + '원'; }), '내 기록');
     box.appendChild(h('div', { class:'sub', text:'기록은 앞 기록의 지문을 이어 붙여 쌓여요. 한 곳을 몰래 바꾸면 뒤 기록과 맞지 않아 드러나요. 가상 장부로 시험해 보세요.' }));
     box.appendChild(h('div', { class:'row' }, [h('button', { type:'button', id:'sim-chain', text:'변조 시험 하기', onclick:function () { var el = document.getElementById('sim-s-chain'); if (el) el.textContent = '시험 중…'; chainTest(s.seed, 30).then(function (rs) { var e2 = document.getElementById('sim-s-chain'); if (e2) e2.textContent = rs ? rs.records + '건짜리 장부에서 변조 ' + rs.trials + '번 중 ' + rs.detected + '번 잡았어요. 맨 끝 전표를 지우면 이 장부만으로는 못 잡아요(바깥에 기준 해시를 따로 둬야 해요).' : '시험 모듈이 없어요.'; }); } })]));
     box.appendChild(h('div', { class:'sub', id:'sim-s-chain' }));
@@ -796,16 +809,19 @@ function readOpt(kind) {
   if (kind === 'bank') { o.months = g('sm-mo', o.months); o.start = g('sm-st', o.start); o.income = g('sm-in', o.income); o.fixed = g('sm-fx', o.fixed); o.vol = g('sm-vol', o.vol); }
   if (kind === 'stock') { o.n = g('sm-n', o.n); o.ft = g('sm-ft', o.ft); o.fa = g('sm-fa', o.fa); o.fc = g('sm-fc', o.fc); o.fr = g('sm-fr', o.fr); o.br = g('sm-br', o.br); o.co = g('sm-co', o.co || '0'); o.w = g('sm-w', o.w || X.w); s.f = { sector:g('sm-sec', s.f.sector), region:g('sm-reg', s.f.region), size:g('sm-sz', s.f.size) }; }
 }
-function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, settings:settingsGen, med:medGen, pub:pubGen, cert:learn, home:homeGen, mail:mailGen, guide:docsGen, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
+function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, settings:settingsGen, med:medGen, pub:pubGen, cert:learn, home:homeGen, mail:mailGen, guide:docsGen, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 20; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
-  ST._redraw = null; document.removeEventListener('keydown', onKey, true); document.removeEventListener('click', onOutside, true);
+  ST._redraw = null; ST._regen = null; document.removeEventListener('keydown', onKey, true); document.removeEventListener('click', onOutside, true);
   if (PN) { var p = PN; p.classList.remove('on'); p.removeAttribute('id'); Array.prototype.forEach.call(p.querySelectorAll('[id]'), function (e) { e.removeAttribute('id'); }); setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 230); }
   PN = null; CUR = null; if (prevFocus && prevFocus.focus) { try { prevFocus.focus(); } catch (e) { /* 포커스 복귀 실패는 무시 */ } }
 }
 function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
 /** 패널 바깥을 누르면 닫는다(시뮬레이션 버튼은 제외: 눌러서 다시 여는 동작과 겹치지 않게). */
 function onOutside(e) { var el = e.target; if (!PN || !el || PN.contains(el) || (el.closest && el.closest('.simbtn'))) return; close(); }
+var KMET = {
+  stock:'모의 주문을 끝까지 마친 비율, 감독 AI 오탐률, 수수료 손익분기 거래대금', bank:'송금·결제 성공률, 잔액 부족 거절 비율, 백업 키 복구 성공률', tax:'전표 입력부터 세액 확인까지 마친 비율, 원가 미확인 매출 비율', market:'구매 단계별 이탈 단계, 제 값 초과 가격을 걸러낸 비율', insure:'청구 추가 확인 비율, 가입자 규모별 손해율 안정성', learn:'과목별 정답률 추이, 몰아치기 의심 비율', pdv:'기록 변조 탐지율, 기록 열람 허락 흐름 완료율', myforms:'양식 재사용 비율, 항목 인식 정확도', othersite:'옮겨 적기 단계별 중단 지점, 사용자 직접 단계 완료율', docs:'작성 시작부터 확정까지 마친 비율, 준법 점검에서 고쳐진 비율', settings:'탭별 설정 완료율, 백업 키 복구 성공률', mail:'발송 전 점검(받는 사람·첨부)에서 막힌 비율', guide:'과제 성공률과 많은 실패 원인', home:'가입·로그인 완료율, 입력 문장이 맞는 갈래로 간 비율, 사람 찾기 성공률', med:'제출 범위를 최소로 고른 비율, 소수 집단 통계 숨김 비율', pub:'대행 요청 완료율, 위임 범위 선택 분포', cert:'모의 시험 통과율, 학습 기록 이상 탐지 비율'
+};
 function tabLabel(kind, tab) { var t = PAGES[kind].tabs.filter(function (x) { return x[0] === tab; })[0]; return t ? t[1] : ''; }
 function render() {
   if (!PN || !CUR) return; var kind = CUR, s = ST[kind], tab = s.tab, box = document.getElementById('sim-body'); if (!box) return;
@@ -813,6 +829,7 @@ function render() {
   Array.prototype.forEach.call(PN.querySelectorAll('.chips button'), function (b) { var on = b.getAttribute('data-tab') === tab; b.className = on ? 'cur' : ''; b.setAttribute('aria-selected', on ? 'true' : 'false'); });
   s.vals = s.vals || {}; Array.prototype.forEach.call(box.querySelectorAll('input,select,textarea'), function (e) { if (e.id) s.vals[e.id] = e.value; });
   box.textContent = ''; BODY[kind](box, s, tab);
+  box.appendChild(h('div', { class:'sub', id:'sim-metric', style:'margin-top:14px;border-top:1px dashed #d9dce1;padding-top:8px', text:'상용화 준비용 점검 지표(실제로 재면 볼 것 · 이 화면의 숫자는 가상): ' + (KMET[kind] || '') }));
 }
 /** 화면에서 탭이 바뀌면 패널도 그 탭의 시뮬레이션으로 따라간다. */
 function setTab(kind, tab) { if (!PAGES[kind] || !ST[kind]) return false; if (!tabLabel(kind, tab)) return false; readOpt(kind); ST[kind].tab = tab; if (CUR === kind) render(); return true; }
@@ -823,6 +840,7 @@ function open(kind, tab) {
   ST[kind] = { seed:((Date.now() / 1000) | 0) % 100000, opt:o, f:{ sector:'', region:'', size:'' }, day:0, tab:tabLabel(kind, tab) ? tab : PAGES[kind].tabs[0][0] }; CUR = kind; make(kind);
   prevFocus = document.activeElement; var box = h('div', { id:'sim-body', class:'bdy' });
   ST._redraw = function () { readOpt(kind); render(); };
+  ST._regen = function () { readOpt(kind); make(kind); render(); };
   var seedIn = h('input', { id:'sm-seed', type:'text', inputmode:'numeric', value:String(ST[kind].seed), 'aria-label':'시드', style:'width:90px' });
   var bar = h('div', { class:'row' }, [h('label', { for:'sm-seed' }, ['시드(같으면 같은 결과)', seedIn]), h('button', { type:'button', class:'pri', id:'sim-gen', text:'가상 데이터 만들기', onclick:function () { ST[kind].seed = ci(seedIn.value, 0, 4294967295, 1); make(kind); render(); } }),
     h('button', { type:'button', id:'sim-again', text:'다른 데이터로 다시', onclick:function () { ST[kind].seed = (ST[kind].seed + 1) % 4294967295; seedIn.value = String(ST[kind].seed); make(kind); render(); } })]);

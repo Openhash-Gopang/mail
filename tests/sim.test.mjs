@@ -55,7 +55,7 @@ test('화면: 열면 가상 데이터 표시가 있고, 실제 저장소에는 �
 test('화면: 입력값을 바꿔 다시 만들면 반영되고, 증권은 하루 진행으로 시세가 움직이며 필터가 걸린다', { skip }, () => {
   const { S, doc, w } = env(true); S.open('bank'); doc.getElementById('sm-st').value = '0'; doc.getElementById('sm-in').value = '1,000,000'; doc.getElementById('sm-fx').value = '1500000'; doc.getElementById('sim-gen').click();
   assert.match(doc.getElementById('sim-b-sum').textContent, /거절된 결제 [1-9]/); assert.match(doc.getElementById('sim-b-sum').textContent, /장부 대조: .*✓/);
-  S.open('stock'); doc.getElementById('sim-next').click(); assert.match(doc.getElementById('sim-body').textContent, /시세 1일째/); S.tab('stock', 'explore'); const rows0 = doc.querySelectorAll('#sim-body tbody tr').length; assert.ok(rows0 >= 3);
+  S.open('stock'); doc.getElementById('sim-next').click(); assert.match(doc.getElementById('sim-body').textContent, /시세 21일째/); S.tab('stock', 'explore'); const rows0 = doc.querySelectorAll('#sim-body tbody tr').length; assert.ok(rows0 >= 3);
   const sec = doc.getElementById('sm-sec'); sec.value = '__none__'; sec.dispatchEvent(new w.Event('change', { bubbles: true }));
   const cnt = doc.querySelectorAll('#sim-body tbody tr').length; assert.ok(cnt <= rows0);
 });
@@ -203,4 +203,14 @@ test('나머지 시뮬레이션: 의료·행정·전문가 인증서·홈 확장
   S.tab('home', 'learnai'); fire('sm-ld', '30'); assert.match(doc.getElementById('sim-h-learn').textContent, /8\d\.\d%/);
   S.open('pdv', 'life'); assert.match(doc.getElementById('sim-p-life').textContent, /허락 없이는 열리지 않아요/);
   for (const id of ['cert-sim']) assert.ok(desk.includes('id="' + id + '"')); assert.match(rd('../medical-app.js'), /_simOpen\('med'/); assert.match(rd('../public-app.js'), /_simOpen\('pub'/);
+});
+
+test('검토 보완: 입력을 바꾸면 바로 새 가상 데이터가 만들어지고, 거래·내 기록은 이음 표와 변조 표시가 있으며, 모의 주문은 금액·수수료·한도를 계산하고, 점검 지표가 붙는다', { skip }, () => {
+  const { S, doc, w } = env(true); const fire = (id, v) => { const e = doc.getElementById(id); e.value = v; e.dispatchEvent(new w.Event('change', { bubbles: true })); };
+  S.open('tax', 'exp'); const before = doc.getElementById('sim-t-exp').textContent; fire('sm-opex', '5000000'); assert.notEqual(doc.getElementById('sim-t-exp').textContent, before); assert.match(doc.getElementById('sim-t-exp').textContent, /5,000,000원/);
+  S.open('stock', 'trades'); assert.match(doc.getElementById('sim-st-chk').textContent, /이어져/); fire('sm-stfx', '3'); assert.match(doc.getElementById('sim-st-chk').textContent, /3번째 기록부터/);
+  S.tab('stock', 'order'); fire('sm-oq', '10'); fire('sm-op', '1'); assert.match(doc.getElementById('sim-o-sum').textContent, /주문 보류·확인 대상/); assert.match(doc.getElementById('sim-o-sum').textContent, /수수료/);
+  S.open('pdv', 'vault'); fire('sm-pvfx', '2'); assert.match(doc.getElementById('sim-pv-chk').textContent, /2번째 기록부터/);
+  for (const [k, pg] of Object.entries(S.pages)) { S.open(k, pg.tabs[0][0]); assert.match(doc.getElementById('sim-metric').textContent, /점검 지표/, k); S.close(); }
+  S.open('stock', 'portfolio'); assert.match(doc.getElementById('sim-body').textContent, /시세 20일째/);
 });
