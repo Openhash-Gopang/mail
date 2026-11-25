@@ -14,6 +14,8 @@
  * 무엇이 실제이고 무엇이 아닌가(화면에도 그대로 적는다):
  *  - 시장 인프라 AI·국세청 AI·시장 SP·나만의 AI 비서·재무제표 SP는 아직 서로 연결되어 있지 않다. 이 화면이 한 브라우저 안에서 이 모두를 대신해 흐름을 보여 준다.
  *    서명은 이 화면이 만든 임시 키(ECDSA P-256)로 하며 실제 신원 인증이 아니다. 기록은 이 브라우저(localStorage)에만 저장된다.
+ *  - 「홈택스에서 가져오기」는 고른 조회 화면(신고 내역·전자세금계산서·사업자 현황)을 나비웹 도우미가 홈택스에서 열어 주는 것이다. 이 화면은 'agent' 이벤트로 할 일만 호스트에 넘기고,
+ *    로그인·인증서는 사용자가 하며 조회·내려받기까지만 한다(신고서 제출·납부는 하지 않는다). 내려받은 파일은 사용자의 컴퓨터에 저장되고 이 장부에는 자동으로 반영되지 않는다.
  *  - 세액은 부가가치세 10%(공급가액 기준) 체험 값이다. 실제 과세는 최신 세법에 따라 국세청이 정하며, 세무 상담이나 신고 대리가 아니다.
  */
 (function () {
@@ -221,6 +223,22 @@ rows.reverse();
 return h('div', { class:'card', id:'tx-hist', style:'padding:0;margin-top:12px' }, [h('div', { style:'padding:12px 16px' }, [h('b', { text:'갱신 이력 — 언제·왜·어떻게 바뀌었는지' }), h('div', { class:'sub', text:'장부가 바뀔 때마다 갱신일시와 일련번호가 한 줄씩 남아요. 장부 항목을 몰래 고치면 아래 "일련번호로 확인"에서 전표와 맞지 않아 드러나요.' })]),
 h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [thr(['갱신일시', '일련번호', '장부 주인', '계정', '차변·대변', '사유', '전표 해시']), h('tbody', {}, rows.slice(0, 36))])])]);
 }
+var HT = [['vat', '부가가치세 신고 내역', '홈택스에서 부가가치세 신고 내역(신고서 조회)'], ['inv', '전자세금계산서 목록', '홈택스에서 전자세금계산서 매입·매출 목록'], ['biz', '사업자 현황', '홈택스에서 사업자등록 상태와 신고 현황']];
+/** 홈택스 조회를 도우미에 맡길 일로 호스트에 넘긴다. 호스트는 NaviTax.agentResult(ok, msg) 로 결과를 돌려준다. */
+function handOff() {
+  var it = HT.filter(function (x) { return x[0] === S.ht; })[0] || HT[0];
+  S.htMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], goal:it[2] });
+}
+function agentResult(ok, msg) { S.htMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function agentCard() {
+  var s = h('select', { id:'tx-ht', 'aria-label':'홈택스에서 가져올 것' }, HT.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ht || 'vat'; s.onchange = function () { S.ht = s.value; };
+  return h('div', { class:'card col', id:'tx-agent', style:'margin-top:12px' }, [h('b', { text:'홈택스에서 가져오기 (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'고른 조회 화면을 도우미가 홈택스에서 열어 줍니다. 로그인·인증서는 내가 하고, 조회와 내려받기까지만 해요. 신고서 제출과 납부는 하지 않아요. 내려받은 파일은 내 컴퓨터에 저장되며 이 장부에는 자동으로 들어가지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff, 'tx-ht-go')]),
+    S.htMsg ? note(S.htMsg, false, 'tx-ht-msg') : null]);
+}
 function viewMain() {
   var kids = [], P = pending();
   kids.push(h('h2', { text:'세무 회계 — 시장에서 받은 전표를 세액 결정과 장부 반영까지' }));
@@ -235,6 +253,7 @@ function viewMain() {
     box.push(h('div', { style:'margin-top:16px' }, [h('div', { text:slipLine(x.f) }), h('div', { class:'sub', text:'출처: ' + x.src }), h('div', { class:'sub', id:'tx-infra-sig-' + i, text:sg }), h('div', { class:'rowf', style:'margin-top:10px' }, [btn('국세청 AI에 보내기', 'fill', function () { send(x); }, 'tx-send-' + i)])]));
   });
   kids.push(h('div', { class:'card col', style:'margin-top:12px' }, box));
+  kids.push(agentCard());
   if (S.err) kids.push(note(S.err, true, 'tx-err'));
   var r = S.rec[0]; if (r) kids = kids.concat(viewResult(r));
   if (S.rec.length && (S.stage == null || S.stage >= 3)) kids.push(ownBooks());   // 이력 기록 뒤에 내 장부 합계를 보여 준다
@@ -336,6 +355,7 @@ window.NaviTax = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function () { if (M) render(); },
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   flow:{ check:checkSlip, canon:canon, vat10:vat10, entry:entryFor, run:run, trace:trace },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };

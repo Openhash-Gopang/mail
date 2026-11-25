@@ -3751,7 +3751,7 @@ function _medShow(view) {
   });
 }
 function _medOpen(view) { _switchTab('med'); _medShow(view); }
-const _TAX_V = '20261125eb'; let _taxChat = false;
+const _TAX_V = '20261125fa'; let _taxChat = false;
 function _taxLoad(cb) { _ledgerLoad(() => _taxLoad2(cb)); }
 function _taxLoad2(cb) {
   if (window.NaviTax) { cb(); return; }
@@ -3766,9 +3766,18 @@ function _taxShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviTax.on('ask', (t) => { _infraChatSync('tax'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
+      NaviTax.on('agent', _taxAgent);   // 홈택스 조회: 나비웹 도우미가 홈택스를 열어 준다(로그인·인증서는 사용자, 제출·납부는 하지 않음)
       NaviTax.mount(r, { view: view });
     } else if (view) NaviTax.view(view);
   });
+}
+async function _taxAgent(job) {
+  const say = (ok, m) => { try { NaviTax.agentResult(ok, m); } catch (e) {} };
+  let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
+  if (!info) { say(false, window.NaviAgent && NaviAgent.STORE_URL ? '나비웹 도우미가 연결돼 있지 않아요. 홈 메뉴의 도우미 설치를 눌러 추가한 뒤 다시 눌러 주세요.' : '나비웹 도우미가 연결돼 있지 않아요.'); return; }
+  const goal = job.goal + ' 조회 화면을 열어 주세요. 조회와 내려받기까지만 하고 신고서 제출·납부·발급 신청은 하지 마세요. 로그인·인증서는 사용자가 직접 합니다.';
+  let ok = false; try { ok = await NaviAgent.queue({ playbook: '', goal: goal, title: '홈택스 — ' + job.label, url: 'https://www.hometax.go.kr' }); } catch (e) { ok = false; }
+  say(!!ok, ok ? '도우미가 홈택스를 엽니다. 열린 화면의 안내에 따라 로그인해 주세요.' : '도우미에 맡기지 못했어요. 확장 프로그램이 켜져 있는지 확인해 주세요.');
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
 const _MKT_V = '20261125tb'; let _mktChat = false;
