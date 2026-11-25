@@ -108,10 +108,10 @@ test('탭마다 시뮬레이션: 네 화면의 모든 탭이 각자 내용을 �
     assert.ok(seen.size >= pg.tabs.length - 2, k + ' 탭마다 내용이 달라야 해요');
     assert.equal(S.tab(k, '없는탭'), false); S.close();
   }
-  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3 + 8 + 5 + 3); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
+  assert.equal(total, 11 + 6 + 5 + 12 + 5 + 5 + 7 + 1 + 1 + 3 + 8 + 5 + 3 + 6); assert.equal(w.localStorage.length, before); assert.equal(fetched(), 0);
   S.open('stock', 'goal'); doc.getElementById('sm-sv').value = '500000'; doc.getElementById('sm-sv').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-g-sum').textContent, /목표를 넘긴/);
   S.open('stock', 'alloc'); doc.getElementById('sm-wa').value = '100'; doc.getElementById('sm-wa').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-a-sum').textContent, /현금 비중 0%/);
-  S.open('market', 's3'); doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
+  S.open('market', 's3'); { let sd = 1; while (!(S.gen.market(sd, { n: 6, spread: 8, odd: 15 }).rows[0].band.lo > 1)) sd++; doc.getElementById('sm-seed').value = String(sd); doc.getElementById('sim-gen').click(); } doc.getElementById('sm-bud').value = '1'; doc.getElementById('sm-bud').dispatchEvent(new w.Event('change', { bubbles: true })); assert.match(doc.getElementById('sim-m-b').textContent, /살 곳이 없을 수 있어요/);
 });
 test('배선: 각 화면은 현재 탭을 시뮬레이션에 넘기고, 화면을 옮기면 패널을 닫는다', { skip }, () => {
   assert.match(stockApp, /_simOpen\('stock', S\.view\)/); assert.match(bankApp, /_simOpen\('bank', S\.view\)/); assert.match(mktApp, /_simOpen\('market', 's' \+ S\.step\)/); assert.match(mktApp, /market-sim-sell/); assert.match(taxApp, /_simOpen\('tax', 'slip'\)/);
@@ -145,7 +145,7 @@ test('서류·기록 시뮬레이션: 서류함·외부 입력·서류 작성·P
 
 test('버튼 위치: 모든 화면의 시뮬레이션 버튼은 같은 작은 모양(simbtn)이고, 제목 줄 오른쪽 끝에 놓는 공통 규칙이 있다', { skip }, () => {
   for (const [src, n] of [[stockApp, 1], [bankApp, 1], [taxApp, 1], [mktApp, 2], [insApp, 1], [lrnApp, 1]]) assert.equal((src.match(/class:'btn quiet simbtn', id:'[a-z-]*sim/g) || []).length, n);
-  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 9);
+  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 10);
   assert.match(desk, /id="simbtn-css"/); assert.match(desk, /\.brand:has\(> \.simbtn\)\{display:flex/); assert.match(desk, /min-height:30px!important/);
 });
 
@@ -166,4 +166,15 @@ test('메일·길잡이 시뮬레이션: 받는 사람은 정확 일치만, 첨�
   S.open('guide', 'prog'); assert.match(doc.getElementById('sim-gd-prog').textContent, /늦어지는 과제 \d개/); S.tab('guide', 'done'); assert.match(doc.getElementById('sim-gd-done').textContent, /성공 \d건/);
   for (const id of ['mail-sim', 'guide-sim-prog', 'guide-sim-done']) assert.ok(desk.includes('id="' + id + '"'), id); assert.match(desk, /NaviSim\.tab\('mail', name\)/);
   assert.equal(J(S.gen.mail(3)), J(S.gen.mail(3)));
+});
+
+test('홈 시뮬레이션: 입력 문장이 갈래로 안내되고, 사람은 정확 일치만 찾고, 숫자 코드는 실제 변환 규칙을 쓰며, 모드에 맞게 열린다', { skip }, () => {
+  const { S, doc, w } = env(); const fire = (id, v) => { const e = doc.getElementById(id); e.value = v; e.dispatchEvent(new w.Event('change', { bubbles: true })); };
+  S.open('home', 'input'); fire('sm-hq', '이번 달 부가세 얼마야'); assert.match(doc.getElementById('sim-h-route').textContent, /세무 회계 AI/); fire('sm-hq', '그냥 심심해'); assert.match(doc.getElementById('sim-h-route').textContent, /나만의 AI 비서/);
+  S.tab('home', 'people'); const nm = S.gen.home(Number(doc.getElementById('sm-seed').value)).names[0]; fire('sm-hp', nm); assert.match(doc.getElementById('sim-h-find').textContent, /찾았어요/); fire('sm-hp', nm.slice(0, 1)); assert.match(doc.getElementById('sim-h-find').textContent, /정확히 같아야/);
+  w._ncPhoneToDigits = (raw) => String(raw).replace(/\D/g, '') === '01000000001' ? { digits: '1000000001', kind: '휴대폰' } : { err: '규칙' };
+  S.tab('home', 'code'); fire('sm-hn', '010-0000-0001'); assert.match(doc.getElementById('sim-h-code').textContent, /연습 식당/);
+  S.tab('home', 'attach'); doc.getElementById('sim-h-att0').click(); assert.match(doc.getElementById('sim-h-atts').textContent, /붙인 것: 마이크/);
+  S.tab('home', 'chat'); doc.getElementById('sim-h-p2p').click(); doc.getElementById('sim-h-p2p').click(); assert.match(doc.getElementById('sim-h-p2ps').textContent, /이전 대화 복구/);
+  assert.ok(desk.includes('id="home-sim"')); assert.match(desk, /function _homeSimOpen/); assert.equal(J(S.gen.home(2)), J(S.gen.home(2)));
 });
