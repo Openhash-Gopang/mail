@@ -439,7 +439,7 @@ async function runJob(m) {
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
       state.tabId = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
-      trace('0.7.5 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
+      trace('0.7.6 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
@@ -512,10 +512,10 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     if (j.autostart && fromNavi && sender.tab && (j.goal || j.playbook)) {
       // 사용자가 다시 맡기면 하던 작업(예: 닫힌 정부24 탭을 기다리던 작업)을 끝내고 새로 시작한다 — 예전에는 '이미 진행 중'으로 아무 일도 안 했다.
       const pb = j.playbook ? PLAYBOOKS[j.playbook] : null, winId = sender.tab.windowId;
+      send({ ok: true });   // 0.7.6: 접수 응답을 먼저 보낸다 — 하던 작업을 끝내느라 최대 4초 걸리면 나비웹의 3초 대기가 끝나 "맡기지 못했어요"로 잘못 보였다
       (async () => {
         await stopCurrent();
         runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: winId, file: j.file || null });
-        send({ ok: true });
       })();
       return true;
     }

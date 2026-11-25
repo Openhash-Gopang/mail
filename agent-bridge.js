@@ -70,7 +70,7 @@
   }
   // 확장이 설치돼 있다는 표지(bridge.js 가 남긴다). 연결 응답이 늦을 때 "설치 안내"를 다시 띄우지 않는 근거로만 쓴다.
   function installedMark() { try { return document.documentElement.getAttribute('data-navi-agent') || ''; } catch (e) { return ''; } }
-  function queue(job) { job = Object.assign({}, job, { autostart: true }); try { if (!job.token && window.KAuth && KAuth.getToken) job = Object.assign({}, job, { token: KAuth.getToken() || '' }); } catch (e) { /* 로그인 전 */ } return call('agent-queue', { job: job }, 3000).then(function (m) { return !!(m && m.ok); }); }
+  function queue(job) { job = Object.assign({}, job, { autostart: true }); try { if (!job.token && window.KAuth && KAuth.getToken) job = Object.assign({}, job, { token: KAuth.getToken() || '' }); } catch (e) { /* 로그인 전 */ } return call('agent-queue', { job: job }, 9000).then(function (m) { return !!(m && m.ok); }); }
   // 이미 시작한 작업에 나중에 알게 된 정보(예: 법인 이름)를 전한다.
   function update(slot, text) { return call('agent-queue', { job: { update: true, slot: String(slot || ''), text: String(text || '') } }, 3000).then(function (m) { return !!(m && m.ok); }); }
   // Chrome 웹 스토어에 등록한 뒤 이 주소를 채운다(비어 있으면 설치 안내를 보이지 않는다).
