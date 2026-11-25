@@ -19,70 +19,67 @@ function page(view) {
 const type = (p, id, v) => { const i = p.doc.getElementById(id); i.value = v; i.dispatchEvent(new p.w.Event('input', { bubbles: true })); };
 const api = () => { const w = new JSDOM('', { runScripts: 'outside-only' }).window; w.eval(app); return w.NaviEmergency; };
 
-test('detect: 낮을 때·높을 때 이상, 숫자가 아니면 null', { skip }, () => {
+test('callMessage: 말·문자가 되면 함께, 아니면 오직 응급', { skip }, () => {
   const N = api();
-  assert.equal(N.detect('lt', '35', '40').hit, true); assert.equal(N.detect('lt', '40', '40').hit, false);
-  assert.equal(N.detect('gt', '450', '300').hit, true); assert.equal(N.detect('gt', '300', '300').hit, false);
-  assert.equal(N.detect('gt', '', '300'), null); assert.equal(N.detect('gt', 'abc', '300'), null);
+  const v = N.callMessage('voice', '가슴이 아파요'); assert.equal(v.only, false); assert.equal(v.mode, 'voice'); assert.equal(v.body, '가슴이 아파요'); assert.equal(v.flag, '응급');
+  const t = N.callMessage('text', '쓰러졌어요'); assert.equal(t.mode, 'text'); assert.equal(t.only, false);
+  const n = N.callMessage('none', '무시되는 말'); assert.equal(n.only, true); assert.equal(n.body, ''); assert.equal(n.label, '응급');
 });
 
-test('anomaly: 평소 값 대비 표준편차', { skip }, () => {
-  const N = api();
-  const r = N.anomaly(['68', '72', '70', '66', '74'], '40', '3'); assert.equal(r.mean, 70); assert.equal(r.abnormal, true); assert.ok(r.z < -3);
-  assert.equal(N.anomaly(['68', '72', '70', '66', '74'], '71', '3').abnormal, false);
-  assert.equal(N.anomaly(['1', '2'], '1', '3'), null);
-  assert.equal(N.anomaly(['70', '70', '70', '70', '70'], '70', '3').abnormal, false);
-  assert.equal(N.anomaly(['70', '70', '70', '70', '70'], '60', '3').abnormal, true);
-});
-
-test('plan: 공개를 허용한 항목만 보낸다(위치는 항상)', { skip }, () => {
-  const N = api();
-  const a = N.plan('cardiac', {}); assert.deepEqual([...a.send], ['현재 위치']); assert.ok(a.blocked.includes('과거 질병 이력')); assert.equal(a.steps.length, 5);
-  const b = N.plan('cardiac', { cond: 1, age: 1 }); assert.ok(b.send.includes('과거 질병 이력') && b.send.includes('나이(연령대)')); assert.ok(!b.blocked.includes('과거 질병 이력'));
-  assert.deepEqual([...N.plan('fire', {}).send], ['현재 위치']); assert.equal(N.plan('nope', {}), null);
+test('match: 한 병원 또는 인력 이동 조합 중 가장 빠른 처치 시작', { skip }, () => {
+  const N = api(); const H = N.newHosp();
+  const a = N.match('ami', 'p1', H); assert.equal(a.best.kind, 'split'); assert.equal(a.best.fac.name, '가상 해안병원'); assert.equal(a.best.doc.name, '가상 중앙병원');
+  assert.ok(a.options.every((o) => o.start >= a.best.start)); assert.match(N.planText(a).join(' '), /자율주행차량/);
+  const b = N.match('stroke', 'p3', H); assert.equal(b.best.kind, 'single'); assert.equal(b.best.fac.name, '가상 산악병원');
+  H[2].eq['뇌혈관 중재 장비'] = false; H[0].docs['신경과'] = true;
+  const c = N.match('stroke', 'p3', H); assert.equal(c.best.fac.name, '가상 중앙병원'); assert.equal(c.best.kind, 'single');
+  for (const h of H) { for (const k in h.docs) h.docs[k] = false; }
+  assert.equal(N.match('ami', 'p1', H).best, null); assert.equal(N.match('nope', 'p1', H), null);
 });
 
 test('devSummary', { skip }, () => {
-  const N = api(); const m = N.devSummary([{ kind: 'CCTV', chk: '2026-11-01' }, { kind: '스마트워치', chk: '2027-01-01' }, { kind: '연기 센서', chk: '' }], '2026-11-23');
-  assert.equal(m.count, 3); assert.equal(m.due, 1);
+  const N = api(); const m = N.devSummary([{ kind: '폰', carry: true, chk: '2026-11-01' }, { kind: '나비웹 워치', carry: false, chk: '2027-01-01' }, { kind: '링(팔찌)', carry: true, chk: '' }], '2026-11-23');
+  assert.equal(m.count, 3); assert.equal(m.due, 1); assert.equal(m.carry, 2);
 });
 
-test('응급 연락: 119·112 전화 링크와 직접 전화 안내, 응급 정보 카드 저장', { skip }, () => {
-  const p = page('contact');
-  assert.match(p.doc.getElementById('emg-warn').textContent, /119에 전화/); assert.ok(p.doc.querySelector('a[href="tel:119"]')); assert.ok(p.doc.querySelector('a[href="tel:112"]'));
-  type(p, 'emg-i-blood', 'A형'); assert.equal(JSON.parse(p.w.localStorage.getItem('navi-emg-v1')).info.blood, 'A형');
-  p.btn('모두 지우기').click(); assert.equal(p.doc.getElementById('emg-i-blood').value, '');
-  assert.equal(p.fetched(), 0);
+test('응급 호출: 기기·상태에 따라 전달 형태가 달라지고 공개 선택을 따른다', { skip }, () => {
+  const p = page('call'); const t = p.txt();
+  assert.doesNotMatch(p.doc.body.textContent, /119|112/); assert.ok(p.doc.getElementById('emg-mock'));
+  type(p, 'emg-say', '숨이 안 쉬어져요'); p.doc.getElementById('emg-fire').click();
+  assert.equal(p.doc.getElementById('emg-c-mode').textContent, '음성 + 응급'); assert.equal(p.doc.getElementById('emg-c-body').textContent, '숨이 안 쉬어져요');
+  assert.equal(p.doc.getElementById('emg-c-send').textContent, '현재 위치');
+  p.doc.querySelector('[data-v="none"]').click(); p.doc.getElementById('emg-fire').click();
+  assert.equal(p.doc.getElementById('emg-c-mode').textContent, '응급'); assert.match(p.doc.getElementById('emg-c-flag').textContent, /오직/); assert.equal(p.doc.getElementById('emg-c-body'), null);
+  p.N.view('consent'); const cb = p.doc.getElementById('emg-sh-hist'); cb.checked = true; cb.dispatchEvent(new p.w.Event('change'));
+  const ak = p.doc.getElementById('emg-ak-meal'); ak.checked = true; ak.dispatchEvent(new p.w.Event('change'));
+  p.N.view('call'); p.doc.getElementById('emg-fire').click();
+  assert.match(p.doc.getElementById('emg-c-send').textContent, /병력/); assert.match(p.doc.getElementById('emg-c-ask').textContent, /마지막으로 먹은 음식/);
+  assert.equal(p.fetched(), 0); assert.ok(t.length > 20);
 });
 
-test('대응 원리: 센서·이상 탐지·AI 판단·자동 대응과 설계 단계 표시', { skip }, () => {
-  const t = page('principle').txt();
-  for (const re of [/스마트워치/, /CCTV/, /이상 탐지/, /사건 종류/, /자동으로/, /설계 원칙/, /화재/, /개인 위급/]) assert.match(t, re);
+test('대응 흐름: 호출부터 병·의원 조합까지', { skip }, () => {
+  const t = page('flow').txt();
+  for (const re of [/가장 단순한 조작/, /나만의 AI 비서/, /마지막으로 먹은 음식/, /최단 시간/, /실시간/, /자율주행차량/, /일정/, /모의/]) assert.match(t, re);
+  assert.doesNotMatch(t, /119|112|CCTV|센서/);
 });
 
-test('대응 시뮬레이션: 심박 저하 → 감지·순서·보낼 데이터, 공개 범위 반영', { skip }, () => {
-  const p = page('sim');
-  type(p, 'emg-s-val', '55'); assert.match(p.doc.getElementById('emg-s-res').textContent, /이상이 아니에요/);
-  type(p, 'emg-s-val', '35'); assert.match(p.doc.getElementById('emg-s-res').textContent, /이상 감지/);
-  assert.match(p.txt(), /119 구조팀/); assert.equal(p.doc.getElementById('emg-s-send').textContent, '현재 위치'); assert.match(p.doc.getElementById('emg-s-block').textContent, /과거 질병 이력/);
-  p.N.view('consent'); const cb = p.doc.getElementById('emg-sh-cond'); cb.checked = true; cb.dispatchEvent(new p.w.Event('change'));
-  p.N.view('sim'); type(p, 'emg-s-val', '35'); assert.match(p.doc.getElementById('emg-s-send').textContent, /과거 질병 이력/);
-  type(p, 'emg-b-base', '68, 72, 70, 66, 74'); assert.match(p.doc.getElementById('emg-b-res').textContent, /이상/);
-  assert.equal(p.fetched(), 0);
+test('자원 조합: 인력·장비 상태를 바꾸면 결과가 바뀐다', { skip }, () => {
+  const p = page('match');
+  assert.match(p.doc.getElementById('emg-m-kind').textContent, /가상 중앙병원 의료진이 가상 해안병원 장비/);
+  p.doc.querySelector('[data-doc="h1:심장내과"]').click(); assert.match(p.doc.getElementById('emg-m-res').textContent, /조합할 수 있는 인력·장비가 없어요/);
+  p.doc.querySelector('[data-doc="h1:심장내과"]').click(); p.doc.querySelector('[data-eq="h2:심혈관 중재 장비"]').click(); assert.match(p.doc.getElementById('emg-m-res').textContent, /조합할 수 있는 인력·장비가 없어요/);
+  p.btn('처음 상태로').click(); assert.match(p.doc.getElementById('emg-m-kind').textContent, /가상 중앙병원/);
+  const s = p.doc.getElementById('emg-m-need'); s.value = 'stroke'; s.dispatchEvent(new p.w.Event('change')); assert.match(p.doc.getElementById('emg-m-res').textContent, /가상 산악병원|가상 중앙병원/);
+  assert.equal(p.fetched(), 0); assert.equal(p.w.localStorage.getItem('navi-emg-v1'), null);
 });
 
-test('시뮬레이션: 화재(연기) 카테고리', { skip }, () => {
-  const p = page('sim'); const s = p.doc.getElementById('emg-s-cat'); s.value = 'fire'; s.dispatchEvent(new p.w.Event('change'));
-  type(p, 'emg-s-val', '450'); assert.match(p.doc.getElementById('emg-s-res').textContent, /건물 화재/); assert.match(p.txt(), /온도·영상/);
-});
-
-test('내 장치·공개 범위·탭 이동', { skip }, () => {
+test('내 기기·보내는 정보·탭 이동', { skip }, () => {
   const p = page('devices');
-  p.btn('기록하기').click(); assert.match(p.txt(), /장치 이름을 적어/);
-  type(p, 'emg-dn', '현관 CCTV'); type(p, 'emg-dc', '2026-01-01'); p.btn('기록하기').click();
-  assert.equal(p.doc.getElementById('emg-d0').textContent, '1개'); assert.equal(p.doc.getElementById('emg-d1').textContent, '1개');
-  p.btn('삭제').click(); assert.match(p.txt(), /아직 등록한 장치가 없어요/);
-  for (const v of ['contact', 'principle', 'sim', 'devices', 'consent']) { p.N.view(v); assert.ok(p.txt().length > 20, v); }
+  p.btn('기록하기').click(); assert.match(p.txt(), /기기 이름을 적어/);
+  type(p, 'emg-dn', '내 폰'); type(p, 'emg-dc', '2026-01-01'); p.btn('기록하기').click();
+  assert.equal(p.doc.getElementById('emg-d0').textContent, '1개'); assert.equal(p.doc.getElementById('emg-d2').textContent, '1개'); assert.equal(p.doc.getElementById('emg-d1').textContent, '1개');
+  p.btn('삭제').click(); assert.match(p.txt(), /아직 등록한 기기가 없어요/);
+  for (const v of ['call', 'flow', 'match', 'devices', 'consent']) { p.N.view(v); assert.ok(p.txt().length > 20, v); }
   assert.equal(p.doc.querySelectorAll('.tab').length, 5);
   p.N.view('consent'); assert.ok(p.doc.getElementById('emg-sh-loc').disabled);
 });
@@ -95,6 +92,6 @@ test('CSS는 .emg 아래로 한정, 네트워크 호출 없음', () => {
 
 test('desktop.html 연결과 배포 목록', () => {
   assert.match(d, /tab-btn-emg/); assert.match(d, /emg-root/); assert.match(d, /_emgOpen/); assert.match(d, /key === 'k119' && !_emgChat/);
-  assert.match(d, /emergency-app\.js/); assert.match(d, /emergency\.css/); assert.match(d, /emg:contact/);
+  assert.match(d, /emergency-app\.js/); assert.match(d, /emergency\.css/); assert.match(d, /emg:call/);
   assert.match(paths, /"emergency-app\.js"/); assert.match(paths, /"emergency\.css"/);
 });

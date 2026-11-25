@@ -2,14 +2,21 @@
  * 사용: NaviEmergency.mount(요소, { view }) · .nav(조작) · .view(이름) · .on('ask'|'result', 함수)
  * 모양은 emergency.css(.emg 범위). 전역은 NaviEmergency 하나만 쓴다.
  *
- * 응급 화면의 특징(주피터 지시, 설계 원칙): 나비웹 응급은 개인마다 제공된 스마트워치, 기관·장소마다 부착된 CCTV 등 각종 센서를 기반으로 한다.
- *  위급·재난·이상 상황은 이상 탐지(anomaly detection)로 감지하고, 사건의 종류는 AI가 영상·센서 데이터로 판단하며, 사건 카테고리마다 다른 대응 절차가 자동으로 동작한다.
- *  예) 개인의 심박수가 급격히 낮아지면 그 사람의 현재 위치·나이·성별·과거 질병 이력을 가까운 119 구조팀에 보내고 출동을 지시한다.
- *      건물에서 연기가 기준치 이상 감지되면 화재 등을 의심해 그 건물의 추가 센서(온도·영상 등)에서 데이터를 더 얻고, 사건 종류를 확정한 뒤 정해진 절차의 대응이 자동으로 전개된다.
- * 무엇이 실제이고 무엇이 아닌가(화면에도 그대로 적는다):
- *  - 위 원칙은 아직 설계 단계다. 지금은 센서·스마트워치·CCTV가 연결되어 있지 않고, 이 화면은 119 등에 어떤 정보도 보내거나 출동을 지시하지 않는다. 실제 위급 상황은 119에 직접 전화해야 한다.
- *  - '대응 시뮬레이션'은 사용자가 넣은 값으로 감지·대응 순서를 보여 주는 연습용이다. 기준값은 예시이며 의학·안전 기준이 아니다.
- *  - 응급 정보 카드·내 장치·공개 범위는 사용자가 직접 적는 기록이고 이 브라우저(localStorage)에만 저장된다.
+ * 응급 AI 설계 원칙(주피터 지시, 2026-11-25):
+ *  1. 모든 개인은 폰·나비웹 워치·링(팔찌) 중 적어도 하나를 24시간 가까이 둔다.
+ *  2. 응급은 이 기기를 가장 단순한 조작으로 호출하고, 응급 메시지가 관련 기관(응급 AI)에 전송된다.
+ *     말을 하거나 문자를 입력할 수 있으면 음성 또는 문자를 보내고, 그 밖에는 오직 '응급' 메시지만 전달한다.
+ *  3. 신고자의 '나만의 AI 비서'가 위치·나이·성명·병력·생체 정보 등을 응급 AI에 보내고, 응급 AI는 그 비서에게 추가로 물을 수 있다
+ *     (예: 마지막으로 먹은 음식, 오늘 격한 운동을 했는지).
+ *  4. 응급 AI는 신고자의 현재 위치에서 최단 시간 안에 도착할 수 있는 응급 대응 인원·장비를 정해 출동을 지시하고,
+ *     출동 인원·장비는 응급 AI에서 실시간 데이터와 현장 처치·이송 목적지 지시를 받는다.
+ *  5. 핵심: 전국 병·의원·보건소의 위치, 의료진 전공·자격, 보유 장비, 인력별 일정, 장비별 가동·예약 상태를 실시간으로 파악·갱신하고,
+ *     응급 환자가 생기면 최적의 처치 인력과 장비를 실시간으로 조합한다(A 병원 B 의료진이 C 병원 장비로 처치하도록 일정을 짜고 자율주행차량을 A 병원에 급파).
+ *
+ * 무엇이 실제이고 무엇이 아닌가(화면에도 한 줄로 적는다):
+ *  - 위 원칙은 설계 단계이고 이 화면은 모의 체험이다. 기기·병원·출동 시스템에 연결되어 있지 않고 어떤 것도 전송하지 않는다.
+ *  - '자원 조합'의 병원·인력·장비·위치·이동 시간은 모두 가상 값이며 메모리 안에서만 계산한다(저장하지 않는다).
+ *  - 내 기기·보내는 정보는 사용자가 직접 정하는 기록이고 이 브라우저(localStorage)에만 저장된다.
  */
 (function () {
 'use strict';
@@ -34,79 +41,115 @@ function snum(v) { var s = String(v == null ? '' : v).replace(/[,\s원]/g, '').r
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function clean(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001f<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); }
 
+
 // ── 저장 ──
-var KEY = 'navi-emg-v1', MAXD = 50;
-var TABS = [['contact', '응급 연락'], ['principle', '대응 원리'], ['sim', '대응 시뮬레이션'], ['devices', '내 장치'], ['consent', '공개 범위']];
+var KEY = 'navi-emg-v1', MAXD = 20;
+var TABS = [['call', '응급 호출'], ['flow', '대응 흐름'], ['match', '자원 조합'], ['devices', '내 기기'], ['consent', '보내는 정보']];
 var VIEWS = TABS.map(function (t) { return t[0]; });
-var INFO = [['name', '이름', 20, '홍길동'], ['age', '연령대', 10, '40대'], ['sex', '성별', 6, '여'], ['blood', '혈액형', 8, 'A형'], ['cond', '지병·과거 질병', 60, '예: 고혈압'], ['meds', '복용 약', 60, ''], ['allergy', '알레르기', 60, ''], ['kin', '비상 연락처(이름·전화)', 40, '예: 배우자 010-0000-0000']];
-/** 응급 상황에 보내는 데이터 항목(예시). 사용자가 항목마다 보낼지 정한다. */
-var SEND = [['loc', '현재 위치'], ['age', '나이(연령대)'], ['sex', '성별'], ['cond', '과거 질병 이력'], ['meds', '복용 약·알레르기'], ['blood', '혈액형'], ['kin', '비상 연락처']];
-/** 사건 카테고리: 감지 센서, 이상 기준(예시), 추가 확인 데이터, 확정, 자동 대응 절차, 받는 곳. */
-var CATS = {
-  cardiac: { name:'개인 위급(심박 이상)', sensor:'스마트워치 · 심박수', unit:'bpm', dir:'lt', th:'40', thHelp:'이 값보다 낮으면 이상(예시 기준)', extra:['움직임 없음 여부', '산소포화도', '쓰러짐 감지'], confirm:'AI가 심박·움직임으로 위급을 판단하고, 본인이 알림에 응답하지 않으면 확정', to:'가까운 119 구조팀', send:['loc', 'age', 'sex', 'cond', 'meds', 'blood', 'kin'],
-    steps:['스마트워치가 심박수의 급격한 저하를 이상으로 감지', '본인 앱에 확인 알림을 보내고 잠시 응답을 기다림', '추가 데이터(움직임·산소포화도·쓰러짐)를 얻어 AI가 위급 여부 판단', '확정되면 아래 데이터를 가까운 119 구조팀에 전송하고 출동 지시', '비상 연락처에 알림, 구조 진행 상황을 본인 기록에 남김'] },
-  fire: { name:'건물 화재', sensor:'건물 연기 센서', unit:'ppm', dir:'gt', th:'300', thHelp:'이 값보다 높으면 이상(예시 기준)', extra:['온도 센서', '영상(CCTV)', '다른 층 연기 센서'], confirm:'연기 + 온도 상승 + 영상에서 불꽃·연기가 함께 확인되면 화재로 확정', to:'119 소방 · 건물 관리자', send:['loc'],
-    steps:['건물 연기 센서가 기준치 이상을 이상으로 감지', '화재 등을 의심하고 같은 건물의 추가 센서(온도·영상 등)에서 데이터 획득', 'AI가 사건 종류를 화재로 확정', '정해진 절차 전개: 건물 경보와 대피 안내, 119 신고·출동 지시', '건물 관리자에게 알리고, 설비가 연동되어 있으면 방화·배연 설비를 작동'] },
-  fall: { name:'쓰러짐·낙상', sensor:'CCTV 영상 · 스마트워치 가속도', unit:'초(움직임 없는 시간)', dir:'gt', th:'30', thHelp:'움직임이 없는 시간이 이보다 길면 이상(예시 기준)', extra:['영상 확인', '심박수', '충격 감지'], confirm:'영상에서 쓰러진 자세가 유지되고 반응이 없으면 확정', to:'가까운 119 구조팀 · 장소 관리자', send:['loc', 'age', 'sex', 'cond'],
-    steps:['영상·가속도에서 쓰러짐과 움직임 없음을 이상으로 감지', '그 사람 워치의 심박·충격 데이터와 주변 영상을 추가로 확인', 'AI가 낙상으로 확정', '현장 관리자에게 즉시 알리고 119 구조팀에 위치와 필요한 정보 전송', '구조 완료까지 진행 상황 기록'] },
-  gas: { name:'가스 누출', sensor:'가스 센서', unit:'ppm', dir:'gt', th:'100', thHelp:'이 값보다 높으면 이상(예시 기준)', extra:['다른 구역 가스 센서', '환기 설비 상태', '영상'], confirm:'여러 센서에서 같은 방향으로 농도가 높으면 누출로 확정', to:'119 · 가스 안전 기관 · 건물 관리자', send:['loc'],
-    steps:['가스 센서가 기준치 이상을 이상으로 감지', '인접 센서와 환기 설비 상태를 추가로 확인', 'AI가 누출로 확정', '밸브 차단·환기 안내와 대피 안내를 내보내고 119와 가스 안전 기관에 통보', '조치가 끝날 때까지 농도를 계속 기록'] },
-  flood: { name:'침수·수해', sensor:'수위 센서', unit:'cm', dir:'gt', th:'50', thHelp:'이 값보다 높으면 이상(예시 기준)', extra:['강우량', '영상', '주변 지역 수위'], confirm:'수위 상승이 계속되고 주변 지역에서도 확인되면 침수로 확정', to:'지자체 재난 부서 · 119', send:['loc'],
-    steps:['수위 센서가 기준치 이상을 이상으로 감지', '강우량·영상·주변 수위를 추가로 확인', 'AI가 침수로 확정', '해당 지역 사용자에게 대피 안내, 지자체와 119에 통보', '수위 변화와 대응 상황 기록'] }
-};
-var CAT_KEYS = Object.keys(CATS);
+var DEVICES = [['phone', '폰'], ['watch', '나비웹 워치'], ['ring', '링(팔찌)']];
+var DEVKINDS = DEVICES.map(function (d) { return d[1]; });
+/** 내 비서가 응급 AI에 보내는 정보. 위치는 구조에 꼭 필요해 항상 포함하고, 나머지는 항목마다 직접 정한다. */
+var SEND = [['loc', '현재 위치'], ['name', '성명'], ['age', '나이'], ['hist', '병력(과거 질병)'], ['meds', '복용 약·알레르기'], ['blood', '혈액형'], ['vitals', '생체 정보(심박 등)'], ['kin', '비상 연락처']];
+/** 응급 AI가 내 비서에게 추가로 물을 수 있는 것(예시). 항목마다 답해도 되는지 직접 정한다. */
+var ASKS = [['meal', '마지막으로 먹은 음식'], ['exercise', '오늘 격한 운동을 했는지']];
+var CALLS = [['voice', '말할 수 있음'], ['text', '문자를 입력할 수 있음'], ['none', '둘 다 어려움']];
 var M = null, LS = {};
-var S = { view:'contact', info:{}, share:{}, dev:[], form:{ kind:'스마트워치' }, err:{}, msg:'', sim:{ cat:'cardiac', th:'', val:'', base:'', k:'3' }, simRan:false };
-var DEVKINDS = ['스마트워치', 'CCTV', '연기 센서', '가스 센서', '수위 센서', '온도 센서', '기타'];
+var S = { view:'call', share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'',
+  call:{ dev:'phone', can:'voice', say:'', fired:false }, m:null };
 
 function field(id, label, val, o) {
   o = o || {}; var e = o.err, inp = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '60', inputmode:o.mode || '', autocomplete:'off', 'aria-invalid':e ? 'true' : 'false' });
   inp.oninput = function () { if (o.set) o.set(inp.value); };
   return h('div', { class:'field' }, [h('label', { for:id, text:label }), inp, h('div', { id:id + '-h', class:e ? 'err' : 'help', text:e || o.help || '' })]);
 }
-
 function empty(t, b) { return h('div', { class:'card', style:'margin-top:16px' }, [h('div', { class:'empty', text:t }), b ? h('div', { class:'rowf', style:'justify-content:center' }, [b]) : null]); }
-
 function head(title, lead) { return [h('h1', { text:title }), lead ? h('p', { class:'lead', text:lead }) : null]; }
 function go(v) { S.view = v; S.err = {}; S.msg = ''; render(); try { M.scrollIntoView({ block:'start' }); } catch (e) {} }
+function seg(label, opts, val, set) {
+  return h('div', { class:'seg', role:'group', 'aria-label':label }, opts.map(function (o) { return h('button', { type:'button', 'data-v':o[0], 'aria-pressed':String(val === o[0]), text:o[1], onclick:function () { set(o[0]); } }); }));
+}
+function sel(id, label, val, opts, set) {
+  var s = h('select', { id:id, 'aria-label':label }, opts.map(function (c) { return h('option', { value:c[0], text:c[1] }); })); s.value = val; s.onchange = function () { set(s.value); };
+  return h('div', { class:'field' }, [h('label', { for:id, text:label }), s]);
+}
+function tile(k, v, s, id) { return h('div', { class:'tile' }, [h('div', { class:'k', text:k }), h('div', { class:'num', id:id, style:'font-size:20px;font-weight:700', text:v }), s ? h('div', { class:'sub', text:s }) : null]); }
+function mockNote(t) { return h('div', { class:'note info', id:'emg-mock', style:'margin:16px 0', text:t }); }
+
 function load() {
   try {
     var v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!v || typeof v !== 'object') return;
-    if (v.info && typeof v.info === 'object') INFO.forEach(function (f) { if (typeof v.info[f[0]] === 'string') S.info[f[0]] = clean(v.info[f[0]], f[2]); });
     if (v.share && typeof v.share === 'object') SEND.forEach(function (f) { if (v.share[f[0]]) S.share[f[0]] = 1; });
+    if (v.askok && typeof v.askok === 'object') ASKS.forEach(function (f) { if (v.askok[f[0]]) S.askok[f[0]] = 1; });
     S.dev = (Array.isArray(v.dev) ? v.dev : []).map(fixDev).filter(Boolean).slice(0, MAXD);
   } catch (e) {}
 }
 function fixDev(x) {
   if (!x || typeof x !== 'object') return null;
-  var name = clean(x.name, 40); if (!name || DEVKINDS.indexOf(x.kind) < 0 || (x.chk && !/^\d{4}-\d{2}-\d{2}$/.test(x.chk))) return null;
-  return { id:clean(x.id, 20) || uid(), kind:x.kind, name:name, place:clean(x.place, 40), chk:x.chk || '' };
+  var kind = x.kind === '스마트워치' ? '나비웹 워치' : x.kind;
+  var name = clean(x.name, 40); if (!name || DEVKINDS.indexOf(kind) < 0 || (x.chk && !/^\d{4}-\d{2}-\d{2}$/.test(x.chk))) return null;
+  return { id:clean(x.id, 20) || uid(), kind:kind, name:name, carry:x.carry !== false, chk:x.chk || '' };
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ info:S.info, share:S.share, dev:S.dev })); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ share:S.share, askok:S.askok, dev:S.dev })); } catch (e) {} }
 
-/** 기준값 감지: dir 'lt' 는 값이 기준보다 낮을 때, 'gt' 는 높을 때 이상. 숫자가 아니면 null. */
-function detect(dir, value, th) {
-  var v = numOf(value), t = numOf(th); if (!isFinite(v) || !isFinite(t) || v > 1e9 || t > 1e9) return null;
-  return { hit:dir === 'lt' ? v < t : v > t, value:v, th:t };
+/** 응급 호출 메시지: 말할 수 있으면 음성, 문자를 입력할 수 있으면 문자를 함께 보내고, 그 밖에는 오직 '응급'만 보낸다. */
+function callMessage(can, said) {
+  var t = clean(said, 120);
+  if (can === 'voice') return { mode:'voice', label:'음성 + 응급', body:t || '(말한 내용이 음성으로 전달됩니다)', flag:'응급', only:false };
+  if (can === 'text') return { mode:'text', label:'문자 + 응급', body:t || '(입력한 문자가 전달됩니다)', flag:'응급', only:false };
+  return { mode:'none', label:'응급', body:'', flag:'응급', only:true };
 }
-/** 평소 값 대비 감지: 최근 평소 측정값(5개 이상)의 평균·표준편차로 지금 값이 k 표준편차 이상 벗어났는지 본다. */
-function anomaly(readings, latest, k) {
-  var xs = (readings || []).map(numOf), v = numOf(latest), kk = numOf(k);
-  if (xs.length < 5 || xs.some(function (x) { return !isFinite(x); }) || !isFinite(v) || !(kk > 0) || kk > 20) return null;
-  var mean = xs.reduce(function (a, b) { return a + b; }, 0) / xs.length, sd = Math.sqrt(xs.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / xs.length);
-  if (sd === 0) return { mean:mean, sd:0, z:null, abnormal:v !== mean };
-  var z = (v - mean) / sd; return { mean:mean, sd:sd, z:z, abnormal:Math.abs(z) >= kk };
-}
-/** 사건 카테고리의 자동 대응 계획. 사용자가 공개를 허용한 항목만 보낼 데이터에 넣고, 나머지는 막힌 항목으로 따로 돌려준다. */
-function plan(cat, share) {
-  var c = CATS[cat]; if (!c) return null; var allow = [], block = [];
-  c.send.forEach(function (k) { var f = SEND.filter(function (x) { return x[0] === k; })[0]; if (!f) return; (k === 'loc' || share[k] ? allow : block).push(f[1]); });
-  return { name:c.name, steps:c.steps.slice(), to:c.to, send:allow, blocked:block, confirm:c.confirm, extra:c.extra.slice() };
-}
+function sharedItems(share) { return SEND.filter(function (f) { return f[0] === 'loc' || share[f[0]]; }).map(function (f) { return f[1]; }); }
+function askItems(askok) { return ASKS.filter(function (f) { return askok[f[0]]; }).map(function (f) { return f[1]; }); }
 function devSummary(list, today) {
-  var t0 = today ? Date.parse(today + 'T00:00:00Z') : NaN, due = 0, by = {};
-  list.forEach(function (x) { by[x.kind] = (by[x.kind] || 0) + 1; if (x.chk && isFinite(t0) && Date.parse(x.chk + 'T00:00:00Z') <= t0) due++; });
-  return { count:list.length, by:by, due:due };
+  var t0 = today ? Date.parse(today + 'T00:00:00Z') : NaN, due = 0, carry = 0, by = {};
+  list.forEach(function (x) { by[x.kind] = (by[x.kind] || 0) + 1; if (x.carry) carry++; if (x.chk && isFinite(t0) && Date.parse(x.chk + 'T00:00:00Z') <= t0) due++; });
+  return { count:list.length, carry:carry, by:by, due:due };
+}
+
+// ── 자원 조합(가상 값) ──
+var UNITS = [['U1', '구급대 1', 5, 6], ['U2', '구급대 2', 12, 8], ['U3', '구급대 3', 8, 13]];
+var PLACES = [['p1', '가상 마을 가', 3, 5], ['p2', '가상 마을 나', 13, 9], ['p3', '가상 마을 다', 9, 16], ['p4', '가상 마을 라', 16, 12]];
+var NEEDS = { ami:{ name:'급성 심근경색 의심', sp:'심장내과', eq:'심혈관 중재 장비' }, stroke:{ name:'뇌졸중 의심', sp:'신경과', eq:'뇌혈관 중재 장비' }, trauma:{ name:'중증 외상', sp:'외과', eq:'수술실' }, infant:{ name:'영아 호흡곤란', sp:'소아과', eq:'신생아 인공호흡기' } };
+var PREP = 3;   // 의료진이 자율주행차량에 타기까지(분, 가정)
+function newHosp() {
+  return [
+    { id:'h1', name:'가상 중앙병원', x:4, y:4, docs:{ '심장내과':true, '외과':true, '신경과':false }, eq:{ '심혈관 중재 장비':false, '수술실':true, '뇌혈관 중재 장비':true } },
+    { id:'h2', name:'가상 해안병원', x:14, y:5, docs:{ '심장내과':false, '외과':true, '소아과':true }, eq:{ '심혈관 중재 장비':true, '수술실':true, '신생아 인공호흡기':true } },
+    { id:'h3', name:'가상 산악병원', x:6, y:15, docs:{ '신경과':true, '소아과':false, '외과':false }, eq:{ '뇌혈관 중재 장비':true, '수술실':false, '신생아 인공호흡기':false } },
+    { id:'h4', name:'가상 동부의원', x:17, y:13, docs:{ '소아과':true }, eq:{ '신생아 인공호흡기':true } },
+    { id:'h5', name:'가상 보건소', x:10, y:10, docs:{}, eq:{} }
+  ];
+}
+function dist(a, b) { return Math.max(1, Math.round(Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2)))); }   // 1km = 1분(가정)
+/** 신고 위치에서 가장 빨리 처치를 시작할 수 있는 조합을 찾는다. 한 병원에 전문의와 장비가 모두 있으면 그곳으로, 없으면 장비가 있는 병원으로 환자를 옮기고 다른 병원의 전문의를 자율주행차량으로 보낸다. */
+function match(needKey, placeKey, hosp) {
+  var need = NEEDS[needKey], pl = PLACES.filter(function (p) { return p[0] === placeKey; })[0]; if (!need || !pl) return null;
+  var P = [pl[2], pl[3]], amb = null;
+  UNITS.forEach(function (u) { var t = dist([u[2], u[3]], P); if (!amb || t < amb.eta) amb = { id:u[0], name:u[1], eta:t }; });
+  var opts = [], why = [];
+  hosp.forEach(function (F) {
+    var docOn = F.docs[need.sp] === true, hasEq = need.eq in F.eq, eqFree = F.eq[need.eq] === true;
+    if (!hasEq) why.push([F.name, '필요한 장비(' + need.eq + ')가 없어요']);
+    else if (!eqFree) why.push([F.name, need.eq + '가 사용 중이에요']);
+    if (!docOn && need.sp in F.docs) why.push([F.name, need.sp + ' 전문의가 근무 중이 아니에요']);
+    else if (!(need.sp in F.docs)) why.push([F.name, need.sp + ' 전문의가 없어요']);
+  });
+  hosp.forEach(function (F) {
+    if (F.eq[need.eq] !== true) return;
+    var tp = amb.eta + dist(P, [F.x, F.y]);
+    if (F.docs[need.sp] === true) opts.push({ kind:'single', fac:F, doc:F, tPatient:tp, tDoc:0, start:tp });
+    hosp.forEach(function (D) { if (D !== F && D.docs[need.sp] === true) { var td = PREP + dist([D.x, D.y], [F.x, F.y]); opts.push({ kind:'split', fac:F, doc:D, tPatient:tp, tDoc:td, start:Math.max(tp, td) }); } });
+  });
+  opts.sort(function (a, b) { return a.start - b.start || (a.kind === 'single' ? -1 : 1) - (b.kind === 'single' ? -1 : 1) || a.fac.id.localeCompare(b.fac.id); });
+  return { need:need, place:pl, amb:amb, options:opts, best:opts[0] || null, why:why };
+}
+function planText(r) {
+  var b = r.best; if (!b) return [];
+  var s = ['신고 위치(' + r.place[1] + ')에서 가장 빨리 닿는 ' + r.amb.name + '(' + r.amb.eta + '분)를 출동시켜요.'];
+  if (b.kind === 'single') s.push(b.fac.name + '에 ' + r.need.sp + ' 전문의와 ' + r.need.eq + '가 모두 있어, 환자를 그곳으로 이송해요(' + b.tPatient + '분 후 도착).');
+  else { s.push('환자는 ' + r.need.eq + '를 쓸 수 있는 ' + b.fac.name + '으로 이송해요(' + b.tPatient + '분 후 도착).'); s.push(b.doc.name + '의 ' + r.need.sp + ' 전문의를 자율주행차량에 태워 ' + b.fac.name + '으로 보내요(' + b.tDoc + '분 후 도착, 준비 ' + PREP + '분 포함).'); }
+  s.push('처치는 약 ' + b.start + '분 뒤 ' + b.fac.name + '에서 시작돼요. 구급대에는 현장 처치와 이송 목적지를 실시간으로 알려 줘요.');
+  return s;
 }
 
 function topbar() {
@@ -114,107 +157,132 @@ function topbar() {
     h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 응급' })])]),
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
-function warn() {
-  return h('div', { class:'note', role:'alert', style:'margin:16px 0', id:'emg-warn' }, [h('b', { text:'지금 위급하다면 119에 전화하세요. ' }), '이 화면은 센서나 119에 연결되어 있지 않아 정보를 보내거나 출동을 부르지 않습니다. 범죄·폭력은 112입니다.']);
-}
-function tile(k, v, s, id) { return h('div', { class:'tile' }, [h('div', { class:'k', text:k }), h('div', { class:'num', id:id, style:'font-size:20px;font-weight:700', text:v }), s ? h('div', { class:'sub', text:s }) : null]); }
-function sel(id, label, val, opts, set) {
-  var s = h('select', { id:id, 'aria-label':label }, opts.map(function (c) { return h('option', { value:c[0], text:c[1] }); })); s.value = val; s.onchange = function () { set(s.value); };
-  return h('div', { class:'field' }, [h('label', { for:id, text:label }), s, h('div', { class:'help', text:'' })]);
-}
 
-// ── 응급 연락 ──
-function viewContact() {
-  var kids = head('응급 연락', '위급할 때 바로 걸 번호와, 구조대에 알려 줄 내 응급 정보를 적어 두는 곳입니다.'); kids.push(warn());
-  kids.push(h('div', { class:'g2' }, [['119', '응급·화재·구조', '쓰러짐, 호흡 곤란, 화재, 사고 등'], ['112', '범죄·폭력 신고', '위협, 폭행, 도난 등']].map(function (x) {
-    return h('div', { class:'card col' }, [h('div', { class:'num', style:'font-size:34px;font-weight:700', text:x[0] }), h('b', { text:x[1] }), h('span', { class:'sub', text:x[2] }), h('a', { class:'btn fill', href:'tel:' + x[0], text:x[0] + ' 전화 걸기', style:'text-decoration:none;align-self:flex-start' })]); })));
-  var card = h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'내 응급 정보 카드' }), h('div', { class:'sub', text:'구조대나 주변 사람에게 보여 줄 수 있게 적어 둡니다. 이 브라우저에만 저장되며 119에 자동으로 보내지지 않아요(연결 전).' }),
-    h('div', { class:'frm' }, INFO.map(function (f) { return field('emg-i-' + f[0], f[1], S.info[f[0]] || '', { ph:f[3], max:f[2], set:function (v) { S.info[f[0]] = clean(v, f[2]); save(); } }); })),
-    h('div', { class:'rowf', style:'margin-top:16px' }, [btn('모두 지우기', 'quiet', function () { S.info = {}; S.msg = '지웠어요.'; save(); render(); }), S.msg ? h('span', { class:'sub', role:'status', text:S.msg }) : null])]);
-  kids.push(card);
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 AI에게 묻기', 'quiet', function () { ask('응급 상황에서 119에 무엇을 알려야 하나요?'); })]));
-  return kids;
-}
-
-// ── 대응 원리 ──
-function viewPrinciple() {
-  var kids = head('대응 원리', '나비웹 응급이 위급·재난 상황을 감지하고 대응하는 방식입니다.');
-  var st = [['센서가 계속 지켜봅니다', '개인은 스마트워치, 기관과 장소는 부착된 CCTV와 각종 센서(연기·가스·수위·온도 등)가 데이터를 보냅니다.'], ['이상 탐지로 감지합니다', '평소와 다른 값이나 기준을 넘는 값을 이상 탐지(anomaly detection)로 잡아냅니다.'], ['AI가 사건 종류를 판단합니다', '영상과 센서 데이터로 어떤 사건인지(위급, 화재, 가스, 침수 등) 판단합니다. 필요하면 같은 장소의 추가 센서에서 데이터를 더 얻어요.'], ['사건 종류에 맞는 대응이 자동으로 동작합니다', '카테고리마다 정해진 절차가 다릅니다. 확정되면 사전에 정해진 절차대로 119 등에 필요한 데이터를 보내고 출동을 지시합니다.']];
-  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'감지부터 대응까지' }), h('div', {}, st.map(function (x, i) { return h('div', { class:'stp' }, [h('i', { text:String(i + 1) }), h('div', {}, [h('b', { text:x[0] }), h('span', { text:x[1] })])]); })),
-    h('div', { class:'note info', text:'설계 원칙입니다. 지금은 스마트워치·CCTV·센서가 연결되어 있지 않고 이 화면은 119에 아무것도 보내지 않아요. 대응 시뮬레이션에서 순서를 연습해 볼 수 있습니다.' })]));
-  kids.push(h('div', { class:'g2', style:'margin-top:16px' }, CAT_KEYS.map(function (k) {
-    var c = CATS[k]; return h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:c.name }), h('div', { class:'kv' }, [h('span', { text:'감지' }), h('b', { text:c.sensor })]), h('div', { class:'kv' }, [h('span', { text:'추가 확인' }), h('b', { text:c.extra.join(' · ') })]), h('div', { class:'kv' }, [h('span', { text:'받는 곳' }), h('b', { text:c.to })]), h('div', { class:'sub', text:'확정: ' + c.confirm })]); })));
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('대응 시뮬레이션 해 보기', 'fill', function () { go('sim'); })]));
-  return kids;
-}
-
-// ── 대응 시뮬레이션 ──
-function viewSim() {
-  var kids = head('대응 시뮬레이션', '사건 종류와 측정값을 넣으면 감지되는지, 그 뒤 어떤 순서로 대응이 전개되는지 보여 줍니다. 연습용이며 실제 출동은 일어나지 않아요.'); kids.push(warn());
-  var s = S.sim, c = CATS[s.cat] || CATS.cardiac, th = s.th === '' ? c.th : s.th;
-  var form = h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'상황 넣기' }), h('div', { class:'frm' }, [
-    sel('emg-s-cat', '사건 종류', s.cat, CAT_KEYS.map(function (k) { return [k, CATS[k].name]; }), function (v) { s.cat = v; s.th = ''; s.val = ''; s.simRan = false; render(); }),
-    field('emg-s-th', '이상 기준(' + c.unit + ')', th, { mode:'decimal', max:10, help:c.thHelp + '. 의학·안전 기준이 아니에요.', set:function (v) { s.th = v; upd(); } }),
-    field('emg-s-val', '지금 측정값(' + c.unit + ')', s.val, { ph:c.dir === 'lt' ? '예: 35' : '예: 450', mode:'decimal', max:10, help:c.sensor, set:function (v) { s.val = v; upd(); } })])]);
-  var out = h('div', { class:'col', id:'emg-s-out', style:'gap:16px' });
-  function upd() {
-    out.textContent = ''; var th2 = s.th === '' ? c.th : s.th, d = detect(c.dir, s.val, th2);
-    if (!d) { out.appendChild(h('div', { class:'card' }, [h('div', { class:'empty', text:'측정값을 넣으면 감지 결과가 나와요.' })])); return; }
-    if (!d.hit) { out.appendChild(h('div', { class:'note info', id:'emg-s-res', text:'이상이 아니에요: 측정값 ' + won(d.value) + c.unit + '은(는) 기준 ' + won(d.th) + c.unit + (c.dir === 'lt' ? ' 이상' : ' 이하') + '입니다. 대응은 시작되지 않아요.' })); return; }
-    var P = plan(s.cat, S.share);
-    out.appendChild(h('div', { class:'note', role:'alert', id:'emg-s-res', text:'이상 감지: 측정값 ' + won(d.value) + c.unit + '이(가) 기준 ' + won(d.th) + c.unit + '보다 ' + (c.dir === 'lt' ? '낮아요' : '높아요') + '. ' + P.name + ' 대응이 시작됩니다(연습).' }));
-    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'대응 순서' }), h('div', {}, P.steps.map(function (x, i) { return h('div', { class:'stp' }, [h('i', { text:String(i + 1) }), h('div', {}, [h('span', { text:x })])]); })), h('div', { class:'sub', text:'확정: ' + P.confirm })]));
-    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'받는 곳과 보내는 데이터' }), h('div', { class:'kv' }, [h('span', { text:'받는 곳' }), h('b', { text:P.to })]), h('div', { class:'kv' }, [h('span', { text:'보낼 데이터' }), h('b', { id:'emg-s-send', text:P.send.join(', ') || '없음' })]),
-      P.blocked.length ? h('div', { class:'sub', id:'emg-s-block', text:'공개 안 함으로 막힌 항목: ' + P.blocked.join(', ') + ' (공개 범위 탭에서 바꿀 수 있어요)' }) : null]));
+// ── 응급 호출 ──
+function viewCall() {
+  var c = S.call, kids = head('응급 호출', '폰·나비웹 워치·링(팔찌) 중 하나를 24시간 가까이 두고, 위급할 때 가장 단순한 조작 한 번으로 부릅니다.');
+  kids.push(mockNote('모의 체험입니다. 아무것도 전송되지 않고 출동도 일어나지 않아요.'));
+  var dn = DEVICES.filter(function (d) { return d[0] === c.dev; })[0][1], msg = callMessage(c.can, c.say);
+  var form = h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'상황 고르기' }),
+    h('div', { class:'lab', text:'호출하는 기기' }), seg('기기', DEVICES, c.dev, function (v) { c.dev = v; c.fired = false; render(); }),
+    h('div', { class:'lab', text:'지금 내 상태' }), seg('상태', CALLS, c.can, function (v) { c.can = v; c.fired = false; render(); }),
+    c.can === 'none' ? h('div', { class:'sub', id:'emg-c-none', text:'말을 하거나 문자를 입력하기 어려우면 오직 “응급” 메시지만 전달돼요.' }) : field('emg-say', c.can === 'voice' ? '말한 내용(가상)' : '입력한 문자(가상)', c.say, { ph:'예: 가슴이 너무 아파요', max:120, set:function (v) { c.say = v; } }),
+    h('div', { class:'rowf', style:'margin-top:16px' }, [h('button', { type:'button', class:'btn fill', id:'emg-fire', text:dn + '로 응급 호출 (모의)', onclick:function () { c.fired = true; render(); } }), c.fired ? btn('처음으로', 'quiet', function () { c.fired = false; c.say = ''; render(); }) : null])]);
+  var out = h('div', { class:'col', id:'emg-c-out', style:'gap:16px' });
+  if (!c.fired) out.appendChild(h('div', { class:'card' }, [h('div', { class:'empty', text:'기기와 상태를 고르고 호출해 보면 무엇이 전달되는지 보여 줘요.' })]));
+  else {
+    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'1. 기기에서 전송된 응급 메시지' }),
+      h('div', { class:'kv' }, [h('span', { text:'보낸 기기' }), h('b', { text:dn })]), h('div', { class:'kv' }, [h('span', { text:'받는 곳' }), h('b', { text:'관련 기관(응급 AI)' })]),
+      h('div', { class:'kv' }, [h('span', { text:'전달 형태' }), h('b', { id:'emg-c-mode', text:msg.label })]), msg.body ? h('div', { class:'kv' }, [h('span', { text:'내용' }), h('b', { id:'emg-c-body', text:msg.body })]) : null,
+      h('div', { class:'sub', id:'emg-c-flag', text:msg.only ? '오직 “응급” 메시지만 전달됐어요.' : '“응급” 표시와 함께 ' + (msg.mode === 'voice' ? '음성' : '문자') + '이(가) 전달됐어요.' })]));
+    var sh = sharedItems(S.share), ak = askItems(S.askok);
+    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'2. 내 AI 비서가 응급 AI에 보내는 정보' }), h('div', { class:'kv' }, [h('span', { text:'보내는 정보' }), h('b', { id:'emg-c-send', text:sh.join(', ') })]),
+      h('div', { class:'kv' }, [h('span', { text:'응급 AI가 추가로 물어도 되는 것' }), h('b', { id:'emg-c-ask', text:ak.join(', ') || '없음' })]), h('div', { class:'sub', text:'보내는 정보는 “보내는 정보” 탭에서 항목마다 정해요.' })]));
+    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'3. 이어지는 일' }), h('div', { class:'sub', text:'신고 위치에서 가장 빨리 닿는 구급 인원·장비에 출동이 지시되고, 처치할 병원의 인력·장비가 조합됩니다.' }), h('div', { class:'rowf' }, [btn('대응 흐름 보기', 'quiet', function () { go('flow'); }), btn('자원 조합 해 보기', 'fill', function () { go('match'); })])]));
   }
-  upd(); kids.push(h('div', { class:'g2', style:'margin-top:16px;align-items:start' }, [form, out]));
-  if (s.cat === 'cardiac' || s.cat === 'fall') kids.push(baseCard());
+  kids.push(h('div', { class:'g2', style:'margin-top:16px;align-items:start' }, [form, out]));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 AI에게 묻기', 'quiet', function () { ask('응급 호출을 하면 무엇이 전달되나요?'); })]));
   return kids;
 }
-function baseCard() {
-  var s = S.sim, out = h('div', { id:'emg-b-out', style:'margin-top:12px' });
-  function upd() {
-    out.textContent = ''; var xs = s.base.split(/[\s,]+/).filter(Boolean), r = anomaly(xs, s.val, s.k);
-    out.appendChild(!r ? h('div', { class:'sub', text:'평소 값 5개 이상과 지금 값을 넣으면 평소와 얼마나 다른지 알려 줘요.' }) : h('div', { class:r.abnormal ? 'note' : 'note info', id:'emg-b-res', text:'평소 평균 ' + (Math.round(r.mean * 10) / 10) + ', 지금 값은 평소에서 ' + (r.z == null ? (r.abnormal ? '벗어나 있어요(평소 값이 모두 같아요).' : '벗어나지 않았어요.') : Math.abs(Math.round(r.z * 10) / 10) + '표준편차 ' + (r.z < 0 ? '낮아요' : '높아요') + (r.abnormal ? ' → 평소와 다른 이상으로 봅니다.' : ' → 평소 범위예요.')) }));
-  }
-  var c = h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'평소 값과 비교(이상 탐지 원리)' }), h('div', { class:'sub', text:'고정 기준 대신 그 사람의 평소 값과 비교하는 방식입니다. 위 “지금 측정값”을 함께 씁니다.' }),
-    h('div', { class:'frm' }, [field('emg-b-base', '평소 측정값(쉼표로 구분, 5개 이상)', s.base, { ph:'예: 68, 72, 70, 66, 71, 69', max:120, set:function (v) { s.base = v; upd(); } }), field('emg-b-k', '이상으로 볼 표준편차 배수', s.k, { mode:'decimal', max:4, help:'클수록 더 크게 벗어나야 이상', set:function (v) { s.k = v; upd(); } })]), out]);
-  upd(); return c;
+
+// ── 대응 흐름 ──
+function viewFlow() {
+  var kids = head('대응 흐름', '응급 호출부터 처치까지, 나비웹 응급 AI가 이어 가는 순서입니다.');
+  var st = [
+    ['호출', '폰·나비웹 워치·링(팔찌) 중 하나를 가장 단순한 조작으로 호출하면 응급 메시지가 관련 기관에 전송돼요. 말을 하거나 문자를 입력할 수 있으면 음성 또는 문자를 함께 보내고, 그 밖에는 오직 “응급”만 보냅니다.'],
+    ['내 비서가 정보를 보냅니다', '신고자의 나만의 AI 비서가 위치·나이·성명·병력·생체 정보 같은 데이터를 응급 AI에 보내요.'],
+    ['응급 AI가 더 묻습니다', '응급 AI는 신고자의 비서에게 추가로 물을 수 있어요. 예를 들어 마지막으로 먹은 음식, 오늘 격한 운동을 했는지입니다.'],
+    ['가장 빠른 출동을 정합니다', '신고자의 현재 위치를 기준으로 최단 시간 안에 도착할 수 있는 응급 대응 인원과 장비를 정해 출동을 지시해요.'],
+    ['출동한 쪽에 실시간으로 알립니다', '출동 인원·장비는 응급 AI로부터 적절한 데이터를 실시간으로 받고, 신고자에 대한 현장 처치와 이송 목적지를 지시받아요.'],
+    ['병·의원 자원을 조합합니다', '전국 병·의원·보건소의 위치, 장비, 의료 인력의 자격을 실시간으로 파악해 처치에 가장 알맞은 인력·장비·시설을 정해요. 필요하면 A 병원의 B 의료진이 C 병원의 장비로 처치하도록 일정을 짜고, 자율주행차량을 A 병원에 급파합니다.']];
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('div', {}, st.map(function (x, i) { return h('div', { class:'stp' }, [h('i', { text:String(i + 1) }), h('div', {}, [h('b', { text:x[0] }), h('span', { text:x[1] })])]); }))]));
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'응급 AI의 핵심' }),
+    h('div', { class:'sub', style:'font-size:14px', text:'전국 병·의원의 위치만이 아니라 병·의원마다 의료진의 전공 분야, 보유 장비, 의료 인력 각각의 일정, 장비 각각의 가동 여부와 예약 스케줄을 실시간으로 파악·갱신하고, 응급 환자가 생기면 최적의 처치 인력과 장비를 그 순간에 조합하는 것입니다.' })]));
+  kids.push(mockNote('설계 원칙이며, 이 화면은 모의로 체험하는 곳이에요. 기기·병원·출동 시스템에는 연결되어 있지 않습니다.'));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 호출 해 보기', 'quiet', function () { go('call'); }), btn('자원 조합 해 보기', 'fill', function () { go('match'); })]));
+  return kids;
 }
 
-// ── 내 장치 ──
+// ── 자원 조합 ──
+function mapSvg(r, hosp) {
+  var K = 11, W = 20 * K + 20, ns = 'http://www.w3.org/2000/svg';
+  function e(t, a, tx) { var n = document.createElementNS(ns, t), k; for (k in a) n.setAttribute(k, a[k]); if (tx != null) n.textContent = tx; return n; }
+  var svg = e('svg', { viewBox:'0 0 ' + W + ' ' + W, role:'img', 'aria-label':'가상 지도: 병원, 구급대, 신고 위치와 선택된 이동 경로', style:'width:100%;max-width:440px;border:1px solid var(--line);border-radius:12px;background:var(--soft)' });
+  function X(v) { return 10 + v * K; }
+  var b = r.best;
+  if (b) {
+    svg.appendChild(e('line', { x1:X(r.place[2]), y1:X(r.place[3]), x2:X(b.fac.x), y2:X(b.fac.y), stroke:'#1A5FB4', 'stroke-width':2.5 }));
+    if (b.kind === 'split') svg.appendChild(e('line', { x1:X(b.doc.x), y1:X(b.doc.y), x2:X(b.fac.x), y2:X(b.fac.y), stroke:'#1E7B46', 'stroke-width':2.5, 'stroke-dasharray':'5 3' }));
+  }
+  hosp.forEach(function (F) { var on = b && (F === b.fac || F === b.doc); svg.appendChild(e('rect', { x:X(F.x) - 7, y:X(F.y) - 7, width:14, height:14, rx:3, fill:on ? '#1E7B46' : '#fff', stroke:'#49505A' })); svg.appendChild(e('text', { x:X(F.x), y:X(F.y) - 10, 'text-anchor':'middle', 'font-size':9, fill:'#49505A' }, F.name.replace('가상 ', ''))); });
+  UNITS.forEach(function (u) { var on = u[0] === r.amb.id; svg.appendChild(e('polygon', { points:(X(u[2])) + ',' + (X(u[3]) - 6) + ' ' + (X(u[2]) - 5) + ',' + (X(u[3]) + 4) + ' ' + (X(u[2]) + 5) + ',' + (X(u[3]) + 4), fill:on ? '#1A5FB4' : '#9AA3B2' })); });
+  svg.appendChild(e('circle', { cx:X(r.place[2]), cy:X(r.place[3]), r:6, fill:'#C9302C' })); svg.appendChild(e('text', { x:X(r.place[2]) + 9, y:X(r.place[3]) + 4, 'font-size':9, fill:'#C9302C' }, '신고'));
+  return svg;
+}
+function viewMatch() {
+  var m = S.m || (S.m = { need:'ami', place:'p1', hosp:newHosp() });
+  var kids = head('자원 조합', '신고 위치에서 가장 빨리 처치를 시작할 수 있는 인력·장비·병원을 실시간으로 조합합니다. 아래 병원·인력·장비는 모두 가상이에요.');
+  kids.push(mockNote('가상 값으로 계산합니다. 인력의 근무와 장비의 사용 상태를 바꾸면 결과가 바로 달라져요(저장하지 않습니다).'));
+  var r = match(m.need, m.place, m.hosp);
+  kids.push(h('div', { class:'card col' }, [h('div', { class:'frm' }, [sel('emg-m-need', '응급 환자', m.need, Object.keys(NEEDS).map(function (k) { return [k, NEEDS[k].name]; }), function (v) { m.need = v; render(); }), sel('emg-m-place', '신고 위치', m.place, PLACES.map(function (p) { return [p[0], p[1]]; }), function (v) { m.place = v; render(); })]),
+    h('div', { class:'sub', text:'필요한 것: ' + r.need.sp + ' 전문의 + ' + r.need.eq })]));
+  var b = r.best, res = h('div', { class:'card col hero', id:'emg-m-res', style:'margin-top:16px' });
+  if (!b) { res.appendChild(h('div', { class:'big', text:'지금은 조합할 수 있는 인력·장비가 없어요' })); res.appendChild(h('div', { class:'sub', text:'가장 가까운 병원에서 상태를 안정시키며, 다른 병원의 인력·장비가 비는 대로 다시 조합합니다(연습).' })); }
+  else { res.appendChild(h('div', { class:'big', id:'emg-m-start', text:'처치 시작 약 ' + b.start + '분 뒤 · ' + b.fac.name })); res.appendChild(h('div', { class:'sub', id:'emg-m-kind', text:b.kind === 'single' ? '한 병원에서 전문의와 장비를 모두 쓸 수 있어요.' : '전문의와 장비가 다른 병원에 있어 ' + b.doc.name + ' 의료진이 ' + b.fac.name + ' 장비로 처치하도록 조합했어요.' })); }
+  kids.push(res);
+  if (b) kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'결정된 대응' }), h('div', {}, planText(r).map(function (x, i) { return h('div', { class:'stp', 'data-s':String(i) }, [h('i', { text:String(i + 1) }), h('div', {}, [h('span', { text:x })])]); }))]));
+  var rows = r.options.slice(0, 5).map(function (o, i) { return h('tr', {}, [h('td', {}, [pill(o.kind === 'single' ? '한 병원' : '인력 이동', o.kind === 'single' ? 'm' : 'p')]), h('td', { text:o.fac.name }), h('td', { text:o.kind === 'single' ? '—' : o.doc.name }), h('td', { class:'r num', text:o.tPatient + '분' }), h('td', { class:'r num', text:o.kind === 'single' ? '—' : o.tDoc + '분' }), h('td', { class:'r num', text:(i === 0 ? '★ ' : '') + o.start + '분' })]); });
+  kids.push(h('div', { class:'card', style:'margin-top:16px;padding:0' }, [h('div', { style:'padding:14px 16px 0' }, [h('b', { text:'가능한 조합(빠른 순)' })]), rows.length ? h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'emg-m-opts' }, [h('thead', {}, [h('tr', {}, ['방식', '처치 장소', '전문의 출발', '환자 도착', '전문의 도착', '시작'].slice(0, 6).map(function (t, i) { return h('th', { class:i > 2 ? 'r' : '', text:t }); }))]), h('tbody', {}, rows)])]) : h('div', { class:'empty', text:'가능한 조합이 없어요.' })]));
+  kids.push(h('div', { style:'margin-top:16px' }, [mapSvg(r, m.hosp), h('div', { class:'sub', text:'빨간 점이 신고 위치, 삼각형이 구급대(파란색이 출동), 네모가 병원이에요. 파란 선은 환자 이송, 초록 점선은 전문의 이동입니다.' })]));
+  var tb = h('table', { class:'tbl', id:'emg-m-res-tbl' }, [h('thead', {}, [h('tr', {}, ['병원', '전문의(근무)', '장비(사용 가능)'].map(function (t) { return h('th', { text:t }); }))]),
+    h('tbody', {}, m.hosp.map(function (F) {
+      var docs = Object.keys(F.docs).map(function (k) { return h('button', { type:'button', class:'chip', 'data-doc':F.id + ':' + k, 'aria-pressed':String(F.docs[k]), text:k + (F.docs[k] ? ' 근무' : ' 비번'), onclick:function () { F.docs[k] = !F.docs[k]; render(); } }); });
+      var eqs = Object.keys(F.eq).map(function (k) { return h('button', { type:'button', class:'chip', 'data-eq':F.id + ':' + k, 'aria-pressed':String(F.eq[k]), text:k + (F.eq[k] ? ' 가능' : ' 사용 중'), onclick:function () { F.eq[k] = !F.eq[k]; render(); } }); });
+      return h('tr', {}, [h('td', {}, [h('b', { text:F.name })]), h('td', {}, [h('div', { class:'chips' }, docs.length ? docs : [h('span', { class:'sub', text:'전문의 없음' })])]), h('td', {}, [h('div', { class:'chips' }, eqs.length ? eqs : [h('span', { class:'sub', text:'장비 없음' })])])]);
+    }))]);
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'병·의원 인력·장비 현황(실시간 갱신 연습)' }), h('div', { class:'sub', text:'버튼을 눌러 전문의가 퇴근하거나 장비가 사용 중이 된 상황을 만들어 보세요.' }), h('div', { class:'tbw' }, [tb]), h('div', { class:'rowf' }, [btn('처음 상태로', 'quiet', function () { m.hosp = newHosp(); render(); })])]));
+  var seen = {}, why = r.why.filter(function (w) { var k = w[0] + w[1]; if (seen[k]) return false; seen[k] = 1; return true; });
+  if (why.length) kids.push(h('div', { class:'card col', style:'margin-top:16px', id:'emg-m-why' }, [h('b', { text:'조합에서 빠진 이유' }), h('div', {}, why.map(function (w) { return h('div', { class:'kv' }, [h('span', { text:w[0] }), h('b', { text:w[1] })]); }))]));
+  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 AI에게 묻기', 'quiet', function () { ask('다른 병원의 의료진과 장비를 어떻게 조합하나요?'); })]));
+  return kids;
+}
+
+// ── 내 기기 ──
 function addDev() {
   var f = S.form, e = {}, name = clean(f.name, 40);
-  if (!name) e.name = '장치 이름을 적어 주세요.';
+  if (!name) e.name = '기기 이름을 적어 주세요.';
   if (f.chk && !/^\d{4}-\d{2}-\d{2}$/.test(f.chk)) e.chk = '점검일은 2026-11-23 모양으로 적어 주세요.';
   if (S.dev.length >= MAXD) e.name = '기록은 최대 ' + MAXD + '개까지예요.';
   S.err = e; if (Object.keys(e).length) { S.msg = ''; return render(); }
-  S.dev.push({ id:uid(), kind:DEVKINDS.indexOf(f.kind) >= 0 ? f.kind : '기타', name:name, place:clean(f.place, 40), chk:f.chk || '' }); S.form = { kind:f.kind }; S.msg = '기록했어요.'; save(); render();
+  S.dev.push({ id:uid(), kind:DEVKINDS.indexOf(f.kind) >= 0 ? f.kind : '폰', name:name, carry:f.carry !== false, chk:f.chk || '' }); S.form = { kind:f.kind, carry:true }; S.msg = '기록했어요.'; save(); render();
 }
 function viewDevices() {
-  var kids = head('내 장치', '내가 쓰는 스마트워치와 내 집·가게·사무실에 설치한 센서·CCTV를 적어 두고 점검일을 챙깁니다.'); kids.push(warn());
+  var kids = head('내 기기', '폰·나비웹 워치·링(팔찌) 중 적어도 하나를 24시간 가까이 두어야 응급 호출이 가능합니다. 내가 쓰는 기기를 적어 두세요.');
   var m = devSummary(S.dev, kst());
-  kids.push(h('div', { class:'g4' }, [tile('등록한 장치', m.count + '개', '', 'emg-d0'), tile('점검일 지남·오늘', m.due + '개', '', 'emg-d1')]));
+  kids.push(h('div', { class:'g4' }, [tile('등록한 기기', m.count + '개', '', 'emg-d0'), tile('24시간 가까이 두는 기기', m.carry + '개', m.carry ? '' : '하나 이상 필요해요', 'emg-d2'), tile('점검일 지남·오늘', m.due + '개', '', 'emg-d1')]));
   var f = S.form, e = S.err;
-  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'장치 적기' }), h('div', { class:'sub', text:'직접 적는 기록입니다. 장치가 나비웹에 연결되는 기능은 아직 없어요.' }),
-    h('div', { class:'frm' }, [sel('emg-dk', '종류', f.kind, DEVKINDS.map(function (k) { return [k, k]; }), function (v) { f.kind = v; }), field('emg-dn', '장치 이름', f.name, { err:e.name, ph:'예: 현관 CCTV', max:40, set:function (v) { f.name = v; } }), field('emg-dp', '설치 장소(선택)', f.place, { ph:'예: 1층 주방', max:40, set:function (v) { f.place = v; } }), field('emg-dc', '다음 점검일(선택)', f.chk, { err:e.chk, ph:'2027-01-31', mode:'numeric', max:10, set:function (v) { f.chk = v.trim(); } })]),
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'기기 적기' }), h('div', { class:'sub', text:'직접 적는 기록입니다. 기기가 나비웹에 연결되는 기능은 아직 없어요.' }),
+    h('div', { class:'frm' }, [sel('emg-dk', '종류', f.kind, DEVKINDS.map(function (k) { return [k, k]; }), function (v) { f.kind = v; }), field('emg-dn', '기기 이름', f.name, { err:e.name, ph:'예: 내 폰', max:40, set:function (v) { f.name = v; } }), field('emg-dc', '다음 점검·충전일(선택)', f.chk, { err:e.chk, ph:'2027-01-31', mode:'numeric', max:10, set:function (v) { f.chk = v.trim(); } })]),
+    h('label', { class:'chk', for:'emg-dcarry' }, [(function () { var c = h('input', { type:'checkbox', id:'emg-dcarry', checked:f.carry !== false ? true : false }); c.onchange = function () { f.carry = c.checked; }; return c; })(), h('span', { text:'24시간 가까이 둡니다' })]),
     h('div', { class:'rowf', style:'margin-top:16px' }, [btn('기록하기', 'fill', addDev), S.msg ? h('span', { class:'sub', role:'status', text:S.msg }) : null])]));
-  if (!S.dev.length) { kids.push(empty('아직 등록한 장치가 없어요.')); return kids; }
-  kids.push(h('div', { class:'card', style:'margin-top:16px;padding:0' }, [h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['종류', '이름', '장소', '점검일', ''].map(function (t) { return h('th', { text:t }); }))]),
-    h('tbody', {}, S.dev.map(function (x) { return h('tr', {}, [h('td', {}, [pill(x.kind)]), h('td', {}, [h('b', { text:x.name })]), h('td', { text:x.place || '—' }), h('td', { class:'num', text:x.chk || '—' }), h('td', { class:'r' }, [btn('삭제', 'sm quiet', function () { S.dev = S.dev.filter(function (y) { return y.id !== x.id; }); S.msg = '삭제했어요.'; save(); render(); })])]); }))])])]));
+  if (!S.dev.length) { kids.push(empty('아직 등록한 기기가 없어요.')); return kids; }
+  kids.push(h('div', { class:'card', style:'margin-top:16px;padding:0' }, [h('div', { class:'tbw' }, [h('table', { class:'tbl' }, [h('thead', {}, [h('tr', {}, ['종류', '이름', '24시간', '점검일', ''].map(function (t) { return h('th', { text:t }); }))]),
+    h('tbody', {}, S.dev.map(function (x) { return h('tr', {}, [h('td', {}, [pill(x.kind)]), h('td', {}, [h('b', { text:x.name })]), h('td', { text:x.carry ? '예' : '아니요' }), h('td', { class:'num', text:x.chk || '—' }), h('td', { class:'r' }, [btn('삭제', 'sm quiet', function () { S.dev = S.dev.filter(function (y) { return y.id !== x.id; }); S.msg = '삭제했어요.'; save(); render(); })])]); }))])])]));
   return kids;
 }
 
-// ── 공개 범위 ──
+// ── 보내는 정보 ──
 function viewConsent() {
-  var kids = head('공개 범위', '응급 상황에서 구조 기관에 보낼 데이터를 항목마다 직접 정합니다.');
-  kids.push(h('div', { class:'note info', style:'margin:16px 0', text:'설계 원칙: 위급 상황에서만, 구조에 필요한 항목만 보냅니다. 현재 위치는 구조에 꼭 필요해 항상 포함됩니다. 지금은 아무것도 전송되지 않으며, 고른 상태는 이 브라우저에만 저장돼요. 대응 시뮬레이션이 이 선택을 따릅니다.' }));
-  var n = h('span', { class:'sub', id:'emg-c-n' });
-  function tally() { n.textContent = '보내기로 고른 항목 ' + Object.keys(S.share).length + ' / ' + (SEND.length - 1) + ' (현재 위치 제외)'; }
-  kids.push(h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'구조 기관에 보낼 데이터' }), n,
-    h('div', {}, SEND.map(function (f) { var id = 'emg-sh-' + f[0], cb = h('input', { type:'checkbox', id:id, checked:f[0] === 'loc' || S.share[f[0]] ? true : false, disabled:f[0] === 'loc' ? true : null });
-      cb.onchange = function () { if (cb.checked) S.share[f[0]] = 1; else delete S.share[f[0]]; save(); tally(); }; return h('label', { class:'chk', for:id }, [cb, h('span', { text:f[1] + (f[0] === 'loc' ? ' (항상 포함)' : '') })]); })),
-    h('div', { class:'rowf' }, [btn('모두 해제', 'quiet', function () { S.share = {}; save(); render(); })])]));
+  var kids = head('보내는 정보', '응급 호출이 되면 내 AI 비서가 응급 AI에 보낼 정보와, 응급 AI가 추가로 물어도 되는 것을 항목마다 직접 정합니다.');
+  kids.push(h('div', { class:'note info', style:'margin:16px 0', text:'현재 위치는 구조에 꼭 필요해 항상 포함됩니다. 고른 상태는 이 브라우저에만 저장되고, 응급 호출 화면의 연습이 이 선택을 따릅니다.' }));
+  var n = h('span', { class:'sub', id:'emg-c-n' }), n2 = h('span', { class:'sub', id:'emg-a-n' });
+  function tally() { n.textContent = '보내기로 고른 항목 ' + Object.keys(S.share).length + ' / ' + (SEND.length - 1) + ' (현재 위치 제외)'; n2.textContent = '답해도 되는 질문 ' + Object.keys(S.askok).length + ' / ' + ASKS.length; }
+  function list(items, store, pre, fixedKey) {
+    return h('div', {}, items.map(function (f) { var id = pre + f[0], cb = h('input', { type:'checkbox', id:id, checked:f[0] === fixedKey || store[f[0]] ? true : false, disabled:f[0] === fixedKey ? true : null });
+      cb.onchange = function () { if (cb.checked) store[f[0]] = 1; else delete store[f[0]]; save(); tally(); }; return h('label', { class:'chk', for:id }, [cb, h('span', { text:f[1] + (f[0] === fixedKey ? ' (항상 포함)' : '') })]); }));
+  }
+  kids.push(h('div', { class:'card col' }, [h('b', { style:'font-size:17px', text:'내 비서가 응급 AI에 보낼 정보' }), n, list(SEND, S.share, 'emg-sh-', 'loc'), h('div', { class:'rowf' }, [btn('모두 해제', 'quiet', function () { S.share = {}; save(); render(); })])]));
+  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'응급 AI가 내 비서에게 추가로 물어도 되는 것' }), n2, list(ASKS, S.askok, 'emg-ak-', null), h('div', { class:'sub', text:'예시입니다. 내 비서는 허용한 질문에만 내 기록을 바탕으로 답해요.' })]));
   tally();
   kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 AI에게 묻기', 'quiet', function () { ask('응급 상황에서 내 정보는 누구에게 전달되나요?'); })]));
   return kids;
@@ -222,7 +290,7 @@ function viewConsent() {
 
 function render() {
   var root = $('emg-root'), tp = $('emg-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'principle' ? viewPrinciple() : S.view === 'sim' ? viewSim() : S.view === 'devices' ? viewDevices() : S.view === 'consent' ? viewConsent() : viewContact();
+  var kids = S.view === 'flow' ? viewFlow() : S.view === 'match' ? viewMatch() : S.view === 'devices' ? viewDevices() : S.view === 'consent' ? viewConsent() : viewCall();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -233,15 +301,15 @@ function nav(a) {
 }
 function mount(el, o) {
   if (!el) return; o = o || {};
-  M = el; el.textContent = ''; el.classList.add('emg'); S.info = {}; S.share = {}; S.dev = []; S.err = {}; S.msg = ''; load();
+  M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.call = { dev:'phone', can:'voice', say:'', fired:false }; S.m = null; load();
   [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' })].forEach(function (x) { el.appendChild(x); });
-  S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'contact'; render();
+  S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'call'; render();
 }
 window.NaviEmergency = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
-  detect:detect, anomaly:anomaly, plan:plan, devSummary:devSummary,
+  callMessage:callMessage, match:match, newHosp:newHosp, planText:planText, devSummary:devSummary, sharedItems:sharedItems,
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
