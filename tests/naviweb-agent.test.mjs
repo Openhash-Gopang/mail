@@ -744,3 +744,9 @@ test('0.7.2: 맡긴 주소가 있으면 같은 사이트 탭만 대상으로 쓴
   const b = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
   assert.match(b, /wantSite/); assert.match(b, /site\(t\.url\) === wantSite/);
 });
+
+test('0.7.3: upload_attached_file 은 DOM 도구 일괄 처리보다 먼저 걸러져 맡긴 파일(b64)이 붙는다', () => {
+  const b = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  const i = b.indexOf("DOM_TOOLS.has(name) && name !== 'upload_attached_file'"), j = b.indexOf("name === 'upload_attached_file') {");
+  assert.ok(i > 0 && j > 0); assert.match(b, /b64: a\.b64/);
+});
