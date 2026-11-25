@@ -57,7 +57,7 @@ var ASKS = [['meal', '마지막으로 먹은 음식'], ['exercise', '오늘 격�
 var CALLS = [['voice', '말할 수 있음'], ['text', '문자를 입력할 수 있음'], ['none', '둘 다 어려움']];
 var ANCH = { call:'emg-list', flow:'emg-list', follow:'emg-list', match:'emg-list', prep:'emg-s-prep', devices:'emg-s-prep', consent:'emg-s-prep' };
 var M = null, LS = {};
-var S = { share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'', prepOpen:false, m:{ hosp:null }, sim:null, wasOpen:false };
+var S = { share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'', prepOpen:false, m:{ hosp:null }, sim:null, wasOpen:false, auto:null };
 
 function field(id, label, val, o) {
   o = o || {}; var e = o.err, inp = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '60', inputmode:o.mode || '', autocomplete:'off', 'aria-invalid':e ? 'true' : 'false' });
@@ -177,7 +177,7 @@ function addDev() {
   S.dev.push({ id:uid(), kind:DEVKINDS.indexOf(f.kind) >= 0 ? f.kind : '폰', name:name, carry:f.carry !== false, chk:f.chk || '' }); S.form = { kind:f.kind, carry:true }; S.msg = '기록했어요.'; save(); render();
 }
 
-function topbar() { return h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 응급' })])])]); }
+function topbar() { return h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 응급' })])]), h('button', { type:'button', class:'btn tonal simbtn', id:'emg-sim', text:'🧪 시뮬레이션', 'aria-label':'자동 시뮬레이션 열기', disabled:S.auto ? true : null, onclick:openAuto })]); }
 function kv(k, v, id) { return h('div', { class:'kv' }, [h('span', { text:k }), h('b', { id:id || null, text:v })]); }
 function step(n, title, kids, id) {
   return h('div', { class:'card col', id:id || null, style:'margin-top:16px' }, [h('div', { class:'rowf' }, [pill(String(n), 'm'), h('b', { style:'font-size:17px', text:title })])].concat(kids));
@@ -437,13 +437,55 @@ function stepList() {
 }
 function fillPanel(pn) {
   var sm = S.sim, open = sm.cur >= 0, pb0 = $('emg-pbody'), ps = pb0 ? pb0.scrollTop : 0;
-  pn.textContent = ''; pn.className = 'panel' + (open ? ' open' : '') + (open && !S.wasOpen ? ' anim' : ''); pn.setAttribute('aria-hidden', String(!open)); M.classList.toggle('pn-open', open); S.wasOpen = open;
+  pn.textContent = ''; var au = S.auto; pn.className = 'panel' + (open ? ' open' : '') + (au ? ' auto' : '') + (au && au.closing ? ' closing' : (open && !S.wasOpen ? ' anim' : '')); pn.setAttribute('aria-hidden', String(!open)); M.classList.toggle('pn-open', open); S.wasOpen = open;
   if (!open) return;
   var st = STEPS[sm.cur], c = ctx(), last = sm.cur === STEPS.length - 1;
-  pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'단계 ' + (sm.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:closePanel })]));
+  if (S.auto) { autoPanel(pn, st, c, ps); return; }
+  pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:(S.auto ? '시뮬레이션 · ' : '') + '단계 ' + (sm.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:S.auto ? closeAuto : closePanel })]));
   var body = h('div', { class:'pbody col', id:'emg-pbody' }, st.fn(c).filter(Boolean)); pn.appendChild(body);
   pn.appendChild(h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:sm.cur === 0 ? true : null, onclick:function () { openStep(sm.cur - 1); } }),
     last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { newCase(); render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : h('button', { type:'button', class:'btn fill', id:'emg-nextstep', text:'다음 ▶ ' + STEPS[sm.cur + 1].id + ' ' + STEPS[sm.cur + 1].title, onclick:advance })]));
+  body.scrollTop = ps;
+}
+
+// ── 자동 시뮬레이션: 무작위 사건을 1-1 부터 끝까지 알맞은 속도로 보여 준다 ──
+var HOLD = { '2-4':7500, '2-5':7500, '2-6':6500, '3-1':7000, '3-5':8000, '4-4':0 };
+function holdMs(id) { return HOLD[id] === undefined ? 5500 : HOLD[id]; }
+function openAuto() {
+  if (S.auto) return;
+  var main = { sim:S.sim, m:S.m }; newCase();
+  S.m.hosp.forEach(function (F) { Object.keys(F.docs).forEach(function (k) { if (Math.random() < 0.12) F.docs[k] = !F.docs[k]; }); Object.keys(F.eq).forEach(function (k) { if (Math.random() < 0.12) F.eq[k] = !F.eq[k]; }); });
+  S.auto = { main:main, playing:true, closing:false, timer:null, ev:null };
+  S.sim.reached = 0; S.sim.cur = 0; S.wasOpen = false; render(); autoSchedule();
+}
+function autoClear() { var a = S.auto; if (a) { clearTimeout(a.timer); clearTimeout(a.ev); a.timer = null; a.ev = null; } }
+function autoSchedule() {
+  var a = S.auto; if (!a || a.closing) return; clearTimeout(a.timer); a.timer = null; if (!a.playing) return;
+  var i = S.sim.cur, id = STEPS[i].id, ms = holdMs(id); if (!ms) { a.playing = false; render(); return; }
+  a.timer = setTimeout(function () { if (!S.auto || S.auto.closing || !S.auto.playing) return; autoStep(); }, ms);
+}
+function autoStep() {
+  var sm = S.sim, i = sm.cur + 1; if (i >= STEPS.length) return;
+  sm.reached = Math.max(sm.reached, i); openStep(i); autoEnter(i); autoSchedule();
+}
+function autoEnter(i) {
+  var sm = S.sim, a = S.auto, id = STEPS[i].id, p = sm.plan0, b = p && p.best, pb = $('emg-pbody'); if (pb) pb.scrollTop = 0;
+  if (b && (id === '3-2' || id === '3-3' || id === '3-4')) { var f = id === '3-2' ? 0.5 : id === '3-3' ? 0.8 : 1; sm.t = Math.round((id === '3-4' ? b.start : (id === '3-2' ? p.amb.eta : (b.kind === 'split' ? b.tDoc : b.tPatient))) * f); render(); }
+  if (id === '3-5' && Math.random() < 0.6) { a.ev = setTimeout(function () { if (S.auto && !S.auto.closing && S.sim.cur === i && !S.sim.ev) triggerEvent(); }, 2200); }
+}
+function autoToggle() { var a = S.auto; if (!a) return; a.playing = !a.playing; render(); autoSchedule(); }
+function autoRestart() { var a = S.auto; if (!a) return; autoClear(); var main = a.main; S.auto = null; newCase(); S.m.hosp.forEach(function (F) { Object.keys(F.docs).forEach(function (k) { if (Math.random() < 0.12) F.docs[k] = !F.docs[k]; }); Object.keys(F.eq).forEach(function (k) { if (Math.random() < 0.12) F.eq[k] = !F.eq[k]; }); }); S.auto = { main:main, playing:true, closing:false, timer:null, ev:null }; S.sim.reached = 0; S.sim.cur = 0; S.wasOpen = true; render(); autoSchedule(); }
+function closeAuto() {
+  var a = S.auto; if (!a || a.closing) return; autoClear(); a.closing = true; a.playing = false; render();
+  setTimeout(function () { if (S.auto !== a) return; S.sim = a.main.sim; S.m = a.main.m; S.auto = null; S.wasOpen = false; render(); }, 240);
+}
+function autoPanel(pn, st, c, ps) {
+  var sm = S.sim, a = S.auto, last = sm.cur === STEPS.length - 1, done = last && !a.playing, frac = (sm.cur + 1) / STEPS.length;
+  var kids = [h('div', { class:'sub', id:'emg-ph-n', text:'시뮬레이션 · 단계 ' + (sm.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] + (a.playing ? ' · 자동 진행 중' : done ? ' · 끝' : ' · 멈춤') }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })];
+  pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, kids), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:closeAuto })]));
+  pn.appendChild(h('div', { class:'aprog', 'aria-hidden':'true' }, [h('i', { style:'width:' + Math.round(frac * 100) + '%' })]));
+  var body = h('div', { class:'pbody col', id:'emg-pbody' }, st.fn(c).filter(Boolean)); pn.appendChild(body);
+  pn.appendChild(h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-apause', text:a.playing ? '⏸ 멈추기' : last ? '끝났어요' : '▶ 이어서', disabled:last && !a.playing ? true : null, onclick:autoToggle }), h('button', { type:'button', class:'btn fill', id:'emg-arestart', text:'↻ 새 무작위 사건', onclick:autoRestart })]));
   body.scrollTop = ps;
 }
 function render() {
@@ -454,7 +496,7 @@ function render() {
   kids.push(mockNote('모의 체험입니다. 아무것도 전송되지 않고 출동도 일어나지 않아요. 병원·시간은 모두 가상 값입니다.'));
   kids.push(progressBar(), prepSection(), summaryCard(), stepList());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
-  fillPanel(pn);
+  fillPanel(pn); var bk = $('emg-back'); if (bk) bk.className = 'back' + (S.auto && !S.auto.closing ? ' on' : '');
   if (y) { try { window.scrollTo(0, y); } catch (e) {} }
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg }); }
@@ -471,8 +513,8 @@ function nav(a) {
 }
 function mount(el, o) {
   if (!el) return; o = o || {};
-  M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.prepOpen = false; newCase(); load();
-  [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' }), h('aside', { id:'emg-panel', class:'panel', 'aria-hidden':'true', 'aria-label':'단계 결과' })].forEach(function (x) { el.appendChild(x); });
+  autoClear(); S.auto = null; M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.prepOpen = false; newCase(); load();
+  [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' }), h('div', { id:'emg-back', class:'back', onclick:function () { if (S.auto) closeAuto(); } }), h('aside', { id:'emg-panel', class:'panel', 'aria-hidden':'true', 'aria-label':'단계 결과' })].forEach(function (x) { el.appendChild(x); });
   if (o.view && ANCH[o.view] && o.view !== 'call') go(o.view); else render();
 }
 window.NaviEmergency = {
