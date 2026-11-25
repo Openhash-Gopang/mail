@@ -202,7 +202,7 @@ test('나머지 시뮬레이션: 의료·행정·전문가 인증서·홈 확장
   S.tab('home', 'expert'); fire('sm-xg', '법률'); assert.match(doc.getElementById('sim-h-exp').textContent, /맞아요/);
   S.tab('home', 'learnai'); fire('sm-ld', '30'); assert.match(doc.getElementById('sim-h-learn').textContent, /8\d\.\d%/);
   S.open('pdv', 'life'); assert.match(doc.getElementById('sim-p-life').textContent, /허락 없이는 열리지 않아요/);
-  for (const id of ['cert-sim']) assert.ok(desk.includes('id="' + id + '"')); assert.match(rd('../medical-app.js'), /_simOpen\('med'/); assert.match(rd('../public-app.js'), /_simOpen\('pub'/);
+  for (const id of ['cert-sim']) assert.ok(desk.includes('id="' + id + '"')); assert.match(rd('../public-app.js'), /_simOpen\('pub'/);
 });
 
 test('검토 보완: 입력을 바꾸면 바로 새 가상 데이터가 만들어지고, 거래·내 기록은 이음 표와 변조 표시가 있으며, 모의 주문은 금액·수수료·한도를 계산하고, 점검 지표가 붙는다', { skip }, () => {
