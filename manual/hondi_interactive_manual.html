@@ -1075,7 +1075,7 @@ var _hwLoading = null;
 function hwLoad() {
   if (window.NaviHowto) return Promise.resolve();
   if (_hwLoading) return _hwLoading;
-  var src = (window.__naviManualRoot ? 'sim-howto.js' : 'https://naviweb.kr/sim-howto.js') + '?v=20261125a';
+  var src = (window.__naviManualRoot ? 'sim-howto.js' : 'https://naviweb.kr/sim-howto.js') + '?v=20261125b';
   _hwLoading = new Promise(function (ok, no) {
     var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { _hwLoading = null; no(new Error('load')); };
     document.head.appendChild(s);
