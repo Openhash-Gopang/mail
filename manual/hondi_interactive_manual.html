@@ -987,7 +987,25 @@ DOC.addEventListener('click', function (e) {
   if (!a) return; e.preventDefault(); goChapter(a.getAttribute('data-goto'));
 });
 
-function scrollToContent() { var el = DOC.getElementById('chContent'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+/* 나비웹 화면 안에 들어갈 때 위쪽의 고정 막대(상단 헤더와 페이지 막대)가 내용 윗부분을 가리지 않도록, 그 막대 아래에서 시작하게 스크롤한다. */
+function stickyTop() {
+  var h = 0;
+  try {
+    ['header.topbar', '.tab-panel.active .pg-bar'].forEach(function (q) {
+      var n = document.querySelector(q); if (!n) return;
+      var cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      if (cs.position !== 'sticky' && cs.position !== 'fixed') return;
+      var r = n.getBoundingClientRect(); if (r.bottom > h && r.top < 4) h = r.bottom;
+    });
+  } catch (x) {}
+  return h;
+}
+function scrollToEl(el) {
+  if (!el) return;
+  var r = el.getBoundingClientRect(), y = Math.max(0, (window.pageYOffset || 0) + r.top - stickyTop() - 12);
+  try { window.scrollTo({ top: y, behavior: 'smooth' }); } catch (x) { window.scrollTo(0, y); }
+}
+function scrollToContent() { scrollToEl(DOC.getElementById('chContent')); }
 
 
 function renderQuiz(chapter) {
@@ -1087,7 +1105,7 @@ function hwBind(el, chapter) {
   b.addEventListener('click', function (e) {
     e.stopPropagation();
     hwLoad().then(function () {
-      window.NaviHowto.onQuiz(function () { var q = el.querySelector('.quiz-section'); if (q && q.scrollIntoView) q.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      window.NaviHowto.onQuiz(function () { var q = el.querySelector('.quiz-section'); if (q) scrollToEl(q); });
       window.NaviHowto.open(chapter.id);
     }).catch(function () { b.textContent = '불러오지 못했어요. 다시 눌러 보세요'; });
   });
