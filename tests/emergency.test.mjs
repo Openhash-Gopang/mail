@@ -57,10 +57,17 @@ test('응급 호출: 기기·상태에 따라 전달 형태가 달라지고 공�
   assert.equal(p.fetched(), 0); assert.ok(t.length > 20);
 });
 
-test('대응 흐름: 호출부터 병·의원 조합까지', { skip }, () => {
-  const t = page('flow').txt();
-  for (const re of [/가장 단순한 조작/, /나만의 AI 비서/, /마지막으로 먹은 음식/, /최단 시간/, /실시간/, /자율주행차량/, /일정/, /모의/]) assert.match(t, re);
-  assert.doesNotMatch(t, /119|112|CCTV|센서/);
+test('한 사건 따라가기: 장면을 넘기며 누가 무엇을 받는지 본다', { skip }, () => {
+  const p = page('follow'); const now = () => p.doc.getElementById('emg-f-now').textContent;
+  assert.match(p.doc.getElementById('emg-f-step').textContent, /1 \/ 7 · 호출/); assert.match(now(), /가장 단순하게 조작/); assert.equal(p.doc.getElementById('emg-f-map'), null);
+  for (let k = 0; k < 3; k++) p.btn('다음').click();
+  assert.match(p.doc.getElementById('emg-f-step').textContent, /4 \/ 7/); assert.ok(p.doc.getElementById('emg-f-map'));
+  p.btn('다음').click(); p.btn('다음').click(); assert.match(now(), /일정을 짜고|이송합니다/);
+  p.btn('다음').click(); assert.match(now(), /처치가 시작됩니다/); assert.ok(p.btn('응급 호출 해 보기'));
+  p.doc.querySelector('[data-v="s2"]').click(); assert.match(p.doc.getElementById('emg-f-now').textContent, /말도 문자도 어려워서 “응급”만/);
+  p.N.view('prep'); const ak = p.doc.getElementById('emg-ak-exercise'); ak.checked = true; ak.dispatchEvent(new p.w.Event('change'));
+  p.N.view('follow'); for (let k = 0; k < 2; k++) p.btn('다음').click(); assert.match(p.doc.getElementById('emg-f-got').textContent, /오늘 격한 운동을 했는지에 답함/);
+  const t = p.txt(); assert.doesNotMatch(t, /119|112|CCTV|센서/); assert.equal(p.fetched(), 0);
 });
 
 test('자원 조합: 인력·장비 상태를 바꾸면 결과가 바뀐다', { skip }, () => {
@@ -74,13 +81,13 @@ test('자원 조합: 인력·장비 상태를 바꾸면 결과가 바뀐다', { 
 });
 
 test('내 기기·보내는 정보·탭 이동', { skip }, () => {
-  const p = page('devices');
+  const p = page('prep');
   p.btn('기록하기').click(); assert.match(p.txt(), /기기 이름을 적어/);
   type(p, 'emg-dn', '내 폰'); type(p, 'emg-dc', '2026-01-01'); p.btn('기록하기').click();
   assert.equal(p.doc.getElementById('emg-d0').textContent, '1개'); assert.equal(p.doc.getElementById('emg-d2').textContent, '1개'); assert.equal(p.doc.getElementById('emg-d1').textContent, '1개');
   p.btn('삭제').click(); assert.match(p.txt(), /아직 등록한 기기가 없어요/);
-  for (const v of ['call', 'flow', 'match', 'devices', 'consent']) { p.N.view(v); assert.ok(p.txt().length > 20, v); }
-  assert.equal(p.doc.querySelectorAll('.tab').length, 5);
+  for (const v of ['call', 'follow', 'match', 'prep', 'devices', 'consent']) { p.N.view(v); assert.ok(p.txt().length > 20, v); }
+  assert.equal(p.doc.querySelectorAll('.tab').length, 4);
   p.N.view('consent'); assert.ok(p.doc.getElementById('emg-sh-loc').disabled);
 });
 

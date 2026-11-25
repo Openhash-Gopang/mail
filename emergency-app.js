@@ -44,8 +44,9 @@ function clean(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001f
 
 // ── 저장 ──
 var KEY = 'navi-emg-v1', MAXD = 20;
-var TABS = [['call', '응급 호출'], ['flow', '대응 흐름'], ['match', '자원 조합'], ['devices', '내 기기'], ['consent', '보내는 정보']];
+var TABS = [['call', '응급 호출'], ['follow', '한 사건 따라가기'], ['match', '자원 조합'], ['prep', '내 준비']];
 var VIEWS = TABS.map(function (t) { return t[0]; });
+var ALIAS = { flow:'follow', devices:'prep', consent:'prep' };
 var DEVICES = [['phone', '폰'], ['watch', '나비웹 워치'], ['ring', '링(팔찌)']];
 var DEVKINDS = DEVICES.map(function (d) { return d[1]; });
 /** 내 비서가 응급 AI에 보내는 정보. 위치는 구조에 꼭 필요해 항상 포함하고, 나머지는 항목마다 직접 정한다. */
@@ -178,28 +179,47 @@ function viewCall() {
     var sh = sharedItems(S.share), ak = askItems(S.askok);
     out.appendChild(h('div', { class:'card col' }, [h('b', { text:'2. 내 AI 비서가 응급 AI에 보내는 정보' }), h('div', { class:'kv' }, [h('span', { text:'보내는 정보' }), h('b', { id:'emg-c-send', text:sh.join(', ') })]),
       h('div', { class:'kv' }, [h('span', { text:'응급 AI가 추가로 물어도 되는 것' }), h('b', { id:'emg-c-ask', text:ak.join(', ') || '없음' })]), h('div', { class:'sub', text:'보내는 정보는 “보내는 정보” 탭에서 항목마다 정해요.' })]));
-    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'3. 이어지는 일' }), h('div', { class:'sub', text:'신고 위치에서 가장 빨리 닿는 구급 인원·장비에 출동이 지시되고, 처치할 병원의 인력·장비가 조합됩니다.' }), h('div', { class:'rowf' }, [btn('대응 흐름 보기', 'quiet', function () { go('flow'); }), btn('자원 조합 해 보기', 'fill', function () { go('match'); })])]));
+    out.appendChild(h('div', { class:'card col' }, [h('b', { text:'3. 이어지는 일' }), h('div', { class:'sub', text:'신고 위치에서 가장 빨리 닿는 구급 인원·장비에 출동이 지시되고, 처치할 병원의 인력·장비가 조합됩니다.' }), h('div', { class:'rowf' }, [btn('한 사건 따라가기', 'quiet', function () { go('follow'); }), btn('자원 조합 해 보기', 'fill', function () { go('match'); })])]));
   }
   kids.push(h('div', { class:'g2', style:'margin-top:16px;align-items:start' }, [form, out]));
   kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 AI에게 묻기', 'quiet', function () { ask('응급 호출을 하면 무엇이 전달되나요?'); })]));
   return kids;
 }
 
-// ── 대응 흐름 ──
-function viewFlow() {
-  var kids = head('대응 흐름', '응급 호출부터 처치까지, 나비웹 응급 AI가 이어 가는 순서입니다.');
-  var st = [
-    ['호출', '폰·나비웹 워치·링(팔찌) 중 하나를 가장 단순한 조작으로 호출하면 응급 메시지가 관련 기관에 전송돼요. 말을 하거나 문자를 입력할 수 있으면 음성 또는 문자를 함께 보내고, 그 밖에는 오직 “응급”만 보냅니다.'],
-    ['내 비서가 정보를 보냅니다', '신고자의 나만의 AI 비서가 위치·나이·성명·병력·생체 정보 같은 데이터를 응급 AI에 보내요.'],
-    ['응급 AI가 더 묻습니다', '응급 AI는 신고자의 비서에게 추가로 물을 수 있어요. 예를 들어 마지막으로 먹은 음식, 오늘 격한 운동을 했는지입니다.'],
-    ['가장 빠른 출동을 정합니다', '신고자의 현재 위치를 기준으로 최단 시간 안에 도착할 수 있는 응급 대응 인원과 장비를 정해 출동을 지시해요.'],
-    ['출동한 쪽에 실시간으로 알립니다', '출동 인원·장비는 응급 AI로부터 적절한 데이터를 실시간으로 받고, 신고자에 대한 현장 처치와 이송 목적지를 지시받아요.'],
-    ['병·의원 자원을 조합합니다', '전국 병·의원·보건소의 위치, 장비, 의료 인력의 자격을 실시간으로 파악해 처치에 가장 알맞은 인력·장비·시설을 정해요. 필요하면 A 병원의 B 의료진이 C 병원의 장비로 처치하도록 일정을 짜고, 자율주행차량을 A 병원에 급파합니다.']];
-  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('div', {}, st.map(function (x, i) { return h('div', { class:'stp' }, [h('i', { text:String(i + 1) }), h('div', {}, [h('b', { text:x[0] }), h('span', { text:x[1] })])]); }))]));
-  kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'응급 AI의 핵심' }),
-    h('div', { class:'sub', style:'font-size:14px', text:'전국 병·의원의 위치만이 아니라 병·의원마다 의료진의 전공 분야, 보유 장비, 의료 인력 각각의 일정, 장비 각각의 가동 여부와 예약 스케줄을 실시간으로 파악·갱신하고, 응급 환자가 생기면 최적의 처치 인력과 장비를 그 순간에 조합하는 것입니다.' })]));
-  kids.push(mockNote('설계 원칙이며, 이 화면은 모의로 체험하는 곳이에요. 기기·병원·출동 시스템에는 연결되어 있지 않습니다.'));
-  kids.push(h('div', { class:'rowf', style:'margin-top:16px' }, [btn('응급 호출 해 보기', 'quiet', function () { go('call'); }), btn('자원 조합 해 보기', 'fill', function () { go('match'); })]));
+// ── 한 사건 따라가기 ──
+var CASES = [
+  { id:'s1', name:'말할 수 있어요', who:'아버지가 집에서 갑자기 가슴을 움켜쥐고 쓰러졌어요.', dev:'phone', can:'voice', say:'가슴이 너무 아파요', need:'ami', place:'p2' },
+  { id:'s2', name:'말을 못 해요', who:'할머니가 말이 나오지 않고 한쪽 팔에 힘이 풀렸어요.', dev:'ring', can:'none', say:'', need:'stroke', place:'p3' },
+  { id:'s3', name:'전문의와 장비가 다른 병원에 있어요', who:'동생이 운동 중에 갑자기 숨쉬기 힘들다며 주저앉았어요.', dev:'watch', can:'text', say:'숨이 안 쉬어져요', need:'ami', place:'p1' }
+];
+function scenes(c, hosp) {
+  var dn = DEVICES.filter(function (d) { return d[0] === c.dev; })[0][1], msg = callMessage(c.can, c.say), r = match(c.need, c.place, hosp), b = r.best;
+  var sh = sharedItems(S.share), ak = askItems(S.askok), hasMap = !!b;
+  var L = [
+    { t:'호출', now:dn + '을(를) 가장 단순하게 조작했습니다. ' + (msg.only ? '말도 문자도 어려워서 “응급”만 전달됩니다.' : (msg.mode === 'voice' ? '말한 내용이 음성으로' : '입력한 문자가') + ' “응급” 표시와 함께 전달됩니다.'),
+      got:[['응급 AI', msg.only ? '“응급” 메시지' : '“응급” + ' + (msg.body || msg.label)]] },
+    { t:'내 AI 비서가 정보를 보냄', now:'신고자의 나만의 AI 비서가 위치·나이·성명·병력·생체 정보 같은 데이터를 응급 AI에 보냅니다.', got:[['응급 AI', sh.join(', ')], ['안내', '“내 준비” 탭에서 정한 항목만 보냅니다. 현재 위치는 항상 포함']] },
+    { t:'응급 AI가 더 물음', now:'응급 AI가 신고자의 비서에게 처치에 필요한 것을 더 묻습니다.', got:[['응급 AI → 비서', '“마지막으로 먹은 음식은?” “오늘 격한 운동을 했나요?”'], ['비서의 답', ak.length ? ak.join(', ') + '에 답함' : '허용한 질문이 없어 답하지 않음']] },
+    { t:'가장 빠른 출동', now:b ? '신고 위치(' + r.place[1] + ')에서 가장 빨리 닿는 ' + r.amb.name + '에 출동을 지시합니다(' + r.amb.eta + '분).' : '출동 가능한 구급대를 찾습니다.', got:[['구급대', '출동 지시와 실시간 데이터'], ['응급 AI', '현장 처치와 이송 목적지를 구급대에 계속 알림']], map:hasMap },
+    { t:'병·의원 인력·장비 확인', now:'응급 AI는 병·의원의 전문의 근무, 장비 가동, 예약 상태를 실시간으로 갖고 있습니다. 필요한 것은 ' + r.need.sp + ' 전문의와 ' + r.need.eq + '입니다.', got:[['병·의원 현황', r.need.sp + ' 전문의와 ' + r.need.eq + '의 상태를 비교']], map:hasMap },
+    { t:'최적 조합 결정', now:b ? (b.kind === 'single' ? b.fac.name + '에 전문의와 장비가 모두 있어 그곳으로 이송합니다.' : b.doc.name + '의 의료진이 ' + b.fac.name + '의 장비로 처치하도록 일정을 짜고, 자율주행차량을 ' + b.doc.name + '에 급파합니다.') : '지금은 조합할 인력·장비가 없습니다.', got:b ? [['환자', b.fac.name + '로 이송(' + b.tPatient + '분)']].concat(b.kind === 'split' ? [['의료진', b.doc.name + ' → ' + b.fac.name + '(' + b.tDoc + '분)']] : []) : [], map:hasMap },
+    { t:'처치 시작', now:b ? '약 ' + b.start + '분 뒤 ' + b.fac.name + '에서 처치가 시작됩니다.' : '조합이 가능해지면 다시 계산합니다.', got:b ? [['결과', '처치 시작 약 ' + b.start + '분 뒤']] : [], map:hasMap }
+  ];
+  return { list:L, r:r };
+}
+function viewFollow() {
+  var f = S.f || (S.f = { sc:'s1', i:0 }), c = CASES.filter(function (x) { return x.id === f.sc; })[0] || CASES[0];
+  var d = scenes(c, S.m ? S.m.hosp : newHosp()), L = d.list, i = Math.max(0, Math.min(f.i, L.length - 1)), sc = L[i];
+  var kids = head('한 사건 따라가기', '가상 사건 하나를 처음부터 끝까지 따라가며, 누가 무엇을 받는지 봅니다.');
+  kids.push(mockNote('모의 체험입니다. 병원·시간은 가상 값이고 아무것도 전송되지 않아요.'));
+  kids.push(h('div', { class:'card col' }, [h('div', { class:'lab', text:'사건 고르기' }), seg('사건', CASES.map(function (x) { return [x.id, x.name]; }), f.sc, function (v) { f.sc = v; f.i = 0; render(); }), h('div', { class:'sub', id:'emg-f-who', text:c.who })]));
+  kids.push(h('div', { class:'card col hero', style:'margin-top:16px' }, [
+    h('div', { class:'sub', id:'emg-f-step', text:(i + 1) + ' / ' + L.length + ' · ' + sc.t }),
+    h('div', { class:'big', id:'emg-f-now', style:'font-size:18px', text:sc.now }),
+    sc.got.length ? h('div', { id:'emg-f-got' }, sc.got.map(function (g) { return h('div', { class:'kv' }, [h('span', { text:g[0] }), h('b', { text:g[1] })]); })) : null,
+    h('div', { class:'rowf', style:'margin-top:16px' }, [btn('이전', 'quiet', function () { f.i = Math.max(0, i - 1); render(); }), i < L.length - 1 ? btn('다음', 'fill', function () { f.i = i + 1; render(); }) : btn('처음으로', 'quiet', function () { f.i = 0; render(); })])]));
+  if (sc.map) kids.push(h('div', { style:'margin-top:16px', id:'emg-f-map' }, [mapSvg(d.r, S.m ? S.m.hosp : newHosp())]));
+  if (i === L.length - 1) kids.push(h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { text:'이제 내 설정으로 해 보세요' }), h('div', { class:'rowf' }, [btn('응급 호출 해 보기', 'fill', function () { go('call'); }), btn('자원 조합 해 보기', 'quiet', function () { go('match'); }), btn('내 준비 보기', 'quiet', function () { go('prep'); })])]));
   return kids;
 }
 
@@ -288,27 +308,32 @@ function viewConsent() {
   return kids;
 }
 
+function viewPrep() {
+  var a = viewDevices(), b = viewConsent(), kids = head('내 준비', '응급 호출이 되려면 기기를 24시간 가까이 두어야 하고, 비서가 응급 AI에 무엇을 보낼지 미리 정해 둡니다.');
+  var rm = function (k) { return k && k.tagName !== 'H1' && !(k.className === 'lead'); };
+  return kids.concat(a.slice(2).filter(rm), [h('div', { style:'height:8px' })], b.slice(2).filter(rm));
+}
 function render() {
   var root = $('emg-root'), tp = $('emg-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
-  var kids = S.view === 'flow' ? viewFlow() : S.view === 'match' ? viewMatch() : S.view === 'devices' ? viewDevices() : S.view === 'consent' ? viewConsent() : viewCall();
+  var kids = S.view === 'follow' ? viewFollow() : S.view === 'match' ? viewMatch() : S.view === 'prep' ? viewPrep() : viewCall();
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
 function nav(a) {
-  var d = a && typeof a['do'] === 'string' ? a['do'] : '';
+  var d = a && typeof a['do'] === 'string' ? a['do'] : ''; d = ALIAS[d] || d;
   if (VIEWS.indexOf(d) >= 0) { go(d); return reply(true, TABS[VIEWS.indexOf(d)][1] + ' 화면으로 이동했습니다.'); }
   return reply(false, '지원하지 않는 요청입니다.');
 }
 function mount(el, o) {
   if (!el) return; o = o || {};
-  M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.call = { dev:'phone', can:'voice', say:'', fired:false }; S.m = null; load();
+  M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.call = { dev:'phone', can:'voice', say:'', fired:false }; S.m = null; S.f = null; load();
   [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' })].forEach(function (x) { el.appendChild(x); });
-  S.view = VIEWS.indexOf(o.view) >= 0 ? o.view : 'call'; render();
+  var ov = ALIAS[o.view] || o.view; S.view = VIEWS.indexOf(ov) >= 0 ? ov : 'call'; render();
 }
 window.NaviEmergency = {
   mount:mount,
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
-  view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
+  view:function (v) { v = ALIAS[v] || v; if (M && VIEWS.indexOf(v) >= 0) go(v); },
   callMessage:callMessage, match:match, newHosp:newHosp, planText:planText, devSummary:devSummary, sharedItems:sharedItems,
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
