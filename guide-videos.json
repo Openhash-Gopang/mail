@@ -10,7 +10,7 @@
     {
       "id": "pFSTOKbYGAE",
       "t": "navi 02 - 대략적 구성",
-      "len": "5:52",
+      "len": "5:51",
       "d": "2026년 11월 현재, 나비와 나비웹은 Pre-alpha 단계입니다. 여전히 개발 진행 중이며, 상용 v1.0은 12월 중으로 출시 계획입니다. 나비웹 도우미는 크롬 익스텐션이며, 흔히 말하는 AI Agent입니다. naviweb.kr hondi.…"
     },
     {
@@ -22,43 +22,43 @@
     {
       "id": "z30aiUDXHLA",
       "t": "navi 04 - 정부 AI [2/2]",
-      "len": "",
+      "len": "12:06",
       "d": "한국의 AI 전자 소송 시스템이 없는 국가들에게 K-Law로서 사법 체제의 대안을 제공하듯, 한국의 정부24와 문서24 시스템을 구축하지 못한 국가들에게 행정부 자체를 AI 시스템으로 구현 및 제공합니다. K-Goverment https://hond…"
     },
     {
       "id": "N-hjOIljChA",
       "t": "navi 05 - 사법부 보조 AI 시스템 [1|5]",
-      "len": "",
+      "len": "9:18",
       "d": "K-Law의 개요를 설명합니다. https://klaw.hondi.net/desktop.html"
     },
     {
       "id": "FIR06RMLM5s",
       "t": "navi 06 - 사법부 보조 AI 시스템 [2/5]",
-      "len": "",
+      "len": "9:36",
       "d": "K-Law 가상 판결문의 구성 https://klaw.hondi.net/desktop.html"
     },
     {
       "id": "wEIX332Av-M",
       "t": "navi 07 - 사법부 보조 AI 시스템 [3/5]",
-      "len": "",
+      "len": "8:44",
       "d": "K-Law 가상 판결문 생성 방식 - 수동 https://klaw.hondi.net/desktop.html"
     },
     {
       "id": "gmGVc3FQQzY",
       "t": "navi 08 - 사법부 보조 AI 시스템 [4/5]",
-      "len": "",
+      "len": "9:59",
       "d": "K-Law 가상 판결문 생성 방식 - 자동 https://klaw.hondi.net/desktop.html"
     },
     {
       "id": "0_mJ-HJ6B54",
       "t": "navi 09 - 사법부 보조 AI 시스템 [5/5]",
-      "len": "",
+      "len": "11:20",
       "d": "연역적 방법 vs. 귀납적 방법 K-Law의 개발 취지 https://klaw.hondi.net/desktop.html"
     },
     {
       "id": "JqgXzlK7ylc",
       "t": "navi 10 - 나비 & 나비웹",
-      "len": "",
+      "len": "26:16",
       "d": "나만의 AI 비서(나비), 나비앱 그리고 나비웹의 차이 naviweb.kr"
     }
   ]
