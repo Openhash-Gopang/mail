@@ -58,7 +58,7 @@ var ASKS = [['meal', '마지막으로 먹은 음식'], ['exercise', '오늘 격�
 var CALLS = [['voice', '말할 수 있음'], ['text', '문자를 입력할 수 있음'], ['none', '둘 다 어려움']];
 var ANCH = { call:'emg-list', flow:'emg-list', follow:'emg-list', match:'emg-list', prep:'emg-s-prep', devices:'emg-s-prep', consent:'emg-s-prep' };
 var M = null, LS = {};
-var S = { share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'', prepOpen:false, sim:null, wasOpen:false, lastOpen:-1, auto:null };
+var S = { share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'', prepOpen:false, sim:null, wasOpen:false, lastOpen:-1, move:null, auto:null };
 
 function field(id, label, val, o) {
   o = o || {}; var e = o.err, inp = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '60', inputmode:o.mode || '', autocomplete:'off', 'aria-invalid':e ? 'true' : 'false' });
@@ -500,14 +500,34 @@ function inlinePanel() {
   S.wasOpen = true; S.lastOpen = R.cur; PF = 'emg-';
   var body = h('div', { class:'pbody col', id:'emg-pbody' }, st.fn(c).filter(Boolean));
   var pn = h('div', { id:'emg-ipanel', class:'ipanel' + (fresh ? ' anim' : ''), role:'region', 'aria-label':st.id + ' ' + st.title + ' 결과' }, [
-    h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'직접 따라가기 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { R.cur = -1; S.wasOpen = false; render(); } })]),
+    h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'직접 따라가기 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { closeStep(R); } })]),
     body,
-    h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:R.cur === 0 ? true : null, onclick:function () { openStep(R, R.cur - 1, render); showPanel(); } }),
+    h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:R.cur === 0 ? true : null, onclick:function () { pickStep(R, R.cur - 1); } }),
       last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : null])]);
   body.scrollTop = ps; return pn;
 }
-function showPanel() { var e = $('emg-ipanel'); try { if (e) e.scrollIntoView({ block:'nearest' }); } catch (x) {} }
-function pickStep(R, i) { openStep(R, i, render); showPanel(); }
+// ── 부드러운 전환: 눌린 단계를 진행 막대 바로 아래로 올리고, 새 패널은 높이가 늘어나며 아래 단계를 밀어 내린다 ──
+var MOVE_MS = 350;
+function calm() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
+function noIds(el) { el.removeAttribute('id'); [].forEach.call(el.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); }); el.setAttribute('aria-hidden', 'true'); el.classList.remove('anim'); }
+/** 지금 열린 패널을 본떠 두었다가, 다시 그린 뒤 같은 자리에서 접히게 한다. */
+function ghostOf() { var old = $('emg-ipanel'), R = S.sim; if (!old || R.cur < 0) return null; return { el:old.cloneNode(true), h:old.offsetHeight, rowId:'emg-row-' + STEPS[R.cur].id }; }
+function settle(mv) {
+  var np = $('emg-ipanel'), row = mv.rowId ? $(mv.rowId) : null, bw = M && M.querySelector('.barwrap'), ok = !calm();
+  var ty = null; try { if (row && bw) ty = row.getBoundingClientRect().top + (window.pageYOffset || 0) - bw.getBoundingClientRect().bottom - 8; } catch (e) {}
+  if (ok && np && np.classList.contains('anim')) { var hh = np.scrollHeight; np.style.overflow = 'hidden'; np.style.height = '0px'; void np.offsetHeight; np.style.transition = 'height ' + MOVE_MS + 'ms ease'; np.style.height = hh + 'px'; setTimeout(function () { np.style.height = ''; np.style.transition = ''; np.style.overflow = ''; }, MOVE_MS + 60); }
+  var g = mv.ghost, orow = g ? $(g.rowId) : null;
+  if (ok && g && orow && g.h > 0) { noIds(g.el); g.el.style.overflow = 'hidden'; g.el.style.height = g.h + 'px'; orow.parentNode.insertBefore(g.el, orow.nextSibling); void g.el.offsetHeight; g.el.style.transition = 'height ' + MOVE_MS + 'ms ease'; g.el.style.height = '0px'; setTimeout(function () { if (g.el.parentNode) g.el.parentNode.removeChild(g.el); }, MOVE_MS + 60); }
+  if (ty !== null && np) { try { window.scrollTo({ top:Math.max(0, ty), behavior:ok ? 'smooth' : 'auto' }); } catch (e) {} }
+}
+/** 같은 단계를 다시 누르면 접고, 다른 단계를 누르면 그 단계 아래로 옮겨 연다. */
+function pickStep(R, i) {
+  if (i < 0 || i >= STEPS.length || i > R.reached) return;
+  var g = ghostOf(); S.move = { ghost:g };
+  if (i === R.cur) { R.cur = -1; S.wasOpen = false; render(); return; }
+  S.move.rowId = 'emg-row-' + STEPS[i].id; openStep(R, i, render);
+}
+function closeStep(R) { S.move = { ghost:ghostOf() }; R.cur = -1; S.wasOpen = false; render(); }
 
 // ── 자동 시뮬레이션(오른쪽 위 버튼): 자기만의 사건과 진행 상태를 쓰므로 화면의 단계 목록과 섞이지 않는다 ──
 var HOLD = { '2-4':7500, '2-5':7500, '2-6':6500, '3-1':7000, '3-5':8000, '4-4':0 };
@@ -560,6 +580,7 @@ function render() {
   kids.push(progressBar(), prepSection(), summaryCard(), stepList());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   if (y) { try { window.scrollTo(0, y); } catch (e) {} }
+  var mv = S.move; S.move = null; if (mv) settle(mv);
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg }); }
 function go(v) {

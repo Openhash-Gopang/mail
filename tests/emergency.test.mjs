@@ -231,3 +231,20 @@ test('페이지 단계를 누르면 그 단계 바로 아래에 패널이 펼쳐
   assert.equal(id('emg-apanel').outerHTML, aBefore, '시뮬레이션 패널은 그대로'); assert.equal(id('emg-back').className, bBefore);
   id('emg-pclose').click(); assert.equal(id('emg-ipanel'), null);
 });
+
+test('부드러운 전환: 눌린 단계가 진행 막대 아래로 스크롤되고, 새 패널은 늘어나며 이전 패널은 같은 자리에서 접힌다', { skip }, () => {
+  const p = page(); const q = fake(p); const id = (x) => p.doc.getElementById(x); const calls = [];
+  p.w.scrollTo = (...a) => calls.push(a);
+  for (const k of ['offsetHeight', 'scrollHeight']) Object.defineProperty(p.w.HTMLElement.prototype, k, { configurable: true, get() { return 120; } });
+  id('emg-draw').click(); id('emg-row-1-1').click(); q.length = 0; calls.length = 0;
+  id('emg-row-1-2').click();
+  assert.equal(p.doc.querySelectorAll('.ipanel').length, 2, '접히는 이전 패널 + 새 패널'); const ghost = id('emg-row-1-1').nextElementSibling;
+  assert.ok(ghost && ghost.classList.contains('ipanel') && ghost.getAttribute('aria-hidden') === 'true'); assert.equal(ghost.id, '');
+  assert.equal(id('emg-row-1-2').nextElementSibling, id('emg-ipanel'));
+  assert.equal(p.doc.querySelectorAll('[id]').length, new Set([...p.doc.querySelectorAll('[id]')].map((x) => x.id)).size, 'id 가 겹치면 안 된다');
+  assert.ok(calls.some((a) => a[0] && a[0].behavior === 'smooth'), '눌린 단계를 막대 아래로 부드럽게 스크롤');
+  assert.ok(id('emg-ipanel').style.transition.includes('height'), '새 패널은 높이가 늘어난다');
+  while (q.length) q.shift().fn(); assert.equal(p.doc.querySelectorAll('.ipanel').length, 1); assert.equal(id('emg-ipanel').style.height, '');
+  id('emg-row-1-2').click(); assert.equal(!!id('emg-ipanel'), false, '같은 단계를 다시 누르면 접힌다'); while (q.length) q.shift().fn(); assert.equal(p.doc.querySelectorAll('.ipanel').length, 0);
+  assert.equal(id('emg-apanel').classList.contains('open'), false);
+});
