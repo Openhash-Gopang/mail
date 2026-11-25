@@ -3507,7 +3507,7 @@ const _INFRA_EX = {
   'exp:약사':['복약 지도 문구','약물 상호작용 확인','대체 조제 가능 여부','부작용 정리'],
   'exp:한의사':['증상별 처방 검토','한약 상호작용 확인','진료기록 요약','생활 지도 문구'],
   kmail:['편지 쓰기>mail:compose','캠페인…>campaign','Draft>mail:drafts','보낸메일함>mail:sent','받은메일함>mail:inbox','태그별 보관함>mail:tags'],
-  k119:['응급 호출>emg:call','한 사건 따라가기>emg:follow','자원 조합>emg:match','내 준비>emg:prep'], klaw:['사건 상담','가상 판결>verdict','서류 작성>doc','내 사건'],
+  k119:['사건 정하기>emg:call','평소 준비>emg:prep'], klaw:['사건 상담','가상 판결>verdict','서류 작성>doc','내 사건'],
   kpolice:['신고하기>pol:report','대응 원리>pol:principle','대응 시뮬레이션>pol:sim','내 신고>pol:log'], ksecurity:['보안 점검','위협 알림','내 기기','조치 이력'],
   khealth:['증상 상담','내 의료 정보>med:profile','제출 범위>med:submit','진료 기록>med:visits'], kschool:['학습 상담','내 수업>learn:subjects','과제','학습 기록>learn:history'],
   gdc:['송금·결제>bank:pay','내 지갑(GDC)>bank:wallet','거래 내역>bank:history','청구서>bank:history'], kstock:['종목 상담','관심 종목>stock:watch','내 포트폴리오>stock:portfolio','거래 내역>stock:trades'],
@@ -3665,7 +3665,7 @@ function _insureShow(view) {
 }
 function _insureOpen(view) { _switchTab('insure'); _insureShow(view); }
 // 나비웹 응급(2026-11-23): 인프라 AI → 응급을 고르면 응급 화면을 이 문서 안에 직접 그려 연다(emergency.css·emergency-app.js). 기기(폰·워치·링) 호출·출동·병원 자원 연동은 아직 연결되어 있지 않다(설계 단계). 자원 조합은 가상 값의 모의 체험이다.
-const _EMG_V = '20261125b'; let _emgChat = false;
+const _EMG_V = '20261125c'; let _emgChat = false;
 function _emgLoad(cb) {
   if (window.NaviEmergency) { cb(); return; }
   if (!document.getElementById('emg-css')) { const l = document.createElement('link'); l.id = 'emg-css'; l.rel = 'stylesheet'; l.href = 'emergency.css?v=' + _EMG_V; document.head.appendChild(l); }
