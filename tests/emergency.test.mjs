@@ -200,6 +200,10 @@ test('평소 준비: 내 기기·보내는 정보, 옛 화면 이름은 같은 �
   assert.equal(res[0].ok, true); assert.equal(res[1].ok, false);
 });
 
+test('진행 막대는 4칸 격자로 줄바꿈이 없고, 사이트 헤더 아래에 붙는다', () => {
+  assert.match(css, /\.emg \.bar\{display:grid;grid-template-columns:4fr 6fr 5fr 4fr/); assert.match(css, /body:not\(\.hd-hidden\) \.emg \.barwrap\{top:54px\}/); assert.match(css, /body\.hd-hidden \.emg \.panel\{top:0\}/);
+});
+
 test('CSS는 .emg 아래로 한정, 네트워크 호출 없음', () => {
   const sel = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@media[^{]*\{/g, '').split('}').map((x) => x.split('{')[0].trim()).filter((x) => x && !x.startsWith('@') && !/^\d+%|^from|^to/.test(x));
   assert.deepEqual(sel.filter((x) => x.split(',').some((y) => !/\.emg\b/.test(y))).slice(0, 5), []);
