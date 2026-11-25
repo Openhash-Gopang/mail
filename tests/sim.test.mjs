@@ -178,3 +178,12 @@ test('홈 시뮬레이션: 입력 문장이 갈래로 안내되고, 사람은 �
   S.tab('home', 'chat'); doc.getElementById('sim-h-p2p').click(); doc.getElementById('sim-h-p2p').click(); assert.match(doc.getElementById('sim-h-p2ps').textContent, /이전 대화 복구/);
   assert.ok(desk.includes('id="home-sim"')); assert.match(desk, /function _homeSimOpen/); assert.equal(J(S.gen.home(2)), J(S.gen.home(2)));
 });
+
+test('바깥 클릭: 패널 밖을 누르면 닫히고, 패널 안·시뮬레이션 버튼을 누르면 닫히지 않는다', { skip }, async () => {
+  const { S, doc, w } = env(true); doc.body.insertAdjacentHTML('beforeend', '<div id="out">밖</div><button class="simbtn" id="sb">시뮬레이션</button>');
+  const click = (el) => el.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); const wait = () => new Promise((r) => setTimeout(r, 10));
+  S.open('stock', 'portfolio'); await wait(); click(doc.getElementById('sim-body')); assert.ok(doc.getElementById('nsim-pn'), '안쪽 클릭은 유지');
+  click(doc.getElementById('sb')); assert.ok(doc.getElementById('nsim-pn'), '시뮬레이션 버튼은 유지');
+  click(doc.getElementById('out')); assert.ok(!doc.getElementById('nsim-pn'), '바깥 클릭은 닫힘');
+  S.open('bank', 'wallet'); click(doc.getElementById('out')); assert.ok(doc.getElementById('nsim-pn'), '열자마자 들어온 같은 클릭으로는 닫히지 않음'); await wait(); click(doc.getElementById('out')); assert.ok(!doc.getElementById('nsim-pn'));
+});
