@@ -104,3 +104,14 @@ test('판관비 적기: 거래 뒤 카드가 나오고, 적으면 합계가 쌓�
   assert.equal(JSON.parse(p.w.localStorage.getItem('navi-exp-v1')).items.length, 1); assert.equal(p.fetched(), 0);
   p.btn('체험 기록 지우기').click(); p.btn('정말 지울까요').click(); assert.equal(p.w.localStorage.getItem('navi-exp-v1'), null);
 });
+
+test('홈택스에서 가져오기: 연결이 없으면 알리고, 있으면 고른 조회만 넘기며 제출·납부는 하지 않는다고 밝힌다', { skip }, () => {
+  const p = page(); assert.match(p.txt(), /신고서 제출과 납부는 하지 않아요/);
+  p.doc.getElementById('tx-ht-go').click(); assert.match(p.doc.getElementById('tx-ht-msg').textContent, /도우미를 쓸 수 없는 화면/);
+  const jobs = []; p.N.on('agent', (j) => jobs.push(j));
+  const s = p.doc.getElementById('tx-ht'); s.value = 'inv'; s.dispatchEvent(new p.w.Event('change')); p.doc.getElementById('tx-ht-go').click();
+  assert.equal(jobs.length, 1); assert.equal(jobs[0].kind, 'inv'); assert.match(jobs[0].goal, /전자세금계산서/); assert.match(p.doc.getElementById('tx-ht-msg').textContent, /맡기는 중/);
+  p.N.agentResult(true, '도우미가 홈택스를 엽니다.'); assert.match(p.doc.getElementById('tx-ht-msg').textContent, /홈택스를 엽니다/);
+  assert.equal(p.fetched(), 0);
+  assert.match(d, /NaviTax\.on\('agent', _taxAgent\)/); assert.match(d, /hometax\.go\.kr/);
+});
