@@ -162,7 +162,7 @@
 @keyframes emg-slide{from{transform:translateX(100%)}to{transform:translateX(0)}}
 .emg .phead{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
 .emg .pbody{flex:1;overflow:auto;padding:16px 20px;gap:12px}
-.emg .pfoot{display:flex;gap:8px;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--line)}
+.emg .pfoot{display:flex;gap:8px;justify-content:space-between;padding:12px 88px 12px 20px;border-top:1px solid var(--line)}
 @media (min-width:1200px){.emg.pn-open .wrap{padding-right:500px}}
 @media (prefers-reduced-motion:reduce){.emg .panel.anim{animation:none}}
 
@@ -173,6 +173,10 @@
 .emg .panel.auto{z-index:45}
 .emg .panel.closing{display:flex;animation:emg-slideout .22s ease-in forwards}
 @keyframes emg-slideout{from{transform:translateX(0)}to{transform:translateX(100%)}}
-.emg .aprog{height:3px;background:var(--line)}
-.emg .aprog i{display:block;height:100%;background:var(--pri);transition:width .4s}
 @media (prefers-reduced-motion:reduce){.emg .panel.closing{animation:none}}
+.emg .panel.under{visibility:hidden}
+.emg .mini{display:flex;gap:3px;padding:8px 20px 0}
+.emg .mini i{flex:1;height:6px;background:var(--nb,#E4E8EE)}
+.emg .mini i.gap{margin-left:6px}
+.emg .mini i.done{background:var(--pri)}
+.emg .mini i.cur{background:color-mix(in srgb,var(--pri) 55%,#fff);outline:2px solid var(--pri);outline-offset:1px}

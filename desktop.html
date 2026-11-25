@@ -3665,7 +3665,7 @@ function _insureShow(view) {
 }
 function _insureOpen(view) { _switchTab('insure'); _insureShow(view); }
 // 나비웹 응급(2026-11-23): 인프라 AI → 응급을 고르면 응급 화면을 이 문서 안에 직접 그려 연다(emergency.css·emergency-app.js). 기기(폰·워치·링) 호출·출동·병원 자원 연동은 아직 연결되어 있지 않다(설계 단계). 자원 조합은 가상 값의 모의 체험이다.
-const _EMG_V = '20261125f'; let _emgChat = false;
+const _EMG_V = '20261125g'; let _emgChat = false;
 function _emgLoad(cb) {
   if (window.NaviEmergency) { cb(); return; }
   if (!document.getElementById('emg-css')) { const l = document.createElement('link'); l.id = 'emg-css'; l.rel = 'stylesheet'; l.href = 'emergency.css?v=' + _EMG_V; document.head.appendChild(l); }
