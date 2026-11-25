@@ -667,11 +667,13 @@ function readOpt(kind) {
 function make(kind) { var s = ST[kind]; readOpt(kind); var G = { market:market, tax:tax, bank:bank, stock:stock, insure:insure, learn:learn, pdv:bank, settings:settingsGen, home:homeGen, mail:mailGen, guide:docsGen, myforms:formsGen, othersite:formsGen, docs:docsGen }[kind]; s.data = G(s.seed, s.opt); if (kind === 'stock') s.day = 0; return s; }
 var PN = null, CUR = null, prevFocus = null;
 function close() {
-  ST._redraw = null; document.removeEventListener('keydown', onKey, true);
+  ST._redraw = null; document.removeEventListener('keydown', onKey, true); document.removeEventListener('click', onOutside, true);
   if (PN) { var p = PN; p.classList.remove('on'); p.removeAttribute('id'); Array.prototype.forEach.call(p.querySelectorAll('[id]'), function (e) { e.removeAttribute('id'); }); setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 230); }
   PN = null; CUR = null; if (prevFocus && prevFocus.focus) { try { prevFocus.focus(); } catch (e) { /* 포커스 복귀 실패는 무시 */ } }
 }
 function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+/** 패널 바깥을 누르면 닫는다(시뮬레이션 버튼은 제외: 눌러서 다시 여는 동작과 겹치지 않게). */
+function onOutside(e) { var el = e.target; if (!PN || !el || PN.contains(el) || (el.closest && el.closest('.simbtn'))) return; close(); }
 function tabLabel(kind, tab) { var t = PAGES[kind].tabs.filter(function (x) { return x[0] === tab; })[0]; return t ? t[1] : ''; }
 function render() {
   if (!PN || !CUR) return; var kind = CUR, s = ST[kind], tab = s.tab, box = document.getElementById('sim-body'); if (!box) return;
@@ -694,7 +696,7 @@ function open(kind, tab) {
     h('button', { type:'button', id:'sim-again', text:'다른 데이터로 다시', onclick:function () { ST[kind].seed = (ST[kind].seed + 1) % 4294967295; seedIn.value = String(ST[kind].seed); make(kind); render(); } })]);
   var hd = h('div', { class:'hd' }, [h('div', { style:'display:flex;justify-content:space-between;gap:8px' }, [h('h2', { id:'sim-title' }, [h('span', { id:'sim-title-t' }), h('span', { class:'bd', text:'가상 데이터' })]), h('button', { type:'button', id:'sim-close', text:'닫기', onclick:close })]),
     h('div', { class:'sub', text:LEAD[kind] }), h('div', { class:'sub', text:'여기서 만든 데이터는 이 패널에만 있고, 실제 장부·잔고·전표·기록에는 들어가지 않아요. 패널을 닫으면 사라져요.' }), chipsRow(kind), bar]);
-  PN = h('aside', { class:'nsim-pn', id:'nsim-pn', role:'complementary', 'aria-labelledby':'sim-title' }, [hd, box]); document.body.appendChild(PN); document.addEventListener('keydown', onKey, true); render();
+  PN = h('aside', { class:'nsim-pn', id:'nsim-pn', role:'complementary', 'aria-labelledby':'sim-title' }, [hd, box]); document.body.appendChild(PN); document.addEventListener('keydown', onKey, true); setTimeout(function () { if (PN) document.addEventListener('click', onOutside, true); }, 0); render();
   requestAnimationFrame(function () { if (PN) PN.classList.add('on'); }); if (!window.requestAnimationFrame && PN) PN.classList.add('on');
   var c = document.getElementById('sim-close'); if (c) c.focus(); return true;
 }
