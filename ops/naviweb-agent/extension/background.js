@@ -176,10 +176,11 @@ function watchLogin(waiter) {
   return () => { stop = true; };
 }
 function ask(kind, text) {
+  trace('사용자 확인 대기(' + kind + '): ' + String(text || '').slice(0, 100));   // 0.7.4: 확인 창이 떴는지 기록에 남긴다
   say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text);
   return new Promise((res) => {
     let unwatch = null;
-    const w = (ok, v) => { if (unwatch) unwatch(); overlay('busy', ''); res(v === '__say' ? 'say' : ok); };
+    const w = (ok, v) => { if (unwatch) unwatch(); trace('사용자 응답(' + kind + '): ' + (v === '__say' ? '메시지' : ok ? '진행' : '취소')); overlay('busy', ''); res(v === '__say' ? 'say' : ok); };
     state.waiter = w;
     if (kind === 'handoff' && /로그인/.test(String(text || '')) && !/회원\s*가입|결제|납부|인증서\s*비밀번호/.test(String(text || ''))) unwatch = watchLogin(w);
   });
@@ -437,7 +438,7 @@ async function runJob(m) {
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
       state.tabId = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
-      trace('0.7.3 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
+      trace('0.7.4 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
       say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;

@@ -750,3 +750,10 @@ test('0.7.3: upload_attached_file 은 DOM 도구 일괄 처리보다 먼저 걸�
   const i = b.indexOf("DOM_TOOLS.has(name) && name !== 'upload_attached_file'"), j = b.indexOf("name === 'upload_attached_file') {");
   assert.ok(i > 0 && j > 0); assert.match(b, /b64: a\.b64/);
 });
+
+test('0.7.4: 파일 올리기는 사용자가 진행을 누르기 전에는 실행되지 않는다(거절하면 실행 0회, 승인하면 1회)', async () => {
+  let h = fakeHost([use('1', 'upload_attached_file', { ref: 'r' }), end('끝')], { ask: false });
+  await runAgent({ goal: 'g', host: h }); assert.equal(h.calls.length, 0);
+  h = fakeHost([use('1', 'upload_attached_file', { ref: 'r' }), end('끝')], { ask: true });
+  await runAgent({ goal: 'g', host: h }); assert.equal(h.calls.length, 1);
+});
