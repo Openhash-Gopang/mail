@@ -60,12 +60,12 @@ test('19단계: 처음엔 패널이 닫혀 있고, 1-1 부터 순서대로만 �
   const p = page(); const id = (x) => p.doc.getElementById(x);
   assert.equal(p.doc.querySelectorAll('.tab, [role="tab"], [role="tablist"]').length, 0); assert.ok(id('emg-mock'));
   assert.equal(p.doc.querySelectorAll('#emg-bar .tick').length, 19); assert.equal(p.doc.querySelectorAll('#emg-list .srow').length, 19);
-  assert.equal(id('emg-panel').classList.contains('open'), false); assert.match(id('emg-bar-cap').textContent, /^0 \/ 19/);
+  assert.equal(!!id('emg-ipanel'), false); assert.match(id('emg-bar-cap').textContent, /^0 \/ 19/);
   assert.equal(id('emg-row-2-1').disabled, true); assert.equal(id('emg-tick-4-4').disabled, true); assert.equal(id('emg-row-1-1').disabled, false);
-  id('emg-row-1-1').click(); assert.equal(id('emg-panel').classList.contains('open'), true); assert.match(id('emg-ph-t').textContent, /^1-1 기기 호출/); assert.match(id('emg-bar-cap').textContent, /^1 \/ 19/);
+  id('emg-row-1-1').click(); assert.equal(!!id('emg-ipanel'), true); assert.match(id('emg-ph-t').textContent, /^1-1 기기 호출/); assert.match(id('emg-bar-cap').textContent, /^1 \/ 19/);
   assert.equal(id('emg-prev').disabled, true); assert.equal(id('emg-row-1-2').disabled, true);
   id('emg-nextstep').click(); assert.match(id('emg-ph-t').textContent, /^1-2/); id('emg-prev').click(); assert.match(id('emg-ph-t').textContent, /^1-1/);
-  id('emg-pclose').click(); assert.equal(id('emg-panel').classList.contains('open'), false); assert.equal(id('emg-row-1-2').disabled, false); assert.equal(id('emg-row-1-3').disabled, true);
+  id('emg-pclose').click(); assert.equal(!!id('emg-ipanel'), false); assert.equal(id('emg-row-1-2').disabled, false); assert.equal(id('emg-row-1-3').disabled, true);
 });
 
 test('19단계: 끝까지 따라가며 각 패널에 내용이 있고, 신상 Form·서명·인계가 나온다', { skip }, () => {
@@ -115,7 +115,7 @@ test('2-4: 병·의원 현황을 바꾸면 결과가 바뀌고, 조합이 없어
   walk(p, 2); assert.match(id('emg-ph-t').textContent, /^3-1/); assert.ok(id('emg-s3-fb')); assert.ok(id('emg-s3-tbl').querySelectorAll('tbody tr').length >= 3);
   walk(p, 1); assert.ok(id('emg-st-amb')); walk(p, 2); assert.match(id('emg-ph-t').textContent, /^3-4/); walk(p, 1); assert.ok(id('emg-ev-none')); assert.equal(id('emg-ev'), null);
   walk(p, 3); assert.match(id('emg-s4-dr').textContent, /당직 의료진/); walk(p, 1); assert.match(id('emg-s4-end').textContent, /안정화 처치가 시작됩니다/);
-  id('emg-draw').click(); assert.equal(id('emg-panel').classList.contains('open'), false); assert.match(id('emg-bar-cap').textContent, /^0 \/ 19/); assert.equal(id('emg-row-1-2').disabled, true); assert.equal(p.w.localStorage.getItem('navi-emg-v1'), null);
+  id('emg-draw').click(); assert.equal(!!id('emg-ipanel'), false); assert.match(id('emg-bar-cap').textContent, /^0 \/ 19/); assert.equal(id('emg-row-1-2').disabled, true); assert.equal(p.w.localStorage.getItem('navi-emg-v1'), null);
 });
 
 test('match: 조합이 없으면 안정화 계획(fb)을, 출동 뒤 다시 계산하면 움직이는 구급대·의료진의 위치에서 계산한다', { skip }, () => {
@@ -152,12 +152,12 @@ test('시뮬레이션 버튼: 오른쪽 위에서 열면 1-1 부터 자동으로
 test('시뮬레이션은 화면의 단계 목록·패널과 완전히 분리되어 있다', { skip }, () => {
   const p = page(); const q = fake(p); const id = (x) => p.doc.getElementById(x);
   id('emg-draw').click(); id('emg-row-1-1').click(); walk(p, 2);
-  const snap = () => ({ cap: id('emg-bar-cap').textContent, hint: id('emg-next-hint').textContent, done: p.doc.querySelectorAll('#emg-bar .tick.done').length, rows: [...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join(), panel: id('emg-panel').innerHTML, pills: id('emg-draw-sum').parentNode.querySelector('.rowf').textContent });
+  const snap = () => ({ cap: id('emg-bar-cap').textContent, hint: id('emg-next-hint').textContent, done: p.doc.querySelectorAll('#emg-bar .tick.done').length, rows: [...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join(), panel: id('emg-ipanel').innerHTML, pills: id('emg-draw-sum').parentNode.querySelector('.rowf').textContent });
   const before = snap(); assert.match(before.cap, /^3 \/ 19/); assert.match(id('emg-ph-n').textContent, /직접 따라가기/);
   id('emg-sim').click(); assert.equal(id('emg-sim').disabled, true);
   for (let k = 0; k < 25 && q.length; k++) { fire(q, 4000); if (id('emg-au-t').textContent.startsWith('4-')) break; }
   assert.deepEqual(snap(), before, '시뮬레이션이 도는 동안 페이지는 그대로');
-  assert.equal(id('emg-panel').classList.contains('open'), true, '페이지 패널은 닫히거나 비워지지 않는다');
+  assert.equal(!!id('emg-ipanel'), true, '페이지 패널은 닫히거나 비워지지 않는다');
   assert.equal(p.doc.querySelectorAll('[id]').length, new Set([...p.doc.querySelectorAll('[id]')].map((x) => x.id)).size, 'id 가 겹치면 안 된다');
   id('emg-row-1-2').click(); assert.match(id('emg-au-t').textContent, /^4-/, '단계 목록을 눌러도 시뮬레이션은 따라가지 않는다'); assert.match(id('emg-ph-t').textContent, /^1-2/, '반대로 시뮬레이션은 페이지 패널을 움직이지 않는다');
   id('emg-nextstep').click(); assert.match(id('emg-au-t').textContent, /^4-/);
@@ -174,7 +174,7 @@ test('새 사건 뽑기: 처음엔 깜박여 눌러 볼 곳을 알려 주고, �
   id('emg-row-1-1').click(); assert.match(id('emg-next-hint').textContent, /다음 ▶ 1-2 메시지 구성/); assert.equal(id('emg-row-1-1').classList.contains('blink'), false);
   id('emg-pclose').click(); assert.match(id('emg-next-hint').textContent, /“1-1 기기 호출”을 눌러 이어 가세요/);
   id('emg-row-1-1').click(); walk(p, 18); assert.match(id('emg-next-hint').textContent, /새 사건 뽑기/);
-  id('emg-draw').click(); assert.match(id('emg-next-hint').textContent, /1-1 기기 호출/); assert.equal(id('emg-panel').classList.contains('open'), false);
+  id('emg-draw').click(); assert.match(id('emg-next-hint').textContent, /1-1 기기 호출/); assert.equal(!!id('emg-ipanel'), false);
 });
 
 test('시뮬레이션: 멈추기·이어서, 새 무작위 사건, 닫기 버튼, 3-5 사건이 무작위로 일어남', { skip }, () => {
@@ -210,4 +210,18 @@ test('desktop.html 연결과 배포 목록', () => {
   assert.match(d, /tab-btn-emg/); assert.match(d, /emg-root/); assert.match(d, /_emgOpen/); assert.match(d, /key === 'k119' && !_emgChat/);
   assert.match(d, /emergency-app\.js/); assert.match(d, /emergency\.css/); assert.match(d, /emg:call/);
   assert.match(paths, /"emergency-app\.js"/); assert.match(paths, /"emergency\.css"/);
+});
+
+test('페이지 단계를 누르면 그 단계 바로 아래에 패널이 펼쳐지고, 오른쪽 시뮬레이션 패널은 전혀 건드리지 않는다', { skip }, () => {
+  const p = page(); const id = (x) => p.doc.getElementById(x);
+  assert.equal(id('emg-panel'), null, '오른쪽 고정 패널은 페이지 단계용이 아니다');
+  const aBefore = id('emg-apanel').outerHTML, bBefore = id('emg-back').className;
+  id('emg-draw').click(); id('emg-row-1-1').click();
+  assert.equal(id('emg-row-1-1').nextElementSibling, id('emg-ipanel'), '1-1 행 바로 아래');
+  assert.equal(id('emg-list').contains(id('emg-ipanel')), true);
+  id('emg-nextstep').click(); assert.equal(id('emg-row-1-2').nextElementSibling, id('emg-ipanel'), '다음 단계로 가면 패널도 그 행 아래로');
+  assert.equal(p.doc.querySelectorAll('#emg-ipanel').length, 1);
+  id('emg-tick-1-1').click(); assert.equal(id('emg-row-1-1').nextElementSibling, id('emg-ipanel'), '진행 막대 눌러도 같은 패널');
+  assert.equal(id('emg-apanel').outerHTML, aBefore, '시뮬레이션 패널은 그대로'); assert.equal(id('emg-back').className, bBefore);
+  id('emg-pclose').click(); assert.equal(id('emg-ipanel'), null);
 });

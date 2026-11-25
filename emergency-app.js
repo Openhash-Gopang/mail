@@ -58,7 +58,7 @@ var ASKS = [['meal', '마지막으로 먹은 음식'], ['exercise', '오늘 격�
 var CALLS = [['voice', '말할 수 있음'], ['text', '문자를 입력할 수 있음'], ['none', '둘 다 어려움']];
 var ANCH = { call:'emg-list', flow:'emg-list', follow:'emg-list', match:'emg-list', prep:'emg-s-prep', devices:'emg-s-prep', consent:'emg-s-prep' };
 var M = null, LS = {};
-var S = { share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'', prepOpen:false, sim:null, wasOpen:false, auto:null };
+var S = { share:{}, askok:{}, dev:[], form:{ kind:'폰', carry:true }, err:{}, msg:'', prepOpen:false, sim:null, wasOpen:false, lastOpen:-1, auto:null };
 
 function field(id, label, val, o) {
   o = o || {}; var e = o.err, inp = h('input', { id:id, type:'text', value:val == null ? '' : val, placeholder:o.ph || '', maxlength:o.max || '60', inputmode:o.mode || '', autocomplete:'off', 'aria-invalid':e ? 'true' : 'false' });
@@ -463,7 +463,7 @@ function progressBar() {
   STAGES.forEach(function (name, si) {
     var ticks = []; STEPS.forEach(function (s, i) { if (s.st !== si) return;
       var cl = 'tick ' + (i < R.reached ? 'done' : i === R.reached ? 'next' : 'lock') + (i === cur ? ' cur' : '');
-      ticks.push(h('button', { type:'button', class:cl, id:'emg-tick-' + s.id, 'data-i':String(i), 'aria-label':s.id + ' ' + s.title, title:s.id + ' ' + s.title, 'aria-current':i === cur ? 'step' : null, disabled:i > R.reached ? true : null, onclick:function () { openStep(R, i, render); } })); });
+      ticks.push(h('button', { type:'button', class:cl, id:'emg-tick-' + s.id, 'data-i':String(i), 'aria-label':s.id + ' ' + s.title, title:s.id + ' ' + s.title, 'aria-current':i === cur ? 'step' : null, disabled:i > R.reached ? true : null, onclick:function () { pickStep(R, i); } })); });
     wrap.appendChild(h('div', { class:'bseg' }, [h('div', { class:'bname', text:(si + 1) + '. ' + name }), h('div', { class:'bticks' }, ticks)]));
   });
   return h('div', { class:'barwrap' }, [wrap, h('div', { class:'bcap', id:'emg-bar-cap', text:cur >= 0 ? (cur + 1) + ' / ' + STEPS.length + ' · ' + STEPS[cur].id + ' ' + STEPS[cur].title : '0 / ' + STEPS.length + ' · 1-1 기기 호출부터 눌러 보세요' })]);
@@ -472,13 +472,13 @@ function progressBar() {
 function nextHint() {
   var R = S.sim; if (!R.picked) return null;
   var last = R.cur === STEPS.length - 1, t = R.cur < 0 ? (!R.seen ? '새 사건이 뽑혔어요. 다음 할 일: 아래 단계 목록에서 깜박이는 “1-1 기기 호출”을 눌러 시작하세요.' : '다음 할 일: 단계 목록에서 “' + STEPS[R.reached].id + ' ' + STEPS[R.reached].title + '”을 눌러 이어 가세요. 이미 연 단계는 다시 볼 수 있어요.')
-    : last ? '끝까지 봤어요. 다음 할 일: “새 사건 뽑기”를 눌러 다른 사건으로 다시 해 보세요.' : '다음 할 일: 오른쪽 패널 아래의 “다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title + '”을 눌러 한 단계씩 따라가세요.';
+    : last ? '끝까지 봤어요. 다음 할 일: “새 사건 뽑기”를 눌러 다른 사건으로 다시 해 보세요.' : '다음 할 일: 펼쳐진 패널 아래의 “다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title + '”을 눌러 한 단계씩 따라가세요.';
   return h('div', { class:'note info hintbn', id:'emg-next-hint', role:'status', text:t });
 }
 function summaryCard() {
   var sc = S.sim.sc;
   return h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'무작위 가상 사건' }), h('div', { class:'rowf' }, [pill(sc.devName, 'm'), pill(sc.inc.kind, 'p'), pill(sc.inc.name), pill(sc.placeName)]),
-    h('div', { class:'sub', id:'emg-draw-sum', text:'기기·사건·신고자·위치를 무작위로 뽑았어요. 아래 목록에서 단계를 눌러 오른쪽 패널로 결과를 확인하세요. 처음부터 저절로 보려면 오른쪽 위의 시뮬레이션 버튼을 누르세요.' }),
+    h('div', { class:'sub', id:'emg-draw-sum', text:'기기·사건·신고자·위치를 무작위로 뽑았어요. 아래 목록에서 단계를 누르면 그 단계 바로 아래에 결과가 펼쳐져요. 처음부터 저절로 보려면 오른쪽 위의 시뮬레이션 버튼을 누르세요.' }),
     h('div', { class:'rowf' }, [h('button', { type:'button', class:'btn quiet' + (S.sim.picked ? '' : ' blink'), id:'emg-draw', text:'새 사건 뽑기', onclick:function () { S.sim = newRun(); S.sim.picked = true; S.wasOpen = false; render(); } }), btn('응급 AI에게 묻기', 'quiet', function () { ask('다른 병원의 의료진과 장비를 어떻게 조합하나요?'); })]), nextHint()]);
 }
 function stepList() {
@@ -487,23 +487,27 @@ function stepList() {
     out.appendChild(h('div', { class:'lab', text:(si + 1) + '. ' + name }));
     STEPS.forEach(function (s, i) { if (s.st !== si) return;
       var state = i === R.cur ? '보는 중' : i < R.reached ? '완료' : i === R.reached ? '열기' : '잠김', hintRow = R.picked && R.cur < 0 && !R.seen && i === 0;
-      out.appendChild(h('button', { type:'button', class:'srow' + (i === R.cur ? ' cur' : '') + (hintRow ? ' blink' : ''), id:'emg-row-' + s.id, 'data-i':String(i), disabled:i > R.reached ? true : null, 'aria-current':i === R.cur ? 'step' : null, onclick:function () { openStep(R, i, render); } },
-        [h('span', { class:'sid', text:s.id }), h('span', { class:'stx' }, [h('b', { text:s.title }), h('span', { text:s.desc })]), h('span', { class:'sst', text:state })])); });
+      out.appendChild(h('button', { type:'button', class:'srow' + (i === R.cur ? ' cur' : '') + (hintRow ? ' blink' : ''), id:'emg-row-' + s.id, 'data-i':String(i), disabled:i > R.reached ? true : null, 'aria-current':i === R.cur ? 'step' : null, onclick:function () { pickStep(R, i); } },
+        [h('span', { class:'sid', text:s.id }), h('span', { class:'stx' }, [h('b', { text:s.title }), h('span', { text:s.desc })]), h('span', { class:'sst', text:state })]));
+      if (i === R.cur) { var ip = inlinePanel(); if (ip) out.appendChild(ip); } });
   });
   return out;
 }
-/** 단계 목록 옆 패널. 시뮬레이션이 열려 있는 동안에는 자리만 지키고, 닫으면 보던 단계가 그대로 나온다. */
-function fillPanel(pn) {
-  var R = S.sim, open = R.cur >= 0, pb0 = $('emg-pbody'), ps = pb0 ? pb0.scrollTop : 0;
-  pn.textContent = ''; pn.className = 'panel' + (open ? ' open' : '') + (open && !S.wasOpen ? ' anim' : ''); pn.setAttribute('aria-hidden', String(!open)); M.classList.toggle('pn-open', open); S.wasOpen = open;
-  if (!open) return;
-  var st = STEPS[R.cur], c = ctx(R, render), last = R.cur === STEPS.length - 1;
-  PF = 'emg-'; pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'직접 따라가기 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { R.cur = -1; render(); } })]));
-  var body = h('div', { class:'pbody col', id:'emg-pbody' }, st.fn(c).filter(Boolean)); pn.appendChild(body);
-  pn.appendChild(h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:R.cur === 0 ? true : null, onclick:function () { openStep(R, R.cur - 1, render); } }),
-    last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : h('button', { type:'button', class:'btn fill', id:'emg-nextstep', text:'다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title, onclick:function () { advance(R, render); } })]));
-  body.scrollTop = ps;
+/** 단계 아래로 펼쳐지는 페이지 안 패널. 오른쪽 시뮬레이션 패널(#emg-apanel)과는 서로 아무 관계가 없다. */
+function inlinePanel() {
+  var R = S.sim; if (R.cur < 0) return null;
+  var st = STEPS[R.cur], c = ctx(R, render), last = R.cur === STEPS.length - 1, pb0 = $('emg-pbody'), ps = pb0 ? pb0.scrollTop : 0, fresh = !S.wasOpen || S.lastOpen !== R.cur;
+  S.wasOpen = true; S.lastOpen = R.cur; PF = 'emg-';
+  var body = h('div', { class:'pbody col', id:'emg-pbody' }, st.fn(c).filter(Boolean));
+  var pn = h('div', { id:'emg-ipanel', class:'ipanel' + (fresh ? ' anim' : ''), role:'region', 'aria-label':st.id + ' ' + st.title + ' 결과' }, [
+    h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'직접 따라가기 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { R.cur = -1; S.wasOpen = false; render(); } })]),
+    body,
+    h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:R.cur === 0 ? true : null, onclick:function () { openStep(R, R.cur - 1, render); showPanel(); } }),
+      last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : h('button', { type:'button', class:'btn fill', id:'emg-nextstep', text:'다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title, onclick:function () { advance(R, render); showPanel(); } })])]);
+  body.scrollTop = ps; return pn;
 }
+function showPanel() { var e = $('emg-ipanel'); try { if (e) e.scrollIntoView({ block:'nearest' }); } catch (x) {} }
+function pickStep(R, i) { openStep(R, i, render); showPanel(); }
 
 // ── 자동 시뮬레이션(오른쪽 위 버튼): 자기만의 사건과 진행 상태를 쓰므로 화면의 단계 목록과 섞이지 않는다 ──
 var HOLD = { '2-4':7500, '2-5':7500, '2-6':6500, '3-1':7000, '3-5':8000, '4-4':0 };
@@ -548,14 +552,13 @@ function renderAuto() {
   body.scrollTop = ps;
 }
 function render() {
-  var root = $('emg-root'), tp = $('emg-top'), pn = $('emg-panel'); if (!root || !tp || !pn) return;
+  var root = $('emg-root'), tp = $('emg-top'); if (!root || !tp) return;
   var y = 0; try { y = window.pageYOffset || 0; } catch (e) {}
   root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
   var kids = head('응급', '폰·나비웹 워치·링(팔찌) 중 하나를 24시간 가까이 두고, 위급할 때 가장 단순한 조작 한 번으로 부릅니다. 무작위 가상 사건 하나를 신고부터 환자 인계까지 단계별로 따라가 보세요.');
   kids.push(mockNote('모의 체험입니다. 아무것도 전송되지 않고 출동도 일어나지 않아요. 병원·시간은 모두 가상 값입니다.'));
   kids.push(progressBar(), prepSection(), summaryCard(), stepList());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
-  fillPanel(pn);
   if (y) { try { window.scrollTo(0, y); } catch (e) {} }
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg }); }
@@ -573,7 +576,7 @@ function nav(a) {
 function mount(el, o) {
   if (!el) return; o = o || {};
   autoClear(); S.auto = null; M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.prepOpen = false; S.sim = newRun(); S.wasOpen = false; load();
-  [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' }), h('div', { id:'emg-back', class:'back', onclick:closeAuto }), h('aside', { id:'emg-panel', class:'panel', 'aria-hidden':'true', 'aria-label':'단계 결과' }), h('aside', { id:'emg-apanel', class:'panel auto', 'aria-hidden':'true', 'aria-label':'시뮬레이션' })].forEach(function (x) { el.appendChild(x); });
+  [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' }), h('div', { id:'emg-back', class:'back', onclick:closeAuto }), h('aside', { id:'emg-apanel', class:'panel auto', 'aria-hidden':'true', 'aria-label':'시뮬레이션' })].forEach(function (x) { el.appendChild(x); });
   if (o.view && ANCH[o.view] && o.view !== 'call') go(o.view); else render();
 }
 window.NaviEmergency = {

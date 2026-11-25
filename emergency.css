@@ -163,8 +163,12 @@
 .emg .phead{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
 .emg .pbody{flex:1;overflow:auto;padding:16px 20px;gap:12px}
 .emg .pfoot{display:flex;gap:8px;justify-content:space-between;padding:12px 88px 12px 20px;border-top:1px solid var(--line)}
-@media (min-width:1200px){.emg.pn-open .wrap{padding-right:500px}}
 @media (prefers-reduced-motion:reduce){.emg .panel.anim{animation:none}}
+.emg .ipanel{margin:2px 0 10px 12px;border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:12px;background:var(--card);overflow:hidden}
+.emg .ipanel.anim{animation:emg-expand .24s ease-out}
+@keyframes emg-expand{from{max-height:0;opacity:0;transform:translateY(-8px)}to{max-height:3000px;opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.emg .ipanel.anim{animation:none}}
+.emg .ipanel .pfoot{padding-right:20px}
 
 /* 자동 시뮬레이션 */
 .emg .simbtn{flex:none;white-space:nowrap}
