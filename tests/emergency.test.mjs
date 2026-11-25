@@ -52,7 +52,9 @@ test('draw: 기기·사건이 무작위로 정해지고 신상 Form·디지털 �
   assert.equal(devs.size, 3); assert.ok(seen.size >= 4);
 });
 
+
 const walk = (p, n) => { for (let k = 0; k < n; k++) { const b = p.doc.getElementById('emg-nextstep'); if (b) b.click(); } };
+const eqState = (p) => [...p.doc.querySelectorAll('[data-eq]')].map((b) => b.dataset.eq + b.textContent).join('|');
 
 test('19단계: 처음엔 패널이 닫혀 있고, 1-1 부터 순서대로만 열린다', { skip }, () => {
   const p = page(); const id = (x) => p.doc.getElementById(x);
@@ -62,7 +64,6 @@ test('19단계: 처음엔 패널이 닫혀 있고, 1-1 부터 순서대로만 �
   assert.equal(id('emg-row-2-1').disabled, true); assert.equal(id('emg-tick-4-4').disabled, true); assert.equal(id('emg-row-1-1').disabled, false);
   id('emg-row-1-1').click(); assert.equal(id('emg-panel').classList.contains('open'), true); assert.match(id('emg-ph-t').textContent, /^1-1 기기 호출/); assert.match(id('emg-bar-cap').textContent, /^1 \/ 19/);
   assert.equal(id('emg-prev').disabled, true); assert.equal(id('emg-row-1-2').disabled, true);
-  id('emg-tick-1-1').click(); id('emg-row-1-1').click();
   id('emg-nextstep').click(); assert.match(id('emg-ph-t').textContent, /^1-2/); id('emg-prev').click(); assert.match(id('emg-ph-t').textContent, /^1-1/);
   id('emg-pclose').click(); assert.equal(id('emg-panel').classList.contains('open'), false); assert.equal(id('emg-row-1-2').disabled, false); assert.equal(id('emg-row-1-3').disabled, true);
 });
@@ -86,57 +87,89 @@ test('19단계: 끝까지 따라가며 각 패널에 내용이 있고, 신상 Fo
   id('emg-row-4-3').click(); assert.ok(id('emg-s4-sig1').textContent.startsWith('SIG-') && id('emg-s4-sig2').textContent.startsWith('SIG-') && id('emg-s4-sig1').textContent !== id('emg-s4-sig2').textContent);
   id('emg-row-4-4').click(); assert.match(id('emg-s4-end').textContent, /처치가 시작됩니다/); assert.equal(p.fetched(), 0);
   const order = ['emg-bar', 'emg-s-prep', 'emg-draw', 'emg-list'].map((x) => [...p.doc.getElementById('emg-root').querySelectorAll('*')].indexOf(id(x))); assert.ok(order.every((x, k) => x >= 0 && (k === 0 || x > order[k - 1])), order.join());
-  });
+});
 
 test('3-2~3-5: 시간 막대가 단계를 옮겨도 유지되고 상태가 바뀐다', { skip }, () => {
-  let p = page(); const id = (x) => p.doc.getElementById(x); id('emg-row-1-1').click(); walk(p, 11);
-  assert.match(id('emg-ph-t').textContent, /^3-2/); let t = id('emg-t'); assert.ok(t); t.value = '0'; t.dispatchEvent(new p.w.Event('input'));
+  const p = page(); const id = (x) => p.doc.getElementById(x); id('emg-row-1-1').click(); walk(p, 11);
+  assert.match(id('emg-ph-t').textContent, /^3-2/); const t = id('emg-t'); assert.ok(t); t.value = '0'; t.dispatchEvent(new p.w.Event('input'));
   assert.match(id('emg-st-amb').textContent, /이동 중/); t.value = t.max; t.dispatchEvent(new p.w.Event('input')); assert.equal(id('emg-st-amb').textContent, '병원 도착');
   const keep = t.value; id('emg-nextstep').click(); assert.match(id('emg-ph-t').textContent, /^3-3/); assert.equal(id('emg-t').value, keep); assert.ok(id('emg-st-doc'));
   id('emg-nextstep').click(); assert.ok(id('emg-st-fac'));
 });
 
-test('3-5: 이동 중 장비가 막히면 조합을 다시 짜고, 4단계는 새 계획을 따른다', { skip }, () => {
+test('3-5: 장비가 막히면 그 시각 위치에서 다시 조합하고, 앞 단계는 그때의 판단을 그대로 보여 주며, 4단계는 새 계획을 따른다', { skip }, () => {
   const p = page(); const id = (x) => p.doc.getElementById(x); id('emg-row-1-1').click(); walk(p, 14);
-  assert.match(id('emg-ph-t').textContent, /^3-5/); assert.equal(id('emg-ev-new'), null); id('emg-ev').click();
-  assert.ok(id('emg-ev-new').textContent.length > 5); assert.equal(id('emg-ev').disabled, true);
-  id('emg-row-2-4').click(); assert.ok(p.doc.querySelectorAll('[data-eq]:disabled').length > 0, '계획 확정 뒤에는 현황을 바꿀 수 없다'); id('emg-row-3-5').click();
-  id('emg-nextstep').click(); assert.match(id('emg-ph-t').textContent, /^4-1/); assert.match(id('emg-pbody').textContent, /새 계획/);
-  id('emg-row-3-5').click(); assert.ok(id('emg-ev-new'));
+  assert.match(id('emg-ph-t').textContent, /^3-5/); assert.equal(id('emg-ev-new'), null);
+  id('emg-row-2-4').click(); const before = eqState(p), plan = (id('emg-row-2-6').click(), id('emg-s2-plan').textContent); id('emg-row-3-5').click();
+  id('emg-ev').click(); assert.ok(id('emg-ev-new').textContent.length > 5); assert.equal(id('emg-ev').disabled, true);
+  id('emg-row-2-4').click(); assert.equal(eqState(p), before, '2-4 는 계획을 확정할 때의 현황 그대로'); assert.ok(p.doc.querySelectorAll('[data-eq]:disabled').length > 0);
+  id('emg-row-2-6').click(); assert.equal(id('emg-s2-plan').textContent, plan, '2-6 계획서도 그대로');
+  id('emg-row-3-5').click(); id('emg-nextstep').click(); assert.match(id('emg-ph-t').textContent, /^4-1/); assert.match(id('emg-pbody').textContent, /새 계획/);
+  assert.equal(id('emg-s4-ready').textContent.includes('undefined'), false); walk(p, 3); assert.match(id('emg-s4-end').textContent, /처치가 시작됩니다/);
 });
 
-test('2-4: 병·의원 현황을 바꾸면 결과가 바뀌고, 새 사건을 뽑으면 처음으로 돌아간다', { skip }, () => {
+test('2-4: 병·의원 현황을 바꾸면 결과가 바뀌고, 조합이 없어도 구급대는 안정화 계획으로 출동한다', { skip }, () => {
   const p = page(); const id = (x) => p.doc.getElementById(x); id('emg-row-1-1').click(); walk(p, 7); assert.match(id('emg-ph-t').textContent, /^2-4/);
   [...p.doc.querySelectorAll('[data-doc]')].forEach((b) => { if (b.getAttribute('aria-pressed') === 'true') p.doc.querySelector('[data-doc="' + b.dataset.doc + '"]').click(); });
-  id('emg-nextstep').click(); assert.match(id('emg-m-res').textContent, /조합할 수 있는 인력·장비가 없어요/); walk(p, 2); assert.match(id('emg-ph-t').textContent, /^3-1/); assert.ok(id('emg-s3-none'));
+  id('emg-nextstep').click(); assert.match(id('emg-m-res').textContent, /조합할 수 있는 인력·장비가 없어요/); assert.match(id('emg-m-kind').textContent, /안정화/);
+  walk(p, 2); assert.match(id('emg-ph-t').textContent, /^3-1/); assert.ok(id('emg-s3-fb')); assert.ok(id('emg-s3-tbl').querySelectorAll('tbody tr').length >= 3);
+  walk(p, 1); assert.ok(id('emg-st-amb')); walk(p, 2); assert.match(id('emg-ph-t').textContent, /^3-4/); walk(p, 1); assert.ok(id('emg-ev-none')); assert.equal(id('emg-ev'), null);
+  walk(p, 3); assert.match(id('emg-s4-dr').textContent, /당직 의료진/); walk(p, 1); assert.match(id('emg-s4-end').textContent, /안정화 처치가 시작됩니다/);
   id('emg-draw').click(); assert.equal(id('emg-panel').classList.contains('open'), false); assert.match(id('emg-bar-cap').textContent, /^0 \/ 19/); assert.equal(id('emg-row-1-2').disabled, true); assert.equal(p.w.localStorage.getItem('navi-emg-v1'), null);
 });
 
-function fake(p) { const q = []; let n = 0; p.w.setTimeout = (fn, ms) => { q.push({ id: ++n, fn, ms }); return n; }; p.w.clearTimeout = (id) => { const k = q.findIndex((x) => x.id === id); if (k >= 0) q.splice(k, 1); }; return q; }
+test('match: 조합이 없으면 안정화 계획(fb)을, 출동 뒤 다시 계산하면 움직이는 구급대·의료진의 위치에서 계산한다', { skip }, () => {
+  const N = api();
+  const H = N.newHosp(); for (const h of H) for (const k in h.docs) h.docs[k] = false;
+  const f = N.match('ami', 'p1', H); assert.equal(f.best, null); assert.equal(f.fb.kind, 'stabilize'); assert.equal(f.go, f.fb); assert.equal(f.fb.fac.name, '가상 중앙병원'); assert.match(N.planText(f).join(' '), /안정화/);
+  const A = N.newHosp(), p0 = N.match('stroke', 'p3', A); assert.equal(p0.best.kind, 'single'); assert.equal(p0.best.fac.name, '가상 산악병원');
+  const at = 4; A.find((x) => x.id === p0.best.fac.id).eq['뇌혈관 중재 장비'] = false;
+  const a = N.match('stroke', 'p3', A, { at, prev: p0 }); assert.equal(a.best.kind, 'split'); assert.equal(a.best.fac.name, '가상 중앙병원'); assert.equal(a.best.doc.name, '가상 산악병원');
+  assert.ok(a.options.every((o) => o.start >= at && o.tPatient >= at && (o.kind === 'single' || o.tDoc >= at + 3)), '이미 지난 시각으로 계산하면 안 된다'); assert.equal(a.amb.id, p0.amb.id);
+  const B = N.newHosp(), q = N.match('ami', 'p1', B); assert.equal(q.best.doc.name, '가상 중앙병원'); assert.equal(q.best.fac.name, '가상 해안병원');
+  B[1].eq['심혈관 중재 장비'] = false; B[0].eq['심혈관 중재 장비'] = true;
+  const z = N.match('ami', 'p1', B, { at: 8, prev: q }); assert.equal(z.best.kind, 'split'); assert.equal(z.best.doc.id, z.best.fac.id, '이미 출발한 전문의가 차량을 돌려 돌아온다'); assert.ok(z.best.tDoc >= 8); assert.match(N.planText(z).join(' '), /돌려/);
+  const C = N.newHosp(), r0 = N.match('ami', 'p1', C); C[1].eq['심혈관 중재 장비'] = false; const d = N.match('ami', 'p1', C, { at: 8, prev: r0 }); assert.equal(d.best, null); assert.equal(d.fb.kind, 'stabilize'); assert.ok(d.fb.tPatient >= 8);
+});
+
+const fake = (p) => { const q = []; let n = 0; p.w.setTimeout = (fn, ms) => { q.push({ id: ++n, fn, ms }); return n; }; p.w.clearTimeout = (id) => { const k = q.findIndex((x) => x.id === id); if (k >= 0) q.splice(k, 1); }; return q; };
 const fire = (q, min) => { const k = q.findIndex((x) => x.ms >= (min || 0)); if (k < 0) return null; const [x] = q.splice(k, 1); x.fn(); return x.ms; };
 
 test('시뮬레이션 버튼: 오른쪽 위에서 열면 1-1 부터 자동으로 끝까지 진행하고, 닫기·바깥 클릭으로 닫힌다', { skip }, () => {
   const p = page(); const q = fake(p); const id = (x) => p.doc.getElementById(x);
-  assert.ok(id('emg-top').contains(id('emg-sim'))); assert.equal(id('emg-panel').classList.contains('open'), false);
-  id('emg-sim').click(); assert.equal(id('emg-panel').classList.contains('open'), true); assert.ok(id('emg-panel').classList.contains('auto')); assert.ok(id('emg-back').classList.contains('on'));
-  assert.match(id('emg-ph-t').textContent, /^1-1/); assert.match(id('emg-ph-n').textContent, /시뮬레이션/); assert.equal(id('emg-nextstep'), null);
-  const seen = [id('emg-ph-t').textContent.split(' ')[0]]; const holds = [];
-  for (let k = 0; k < 40 && q.length; k++) { const ms = fire(q, 4000); if (ms === null) break; holds.push(ms); seen.push(id('emg-ph-t').textContent.split(' ')[0]); if (id('emg-ph-t').textContent.startsWith('4-4')) break; }
+  assert.ok(id('emg-top').contains(id('emg-sim'))); assert.equal(id('emg-apanel').classList.contains('open'), false);
+  id('emg-sim').click(); assert.equal(id('emg-apanel').classList.contains('open'), true); assert.ok(id('emg-back').classList.contains('on'));
+  assert.match(id('emg-au-t').textContent, /^1-1/); assert.match(id('emg-au-n').textContent, /시뮬레이션/); assert.equal(id('emg-nextstep'), null); assert.equal(p.doc.querySelectorAll('#emg-au-mini i').length, 19);
+  const seen = [id('emg-au-t').textContent.split(' ')[0]]; const holds = [];
+  for (let k = 0; k < 40 && q.length; k++) { const ms = fire(q, 4000); if (ms === null) break; holds.push(ms); seen.push(id('emg-au-t').textContent.split(' ')[0]); if (id('emg-au-t').textContent.startsWith('4-4')) break; }
   assert.equal(new Set(seen).size, 19); assert.equal(seen[18], '4-4'); assert.ok(holds.every((m) => m >= 4000 && m <= 9000), holds.join());
-  assert.match(id('emg-s4-end').textContent, /처치가 시작됩니다|보류|안정/ ); assert.equal(id('emg-apause').disabled, true);
-  id('emg-back').click(); assert.ok(id('emg-panel').classList.contains('closing'));
-  while (q.length) q.shift().fn(); assert.equal(id('emg-panel').classList.contains('open'), false); assert.equal(p.doc.querySelectorAll('.tick.done').length, 0); assert.equal(id('emg-back').classList.contains('on'), false); assert.equal(id('emg-sim').disabled, false);
+  assert.match(id('emg-s4-end').textContent, /처치가 시작됩니다/); assert.equal(id('emg-au-pause').disabled, true);
+  id('emg-back').click(); assert.ok(id('emg-apanel').classList.contains('closing'));
+  while (q.length) q.shift().fn(); assert.equal(id('emg-apanel').classList.contains('open'), false); assert.equal(id('emg-back').classList.contains('on'), false); assert.equal(id('emg-sim').disabled, false);
   assert.equal(p.fetched(), 0);
+});
+
+test('시뮬레이션은 화면의 단계 목록과 완전히 분리되어 있다', { skip }, () => {
+  const p = page(); const q = fake(p); const id = (x) => p.doc.getElementById(x);
+  id('emg-row-1-1').click(); walk(p, 2); const cap = id('emg-bar-cap').textContent, sum = id('emg-draw-sum').previousSibling.textContent, ticks = p.doc.querySelectorAll('#emg-bar .tick.done').length, rows = [...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join();
+  assert.match(cap, /^3 \/ 19/); id('emg-sim').click();
+  for (let k = 0; k < 25 && q.length; k++) { fire(q, 4000); if (id('emg-au-t').textContent.startsWith('4-')) break; }
+  assert.equal(id('emg-bar-cap').textContent, cap); assert.equal(id('emg-draw-sum').previousSibling.textContent, sum); assert.equal(p.doc.querySelectorAll('#emg-bar .tick.done').length, ticks); assert.equal([...p.doc.querySelectorAll('.srow .sst')].map((x) => x.textContent).join(), rows);
+  assert.equal(p.doc.querySelectorAll('[id]').length, new Set([...p.doc.querySelectorAll('[id]')].map((x) => x.id)).size, 'id 가 겹치면 안 된다');
+  id('emg-row-1-2').click(); assert.match(id('emg-au-t').textContent, /^4-/, '단계 목록을 눌러도 시뮬레이션은 따라가지 않는다');
+  id('emg-au-close').click(); while (q.length) q.shift().fn();
+  assert.equal(id('emg-apanel').classList.contains('open'), false); assert.equal(id('emg-panel').classList.contains('open'), true); assert.match(id('emg-ph-t').textContent, /^1-2/);
+  assert.equal(id('emg-bar-cap').textContent.startsWith('2 / 19'), true);
 });
 
 test('시뮬레이션: 멈추기·이어서, 새 무작위 사건, 닫기 버튼, 3-5 사건이 무작위로 일어남', { skip }, () => {
   const p = page(); const q = fake(p); const id = (x) => p.doc.getElementById(x); id('emg-sim').click();
-  id('emg-apause').click(); assert.equal(q.length, 0); assert.match(id('emg-ph-n').textContent, /멈춤/); id('emg-apause').click(); assert.ok(q.length > 0);
-  const before = p.doc.getElementById('emg-draw-sum') && p.doc.querySelector('.pill') ; id('emg-arestart').click(); assert.match(id('emg-ph-t').textContent, /^1-1/);
-  for (let k = 0; k < 40 && !id('emg-ph-t').textContent.startsWith('3-5'); k++) fire(q, 4000);
-  assert.match(id('emg-ph-t').textContent, /^3-5/); const ev = q.find((x) => x.ms === 2200); if (ev) { fire(q, 2200); assert.ok(id('emg-ev-new')); } else assert.equal(id('emg-ev-new'), null);
-  id('emg-pclose').click(); while (q.length) q.shift().fn(); assert.equal(id('emg-panel').classList.contains('open'), false);
-  let evs = 0; for (let r = 0; r < 30; r++) { const pp = page(); const qq = fake(pp); pp.doc.getElementById('emg-sim').click(); for (let k = 0; k < 40 && !pp.doc.getElementById('emg-ph-t').textContent.startsWith('3-5'); k++) fire(qq, 4000); if (qq.some((x) => x.ms === 2200)) evs++; }
+  id('emg-au-pause').click(); assert.equal(q.length, 0); assert.match(id('emg-au-n').textContent, /멈춤/); id('emg-au-pause').click(); assert.ok(q.length > 0);
+  id('emg-au-restart').click(); assert.match(id('emg-au-t').textContent, /^1-1/);
+  for (let k = 0; k < 40 && !id('emg-au-t').textContent.startsWith('3-5'); k++) fire(q, 4000);
+  assert.match(id('emg-au-t').textContent, /^3-5/); const ev = q.find((x) => x.ms === 2200); if (ev) { fire(q, 2200); assert.ok(id('emg-ev-new')); } else assert.equal(id('emg-ev-new'), null);
+  id('emg-au-close').click(); while (q.length) q.shift().fn(); assert.equal(id('emg-apanel').classList.contains('open'), false);
+  let evs = 0; for (let r = 0; r < 30; r++) { const pp = page(); const qq = fake(pp); pp.doc.getElementById('emg-sim').click(); for (let k = 0; k < 40 && !pp.doc.getElementById('emg-au-t').textContent.startsWith('3-5'); k++) fire(qq, 4000); if (qq.some((x) => x.ms === 2200)) evs++; }
   assert.ok(evs > 0 && evs < 30, String(evs));
 });
 
