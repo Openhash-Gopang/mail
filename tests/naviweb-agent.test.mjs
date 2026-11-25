@@ -737,5 +737,10 @@ test('0.7.1: 진행 단계 trace — 서비스 워커 콘솔과 나비웹(step)�
   const b = rd('background.js'), br = rd('bridge.js'), d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(b, /function trace\(/); assert.match(b, /접근 허용 창을 띄웁니다/); assert.match(b, /파일 넣기 결과/);
   assert.match(br, /'opened', 'step'/); assert.match(d, /s\.state === 'step'/);
-  assert.equal(JSON.parse(rd('manifest.json')).version, '0.7.1');
+  assert.match(JSON.parse(rd('manifest.json')).version, /^0\.7\.[1-9]/);
+});
+
+test('0.7.2: 맡긴 주소가 있으면 같은 사이트 탭만 대상으로 쓴다(아니면 새 탭)', () => {
+  const b = readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
+  assert.match(b, /wantSite/); assert.match(b, /site\(t\.url\) === wantSite/);
 });
