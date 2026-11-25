@@ -207,6 +207,7 @@ function addDev() {
   S.dev.push({ id:uid(), kind:DEVKINDS.indexOf(f.kind) >= 0 ? f.kind : '폰', name:name, carry:f.carry !== false, chk:f.chk || '' }); S.form = { kind:f.kind, carry:true }; S.msg = '기록했어요.'; save(); render();
 }
 
+function setSimBtn() { var b = $('emg-sim'); if (b) b.disabled = !!S.auto; }
 function topbar() { return h('div', { class:'topin' }, [h('div', { class:'brand' }, [h('div', {}, [h('span', { text:'인프라 AI · 응급' })])]), h('button', { type:'button', class:'btn tonal simbtn', id:'emg-sim', text:'🧪 시뮬레이션', 'aria-label':'자동 시뮬레이션 열기', disabled:S.auto ? true : null, onclick:openAuto })]); }
 function kv(k, v, id) { return h('div', { class:'kv' }, [h('span', { text:k }), h('b', { id:id || null, text:v })]); }
 function step(n, title, kids, id) {
@@ -305,7 +306,7 @@ function sub(t) { return h('b', { style:'display:block;margin-top:8px', text:t }
 // run = { sc:사건, hosp:지금의 병·의원 현황, hosp0:계획 확정 때의 현황, plan0:확정한 계획, ev:이동 중 갱신, t:시간 막대, reached:열린 가장 먼 단계, cur:보고 있는 단계 }
 // 화면의 단계 목록과 오른쪽 위 시뮬레이션 버튼은 서로 다른 run 을 쓰므로 서로 영향을 주지 않는다.
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
-function newRun() { return { sc:draw(Math.random), hosp:newHosp(), hosp0:null, plan0:null, ev:null, t:0, reached:0, cur:-1 }; }
+function newRun() { return { sc:draw(Math.random), hosp:newHosp(), hosp0:null, plan0:null, ev:null, t:0, reached:0, cur:-1, picked:false, seen:false }; }
 function shake(R) { R.hosp.forEach(function (F) { Object.keys(F.docs).forEach(function (k) { if (Math.random() < 0.12) F.docs[k] = !F.docs[k]; }); Object.keys(F.eq).forEach(function (k) { if (Math.random() < 0.12) F.eq[k] = !F.eq[k]; }); }); }
 /** 3-1 에서 지시서를 보내는 순간 계획과 그때의 병·의원 현황을 굳힌다. 이후 현황이 바뀌어도(3-5) 앞 단계는 그때의 판단을 그대로 보여 준다. */
 function lock(R) { if (R.plan0) return; R.hosp0 = clone(R.hosp); R.plan0 = match(R.sc.need, R.sc.place, R.hosp0); }
@@ -313,8 +314,11 @@ function ctx(R, re) {
   var sc = R.sc, locked = !!R.plan0, hd = locked ? R.hosp0 : R.hosp, dec = locked ? R.plan0 : match(sc.need, sc.place, R.hosp);
   return { R:R, re:re, sc:sc, locked:locked, hosp:hd, g:gather(sc, hd), dec:dec, fin:R.ev ? R.ev.after : dec };
 }
+/** 단계 결과를 그리는 곳(페이지 패널 / 시뮬레이션 패널)마다 id 앞머리가 달라, 두 패널이 같은 id 를 갖지 않는다. */
+var PF = 'emg-';
+function X(id) { return PF + id; }
 function none(id, t) { return [h('div', { class:'sub', id:id, text:t })]; }
-function rows3(rows) { return rows.length ? h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'emg-m-opts' }, [h('thead', {}, [h('tr', {}, ['방식', '처치 장소', '전문의 출발', '환자 도착', '전문의 도착', '시작'].map(function (t, i) { return h('th', { class:i > 2 ? 'r' : '', text:t }); }))]), h('tbody', {}, rows)])]) : h('div', { class:'empty', text:'가능한 조합이 없어요.' }); }
+function rows3(rows) { return rows.length ? h('div', { class:'tbw' }, [h('table', { class:'tbl', id:X('m-opts') }, [h('thead', {}, [h('tr', {}, ['방식', '처치 장소', '전문의 출발', '환자 도착', '전문의 도착', '시작'].map(function (t, i) { return h('th', { class:i > 2 ? 'r' : '', text:t }); }))]), h('tbody', {}, rows)])]) : h('div', { class:'empty', text:'가능한 조합이 없어요.' }); }
 function recv(r) { var g = r.go; return g.kind === 'split' ? g.doc.name + ' ' + r.need.sp + ' 의료진' : g.kind === 'single' ? g.fac.name + ' ' + r.need.sp + ' 의료진' : g.fac.name + ' 당직 의료진'; }
 function dispatchList(sc, r) {
   var g = r.go, need = r.need; if (!g) return [];
@@ -333,34 +337,34 @@ function statusAt(sc, r, t) {
   return o;
 }
 function timeBar(c, r) {
-  var g = r.go, sc = c.sc, R = c.R, t = Math.min(R.t, g.start + 1);
-  var lab = h('b', { id:'emg-t-lab', text:'경과 T+' + t + '분 · 가상 시각 ' + clock(sc.t0 + t * 60000) });
-  var rg = h('input', { type:'range', id:'emg-t', min:'0', max:String(g.start + 1), value:String(t), 'aria-label':'경과 시간(분)', style:'width:100%' });
-  rg.oninput = function () { var v = Number(rg.value), o = statusAt(sc, r, v); R.t = v; lab.textContent = '경과 T+' + v + '분 · 가상 시각 ' + clock(sc.t0 + v * 60000); ['amb', 'doc', 'fac'].forEach(function (k) { var e = $('emg-st-' + k); if (e) e.textContent = o[k]; }); };
+  var g = r.go, sc = c.sc, R = c.R, pf = PF, t = Math.min(R.t, g.start + 1);
+  var lab = h('b', { id:X('t-lab'), text:'경과 T+' + t + '분 · 가상 시각 ' + clock(sc.t0 + t * 60000) });
+  var rg = h('input', { type:'range', id:X('t'), min:'0', max:String(g.start + 1), value:String(t), 'aria-label':'경과 시간(분)', style:'width:100%' });
+  rg.oninput = function () { var v = Number(rg.value), o = statusAt(sc, r, v); R.t = v; lab.textContent = '경과 T+' + v + '분 · 가상 시각 ' + clock(sc.t0 + v * 60000); ['amb', 'doc', 'fac'].forEach(function (k) { var e = $(pf + 'st-' + k); if (e) e.textContent = o[k]; }); };
   return h('div', { class:'card col', style:'margin-top:12px' }, [lab, rg, h('div', { class:'sub', text:'막대를 끌어 시간이 흐를 때 상태가 어떻게 바뀌는지 보세요. ' + ONSITE_NOTE })]);
 }
 function sendForm(sc) {
   var m = sc.msg, p = sc.patient;
   return form([
-    ['① 기기에서 보낸 응급 메시지', [['전송 기기', sc.devName + (sc.dev === 'ring' ? ' (말·문자 입력이 없는 기기)' : ''), 'emg-s1-dev'], ['전달 형태', m.label, 'emg-s1-mode'], ['내용', m.body || '없음 — 오직 “응급”만 전달', 'emg-s1-body'], ['받는 곳', '응급 AI']]],
-    ['② 내 AI 비서가 첨부한 신고자·환자 정보', [['신고자', sc.reporter.name + ' · ' + sc.reporter.rel, 'emg-s1-rep'], ['환자 성명', p.name, 'emg-s1-name'], ['나이 · 성별', p.ageText + ' · ' + p.sex], ['혈액형', p.blood, 'emg-s1-blood'], ['과거 질병 이력', p.hist, 'emg-s1-hist'], ['복용 약 · 알레르기', p.meds], ['생체 정보', p.vit], ['현재 위치', sc.placeName + ' (가상 좌표 ' + sc.xy[0] + ', ' + sc.xy[1] + ')', 'emg-s1-loc']]],
-    ['③ 접수 정보', [['신고 시각', clock(sc.t0) + ' (가상)'], ['사건 번호', sc.no, 'emg-s1-no']]],
-    ['④ 신고자의 디지털 서명', [['서명값', sc.sig, 'emg-s1-sig'], ['서명 방식', '신고자 단말의 개인 키로 서명(가상). 응급 AI가 받은 뒤 확인합니다.']]]]);
+    ['① 기기에서 보낸 응급 메시지', [['전송 기기', sc.devName + (sc.dev === 'ring' ? ' (말·문자 입력이 없는 기기)' : ''), X('s1-dev')], ['전달 형태', m.label, X('s1-mode')], ['내용', m.body || '없음 — 오직 “응급”만 전달', X('s1-body')], ['받는 곳', '응급 AI']]],
+    ['② 내 AI 비서가 첨부한 신고자·환자 정보', [['신고자', sc.reporter.name + ' · ' + sc.reporter.rel, X('s1-rep')], ['환자 성명', p.name, X('s1-name')], ['나이 · 성별', p.ageText + ' · ' + p.sex], ['혈액형', p.blood, X('s1-blood')], ['과거 질병 이력', p.hist, X('s1-hist')], ['복용 약 · 알레르기', p.meds], ['생체 정보', p.vit], ['현재 위치', sc.placeName + ' (가상 좌표 ' + sc.xy[0] + ', ' + sc.xy[1] + ')', X('s1-loc')]]],
+    ['③ 접수 정보', [['신고 시각', clock(sc.t0) + ' (가상)'], ['사건 번호', sc.no, X('s1-no')]]],
+    ['④ 신고자의 디지털 서명', [['서명값', sc.sig, X('s1-sig')], ['서명 방식', '신고자 단말의 개인 키로 서명(가상). 응급 AI가 받은 뒤 확인합니다.']]]]);
 }
 
 // ── 19개 세부 단계(각각 오른쪽 패널에 결과를 보여 준다) ──
 function s11(c) { var sc = c.sc, how = { phone:'폰의 응급 버튼을 한 번 누릅니다.', watch:'나비웹 워치의 응급 버튼을 길게 누릅니다.', ring:'링(팔찌)을 두 번 눌러 응급을 보냅니다.' }[sc.dev];
-  return [h('div', { class:'sub', text:'가상 사건입니다. 기기와 사건은 무작위로 뽑았어요.' }), form([['기기 호출', [['사용한 기기', sc.devName, 'emg-s1-dev'], ['조작(가상)', how], ['호출 시각', clock(sc.t0) + ' (가상)'], ['어떤 상황', sc.inc.kind + ' · ' + sc.inc.name, 'emg-s1-inc']]]])]; }
+  return [h('div', { class:'sub', text:'가상 사건입니다. 기기와 사건은 무작위로 뽑았어요.' }), form([['기기 호출', [['사용한 기기', sc.devName, X('s1-dev')], ['조작(가상)', how], ['호출 시각', clock(sc.t0) + ' (가상)'], ['어떤 상황', sc.inc.kind + ' · ' + sc.inc.name, X('s1-inc')]]]])]; }
 function s12(c) { var sc = c.sc, m = sc.msg;
-  return [form([['응급 메시지 구성', [['말·문자 입력', sc.can === 'voice' ? '말할 수 있음' : sc.can === 'text' ? '문자를 입력할 수 있음' : '둘 다 어려움'], ['전달 형태', m.label, 'emg-s1-mode'], ['내용', m.body || '없음 — 오직 “응급”만 전달', 'emg-s1-body'], ['이유', m.only ? (sc.dev === 'ring' ? '링에는 말·문자 입력이 없어 “응급”만 갑니다.' : '말도 문자도 어려워 “응급”만 갑니다.') : '“응급” 표시와 함께 ' + (m.mode === 'voice' ? '음성' : '문자') + '을(를) 보냅니다.']]]])]; }
+  return [form([['응급 메시지 구성', [['말·문자 입력', sc.can === 'voice' ? '말할 수 있음' : sc.can === 'text' ? '문자를 입력할 수 있음' : '둘 다 어려움'], ['전달 형태', m.label, X('s1-mode')], ['내용', m.body || '없음 — 오직 “응급”만 전달', X('s1-body')], ['이유', m.only ? (sc.dev === 'ring' ? '링에는 말·문자 입력이 없어 “응급”만 갑니다.' : '말도 문자도 어려워 “응급”만 갑니다.') : '“응급” 표시와 함께 ' + (m.mode === 'voice' ? '음성' : '문자') + '을(를) 보냅니다.']]]])]; }
 function s13(c) { var sc = c.sc, p = sc.patient;
   return [h('div', { class:'sub', text:'신고자의 나만의 AI 비서가 붙이는 정보입니다. 이 시뮬레이션은 모든 항목을 보내기로 한 경우를 보여 줍니다. 실제로는 “평소 준비”에서 고른 항목만 전송되고, 현재 위치는 항상 포함돼요.' }),
-    form([['신고자·환자 정보', [['신고자', sc.reporter.name + ' · ' + sc.reporter.rel, 'emg-s1-rep'], ['환자 성명', p.name, 'emg-s1-name'], ['나이 · 성별', p.ageText + ' · ' + p.sex], ['혈액형', p.blood, 'emg-s1-blood'], ['과거 질병 이력', p.hist, 'emg-s1-hist'], ['복용 약 · 알레르기', p.meds], ['생체 정보', p.vit], ['현재 위치', sc.placeName + ' (가상 좌표 ' + sc.xy[0] + ', ' + sc.xy[1] + ')', 'emg-s1-loc']]]])]; }
+    form([['신고자·환자 정보', [['신고자', sc.reporter.name + ' · ' + sc.reporter.rel, X('s1-rep')], ['환자 성명', p.name, X('s1-name')], ['나이 · 성별', p.ageText + ' · ' + p.sex], ['혈액형', p.blood, X('s1-blood')], ['과거 질병 이력', p.hist, X('s1-hist')], ['복용 약 · 알레르기', p.meds], ['생체 정보', p.vit], ['현재 위치', sc.placeName + ' (가상 좌표 ' + sc.xy[0] + ', ' + sc.xy[1] + ')', X('s1-loc')]]]])]; }
 function s14(c) { return [h('div', { class:'sub', text:'위 내용을 하나의 Form으로 묶어 신고자의 디지털 서명을 붙이고 응급 AI로 보냅니다.' }), sendForm(c.sc)]; }
-function s21(c) { var sc = c.sc; return [form([['서명 확인', [['받은 서명', sc.sig], ['확인 결과', verify(sc) ? '일치 — 전달 중 내용이 바뀌지 않았어요' : '불일치 — 위변조 의심', 'emg-s2-sig'], ['사건 번호', sc.no]]]])]; }
+function s21(c) { var sc = c.sc; return [form([['서명 확인', [['받은 서명', sc.sig], ['확인 결과', verify(sc) ? '일치 — 전달 중 내용이 바뀌지 않았어요' : '불일치 — 위변조 의심', X('s2-sig')], ['사건 번호', sc.no]]]])]; }
 function s22(c) { var sc = c.sc, p = sc.patient, need = NEEDS[sc.need];
-  return [form([['신상 정보와 사고 내용 정리', [['환자', p.name + ' · ' + p.ageText + ' · ' + p.sex + ' · ' + p.blood], ['과거 질병 이력', p.hist], ['생체 정보', p.vit], ['전달된 내용', sc.msg.body || '“응급”만 전달됨'], ['사고 내용(추정)', sc.inc.est + ' — 신뢰도 ' + sc.inc.conf + ' (' + sc.inc.kind + ')', 'emg-s2-est'], ['필요한 처치 자원', need.sp + ' 전문의 + ' + need.eq]]]])]; }
-function s23(c) { return [h('div', { class:'sub', text:'응급 AI가 처치에 꼭 필요한 것을 신고자의 비서에게 더 묻습니다. 비서는 허용된 질문에만 기록을 바탕으로 답해요.' }), form([['추가 질의', c.sc.inc.asks.map(function (a, i) { return ['응급 AI → 비서: ' + a[0], '답: ' + a[1] + ' (가상)', 'emg-s2-ask' + i]; })]])]; }
+  return [form([['신상 정보와 사고 내용 정리', [['환자', p.name + ' · ' + p.ageText + ' · ' + p.sex + ' · ' + p.blood], ['과거 질병 이력', p.hist], ['생체 정보', p.vit], ['전달된 내용', sc.msg.body || '“응급”만 전달됨'], ['사고 내용(추정)', sc.inc.est + ' — 신뢰도 ' + sc.inc.conf + ' (' + sc.inc.kind + ')', X('s2-est')], ['필요한 처치 자원', need.sp + ' 전문의 + ' + need.eq]]]])]; }
+function s23(c) { return [h('div', { class:'sub', text:'응급 AI가 처치에 꼭 필요한 것을 신고자의 비서에게 더 묻습니다. 비서는 허용된 질문에만 기록을 바탕으로 답해요.' }), form([['추가 질의', c.sc.inc.asks.map(function (a, i) { return ['응급 AI → 비서: ' + a[0], '답: ' + a[1] + ' (가상)', X('s2-ask') + i]; })]])]; }
 function s24(c) {
   var sc = c.sc, g = c.g, lock0 = c.locked;
   var unitRows = g.units.map(function (u, i) { return h('tr', {}, [h('td', {}, [pill('구급대(119)', 'm')]), h('td', { text:u.name }), h('td', { class:'r num', text:u.eta + '분' }), h('td', { text:i === 0 ? '★ 가장 가까움' : '' })]); });
@@ -369,35 +373,35 @@ function s24(c) {
     var eqs = Object.keys(F.eq).map(function (k) { return h('button', { type:'button', class:'chip', disabled:lock0 ? true : null, 'data-eq':F.id + ':' + k, 'aria-pressed':String(F.eq[k]), text:k + (F.eq[k] ? ' 가능' : ' 사용 중'), onclick:function () { F.eq[k] = !F.eq[k]; c.re(); } }); });
     return h('tr', {}, [h('td', {}, [h('b', { text:F.name })]), h('td', { class:'r num', text:x.move + '분' }), h('td', {}, [h('div', { class:'chips' }, docs.length ? docs : [h('span', { class:'sub', text:'전문의 없음' })])]), h('td', {}, [h('div', { class:'chips' }, eqs.length ? eqs : [h('span', { class:'sub', text:'장비 없음' })])])]); });
   return [h('div', { class:'sub', text:'신고 위치(' + sc.placeName + ')를 중심으로 가용한 구급대(119), 병·의원의 전문의·장비, 자율주행차량을 모읍니다.' + (lock0 ? ' 아래는 지시서를 보낼 때(3-1)의 현황이에요.' : '') }),
-    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'emg-s2-units' }, [h('thead', {}, [h('tr', {}, ['구분', '자원', '도착', ''].map(function (t, i) { return h('th', { class:i === 2 ? 'r' : '', text:t }); }))]), h('tbody', {}, unitRows)])]),
-    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'emg-m-res-tbl' }, [h('thead', {}, [h('tr', {}, ['병·의원', '위치까지', '전문의(근무)', '장비(사용 가능)'].map(function (t, i) { return h('th', { class:i === 1 ? 'r' : '', text:t }); }))]), h('tbody', {}, hrows)])]),
-    h('div', { class:'sub', id:'emg-s2-av', text:'자율주행차량: 병·의원마다 1대가 대기 중이에요(가상).' }),
+    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:X('s2-units') }, [h('thead', {}, [h('tr', {}, ['구분', '자원', '도착', ''].map(function (t, i) { return h('th', { class:i === 2 ? 'r' : '', text:t }); }))]), h('tbody', {}, unitRows)])]),
+    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:X('m-res-tbl') }, [h('thead', {}, [h('tr', {}, ['병·의원', '위치까지', '전문의(근무)', '장비(사용 가능)'].map(function (t, i) { return h('th', { class:i === 1 ? 'r' : '', text:t }); }))]), h('tbody', {}, hrows)])]),
+    h('div', { class:'sub', id:X('s2-av'), text:'자율주행차량: 병·의원마다 1대가 대기 중이에요(가상).' }),
     h('div', { class:'sub', text:lock0 ? '지시서를 이미 보내 현황은 더 바꿀 수 없어요.' : '버튼을 눌러 전문의가 퇴근하거나 장비가 사용 중이 된 상황을 만들면 다음 단계의 조합이 달라져요(저장하지 않습니다).' }),
     lock0 ? null : h('div', { class:'rowf' }, [btn('처음 상태로', 'quiet', function () { c.R.hosp = newHosp(); c.re(); })])];
 }
 function s25(c) {
   var r = c.dec, b = r.best, hosp = c.hosp;
-  var res = h('div', { class:'card col hero', id:'emg-m-res' });
-  if (!b) { res.appendChild(h('div', { class:'big', text:'지금은 조합할 수 있는 인력·장비가 없어요' })); res.appendChild(h('div', { class:'sub', id:'emg-m-kind', text:'그래도 구급대는 출동하고, 환자는 가장 가까운 ' + r.fb.fac.name + '으로 이송해 안정화해요. 다른 병원의 인력·장비가 비는 대로 응급 AI가 다시 조합합니다(연습).' })); }
-  else { res.appendChild(h('div', { class:'big', id:'emg-m-start', text:'처치 시작 약 ' + b.start + '분 뒤 · ' + b.fac.name })); res.appendChild(h('div', { class:'sub', id:'emg-m-kind', text:b.kind === 'single' ? '한 병원에서 전문의와 장비를 모두 쓸 수 있어요.' : '전문의와 장비가 다른 병원에 있어 ' + b.doc.name + ' 의료진이 ' + b.fac.name + ' 장비로 처치하도록 조합했어요.' })); }
+  var res = h('div', { class:'card col hero', id:X('m-res') });
+  if (!b) { res.appendChild(h('div', { class:'big', text:'지금은 조합할 수 있는 인력·장비가 없어요' })); res.appendChild(h('div', { class:'sub', id:X('m-kind'), text:'그래도 구급대는 출동하고, 환자는 가장 가까운 ' + r.fb.fac.name + '으로 이송해 안정화해요. 다른 병원의 인력·장비가 비는 대로 응급 AI가 다시 조합합니다(연습).' })); }
+  else { res.appendChild(h('div', { class:'big', id:X('m-start'), text:'처치 시작 약 ' + b.start + '분 뒤 · ' + b.fac.name })); res.appendChild(h('div', { class:'sub', id:X('m-kind'), text:b.kind === 'single' ? '한 병원에서 전문의와 장비를 모두 쓸 수 있어요.' : '전문의와 장비가 다른 병원에 있어 ' + b.doc.name + ' 의료진이 ' + b.fac.name + ' 장비로 처치하도록 조합했어요.' })); }
   var opts = r.options.slice(0, 5).map(function (o, i) { return h('tr', {}, [h('td', {}, [pill(o.kind === 'single' ? '한 병원' : '인력 이동', o.kind === 'single' ? 'm' : 'p')]), h('td', { text:o.fac.name }), h('td', { text:o.kind === 'single' ? '—' : o.doc.name }), h('td', { class:'r num', text:o.tPatient + '분' }), h('td', { class:'r num', text:o.kind === 'single' ? '—' : o.tDoc + '분' }), h('td', { class:'r num', text:(i === 0 ? '★ ' : '') + o.start + '분' })]); });
   var seen = {}, why = r.why.filter(function (w) { var k = w[0] + w[1]; if (seen[k]) return false; seen[k] = 1; return true; });
   return [res, sub('가능한 조합(빠른 순)'), rows3(opts), h('div', {}, [mapSvg(r, hosp), h('div', { class:'sub', text:'빨간 점이 신고 위치, 삼각형이 구급대(파란색이 출동), 네모가 병원이에요. 파란 선은 환자 이송, 초록 점선은 전문의 이동입니다.' })]),
-    why.length ? h('div', { id:'emg-m-why' }, [h('b', { text:'조합에서 빠진 이유' }), h('div', {}, why.map(function (w) { return kv(w[0], w[1]); }))]) : null];
+    why.length ? h('div', { id:X('m-why') }, [h('b', { text:'조합에서 빠진 이유' }), h('div', {}, why.map(function (w) { return kv(w[0], w[1]); }))]) : null];
 }
 function s26(c) {
   var r = c.dec, g = r.go, sc = c.sc, b = r.best;
-  return [form([['응급 대응 계획서 · ' + sc.no, [['신고 위치', sc.placeName], [b ? '처치 장소' : '이송 목적지(안정화)', g.fac.name, 'emg-s2-plan'], ['조합 방식', !b ? '조합 없음 — 안정화 후 다시 조합' : g.kind === 'single' ? '한 병원에서 전문의와 장비를 함께 사용' : g.doc.name + ' 의료진이 ' + g.fac.name + ' 장비로 처치(자율주행차량 급파)'], ['출동 구급대', r.amb.name + ' (' + r.amb.eta + '분)'], ['환자 도착', g.tPatient + '분 뒤'], ['전문의 도착', g.kind === 'split' ? g.tDoc + '분 뒤' : '대기 중'], ['필요 장비', b ? r.need.eq : '조합이 가능해질 때 확정'], [b ? '처치 시작' : '안정화 시작', '약 ' + g.start + '분 뒤']]]]),
+  return [form([['응급 대응 계획서 · ' + sc.no, [['신고 위치', sc.placeName], [b ? '처치 장소' : '이송 목적지(안정화)', g.fac.name, X('s2-plan')], ['조합 방식', !b ? '조합 없음 — 안정화 후 다시 조합' : g.kind === 'single' ? '한 병원에서 전문의와 장비를 함께 사용' : g.doc.name + ' 의료진이 ' + g.fac.name + ' 장비로 처치(자율주행차량 급파)'], ['출동 구급대', r.amb.name + ' (' + r.amb.eta + '분)'], ['환자 도착', g.tPatient + '분 뒤'], ['전문의 도착', g.kind === 'split' ? g.tDoc + '분 뒤' : '대기 중'], ['필요 장비', b ? r.need.eq : '조합이 가능해질 때 확정'], [b ? '처치 시작' : '안정화 시작', '약 ' + g.start + '분 뒤']]]]),
     h('div', {}, planText(r).map(function (x, i) { return h('div', { class:'stp', 'data-s':String(i) }, [h('i', { text:String(i + 1) }), h('div', {}, [h('span', { text:x })])]); }))];
 }
 function s31(c) {
   var r = c.dec, L = dispatchList(c.sc, r);
   return [h('div', { class:'sub', text:'응급 AI가 구급대(119), 의료진, 장비(자율주행차량 포함), 병원에 지시서를 동시에 보냅니다. 발송 시각은 T+0분이고, 이때 계획이 확정돼요.' }),
-    r.best ? null : h('div', { class:'sub', id:'emg-s3-fb', text:'조합이 없어 안정화 계획으로 보냅니다. 응급 AI는 현황을 계속 확인하다가 조합이 가능해지면 새 지시를 내려요.' }),
-    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:'emg-s3-tbl' }, [h('thead', {}, [h('tr', {}, ['받는 곳', '지시 내용', '예정'].map(function (x) { return h('th', { text:x }); }))]), h('tbody', {}, L.map(function (x) { return h('tr', {}, [h('td', {}, [h('b', { text:x.who })]), h('td', { text:x.order }), h('td', { text:x.due })]); }))])])];
+    r.best ? null : h('div', { class:'sub', id:X('s3-fb'), text:'조합이 없어 안정화 계획으로 보냅니다. 응급 AI는 현황을 계속 확인하다가 조합이 가능해지면 새 지시를 내려요.' }),
+    h('div', { class:'tbw' }, [h('table', { class:'tbl', id:X('s3-tbl') }, [h('thead', {}, [h('tr', {}, ['받는 곳', '지시 내용', '예정'].map(function (x) { return h('th', { text:x }); }))]), h('tbody', {}, L.map(function (x) { return h('tr', {}, [h('td', {}, [h('b', { text:x.who })]), h('td', { text:x.order }), h('td', { text:x.due })]); }))])])];
 }
 function s3one(k, title) { return function (c) { var r = c.dec, L = dispatchList(c.sc, r), x = L.filter(function (y) { return y.k === k; })[0], st = statusAt(c.sc, r, Math.min(c.R.t, r.go.start + 1));
-  return [form([[title, [['받는 곳', x.who], ['지시 내용', x.order], ['예정', x.due], ['지금 상태', st[k], 'emg-st-' + k]]]]), timeBar(c, r)]; }; }
+  return [form([[title, [['받는 곳', x.who], ['지시 내용', x.order], ['예정', x.due], ['지금 상태', st[k], X('st-') + k]]]]), timeBar(c, r)]; }; }
 /** 이동 중 계획한 병원의 장비가 다른 응급 환자에게 배정된다. 그 시각의 위치에서 다시 계산한다. */
 function triggerEvent(R, re) {
   if (R.ev) return; lock(R); var p0 = R.plan0, b = p0.best; if (!b) return;
@@ -407,30 +411,30 @@ function triggerEvent(R, re) {
 }
 function s35(c) {
   var R = c.R, r = c.dec, b = r.best, ev = R.ev, kids = [h('div', { class:'sub', text:'이동 중에도 응급 AI는 병·의원의 인력·장비 현황을 실시간으로 받습니다. 처치할 장비가 갑자기 사용 중이 되면 그 시각의 위치에서 조합을 다시 계산해 이송 목적지를 바꿔요. 이 단계는 건너뛰어도 됩니다.' })];
-  if (!b) return kids.concat(none('emg-ev-none', '처음부터 조합이 없어 다시 계산할 것이 없어요. 응급 AI는 조합이 가능해지는지 계속 확인합니다.'));
-  kids.push(h('div', { class:'rowf' }, [h('button', { type:'button', class:'btn fill', id:'emg-ev', disabled:ev ? true : null, text:ev ? '사건이 발생했어요' : '이동 중 사건 일으키기 (모의)', onclick:function () { triggerEvent(R, c.re); } })]));
+  if (!b) return kids.concat(none(X('ev-none'), '처음부터 조합이 없어 다시 계산할 것이 없어요. 응급 AI는 조합이 가능해지는지 계속 확인합니다.'));
+  kids.push(h('div', { class:'rowf' }, [h('button', { type:'button', class:'btn fill', id:X('ev'), disabled:ev ? true : null, text:ev ? '사건이 발생했어요' : '이동 중 사건 일으키기 (모의)', onclick:function () { triggerEvent(R, c.re); } })]));
   if (ev) {
     var a = ev.after, n = a.go, same = n.fac.id === b.fac.id;
     var docRow = n.kind === 'split' ? (b.kind === 'split' && b.doc.id === n.doc.id ? n.doc.name + ' 의료진은 ' + n.fac.name + '으로 가는 길을 바꿔 계속 이동' : n.doc.name + ' 의료진이 자율주행차량으로 ' + n.fac.name + '에 이동') : n.kind === 'single' ? n.fac.name + ' 의료진이 그 자리에서 대기' : n.fac.name + ' 당직 의료진이 응급실에서 대기';
     kids.push(form([['실시간 재조합', [['발생 시각', 'T+' + ev.at + '분 · 가상 ' + clock(c.sc.t0 + ev.at * 60000)], ['사건', ev.fac + '의 ' + ev.eq + '가 다른 응급 환자에게 배정됨'], ['그때 구급대', ev.at < r.amb.eta ? '신고 위치로 이동 중' : '환자를 태우고 병원으로 이송 중'], ['이전 계획', b.fac.name + ' · 처치 시작 약 ' + b.start + '분 뒤'],
-      ['새 계획', n.kind === 'stabilize' ? '조합 불가 — ' + n.fac.name + '에서 안정화(약 ' + n.start + '분 뒤 시작)' : n.fac.name + ' · 처치 시작 약 ' + n.start + '분 뒤', 'emg-ev-new'], ['구급대에 지시', same ? '이송 목적지는 그대로' : '이송 목적지를 ' + n.fac.name + '으로 변경'], ['의료진·시설에 지시', docRow]]]]));
+      ['새 계획', n.kind === 'stabilize' ? '조합 불가 — ' + n.fac.name + '에서 안정화(약 ' + n.start + '분 뒤 시작)' : n.fac.name + ' · 처치 시작 약 ' + n.start + '분 뒤', X('ev-new')], ['구급대에 지시', same ? '이송 목적지는 그대로' : '이송 목적지를 ' + n.fac.name + '으로 변경'], ['의료진·시설에 지시', docRow]]]]));
     kids.push(h('div', {}, planText(a).map(function (x, i) { return h('div', { class:'stp', 'data-s':String(i) }, [h('i', { text:String(i + 1) }), h('div', {}, [h('span', { text:x })])]); })));
   }
   return kids;
 }
 function s41(c) { var r = c.fin, g = r.go;
   return [h('div', { class:'sub', text:c.R.ev ? '이동 중 계획이 바뀌어, 새 계획대로 ' + g.fac.name + '에서 인계합니다.' : '환자가 도착했는지, 의료진과 장비가 준비됐는지 확인합니다.' }),
-    form([['도착·준비 확인', [['환자', g.fac.name + ' 도착 (T+' + g.tPatient + '분)', 'emg-s4-ready'], ['구급대', '환자를 넘길 준비'], ['의료진', recv(r) + ' — ' + (g.kind === 'split' ? '도착, 준비 완료' : '대기 중')], ['장비·시설', (g.kind === 'stabilize' ? '응급실 기본 장비' : r.need.eq) + ' — 준비 완료']]]])];
+    form([['도착·준비 확인', [['환자', g.fac.name + ' 도착 (T+' + g.tPatient + '분)', X('s4-ready')], ['구급대', '환자를 넘길 준비'], ['의료진', recv(r) + ' — ' + (g.kind === 'split' ? '도착, 준비 완료' : '대기 중')], ['장비·시설', (g.kind === 'stabilize' ? '응급실 기본 장비' : r.need.eq) + ' — 준비 완료']]]])];
 }
 function handBase(c) { var g = c.fin.go; return c.sc.no + '|' + g.fac.name + '|' + clock(c.sc.t0 + g.start * 60000); }
 function s42(c) { var sc = c.sc, p = sc.patient;
   return [form([['인계 기록(구급대 → 의료진)', [['환자', p.name + ' · ' + p.ageText + ' · ' + p.sex + ' · ' + p.blood], ['과거 질병 이력', p.hist], ['복용 약 · 알레르기', p.meds], ['사고 내용(추정)', sc.inc.est], ['현장 처치', sc.inc.onsite], ['이송 중 생체 정보', p.vit + ' (최근 값, 가상)'], ['비서의 추가 답', sc.inc.asks.map(function (a) { return a[0] + ' ' + a[1]; }).join(' / ')]]]]), h('div', { class:'sub', text:ONSITE_NOTE })];
 }
 function s43(c) { var r = c.fin, g = r.go, sc = c.sc, base = handBase(c);
-  return [form([['인수·서명', [['인계 시각', 'T+' + g.start + '분 · 가상 ' + clock(sc.t0 + g.start * 60000), 'emg-s4-at'], ['인계 장소', g.fac.name, 'emg-s4-fac'], ['넘기는 쪽', '구급대 ' + r.amb.name], ['받는 쪽', recv(r), 'emg-s4-dr'], ['넘기는 쪽 서명', sig(base + '|EMS'), 'emg-s4-sig1'], ['받는 쪽 서명', sig(base + '|DR'), 'emg-s4-sig2']]]])];
+  return [form([['인수·서명', [['인계 시각', 'T+' + g.start + '분 · 가상 ' + clock(sc.t0 + g.start * 60000), X('s4-at')], ['인계 장소', g.fac.name, X('s4-fac')], ['넘기는 쪽', '구급대 ' + r.amb.name], ['받는 쪽', recv(r), X('s4-dr')], ['넘기는 쪽 서명', sig(base + '|EMS'), X('s4-sig1')], ['받는 쪽 서명', sig(base + '|DR'), X('s4-sig2')]]]])];
 }
 function s44(c) { var r = c.fin, g = r.go, stab = g.kind === 'stabilize';
-  return [h('div', { class:'card col hero' }, [h('div', { class:'big', id:'emg-s4-end', text:'신고 후 약 ' + g.start + '분 만에 ' + g.fac.name + (stab ? ' 응급실에서 안정화 처치가 시작됩니다' : '에서 처치가 시작됩니다') }), h('div', { class:'sub', text:(stab ? '전문의·장비 조합은 가능해지는 대로 이어 가요. ' : '') + '이 흐름은 모두 모의 체험이며, 병원·시간·처치 내용은 가상입니다.' })]),
+  return [h('div', { class:'card col hero' }, [h('div', { class:'big', id:X('s4-end'), text:'신고 후 약 ' + g.start + '분 만에 ' + g.fac.name + (stab ? ' 응급실에서 안정화 처치가 시작됩니다' : '에서 처치가 시작됩니다') }), h('div', { class:'sub', text:(stab ? '전문의·장비 조합은 가능해지는 대로 이어 가요. ' : '') + '이 흐름은 모두 모의 체험이며, 병원·시간·처치 내용은 가상입니다.' })]),
     form([['기록 보존', [['환자의 데이터 금고(PDV)', '신고·인계 기록이 남습니다(가상).'], ['응급 AI', '사건 ' + c.sc.no + ' 종결 기록과 처치 시작 시각을 보관합니다(가상).']]]])];
 }
 
@@ -450,7 +454,7 @@ var STEPS = [
 var PLAN_AT = 10; // 3-1(지시서 발송)을 여는 순간 계획을 확정한다
 
 // ── 단계 이동(run 마다 따로) ──
-function openStep(R, i, re) { if (i < 0 || i >= STEPS.length || i > R.reached) return; if (i >= PLAN_AT) lock(R); R.cur = i; re(); }
+function openStep(R, i, re) { if (i < 0 || i >= STEPS.length || i > R.reached) return; if (i >= PLAN_AT) lock(R); R.cur = i; R.seen = true; re(); }
 function advance(R, re) { var i = R.cur + 1; if (i >= STEPS.length) return; R.reached = Math.max(R.reached, i); openStep(R, i, re); }
 
 // ── 화면: 진행 막대 · 단계 목록 · 패널 ──
@@ -464,30 +468,37 @@ function progressBar() {
   });
   return h('div', { class:'barwrap' }, [wrap, h('div', { class:'bcap', id:'emg-bar-cap', text:cur >= 0 ? (cur + 1) + ' / ' + STEPS.length + ' · ' + STEPS[cur].id + ' ' + STEPS[cur].title : '0 / ' + STEPS.length + ' · 1-1 기기 호출부터 눌러 보세요' })]);
 }
+/** 새 사건을 뽑은 뒤 지금 무엇을 하면 되는지 알려 주는 배너. */
+function nextHint() {
+  var R = S.sim; if (!R.picked) return null;
+  var last = R.cur === STEPS.length - 1, t = R.cur < 0 ? (!R.seen ? '새 사건이 뽑혔어요. 다음 할 일: 아래 단계 목록에서 깜박이는 “1-1 기기 호출”을 눌러 시작하세요.' : '다음 할 일: 단계 목록에서 “' + STEPS[R.reached].id + ' ' + STEPS[R.reached].title + '”을 눌러 이어 가세요. 이미 연 단계는 다시 볼 수 있어요.')
+    : last ? '끝까지 봤어요. 다음 할 일: “새 사건 뽑기”를 눌러 다른 사건으로 다시 해 보세요.' : '다음 할 일: 오른쪽 패널 아래의 “다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title + '”을 눌러 한 단계씩 따라가세요.';
+  return h('div', { class:'note info hintbn', id:'emg-next-hint', role:'status', text:t });
+}
 function summaryCard() {
   var sc = S.sim.sc;
   return h('div', { class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'무작위 가상 사건' }), h('div', { class:'rowf' }, [pill(sc.devName, 'm'), pill(sc.inc.kind, 'p'), pill(sc.inc.name), pill(sc.placeName)]),
     h('div', { class:'sub', id:'emg-draw-sum', text:'기기·사건·신고자·위치를 무작위로 뽑았어요. 아래 목록에서 단계를 눌러 오른쪽 패널로 결과를 확인하세요. 처음부터 저절로 보려면 오른쪽 위의 시뮬레이션 버튼을 누르세요.' }),
-    h('div', { class:'rowf' }, [h('button', { type:'button', class:'btn quiet', id:'emg-draw', text:'새 사건 뽑기', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); } }), btn('응급 AI에게 묻기', 'quiet', function () { ask('다른 병원의 의료진과 장비를 어떻게 조합하나요?'); })])]);
+    h('div', { class:'rowf' }, [h('button', { type:'button', class:'btn quiet' + (S.sim.picked ? '' : ' blink'), id:'emg-draw', text:'새 사건 뽑기', onclick:function () { S.sim = newRun(); S.sim.picked = true; S.wasOpen = false; render(); } }), btn('응급 AI에게 묻기', 'quiet', function () { ask('다른 병원의 의료진과 장비를 어떻게 조합하나요?'); })]), nextHint()]);
 }
 function stepList() {
   var R = S.sim, out = h('div', { id:'emg-list', class:'card col', style:'margin-top:16px' }, [h('b', { style:'font-size:17px', text:'단계 목록 (' + STEPS.length + '단계)' }), h('div', { class:'sub', text:'앞 단계를 연 뒤에 다음 단계를 열 수 있어요. 이미 연 단계는 언제든 다시 볼 수 있습니다.' })]);
   STAGES.forEach(function (name, si) {
     out.appendChild(h('div', { class:'lab', text:(si + 1) + '. ' + name }));
     STEPS.forEach(function (s, i) { if (s.st !== si) return;
-      var state = i === R.cur ? '보는 중' : i < R.reached ? '완료' : i === R.reached ? '열기' : '잠김';
-      out.appendChild(h('button', { type:'button', class:'srow' + (i === R.cur ? ' cur' : ''), id:'emg-row-' + s.id, 'data-i':String(i), disabled:i > R.reached ? true : null, 'aria-current':i === R.cur ? 'step' : null, onclick:function () { openStep(R, i, render); } },
+      var state = i === R.cur ? '보는 중' : i < R.reached ? '완료' : i === R.reached ? '열기' : '잠김', hintRow = R.picked && R.cur < 0 && !R.seen && i === 0;
+      out.appendChild(h('button', { type:'button', class:'srow' + (i === R.cur ? ' cur' : '') + (hintRow ? ' blink' : ''), id:'emg-row-' + s.id, 'data-i':String(i), disabled:i > R.reached ? true : null, 'aria-current':i === R.cur ? 'step' : null, onclick:function () { openStep(R, i, render); } },
         [h('span', { class:'sid', text:s.id }), h('span', { class:'stx' }, [h('b', { text:s.title }), h('span', { text:s.desc })]), h('span', { class:'sst', text:state })])); });
   });
   return out;
 }
 /** 단계 목록 옆 패널. 시뮬레이션이 열려 있는 동안에는 자리만 지키고, 닫으면 보던 단계가 그대로 나온다. */
 function fillPanel(pn) {
-  var R = S.sim, open = R.cur >= 0, a = S.auto, under = !!(a && !a.closing), pb0 = $('emg-pbody'), ps = pb0 ? pb0.scrollTop : 0;
-  pn.textContent = ''; pn.className = 'panel' + (open ? ' open' : '') + (under ? ' under' : '') + (open && !S.wasOpen ? ' anim' : ''); pn.setAttribute('aria-hidden', String(!open || under)); M.classList.toggle('pn-open', open); S.wasOpen = open;
-  if (!open || under) return;
+  var R = S.sim, open = R.cur >= 0, pb0 = $('emg-pbody'), ps = pb0 ? pb0.scrollTop : 0;
+  pn.textContent = ''; pn.className = 'panel' + (open ? ' open' : '') + (open && !S.wasOpen ? ' anim' : ''); pn.setAttribute('aria-hidden', String(!open)); M.classList.toggle('pn-open', open); S.wasOpen = open;
+  if (!open) return;
   var st = STEPS[R.cur], c = ctx(R, render), last = R.cur === STEPS.length - 1;
-  pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { R.cur = -1; render(); } })]));
+  PF = 'emg-'; pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-ph-n', text:'직접 따라가기 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] }), h('b', { id:'emg-ph-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-pclose', text:'닫기', onclick:function () { R.cur = -1; render(); } })]));
   var body = h('div', { class:'pbody col', id:'emg-pbody' }, st.fn(c).filter(Boolean)); pn.appendChild(body);
   pn.appendChild(h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-prev', text:'◀ 이전', disabled:R.cur === 0 ? true : null, onclick:function () { openStep(R, R.cur - 1, render); } }),
     last ? h('button', { type:'button', class:'btn fill', id:'emg-again', text:'새 사건으로 다시', onclick:function () { S.sim = newRun(); S.wasOpen = false; render(); try { window.scrollTo(0, 0); } catch (x) {} } }) : h('button', { type:'button', class:'btn fill', id:'emg-nextstep', text:'다음 ▶ ' + STEPS[R.cur + 1].id + ' ' + STEPS[R.cur + 1].title, onclick:function () { advance(R, render); } })]));
@@ -500,7 +511,7 @@ function holdMs(id) { return HOLD[id] === undefined ? 5500 : HOLD[id]; }
 function openAuto() {
   if (S.auto) return;
   var R = newRun(); shake(R); R.cur = 0; S.auto = { R:R, playing:true, closing:false, shown:false, top:true, timer:null, ev:null };
-  render(); autoSchedule();
+  setSimBtn(); renderAuto(); autoSchedule();
 }
 function autoClear() { var a = S.auto; if (a) { clearTimeout(a.timer); clearTimeout(a.ev); a.timer = null; a.ev = null; } }
 function autoSchedule() {
@@ -520,8 +531,8 @@ function autoStep() {
 function autoToggle() { var a = S.auto; if (!a) return; a.playing = !a.playing; renderAuto(); autoSchedule(); }
 function autoRestart() { var a = S.auto; if (!a) return; autoClear(); var R = newRun(); shake(R); R.cur = 0; a.R = R; a.playing = true; a.top = true; renderAuto(); autoSchedule(); }
 function closeAuto() {
-  var a = S.auto; if (!a || a.closing) return; autoClear(); a.closing = true; a.playing = false; render();
-  setTimeout(function () { if (S.auto !== a) return; S.auto = null; render(); }, 240);
+  var a = S.auto; if (!a || a.closing) return; autoClear(); a.closing = true; a.playing = false; renderAuto();
+  setTimeout(function () { if (S.auto !== a) return; S.auto = null; renderAuto(); setSimBtn(); }, 240);
 }
 function renderAuto() {
   var pn = $('emg-apanel'), bk = $('emg-back'), a = S.auto; if (!pn || !bk) return;
@@ -531,7 +542,8 @@ function renderAuto() {
   pn.appendChild(h('div', { class:'phead' }, [h('div', { style:'flex:1;min-width:0' }, [h('div', { class:'sub', id:'emg-au-n', text:'시뮬레이션 · 단계 ' + (R.cur + 1) + ' / ' + STEPS.length + ' · ' + STAGES[st.st] + (a.playing ? ' · 자동 진행 중' : done ? ' · 끝' : ' · 멈춤') }), h('b', { id:'emg-au-t', style:'font-size:17px', text:st.id + ' ' + st.title })]), h('button', { type:'button', class:'btn quiet sm', id:'emg-au-close', text:'닫기', onclick:closeAuto })]));
   var mini = h('div', { class:'mini', id:'emg-au-mini', 'aria-hidden':'true' }); STEPS.forEach(function (s, i) { mini.appendChild(h('i', { class:(i < R.cur ? 'done' : i === R.cur ? 'cur' : '') + (i > 0 && STEPS[i - 1].st !== s.st ? ' gap' : '') })); });
   pn.appendChild(mini);
-  var body = h('div', { class:'pbody col', id:'emg-au-body' }, st.fn(c).filter(Boolean)); pn.appendChild(body);
+  PF = 'emg-au-'; var kidsA; try { kidsA = st.fn(c).filter(Boolean); } finally { PF = 'emg-'; }
+  var body = h('div', { class:'pbody col', id:'emg-au-body' }, kidsA); pn.appendChild(body);
   pn.appendChild(h('div', { class:'pfoot' }, [h('button', { type:'button', class:'btn quiet', id:'emg-au-pause', text:a.playing ? '⏸ 멈추기' : last ? '끝났어요' : '▶ 이어서', disabled:last && !a.playing ? true : null, onclick:autoToggle }), h('button', { type:'button', class:'btn fill', id:'emg-au-restart', text:'↻ 새 무작위 사건', onclick:autoRestart })]));
   body.scrollTop = ps;
 }
@@ -543,7 +555,7 @@ function render() {
   kids.push(mockNote('모의 체험입니다. 아무것도 전송되지 않고 출동도 일어나지 않아요. 병원·시간은 모두 가상 값입니다.'));
   kids.push(progressBar(), prepSection(), summaryCard(), stepList());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
-  fillPanel(pn); renderAuto();
+  fillPanel(pn);
   if (y) { try { window.scrollTo(0, y); } catch (e) {} }
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg }); }
