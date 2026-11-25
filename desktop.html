@@ -120,7 +120,9 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js?v=20261126b"></script>
+<script src="agent-bridge.js?v=20261126c"></script>
+<script src="doc-history.js?v=20261126"></script>
+<script src="task-flow.js?v=20261126"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
 <script src="manual-chat.js?v=20261106a"></script>
@@ -2542,7 +2544,10 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="card">
       <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="myforms-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('myforms','forms')">시뮬레이션</button><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
-      <div class="sub">자주 쓰는 양식과 올린 양식이 이 기기에 보관됩니다. 누르면 바로 열리며, 작성 중 “내 서류함에 담기”로 추가할 수 있습니다.</div>
+      <div class="sub">작성·제출 이력과 자주 쓰는 양식이 이 기기에만 보관됩니다. 양식은 누르면 바로 열리며, 작성 중 “내 서류함에 담기”로 추가할 수 있습니다.</div>
+      <div class="dr-sec">작성·제출 이력</div>
+      <div id="mf-history"></div>
+      <div class="dr-sec">양식</div>
       <div id="mf-new" hidden></div>
       <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="mf-empty" style="display:none;font-size:14px;color:var(--hint)">아직 보관한 양식이 없습니다.</div>
@@ -3063,7 +3068,7 @@ function _agentOpenedNotice(s) {
   d.append(t, p, b);
 }
 // ── 홈 입력창에서 맡긴 발급(2026-11-26): 진행 상황과 받은 파일을 홈 대화창에 보여 준다 ──
-const _homeAgent = { got: {}, active: null };   // active: 지금 도우미에게 맡겨 둔 일 { doc, slot, issue }
+const _homeAgent = { got: {}, active: null, hist: {} };   // active: 지금 도우미에게 맡겨 둔 일 { doc, slot, issue }
 function _homeNoun(doc) { return window.NaviAgent && NaviAgent.isIssueTask && NaviAgent.isIssueTask(doc) ? ' 발급' : ' 작업'; }
 function _homeSay(md) {
   if (!document.getElementById('cmp-thread')) return;
@@ -3084,10 +3089,115 @@ async function _homeAgentRun(doc, plan, userText) {
   let ok = false; try { ok = await NaviAgent.queue(job); } catch (e) { ok = false; }
   if (!ok) { _homeSay('도우미가 작업을 접수하지 못했습니다. 이 화면을 새로 고친 뒤 다시 말씀해 주세요.'); return; }
   _homeAgent.active = { doc: doc, slot: job.slot };
+  _homeAgent.hist[doc] = await _histAdd({ title: doc, agency: plan.agency || '', type: issue ? 'issue' : 'filing', state: 'running', proc: plan.proc || null });
   const stopped = prev && prev.doc !== doc ? '앞서 맡긴 “' + prev.doc + '” 작업이 남아 있었다면 중단됩니다.\n\n' : '';
   _homeSay(stopped + (issue ? doc + ' 발급을 시작합니다. 열리는 기관 사이트에서 로그인(본인인증)만 해 주세요. 나머지는 제가 진행합니다.'
       : '“' + doc + '” 작업을 시작합니다. 열리는 기관 사이트에서 로그인(본인인증)해 주세요. 추가로 알려 주실 내용은 여기에 입력하시면 도우미에게 전달합니다. 최종 제출 전에는 제출 내용을 확인받습니다.')
     + (plan.paid ? ' 결제는 직접 하셔야 합니다.' : ''));
+  if (!issue) _homeFiledButton(doc);
+}
+// 신고·신청: 도우미가 접수 확인을 알리지 못해도 사용자가 직접 표시할 수 있다
+function _homeFiledButton(doc) {
+  const thread = document.getElementById('cmp-thread'); if (!thread) return;
+  const box = document.createElement('div'); box.className = 'nav-ask nav-filed';
+  const opts = document.createElement('div'); opts.className = 'nav-ask-opts';
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = '접수까지 마쳤어요';
+  b.onclick = async () => { box.remove(); await _homeFiled(doc, 'filed'); };
+  opts.appendChild(b); box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
+}
+async function _homeFiled(doc, state) {
+  if (_homeAgent.active && _homeAgent.active.doc === doc) _homeAgent.active = null;
+  const id = _homeAgent.hist[doc];
+  const r = id ? await _histAdvance(id, state) : null;
+  if (!r) { if (state === 'filed') _homeSay('“' + doc + '” 이력을 갱신하지 못했습니다. 내 서류함에서 확인해 주세요.'); return; }
+  if (r.changed) _homeSay('“' + doc + '” 접수를 내 서류함 ▸ 작성·제출 이력에 기록했습니다.' + _histDraftNote(r.draft));
+}
+// 표준 절차: 저장된(승인된) 절차를 먼저 쓰고, 없으면 공공기관 자료로 계획을 수립한 뒤 도우미에게 맡긴다
+async function _homePlanAndRun(task, userText) {
+  let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
+  if (!info) { await _homeAgentRun(task, { playbook: '', url: '', goal: '' }, userText); return; }   // 설치 안내만 한다(조사 비용을 쓰지 않는다)
+  _homeSay('“' + task + '”의 처리 절차를 확인하고 있습니다. 저장된 절차를 찾고, 없으면 공공기관 자료를 조사합니다. 1분쯤 걸릴 수 있습니다.');
+  let data = null;
+  try {
+    const res = await KAuth.fetchWithAuth(PROXY + '/procedures/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task: task, said: NaviAgent.mask(userText) }) });
+    data = await res.json().catch(() => null);
+    if (!res.ok || !data || data.ok === false) data = { status: 'error', reason: (data && data.message) || ('HTTP ' + res.status) };
+  } catch (e) { data = { status: 'error', reason: e.message || '연결 실패' }; }
+  const run = (found) => { _homeSay(TaskFlow.planMarkdown(found)); return _homeAgentRun(task, TaskFlow.toPlan(found), userText); };
+  if (data.status === 'planned') { await run({ source: 'web', procedure: data.procedure, term_note: data.term_note, questions: data.questions }); return; }
+  if (data.status === 'approved' && data.procedures.length === 1) { await run({ source: 'db', procedure: data.procedures[0] }); return; }
+  const choices = data.status === 'approved'
+    ? data.procedures.map((p) => ({ label: p.variant || (p.conditions || []).join(', ') || p.title, go: () => run({ source: 'db', procedure: p }) }))
+    : [{ label: '계획 없이 도우미에게 맡기기', go: () => _homeAgentRun(task, { playbook: '', url: '', goal: '처리 방법을 공공기관 사이트에서 확인해 진행하세요. 업무: ' }, userText) }];
+  _homeSay(data.status === 'approved' ? '조건에 따라 절차가 나뉩니다. 해당하는 것을 골라 주세요.' : '처리 절차를 확정하지 못했습니다. 사유: ' + (data.reason || '알 수 없음'));
+  const thread = document.getElementById('cmp-thread'); if (!thread) return;
+  const box = document.createElement('div'); box.className = 'nav-ask';
+  const opts = document.createElement('div'); opts.className = 'nav-ask-opts';
+  choices.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = c.label; b.onclick = async () => { box.remove(); await c.go(); }; opts.appendChild(b); });
+  box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
+}
+// ── 내 서류함 ▸ 작성·제출 이력 (이 기기 PDV, kind='history') ──
+let _histOk = null;
+async function _histSupported() {
+  if (_histOk !== null) return _histOk;
+  try { const r = await _drCall('caps', {}, 4000); _histOk = Array.isArray(r.kinds) && r.kinds.indexOf('history') >= 0; } catch (e) { return false; }   // 옛 중계는 모르는 종류를 '서류 초안'으로 저장하므로 지원할 때만 쓴다
+  return _histOk;
+}
+async function _histAdd(o) {
+  if (!window.DocHistory || !(await _histSupported())) return '';
+  const id = 'hist-' + _drNewId();
+  try { await _drCall('put', { item: DocHistory.make(id, o, Date.now()) }); return id; } catch (e) { return ''; }
+}
+async function _histAdvance(id, state, file) {
+  if (!id || !window.DocHistory) return null;
+  try {
+    const it = (await _drCall('get', { id })).item;
+    const data = DocHistory.parse(it.body), next = state ? DocHistory.advance(data, state, Date.now()) : null;
+    if (!next && !file) return { changed: false, draft: '' };
+    const keep = next || data;
+    let draft = '';
+    if (next && (state === 'reported' || state === 'filed') && keep.proc && !keep.draftSaved) { draft = await _procDraftSave(keep.proc); if (draft === 'saved') keep.draftSaved = true; }
+    const item = { id: id, kind: 'history', title: it.title, subject: it.subject, body: JSON.stringify(keep) };
+    if (file) Object.assign(item, { fileName: String(file.name || '서류.pdf').slice(0, 160), fileMime: String(file.mime || ''), fileData: file.data });
+    await _drCall('put', { item });
+    return { changed: !!next, draft: draft };
+  } catch (e) { return null; }
+}
+async function _procDraftSave(proc) {
+  try {
+    const res = await KAuth.fetchWithAuth(PROXY + '/procedures/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ procedure: proc }) });
+    return res.ok ? 'saved' : 'failed';
+  } catch (e) { return 'failed'; }
+}
+function _histDraftNote(d) {
+  return d === 'saved' ? ' 이번에 쓴 계획은 개인 자료 없이 공용 절차 초안으로 올렸습니다. 관리자가 승인하면 다른 이용자의 같은 요청에 쓰입니다.'
+    : d === 'failed' ? ' 공용 절차 초안은 저장하지 못했습니다.' : '';
+}
+async function _histRender() {
+  const box = document.getElementById('mf-history'); if (!box || !window.DocHistory) return;
+  box.textContent = '불러오는 중…';
+  try {
+    const supported = await _histSupported();
+    const list = supported ? (await _drCall('list', { kind: 'history' })).items.slice(0, 100) : [];
+    const full = [];
+    for (const s of list) full.push((await _drCall('get', { id: s.id })).item);
+    const done = (await _drCall('list', { kind: 'doc', status: 'done' })).items || [];
+    const rows = DocHistory.rows(full, done);
+    if (!rows.length) { box.innerHTML = '<div style="font-size:14px;color:var(--hint)">아직 작성하거나 제출한 서류가 없습니다.</div>'; return; }
+    box.innerHTML = rows.map((r) => {
+      const acts = (r.hasFile ? [['dl', '파일 받기']] : []).concat(r.canMark ? [['filed', '제출 완료로 표시']] : []).concat(r.source === 'history' ? [['del', '삭제']] : []);
+      return '<div class="list-item" data-id="' + escHtml(r.id) + '"><div class="li-main"><div class="li-title">' + escHtml(r.title || '(제목 없음)') + '</div><div class="li-sub">' + escHtml([r.label, r.agency, fmtDt(r.at)].filter(Boolean).join(' · ')) + '</div></div><div class="dr-actions">' +
+        acts.map((a) => '<button type="button" class="btn btn-outline btn-sm" data-act="' + a[0] + '">' + a[1] + '</button>').join('') + '</div></div>';
+    }).join('');
+    box.querySelectorAll('button[data-act]').forEach((b) => b.addEventListener('click', async () => {
+      const id = b.closest('.list-item').getAttribute('data-id'), act = b.getAttribute('data-act');
+      try {
+        if (act === 'dl') await _drDownload((await _drCall('get', { id })).item);
+        else if (act === 'del') { if (await (window.mpConfirm || confirm)('이 이력을 삭제할까요? 받아 둔 파일도 함께 지워집니다.')) { await _drCall('delete', { id }); _histRender(); } }
+        else if (act === 'filed') { const r = await _histAdvance(id, 'filed'); _drToast(r ? '제출 완료로 기록했습니다.' + _histDraftNote(r.draft) : '기록하지 못했습니다.'); _histRender(); }
+      } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
+    }));
+  } catch (e) { box.textContent = 'PDV 연결을 확인하지 못했습니다. 잠시 후 다시 열어 주세요.'; }
 }
 // 진행 중인 일에 대한 답·추가 정보는 새 요청으로 보내지 않고 도우미에게 전한다. true = 전달했다.
 async function _homeAgentRelay(text) {
@@ -3106,19 +3216,24 @@ async function _homeAgentRelay(text) {
   return true;
 }
 function _homeAgentStatus(doc, s) {
+  if (s.state === 'sent' && _homeNoun(doc) === ' 작업') { _homeFiled(doc, 'reported'); return; }
+  if (s.state === 'failed') _histAdvance(_homeAgent.hist[doc], 'failed');
   if (s.state === 'opened') _homeSay(_agentAgencyName(s.note) + ' 페이지를 열었습니다. 그 탭의 안내에 따라 로그인해 주세요.');
   else if (s.state === 'failed') { if (_homeAgent.active && _homeAgent.active.doc === doc) _homeAgent.active = null; _homeSay(doc + _homeNoun(doc) + '을 마치지 못했습니다.' + (s.note ? ' 사유: ' + s.note : '')); _autoReportFail(Object.assign({}, s, { label: doc }), 'FETCH_FAILED'); }
   else if (s.state === 'pending' && !_homeAgent.got[doc] && s.note) _homeSay(doc + ': ' + s.note);
 }
 function _homeAgentFile(doc, f) {
   _homeAgent.got[doc] = true;
+  const kept = f.data.byteLength <= 8 * 1024 * 1024;   // PDV 보관 상한
+  _histAdvance(_homeAgent.hist[doc], _homeNoun(doc) === ' 발급' ? 'issued' : '', kept ? { name: f.name, mime: f.mime, data: f.data } : null)
+    .then((r) => { if (r && kept) _homeSay('받은 파일은 내 서류함 ▸ 작성·제출 이력에도 보관했습니다.'); });
   if (_homeAgent.active && _homeAgent.active.doc === doc && _homeNoun(doc) === ' 발급') _homeAgent.active = null;   // 발급은 파일을 받으면 끝난다(신고·신청은 접수증을 받아도 이어질 수 있다)
   const thread = document.getElementById('cmp-thread'); if (!thread) return;
   const mime = f.mime === 'application/pdf' ? 'application/pdf' : 'application/octet-stream';
   const url = URL.createObjectURL(new Blob([f.data], { type: mime }));
   const row = document.createElement('div'); row.className = 'chat-bubble-row assistant';
   const b = document.createElement('div'); b.className = 'chat-bubble';
-  const p = document.createElement('div'); p.textContent = doc + ' 파일을 받았습니다. 이 파일은 화면에만 있으니 저장해 두세요.';
+  const p = document.createElement('div'); p.textContent = doc + ' 파일을 받았습니다. 아래에서 저장해 두세요.';
   const a = document.createElement('a'); a.href = url; a.download = f.name || (doc + '.pdf'); a.textContent = '📄 ' + a.download + ' 저장';
   b.append(p, a); row.appendChild(b); thread.appendChild(row); _cmpScrollToBottom();
 }
@@ -6539,6 +6654,7 @@ async function _docSubmitViaAgent(it) {
   const name = it.fileName || '서류.docx', site = String(to).trim().slice(0, 40);
   let ok = false;
   try { ok = await NaviAgent.queue({ playbook: '', title: '서류 올리기 — ' + site, goal: site + ' 사이트에서 "' + (it.title || name).slice(0, 60) + '" 서류를 올리는 화면까지 진행해 주세요. 맡긴 파일 "' + name + '"을 upload_attached_file 로 파일 칸에 넣고, 제출·접수 단추는 사용자 확인을 받은 뒤에 누르세요. 로그인·인증서·결제는 사용자가 직접 합니다.', file: { name: name, mime: it.fileMime || 'application/octet-stream', b64: _docBase64(buf) } }); } catch (e) { ok = false; }
+  if (ok) _histAdd({ title: it.title || name, agency: site, type: 'upload', state: 'upload' });
   _drToast(ok ? '도우미가 ' + site + '을(를) 엽니다. 열린 화면의 안내에 따라 로그인해 주세요.' : '도우미에 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
 }
 async function _drDocAction(id, act, status) {
@@ -6800,7 +6916,7 @@ function _switchTab(name) {
   if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
   if (name === 'gprog' || name === 'gdone') { _gtabsFill(name); _guideRenderList(name === 'gdone' ? 'done' : 'prog'); if (window.CaseUI) CaseUI.fillSolo(name === 'gdone' ? 'done' : 'prog'); }
   if (name === 'docdrafts') _drRenderDocList('draft');
-  if (name === 'myforms') _mfRender();
+  if (name === 'myforms') { _histRender(); _mfRender(); }
   if (name === 'othersite') _otsRender();
   if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
@@ -9804,8 +9920,10 @@ async function _navAssistTurn(text, opt) {
       _navRoute.cur = { type: 'assistant' };
       // AI 가 함께 보낸 설명·질문을 버리지 않는다(2026-11-26)
       if (data.reply) { _navRoute.msgs.push({ role: 'assistant', content: data.reply }); _cmpAppendBubble('assistant', { md: data.reply, badge: null }); }
-      const plan = (window.NaviAgent && NaviAgent.slotPlan(route.slot)) || { playbook: '', url: '', goal: (route.goal || '') + ' 대상: ' };   // 주소는 카탈로그의 것만 쓰고, 목록에 없으면 도우미가 사이트를 정한다
-      await _homeAgentRun(route.slot, plan, text);
+      // 발급 서류는 카탈로그의 절차로, 신고·신청 같은 업무는 표준 절차(저장된 것 → 새로 수립)로 진행한다
+      const known = window.NaviAgent && NaviAgent.isIssueTask(route.slot) ? NaviAgent.slotPlan(route.slot) : null;
+      if (known || !window.TaskFlow || (window.NaviAgent && NaviAgent.isIssueTask(route.slot))) await _homeAgentRun(route.slot, known || { playbook: '', url: '', goal: (route.goal || '') + ' 대상: ' }, text);
+      else await _homePlanAndRun(route.slot, text);
     } else {
       _navRoute.cur = { type: 'assistant' };
       if (route.asking) _navRoute.asked += 1;      // AC 가 직접 되물음 — 같은 2회 상한에 포함
