@@ -6439,12 +6439,27 @@ async function _drRenderDocList(status) {
     loading.style.display = 'none';
     if (!r.items.length) { empty.style.display = ''; return; }
     box.innerHTML = r.items.map(it => _drItemRow(it, status === 'done'
-      ? ((it.hasFile || it.extraCount) ? [['dl', '파일 받기'], ['mail', '메일에 첨부'], ['del', '삭제']] : [['del', '삭제']])
+      ? ((it.hasFile || it.extraCount) ? [['dl', '파일 받기'], ['mail', '메일에 첨부'], ['submit', '기관에 올리기(도우미)'], ['del', '삭제']] : [['del', '삭제']])
       : [['resume', '이어 쓰기']].concat((it.hasFile || it.extraCount) ? [['done', '작성 완료'], ['dl', '파일 받기']] : []).concat([['del', '삭제']]))).join('');
     _drBindRows(box, (id, act) => _drDocAction(id, act, status));
   } catch (e) {
     loading.style.display = 'none'; empty.style.display = ''; empty.textContent = 'PDV 연결을 확인하지 못했습니다. 잠시 후 다시 열어 주세요.';
   }
+}
+/** 작성한 서류 파일을 나비웹 도우미가 기관 사이트의 올리기 칸에 넣게 맡긴다(2026-11-25). 올리기 전과 제출 단추 앞에서는 도우미가 사용자 확인을 받고, 로그인·결제는 사용자가 한다. */
+async function _docSubmitViaAgent(it) {
+  if (!it.fileData) { _drToast('올릴 Word·PDF 파일이 이 서류에 없습니다.'); return; }
+  let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
+  if (!info) { _drToast('나비웹 도우미가 연결돼 있어야 합니다. 화면 위쪽의 도우미 설치·켜기 안내를 확인해 주세요.'); return; }
+  if (!info.version || String(info.version).split('.').map(Number).reduce((a, n) => a * 1000 + (n || 0), 0) < 7000) { _drToast('파일 올리기는 나비웹 도우미 0.7.0 이상에서 됩니다. 도우미를 업데이트해 주세요.'); return; }
+  const to = await (window.mpPrompt || prompt)('이 서류를 올릴 기관 사이트나 이름을 적어 주세요 (예: 대법원 전자소송, 정부24, 국세청 홈택스)');
+  if (!to || !String(to).trim()) return;
+  const buf = it.fileData instanceof Blob ? await it.fileData.arrayBuffer() : it.fileData;
+  if (!buf || buf.byteLength > 10 * 1024 * 1024) { _drToast('파일이 없거나 10MB를 넘어 올릴 수 없습니다.'); return; }
+  const name = it.fileName || '서류.docx', site = String(to).trim().slice(0, 40);
+  let ok = false;
+  try { ok = await NaviAgent.queue({ playbook: '', title: '서류 올리기 — ' + site, goal: site + ' 사이트에서 "' + (it.title || name).slice(0, 60) + '" 서류를 올리는 화면까지 진행해 주세요. 맡긴 파일 "' + name + '"을 upload_attached_file 로 파일 칸에 넣고, 제출·접수 단추는 사용자 확인을 받은 뒤에 누르세요. 로그인·인증서·결제는 사용자가 직접 합니다.', file: { name: name, mime: it.fileMime || 'application/octet-stream', b64: _docBase64(buf) } }); } catch (e) { ok = false; }
+  _drToast(ok ? '도우미가 ' + site + '을(를) 엽니다. 열린 화면의 안내에 따라 로그인해 주세요.' : '도우미에 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
 }
 async function _drDocAction(id, act, status) {
   try {
@@ -6452,6 +6467,7 @@ async function _drDocAction(id, act, status) {
     if (act === 'done') { await _drCall('done', { id }); _drToast('작성한 서류로 옮겼습니다'); _drRenderDocList(status); return; }
     const it = (await _drCall('get', { id })).item;
     if (act === 'dl') { if (it.fileData || (it.extras || []).length) await _drDownload(it); return; }
+    if (act === 'submit') { await _docSubmitViaAgent(it); return; }
     if (act === 'mail') {
       if (!it.fileData && !(it.extras || []).length) return;
       _switchTab('letter');

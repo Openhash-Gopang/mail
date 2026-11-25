@@ -31,6 +31,7 @@ const ISSUE_ONLY = /발급|다운로드|내려받기|download|문서\s*출력|pd
 const STRONG_CONFIRM = /제출|접수|신청서|전송|삭제|확정|동의|보내기|send|submit|delete/i;
 function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   if (tool === 'ask_choice') return { act: 'choice' };
+  if (tool === 'upload_attached_file') return { act: 'confirm', reason: `나비웹에서 맡긴 파일${input.fileName ? ' "' + String(input.fileName).slice(0, 60) + '"' : ''}을(를) 이 사이트에 올립니다. 올릴까요?` };
   if (tool === 'ask_input') return SECRET_NAME.test(`${input.question || ''} ${input.label || ''}`) ? { act: 'deny', reason: '비밀번호·주민등록번호·카드·계좌·인증번호는 대화창으로 받지 않습니다. 해당 입력칸은 사용자가 직접 입력하도록 handoff_to_user 로 넘기세요.' } : { act: 'input' };
   if (tool === 'handoff_to_user') {
     // 사용자가 할 일은 본인 인증과 결제뿐이다. 그 밖의 이유로 넘기려 하면 거부하고 직접 조작하게 한다.

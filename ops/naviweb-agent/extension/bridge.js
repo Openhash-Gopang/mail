@@ -21,6 +21,8 @@
       window.postMessage({ source: 'navi-agent', type: 'agent-file', label: String(m.label || '').slice(0, 120), name: String(m.name || '').slice(0, 120), mime: String(m.mime || ''), data: u8.buffer }, location.origin);
     } catch (e) { /* 깨진 데이터는 버린다 */ }
   });
+  // 나비웹이 기관 사이트에 올려 달라고 넘기는 파일(0.7): 이름·형식·크기를 확인해 통과한 것만 확장에 전한다(10MB 이하, base64 14MB).
+  const okFile = (f) => (f && typeof f === 'object' && typeof f.b64 === 'string' && f.b64.length > 0 && f.b64.length <= 14 * 1024 * 1024) ? { name: String(f.name || '서류').slice(0, 120), mime: String(f.mime || 'application/octet-stream').slice(0, 100), b64: f.b64 } : null;
   const reply = (id, type, data) => window.postMessage({ source: 'navi-agent', type, id, ...data }, location.origin);
   window.addEventListener('message', async (e) => {
     const m = e.data;
@@ -34,7 +36,7 @@
       if (m.type === 'agent-ping') { const info = await chrome.runtime.sendMessage({ type: 'info' }); reply(m.id, 'agent-pong', { ok: true, ...info }); }
       else if (m.type === 'agent-queue') {
         const job = m.job || {};
-        const r = await chrome.runtime.sendMessage({ type: 'queue', job: { playbook: String(job.playbook || '').slice(0, 60), goal: String(job.goal || '').slice(0, 2000), title: String(job.title || '').slice(0, 120), slot: String(job.slot || '').slice(0, 120), token: String(job.token || '').slice(0, 4000), autostart: job.autostart === true, url: String(job.url || '').slice(0, 300), update: job.update === true, text: String(job.text || '').slice(0, 2000) } });
+        const r = await chrome.runtime.sendMessage({ type: 'queue', job: { playbook: String(job.playbook || '').slice(0, 60), goal: String(job.goal || '').slice(0, 2000), title: String(job.title || '').slice(0, 120), slot: String(job.slot || '').slice(0, 120), token: String(job.token || '').slice(0, 4000), autostart: job.autostart === true, url: String(job.url || '').slice(0, 300), update: job.update === true, text: String(job.text || '').slice(0, 2000), file: okFile(job.file) } });
         reply(m.id, 'agent-queued', r || { ok: false });
       }
     } catch (err) { reply(m.id, 'agent-error', { ok: false, error: String(err && err.message || err) }); }

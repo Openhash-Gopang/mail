@@ -94,6 +94,17 @@
       return `입력 완료: ${nameOf(el)}`; },
     select_option: ({ ref, option }) => { const el = need(ref); const o = [...el.options].find((x) => clean(x.text) === clean(option)) || [...el.options].find((x) => clean(x.text).includes(clean(option)));
       if (!o) throw new Error('옵션을 찾지 못했습니다: ' + option); el.value = o.value; el.dispatchEvent(new Event('change', { bubbles: true })); return `선택: ${clean(o.text)}`; },
+    // 나비웹이 넘긴 파일을 파일 올리기 칸에 넣는다(0.7). 사람이 파일을 고른 것과 같게 input.files 를 채우고 input·change 이벤트를 낸다.
+    upload_attached_file: ({ ref, name, mime, b64 }) => {
+      let el = ref ? refs.get(ref) : null;
+      if (el && !(el.tagName === 'INPUT' && el.type === 'file')) el = (el.tagName === 'LABEL' && el.control && el.control.type === 'file') ? el.control : (el.closest('form,div') || document).querySelector('input[type=file]');
+      if (!el) { const all = [...document.querySelectorAll('input[type=file]')]; if (all.length === 1) el = all[0]; else throw new Error(all.length ? '파일 칸이 여러 개입니다. read_page 로 ref 를 정해 다시 부르세요.' : '이 화면에 파일 올리기 칸이 없습니다. 올리기 화면으로 먼저 이동하세요.'); }
+      if (!b64) throw new Error('올릴 파일이 없습니다.');
+      const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const dt = new DataTransfer(); dt.items.add(new File([u8], String(name || '서류'), { type: String(mime || 'application/octet-stream') }));
+      el.files = dt.files; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
+      return `파일을 올리기 칸에 넣었습니다: ${name} (${Math.round(u8.length / 1024)}KB). 화면에 파일 이름이 보이는지 read_page 로 확인한 뒤 사용자 확인을 거쳐 올리기·제출 단추를 누르세요.`;
+    },
     scroll: ({ direction, amount }) => { window.scrollBy(0, (direction === 'up' ? -1 : 1) * (Number(amount) || 3) * 200); return '스크롤'; },
     get_text: () => clean(document.body.innerText).slice(0, 6000),
     // 내려받기 링크의 주소는 확장(배경)만 받는다. AI 에게는 돌려주지 않는다(주소에 세션 값이 들어 있을 수 있다).
