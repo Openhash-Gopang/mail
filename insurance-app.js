@@ -256,9 +256,26 @@ function viewLearn() {
   return kids;
 }
 
+/* 나비웹 도우미로 기관 사이트 조회 열기 — 로그인·인증은 사용자, 조회까지만 한다. 호스트는 NaviInsure.agentResult(ok, msg) 로 결과를 돌려준다. */
+var AG = [["cont", "내 보험 가입 내역 조회(내보험다보여)", "https://cont.insure.or.kr"], ["compare", "보험 상품 비교(보험다모아)", "https://www.e-insure.or.kr"]], AGG = {"cont": "내보험다보여에서 내 보험 가입 내역 조회", "compare": "보험다모아에서 보험 상품 비교·조회"};
+function agentResult(ok, msg) { S.agMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function handOff() {
+  var it = AG.filter(function (x) { return x[0] === S.ag; })[0] || AG[0];
+  S.agMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], url:it[2], goal:AGG[it[0]] });
+}
+function agentCard() {
+  var s = h('select', { id:'ins-ag', 'aria-label':'도우미로 열 사이트' }, AG.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ag || AG[0][0]; s.onchange = function () { S.ag = s.value; };
+  return h('div', { class:'card col', id:'ins-agent', style:'margin-top:12px' }, [h('b', { text:'보험 조회는 도우미에게 (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'가입한 보험이나 상품 비교를 도우미가 해당 사이트에서 열어 줍니다. 본인인증은 내가 하고, 조회까지만 해요. 보험금 청구·해지·가입은 하지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff)]),
+    S.agMsg ? h('div', { class:'sub', id:'ins-ag-msg', text:S.agMsg }) : null]);
+}
 function render() {
   var root = $('ins-root'), tp = $('ins-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('insure', S.view || 'mine');
   var kids = S.view === 'rate' ? viewRate() : S.view === 'data' ? viewData() : S.view === 'claims' ? viewClaims() : S.view === 'learn' ? viewLearn() : viewMine();
+  if (S.view === 'mine' || !S.view) kids.push(agentCard());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -279,6 +296,7 @@ window.NaviInsure = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   insSummary:insSummary, claimSummary:claimSummary, rateCalc:rateCalc, share:share,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();

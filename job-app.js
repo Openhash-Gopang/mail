@@ -226,9 +226,26 @@ function viewPrinciple() {
   return kids;
 }
 
+/* 나비웹 도우미로 기관 사이트 조회 열기 — 로그인·인증은 사용자, 조회까지만 한다. 호스트는 NaviJob.agentResult(ok, msg) 로 결과를 돌려준다. */
+var AG = [["work24", "채용정보 찾기(고용24)", "https://www.work24.go.kr"], ["ei", "내 고용보험 가입 이력 조회", "https://www.ei.go.kr"]], AGG = {"work24": "고용24에서 내 희망 직종의 채용정보 조회", "ei": "고용보험에서 내 가입 이력 조회"};
+function agentResult(ok, msg) { S.agMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function handOff() {
+  var it = AG.filter(function (x) { return x[0] === S.ag; })[0] || AG[0];
+  S.agMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], url:it[2], goal:AGG[it[0]] });
+}
+function agentCard() {
+  var s = h('select', { id:'jb-ag', 'aria-label':'도우미로 열 사이트' }, AG.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ag || AG[0][0]; s.onchange = function () { S.ag = s.value; };
+  return h('div', { class:'card col', id:'jb-agent', style:'margin-top:12px' }, [h('b', { text:'일자리 조회는 도우미에게 (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'채용정보나 내 고용보험 이력을 도우미가 해당 사이트에서 열어 줍니다. 로그인·인증서는 내가 하고, 조회까지만 해요. 입사 지원과 신청서 제출은 하지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff)]),
+    S.agMsg ? h('div', { class:'sub', id:'jb-ag-msg', text:S.agMsg }) : null]);
+}
 function render() {
   var root = $('jb-root'), tp = $('jb-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); aOut = null; pOut = null;
   var kids = S.view === 'demand' ? viewDemand() : S.view === 'alloc' ? viewAlloc() : S.view === 'plan' ? viewPlan() : S.view === 'principle' ? viewPrinciple() : viewMe();
+  if (S.view === 'me' || !S.view) kids.push(agentCard());
   kids.forEach(function (k) { if (k) root.appendChild(k); }); if (S.view === 'me') updM();
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -248,6 +265,7 @@ window.NaviJob = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   humanHours:humanHours, supplyOf:supplyOf, balance:balance, allocate:allocate, overlap:overlap, matchPerson:matchPerson, rampPlan:rampPlan,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();

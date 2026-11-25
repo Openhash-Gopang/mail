@@ -275,9 +275,26 @@ function viewTheory() {
   return kids;
 }
 
+/* 나비웹 도우미로 기관 사이트 조회 열기 — 로그인·인증은 사용자, 조회까지만 한다. 호스트는 NaviBiz.agentResult(ok, msg) 로 결과를 돌려준다. */
+var AG = [["bizinfo", "지원사업 공고 보기(기업마당)", "https://www.bizinfo.go.kr"], ["kstartup", "창업 지원 정보(K-Startup)", "https://www.k-startup.go.kr"], ["iros", "법인 등기 조회(인터넷등기소)", "https://www.iros.go.kr"]], AGG = {"bizinfo": "기업마당에서 내 사업에 맞는 지원사업 공고 조회", "kstartup": "K-Startup에서 창업 지원사업 공고 조회", "iros": "인터넷등기소에서 법인 등기 정보 조회"};
+function agentResult(ok, msg) { S.agMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function handOff() {
+  var it = AG.filter(function (x) { return x[0] === S.ag; })[0] || AG[0];
+  S.agMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], url:it[2], goal:AGG[it[0]] });
+}
+function agentCard() {
+  var s = h('select', { id:'bz-ag', 'aria-label':'도우미로 열 사이트' }, AG.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ag || AG[0][0]; s.onchange = function () { S.ag = s.value; };
+  return h('div', { class:'card col', id:'bz-agent', style:'margin-top:12px' }, [h('b', { text:'사업 조회는 도우미에게 (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'지원사업 공고, 창업 지원, 법인 등기 정보를 도우미가 해당 사이트에서 열어 줍니다. 로그인·인증서는 내가 하고, 조회까지만 해요. 신청서 제출과 결제는 하지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff)]),
+    S.agMsg ? h('div', { class:'sub', id:'bz-ag-msg', text:S.agMsg }) : null]);
+}
 function render() {
   var root = $('bz-root'), tp = $('bz-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); asOut = null;
   var kids = S.view === 'assess' ? viewAssess() : S.view === 'perf' ? viewPerf() : S.view === 'cycle' ? viewCycle() : S.view === 'theory' ? viewTheory() : viewHome();
+  if (S.view === 'home' || !S.view) kids.push(agentCard());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -297,6 +314,7 @@ window.NaviBiz = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   breakEven:breakEven, cashPath:cashPath, assessStart:assessStart, metrics:metrics, bsc:bsc, suggest:suggest, effect:effect,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
