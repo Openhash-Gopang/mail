@@ -3622,7 +3622,7 @@ function _bankShow(view) {
 function _bankOpen(view) { _switchTab('bank'); _bankShow(view); }
 // 나비웹 증권(2026-11-23): 인프라 AI → 증권을 고르면 증권 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — stock.css·stock-app.js, Material 3).
 // 시세·주문 서버가 없어 주문은 보내지 않고 시세는 보여 주지 않는다(현재가는 직접 입력). 기록은 이 브라우저에만 저장. 안쪽 '증권 AI에게 묻기'는 기존 증권 대화창으로 말을 채워 준다(보내지는 않는다).
-const _STOCK_V = '20261125jb'; let _stockChat = false;
+const _STOCK_V = '20261125h'; let _stockChat = false;
 function _stockLoad(cb) { _ledgerLoad(() => _stockLoad2(cb)); }
 function _stockLoad2(cb) {
   if (window.NaviStock) { cb(); return; }
@@ -3637,13 +3637,14 @@ function _stockShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviStock.on('ask', (t) => { _infraChatSync('stock'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
+      NaviStock.on('agent', (j) => _infraAgentRun('NaviStock', '증권', j));   // 기관 사이트 조회: 나비웹 도우미(로그인은 사용자, 조회까지만)
       NaviStock.mount(r, { view: view });
     } else if (view) NaviStock.view(view);
   });
 }
 function _stockOpen(view) { _switchTab('stock'); _stockShow(view); }
 // 나비웹 보험(2026-11-23): 인프라 AI → 보험을 고르면 보험 화면을 이 문서 안에 직접 그려 연다(insurance.css·insurance-app.js). 보험 판매·가입·청구 접수와 데이터 제공은 아직 연결되어 있지 않다(설계 단계). 기록은 이 브라우저에만 저장.
-const _INSURE_V = '20261125ab'; let _insureChat = false;
+const _INSURE_V = '20261125h'; let _insureChat = false;
 function _insureLoad(cb) {
   if (window.NaviInsure) { cb(); return; }
   if (!document.getElementById('insure-css')) { const l = document.createElement('link'); l.id = 'insure-css'; l.rel = 'stylesheet'; l.href = 'insurance.css?v=' + _INSURE_V; document.head.appendChild(l); }
@@ -3657,6 +3658,7 @@ function _insureShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviInsure.on('ask', (t) => { _infraChatSync('insure'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
+      NaviInsure.on('agent', (j) => _infraAgentRun('NaviInsure', '보험', j));   // 기관 사이트 조회: 나비웹 도우미(로그인은 사용자, 조회까지만)
       NaviInsure.mount(r, { view: view });
     } else if (view) NaviInsure.view(view);
   });
@@ -3733,7 +3735,7 @@ function _infraRender(key) {
   root.append(h1, lead, card);
 }
 function _infraOpen(key) { _infraVia = key; _infraRender(key); _switchTab('infra'); }
-const _MED_V = '20261125a'; let _medChat = false;
+const _MED_V = '20261125h'; let _medChat = false;
 function _medLoad(cb) {
   if (window.NaviMedical) { cb(); return; }
   if (!document.getElementById('med-css')) { const l = document.createElement('link'); l.id = 'med-css'; l.rel = 'stylesheet'; l.href = 'medical.css?v=' + _MED_V; document.head.appendChild(l); }
@@ -3747,6 +3749,7 @@ function _medShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviMedical.on('ask', (t) => { _infraChatSync('med'); if (window.InfraHost) InfraHost.ask(t); });   // 의료 대화는 우하단 아이콘의 의료 SP 대화창에서
+      NaviMedical.on('agent', (j) => _infraAgentRun('NaviMedical', '의료', j));   // 기관 사이트 조회: 나비웹 도우미(로그인은 사용자, 조회까지만)
       NaviMedical.mount(r, { view: 'all', section: view });   // 한 페이지에 모든 기능을 쌓고, 고른 칸으로 옮겨 간다
     } else if (view) NaviMedical.view(view);
   });
@@ -3779,6 +3782,15 @@ async function _taxAgent(job) {
   const goal = job.goal + ' 조회 화면을 열어 주세요. 조회와 내려받기까지만 하고 신고서 제출·납부·발급 신청은 하지 마세요. 로그인·인증서는 사용자가 직접 합니다.';
   let ok = false; try { ok = await NaviAgent.queue({ playbook: '', goal: goal, title: '홈택스 — ' + job.label, url: 'https://www.hometax.go.kr' }); } catch (e) { ok = false; }
   say(!!ok, ok ? '도우미가 홈택스를 엽니다. 열린 화면의 안내에 따라 로그인해 주세요.' : '도우미에 맡기지 못했어요. 확장 프로그램이 켜져 있는지 확인해 주세요.');
+}
+// 인프라 화면 공통: 기관 사이트 조회를 나비웹 도우미에 맡긴다(로그인·인증서는 사용자, 조회까지만). 결과는 화면의 agentResult 로 돌려준다.
+async function _infraAgentRun(mod, tag, job) {
+  const say = (ok, m) => { try { window[mod].agentResult(ok, m); } catch (e) {} };
+  let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
+  if (!info) { say(false, window.NaviAgent && NaviAgent.STORE_URL ? '나비웹 도우미가 연결돼 있지 않아요. 홈 메뉴의 도우미 설치를 눌러 추가한 뒤 다시 눌러 주세요.' : '나비웹 도우미가 연결돼 있지 않아요.'); return; }
+  const guard = ' 조회 화면을 열어 주세요. 신청·제출·결제·주문·이체는 하지 마세요. 로그인·인증서·본인인증은 사용자가 직접 합니다.';
+  let ok = false; try { ok = await NaviAgent.queue({ playbook: '', goal: String(job.goal || '') + guard, title: tag + ' — ' + job.label, url: String(job.url || '') }); } catch (e) { ok = false; }
+  say(!!ok, ok ? '도우미가 사이트를 엽니다. 열린 화면의 안내에 따라 로그인해 주세요.' : '도우미에 맡기지 못했어요. 확장 프로그램이 켜져 있는지 확인해 주세요.');
 }
 function _taxOpen(view) { _switchTab('tax'); _taxShow(view); }
 const _MKT_V = '20261125tb'; let _mktChat = false;
@@ -3821,7 +3833,7 @@ function _trfShow(view) {
   });
 }
 function _trfOpen(view) { _switchTab('trf'); _trfShow(view); }
-const _LGS_V = '20261123c'; let _lgsChat = false;
+const _LGS_V = '20261125h'; let _lgsChat = false;
 function _lgsLoad(cb) {
   if (window.NaviLogistics) { cb(); return; }
   if (!document.getElementById('lgs-css')) { const l = document.createElement('link'); l.id = 'lgs-css'; l.rel = 'stylesheet'; l.href = 'logistics.css?v=' + _LGS_V; document.head.appendChild(l); }
@@ -3835,6 +3847,7 @@ function _lgsShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviLogistics.on('ask', (t) => { _infraChatSync('lgs'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
+      NaviLogistics.on('agent', (j) => _infraAgentRun('NaviLogistics', '물류', j));   // 기관 사이트 조회: 나비웹 도우미(로그인은 사용자, 조회까지만)
       NaviLogistics.mount(r, { view: view });
     } else if (view) NaviLogistics.view(view);
   });
@@ -3916,7 +3929,7 @@ function _schShow(view) {
 function _schOpen(view) { _switchTab('sch'); _schShow(view); }
 // 나비웹 사업(2026-11-23): 인프라 AI → 사업자를 고르면 사업 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — biz.css·biz-app.js, Material 3).
 // 시작 전 판단(다섯 가지 힘·SWOT·손익분기) → 성과 평가(균형성과표·LTV/CAC) → 개선 순환(PDCA). 입력한 숫자로 계산·기록만 하며 장부·시장 정보와 연결되지 않고 성공을 보장하지 않는다. 기록은 이 브라우저에만 저장.
-const _BIZ_V = '20261123a'; let _bizChat = false;
+const _BIZ_V = '20261125h'; let _bizChat = false;
 function _bizLoad(cb) {
   if (window.NaviBiz) { cb(); return; }
   if (!document.getElementById('biz-css')) { const l = document.createElement('link'); l.id = 'biz-css'; l.rel = 'stylesheet'; l.href = 'biz.css?v=' + _BIZ_V; document.head.appendChild(l); }
@@ -3930,6 +3943,7 @@ function _bizShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviBiz.on('ask', (t) => { _infraChatSync('biz'); if (window.InfraHost) InfraHost.ask(t); });
+      NaviBiz.on('agent', (j) => _infraAgentRun('NaviBiz', '사업', j));   // 기관 사이트 조회: 나비웹 도우미(로그인은 사용자, 조회까지만)
       NaviBiz.mount(r, { view: view });
     } else if (view) NaviBiz.view(view);
   });
@@ -3979,7 +3993,7 @@ function _wchShow(view) {
 function _wchOpen(view) { _switchTab('wch'); _wchShow(view); }
 // 나비웹 일자리(2026-11-23): 인프라 AI → 직업을 고르면 일자리 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — job.css·job-app.js, Material 3).
 // 기초수급제도 확장: 재화·용역 수요 추정 → AI·로봇 대체 분류 → 사람이 해야 할 일에 실직 인구 배치(개인 적성·희망 반영). 입력한 가정으로 노동 시간의 수요와 공급을 맞추는 모의 계산만 하며 통계·교육 인프라와 연결되지 않았고 배정·지급은 하지 않는다. 기록은 이 브라우저에만 저장.
-const _JOB_V = '20261123a'; let _jobChat = false;
+const _JOB_V = '20261125h'; let _jobChat = false;
 function _jobLoad(cb) {
   if (window.NaviJob) { cb(); return; }
   if (!document.getElementById('job-css')) { const l = document.createElement('link'); l.id = 'job-css'; l.rel = 'stylesheet'; l.href = 'job.css?v=' + _JOB_V; document.head.appendChild(l); }
@@ -3993,6 +4007,7 @@ function _jobShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviJob.on('ask', (t) => { _infraChatSync('job'); if (window.InfraHost) InfraHost.ask(t); });
+      NaviJob.on('agent', (j) => _infraAgentRun('NaviJob', '일자리', j));   // 기관 사이트 조회: 나비웹 도우미(로그인은 사용자, 조회까지만)
       NaviJob.mount(r, { view: view });
     } else if (view) NaviJob.view(view);
   });

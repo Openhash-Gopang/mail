@@ -584,9 +584,26 @@ function viewLearn() {
   return kids;
 }
 
+/* 나비웹 도우미로 기관 사이트 조회 열기 — 로그인·인증은 사용자, 조회까지만 한다. 호스트는 NaviStock.agentResult(ok, msg) 로 결과를 돌려준다. */
+var AG = [["seibro", "내 보유 증권·배당 조회(예탁결제원)", "https://www.seibro.or.kr"], ["dart", "기업 공시 보기(전자공시 DART)", "https://dart.fss.or.kr"]], AGG = {"seibro": "예탁결제원 증권정보포털에서 내 보유 증권과 배당 내역 조회", "dart": "금융감독원 전자공시에서 기업 공시·사업보고서 조회"};
+function agentResult(ok, msg) { S.agMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function handOff() {
+  var it = AG.filter(function (x) { return x[0] === S.ag; })[0] || AG[0];
+  S.agMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], url:it[2], goal:AGG[it[0]] });
+}
+function agentCard() {
+  var s = h('select', { id:'stk-ag', 'aria-label':'도우미로 열 사이트' }, AG.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ag || AG[0][0]; s.onchange = function () { S.ag = s.value; };
+  return h('div', { class:'card col', id:'stk-agent', style:'margin-top:12px' }, [h('b', { text:'조회는 도우미에게 (증권 사이트) (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'내 보유 증권·배당이나 기업 공시를 도우미가 해당 사이트에서 열어 줍니다. 로그인·인증서는 내가 하고, 조회까지만 해요. 주문·이체·결제는 하지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff)]),
+    S.agMsg ? h('div', { class:'sub', id:'stk-ag-msg', text:S.agMsg }) : null]);
+}
 function render() {
   var root = $('stk-root'), tp = $('stk-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('stock', S.view);
   var kids = S.view === 'explore' ? viewExplore() : S.view === 'wage' ? viewWage() : S.view === 'order' ? viewOrder() : S.view === 'value' ? viewValue() : S.view === 'company' ? viewCompany() : S.view === 'trades' ? viewTrades() : S.view === 'watch' ? viewWatch() : S.view === 'alloc' ? viewAlloc() : S.view === 'goal' ? viewGoal() : S.view === 'learn' ? viewLearn() : viewPortfolio();
+  if (S.view === 'portfolio' || !S.view) kids.push(agentCard());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
   if (S.view === 'goal' && M.__goalOut) M.__goalOut();
 }
@@ -621,6 +638,7 @@ window.NaviStock = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   positions:positions, valued:valued, evalCo:evalCo, valueOf:valueOf, wageStats:wageStats, searchListings:searchListings, sizeOf:sizeOf, hashOf:hashOf, crossCheck:crossCheck, fv:fv, needMonthly:needMonthly, goalCalc:goalCalc,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();

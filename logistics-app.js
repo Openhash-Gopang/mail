@@ -206,9 +206,26 @@ function viewParcels() {
   return kids;
 }
 
+/* 나비웹 도우미로 기관 사이트 조회 열기 — 로그인·인증은 사용자, 조회까지만 한다. 호스트는 NaviLogistics.agentResult(ok, msg) 로 결과를 돌려준다. */
+var AG = [["epost", "택배 배송 조회(우체국)", "https://service.epost.go.kr"], ["unipass", "수입 화물 통관 조회(관세청)", "https://unipass.customs.go.kr"]], AGG = {"epost": "우체국 택배에서 배송 조회", "unipass": "관세청 유니패스에서 화물 통관 진행 조회"};
+function agentResult(ok, msg) { S.agMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function handOff() {
+  var it = AG.filter(function (x) { return x[0] === S.ag; })[0] || AG[0];
+  S.agMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], url:it[2], goal:AGG[it[0]] });
+}
+function agentCard() {
+  var s = h('select', { id:'lg-ag', 'aria-label':'도우미로 열 사이트' }, AG.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ag || AG[0][0]; s.onchange = function () { S.ag = s.value; };
+  return h('div', { class:'card col', id:'lg-agent', style:'margin-top:12px' }, [h('b', { text:'배송 조회는 도우미에게 (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'택배 배송이나 수입 화물 통관 상태를 도우미가 해당 사이트에서 열어 줍니다. 로그인은 내가 하고, 조회까지만 해요. 발송 신청과 결제는 하지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff)]),
+    S.agMsg ? h('div', { class:'sub', id:'lg-ag-msg', text:S.agMsg }) : null]);
+}
 function render() {
   var root = $('lg-root'), tp = $('lg-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar());
   var kids = S.view === 'pack' ? viewPack() : S.view === 'route' ? viewRoute() : S.view === 'parcels' ? viewParcels() : viewPrinciple();
+  if (S.view === 'parcels' || !S.view) kids.push(agentCard());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -228,6 +245,7 @@ window.NaviLogistics = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   packBins:packBins, bestRoute:bestRoute, schedule:schedule, parseHM:parseHM,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();

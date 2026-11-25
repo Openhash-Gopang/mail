@@ -243,9 +243,26 @@ function viewAll() {
   });
   return out;
 }
+/* 나비웹 도우미로 기관 사이트 조회 열기 — 로그인·인증은 사용자, 조회까지만 한다. 호스트는 NaviMedical.agentResult(ok, msg) 로 결과를 돌려준다. */
+var AG = [["nhis", "내 진료·투약 내역 조회(건강보험공단)", "https://www.nhis.or.kr"], ["kdca", "예방접종 이력 조회(질병관리청)", "https://nip.kdca.go.kr"], ["hira", "병원·약국 찾기(심평원)", "https://www.hira.or.kr"]], AGG = {"nhis": "국민건강보험공단에서 내 진료·투약 내역 조회", "kdca": "질병관리청 예방접종도우미에서 내 접종 이력 조회", "hira": "건강보험심사평가원에서 병원·약국 정보 조회"};
+function agentResult(ok, msg) { S.agMsg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.'); render(); }
+function handOff() {
+  var it = AG.filter(function (x) { return x[0] === S.ag; })[0] || AG[0];
+  S.agMsg = '도우미에 맡기는 중…'; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요.');
+  emit('agent', { kind:it[0], label:it[1], url:it[2], goal:AGG[it[0]] });
+}
+function agentCard() {
+  var s = h('select', { id:'med-ag', 'aria-label':'도우미로 열 사이트' }, AG.map(function (x) { return h('option', { value:x[0], text:x[1] }); })); s.value = S.ag || AG[0][0]; s.onchange = function () { S.ag = s.value; };
+  return h('div', { class:'card col', id:'med-agent', style:'margin-top:12px' }, [h('b', { text:'의료 조회는 도우미에게 (나비웹 도우미)' }),
+    h('div', { class:'sub', text:'진료·투약 내역이나 접종 이력, 병원·약국 정보를 도우미가 해당 사이트에서 열어 줍니다. 본인인증은 내가 하고, 조회까지만 해요. 예약·결제·서류 제출은 하지 않아요.' }),
+    h('div', { class:'rowf' }, [s, btn('도우미로 열기', '', handOff)]),
+    S.agMsg ? h('div', { class:'sub', id:'med-ag-msg', text:S.agMsg }) : null]);
+}
 function render() {
   var root = $('med-root'), tp = $('med-top'); if (!root || !tp) return; root.textContent = ''; tp.textContent = ''; tp.className = 'top'; tp.appendChild(topbar()); if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('med', S.view === 'all' ? 'profile' : S.view);
   var kids = S.view === 'all' ? viewAll() : S.view === 'submit' ? viewSubmit() : S.view === 'principle' ? viewPrinciple() : S.view === 'rank' ? viewRank() : S.view === 'visits' ? viewVisits() : viewProfile();
+  if (S.view === 'profile' || S.view === 'all' || !S.view) kids.push(agentCard());
   kids.forEach(function (k) { if (k) root.appendChild(k); });
 }
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg, view:S.view }); }
@@ -266,6 +283,7 @@ window.NaviMedical = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   bmi:bmi, submission:submission, summaryText:summaryText, rankCandidates:rankCandidates,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();
