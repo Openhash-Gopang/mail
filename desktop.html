@@ -120,7 +120,7 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js?v=20261126a"></script>
+<script src="agent-bridge.js?v=20261126b"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
 <script src="manual-chat.js?v=20261106a"></script>
@@ -3063,7 +3063,8 @@ function _agentOpenedNotice(s) {
   d.append(t, p, b);
 }
 // ── 홈 입력창에서 맡긴 발급(2026-11-26): 진행 상황과 받은 파일을 홈 대화창에 보여 준다 ──
-const _homeAgent = { got: {} };
+const _homeAgent = { got: {}, active: null };   // active: 지금 도우미에게 맡겨 둔 일 { doc, slot, issue }
+function _homeNoun(doc) { return window.NaviAgent && NaviAgent.isIssueTask && NaviAgent.isIssueTask(doc) ? ' 발급' : ' 작업'; }
 function _homeSay(md) {
   if (!document.getElementById('cmp-thread')) return;
   _navRoute.msgs.push({ role: 'assistant', content: md });
@@ -3072,23 +3073,46 @@ function _homeSay(md) {
 async function _homeAgentRun(doc, plan, userText) {
   let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
   if (!info) {
-    _homeSay('나비웹 도우미가 연결돼 있지 않아 ' + doc + ' 발급을 시작하지 못했습니다. 도우미를 설치하거나 켠 뒤 다시 말씀해 주세요.' + (window.NaviAgent && NaviAgent.STORE_URL ? ' [도우미 설치](' + NaviAgent.STORE_URL + ')' : ''));
+    _homeSay('나비웹 도우미가 연결돼 있지 않아 ' + doc + _homeNoun(doc) + '을 시작하지 못했습니다. 도우미를 설치하거나 켠 뒤 다시 말씀해 주세요.' + (window.NaviAgent && NaviAgent.STORE_URL ? ' [도우미 설치](' + NaviAgent.STORE_URL + ')' : ''));
     return;
   }
   _agentInfo = info;
   if (!_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); }
   delete _homeAgent.got[doc];
-  let ok = false; try { ok = await NaviAgent.queue(NaviAgent.homeJob(doc, plan, userText)); } catch (e) { ok = false; }
-  _homeSay(ok ? doc + ' 발급을 시작합니다. 열리는 기관 사이트에서 로그인(본인인증)만 해 주세요. 나머지는 제가 진행합니다.' + (plan.paid ? ' 결제는 직접 하셔야 합니다.' : '')
-    : '도우미가 작업을 접수하지 못했습니다. 이 화면을 새로 고친 뒤 다시 말씀해 주세요.');
+  const prev = _homeAgent.active;
+  const job = NaviAgent.homeJob(doc, plan, userText), issue = NaviAgent.isIssueTask(doc);
+  let ok = false; try { ok = await NaviAgent.queue(job); } catch (e) { ok = false; }
+  if (!ok) { _homeSay('도우미가 작업을 접수하지 못했습니다. 이 화면을 새로 고친 뒤 다시 말씀해 주세요.'); return; }
+  _homeAgent.active = { doc: doc, slot: job.slot };
+  const stopped = prev && prev.doc !== doc ? '앞서 맡긴 “' + prev.doc + '” 작업이 남아 있었다면 중단됩니다.\n\n' : '';
+  _homeSay(stopped + (issue ? doc + ' 발급을 시작합니다. 열리는 기관 사이트에서 로그인(본인인증)만 해 주세요. 나머지는 제가 진행합니다.'
+      : '“' + doc + '” 작업을 시작합니다. 열리는 기관 사이트에서 로그인(본인인증)해 주세요. 추가로 알려 주실 내용은 여기에 입력하시면 도우미에게 전달합니다. 최종 제출 전에는 제출 내용을 확인받습니다.')
+    + (plan.paid ? ' 결제는 직접 하셔야 합니다.' : ''));
+}
+// 진행 중인 일에 대한 답·추가 정보는 새 요청으로 보내지 않고 도우미에게 전한다. true = 전달했다.
+async function _homeAgentRelay(text) {
+  const job = _homeAgent.active;
+  if (!job || !window.NaviAgent || !NaviAgent.isFollowUp || !NaviAgent.isFollowUp(text)) return false;
+  let ok = false; try { ok = await NaviAgent.update(job.slot, NaviAgent.mask(text)); } catch (e) { ok = false; }
+  if (!ok) { _homeAgent.active = null; return false; }   // 이미 끝난 작업 — 평소처럼 처리한다
+  _navBegin(); _cmpAppendBubble('user', { text }); _navRoute.msgs.push({ role: 'user', content: text });
+  _homeSay('진행 중인 “' + job.doc + '” 작업의 도우미에게 전달했습니다.');
+  const thread = document.getElementById('cmp-thread');
+  const box = document.createElement('div'); box.className = 'nav-ask';
+  const opts = document.createElement('div'); opts.className = 'nav-ask-opts';
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = '이 말은 새 질문이에요';
+  b.onclick = async () => { box.remove(); await _navAssistTurn(text, { again: true }); };
+  opts.appendChild(b); box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
+  return true;
 }
 function _homeAgentStatus(doc, s) {
   if (s.state === 'opened') _homeSay(_agentAgencyName(s.note) + ' 페이지를 열었습니다. 그 탭의 안내에 따라 로그인해 주세요.');
-  else if (s.state === 'failed') { _homeSay(doc + ' 발급을 마치지 못했습니다.' + (s.note ? ' 사유: ' + s.note : '')); _autoReportFail(Object.assign({}, s, { label: doc }), 'FETCH_FAILED'); }
+  else if (s.state === 'failed') { if (_homeAgent.active && _homeAgent.active.doc === doc) _homeAgent.active = null; _homeSay(doc + _homeNoun(doc) + '을 마치지 못했습니다.' + (s.note ? ' 사유: ' + s.note : '')); _autoReportFail(Object.assign({}, s, { label: doc }), 'FETCH_FAILED'); }
   else if (s.state === 'pending' && !_homeAgent.got[doc] && s.note) _homeSay(doc + ': ' + s.note);
 }
 function _homeAgentFile(doc, f) {
   _homeAgent.got[doc] = true;
+  if (_homeAgent.active && _homeAgent.active.doc === doc && _homeNoun(doc) === ' 발급') _homeAgent.active = null;   // 발급은 파일을 받으면 끝난다(신고·신청은 접수증을 받아도 이어질 수 있다)
   const thread = document.getElementById('cmp-thread'); if (!thread) return;
   const mime = f.mime === 'application/pdf' ? 'application/pdf' : 'application/octet-stream';
   const url = URL.createObjectURL(new Blob([f.data], { type: mime }));
@@ -9778,6 +9802,8 @@ async function _navAssistTurn(text, opt) {
     } else if (route.type === 'agent') {
       loading.style.display = 'none';
       _navRoute.cur = { type: 'assistant' };
+      // AI 가 함께 보낸 설명·질문을 버리지 않는다(2026-11-26)
+      if (data.reply) { _navRoute.msgs.push({ role: 'assistant', content: data.reply }); _cmpAppendBubble('assistant', { md: data.reply, badge: null }); }
       const plan = (window.NaviAgent && NaviAgent.slotPlan(route.slot)) || { playbook: '', url: '', goal: (route.goal || '') + ' 대상: ' };   // 주소는 카탈로그의 것만 쓰고, 목록에 없으면 도우미가 사이트를 정한다
       await _homeAgentRun(route.slot, plan, text);
     } else {
@@ -9805,6 +9831,7 @@ async function _navRouteSend(text, attachments) {
   }
   if ((cur && cur.type === 'kmail') || _cmpChat.messages.length || (attachments && attachments.length)) { _navRoute.cur = { type: 'kmail' }; _cmpSetMode('campaign', { keep: true }); return false; }
   // 2026-11-26: 기관 서류를 발급해 달라는 분명한 지시는 AI 답을 기다리지 않고 바로 도우미에 맡긴다
+  if (await _homeAgentRelay(text)) { _cmpChatUpdateSendState(); return true; }
   const hi = window.NaviAgent && NaviAgent.issueIntent ? NaviAgent.issueIntent(text) : null;
   if (hi) {
     _navBegin(); _cmpAppendBubble('user', { text }); _navRoute.msgs.push({ role: 'user', content: text }); _navRoute.cur = { type: 'assistant' };

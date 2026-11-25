@@ -19,3 +19,22 @@ test('홈 작업에는 파일을 돌려받을 slot 이 있고 주민번호는 �
   assert.equal(A.homeDoc(j.slot), '주민등록표 등본'); assert.equal(j.url, 'https://www.gov.kr'); assert.ok(!j.goal.includes('1234567'));
   assert.equal(A.homeDoc('주민등록표 등본'), '');
 });
+
+test('신고·신청·등록은 발급으로 부르지 않고 제출 전 확인을 지시한다', () => {
+  for (const n of ['위치기반서비스 등록', '여권 재발급 신청', '위치기반서비스사업 신고', '사업자 등록', '정보 공개 청구']) {
+    assert.equal(A.isIssueTask(n), false, n);
+    const j = A.homeJob(n, { goal: '방법을 찾아 처리 대상: ' }, n + ' 해 줘');
+    assert.equal(j.title, n); assert.ok(j.goal.includes('확인 없이 제출하지 마세요'), n); assert.ok(!j.goal.includes('이미 지시한 발급'), n);
+  }
+  for (const n of ['주민등록표 등본', '가족관계증명서', '토지대장', '건강보험 자격득실 확인서', '주민등록표 초본 발급']) assert.equal(A.isIssueTask(n), true, n);
+});
+test('진행 중 작업의 답은 전달하고, 질문·새 지시는 전달하지 않는다', () => {
+  for (const t of ['개인사업자입니다', '사업자등록번호는 123-45-67890이에요', '음식점 위치를 안내하는 앱이야', '네', '2번', '로그인했어', '개인위치정보는 저장하지 않아'])
+    assert.equal(A.isFollowUp(t), true, t);
+  for (const t of ['수수료 얼마야', '이거 왜 해야 해?', '진행 상황 알려 줘', '위임장 작성해 줘', '김과장에게 메일 보내 줘', '가족관계증명서 발급해 줘', ''])
+    assert.equal(A.isFollowUp(t), false, t);
+});
+test('전달·작업 문구에서 주민번호와 카드번호를 가린다', () => {
+  assert.equal(A.mask('900101-1234567 그리고 1234-5678-9012-3456'), '(가림) 그리고 (가림)');
+  assert.equal(A.mask('123-45-67890'), '123-45-67890');
+});
