@@ -339,6 +339,11 @@ async function host(playbook) {
         await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '파일을 나비웹으로 보냈습니다.' }).catch(() => {});
         return { text: `나비웹으로 보냈습니다: ${f.name} (${Math.round(f.size / 1024)}KB). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 서류에 넣을지 다시 묻지 말고, 이어서 남은 일이 없으면 작업을 마치세요.` };
       }
+      if (name === 'upload_attached_file') {   // 나비웹이 맡긴 파일을 이 사이트의 올리기 칸에 넣는다(파일 내용은 AI 에게 보내지 않는다)
+        const a = state.attach; if (!a) return { text: '이 작업에는 나비웹이 맡긴 파일이 없습니다.' };
+        const r = await toTab('upload_attached_file', { ...(input || {}), name: a.name, mime: a.mime, b64: a.b64 });
+        return { text: String(r.text || '파일을 넣었습니다.') };
+      }
       if (name === 'wait') { await wait(Math.min(10, Number(input.seconds) || 1) * 1000); return { text: '대기 완료' }; }
       throw new Error('알 수 없는 도구: ' + name);
     },
@@ -406,7 +411,7 @@ async function openIssuedDocument(row) {
   return { text: `문서출력 → 문서 보기 창 → PDF 로 나비웹에 보냈습니다: ${nm} (${Math.round(pr.size / 1024)}KB). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 다시 묻지 말고 작업을 마치세요.` };
 }
 async function runJob(m) {
-    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120) };
+    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120), attach: m.file && m.file.b64 ? m.file : null };
     const me = state;
     const keep = setInterval(() => { try { chrome.runtime.getPlatformInfo(); } catch { /* 살아 있음 확인용 호출 */ } }, 20000);   // 서비스 워커가 긴 대기 중에 잠들어 작업이 끊기지 않게
     try {
@@ -494,7 +499,7 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
       const pb = j.playbook ? PLAYBOOKS[j.playbook] : null, winId = sender.tab.windowId;
       (async () => {
         await stopCurrent();
-        runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: winId });
+        runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: winId, file: j.file || null });
         send({ ok: true });
       })();
       return true;

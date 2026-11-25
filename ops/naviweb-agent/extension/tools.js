@@ -37,6 +37,8 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
   { name: 'open_issued_document', description: '정부24 신청 내역(처리완료) 화면에서 방금 발급된 서류의 "문서출력" 단추를 찾아 사람처럼 눌러 문서 보기 창을 열고, 그 문서를 PDF 로 만들어 나비웹의 맡긴 항목으로 보낸다. 단추 찾기·누르기·창 확인·전송을 한 번에 하므로 화면을 여러 번 읽거나 단추를 직접 누르지 말고 이것을 부른다. row 는 위에서 몇 번째 행인지(기본 0 = 가장 최근).',
     input_schema: { type: 'object', properties: { row: { type: 'number' } }, required: [] } },
+  { name: 'upload_attached_file', description: '나비웹이 맡긴 파일(작업에 파일이 붙어 있을 때만)을 이 사이트의 파일 올리기 칸에 넣는다. ref 는 파일 선택 입력칸이나 "파일 선택·첨부·찾아보기" 단추/라벨의 ref 이고, 화면에 파일 칸이 하나뿐이면 ref 를 생략해도 된다. 올리기 전에 시스템이 사용자 확인을 받는다. 파일 내용은 AI 에게 보이지 않는다.',
+    input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: [] } },
   { name: 'ask_choice', description: '사용자의 선택이 필요할 때 질문과 선택지를 화면 띠에 단추로 보여 주고 고른 값을 돌려받는다. 사용자에게 "알려 주세요"라고 글로만 묻지 말고 반드시 이 도구를 쓴다.',
     input_schema: { type: 'object', properties: { question: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 6 } }, required: ['question', 'options'] } },
   { name: 'pdv_get', description: '사용자의 내 데이터 금고(PDV)에 보관된 개인 정보를 읽는다. 항목: name(성명), sido(거주지 시도), address(주소), phone(전화번호), email(이메일). 입력칸에 넣을 값은 사용자에게 묻기 전에 먼저 이 도구로 찾는다. 없는 항목은 결과에 나오지 않는다.',
@@ -46,4 +48,4 @@ export const TOOLS = [
   { name: 'handoff_to_user', description: '로그인·인증서·결제·보안문자처럼 사용자가 직접 해야 하는 단계에서 멈추고 안내한다.',
     input_schema: { type: 'object', properties: { reason: { type: 'string' } }, required: ['reason'] } },
 ];
-export const DOM_TOOLS = new Set(['read_page', 'find', 'form_controls', 'click', 'type', 'select_option', 'scroll', 'get_text']);
+export const DOM_TOOLS = new Set(['read_page', 'find', 'form_controls', 'click', 'type', 'select_option', 'scroll', 'get_text', 'upload_attached_file']);

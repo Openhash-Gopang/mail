@@ -303,7 +303,7 @@ test('send_file_to_navi: 도구·권한·안내가 갖춰져 있다', async () =
   assert.equal(classify('send_file_to_navi', {}, {}).act, 'auto');
   assert.match(buildSystem(null), /send_file_to_navi/);
   const mf = JSON.parse(fs.readFileSync(new URL('../ops/naviweb-agent/extension/manifest.json', import.meta.url), 'utf8'));
-  assert.ok(mf.permissions.includes('downloads')); assert.match(mf.version, /^0\.6\./);
+  assert.ok(mf.permissions.includes('downloads')); assert.match(mf.version, /^0\.[67]\./);
   const bg = fs.readFileSync(new URL('../ops/naviweb-agent/extension/background.js', import.meta.url), 'utf8');
   assert.match(bg, /name === 'send_file_to_navi'/); assert.match(bg, /kind: 'file'/);
   assert.match(fs.readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8'), /link_href/);
@@ -422,7 +422,7 @@ test('가져오기: 법인 이름이 필요한 항목은 사이트를 먼저 열
   assert.match(rd('ops/naviweb-agent/extension/background.js'), /state\.inbox\.push\(j\.text/);
   assert.match(rd('ops/naviweb-agent/extension/agent-core.js'), /\[추가 정보\]/);
   assert.match(rd('desktop.html'), /NaviAgent\.update\(_lbl, d\.goal\)/);
-  assert.match(JSON.parse(rd('ops/naviweb-agent/extension/manifest.json')).version, /^0\.6\.[1-9]/);
+  assert.match(JSON.parse(rd('ops/naviweb-agent/extension/manifest.json')).version, /^0\.[67]\./);
   // 에이전트 루프: inbox 의 정보가 다음 단계 입력에 덧붙는다
   const sent = []; let n = 0;
   const host = { aborted: () => false, log() {}, describe: async () => ({}), execTool: async () => ({ text: 'ok' }), ask: async () => true, handoff: async () => {}, inbox: () => (n++ === 1 ? '법인 이름: 가나다' : null),
@@ -487,7 +487,7 @@ test('0.6.4: 설치·시작 때 열려 있는 나비웹 탭에 bridge.js 주입 
   const m = mf.content_scripts[0].matches;
   for (const u of m) assert.ok(bg.includes(`'${u}'`), u);
   assert.ok(mf.host_permissions.includes('https://*/*') && mf.permissions.includes('scripting') && mf.permissions.includes('tabs'));
-  assert.match(mf.version, /^0\.6\.([4-9]|\d\d)/);
+  assert.match(mf.version, /^0\.([67]\.|6\.([4-9]|\d\d))/);
 });
 
 test('ask_choice: 선택지를 단추로 묻고 고른 값을 모델에 돌려준다', async () => {
@@ -711,4 +711,23 @@ test('팝업 창이 뜨면 커서는 팝업에서만, 안내 문구는 팝업에
 test('다리(bridge.js): pdv-result 전달이 끊겨도(확장 새로고침 등) 오류를 던지지 않는다', () => {
   const b = readFileSync(new URL('../ops/naviweb-agent/extension/bridge.js', import.meta.url), 'utf8');
   assert.match(b, /pr\.catch\(\(\) => \{\}\)/); assert.match(b, /Extension context invalidated/);
+});
+
+// ── 0.7.0: 나비웹이 맡긴 파일을 기관 사이트 올리기 칸에 넣는다 ──────────────────────────
+test('0.7.0: upload_attached_file — 도구·확인·파일 검사·content 동작이 갖춰져 있다', () => {
+  const rd = (p) => readFileSync(new URL('../ops/naviweb-agent/extension/' + p, import.meta.url), 'utf8');
+  assert.ok(TOOLS.some((t) => t.name === 'upload_attached_file'));
+  assert.equal(classify('upload_attached_file', { fileName: '소장.pdf' }).act, 'confirm'); assert.match(classify('upload_attached_file', { fileName: '소장.pdf' }).reason, /소장\.pdf/);
+  const br = rd('bridge.js'); assert.match(br, /okFile/); assert.match(br, /14 \* 1024 \* 1024/);
+  const bg = rd('background.js'); assert.match(bg, /attach: m\.file/); assert.match(bg, /name === 'upload_attached_file'/); assert.match(bg, /file: j\.file/);
+  const ct = rd('content.js'); assert.match(ct, /upload_attached_file:/); assert.match(ct, /new DataTransfer\(\)/); assert.match(ct, /dispatchEvent\(new Event\('change'/);
+  assert.match(buildSystem(null), /upload_attached_file/);
+  assert.match(JSON.parse(rd('manifest.json')).version, /^0\.7\./);
+});
+
+test('0.7.0: 작성한 서류에 "기관에 올리기(도우미)" — 버전·파일 크기 확인 뒤 file 로 맡긴다', () => {
+  const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.match(d, /\['submit', '기관에 올리기\(도우미\)'\]/); assert.match(d, /_docSubmitViaAgent\(it\)/);
+  assert.match(d, /0\.7\.0 이상/); assert.match(d, /10 \* 1024 \* 1024/); assert.match(d, /file: \{ name: name, mime:/);
+  const br = readFileSync(new URL('../agent-bridge.js', import.meta.url), 'utf8'); assert.match(br, /Object\.assign\(\{\}, job, \{ autostart: true \}\)/);
 });
