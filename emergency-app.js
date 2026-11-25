@@ -585,6 +585,7 @@ function render() {
 function reply(ok, msg) { emit('result', { ok:ok, msg:msg }); }
 function go(v) {
   var a = ANCH[v]; if (!a) return false;
+  if (v === 'call') { render(); try { window.scrollTo(0, 0); } catch (x) {} return true; }   // 시뮬레이션 칩: 단계 목록이 아니라 페이지 맨 위에서 시작
   if (a === 'emg-s-prep') S.prepOpen = true;
   render(); var e = $(a) || $('emg-s-call'); try { if (e) e.scrollIntoView({ block:'start' }); } catch (x) {}
   return true;
@@ -598,7 +599,7 @@ function mount(el, o) {
   if (!el) return; o = o || {};
   autoClear(); S.auto = null; M = el; el.textContent = ''; el.classList.add('emg'); S.share = {}; S.askok = {}; S.dev = []; S.err = {}; S.msg = ''; S.prepOpen = false; S.sim = newRun(); S.wasOpen = false; load();
   [h('div', { id:'emg-top' }), h('div', { class:'wrap', id:'emg-root' }), h('div', { id:'emg-back', class:'back', onclick:closeAuto }), h('aside', { id:'emg-apanel', class:'panel auto', 'aria-hidden':'true', 'aria-label':'시뮬레이션' })].forEach(function (x) { el.appendChild(x); });
-  if (o.view && ANCH[o.view] && o.view !== 'call') go(o.view); else render();
+  if (o.view && ANCH[o.view] && o.view !== 'call') go(o.view); else { render(); try { window.scrollTo(0, 0); } catch (x) {} }   // 처음 열 때는 이전 화면의 스크롤 위치를 잇지 않고 맨 위에서
 }
 window.NaviEmergency = {
   mount:mount,
