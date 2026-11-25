@@ -10,7 +10,8 @@
  *    동의와 수수료 결제도 사용자가 위임한 범위 안에서 비서가 수행하고 사용자는 승인만 한다.
  * 이 화면은 계산·기록만 한다: matchDocs(요구 서류와 내가 가진 서류 대조).
  * 무엇이 실제이고 무엇이 아닌가(화면에도 그대로 적는다):
- *  - 이 화면은 기관 사이트에 접속하거나 서류를 제출·결제하지 않고 어떤 정보도 밖으로 보내지 않는다. 실제 대행은 나비웹 도우미가 기관 사이트에서 사용자의 승인을 받아 한다.
+ *  - 이 화면 자체는 기관 사이트에 접속하거나 서류를 제출·결제하지 않는다. 「도우미로 맡기기」를 누르면 일의 기관 이름·할 일·서류 이름만 'agent' 이벤트로 호스트(desktop.html)에 넘기고,
+ *    호스트가 나비웹 도우미(NaviAgent.queue)에 맡긴다. 실제 대행은 도우미가 기관 사이트에서 사용자의 승인을 받아 하며, 로그인·최종 확인·결제는 사용자가 한다. 도우미가 없으면 맡기지 못했다고 알린다.
  *  - 연결된 기관 AI 는 아직 없다(handshake 는 설계 단계). 위임 규칙은 아직 효력이 없다. 모든 기록은 이 브라우저(localStorage)에만 저장된다. */
 (function () {
 'use strict';
@@ -23,6 +24,18 @@ function h(tag, attrs, kids) {
 function $(id) { return M ? M.querySelector('#' + id) : null; }
 function emit(t, p) { (LS[t] || []).slice().forEach(function (f) { try { f(p); } catch (e) {} }); }
 function ask(text) { emit('ask', text || ''); }
+/** 도우미에 맡길 일을 호스트에 넘긴다. 호스트는 NaviPublic.agentResult(ok, msg) 로 결과를 돌려준다(없으면 도우미가 없는 환경). */
+function handOff(org, goal, docs, id) {
+  var job = { org:clean(org, 40) || '기관 사이트', goal:clean(goal, 80) || '필요한 서류', docs:clean(docs, 200), id:id || '' };
+  S.msg = '도우미에 맡기는 중…'; S.agentId = id || ''; render();
+  if (!(LS.agent && LS.agent.length)) return agentResult(false, '나비웹 도우미를 쓸 수 없는 화면이에요. 대화창에서 도우미에게 맡길 수도 있어요.');
+  emit('agent', job);
+}
+function agentResult(ok, msg) {
+  S.msg = clean(msg, 160) || (ok ? '도우미가 시작합니다.' : '도우미에 맡기지 못했어요.');
+  if (ok && S.agentId) { var it = S.items.filter(function (x) { return x.id === S.agentId; })[0]; if (it && it.st === '준비') { it.st = '서류 확인'; save(); } }
+  S.agentId = ''; render();
+}
 function won(n) { return Math.round(Number(n) || 0).toLocaleString('ko-KR'); }
 function pill(t, k) { return h('span', { class:'pill ' + (k || ''), text:t }); }
 function btn(t, c, fn) { return h('button', { type:'button', class:'btn ' + (c || ''), text:t, onclick:fn }); }
@@ -59,7 +72,7 @@ function topbar() {
     h('div', { class:'tabs', role:'tablist' }, TABS.map(function (t) { return h('button', { type:'button', class:'tab', role:'tab', 'aria-selected':String(S.view === t[0]), text:t[1], onclick:function () { go(t[0]); } }); }))]);
 }
 function notice() {
-  return h('div', { class:'note info', style:'margin:16px 0', id:'pb-note', text:'이 화면은 기관 사이트에 접속하거나 서류를 제출·결제하지 않고 어떤 정보도 밖으로 보내지 않습니다. 적어 둔 내용은 이 브라우저에만 저장돼요. 실제 대행은 나비웹 도우미가 기관 사이트에서 내 승인을 받아 합니다.' });
+  return h('div', { class:'note info', style:'margin:16px 0', id:'pb-note', text:'이 화면은 기관 사이트에 접속하거나 서류를 제출·결제하지 않습니다. 적어 둔 내용은 이 브라우저에만 저장되고, 「도우미에게 맡기기」를 누를 때만 기관 이름과 할 일이 나비웹 도우미에게 전달돼요. 실제 대행은 도우미가 기관 사이트에서 내 승인을 받아 하고, 로그인·최종 확인·결제는 내가 합니다.' });
 }
 function tile(k, v, s, id) { return h('div', { class:'tile' }, [h('div', { class:'k', text:k }), h('div', { class:'num', id:id, style:'font-size:20px;font-weight:700', text:v }), s ? h('div', { class:'sub', text:s }) : null]); }
 function stepsCard(title, st, foot) {
@@ -104,8 +117,9 @@ function viewHome() {
   kids.push(table(['기관', '목적', '진행', ''], S.items.map(function (x) {
     var s = h('select', { 'aria-label':x.org + ' 진행 상태' }, STATES.map(function (c) { return h('option', { value:c, text:c }); })); s.value = x.st;
     s.onchange = function () { x.st = s.value; if (x.st === '제출 완료' && !x.d) x.d = kst(); save(); render(); };
-    return h('tr', {}, [h('td', {}, [h('b', { text:x.org }), h('div', { class:'sub', text:x.kind })]), h('td', { text:x.goal }), h('td', {}, [s]), h('td', {}, [btn('삭제', 'quiet', function () { S.items = S.items.filter(function (y) { return y.id !== x.id; }); save(); render(); })])]);
+    return h('tr', {}, [h('td', {}, [h('b', { text:x.org }), h('div', { class:'sub', text:x.kind })]), h('td', { text:x.goal }), h('td', {}, [s]), h('td', {}, [btn('도우미로 진행', 'fill sm', function () { handOff(x.org, x.goal, x.docs, x.id); }), ' ', btn('삭제', 'quiet', function () { S.items = S.items.filter(function (y) { return y.id !== x.id; }); save(); render(); })])]);
   })));
+  if (S.msg) kids.push(h('div', { class:'note info', role:'status', id:'pb-agent-msg', style:'margin-top:8px', text:S.msg }));
   kids.push(h('div', { class:'sub', style:'margin-top:8px', text:'진행 상태는 내가 직접 바꿉니다. 기관 사이트의 실제 접수 상태와 자동으로 맞춰지지는 않아요.' }));
   return kids;
 }
@@ -126,7 +140,7 @@ function viewRequest() {
     field('pb-q-goal', '하려는 일', f.goal, { err:e.goal, max:80, ph:'예: 지급명령 신청서 제출', set:function (v) { f.goal = v; } }),
     field('pb-q-docs', '필요한 서류(쉼표로 구분, 선택)', f.docs, { max:200, ph:'예: 신청서, 소명자료', set:function (v) { f.docs = v; } })]),
     h('div', { class:'rowf', style:'margin-top:16px' }, [btn('내 행정에 적기', 'fill', addItem),
-      btn('나비웹 도우미에게 맡기기', 'quiet', function () { var org = clean(f.org, 40) || '기관 사이트', goal = clean(f.goal, 80) || '필요한 서류'; ask('나비웹 도우미로 ' + org + '에서 "' + goal + '" 서류를 찾아 필드를 채워 줘. 로그인과 최종 확인·결제는 내가 할게.'); }),
+      btn('나비웹 도우미에게 맡기기', 'quiet', function () { handOff(f.org, f.goal, f.docs, ''); }),
       S.msg ? h('span', { class:'sub', role:'status', text:S.msg }) : null])]));
   kids.push(stepsCard('이렇게 나눠서 합니다', [
     ['내가 로그인', '공동인증서 같은 로그인과 본인 인증은 항상 내가 직접 해요. 도우미는 비밀번호와 인증서를 다루지 않아요.'],
@@ -228,6 +242,7 @@ window.NaviPublic = {
   nav:function (a) { if (M && a && typeof a === 'object') nav(a); },
   view:function (v) { if (M && VIEWS.indexOf(v) >= 0) go(v); },
   matchDocs:matchDocs,
+  agentResult:function (ok, msg) { if (M) agentResult(!!ok, msg); },
   on:function (t, f) { if (typeof f === 'function') (LS[t] = LS[t] || []).push(f); }
 };
 })();

@@ -28,7 +28,7 @@ test('matchDocs: 요구 서류 대조 — 띄어쓰기·대소문자 무시, 빈
 
 test('화면: 탭 6개, 첫 화면은 내 행정, 아무것도 밖으로 보내지 않는다', { skip }, () => {
   const p = page(); assert.equal(p.doc.querySelectorAll('.tab').length, 6);
-  assert.match(p.txt(), /아직 적어 둔 일이 없어요/); assert.match(p.txt(), /기관 사이트에 접속하거나 서류를 제출·결제하지 않고/); assert.equal(p.fetched(), 0);
+  assert.match(p.txt(), /아직 적어 둔 일이 없어요/); assert.match(p.txt(), /기관 사이트에 접속하거나 서류를 제출·결제하지 않습니다/); assert.equal(p.fetched(), 0);
   p.N.view('principle'); assert.match(p.txt(), /도장 찍는 로봇/); p.N.view('connect'); assert.match(p.txt(), /아직 없음/);
 });
 
@@ -43,9 +43,21 @@ test('대행 요청 → 내 행정 → 제출 기록, 이 브라우저에만 저
   p.N.view('home'); p.btn('삭제').click(); assert.equal(JSON.parse(p.w.localStorage.getItem('navi-public-v1')).items.length, 0); assert.equal(p.fetched(), 0);
 });
 
-test('도우미에게 맡기기는 대화창에 말만 채운다 · 위임은 효력 없음 표시', { skip }, () => {
+test('도우미에게 맡기기: 연결이 없으면 알리고, 있으면 기관·할 일만 넘기고 결과를 화면에 보인다', { skip }, () => {
   const p = page('request'); type(p, 'pb-q-org', '정부24'); type(p, 'pb-q-goal', '주민등록등본 발급'); p.btn('나비웹 도우미에게 맡기기').click();
-  assert.equal(p.asks.length, 1); assert.match(p.asks[0], /정부24/); assert.match(p.asks[0], /로그인과 최종 확인·결제는 내가/);
+  assert.equal(p.asks.length, 0); assert.match(p.txt(), /도우미를 쓸 수 없는 화면/);
+  const jobs = []; p.N.on('agent', (j) => jobs.push(j));
+  p.btn('나비웹 도우미에게 맡기기').click();
+  assert.equal(jobs.length, 1); assert.deepEqual([jobs[0].org, jobs[0].goal], ['정부24', '주민등록등본 발급']); assert.match(p.txt(), /맡기는 중/);
+  p.N.agentResult(false, '도우미가 연결돼 있지 않아요.'); assert.match(p.txt(), /연결돼 있지 않아요/);
+  type(p, 'pb-q-org', '정부24'); type(p, 'pb-q-goal', '주민등록등본 발급'); p.btn('내 행정에 적기').click(); p.N.view('home');
+  p.btn('도우미로 진행').click(); assert.equal(jobs.length, 2); assert.ok(jobs[1].id);
+  p.N.agentResult(true, '도우미가 시작합니다.'); assert.equal(p.doc.querySelector('select[aria-label$="진행 상태"]').value, '서류 확인'); assert.match(p.doc.getElementById('pb-agent-msg').textContent, /도우미가 시작/);
+  assert.equal(p.fetched(), 0);
+});
+
+test('위임은 효력 없음 표시', { skip }, () => {
+  const p = page('request');
   p.N.view('delegate'); type(p, 'pb-d-org', '정부24'); type(p, 'pb-d-lim', '10000'); p.btn('위임 적어 두기').click(); assert.match(p.txt(), /아직 효력은 없어요/);
   assert.equal(JSON.parse(p.w.localStorage.getItem('navi-public-v1')).rules[0].limit, 10000);
   type(p, 'pb-d-lim', '-5'); type(p, 'pb-d-org', 'x'); p.btn('위임 적어 두기').click(); assert.match(p.txt(), /0~10억/); assert.equal(p.fetched(), 0);

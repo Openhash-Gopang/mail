@@ -3846,9 +3846,20 @@ function _pubShow(view) {
     if (!r.dataset.on) {
       r.dataset.on = '1';
       NaviPublic.on('ask', (t) => { _infraChatSync('pub'); if (window.InfraHost) InfraHost.ask(t); });   // 대화는 우하단 아이콘의 전문가 SP 대화창에서
+      NaviPublic.on('agent', _pubAgent);   // 행정 대행: 기관·할 일을 나비웹 도우미에 맡긴다(로그인·최종 확인·결제는 사용자)
       NaviPublic.mount(r, { view: view });
     } else if (view) NaviPublic.view(view);
   });
+}
+// 행정 화면의 「도우미에게 맡기기」(2026-11-25): 화면은 기관 이름·할 일·서류 이름만 넘기고, 여기서 나비웹 도우미에 맡긴다. 정부24 일이면 정부24 플레이북, 그 밖의 기관은 자유 작업.
+async function _pubAgent(job) {
+  const say = (ok, m) => { try { NaviPublic.agentResult(ok, m); } catch (e) {} };
+  let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
+  if (!info) { say(false, window.NaviAgent && NaviAgent.STORE_URL ? '나비웹 도우미가 연결돼 있지 않아요. 홈 메뉴의 도우미 설치를 눌러 추가한 뒤 다시 맡겨 주세요.' : '나비웹 도우미가 연결돼 있지 않아요.'); return; }
+  const gov = /정부24|정부 24|gov\.kr|민원24/.test(job.org + ' ' + job.goal);
+  const goal = job.org + ' 사이트에서 "' + job.goal + '"' + (job.docs ? ' (필요 서류: ' + job.docs + ')' : '') + ' 일을 진행해 주세요. 로그인·본인 인증·최종 확인·결제는 사용자가 직접 합니다.';
+  let ok = false; try { ok = await NaviAgent.queue({ playbook: gov ? 'gov24-doc' : '', goal: goal, title: '행정 대행 — ' + job.org }); } catch (e) { ok = false; }
+  say(!!ok, ok ? '도우미가 시작합니다. 열린 사이트 화면의 안내에 따라 로그인해 주세요. 인증서·결제는 직접 하셔야 합니다.' : '도우미에 맡기지 못했어요. 확장 프로그램이 켜져 있는지 확인해 주세요.');
 }
 function _pubOpen(view) { _switchTab('pub'); _pubShow(view); }
 // 나비웹 민주주의(2026-11-23): 인프라 AI → 민주주의를 고르면 민주주의 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — democracy.css·democracy-app.js, Material 3).
