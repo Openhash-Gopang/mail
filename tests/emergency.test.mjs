@@ -248,3 +248,12 @@ test('부드러운 전환: 눌린 단계가 진행 막대 아래로 스크롤되
   id('emg-row-1-2').click(); assert.equal(!!id('emg-ipanel'), false, '같은 단계를 다시 누르면 접힌다'); while (q.length) q.shift().fn(); assert.equal(p.doc.querySelectorAll('.ipanel').length, 0);
   assert.equal(id('emg-apanel').classList.contains('open'), false);
 });
+
+test('Material Design 3: 토큰·상태 레이어·타입 스케일·탄성 곡선이 단계 화면에 적용되고 시뮬레이션 패널 규칙은 그대로다', { skip }, () => {
+  assert.match(css, /--md-ease:cubic-bezier\(\.2,0,0,1\)/); assert.match(css, /--md-e1:/);
+  assert.match(css, /\.emg \.srow:hover:not\(:disabled\)::before\{opacity:\.08\}/); assert.match(css, /\.emg \.srow:focus-visible::before,\.emg \.srow:active:not\(:disabled\)::before\{opacity:\.12\}/);
+  assert.match(css, /\.emg \.stx b\{font-size:16px;line-height:24px;font-weight:500/); assert.match(css, /\.emg \.sid\{[^}]*border-radius:50%/); assert.match(css, /\.emg \.tick\.cur::before/);
+  assert.match(css, /\.emg \.ipanel\{[^}]*border-radius:16px[^}]*box-shadow:var\(--md-e1\)/); assert.equal(/\.ipanel\{[^}]*border-left/.test(css), false, '왼쪽 띠는 쓰지 않는다');
+  assert.match(css, /\.emg \.btn\.tonal\{/); assert.match(css, /\.emg \.panel\.auto\{z-index:45\}/); assert.match(css, /\.emg \.panel\{position:fixed;top:54px;right:0;bottom:0;width:min\(480px,100vw\)/);
+  const p = page(); const id = (x) => p.doc.getElementById(x); assert.ok(id('emg-draw').classList.contains('tonal'));
+});
