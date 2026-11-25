@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>표준 절차 승인 · 나비웹 관리자</title>
+<style>
+:root{--pri:#3B7DDD;--bg:#F7F9FC;--sur:#fff;--line:#E9ECEF;--txt:#212529;--sub:#6C757D;--bad:#DC3545}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px}h1{font-size:20px}
+.card{background:var(--sur);border:1px solid var(--line);border-radius:10px;padding:16px;margin:12px 0;overflow-wrap:anywhere}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+button{font:inherit;border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:8px;padding:8px 14px;cursor:pointer}
+button.alt{background:#fff;color:var(--pri)}button.bad{background:#fff;color:var(--bad);border-color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sub{color:var(--sub);font-size:13px}.err{color:var(--bad)}
+dt{font-weight:600;margin-top:8px}dd{margin:0}
+</style>
+</head>
+<body>
+<main>
+  <h1>표준 절차 승인</h1>
+  <p class="sub">승인한 절차는 다른 이용자의 같은 요청에 쓰입니다. 접수 주소·단계·출처를 공식 사이트에서 확인한 뒤 승인하세요. 개인 자료(이름 등)가 섞여 있으면 거절하세요.</p>
+  <form id="login" class="card row">
+    <input id="email" type="email" autocomplete="username" placeholder="관리자 이메일" required>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호" required>
+    <button>로그인</button>
+  </form>
+  <div id="bar" class="row" hidden>
+    <select id="appr" aria-label="상태"><option value="pending">검토 대기</option><option value="approved">승인됨</option><option value="rejected">거절됨</option><option value="retired">사용 중지</option></select>
+    <button type="button" class="alt" id="reload">새로 고침</button>
+  </div>
+  <p id="msg" class="sub" role="status"></p>
+  <div id="list"></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var API = 'https://hondi-proxy.tensor-city.workers.dev';
+  var token = '';   // 화면을 닫으면 사라진다(저장하지 않는다)
+  var $ = function (id) { return document.getElementById(id); };
+  function say(t, bad) { $('msg').textContent = t; $('msg').className = bad ? 'err' : 'sub'; }
+  function el(tag, text, cls) { var e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; }
+  function call(path, body) {
+    return fetch(API + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: 'Bearer ' + token } : {}), body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) { if (r.status === 401 && token) { token = ''; $('login').hidden = false; $('bar').hidden = true; $('list').textContent = ''; } throw new Error(d.message || ('HTTP ' + r.status)); } return d; }); });
+  }
+  function link(url) { if (!/^https:\/\//.test(url || '')) return el('span', url || ''); var a = el('a', url); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; }
+  function pair(dl, name, nodes) { if (!nodes.length) return; dl.appendChild(el('dt', name)); nodes.forEach(function (n) { var dd = el('dd'); dd.appendChild(typeof n === 'string' ? document.createTextNode(n) : n); dl.appendChild(dd); }); }
+  function card(it) {
+    var c = el('section', undefined, 'card');
+    c.appendChild(el('strong', it.title + (it.variant ? ' — ' + it.variant : '') + ' (' + it.version + '판)'));
+    var dl = el('dl');
+    pair(dl, '처리 기관', [it.agency + (it.legal_kind ? ' · ' + it.legal_kind : '')]);
+    pair(dl, '접수 주소', [link(it.entry_url)]);
+    pair(dl, '근거', it.legal_basis ? [it.legal_basis] : []);
+    pair(dl, '별칭', (it.aliases || []).slice());
+    pair(dl, '적용 조건', (it.conditions || []).slice());
+    pair(dl, '단계', (it.steps || []).map(function (s, i) { var w = el('span', (i + 1) + '. [' + (s.actor === 'user' ? '사용자' : '도우미') + '] ' + s.action + (s.submit ? ' (제출 전 확인)' : '')); if (s.url) { w.appendChild(document.createTextNode(' ')); w.appendChild(link(s.url)); } return w; }));
+    pair(dl, '입력 항목', (it.required_fields || []).slice());
+    pair(dl, '첨부서류', (it.documents || []).slice());
+    pair(dl, '출처', (it.sources || []).map(function (s) { var w = el('span', (s.title || '') + ' '); w.appendChild(link(s.url)); return w; }));
+    pair(dl, '확인일', [it.verified_at || '없음']);
+    c.appendChild(dl);
+    var row = el('div', undefined, 'row'), stage = el('select');
+    stage.setAttribute('aria-label', '확인 단계');
+    [['draft', '초안(접수 미확인)'], ['received', '접수 확인'], ['completed', '완료 확인']].forEach(function (o) { var x = el('option', o[1]); x.value = o[0]; stage.appendChild(x); });
+    stage.value = it.stage || 'draft';
+    var note = el('input'); note.placeholder = '검토 메모(개인 자료 금지)'; note.value = it.review_note || '';
+    row.appendChild(stage); row.appendChild(note);
+    [['approved', '승인', ''], ['rejected', '거절', 'bad'], ['retired', '사용 중지', 'alt']].forEach(function (a) {
+      var b = el('button', a[1], a[2]); b.type = 'button';
+      b.onclick = function () { b.disabled = true; call('/admin/procedures/review', { id: it.id, approval: a[0], stage: stage.value, note: note.value }).then(load, function (e) { b.disabled = false; say(e.message, true); }); };
+      row.appendChild(b);
+    });
+    c.appendChild(row);
+    return c;
+  }
+  function load() {
+    say('불러오는 중…');
+    return call('/admin/procedures?approval=' + encodeURIComponent($('appr').value)).then(function (d) {
+      $('list').textContent = ''; (d.items || []).forEach(function (it) { $('list').appendChild(card(it)); });
+      say((d.items || []).length ? d.items.length + '건' : '해당하는 절차가 없습니다.');
+    }, function (e) { say(e.message, true); });
+  }
+  $('login').onsubmit = function (e) {
+    e.preventDefault(); say('로그인 중…');
+    call('/admin/login', { email: $('email').value.trim(), password: $('pw').value }).then(function (d) {
+      token = d.token; $('pw').value = ''; $('login').hidden = true; $('bar').hidden = false; load();
+    }, function (err) { say(err.message, true); });
+  };
+  $('reload').onclick = load; $('appr').onchange = load;
+})();
+</script>
+</body>
+</html>
