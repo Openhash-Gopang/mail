@@ -3622,7 +3622,7 @@ function _bankShow(view) {
 function _bankOpen(view) { _switchTab('bank'); _bankShow(view); }
 // 나비웹 증권(2026-11-23): 인프라 AI → 증권을 고르면 증권 화면을 이 문서 안에 직접 그려 연다(iframe 없음 — stock.css·stock-app.js, Material 3).
 // 시세·주문 서버가 없어 주문은 보내지 않고 시세는 보여 주지 않는다(현재가는 직접 입력). 기록은 이 브라우저에만 저장. 안쪽 '증권 AI에게 묻기'는 기존 증권 대화창으로 말을 채워 준다(보내지는 않는다).
-const _STOCK_V = '20261125h'; let _stockChat = false;
+const _STOCK_V = '20261126a'; let _stockChat = false;
 function _stockLoad(cb) { _ledgerLoad(() => _stockLoad2(cb)); }
 function _stockLoad2(cb) {
   if (window.NaviStock) { cb(); return; }
