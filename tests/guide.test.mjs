@@ -392,10 +392,10 @@ test('안내 영상 화면: 안내 영상 목록만 두고, 나비웹 사용법(
   assert.ok(wf.includes('guide-videos-sync.mjs PLVk7oB1w5pLE guide-howto.json') && wf.includes('continue-on-error: true'));
 });
 
-test('XO+ 태블릿: XO Korea 화면의 마지막 탭(나비웹 안내 오른쪽)이 xo-tablet.html 을 연다', () => {
+test('XO+ 태블릿: XO Korea 화면에서 XO+ 탭의 오른쪽 탭이 xo-tablet.html 을 연다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.indexOf('id="xk-tab-gd"') > 0 && h.indexOf('id="xk-tab-tablet"') > h.indexOf('id="xk-tab-gd"'), '나비웹 안내 오른쪽');
-  assert.ok(h.includes("tablet: 'xo-tablet.html?embed=mail&v=' + _XK_V") && h.includes("'gd', 'tablet'].forEach"));
+  assert.ok(h.indexOf('id="xk-tab-xo"') > 0 && h.indexOf('id="xk-tab-tablet"') > h.indexOf('id="xk-tab-xo"') && h.indexOf('id="xk-tab-tablet"') < h.indexOf('id="xk-tab-history"'), 'XO+ 탭 바로 오른쪽');
+  assert.ok(h.includes("tablet: 'xo-tablet.html?embed=mail&v=' + _XK_V") && h.includes("['xo', 'tablet', 'history'"));
   assert.ok(existsSync(new URL('../xo-tablet.html', import.meta.url)));
 });
 
