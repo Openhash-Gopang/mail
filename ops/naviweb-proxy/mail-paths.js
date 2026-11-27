@@ -116,5 +116,6 @@ export const MAIL_FILES = new Set([
  "watch.css",
  "whitepaper.html",
  "xo-korea.html",
+ "xo-tablet.html",
  "xo.html"
 ]);

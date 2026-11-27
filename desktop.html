@@ -2612,6 +2612,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button type="button" role="tab" class="wp-tab" id="xk-tab-oh" aria-selected="false" onclick="_xkSwitch('oh')">OpenHash</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-ma" aria-selected="false" onclick="_xkSwitch('ma')">서버리스 메일 설계</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-gd" aria-selected="false" onclick="_xkSwitch('gd')">나비웹 안내</button>
+      <button type="button" role="tab" class="wp-tab" id="xk-tab-tablet" aria-selected="false" onclick="_xkSwitch('tablet')">XO+ 태블릿</button>
       <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
     <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
@@ -2639,15 +2640,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-tax" class="tab-panel"><div id="tx-root-host"></div></div> <div id="tab-mkt" class="tab-panel"><div id="mk-root-host"></div></div> <div id="tab-trf" class="tab-panel"><div id="tf-root-host"></div></div> <div id="tab-lgs" class="tab-panel"><div id="lg-root-host"></div></div> <div id="tab-pub" class="tab-panel"><div id="pub-root-host"></div></div> <div id="tab-dem" class="tab-panel"><div id="dem-root-host"></div></div> <div id="tab-sch" class="tab-panel"><div id="sch-root-host"></div></div> <div id="tab-biz" class="tab-panel"><div id="biz-root-host"></div></div> <div id="tab-plan" class="tab-panel"><div id="plan-root-host"></div></div> <div id="tab-wch" class="tab-panel"><div id="wch-root-host"></div></div> <div id="tab-job" class="tab-panel"><div id="job-root-host"></div></div> <div id="tab-jit" class="tab-panel"><div id="jit-root-host"></div></div> <div id="tab-cty" class="tab-panel"><div id="cty-root-host"></div></div> <div id="tab-mtg" class="tab-panel"><div id="mtg-root-host"></div></div> <div id="tab-infra" class="tab-panel"><div id="infra-root"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
   <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
-    <section class="yt-sec" aria-labelledby="yt-howto-h">
-      <div class="yt-head"><h2 id="yt-howto-h">나비웹 사용법</h2></div>
-      <div class="yt-tabs" role="tablist" aria-label="사용법 수준">
-        <button type="button" class="yt-tab" id="yt-tab-basic" role="tab" aria-selected="true" aria-controls="yt-howto" onclick="_ytLevel('basic')">초급</button>
-        <button type="button" class="yt-tab" id="yt-tab-mid" role="tab" aria-selected="false" aria-controls="yt-howto-mid" onclick="_ytLevel('mid')">중급</button>
-      </div>
-      <ol class="yt-list" id="yt-howto" role="tabpanel" aria-labelledby="yt-tab-basic"></ol>
-      <ol class="yt-list" id="yt-howto-mid" role="tabpanel" aria-labelledby="yt-tab-mid" hidden></ol>
-    </section>
     <section class="yt-sec" aria-labelledby="yt-intro-h">
       <div class="yt-head"><h2 id="yt-intro-h">안내 영상</h2><a class="yt-all" href="https://www.youtube.com/playlist?list=PLExMxaYxMDPE" target="_blank" rel="noopener">YouTube에서 전체 보기</a></div>
       <ol class="yt-list" id="yt-grid"></ol>
@@ -9430,7 +9422,6 @@ async function _ytLoad(file, fallback) {
   } catch (e) {}
   return fallback || _YT_LIST;
 }
-// 나비웹 사용법 영상은 guide-howto.json(재생목록 PLVk7oB1w5pLE, GitHub Actions 가 30분마다 갱신)에서 읽는다. 아직 영상이 없으면 '준비 중' 문구.
 function _ytRow(v, i) {
   const li = document.createElement('li'); li.className = 'yt-card';
   const m = /^\s*(navi\s*\d+)\s*[-–—]\s*(.+)$/i.exec(v.t || '');
@@ -9455,33 +9446,7 @@ function _ytRow(v, i) {
   th.addEventListener('click', toggle); go.addEventListener('click', toggle);
   return li;
 }
-// 사용법 영상 초급·중급 탭 — 중급은 guide-howto-mid.json(재생목록 PLaRjMKGRz50E, 같은 Actions 가 갱신)에서 읽는다.
-let _ytLv = 'basic';
-function _ytLevel(lv) {
-  _ytLv = lv === 'mid' ? 'mid' : 'basic';
-  const b = document.getElementById('yt-tab-basic'), m = document.getElementById('yt-tab-mid');
-  if (b) b.setAttribute('aria-selected', _ytLv === 'basic' ? 'true' : 'false'); if (m) m.setAttribute('aria-selected', _ytLv === 'mid' ? 'true' : 'false');
-  const hb = document.getElementById('yt-howto'), hm = document.getElementById('yt-howto-mid');
-  if (hb) hb.hidden = _ytLv !== 'basic'; if (hm) hm.hidden = _ytLv !== 'mid';
-  _ytRender();
-}
 async function _ytRender() {
-  const hm = document.getElementById('yt-howto-mid');
-  if (hm && _ytLv === 'mid' && !hm.childElementCount && !hm.dataset.busy) {
-    hm.dataset.busy = '1'; const ml = await _ytLoad('guide-howto-mid.json', []); delete hm.dataset.busy;
-    if (!hm.childElementCount) {
-      if (ml.length) ml.forEach((v, i) => hm.appendChild(_ytRow(v, i)));
-      else hm.innerHTML = '<li class="yt-empty">중급 영상을 준비하고 있습니다. 곧 이곳에 올라옵니다.</li>';
-    }
-  }
-  const hw = document.getElementById('yt-howto');
-  if (hw && !hw.childElementCount && !hw.dataset.busy) {
-    hw.dataset.busy = '1'; const hl = await _ytLoad('guide-howto.json', []); delete hw.dataset.busy;
-    if (!hw.childElementCount) {
-      if (hl.length) hl.forEach((v, i) => hw.appendChild(_ytRow(v, i)));
-      else hw.innerHTML = '<li class="yt-empty">나비웹 사용법 영상을 준비하고 있습니다. 곧 이곳에 올라옵니다.</li>';
-    }
-  }
   const ol = document.getElementById('yt-grid'); if (!ol || ol.childElementCount || ol.dataset.busy) return;
   ol.dataset.busy = '1'; const list = await _ytLoad(); delete ol.dataset.busy; if (ol.childElementCount) return;
   list.forEach((v, i) => ol.appendChild(_ytRow(v, i)));
@@ -9522,7 +9487,7 @@ window.addEventListener('scroll', () => {
   }, 200);
 }, { passive: true });
 const _XK_V = String(Math.floor(Date.now() / 60000));   // 1분마다 바뀌는 값 — Cloudflare(max-age 4시간)·브라우저가 옛 문서를 붙들지 않게 한다
-const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V, wp: 'manual.html?embed=mail&v=' + _XK_V, oh: 'openhash.html?embed=mail&v=' + _XK_V, ma: 'mail-architecture.html?embed=mail&v=' + _XK_V, gd: 'naviweb-guide.html?embed=mail&v=' + _XK_V };
+const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V, wp: 'manual.html?embed=mail&v=' + _XK_V, oh: 'openhash.html?embed=mail&v=' + _XK_V, ma: 'mail-architecture.html?embed=mail&v=' + _XK_V, gd: 'naviweb-guide.html?embed=mail&v=' + _XK_V, tablet: 'xo-tablet.html?embed=mail&v=' + _XK_V };
 function _xkSwitch(k) {
   const f = document.getElementById('xokorea-frame');
   _subSet('xk', k);
@@ -9530,7 +9495,7 @@ function _xkSwitch(k) {
     // 안쪽 문서가 높이를 알려 오지 않으면(옛 문서·로딩 실패) 안쪽 스크롤을 되살려 내용이 잘리지 않게 한다
     setTimeout(() => { if (f.getAttribute('data-k') === k && !f.getAttribute('data-sized')) f.setAttribute('scrolling', 'auto'); }, 3000);
   }
-  ['xo', 'history', 'wp', 'oh', 'ma', 'gd'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
+  ['xo', 'history', 'wp', 'oh', 'ma', 'gd', 'tablet'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
 }
 window.addEventListener('message', (e) => {
   const f = document.getElementById('xokorea-frame'); if (!f || e.source !== f.contentWindow || !e.data) return;

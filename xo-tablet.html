@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XO+ 태블릿</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--pri:#1A73E8;--on:#202124;--on2:#5F6368;--line:#DADCE0;--bg:#fff}
+@media (prefers-color-scheme:dark){:root{--pri:#8AB4F8;--on:#E8EAED;--on2:#9AA0A6;--line:#3C4043;--bg:#202124}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',Roboto,-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--on);font-size:15px;line-height:1.75;word-break:keep-all;-webkit-font-smoothing:antialiased}
+.wrap{max-width:840px;margin:0 auto;padding:32px 24px 64px}
+h1{font-size:28px;line-height:1.35;font-weight:600;letter-spacing:-.01em}
+h1 small{display:block;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--on2);margin-bottom:8px}
+.lead{margin-top:6px;color:var(--on2);font-size:16px}
+.meta{font-size:13px;color:var(--on2);margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 8px}
+.toc a{border:1px solid var(--line);color:var(--on);border-radius:8px;padding:4px 12px;font-size:13px;font-weight:500;text-decoration:none}
+.toc a:hover{border-color:var(--pri);color:var(--pri)}
+section{margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
+h2{font-size:20px;line-height:1.4;font-weight:600;margin-bottom:12px}
+h2 .n{display:inline;font-size:inherit;font-weight:inherit;color:var(--pri);margin-right:10px}
+h3{font-size:16px;font-weight:600;margin:24px 0 6px}
+p{color:var(--on2);margin:0 0 12px}p b,li b,td b{color:var(--on);font-weight:600}
+ul,ol{margin:0 0 12px 22px;color:var(--on2)}li{margin:4px 0}
+a{color:var(--pri)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;color:var(--on)}
+.key{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.key div{border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--on2);font-size:14px;line-height:1.6}
+.key div b{display:block;color:var(--on);font-size:14px;font-weight:600;margin-bottom:2px}
+.callout{border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:4px 12px 12px 4px;padding:12px 18px;margin:16px 0}
+.callout p{margin:0 0 8px}.callout p:last-child{margin:0}
+blockquote{border-left:3px solid var(--line);padding:2px 0 2px 14px;color:var(--on2);font-size:14px;margin:12px 0}
+.tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;color:var(--on2);border-top:1px solid var(--line)}
+tr:first-child th,tr:first-child td{border-top:0}
+th{color:var(--on);font-weight:600}
+.tag{display:inline-block;font-size:11px;line-height:18px;padding:0 6px;border:1px solid var(--line);border-radius:4px;margin-right:4px;font-weight:500;color:var(--on2);white-space:nowrap;vertical-align:1px}
+.small{font-size:13px}
+h4{font-size:15px;font-weight:600}
+@media (max-width:700px){.key{grid-template-columns:1fr}h1{font-size:24px}.wrap{padding:24px 16px 48px}}
+</style>
+</head>
+<body>
+<script>if (/[?&]embed=mail/.test(location.search)) document.body.classList.add('embed');</script>
+<div class="wrap">
+<h1><small>XO+ · TABLET</small>XO+ 태블릿</h1>
+<p class="lead">스마트폰의 화면을 크게 펼쳐 주는, 나비웹 전용 태블릿</p>
+<div class="toc"><a href="#t1">1. 역할</a><a href="#t2">2. 화면과 소통</a><a href="#t3">3. OS 기능</a><a href="#t4">4. 신뢰와 안전</a><a href="#t5">5. 분실과 복구</a><a href="#t6">6. 정해야 할 것</a></div>
+
+<section id="t1">
+<h2><span class="n">1</span>역할</h2>
+<p>태블릿의 주된 용도는 <b>스마트폰 화면의 확대</b>다. naviweb.kr은 PC에서 접속하면 desktop.html, 폰에서 접속하면 webapp.html을 연다. 이동 중에도 폰으로 desktop.html을 쓰기 위한 방법이 태블릿이다.</p>
+<div class="key">
+<div><b>스마트폰</b>인증과 통신을 맡는다. 서명 키를 가지고, 서버와 이어진다.</div>
+<div><b>태블릿</b>화면과 입력을 맡는다. 키보드, 트랙패드, 마우스, 펜을 쓴다. 자기 서명 키도 가진다.</div>
+<div><b>클라우드</b>암호화된 데이터만 보관한다. 평문은 보지 못한다.</div>
+</div>
+<h3>두 가지 모드</h3>
+<div class="tbl"><table>
+<tr><th>모드</th><th>내용</th><th>XO+가 하는 일</th></tr>
+<tr><td><b>일반 모드</b></td><td>기존 태블릿의 웹 접속과 게임 등을 그대로 쓴다. 모든 태블릿이 이미 갖춘 기능이다.</td><td>추가하는 기능 없음</td></tr>
+<tr><td><b>나비웹 전용 모드</b></td><td>나비웹 전용 브라우저 하나로 나비웹 사이트만 방문한다. 사람이 임의의 사이트를 돌아다니는 일은 고려하지 않는다.</td><td>XO+가 정의하는 모드</td></tr>
+</table></div>
+</section>
+
+<section id="t2">
+<h2><span class="n">2</span>화면과 소통</h2>
+<h3>화면은 태블릿이 직접 그린다</h3>
+<p>전용 모드의 태블릿은 desktop.html을 <b>직접 실행</b>해 화면을 그린다. 폰 화면을 영상으로 받아 보여 주는 방식(화면 미러링)은 쓰지 않는다. 지연이 없고, 폰이 곁에 없어도 문서 편집과 PDV 열람이 계속되며, 배터리와 전송량 부담이 작기 때문이다.</p>
+<h3>폰과 태블릿의 통신</h3>
+<div class="tbl"><table>
+<tr><th>용도</th><th>수단</th></tr>
+<tr><td>페어링, 근접 확인, 깨우기, 서명 요청 알림</td><td>블루투스(BT)</td></tr>
+<tr><td>대용량 데이터(PDV 동기화, 문서)</td><td>Wi‑Fi Direct 또는 폰 핫스팟</td></tr>
+<tr><td>서버와의 통신</td><td>폰이 중계하거나 태블릿이 직접 연결한다. 중계 프로토콜은 WebRTC 기반으로 계획한다.</td></tr>
+</table></div>
+<div class="callout"><p>지금의 기기 연동(QR 90초 세션, X25519 + AES‑GCM 봉투)은 <b>폰의 개인 키를 PC로 복사</b>하는 구조다. 태블릿은 키를 따로 가지므로 이 방식을 그대로 쓰지 않는다. 태블릿이 만든 <b>공개 키만 등록</b>하는 절차를 둔다.</p></div>
+</section>
+
+<section id="t3">
+<h2><span class="n">3</span>OS 기능</h2>
+<ul>
+<li>최소 Linux와 <b>전체 화면 나비웹 브라우저 하나</b>로 구성한다. 앱 실행기와 앱 스토어는 두지 않는다.</li>
+<li>문서 형식은 HTML5 하나다.</li>
+<li>서명 키는 하드웨어 보안 영역에서 만들고, 기기 밖으로 나가지 않는다.</li>
+<li>패스키(FIDO2/WebAuthn)와 호환한다.</li>
+<li>PDV는 암호화해 저장하고, 폰과 태블릿 <b>두 곳에 백업</b>한다.</li>
+<li>일반 모드로 바꾸면 전용 영역(키, PDV)은 분리되어, 일반 모드의 앱이 읽을 수 없다.</li>
+<li>OS와 브라우저 업데이트는 서명된 이미지로만 받는다. 보안 패치 시점은 서버가 기기 등급을 판정할 때 쓴다.</li>
+</ul>
+<p>폰 없이도 서명, PDV 열람, 문서 편집은 계속한다.</p>
+</section>
+
+<section id="t4">
+<h2><span class="n">4</span>신뢰와 안전</h2>
+<h3>서명 주체</h3>
+<p>폰과 태블릿 <b>둘 다 서명</b>한다. 폰의 보안 수준은 이미 상당하므로 폰 단독 서명도 허용하되, <b>아이폰 수준의 보안</b>을 요구한다.</p>
+<h3>기기 등급</h3>
+<p>기종 목록이 아니라 <b>기기가 증명하는 보안 수준</b>으로 등급을 정한다. 새 기종이 나와도 목록을 관리할 필요가 없고, 보안 패치가 끊긴 기기는 자동으로 내려간다.</p>
+<div class="tbl"><table>
+<tr><th>등급</th><th>조건</th></tr>
+<tr><td><span class="tag">A</span><b>최신 갤럭시·아이폰 수준</b></td><td>하드웨어 보안 영역(Secure Enclave, StrongBox)의 키를 서버가 증명으로 검증했고, 최신 OS와 최근 보안 패치를 쓴다. XO+ 태블릿도 여기에 든다. 기준은 2026년 11월의 최신 기종 수준이다.</td></tr>
+<tr><td><span class="tag">B</span><b>그 외</b></td><td>증명이 안 되거나, 보안 영역이 약하거나, 패치가 오래된 기기.</td></tr>
+<tr><td><span class="tag">거부</span><b>등록 불가</b></td><td>루팅·부트로더 해제 기기.</td></tr>
+</table></div>
+<p>패치가 끊기면 A에서 B로 자동으로 내리고 사용자에게 알린다. 등급은 서명할 때마다 서버가 증명 결과로 다시 확인하며, 기기가 스스로 알리는 등급은 믿지 않는다.</p>
+<h3>작업별 허용 범위</h3>
+<div class="tbl"><table>
+<tr><th>작업</th><th>A 등급</th><th>B 등급</th></tr>
+<tr><td>대화, 조회, 서류 초안, 메일 발송</td><td>허용</td><td>허용</td></tr>
+<tr><td>결제·송금</td><td>높은 한도(별도 설정)</td><td>1일 100만 원 미만, 월 누적 1천만 원 미만</td></tr>
+<tr><td>서류 제출, 계약 승인</td><td>허용</td><td>중요도 낮은 서류만</td></tr>
+<tr><td>기기 등록·폐기, 복구, 한도 변경</td><td>알림과 대기 시간을 두고 허용</td><td>불가</td></tr>
+</table></div>
+<p class="small">한도 수치는 예시이며 운영하면서 조정한다. 결제 밖의 작업은 사용자가 하려는 일의 중요도에 따라 하위·구형 기종의 범위를 제한한다.</p>
+<h3>서류 중요도</h3>
+<p>처음에는 <b>제출처</b>로 나눈다. 학교 제출 서류나 민원 신청서처럼 취소·정정이 쉬운 서류는 B 등급도 낼 수 있다. 법원이나 등기소처럼 되돌리기 어려운 곳, 계약 체결, 재산권 변동은 A 등급 기기로 승인해야 한다. 이후 서류 종류별로 세분화한다.</p>
+<h3>구현 원칙</h3>
+<ul>
+<li>일·월 누적 한도는 <b>서버가 집계하고 강제</b>한다. 기기 안에서만 확인하면 우회된다.</li>
+<li>B 등급 폰이라도 A 등급 기기(태블릿)가 함께 서명하면 A 한도를 쓰는 안을 선택지로 둔다.</li>
+<li>서명하기 전에 서명할 내용을 화면에 그대로 보여 주고(WYSIWYS), 하드웨어로 확인한 뒤 보안 칩이 해시에 서명한다. OpenHash에는 해시만 남긴다.</li>
+<li>AI 비서의 지시문은 서명하고, 해시를 OpenHash에 남긴다.</li>
+</ul>
+<h3>신뢰 등급</h3>
+<div class="tbl"><table>
+<tr><th>위치</th><th>신뢰</th><th>설명</th></tr>
+<tr><td>태블릿(XO+)</td><td>최상</td><td>전용 OS, 하드웨어 키, 보이는 그대로 서명</td></tr>
+<tr><td>폰(A 등급)</td><td>높음</td><td>증명된 하드웨어 키, 단독 서명 가능</td></tr>
+<tr><td>폰(B 등급)</td><td>제한</td><td>소액 결제와 중요도 낮은 서류만</td></tr>
+<tr><td>클라우드</td><td>평문 비신뢰</td><td>PDV는 암호화된 상태로만 보관</td></tr>
+</table></div>
+</section>
+
+<section id="t5">
+<h2><span class="n">5</span>분실과 복구</h2>
+<p>폰과 태블릿은 <b>각자 키</b>를 가진다(복사하지 않는다). PDV는 암호화해 두 기기에 백업한다. 둘 중 하나를 잃어도 남은 기기로 복구한다.</p>
+<div class="tbl"><table>
+<tr><th>단계</th><th>처리</th></tr>
+<tr><td>1. 정지</td><td>남은 기기에서 분실 기기의 키를 즉시 정지한다. 정지는 기다리지 않고 할 수 있다.</td></tr>
+<tr><td>2. 폐기</td><td>분실 기기의 공개 키를 등록에서 지우고 OpenHash에 기록한다.</td></tr>
+<tr><td>3. 새 기기 등록</td><td>새 기기가 새 키를 만들고, 남은 A 등급 기기가 승인한다. 탈취에 대비해 알림 뒤 대기 시간을 둔다.</td></tr>
+<tr><td>4. PDV 복원</td><td>남은 기기의 백업으로 새 기기의 PDV를 되살린다.</td></tr>
+</table></div>
+<ul>
+<li>남은 기기가 B 등급 폰이면 기기 등록·폐기·복구를 직접 할 수 없으므로, 오프라인으로 보관하는 <b>복구용 백업 키</b>로 처리한다.</li>
+<li>두 기기를 한꺼번에 잃으면 복구용 백업 키와 본인 확인 절차로만 복구한다.</li>
+</ul>
+</section>
+
+<section id="t6">
+<h2><span class="n">6</span>정해야 할 것</h2>
+<ul>
+<li><span class="tag">미결</span>A 등급이 인정하는 보안 패치 기간</li>
+<li><span class="tag">미결</span>기기 등록·폐기 때 알림 뒤 대기 시간의 길이</li>
+<li><span class="tag">미결</span>복구용 백업 키의 보관 방식</li>
+<li><span class="tag">미결</span>브라우저 엔진, 사용자 확인 방식(서명 전용 버튼, 지문)</li>
+<li><span class="tag">미결</span>클라우드로 보낼 PDV 데이터의 최소화 정책</li>
+<li><span class="tag">미결</span>iOS 스마트폰 지원 범위(PWA의 제약이 큼)</li>
+<li><span class="tag">미결</span>공공 도입에 필요한 암호 모듈 검증 요건 확인</li>
+</ul>
+</section>
+</div>
+<script>
+/* naviweb 안에 끼워 넣었을 때(?embed=mail): 이 문서는 안쪽 스크롤 막대를 두지 않는다. 문서 높이를 부모에 알리면 부모가 iframe 높이를 그만큼 늘려
+   바깥 화면 하나로만 스크롤된다(위쪽 탭 줄은 함께 올라간다). 목차 같은 #앵커 이동도 부모가 대신 스크롤한다. */
+(function(){
+  if (window.parent === window || !/[?&]embed=mail/.test(location.search)) return;
+  document.documentElement.style.overflow = 'hidden';
+  var last = 0;
+  function post(){ var h = Math.ceil(document.documentElement.getBoundingClientRect().height); if (h && h !== last) { last = h; parent.postMessage({ type: 'xokorea-height', h: h }, '*'); } }
+  window.addEventListener('load', post); window.addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.body); else setInterval(post, 500);
+  post();
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
+    var id = a.getAttribute('href').slice(1), t = id && document.getElementById(id); if (!t) return;
+    e.preventDefault(); parent.postMessage({ type: 'xokorea-scroll', y: Math.round(t.getBoundingClientRect().top + window.pageYOffset) }, '*');
+  });
+})();
+</script>
+<script src="https://naviweb.kr/navi-home.js" defer></script>
+</body>
+</html>
