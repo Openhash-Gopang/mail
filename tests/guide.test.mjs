@@ -413,16 +413,16 @@ test('나비웹 사용법 영상: 제목 번호(사용법·매뉴얼·도우미 
   assert.ok(m.includes('howtoNum(x.t) === n') && m.includes('CHAPTERS.findIndex') && !m.includes('HOWTO_CHAPTERS'));
 });
 
-test('나비웹 사용법 중급: 중급 목록(PLaRjMKGRz50E → guide-howto-mid.json)을 따라가고, 매뉴얼 중급 장(01~09·12편) 맨 위에 해당 영상이 붙는다(안내 영상 화면에는 싣지 않는다)', () => {
+test('나비웹 사용법 중급: 중급 목록(PLaRjMKGRz50E → guide-howto-mid.json)을 따라가고, 매뉴얼 중급 장(01~09·12~23편) 맨 위에 해당 영상이 붙는다(안내 영상 화면에는 싣지 않는다)', () => {
   const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
   assert.ok(wf.includes('guide-videos-sync.mjs PLaRjMKGRz50E guide-howto-mid.json') && wf.includes('git add guide-videos.json guide-howto.json guide-howto-mid.json'));
   const j = JSON.parse(readFileSync(new URL('../guide-howto-mid.json', import.meta.url), 'utf8'));
   assert.equal(j.list, 'PLaRjMKGRz50E');
-  assert.deepEqual(j.videos.map(v => v.t.normalize('NFC').match(/(?:나비웹|사용법|도우미) 0*(\d+) /)[1]), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '12'], '제목 번호순(07·08 포함)');
+  assert.deepEqual(j.videos.map(v => v.t.normalize('NFC').match(/(?:나비웹|사용법|도우미) 0*(\d+) /)[1]), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '12', '13', '14', '15', '17', '18', '21', '23', '23'], '제목 번호순(07·08 포함, 23편은 [1/2]·[2/2])');
   assert.ok(j.videos.every(v => v.len && v.d), '길이·설명이 모두 있다');
   assert.ok(j.videos.every(v => /^[\w-]{11}$/.test(v.id)));
   const m = readFileSync(new URL('../manual/hondi_interactive_manual.html', import.meta.url), 'utf8');
-  assert.ok(m.includes("var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5, ch16: 6, ch_doc_write: 7, ch_myforms: 8, ch_othersite: 9, ch_learning: 12 };") && m.includes('guide-howto-mid.json'));
+  assert.ok(m.includes("var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5, ch16: 6, ch_doc_write: 7, ch_myforms: 8, ch_othersite: 9, ch_learning: 12, ch_infra_market: 13, ch_infra_tax: 14, ch_infra_bank: 15, ch_infra_stock: 17, ch_infra_emergency: 18, ch_infra_traffic: 21, ch_infra_public: 23 };") && m.includes('var vs = list.filter(') && m.includes('guide-howto-mid.json'));
   const p = readFileSync(new URL('../ops/naviweb-proxy/mail-paths.js', import.meta.url), 'utf8');
   assert.ok(p.includes('"guide-howto-mid.json"'), '프록시가 이 파일을 내보낸다');
 });
