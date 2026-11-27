@@ -28,6 +28,8 @@
   window.addEventListener('message', async (e) => {
     const m = e.data;
     if (!live() || e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-web') return;
+    // 확장이 다시 불러와진 뒤 남은 옛 다리는 답하지 않는다 — 오류를 먼저 답하면 새 다리의 답이 버려져 '연결 안 됨'이 됐다(2026-11-27)
+    try { if (!chrome.runtime || !chrome.runtime.id) return; } catch (er) { return; }
     if (m.type === 'agent-pdv-result') {
       // 확장을 새로고침해 연결이 끊겼거나 응답할 쪽이 없으면 sendMessage 가 예외·거부를 낸다 — 확장 오류 목록에 쌓이지 않게 삼킨다
       try { const pr = chrome.runtime.sendMessage({ type: 'pdv-result', rid: String(m.rid || '').slice(0, 40), ok: !!m.ok, values: m.values || {}, saved: m.saved || [] }); if (pr && pr.catch) pr.catch(() => {}); } catch (er) { /* Extension context invalidated */ }

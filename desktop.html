@@ -120,7 +120,7 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js?v=20261127c"></script>
+<script src="agent-bridge.js?v=20261127d"></script>
 <script src="doc-history.js?v=20261126"></script>
 <script src="task-flow.js?v=20261126"></script>
 <script src="doc-helper.js?v=20261107"></script>
@@ -1461,6 +1461,20 @@ html[data-menu=open] .side-nav .side-intro{opacity:1!important;pointer-events:au
 .user-row .lp-host{position:relative;display:inline-flex}
 .user-row .lp-btn{height:34px;border-color:var(--bdr,#cbd5e1);color:var(--sub,#334155)}.user-row .lp-btn:hover,.user-row .lp-btn[aria-expanded=true]{background:var(--pri-bg,#e8f0fe)}
 .user-row .lp-pop{right:0;left:auto}
+/* 도우미 설치 & 갱신: 시뮬레이션 왼쪽의 눈에 띄는 단추. 누르면 스토어 설치 화면(일부 공개 링크)이 새 탭에 열린다. 폰은 확장을 쓸 수 없어 감춘다 */
+#helper-install-btn{flex:none;display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:99px;background:#e8590c;color:#fff;font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(232,89,12,.45)}
+#helper-install-btn:hover{background:#d9480f}#helper-install-btn:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
+@media (pointer:coarse) and (max-width:768px){#helper-install-btn{display:none}}
+/* 지구본·기능 개선 제안: 사용자 팝업이 있으면 위쪽 줄에서는 감추고 팝업 안에 한 줄씩 놓는다(팝업을 못 불러오면 위쪽 줄에 그대로 남는다) */
+.user-row:has(#hondi-user-badge) > .lp-host,.user-row:has(#hondi-user-badge) > .fb-top{display:none}
+.user-row #hondi-user-badge .hub-extra{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.user-row #hondi-user-badge .hub-extra .lp-host,.user-row #hondi-user-badge .hub-extra .lp{display:block;width:100%;position:static}
+.user-row #hondi-user-badge .hub-extra .lp-btn{display:flex;width:100%;height:auto;min-height:38px;padding:6px 10px;gap:8px;justify-content:center;border-radius:10px;border:1px solid var(--bdr,#cbd5e1);color:var(--sub,#334155);white-space:normal;box-sizing:border-box}
+.user-row #hondi-user-badge .hub-extra .lp-btn .lp-fl{flex:none}.user-row #hondi-user-badge .hub-extra .lp-btn .lp-fl svg{width:20px;height:20px}
+.user-row #hondi-user-badge .hub-extra .lp-btn::after{content:attr(aria-label);min-width:0;font-size:13px;line-height:1.35;text-align:left}
+.user-row #hondi-user-badge .hub-extra .lp-pop{position:static;width:100%;max-height:260px;margin-top:6px;box-sizing:border-box;text-align:left}
+.user-row #hondi-user-badge .hub-extra .lp-pop[hidden]{display:none}
+.user-row #hondi-user-badge .hub-extra .fb-top{width:100%;min-height:38px}
 .wp-site{margin-left:auto;align-self:center;font-size:13px;color:var(--pri,#2563eb);text-decoration:none;padding:0 6px}.wp-site:hover{text-decoration:underline}
 @media (max-width:1027px){.side-nav{top:auto!important;height:auto!important}}
 </style>
@@ -1686,6 +1700,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
 </div>
+<a id="helper-install-btn" href="https://chromewebstore.google.com/detail/bhmnnbmebjppofdboeinccngpeheongi" target="_blank" rel="noopener" title="Chrome 웹 스토어의 나비웹 도우미 설치 화면을 엽니다. 설치한 뒤에는 새 버전이 자동으로 갱신됩니다." onclick="try{sessionStorage.setItem('navi_agent_installing',String(Date.now()))}catch(e){}">도우미 설치 &amp; 갱신</a>
 <button type="button" class="mfb-btn simbtn" id="home-sim" aria-label="가상 데이터로 시뮬레이션" onclick="_homeSimOpen()">시뮬레이션</button>
 <div class="lp-host" id="lp-host"></div>
 <button type="button" class="fb-top" id="fb-top" title="기능 개선 제안" onclick="_switchTab('feedback')">기능 개선 제안</button>
@@ -2850,7 +2865,7 @@ async function _agentInit() {
       _agentBadge('나비웹 도우미 연결 확인 중 — 계속 안 되면 이 페이지를 새로고침해 주세요');
       if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => location.reload(); _bt.onkeydown = (e) => { if (e.key === 'Enter') location.reload(); }; }
     } else {
-      _agentBadge('나비웹 도우미 연결 안 됨 — 설치·켜기 안내', { install: NaviAgent.STORE_URL });
+      _agentBadge('');   // 설치 안내는 위쪽의 '도우미 설치 & 갱신' 단추가 맡는다
       if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
       setTimeout(() => { if (!_agentGuideSnoozed()) window._agentGuideOpen && window._agentGuideOpen(); }, 800);   // 설치 표지가 없으면 설치 안내를 연다('나중에'를 누르면 하루 동안은 저절로 열지 않는다)
     }
@@ -7751,7 +7766,8 @@ function _i18nBroadcast() {
   document.querySelectorAll('iframe').forEach(f => { try { f.contentWindow.postMessage(m, '*'); } catch (e) {} });
 }
 function _i18nMount() {
-  const host = document.getElementById('lp-host');
+  const host = document.getElementById('lp-host') || window._lpHost;   // 팝업이 다시 그려지는 순간에는 화면 밖에 있을 수 있다
+  if (host) window._lpHost = host;
   if (host && window.NaviI18n) window.NaviI18n.mountPicker(host);
 }
 // 안쪽 화면(서류 작성 등)이 시작할 때 요청하면 지금 언어·국가를 돌려준다
@@ -9563,18 +9579,25 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIs
 // 팝업은 hondi.net/auth/user-badge.js 가 그린다(다른 저장소). 그 코드는 건드리지 않고, 팝업이 열려 '로그아웃' 단추가 생기면 그 위에 한 줄을 끼워 넣는다.
 (function () {
   const root = document.getElementById('user-row'); if (!root) return;
+  // 2026-11-27: 언어·국가 선택(지구본)과 '기능 개선 제안'은 이 팝업 안에 둔다. 팝업은 다시 그려질 때마다 비워지므로 같은 요소를 들고 있다가 다시 넣는다.
+  const extra = document.createElement('div'); extra.className = 'hub-extra';
+  const lp = document.getElementById('lp-host') || window._lpHost, fb = document.getElementById('fb-top');
+  extra.addEventListener('click', (e) => e.stopPropagation());   // 국가를 고르는 동안 팝업이 닫히지 않게
+  if (fb) fb.addEventListener('click', () => { if (extra.contains(fb)) { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.body.click(); } catch (e) {} } });
+  function addExtra(menu) {
+    if (extra.parentNode === menu) return;
+    if (lp) extra.appendChild(lp); if (fb) extra.appendChild(fb);
+    const out = [].find.call(menu.querySelectorAll('button.hub-text'), b => /로그아웃/.test(b.textContent));
+    menu.insertBefore(extra, out && out.parentNode === menu ? out : null);
+  }
   function addPlan() {
     root.querySelectorAll('#hondi-user-badge .hub-menu').forEach(menu => {
+      addExtra(menu);
       if (menu.querySelector('.hub-plan')) return;
       const out = [].find.call(menu.querySelectorAll('button.hub-text'), b => /로그아웃/.test(b.textContent)); if (!out) return;
       const b = document.createElement('button'); b.type = 'button'; b.className = 'hub-btn hub-text hub-plan'; b.textContent = '플랜 업그레이드';
       b.addEventListener('click', () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.body.click(); } catch (e) {} _switchTab('pricing'); });
-      out.parentNode.insertBefore(b, out);
-      if (!_agentInfo && window.NaviAgent && NaviAgent.STORE_URL && !menu.querySelector('.hub-agent')) {   // 도우미가 없을 때만 "도우미 설치" 줄을 끼워 넣는다
-        const g = document.createElement('button'); g.type = 'button'; g.className = 'hub-btn hub-text hub-agent'; g.textContent = '나비웹 도우미 설치';
-        g.addEventListener('click', () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); document.body.click(); } catch (e) {} window._agentGuideOpen && window._agentGuideOpen(); });
-        out.parentNode.insertBefore(g, out);
-      }
+      menu.insertBefore(b, extra.parentNode === menu ? extra : out);
     });
   }
   new MutationObserver(addPlan).observe(root, { childList: true, subtree: true }); addPlan();
