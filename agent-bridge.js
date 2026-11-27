@@ -128,6 +128,19 @@
   function queue(job) { job = Object.assign({}, job, { autostart: true }); try { if (!job.token && window.KAuth && KAuth.getToken) job = Object.assign({}, job, { token: KAuth.getToken() || '' }); } catch (e) { /* 로그인 전 */ } return call('agent-queue', { job: job }, 9000).then(function (m) { return !!(m && m.ok); }); }
   // 이미 시작한 작업에 나중에 알게 된 정보(예: 법인 이름)를 전한다.
   function update(slot, text) { return call('agent-queue', { job: { update: true, slot: String(slot || ''), text: String(text || '') } }, 3000).then(function (m) { return !!(m && m.ok); }); }
+  // 0.7.7: 도우미가 답을 기다리는 질문 { label, aid, mode: choice|input|confirm|handoff|permit|closed, text, options }
+  function onAsk(cb) {
+    if (typeof window === 'undefined' || !window.addEventListener) return;
+    window.addEventListener('message', function (e) {
+      var m = e.data;
+      if (e.source !== window || e.origin !== location.origin || !m || m.source !== 'navi-agent' || m.type !== 'agent-ask') return;
+      cb({ label: String(m.label || ''), aid: String(m.aid || ''), mode: String(m.mode || ''), text: String(m.text || ''), options: Array.isArray(m.options) ? m.options.map(String) : [] });
+    });
+  }
+  function answer(slot, a) { return call('agent-queue', { job: { slot: String(slot || ''), answer: a } }, 3000).then(function (m) { return !!(m && m.ok); }); }
+  function stop(slot) { return call('agent-queue', { job: { slot: String(slot || ''), stop: true } }, 3000).then(function (m) { return !!(m && m.ok); }); }
+  // 대화창에서 답·중단을 받는 확장인지(0.7.7 이상)
+  function canChat(v) { var a = String(v || '').split('.').map(Number); return (a[0] || 0) > 0 || (a[1] || 0) > 7 || ((a[1] || 0) === 7 && (a[2] || 0) >= 7); }
   // Chrome 웹 스토어에 등록한 뒤 이 주소를 채운다(비어 있으면 설치 안내를 보이지 않는다).
   var STORE_URL = 'https://chromewebstore.google.com/detail/bhmnnbmebjppofdboeinccngpeheongi';
   // 확장이 받아 온 파일: { label, name, mime, data(ArrayBuffer) } — 넣을지는 호출한 쪽이 사용자에게 물은 뒤 정한다.
@@ -157,7 +170,7 @@
       cb({ label: String(m.label || ''), data: m.data });
     });
   }
-  var api = { issueIntent: issueIntent, isIssueTask: isIssueTask, isFollowUp: isFollowUp, mask: mask, homeJob: homeJob, homeDoc: homeDoc, installedMark: installedMark, onStatus: onStatus, onData: onData, suggest: suggest, detect: detect, queue: queue, update: update, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
+  var api = { issueIntent: issueIntent, isIssueTask: isIssueTask, isFollowUp: isFollowUp, mask: mask, homeJob: homeJob, homeDoc: homeDoc, installedMark: installedMark, onStatus: onStatus, onData: onData, suggest: suggest, detect: detect, queue: queue, update: update, onAsk: onAsk, answer: answer, stop: stop, canChat: canChat, slotPlan: slotPlan, slotPatterns: slotPatterns, slotFetchable: slotFetchable, onFile: onFile, STORE_URL: STORE_URL };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NaviAgent = api;
 })(typeof window !== 'undefined' ? window : globalThis);
