@@ -49,7 +49,7 @@ h4{font-size:15px;font-weight:600}
 <h1><small>XO+ · TABLET</small>XO+ 태블릿</h1>
 <p class="lead">나비웹 전용 단말의 하드웨어, OS, 물리적 구성</p>
 <p class="meta">철학과 개념, 목표는 <a href="#" class="go-tab" data-k="xo">XO+ 탭</a>에 적는다. 이 페이지는 그것을 기기로 구현하는 방법을 적는다.</p>
-<div class="toc"><a href="#t1">1. 역할과 모드</a><a href="#t2">2. 구성</a><a href="#t3">3. 하드웨어</a><a href="#t4">4. OS와 브라우저</a><a href="#t5">5. 서명과 신뢰</a><a href="#t6">6. 분실과 복구</a><a href="#t7">7. 출시 계획</a><a href="#t8">8. 정해야 할 것</a></div>
+<div class="toc"><a href="#t1">1. 역할과 모드</a><a href="#t2">2. 구성</a><a href="#t3">3. 사용 형태</a><a href="#t4">4. 하드웨어</a><a href="#t5">5. OS와 브라우저</a><a href="#t6">6. 서명과 신뢰</a><a href="#t7">7. 분실과 복구</a><a href="#t8">8. 출시 계획</a><a href="#t9">9. 정해야 할 것</a></div>
 
 <section id="t1">
 <h2><span class="n">1</span>역할과 모드</h2>
@@ -89,7 +89,30 @@ h4{font-size:15px;font-weight:600}
 </section>
 
 <section id="t3">
-<h2><span class="n">3</span>하드웨어</h2>
+<h2><span class="n">3</span>사용 형태</h2>
+<p>같은 소프트웨어와 같은 서명 구조를 두 가지 형태의 기기에서 쓴다.</p>
+<div class="tbl"><table>
+<tr><th></th><th>① 폰 + 태블릿 결합</th><th>② 폴드형 폰(둘을 합친 한 기기)</th></tr>
+<tr><td>구성</td><td>스마트폰과 태블릿이 따로 있다. 폰은 주머니에 두고, 태블릿에 키보드와 트랙패드(마우스, 펜)를 붙여 쓴다.</td><td>접으면 폰, 펼치면 태블릿이 되는 한 기기. 펼친 화면에 키보드와 트랙패드를 연결해 쓴다.</td></tr>
+<tr><td>화면</td><td>태블릿이 desktop.html을 직접 실행한다.</td><td>펼치면 desktop.html, 접으면 폰 화면(webapp.html)이다.</td></tr>
+<tr><td>서명 키</td><td>폰과 태블릿이 각자 키를 가진다(키 2개).</td><td>한 기기에 키 하나. 접어도 펼쳐도 같은 키다.</td></tr>
+<tr><td>폰 ↔ 태블릿 연결</td><td>블루투스와 Wi‑Fi Direct로 연결한다.</td><td>필요 없다. 한 기기 안에서 처리한다.</td></tr>
+<tr><td>장점</td><td>화면·입력과 보안이 분리된다. 하나를 잃어도 남은 기기로 복구한다. 태블릿은 저가형으로 만들 수 있다.</td><td>하나만 들고 다닌다. 연결 과정과 두 번째 기기 비용이 없다. 이동 중에도 큰 화면을 쓴다.</td></tr>
+<tr><td>유의점</td><td>두 기기를 함께 챙겨야 하고, 연결이 끊기면 폰의 중계를 쓰지 못한다.</td><td>기기를 잃으면 키와 PDV가 함께 사라진다. 두 번째 기기가 없으므로 복구용 백업 키와 암호화 백업이 반드시 필요하다.</td></tr>
+</table></div>
+<h3>폴드형 폰의 조건</h3>
+<ul>
+<li>접이식 화면을 가진 한 기기가 폰의 역할(인증, 통신, PDV)과 태블릿의 역할(화면, 입력, 승인)을 함께 맡는다.</li>
+<li>기기 등급은 폰과 같은 기준으로 판정한다. 하드웨어 보안 영역의 키를 서버가 증명으로 검증하고, 최신 OS와 최근 보안 패치를 쓰면 A 등급이다.</li>
+<li>서명 확인은 서명 전용 버튼이나 지문 같은 하드웨어 경로로 한다. 승인 화면은 펼친 화면이 서명 대상 원문으로 직접 그린다.</li>
+<li>PDV는 암호화해 클라우드나 사용자가 지정한 곳에 백업한다. 폰과 태블릿 두 곳에 백업하는 구조는 쓸 수 없으므로, 두 번째 기기가 없는 형태에서는 이 백업이 유일한 복원 경로다.</li>
+<li>두 번째 기기(폰이나 태블릿)를 더하면 ①의 구조로 올라가, 한쪽을 잃었을 때 남은 기기로 복구한다.</li>
+</ul>
+<p class="small">②는 구상 단계의 사용 형태이며, 나비웹 전용 모드를 폴드형 기기에서 실행하는 방식은 시제품에서 검증한다.</p>
+</section>
+
+<section id="t4">
+<h2><span class="n">4</span>하드웨어</h2>
 <p>핵심은 연산 성능이 아니라 <b>하드웨어 서명</b>과 <b>선명한 화면</b>이다. 영화나 게임을 위한 기기가 아니다.</p>
 <h3>화면: 화질이 최우선</h3>
 <ul>
@@ -118,8 +141,8 @@ h4{font-size:15px;font-weight:600}
 </ul>
 </section>
 
-<section id="t4">
-<h2><span class="n">4</span>OS와 브라우저</h2>
+<section id="t5">
+<h2><span class="n">5</span>OS와 브라우저</h2>
 <p>XO+ OS는 윈도우나 리눅스 같은 거대한 OS가 아니다. 최소한의 리눅스 위에서 <b>나비웹 전용 브라우저 하나가 전체 화면으로 실행</b>되는 구조이며, 브라우저에 필요한 OS 기능만 더한다. 앱 실행기와 앱 스토어는 두지 않는다.</p>
 <div class="tbl"><table>
 <tr><th>기능</th><th>내용</th></tr>
@@ -148,8 +171,8 @@ h4{font-size:15px;font-weight:600}
 </ul>
 </section>
 
-<section id="t5">
-<h2><span class="n">5</span>서명과 신뢰</h2>
+<section id="t6">
+<h2><span class="n">6</span>서명과 신뢰</h2>
 <h3>승인 흐름: 화면에 보이는 것 = 서명되는 것</h3>
 <ol>
 <li>나의 AI 비서가 작업 안건을 만든다. 예: 서류 제출, 계약 승인.</li>
@@ -198,8 +221,8 @@ h4{font-size:15px;font-weight:600}
 </table></div>
 </section>
 
-<section id="t6">
-<h2><span class="n">6</span>분실과 복구</h2>
+<section id="t7">
+<h2><span class="n">7</span>분실과 복구</h2>
 <p>폰과 태블릿은 <b>각자 키</b>를 가진다(복사하지 않는다). PDV는 암호화해 <b>두 기기 모두에 백업</b>한다. 둘 중 하나를 잃어도 남은 기기로 복구한다.</p>
 <div class="tbl"><table>
 <tr><th>단계</th><th>처리</th></tr>
@@ -212,11 +235,12 @@ h4{font-size:15px;font-weight:600}
 <li>남은 기기가 B 등급 폰이면 기기 등록·폐기·복구를 직접 할 수 없으므로, 오프라인으로 보관하는 <b>복구용 백업 키</b>로 처리한다.</li>
 <li>두 기기를 한꺼번에 잃으면 복구용 백업 키와 본인 확인 절차로만 복구한다.</li>
 <li>폰만 분실해도 PDV는 암호화되어 있어 읽을 수 없다.</li>
+<li>폴드형 폰 하나만 쓰는 경우에는 남은 기기가 없으므로, 복구용 백업 키와 암호화 백업으로만 복구한다.</li>
 </ul>
 </section>
 
-<section id="t7">
-<h2><span class="n">7</span>출시 계획</h2>
+<section id="t8">
+<h2><span class="n">8</span>출시 계획</h2>
 <ul>
 <li><b>2026년 말 · 시험:</b> 일부 태블릿 브랜드 제품을 대상으로 XO+ 운영체제(OS)를 시험하고 있다.</li>
 <li><b>2027년 · 출시 목표:</b> 100달러 가격이 목표다. OLPC가 내건 ‘100달러 노트북’과 같은 가격대다. 키패드·마우스·트랙패드를 포함하며, 단말 가격과 실제 원가의 차이는 나비웹 플랜으로 충당하는 구상이다.</li>
@@ -235,12 +259,13 @@ h4{font-size:15px;font-weight:600}
 <p>제조 파트너는 아직 정하지 않았다. 부품 변경 금지, 메모리 가격 변동 조항, 키 주입 금지, 설계 소유권을 계약 조건으로 요구할 계획이다.</p>
 </section>
 
-<section id="t8">
-<h2><span class="n">8</span>정해야 할 것</h2>
+<section id="t9">
+<h2><span class="n">9</span>정해야 할 것</h2>
 <ul>
 <li><span class="tag">미결</span>A 등급이 인정하는 보안 패치 기간</li>
 <li><span class="tag">미결</span>기기 등록·폐기 때 알림 뒤 대기 시간의 길이</li>
 <li><span class="tag">미결</span>복구용 백업 키의 보관 방식</li>
+<li><span class="tag">미결</span>폴드형 폰에서 나비웹 전용 모드를 실행하는 방식(접힘·펼침 전환, 키보드 연결)</li>
 <li><span class="tag">미결</span>브라우저 엔진 선택과 실제 메모리 하한 측정</li>
 <li><span class="tag">미결</span>사용자 확인 방식(서명 전용 버튼, 지문)</li>
 <li><span class="tag">미결</span>iOS 스마트폰 지원 범위(PWA의 제약이 큼)</li>
