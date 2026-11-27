@@ -381,14 +381,22 @@ test('안내 영상: 재생목록(YouTube)을 자동으로 따라간다 — 동�
   assert.ok(j.list === 'PLExMxaYxMDPE' && j.videos.length >= 3 && j.videos.every(v => /^[\w-]{11}$/.test(v.id)));
 });
 
-test('나비웹 사용법: 맨 위 섹션, 별도 재생목록(PLVk7oB1w5pLE)을 guide-howto.json 으로 30분마다 따라가며, 실패해도 안내 영상 동기화는 영향 없음', () => {
+test('안내 영상 화면: 안내 영상 목록만 두고, 나비웹 사용법(초급·중급) 구역은 없다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.indexOf('id="yt-howto"') > 0 && h.indexOf('id="yt-howto"') < h.indexOf('id="yt-grid"'), '나비웹 사용법이 안내 영상 위');
-  assert.ok(h.includes("_ytLoad('guide-howto.json', [])") && h.includes('영상을 준비하고 있습니다'));
+  assert.ok(h.includes('id="yt-grid"'), '안내 영상 목록');
+  assert.ok(!h.includes('id="yt-howto"') && !h.includes('id="yt-howto-mid"') && !h.includes('_ytLevel'), '사용법 구역 없음');
+  const j = JSON.parse(readFileSync(new URL('../guide-videos.json', import.meta.url), 'utf8'));
+  assert.equal(j.videos.length, 10); assert.ok(j.videos.every((v, i) => new RegExp('^navi 0?' + (i + 1) + '\\b').test(v.t)), 'navi 01~10');
+  // 사용법 목록 파일은 대화형 매뉴얼이 쓰므로 그대로 두고, 동기화도 이어 간다
   const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
-  assert.ok(wf.includes('guide-videos-sync.mjs PLVk7oB1w5pLE guide-howto.json') && wf.includes('continue-on-error: true') && wf.includes('git add guide-videos.json guide-howto.json'));
-  const j = JSON.parse(readFileSync(new URL('../guide-howto.json', import.meta.url), 'utf8'));
-  assert.equal(j.list, 'PLVk7oB1w5pLE'); assert.ok(Array.isArray(j.videos));
+  assert.ok(wf.includes('guide-videos-sync.mjs PLVk7oB1w5pLE guide-howto.json') && wf.includes('continue-on-error: true'));
+});
+
+test('XO+ 태블릿: XO Korea 화면의 마지막 탭(나비웹 안내 오른쪽)이 xo-tablet.html 을 연다', () => {
+  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  assert.ok(h.indexOf('id="xk-tab-gd"') > 0 && h.indexOf('id="xk-tab-tablet"') > h.indexOf('id="xk-tab-gd"'), '나비웹 안내 오른쪽');
+  assert.ok(h.includes("tablet: 'xo-tablet.html?embed=mail&v=' + _XK_V") && h.includes("'gd', 'tablet'].forEach"));
+  assert.ok(existsSync(new URL('../xo-tablet.html', import.meta.url)));
 });
 
 test('영상 동기화: 번호(나비웹 사용법 NN·navi N)순, 번호 없는 새 영상은 맨 뒤에 업로드 순으로 붙는다', async () => {
@@ -405,10 +413,7 @@ test('나비웹 사용법 영상: 제목 번호(사용법·매뉴얼·도우미 
   assert.ok(m.includes('howtoNum(x.t) === n') && m.includes('CHAPTERS.findIndex') && !m.includes('HOWTO_CHAPTERS'));
 });
 
-test('나비웹 사용법 중급: 초급·중급 탭, 중급 목록(PLaRjMKGRz50E → guide-howto-mid.json)을 따라가고, 매뉴얼 중급 장(01~09·12편) 맨 위에 해당 영상이 붙는다', () => {
-  const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes('id="yt-tab-basic"') && h.includes('id="yt-tab-mid"') && h.includes('id="yt-howto-mid"'));
-  assert.ok(h.includes("_ytLoad('guide-howto-mid.json', [])") && h.includes('.yt-list[hidden]{display:none}'));
+test('나비웹 사용법 중급: 중급 목록(PLaRjMKGRz50E → guide-howto-mid.json)을 따라가고, 매뉴얼 중급 장(01~09·12편) 맨 위에 해당 영상이 붙는다(안내 영상 화면에는 싣지 않는다)', () => {
   const wf = readFileSync(new URL('../.github/workflows/guide-videos.yml', import.meta.url), 'utf8');
   assert.ok(wf.includes('guide-videos-sync.mjs PLaRjMKGRz50E guide-howto-mid.json') && wf.includes('git add guide-videos.json guide-howto.json guide-howto-mid.json'));
   const j = JSON.parse(readFileSync(new URL('../guide-howto-mid.json', import.meta.url), 'utf8'));
