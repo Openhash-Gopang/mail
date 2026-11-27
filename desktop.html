@@ -3129,10 +3129,14 @@ async function _homePlanAndRun(task, userText, detail) {
   const run = (found) => { _homeSay(TaskFlow.planMarkdown(found)); return _homeAgentRun(task, Object.assign(TaskFlow.toPlan(found), { detail: detail }), userText); };
   if (data.status === 'planned') { await run({ source: 'web', procedure: data.procedure, term_note: data.term_note, questions: data.questions }); return; }
   if (data.status === 'approved' && data.procedures.length === 1) { await run({ source: 'db', procedure: data.procedures[0] }); return; }
-  const choices = data.status === 'approved'
-    ? data.procedures.map((p) => ({ label: p.variant || (p.conditions || []).join(', ') || p.title, go: () => run({ source: 'db', procedure: p }) }))
-    : [{ label: '계획 없이 도우미에게 맡기기', go: () => _homeAgentRun(task, { playbook: '', url: '', goal: '처리 방법을 공공기관 사이트에서 확인해 진행하세요. 업무: ' + task, detail: detail }, userText) }];
-  _homeSay(data.status === 'approved' ? '조건에 따라 절차가 나뉩니다. 해당하는 것을 골라 주세요.' : '처리 절차를 확정하지 못했습니다. 사유: ' + (data.reason || '알 수 없음'));
+  // 절차를 확정하지 못해도 묻지 않고 바로 맡긴다(사용자의 일은 로그인·결제·동의·승인뿐). 조건에 따라 절차가 갈릴 때만 사용자가 고른다.
+  if (!(data.status === 'approved' && data.procedures.length > 1)) {
+    _homeSay('표준 절차를 확정하지 못했습니다. 사유: ' + (data.reason || '알 수 없음') + '\n\n도우미가 기관 사이트에서 처리 방법을 확인하며 바로 진행합니다.');
+    await _homeAgentRun(task, { playbook: '', url: '', goal: '처리 방법을 공공기관 사이트에서 확인해 진행하세요. 업무: ' + task, detail: detail }, userText);
+    return;
+  }
+  const choices = data.procedures.map((p) => ({ label: p.variant || (p.conditions || []).join(', ') || p.title, go: () => run({ source: 'db', procedure: p }) }));
+  _homeSay('조건에 따라 절차가 나뉩니다. 해당하는 것을 골라 주세요.');
   const thread = document.getElementById('cmp-thread'); if (!thread) return;
   const box = document.createElement('div'); box.className = 'nav-ask';
   const opts = document.createElement('div'); opts.className = 'nav-ask-opts';
