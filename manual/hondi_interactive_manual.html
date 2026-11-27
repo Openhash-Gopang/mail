@@ -1031,7 +1031,7 @@ function renderQuiz(chapter) {
 /* 나비웹 사용법 영상 — 재생목록(guide-howto.json, 사용법 화면의 '나비웹 사용법'과 같은 목록). 제목 번호 = 장 번호 */
 var howtoP = {};   // 목록 파일별(초급 guide-howto.json · 중급 guide-howto-mid.json) 읽기 결과
 // 중급 장 ↔ 중급 영상 번호([중급] 나비웹 사용법 01~09·12). 초급 영상은 장 순서 번호와 같지만, 중급 영상은 이 장들에만 붙는다(새 영상이 올라오면 여기에 장을 더한다).
-var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5, ch16: 6, ch_doc_write: 7, ch_myforms: 8, ch_othersite: 9, ch_learning: 12 };
+var MID_EP = { ch10: 1, ch11: 2, ch12: 3, ch13: 4, ch14: 5, ch16: 6, ch_doc_write: 7, ch_myforms: 8, ch_othersite: 9, ch_learning: 12, ch_infra_market: 13, ch_infra_tax: 14, ch_infra_bank: 15, ch_infra_stock: 17, ch_infra_emergency: 18, ch_infra_traffic: 21, ch_infra_public: 23 };
 function howtoNum(t) { var m = /(?:navi|나비웹|사용법|매뉴얼|도우미)\s*0*(\d+)/i.exec(String(t || '').normalize('NFC')); return m ? parseInt(m[1], 10) : 1e9; }
 function loadHowto(name) {
   name = name || 'guide-howto.json';
@@ -1072,7 +1072,8 @@ function fillHowto(el) {
   var box = el.querySelector('.howto'); if (!box) return;
   var n = Number(box.getAttribute('data-n'));
   loadHowto(box.getAttribute('data-src') || 'guide-howto.json').then(function (list) {
-    var v = list.filter(function (x) { return howtoNum(x.t) === n; })[0]; if (!v || !box.isConnected) return;
+    var vs = list.filter(function (x) { return howtoNum(x.t) === n; }); if (!vs.length || !box.isConnected) return;
+    vs.forEach(function (v) {   // 같은 번호의 영상이 둘 이상이면([1/2]·[2/2]) 모두 위에 붙인다
     var card = document.createElement('button'); card.type = 'button'; card.className = 'howto-card';
     var th = document.createElement('span'); th.className = 'howto-thumb';
     var im = document.createElement('img'); im.src = 'https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg'; im.alt = ''; im.loading = 'lazy';
@@ -1083,6 +1084,7 @@ function fillHowto(el) {
     tx.appendChild(t); tx.appendChild(h); card.appendChild(th); card.appendChild(tx);
     card.addEventListener('click', function () { howtoOpen(v); });
     box.appendChild(card); box.hidden = false;
+    });
   });
 }
 
