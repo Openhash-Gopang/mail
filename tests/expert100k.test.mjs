@@ -39,9 +39,9 @@ test('10만 AI 전문가: 개요 문서의 배분 합계가 100,000명이고 묶
   for (const k of ['산식', '단위', '가정']) assert.ok(line.includes(pct(k)), k + ' 비율 ' + pct(k));
 });
 
-test('10만 AI 전문가: 개요 문서는 출처 30건을 갖고, 버린 용어(혼디)를 쓰지 않는다', () => {
+test('10만 AI 전문가: 개요 문서는 출처 32건을 갖고, 버린 용어(혼디)를 쓰지 않는다', () => {
   const d = R('expert100k-overview.html');
-  assert.equal([...d.matchAll(/<li id="r\d+">/g)].length, 30);
+  assert.equal([...d.matchAll(/<li id="r\d+">/g)].length, 32);
   assert.ok(!d.includes('혼디'));
   assert.ok(d.includes('초안 v0.2'));
 });
@@ -72,4 +72,10 @@ test('10만 AI 전문가 개요: 역할 재조명 절(1절)과 파산·회생 �
   for (const n of ids.map((x) => x[0])) assert.ok(d.includes('href="#s' + n + '"'), '목차 s' + n);
   const refs = new Set([...d.matchAll(/<li id="r(\d+)">/g)].map((m) => +m[1]));
   for (const m of d.matchAll(/<sup><a href="#r(\d+)">/g)) assert.ok(refs.has(+m[1]), '출처 r' + m[1]);
+});
+
+test('10만 AI 전문가 개요: 제주지법 행과 판사·채권자 AI 비서 시나리오(1-6)가 있다', () => {
+  const d = R('expert100k-overview.html');
+  assert.ok(d.includes('제주지방법원, 2023.6 기준') && d.includes('9.3개월'));
+  for (const k of ['1-6. 시나리오', 'K-Law 가상 판결문', '채권자 AI 비서', '검토·승인']) assert.ok(d.includes(k), k);
 });
