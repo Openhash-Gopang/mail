@@ -72,6 +72,7 @@ async function toTab(name, input, describe) {
         if (r && r.ok && r.text && !/^\(보이는 요소 없음\)$/.test(r.text)) parts.push(id === 0 ? r.text : `[프레임 ${id}]\n` + r.text.replace(/\bref_(\d+)/g, `f${id}.ref_$1`)); } catch { /* 응답 없는 프레임 */ }
     }
     if (!parts.length) throw new Error('화면에서 읽을 요소가 없습니다. 탭을 새로고침(F5)하거나 로딩이 끝난 뒤 다시 시도하세요.');
+    if (name === 'read_page' && state.rootTab != null && state.tabId !== state.rootTab) parts.unshift('※ 지금 화면은 작업 중에 새로 열린 창입니다. 작업에 필요 없는 팝업이면 닫으세요(닫기 단추 또는 close_popup).');
     return { ok: true, text: parts.join('\n') };
   }
   return one(0, input);
@@ -242,6 +243,23 @@ chrome.tabs.onRemoved.addListener((id) => {
   state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } }
 });
 
+// 작업 중에 새로 열린 팝업 창을 닫는다(0.7.10). 처음 작업하던 탭, 이 작업과 무관한 탭, 로그인·본인인증·결제 창은 닫지 않는다.
+const KEEP_POPUP = /log.?in|sign.?in|\bsso\b|oauth|\bauth|\bcert|checkplus|\bpay|payment|checkout|billing|로그인|본인\s*(인증|확인)|인증서|간편\s*인증|결제|납부/i;
+async function closePopup() {
+  const id = state.tabId;
+  if (id == null || !famHas(id) || id === state.rootTab || state.family.size < 2) return { text: '닫을 팝업 창이 없습니다. 지금 화면은 작업하던 창입니다. 화면 안에 뜬 팝업이면 그 "닫기"·X 단추를 누르세요.' };
+  let t; try { t = await chrome.tabs.get(id); } catch { return { text: '창이 이미 닫혔습니다. 화면을 다시 읽으세요.' }; }
+  let secret = false;
+  try { const rs = await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, func: () => [...document.querySelectorAll('input[type=password]')].some((e) => e.getClientRects().length > 0) }); secret = rs.some((r) => r && r.result === true); } catch { /* 읽을 수 없는 창은 주소·제목으로만 판단 */ }
+  if (secret || KEEP_POPUP.test(`${t.url || t.pendingUrl || ''} ${t.title || ''}`)) return { text: '로그인·본인인증·결제 창으로 보여 닫지 않았습니다. 필요 없는 창이 확실하면 그 창의 "닫기" 단추를 누르고, 인증·결제가 필요하면 handoff_to_user 로 넘기세요.' };
+  const title = String(t.title || '').slice(0, 60);
+  state.family.delete(id);
+  const back = famHas(state.rootTab) ? state.rootTab : [...state.family].pop();
+  followTab(back, true);   // 먼저 원래 화면으로 옮긴 뒤 닫는다
+  try { await chrome.tabs.remove(id); } catch { /* 스스로 닫힌 창 */ }
+  await wait(500);
+  return { text: `팝업 창을 닫았습니다${title ? ' ("' + title + '")' : ''}. 원래 화면으로 돌아왔습니다. read_page 로 확인하고 이어서 진행하세요.` };
+}
 // 게이트웨이 호출: 네트워크 끊김·서버 5xx 는 두 번까지 다시 시도한다(2초, 5초 뒤). 90초 무응답은 다시 시도하지 않고 알린다.
 async function postStep(c, body, onRetry) {
   const send = () => fetch(c.gateway + '/v1/step', { method: 'POST', headers: { 'content-type': 'application/json', ...(c.token ? { authorization: 'Bearer ' + c.token } : {}), ...(c.userToken ? { 'x-navi-token': encodeURIComponent(c.userToken) } : {}) }, body: JSON.stringify({ ...body, provider: c.provider || undefined }), signal: AbortSignal.timeout(90000) });
@@ -292,6 +310,7 @@ async function host(playbook) {
           }
         } catch { /* 아래 일반 클릭으로 */ }
       }
+      if (name === 'close_popup') return closePopup();
       if (name === 'open_issued_document') return openIssuedDocument(Math.max(0, Number(input && input.row) || 0));
       if (DOM_TOOLS.has(name) && name !== 'upload_attached_file') return toTab(name, input, false);   // 0.7.3: 파일 올리기는 아래에서 맡긴 파일(state.attach)을 붙여 보낸다 — 예전에는 여기서 파일 없이 바로 보내져 "올릴 파일이 없습니다"가 났다
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
@@ -469,7 +488,7 @@ async function runJob(m) {
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
       if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : START_URL), active: true }); await wait(2500); }
-      state.tabId = tab.id; state.family = new Set([tab.id]);
+      state.tabId = tab.id; state.rootTab = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
       trace('0.7.7 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
