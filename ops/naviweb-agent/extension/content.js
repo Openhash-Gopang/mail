@@ -1,6 +1,6 @@
 // 페이지 안에서 도구를 실행한다. 요소는 ref_N 으로만 가리킨다(좌표 클릭을 쓰지 않는다).
 (() => {
-  if (window.__naviAgentV === 5) return;
+  if (window.__naviAgentV === 6) return;
   const refs = new Map(); let seq = 0;
   const SEL = 'a,button,input,select,textarea,label,area,img[alt],[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[tabindex],[onclick]';
   const PTR = 'span,div,li,td,img,i';
@@ -168,22 +168,33 @@
       if (!curBusy) curTimer = setTimeout(curHide, 3500);
     } catch (e) { curGliding = false; /* 그림은 부가 기능이라 실패해도 조작은 계속한다 */ }
   }
-  // 작업 중인 탭 위쪽에 안내 띠를 띄운다(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
+  // 작업 중인 탭에 안내 카드를 띄운다(기본은 아래쪽. 사이트의 단추를 가리면 위로 옮기거나 접는다)(사용자에게는 단계 기록을 보이지 않고, 필요한 안내·확인만 보인다). 닫힌 shadow DOM 이라 페이지·요소 목록과 섞이지 않는다.
   let ovHost = null, ovRoot = null, ovLast = null, ovWd = null;
+  // 위치(아래·위)는 다음 화면에서도 유지한다. ovMin: 접은 상태면 접을 때의 안내(새 질문이 오면 다시 편다), 펴져 있으면 null.
+  let ovPos = 'bottom', ovMin = null;
+  const ovWaiting = (m) => m === 'confirm' || m === 'handoff' || m === 'choice' || m === 'input' || m === 'error' || m === 'done';
+  function ovPlace() {
+    if (!ovHost) return;
+    const edge = (ovPos === 'top' ? 'top' : 'bottom') + ':12px';
+    ovHost.style.cssText = 'all:initial;position:fixed;z-index:2147483647;' + edge + (ovMin === null ? ';left:50%;transform:translateX(-50%);width:min(720px,calc(100vw - 24px))' : ';left:12px');
+  }
+  try { chrome.storage.local.get('naviOvPos', (v) => { if (v && v.naviOvPos === 'top') { ovPos = 'top'; ovPlace(); } }); } catch (e) { /* 기본 위치 */ }
   function overlay(mode, text, options) {
     if (mode === 'off' || mode === 'done' || mode === 'error' || mode === 'confirm' || mode === 'handoff' || mode === 'choice' || mode === 'input') curHide();
     if (mode === 'busy' && window === window.top) curShow();
     if (window !== window.top) return;
     if (mode === 'off') { ovLast = null; if (ovWd) { clearInterval(ovWd); ovWd = null; } if (ovHost) { ovHost.remove(); ovHost = null; ovRoot = null; } return; }
     ovLast = { mode, text, options };
+    const waiting = ovWaiting(mode), key = mode + '|' + String(text || '');
+    if (ovMin !== null) { if (!waiting) ovMin = ''; else if (ovMin !== key) ovMin = null; }
     // 사이트가 화면을 다시 그려 띠가 사라져도 1초 안에 되살린다(로그인·가입으로 화면이 바뀌어도 띠가 남도록).
     if (!ovWd) ovWd = setInterval(() => { if (ovLast && (!ovHost || !ovHost.isConnected)) overlay(ovLast.mode, ovLast.text, ovLast.options); }, 1000);
     if (!ovHost || !ovHost.isConnected) {
-      ovHost = document.createElement('div'); ovHost.style.cssText = 'all:initial;position:fixed;top:0;left:0;right:0;z-index:2147483647';
+      ovHost = document.createElement('div');
       ovRoot = ovHost.attachShadow({ mode: 'closed' }); document.documentElement.appendChild(ovHost);
     }
     const st = document.createElement('style');
-    st.textContent = '.r2{flex-basis:100%;display:flex;gap:8px}input.i2{flex:1;min-width:120px}.b{flex-wrap:wrap}.b{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1}.k{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input.i,input.i2{font:inherit;border:0;border-radius:6px;padding:6px 10px;min-width:200px;background:#fff;color:#111}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
+    st.textContent = '.r2{flex-basis:100%;display:flex;gap:8px}input.i2{flex:1;min-width:120px}.b{flex-wrap:wrap}.b{border-radius:12px;max-height:45vh;overflow-y:auto;box-sizing:border-box;font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;background:#2f5bd8;box-shadow:0 2px 10px rgba(0,0,0,.3)}.b.w{background:#b45309}.b.e{background:#b91c1c}.b.d{background:#15803d}.t{flex:1 1 100%}.v{margin-left:auto;display:flex;gap:6px}.v button{font-size:12px;padding:3px 10px}button.pill{font:600 13px/1.5 system-ui,"Malgun Gothic",sans-serif;color:#fff;background:#2f5bd8;border:2px solid #fff;border-radius:999px;padding:8px 14px;box-shadow:0 2px 10px rgba(0,0,0,.35)}button.pill.w{background:#b45309}button.pill.e{background:#b91c1c}button.pill.d{background:#15803d}.k{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input.i,input.i2{font:inherit;border:0;border-radius:6px;padding:6px 10px;min-width:200px;background:#fff;color:#111}button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 14px;background:#fff;color:#111}button.s{background:transparent;color:#fff;border:1px solid #fff}.bar{height:3px;background:rgba(255,255,255,.35);position:absolute;left:0;right:0;bottom:0;overflow:hidden}.bar i{display:block;height:100%;width:30%;background:#fff;animation:m 1.2s ease-in-out infinite}@keyframes m{0%{margin-left:-30%}100%{margin-left:100%}}@media(prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}';
     const box = document.createElement('div'); box.className = 'b' + (mode === 'handoff' || mode === 'confirm' || mode === 'choice' || mode === 'input' ? ' w' : mode === 'error' ? ' e' : mode === 'done' ? ' d' : ''); box.style.position = 'relative';
     const t = document.createElement('div'); t.className = 't'; t.textContent = '나비웹 도우미 · ' + String(text || (mode === 'busy' ? '작업 중입니다. 잠시만 기다려 주세요.' : '')).slice(0, 400); box.appendChild(t);
     const k = document.createElement('div'); k.className = 'k';
@@ -205,6 +216,17 @@
     else if (mode === 'busy') btn('중단', 's', () => { chrome.runtime.sendMessage({ type: 'stop' }); });
     else btn('닫기', '', () => overlay('off'));
     box.appendChild(k);
+    // 보기 조절: 위치 옮기기·접기. 다시 그리지 않고 보이기만 바꿔서 쓰던 글이 남는다.
+    const pill = document.createElement('button'); pill.className = 'pill' + (box.className.length > 1 ? box.className.slice(1) : '');
+    pill.textContent = '나비웹 도우미 · ' + (waiting && mode !== 'done' && mode !== 'error' ? '확인 필요 · 펴기' : '펴기');
+    const show = () => { box.style.display = ovMin === null ? '' : 'none'; pill.style.display = ovMin === null ? 'none' : ''; ovPlace(); };
+    pill.onclick = () => { ovMin = null; show(); };
+    const v = document.createElement('div'); v.className = 'v';
+    const mv = document.createElement('button'); mv.className = 's'; mv.textContent = ovPos === 'top' ? '아래로' : '위로';
+    mv.onclick = () => { ovPos = ovPos === 'top' ? 'bottom' : 'top'; mv.textContent = ovPos === 'top' ? '아래로' : '위로'; try { chrome.storage.local.set({ naviOvPos: ovPos }); } catch (e) { /* 이 화면에서만 */ } ovPlace(); };
+    const fold = document.createElement('button'); fold.className = 's'; fold.textContent = '접기';
+    fold.onclick = () => { ovMin = ovWaiting(ovLast && ovLast.mode) ? key : ''; show(); };
+    v.append(mv, fold); box.appendChild(v);
     if (mode === 'busy') { const bar = document.createElement('div'); bar.className = 'bar'; bar.appendChild(document.createElement('i')); box.appendChild(bar); }
     // 도우미에게 말하기: 작업 중·직접 입력 대기 중에 사용자가 한 줄을 보낼 수 있다(진행 표시가 갱신돼도 쓰던 글은 유지).
     const old = ovRoot.querySelector && ovRoot.querySelector('input.i2'), keep = old ? { v: old.value, f: ovRoot.activeElement === old, p: old.placeholder } : null;
@@ -218,7 +240,8 @@
       row.append(inp, sb); box.appendChild(row);
       if (keep) { inp.value = keep.v; if (keep.f) setTimeout(() => inp.focus(), 0); }
     }
-    ovRoot.replaceChildren(st, box);
+    ovRoot.replaceChildren(st, box, pill);
+    show();
   }
   chrome.runtime.onMessage.addListener((msg, _s, send) => {
     if (msg && msg.__navi === 'ping') { send({ ok: true }); return; }
@@ -239,5 +262,5 @@
       else send({ ok: true, text: String(run[msg.name](msg.input || {})) });
     } catch (e) { send({ ok: false, error: e.message }); }
   });
-  window.__naviAgentV = 5;
+  window.__naviAgentV = 6;
 })();

@@ -782,3 +782,11 @@ test('0.7.7: 빈 탭에서 시작하지 않고, 질문은 대화창에도 보내
   assert.match(bg, /function reportEnd/);
   assert.match(br, /agent-ask/); assert.match(br, /stop: job\.stop === true/);
 });
+
+test('0.7.8: 안내 카드는 기본이 아래쪽이고, 위로 옮기거나 접을 수 있으며, 새 질문이 오면 다시 편다', () => {
+  const c = readFileSync(new URL('../ops/naviweb-agent/extension/content.js', import.meta.url), 'utf8');
+  assert.match(c, /let ovPos = 'bottom'/);
+  assert.doesNotMatch(c, /position:fixed;top:0;left:0;right:0/);
+  assert.match(c, /ovMin !== key\) ovMin = null/);
+  assert.match(c, /naviOvPos/);
+});
