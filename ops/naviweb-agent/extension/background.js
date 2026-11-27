@@ -3,7 +3,7 @@ import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
 import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, debuggerClick, safeName, MAX_BYTES } from './files.js';
 import { hostAllowed, isCloseControl } from './policy.js';
-import { cleanProcedure } from './procedure.js';
+import { cleanProcedure, cleanAnnouncement } from './procedure.js';
 import { modelError, keepTrying, looksBlocked, MODEL_NAME } from './resilience.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -405,6 +405,14 @@ async function host(playbook) {
       if (DOM_TOOLS.has(name) && name !== 'upload_attached_file') return toTab(name, input, false);   // 0.7.3: 파일 올리기는 아래에서 맡긴 파일(state.attach)을 붙여 보낸다 — 예전에는 여기서 파일 없이 바로 보내져 "올릴 파일이 없습니다"가 났다
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
       if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); notifyOpened(input.url); await wait(2500); const p = await retryIfBlocked(input.url); return { text: '이동: ' + input.url + (p ? blockedNote(p) : '') }; }
+      if (name === 'announce_procedure') {   // 이행 전에 확인한 절차를 사용자에게 알린다
+        const a = cleanAnnouncement(input);
+        if (!a) return { text: '처리 기관(agency), 접수 https 주소(entry_url), 단계(steps), 직접 읽은 화면 주소(checked)를 모두 적어 다시 부르세요.' };
+        const summary = `확인한 절차 (${a.agency}): ` + a.steps.map((x, i) => `${i + 1}. ${x}`).join(' ');
+        say({ type: 'log', e: { kind: 'say', text: summary } }); trace(summary);
+        if (state.slot) await deliverToNavi({ kind: 'data', label: state.slot, data: { stage: 'announce', procedure: a } }).catch(() => {});
+        return { announced: true, text: '사용자에게 절차를 알렸습니다. 승인을 기다리지 말고 알린 순서대로 진행하세요. 절차가 바뀌면 다시 알리세요.' };
+      }
       if (name === 'record_procedure') {   // 접수·발급까지 성공한 절차를 나비웹에 보낸다(다음에 같은 요청을 처음부터 조사하지 않도록)
         if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 절차를 남길 곳이 없습니다.' };
         const rec = cleanProcedure(input);
