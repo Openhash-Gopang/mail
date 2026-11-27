@@ -1,10 +1,16 @@
 // 에이전트 루프. 브라우저/네트워크는 host 로 주입받아 Node 에서 시험할 수 있다.
 import { TOOLS } from './tools.js';
-import { classify, autoProceed } from './policy.js';
+import { classify, autoProceed, startsFiling } from './policy.js';
 
 export function buildSystem(playbook) {
   const base = [
     '당신은 사용자의 브라우저에서 웹 사이트 작업을 대신 진행하는 범용 에이전트입니다(행정·법률 서류 절차를 포함해 어떤 사이트든). 한국어로 짧게 답합니다.',
+    '[업무 처리 절차] 신고·신청·등록·허가·인가·설립·청구처럼 접수가 필요한 일(예: "위치기반서비스 사업자 등록이나 신고해 줘")은 아래 다섯 단계를 순서대로 합니다. 목표에 "[절차 고지 필요]"가 있으면 3단계를 마치기 전에는 제출 계열 단추를 누를 수 없습니다.',
+    '1단계(표준 절차 검색): 표준 절차 DB 검색은 작업을 맡기기 전에 나비웹이 합니다. 목표에 "저장된 절차"·"전에 성공한 절차"·"검토되지 않은 절차"가 들어 있으면 그 절차에서 시작합니다. 없으면 DB에서 찾지 못했거나 확정하지 못한 것이므로 2단계에서 직접 수립합니다. 직접 DB를 검색했다고 말하지 않습니다.',
+    '2단계(절차 파악): 접수 전에 정확한 절차를 확인합니다. ① 처리 기관의 공식 안내 화면을 읽고 ② 부족하면 웹 검색과 법령(law.go.kr)으로 법령상 정식 명칭과 구분(신고·등록·허가)·대상을 확인하고 ③ 접수처, 단계 순서, 입력 항목, 첨부서류, 수수료·자격 요건을 정리합니다. 1단계의 절차가 있어도 지금 공식 화면과 맞는지 확인합니다. 이 단계에서는 읽고 이동만 하며 접수·제출하지 않습니다. 확인하지 못한 것은 "확인하지 못함"으로 남기고 지어내지 않습니다.',
+    '3단계(사용자에게 고지): announce_procedure 를 불러 확인한 절차(정식 명칭, 기관, 접수 주소, 단계, 사용자가 직접 할 일, 첨부서류, 근거로 본 화면, 확인하지 못한 점)를 사용자에게 알립니다. 승인을 기다리지 않고 이어서 진행합니다. 요청한 말과 법적 절차가 다르거나 절차가 둘 이상으로 갈리면 note 에 적고, 갈리는 선택은 ask_choice 로 묻습니다.',
+    '4단계(이행): 알린 절차의 순서대로 진행합니다. 실제 화면이 달라 순서·기관·서류가 바뀌면 announce_procedure 를 다시 불러 바뀐 점을 알린 뒤 따릅니다.',
+    '5단계(표준 절차 등록): 접수·발급이 화면에서 확인되면 record_procedure 를 불러 실제로 성공한 순서를 남기고, 그다음 report_status 로 알립니다. 다음 사용자를 위한 기록이므로 빠뜨리지 않습니다. 확인되지 않은 절차는 등록하지 않습니다. 등록한 절차가 다른 사용자에게 바로 공개된다고 말하지 않습니다(관리자 검토를 거칩니다).',
     '- 현재 탭이 비어 있거나 about:blank 이면 먼저 navigate 로 필요한 사이트(https)로 이동합니다. 어느 사이트든 이동할 수 있습니다.',
     '- 작업 목표에 "맡긴 파일"이 붙어 있으면, 기관 사이트의 올리기 화면까지 이동·진행한 뒤 upload_attached_file 로 그 파일을 파일 칸에 넣는다(시스템이 사용자 확인을 받는다). 올린 뒤 "제출·접수" 단추는 사용자 확인을 거쳐 누른다.',
     '- 화면을 먼저 read_page 로 확인하고, ref 로만 요소를 조작합니다. 추측해서 누르지 않습니다.',
@@ -70,6 +76,8 @@ export const POPUP_ASK = '작업을 가리는 팝업을 모두 닫을까요? 한
 export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
   let nudges = 0;
   let popupOk = null;   // 팝업 닫기 승인: 작업마다 한 번만 묻는다
+  const mustAnnounce = /\[절차 고지 필요\]/.test(String(goal || ''));   // 접수 업무: 확인한 절차를 알리기 전에는 제출 계열 동작을 하지 않는다
+  let announced = false;
   const system = buildSystem(playbook);
   const extra = (playbook && playbook.allowedHosts) || [];
   const messages = [{ role: 'user', content: [{ type: 'text', text: goal }] }];
@@ -102,7 +110,10 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
         const verdict = classify(u.name, u.input, info, extra, { fetchJob: !!(host.fetchJob && host.fetchJob()) });
         if (host.progress && verdict.act === 'auto') host.progress(`화면을 조작하는 중입니다 (${step + 1}단계 · ${({ click: '누르기', type: '입력', navigate: '이동', read_page: '화면 읽기', find: '찾기', screenshot: '화면 보기' })[u.name] || u.name})`);
         host.log({ kind: 'tool', name: u.name, input: u.input, act: verdict.act });
-        if (verdict.act === 'input') {
+        // 맡긴 작업은 "신청하기" 등을 묻지 않고 누르므로, 고지 여부는 그 예외 없이 분류해 판단한다.
+        const submits = u.name === 'upload_attached_file' || (u.name === 'click' && (classify(u.name, u.input, info, extra, {}).act === 'confirm' || startsFiling(info)));
+        if (mustAnnounce && !announced && submits) say('거부됨: 아직 사용자에게 처리 절차를 알리지 않았습니다. 공식 화면에서 절차를 확인한 뒤 announce_procedure 를 먼저 부르고 다시 하세요.');
+        else if (verdict.act === 'input') {
           const v = await host.input(String(u.input.question || '값을 입력해 주세요.').slice(0, 300), String(u.input.label || '').slice(0, 40), PDV_KEYS.includes(u.input.save_as) ? u.input.save_as : '');
           say(v == null ? '사용자가 입력하지 않고 중단했습니다.' : v && v.manual ? '사용자가 페이지에 직접 입력했다고 알렸습니다. 화면을 다시 읽고 다음 단계로 가세요.' : '사용자가 입력한 값: ' + String(v).slice(0, 200));
         } else if (verdict.act === 'choice') {
@@ -128,6 +139,7 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
         }
         else {
           const r = await host.execTool(u.name, u.input);
+          if (u.name === 'announce_procedure' && r.announced) announced = true;
           say(String(r.text || '(ok)').slice(0, u.name === 'read_page' || u.name === 'find' ? 10000 : 6000));
           if (r.image) out.content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: r.image } });
         }

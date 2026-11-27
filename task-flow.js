@@ -24,6 +24,21 @@
     if ((p.sources || []).length) out.push('출처\n' + p.sources.slice(0, 5).map(function (s) { return '- ' + (s.title ? s.title + ' — ' : '') + s.url; }).join('\n'));
     return out.join('\n\n');
   }
+  // 도우미가 이행 전에 확인해 알린 절차(announce_procedure, 도우미 0.7.13 이상). 화면에 마크다운으로 보이므로 꺾쇠·대괄호는 뺀다.
+  function announceMarkdown(a) {
+    var s = function (v, n) { return String(v || '').replace(/[<>\[\]]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); };
+    var arr = function (v, n) { return (Array.isArray(v) ? v : []).slice(0, 30).map(function (x) { return s(x, n); }).filter(Boolean); };
+    var st = arr(a && a.steps, 200); if (!a || !s(a.agency, 100) || !st.length) return '';
+    var out = ['**도우미가 확인한 처리 절차입니다.** 이 순서대로 진행합니다.'];
+    if (s(a.note, 300)) out.push(s(a.note, 300));
+    out.push('- 업무: ' + (s(a.official_name, 100) || '정식 명칭 확인하지 못함') + (s(a.legal_kind, 40) ? ' (' + s(a.legal_kind, 40) + ')' : ''));
+    out.push('- 처리 기관: ' + s(a.agency, 100) + '\n- 접수 주소: ' + s(a.entry_url, 500));
+    if (arr(a.documents, 100).length) out.push('- 첨부서류: ' + arr(a.documents, 100).join(', '));
+    out.push(st.map(function (x, i) { return line({ action: x }, i); }).join('\n'));
+    if (arr(a.unverified, 200).length) out.push('확인하지 못한 점\n' + arr(a.unverified, 200).map(function (x) { return '- ' + x; }).join('\n'));
+    if (arr(a.checked, 500).length) out.push('확인한 화면\n' + arr(a.checked, 500).map(function (x) { return '- ' + x; }).join('\n'));
+    return out.join('\n\n');
+  }
   // 도우미 작업 목표(확장이 2000자에서 자르므로 절차 부분은 1200자 안에 담는다)
   function planGoal(res) {
     var p = res.procedure;
@@ -66,7 +81,7 @@
       sources: (prev.sources && prev.sources.length) ? prev.sources : [{ title: str(r.agency, 100), url: str(r.entry_url, 500) }], verified_at: today || ''
     };
   }
-  var api = { planMarkdown: planMarkdown, planGoal: planGoal, toPlan: toPlan, stem: stem, remember: remember, recall: recall, forget: forget, recorded: recorded };
+  var api = { announceMarkdown: announceMarkdown, planMarkdown: planMarkdown, planGoal: planGoal, toPlan: toPlan, stem: stem, remember: remember, recall: recall, forget: forget, recorded: recorded };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.TaskFlow = api;
 })(typeof window !== 'undefined' ? window : null);

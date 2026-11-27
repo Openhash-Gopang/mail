@@ -20,3 +20,13 @@ export function cleanProcedure(input) {
   if (!agency || !entry || !steps.length) return null;
   return { official_name: text(input.official_name, 100), agency, entry_url: entry, legal_kind: text(input.legal_kind, 40), steps, required_fields: list(input.required_fields, 60), documents: list(input.documents, 100) };
 }
+
+// 사용자에게 알릴 절차. 알림은 모든 https 주소를 받는다(DB 등록은 위 cleanProcedure 의 공공기관 기준).
+const web = (u) => (/^https:\/\/[^\s]+$/.test(String(u || '')) ? bare(u) : '');
+export function cleanAnnouncement(input) {
+  const agency = text(input && input.agency, 100), entry = web(input && input.entry_url);
+  const steps = list(input && input.steps, 200);
+  const checked = (Array.isArray(input && input.checked) ? input.checked.slice(0, 5) : []).map(web).filter(Boolean);
+  if (!agency || !entry || !steps.length || !checked.length) return null;
+  return { official_name: text(input.official_name, 100), agency, entry_url: entry, legal_kind: text(input.legal_kind, 40), steps, documents: list(input.documents, 100), checked, unverified: list(input.unverified, 200), note: text(input.note, 300) };
+}
