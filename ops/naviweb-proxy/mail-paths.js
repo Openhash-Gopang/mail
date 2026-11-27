@@ -52,6 +52,7 @@ export const MAIL_FILES = new Set([
  "guide.js",
  "hondi-chat.js",
  "icons/navi-apple-touch-180.png",
+ "icons/navi-butterfly.png",
  "icons/navi-icon-96.png",
  "icons/naviweb-logo.png",
  "icons/nb-body.png",
