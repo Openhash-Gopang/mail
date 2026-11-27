@@ -122,7 +122,7 @@ window.addEventListener('load', () => {
 <script src="feedback-kit.js?v=20261109"></script>
 <script src="agent-bridge.js?v=20261127d"></script>
 <script src="doc-history.js?v=20261126"></script>
-<script src="task-flow.js?v=20261126"></script>
+<script src="task-flow.js?v=20261127"></script>
 <script src="doc-helper.js?v=20261107"></script>
 <script src="qna-ui.js?v=20261106b"></script>
 <script src="manual-chat.js?v=20261106a"></script>
@@ -2868,7 +2868,7 @@ async function _agentInit() {
   }
   if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
   if (!_agentInit.obs) { _agentInit.obs = new MutationObserver(ms => { const n = ms.map(m => m.target).map(t => t.nodeType === 3 ? t.parentNode : t).find(t => t && t.classList && t.classList.contains('da-state')); if (n && n.textContent && !/연결됨$/.test(n.textContent)) _agentSay(n.textContent); }); _agentBars().forEach(b => _agentInit.obs.observe(b, { childList: true, characterData: true, subtree: true })); }
-  if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); NaviAgent.onAsk(_homeAgentAsk); }
+  if (_agentInfo && !_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); NaviAgent.onAsk(_homeAgentAsk); NaviAgent.onData(_homeAgentData); }
   _agentTellDoc();
 }
 // 서류 화면에 "도우미가 가져오기" 버튼을 붙일 항목(정규식)을 알려 준다. 확장이 연결된 때만.
@@ -3083,7 +3083,7 @@ function _agentOpenedNotice(s) {
   d.append(t, p, b);
 }
 // ── 홈 입력창에서 맡긴 발급(2026-11-26): 진행 상황과 받은 파일을 홈 대화창에 보여 준다 ──
-const _homeAgent = { got: {}, active: null, hist: {} };   // active: 지금 도우미에게 맡겨 둔 일 { doc, slot, issue }
+const _homeAgent = { got: {}, active: null, hist: {}, proc: {}, planning: {} };   // active: 지금 도우미에게 맡겨 둔 일 { doc, slot, issue }
 function _homeNoun(doc) { return window.NaviAgent && NaviAgent.isIssueTask && NaviAgent.isIssueTask(doc) ? ' 발급' : ' 작업'; }
 function _homeSay(md) {
   if (!document.getElementById('cmp-thread')) return;
@@ -3101,7 +3101,7 @@ async function _homeAgentRun(doc, plan, userText) {
     return;
   }
   _agentInfo = info;
-  if (!_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); NaviAgent.onAsk(_homeAgentAsk); }
+  if (!_agentInit.fileOn) { _agentInit.fileOn = true; NaviAgent.onFile(_agentOnFile); NaviAgent.onStatus(_agentOnStatus); NaviAgent.onAsk(_homeAgentAsk); NaviAgent.onData(_homeAgentData); }
   delete _homeAgent.got[doc];
   const prev = _homeAgent.active;
   const job = NaviAgent.homeJob(doc, plan, userText), issue = NaviAgent.isIssueTask(doc);
@@ -3109,6 +3109,7 @@ async function _homeAgentRun(doc, plan, userText) {
   if (!ok) { _homeSay('도우미가 작업을 접수하지 못했습니다. 이 화면을 새로 고친 뒤 다시 말씀해 주세요.'); return; }
   _homeAgentAskClear(); _homeRelayClear();
   _homeAgent.active = { doc: doc, slot: job.slot };
+  _homeAgent.proc[doc] = plan.proc || plan.known || null;
   _homeAgent.hist[doc] = await _histAdd({ title: doc, agency: plan.agency || '', type: issue ? 'issue' : 'filing', state: 'running', proc: plan.proc || null });
   const stopped = prev && prev.doc !== doc ? '앞서 맡긴 “' + prev.doc + '” 작업이 남아 있었다면 중단됩니다.\n\n' : '';
   _homeSay(stopped + (issue ? doc + ' 발급을 시작합니다. 열리는 기관 사이트에서 로그인(본인인증)만 해 주세요. 나머지는 제가 진행합니다.'
@@ -3125,8 +3126,21 @@ function _homeFiledButton(doc) {
   b.onclick = async () => { box.remove(); await _homeFiled(doc, 'filed'); };
   opts.appendChild(b); box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
 }
+// 성공한 절차는 이 기기에 기억해 두고, 같은 요청에서는 처음부터 다시 조사하지 않는다
+function _homeRememberDone(doc) { if (_homeAgent.proc[doc]) TaskFlow.remember(localStorage, doc, _homeAgent.proc[doc], true, Date.now()); }
+// 도우미가 성공 뒤에 보낸 실제 절차(record_procedure, 도우미 0.7.11 이상): 처음 계획 대신 이것을 남긴다
+async function _homeAgentData(m) {
+  const doc = NaviAgent.homeDoc ? NaviAgent.homeDoc(m.label) : '';
+  if (!doc || !m.data || m.data.stage !== 'procedure') return;
+  const rec = TaskFlow.recorded(doc, m.data.procedure, _homeAgent.proc[doc], new Date().toISOString().slice(0, 10));
+  if (!rec) return;
+  _homeAgent.proc[doc] = rec;
+  const r = await _histSetProc(_homeAgent.hist[doc], rec);
+  if (r && r.done) { _homeRememberDone(doc); if (r.draft) _homeSay('“' + doc + '”에 실제로 성공한 절차를 남겼습니다.' + _histDraftNote(r.draft)); }
+}
 async function _homeFiled(doc, state) {
   if (_homeAgent.active && _homeAgent.active.doc === doc) _homeAgent.active = null;
+  _homeRememberDone(doc);
   const id = _homeAgent.hist[doc];
   const r = id ? await _histAdvance(id, state) : null;
   if (!r) { if (state === 'filed') _homeSay('“' + doc + '” 이력을 갱신하지 못했습니다. 내 서류함에서 확인해 주세요.'); return; }
@@ -3134,17 +3148,32 @@ async function _homeFiled(doc, state) {
 }
 // 표준 절차: 저장된(승인된) 절차를 먼저 쓰고, 없으면 공공기관 자료로 계획을 수립한 뒤 도우미에게 맡긴다
 async function _homePlanAndRun(task, userText, detail) {
+  const key = TaskFlow.stem(task) || task;
+  if (_homeAgent.planning[key]) { _homeSay('“' + task + '”의 처리 절차를 이미 확인하고 있습니다. 잠시만 기다려 주세요.'); return; }   // 같은 조사를 겹쳐 돌리지 않는다
+  _homeAgent.planning[key] = true;
+  try { await _homePlanAndRunOnce(task, userText, detail); } finally { delete _homeAgent.planning[key]; }
+}
+async function _homePlanAndRunOnce(task, userText, detail) {
   let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
   if (!info) { await _homeAgentRun(task, { playbook: '', url: '', goal: '', detail: detail }, userText); return; }   // 설치 안내만 한다(조사 비용을 쓰지 않는다)
-  _homeSay('“' + task + '”의 처리 절차를 확인하고 있습니다. 저장된 절차를 찾고, 없으면 공공기관 자료를 조사합니다. 1분쯤 걸릴 수 있습니다.');
+  const run = (found) => { _homeSay(TaskFlow.planMarkdown(found)); return _homeAgentRun(task, Object.assign(TaskFlow.toPlan(found), { detail: detail, known: found.procedure }), userText); };
+  // 이 기기에 기억해 둔 절차가 있으면 새로 조사하지 않는다. 관리자가 승인한 공용 절차가 있으면 그것이 먼저다.
+  const mem = TaskFlow.recall(localStorage, task, Date.now());
   let data = null;
-  try {
+  if (mem) {
+    try {
+      const r = await fetch(PROXY + '/procedures/search?q=' + encodeURIComponent(task), { signal: AbortSignal.timeout(8000) });
+      const j = await r.json(); if (r.ok && j.status === 'hit') data = { status: 'approved', procedures: j.procedures };
+    } catch (e) { /* 공용 절차를 못 읽으면 기억해 둔 절차를 쓴다 */ }
+    if (!data) { await run(mem.ok ? { source: 'mine', procedure: mem.procedure } : { source: 'web', reused: true, procedure: mem.procedure }); return; }
+  }
+  if (!data) _homeSay('“' + task + '”의 처리 절차를 확인하고 있습니다. 저장된 절차를 찾고, 없으면 공공기관 자료를 조사합니다. 1분쯤 걸릴 수 있습니다.');
+  if (!data) try {
     const res = await KAuth.fetchWithAuth(PROXY + '/procedures/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task: task, said: NaviAgent.mask(userText) }) });
     data = await res.json().catch(() => null);
     if (!res.ok || !data || data.ok === false) data = { status: 'error', reason: (data && data.message) || ('HTTP ' + res.status) };
   } catch (e) { data = { status: 'error', reason: e.message || '연결 실패' }; }
-  const run = (found) => { _homeSay(TaskFlow.planMarkdown(found)); return _homeAgentRun(task, Object.assign(TaskFlow.toPlan(found), { detail: detail }), userText); };
-  if (data.status === 'planned') { await run({ source: 'web', procedure: data.procedure, term_note: data.term_note, questions: data.questions }); return; }
+  if (data.status === 'planned') { TaskFlow.remember(localStorage, task, data.procedure, false, Date.now()); await run({ source: 'web', procedure: data.procedure, term_note: data.term_note, questions: data.questions }); return; }
   if (data.status === 'approved' && data.procedures.length === 1) { await run({ source: 'db', procedure: data.procedures[0] }); return; }
   // 절차를 확정하지 못해도 묻지 않고 바로 맡긴다(사용자의 일은 로그인·결제·동의·승인뿐). 조건에 따라 절차가 갈릴 때만 사용자가 고른다.
   if (!(data.status === 'approved' && data.procedures.length > 1)) {
@@ -3172,7 +3201,25 @@ async function _histAdd(o) {
   const id = 'hist-' + _drNewId();
   try { await _drCall('put', { item: DocHistory.make(id, o, Date.now()) }); return id; } catch (e) { return ''; }
 }
-async function _histAdvance(id, state, file) {
+// 같은 이력을 동시에 읽고 쓰면 한쪽 변경이 사라지므로 차례로 처리한다
+let _histChain = Promise.resolve();
+function _histQueue(fn) { const p = _histChain.then(fn, fn); _histChain = p.catch(() => null); return p; }
+function _histAdvance(id, state, file) { return _histQueue(() => _histAdvanceNow(id, state, file)); }
+// 성공한 절차로 이력의 계획을 바꾼다. 이미 끝난 일이면 바로 공용 초안으로 올린다(끝나기 전이면 끝날 때 올린다).
+function _histSetProc(id, proc) {
+  return _histQueue(async () => {
+    if (!id || !window.DocHistory) return null;
+    try {
+      const it = (await _drCall('get', { id })).item, data = DocHistory.parse(it.body);
+      const done = data.state === 'reported' || data.state === 'filed' || data.state === 'issued';
+      data.proc = proc; let draft = '';
+      if (done) { draft = await _procDraftSave(proc); data.draftSaved = draft === 'saved'; }
+      await _drCall('put', { item: { id: id, kind: 'history', title: it.title, subject: it.subject, body: JSON.stringify(data) } });
+      return { done: done, draft: draft };
+    } catch (e) { return null; }
+  });
+}
+async function _histAdvanceNow(id, state, file) {
   if (!id || !window.DocHistory) return null;
   try {
     const it = (await _drCall('get', { id })).item;
@@ -3180,7 +3227,7 @@ async function _histAdvance(id, state, file) {
     if (!next && !file) return { changed: false, draft: '' };
     const keep = next || data;
     let draft = '';
-    if (next && (state === 'reported' || state === 'filed') && keep.proc && !keep.draftSaved) { draft = await _procDraftSave(keep.proc); if (draft === 'saved') keep.draftSaved = true; }
+    if (next && (state === 'reported' || state === 'filed' || state === 'issued') && keep.proc && !keep.draftSaved) { draft = await _procDraftSave(keep.proc); if (draft === 'saved') keep.draftSaved = true; }
     const item = { id: id, kind: 'history', title: it.title, subject: it.subject, body: JSON.stringify(keep) };
     if (file) Object.assign(item, { fileName: String(file.name || '서류.pdf').slice(0, 160), fileMime: String(file.mime || ''), fileData: file.data });
     await _drCall('put', { item });

@@ -3,6 +3,8 @@ import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
 import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, debuggerClick, safeName, MAX_BYTES } from './files.js';
 import { hostAllowed } from './policy.js';
+import { cleanProcedure } from './procedure.js';
+import { modelError, keepTrying, looksBlocked, MODEL_NAME } from './resilience.js';
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 let state = { running: false, abort: false, tabId: null, waiter: null, inbox: [] };
@@ -66,12 +68,15 @@ async function toTab(name, input, describe) {
   if (m) return one(Number(m[1]), { ...input, ref: m[2] });
   if (input && input.ref) return one(0, input);
   if (name === 'read_page' || name === 'find' || name === 'get_text') {
+    let stuck = '';
+    if (name === 'read_page') { const url = (await chrome.tabs.get(state.tabId)).url; stuck = await retryIfBlocked(url); if (!stuck && state.tries && state.tries[url]) await ensureContent(state.tabId); }
     const ids = await frames(state.tabId); const parts = [];
     for (const id of ids) {
       try { const r = await send1(state.tabId, id, { __navi: 'tool', name, input, describe });
         if (r && r.ok && r.text && !/^\(보이는 요소 없음\)$/.test(r.text)) parts.push(id === 0 ? r.text : `[프레임 ${id}]\n` + r.text.replace(/\bref_(\d+)/g, `f${id}.ref_$1`)); } catch { /* 응답 없는 프레임 */ }
     }
     if (!parts.length) throw new Error('화면에서 읽을 요소가 없습니다. 탭을 새로고침(F5)하거나 로딩이 끝난 뒤 다시 시도하세요.');
+    if (name === 'read_page' && stuck) parts.push(blockedNote(stuck).trim());
     if (name === 'read_page' && state.rootTab != null && state.tabId !== state.rootTab) parts.unshift('※ 지금 화면은 작업 중에 새로 열린 창입니다. 작업에 필요 없는 팝업이면 닫으세요(닫기 단추 또는 close_popup).');
     return { ok: true, text: parts.join('\n') };
   }
@@ -268,6 +273,7 @@ async function postStep(c, body, onRetry) {
     try {
       const r = await send();
       if (r.status < 500 || i === 2) return r;
+      if (r.status === 502) { const j = await r.clone().json().catch(() => null); if (j && Array.isArray(j.tried)) return r; }   // 게이트웨이가 이미 재시도·대체 모델까지 해 본 결과
       last = new Error('서버 응답 ' + r.status);
     } catch (e) {
       if (e && e.name === 'TimeoutError') throw new Error('AI 응답이 90초가 넘도록 없습니다. 잠시 뒤 나비웹에서 "도우미가 가져오기"를 다시 눌러 주세요.');
@@ -275,8 +281,33 @@ async function postStep(c, body, onRetry) {
     }
     if (i < 2) { if (onRetry) onRetry(i + 2); await wait(i === 0 ? 2000 : 5000); }
   }
-  throw new Error('도우미 서버에 연결하지 못했습니다(3번 시도): ' + (last && last.message || last));
+  throw Object.assign(new Error('도우미 서버에 연결하지 못했습니다(3번 시도): ' + (last && last.message || last)), { retryable: true });
 }
+async function pageProblem(tabId) {
+  for (let i = 0; i < 20; i++) { let t; try { t = await chrome.tabs.get(tabId); } catch { return ''; } if (t.status !== 'loading') break; await wait(500); }
+  try {
+    const [r] = await chrome.scripting.executeScript({ target: { tabId }, func: () => ({ title: document.title, text: String((document.body && document.body.innerText) || '').slice(0, 1600) }) });
+    const v = r && r.result;
+    return v && looksBlocked(v.title, v.text) ? (`${v.title} ${v.text}`).replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+  } catch (e) { return /showing error page/i.test(String(e && e.message)) ? '브라우저 오류 화면(연결 실패)' : ''; }   // 접근 권한이 아직 없는 화면은 판단하지 않는다
+}
+const SITE_TRIES = 3, REOPEN_WAIT = [2000, 5000];
+async function retryIfBlocked(url) {
+  if (!/^https:/.test(url || '')) return '';
+  state.tries = state.tries || {};
+  let problem = await pageProblem(state.tabId);
+  while (problem && (state.tries[url] || 1) < SITE_TRIES && !state.abort) {
+    const n = (state.tries[url] || 1) + 1; state.tries[url] = n;
+    trace(`사이트 접속이 막혀 다시 엽니다 (${n}/${SITE_TRIES}): ${problem}`);
+    await overlay('busy', `사이트 접속을 다시 시도하는 중입니다 (${n}/${SITE_TRIES})`);
+    await wait(REOPEN_WAIT[n - 2] || 5000);
+    await chrome.tabs.update(state.tabId, { url });   // 새로고침이 아니라 주소로 다시 연다 — 제출한 양식이 다시 전송되지 않게
+    await wait(1500);
+    problem = await pageProblem(state.tabId);
+  }
+  return problem;
+}
+const blockedNote = (p) => `\n※ 접속이 ${SITE_TRIES}번 모두 막혔습니다(${p}). 같은 주소를 더 열지 말고, 웹에서 같은 업무의 다른 공식 접속 경로를 찾으세요. 없으면 사용자에게 알리세요.`;
 async function host(playbook) {
   const c = await cfg();
   const mine = state;
@@ -287,13 +318,22 @@ async function host(playbook) {
     inbox: () => state.inbox.shift() || null,
     log: (e) => { try { if (e && (e.kind === 'tool' || e.kind === 'say' || e.kind === 'error')) trace((e.name ? e.name + ': ' : '') + (e.text || e.summary || e.result || '')); } catch { /* 기록 실패는 무시 */ } say({ type: 'log', e }); },
     async callModel(body) {
+      return keepTrying(() => this.callModelOnce(body), {
+        aborted: () => mine.abort,
+        notice: (t) => { trace(t); if (!mine.abort) overlay('busy', t); },
+        choose: async (q, o) => { await focusTab(); return choose(q, o); },
+      });
+    },
+    async callModelOnce(body) {
       const r = await postStep(c, body, (n) => { if (!mine.abort) overlay('busy', `도우미 서버 연결을 다시 시도하는 중입니다 (${n}/3)`); });
       const j = await r.json().catch(() => ({}));
       if (r.status === 401) throw new Error((j && j.reason ? '[게이트웨이 거절 사유: ' + String(j.reason).slice(0, 60) + '] ' : '') + (c.userToken
         ? '사이트는 열었습니다. 나비웹 로그인 확인이 거절됐습니다(로그인이 만료됐거나, 도우미 설정의 토큰 칸에 옛 값이 남아 있을 수 있습니다). 나비웹을 새로고침해 다시 로그인된 것을 확인한 뒤 서류 작성 화면에서 다시 맡겨 주세요.'
         : '사이트는 열었습니다. 나비웹 로그인 정보를 받지 못했습니다. 나비웹 화면에서 "도우미가 가져오기"를 다시 눌러 주세요(나비웹에 로그인되어 있어야 합니다). 급하면 열린 사이트에서 직접 진행해 주세요.'));
       if (r.status === 429) throw new Error('오늘 사용할 수 있는 도우미 단계 수를 모두 썼습니다. 내일 다시 이용해 주세요.');
-      if (!r.ok) throw new Error('모델 호출 실패: ' + (j.error || r.status)); return j;
+      if (!r.ok) throw modelError(j, r.status);
+      if (Array.isArray(j.failed_before) && j.failed_before.length) trace(`대체 모델(${MODEL_NAME[j.provider] || j.provider})로 이어 갑니다: ` + modelError({ tried: j.failed_before, retryable: true }).message);
+      return j;
     },
     async describe(name, input) { return DOM_TOOLS.has(name) && input && input.ref ? (await toTab(name, input, true)).info : {}; },
     async execTool(name, input) {
@@ -314,7 +354,14 @@ async function host(playbook) {
       if (name === 'open_issued_document') return openIssuedDocument(Math.max(0, Number(input && input.row) || 0));
       if (DOM_TOOLS.has(name) && name !== 'upload_attached_file') return toTab(name, input, false);   // 0.7.3: 파일 올리기는 아래에서 맡긴 파일(state.attach)을 붙여 보낸다 — 예전에는 여기서 파일 없이 바로 보내져 "올릴 파일이 없습니다"가 났다
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
-      if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); notifyOpened(input.url); await wait(2500); return { text: '이동: ' + input.url }; }
+      if (name === 'navigate') { await chrome.tabs.update(state.tabId, { url: input.url }); notifyOpened(input.url); await wait(2500); const p = await retryIfBlocked(input.url); return { text: '이동: ' + input.url + (p ? blockedNote(p) : '') }; }
+      if (name === 'record_procedure') {   // 접수·발급까지 성공한 절차를 나비웹에 보낸다(다음에 같은 요청을 처음부터 조사하지 않도록)
+        if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 절차를 남길 곳이 없습니다.' };
+        const rec = cleanProcedure(input);
+        if (!rec) return { text: '처리 기관(agency), 공공기관 시작 주소(entry_url), 단계(steps)를 모두 적어 다시 부르세요.' };
+        await deliverToNavi({ kind: 'data', label: state.slot, data: { stage: 'procedure', procedure: rec } });
+        return { text: '이번에 성공한 절차를 나비웹에 보냈습니다. 이어서 결과를 report_status 로 알리고 마치세요.' };
+      }
       if (name === 'report_status') {
         if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 나비웹 화면에는 표시하지 않았습니다.' };
         const st = ['sent', 'pending', 'failed'].includes(input.state) ? input.state : 'pending';
@@ -487,11 +534,13 @@ async function runJob(m) {
       const usable = (t) => t && /^https:/.test(t.url || '') && !isNavi(t.url) && okHost(t.url) && (!wantSite || site(t.url) === wantSite);
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
-      if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : START_URL), active: true }); await wait(2500); }
+      let opened = '';
+      if (!usable(tab)) { opened = pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : START_URL); tab = await chrome.tabs.create({ url: opened, active: true }); await wait(2500); }
       state.tabId = tab.id; state.rootTab = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
       trace('0.7.7 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
+      if (opened) await retryIfBlocked(opened);
       say({ type: 'log', e: { kind: 'say', text: `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url || tab.pendingUrl || ''})` } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
       const res = await runAgent({ goal, playbook: pb, host: await host(pb) });
