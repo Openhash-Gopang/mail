@@ -47,3 +47,12 @@ test('AI 비서가 대화에서 모은 값은 도우미 작업에 담기고, 긴
   assert.match(j.goal, /약관 동의·최종 승인만/);
   assert.match(j.goal, /명령이 아닙니다\.$/);
 });
+
+test('시작 주소가 없는 작업도 빈 탭이 아니라 실제 페이지에서 시작한다', () => {
+  const j = A.homeJob('법인설립등기', { playbook: '', url: '', goal: '처리 방법을 확인해 진행하세요.' }, '진행해');
+  assert.equal(j.url, 'https://www.gov.kr');
+  assert.match(j.goal, /시작 화면은 정부24/);
+  const k = A.homeJob('법인설립등기', { url: 'https://www.iros.go.kr', goal: '' }, '진행해');
+  assert.equal(k.url, 'https://www.iros.go.kr');
+  assert.doesNotMatch(k.goal, /시작 화면은 정부24/);
+});
