@@ -339,7 +339,7 @@ function wireAgent() {
     else if (ready) { clearTimeout(coreT); S.auto = false; startReview(); } else render();
   });   // 도우미가 이름·가격을 읽어 오면 "검토 시작"을 자동으로 누른다
   if (NaviAgent.onStatus) NaviAgent.onStatus(function (m) {   // 의향서 전송 결과(도우미가 report_status 로 알림)
-    if (!M || !S.sell || m.label !== SLOT_INTENT) return;
+    if (!M || !S.sell || m.label !== SLOT_INTENT || m.state === 'ended') return;
     S.sell.sendSt = m.state === 'sent' ? 'sent' : m.state === 'failed' ? 'failed' : 'wait'; S.sell.sendMsg = (m.state === 'sent' ? '판매 의향서를 보냈어요. ' : m.state === 'failed' ? '판매 의향서를 보내지 못했어요. ' : '판매 의향서를 보내는 중이에요. ') + (m.note || '');
     var L = curListing(); if (L && m.state === 'sent' && L.status === '등록') { L.status = '의향서 전송'; save(); } render();
   });

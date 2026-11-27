@@ -11,7 +11,8 @@
   // 확장(서비스 워커)이 받아 온 파일을 나비웹 화면으로 넘긴다. 같은 출처로만 보내고, 넣을지는 화면이 사용자에게 묻는다.
   chrome.runtime.onMessage.addListener((m) => {
     if (!live()) return;
-    if (m && m.type === 'status' && ['sent', 'pending', 'failed', 'opened', 'step'].includes(m.state)) window.postMessage({ source: 'navi-agent', type: 'agent-status', label: String(m.label || '').slice(0, 120), state: m.state, note: String(m.note || '').slice(0, 200) }, location.origin);
+    if (m && m.type === 'status' && ['sent', 'pending', 'failed', 'opened', 'step', 'ended'].includes(m.state)) window.postMessage({ source: 'navi-agent', type: 'agent-status', label: String(m.label || '').slice(0, 120), state: m.state, note: String(m.note || '').slice(0, 200) }, location.origin);
+    if (m && m.type === 'ask' && m.ask) { window.postMessage({ source: 'navi-agent', type: 'agent-ask', label: String(m.label || '').slice(0, 120), aid: String(m.ask.aid || '').slice(0, 40), mode: String(m.ask.mode || '').slice(0, 12), text: String(m.ask.text || '').slice(0, 500), options: Array.isArray(m.ask.options) ? m.ask.options.slice(0, 6).map((o) => String(o).slice(0, 60)) : [] }, location.origin); return; }
     if (m && m.type === 'data' && m.data && typeof m.data === 'object') { try { const s = JSON.stringify(m.data); if (s.length <= 20000) window.postMessage({ source: 'navi-agent', type: 'agent-data', label: String(m.label || '').slice(0, 120), data: JSON.parse(s) }, location.origin); } catch (e) { /* 보낼 수 없는 값은 버린다 */ } return; }
     if (m && m.type === 'pdv' && typeof m.rid === 'string') { window.postMessage({ source: 'navi-agent', type: 'agent-pdv', rid: m.rid.slice(0, 40), op: m.op === 'set' ? 'set' : 'get', keys: Array.isArray(m.keys) ? m.keys.slice(0, 5) : [], values: m.values && typeof m.values === 'object' ? m.values : {} }, location.origin); return; }
     if (!m || m.type !== 'deliver' || typeof m.b64 !== 'string' || m.b64.length > 14 * 1024 * 1024) return;
@@ -36,7 +37,7 @@
       if (m.type === 'agent-ping') { const info = await chrome.runtime.sendMessage({ type: 'info' }); reply(m.id, 'agent-pong', { ok: true, ...info }); }
       else if (m.type === 'agent-queue') {
         const job = m.job || {};
-        const r = await chrome.runtime.sendMessage({ type: 'queue', job: { playbook: String(job.playbook || '').slice(0, 60), goal: String(job.goal || '').slice(0, 2000), title: String(job.title || '').slice(0, 120), slot: String(job.slot || '').slice(0, 120), token: String(job.token || '').slice(0, 4000), autostart: job.autostart === true, url: String(job.url || '').slice(0, 300), update: job.update === true, text: String(job.text || '').slice(0, 2000), file: okFile(job.file) } });
+        const r = await chrome.runtime.sendMessage({ type: 'queue', job: { playbook: String(job.playbook || '').slice(0, 60), goal: String(job.goal || '').slice(0, 2000), title: String(job.title || '').slice(0, 120), slot: String(job.slot || '').slice(0, 120), token: String(job.token || '').slice(0, 4000), autostart: job.autostart === true, url: String(job.url || '').slice(0, 300), update: job.update === true, text: String(job.text || '').slice(0, 2000), file: okFile(job.file), stop: job.stop === true, answer: job.answer ? { aid: String(job.answer.aid || '').slice(0, 40), ok: job.answer.ok === true, value: String(job.answer.value || '').slice(0, 200), manual: job.answer.manual === true } : undefined } });
         reply(m.id, 'agent-queued', r || { ok: false });
       }
     } catch (err) { reply(m.id, 'agent-error', { ok: false, error: String(err && err.message || err) }); }

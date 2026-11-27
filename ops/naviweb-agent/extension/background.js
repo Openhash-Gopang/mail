@@ -10,6 +10,7 @@ const say = (m) => chrome.runtime.sendMessage(m).catch(() => {});
 
 // 스토어 설치본은 설정 없이 동작한다: 게이트웨이 주소는 기본값을 쓰고, 인증은 나비웹 로그인 토큰(나비웹 화면에서 작업을 맡길 때 받음, 브라우저를 닫으면 사라짐)을 쓴다.
 // 설정에 운영자 토큰을 직접 넣으면 그것을 우선한다(개발·시험용).
+const START_URL = 'https://www.gov.kr';   // 시작할 주소가 없을 때 — 빈 탭(about:blank)에는 안내 띠·질문을 띄울 수 없다
 const DEFAULT_GATEWAY = 'https://naviweb-agent-gateway.tensor-city.workers.dev';
 async function cfg() {
   const o = await chrome.storage.local.get(['gateway', 'token', 'provider']);
@@ -103,7 +104,29 @@ async function overlay(mode, text, options) {
   for (const id of fam) await overlayTo(id, main.includes(id) ? { ...base, part: 'banner' } : { __navi: 'overlay', mode: 'off' }, main.includes(id));
 }
 chrome.tabs.onUpdated.addListener((id, info) => { if (info.status === 'complete' && state.running && id === state.tabId && state.ov) overlay(state.ov.mode, state.ov.text, state.ov.options); });
-function choose(question, options) { say({ type: 'prompt', kind: 'choice', text: question, options }); overlay('choice', question, options); return new Promise((res) => { state.waiter = (ok, value) => { overlay('busy', ''); res(ok ? value : null); }; }); }
+// 0.7.7: 도우미가 답을 기다리는 질문은 작업 탭의 띠뿐 아니라 나비웹 대화창에도 보내고, 거기서 한 답도 받는다 — 띠가 안 보여도 멈춘 채 방치되지 않게.
+let askSeq = 0;
+function webAsk(mode, text, options) {
+  state.pending = { aid: 'q' + Date.now().toString(36) + (++askSeq), mode, text: String(text || '').slice(0, 500), options: (options || []).map((o) => String(o).slice(0, 60)).slice(0, 6) };
+  trace('사용자 확인 대기(' + mode + '): ' + state.pending.text.slice(0, 100));
+  sendWebAsk();
+}
+function sendWebAsk() { const p = state.pending; if (p && state.slot) deliverToNavi({ kind: 'ask', label: state.slot, ask: p }).catch(() => {}); }
+function webAskClose() {
+  const p = state.pending; if (!p) return; state.pending = null;
+  if (state.slot) deliverToNavi({ kind: 'ask', label: state.slot, ask: { aid: p.aid, mode: 'closed' } }).catch(() => {});
+}
+// 나비웹 대화창에서 온 답. 지금 기다리는 질문의 번호와 맞고 값이 알맞을 때만 받는다. 사이트 접근 허용(permit)은 브라우저 규칙상 옆 창에서만 받는다.
+function answerFromWeb(a) {
+  const p = state.pending;
+  if (!p || !state.waiter || !a || a.aid !== p.aid || p.mode === 'permit') return false;
+  const value = String(a.value || '').slice(0, 200), ok = a.ok === true, manual = a.manual === true;
+  if (ok && p.mode === 'choice' && !p.options.includes(value)) return false;
+  if (ok && p.mode === 'input' && !manual && (!value.trim() || /\d{6}\s*-?\s*[1-8]\d{6}|(?:\d[ -]?){15,16}/.test(value))) return false;   // 주민등록번호·카드번호는 대화창으로 받지 않는다
+  const w = state.waiter; state.waiter = null; w(ok, value, manual);
+  return true;
+}
+function choose(question, options) { say({ type: 'prompt', kind: 'choice', text: question, options }); overlay('choice', question, options); return new Promise((res) => { state.waiter = (ok, value) => { webAskClose(); overlay('busy', ''); res(ok ? value : null); }; webAsk('choice', question, options); }); }
 // 나비웹 탭(내 데이터 금고 중계가 있는 곳)에 금고 읽기·쓰기를 부탁한다. 안 열려 있거나 늦으면 null.
 const pdvWait = new Map();
 async function pdvCall(op, data) {
@@ -120,10 +143,11 @@ function inputAsk(question, label, saveAs) {
   say({ type: 'prompt', kind: 'input', text: question }); overlay('input', question, [label, saveAs || '']);
   return new Promise((res) => {
     state.waiter = async (ok, value, manual) => {
-      overlay('busy', ''); if (!ok) return res(null); if (manual) return res({ manual: true });
+      webAskClose(); overlay('busy', ''); if (!ok) return res(null); if (manual) return res({ manual: true });
       if (saveAs && value) { const r = await pdvCall('set', { values: { [saveAs]: value } }); if (r && r.ok && Array.isArray(r.saved) && r.saved.includes(saveAs)) say({ type: 'prompt', kind: 'saved', text: '내 데이터 금고에 저장했습니다.' }); }
       res(value);
     };
+    webAsk('input', question);
   });
 }
 // 사용자가 할 일이 생기면 작업 탭을 앞으로 가져온다(나비웹 탭을 보고 있어도 알아챌 수 있게).
@@ -176,19 +200,20 @@ function watchLogin(waiter) {
   return () => { stop = true; };
 }
 function ask(kind, text) {
-  trace('사용자 확인 대기(' + kind + '): ' + String(text || '').slice(0, 100));   // 0.7.4: 확인 창이 떴는지 기록에 남긴다
   say({ type: 'prompt', kind, text }); if (kind !== 'permit') overlay(kind, text);
   return new Promise((res) => {
     let unwatch = null;
-    const w = (ok, v) => { if (unwatch) unwatch(); trace('사용자 응답(' + kind + '): ' + (v === '__say' ? '메시지' : ok ? '진행' : '취소')); overlay('busy', ''); res(v === '__say' ? 'say' : ok); };
+    const w = (ok, v) => { if (unwatch) unwatch(); webAskClose(); trace('사용자 응답(' + kind + '): ' + (v === '__say' ? '메시지' : ok ? '진행' : '취소')); overlay('busy', ''); res(v === '__say' ? 'say' : ok); };
     state.waiter = w;
+    webAsk(kind, kind === 'permit' ? String(text || '') + ' 사이트 접근 허용이 필요합니다' : text);   // 0.7.4: 확인 창이 떴는지 기록에도 남는다
     if (kind === 'handoff' && /로그인/.test(String(text || '')) && !/회원\s*가입|결제|납부|인증서\s*비밀번호/.test(String(text || ''))) unwatch = watchLogin(w);
   });
 }
 
 // 진행 중인 작업을 멈춘다(답을 기다리던 것도 풀어 준다). 몇 초 안에 끝나지 않아도 새 작업은 시작한다.
-async function stopCurrent() {
+async function stopCurrent(why) {
   if (!state.running) return;
+  if (why === 'replaced') state.replaced = true;   // 새 작업으로 바꾸는 중단은 실패·종료로 알리지 않는다
   state.abort = true;
   if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* 이미 끝남 */ } }
   for (let i = 0; i < 40 && state.running; i++) await wait(100);
@@ -274,6 +299,7 @@ async function host(playbook) {
       if (name === 'report_status') {
         if (!state.slot) return { text: '나비웹에서 맡긴 항목이 없어 나비웹 화면에는 표시하지 않았습니다.' };
         const st = ['sent', 'pending', 'failed'].includes(input.state) ? input.state : 'pending';
+        if (st !== 'pending') state.reported = true;
         await deliverToNavi({ kind: 'status', label: state.slot, state: st, note: String(input.note || '').slice(0, 200) });
         return { text: '나비웹 화면에 알렸습니다: ' + st };
       }
@@ -368,7 +394,7 @@ async function host(playbook) {
 async function deliverToNavi(msg) {
   const { naviTabId } = (chrome.storage.session && await chrome.storage.session.get('naviTabId')) || {};
   if (naviTabId == null) throw new Error('나비웹 화면을 찾지 못했습니다. 나비웹에서 다시 맡겨 주세요.');
-  await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : msg.kind === 'data' ? 'data' : 'deliver', data: msg.data, label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
+  await chrome.tabs.sendMessage(naviTabId, { type: msg.kind === 'status' ? 'status' : msg.kind === 'data' ? 'data' : msg.kind === 'ask' ? 'ask' : 'deliver', ask: msg.ask, data: msg.data, label: msg.label, name: msg.name, mime: msg.mime, b64: msg.b64, state: msg.state, note: msg.note });
 }
 // 기관 사이트(정부24 등)를 열었다고 나비웹 서류 화면에 알린다. 작업 하나에 한 번만.
 function notifyOpened(url) {
@@ -420,8 +446,14 @@ async function openIssuedDocument(row) {
   await deliverToNavi({ kind: 'status', label: state.slot, state: 'pending', note: '발급된 문서를 나비웹으로 보냈습니다.' }).catch(() => {});
   return { text: `문서출력 → 문서 보기 창 → PDF 로 나비웹에 보냈습니다: ${nm} (${Math.round(pr.size / 1024)}KB). 나비웹이 서류의 해당 항목에 자동으로 넣습니다. 사용자에게 다시 묻지 말고 작업을 마치세요.` };
 }
+// 작업이 어떻게 끝났는지 나비웹에 반드시 알린다(이미 sent·failed 로 알렸거나 새 작업으로 바꾼 경우는 제외).
+function reportEnd(job, st, note) {
+  if (!job.slot || job.reported || job.replaced) return;
+  job.reported = true;
+  deliverToNavi({ kind: 'status', label: job.slot, state: st, note: String(note || '').replace(/[#*`]/g, '').slice(0, 200) }).catch(() => {});
+}
 async function runJob(m) {
-    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], slot: String(m.slot || '').slice(0, 120), attach: m.file && m.file.b64 ? m.file : null };
+    state = { running: true, abort: false, tabId: null, waiter: null, ov: null, inbox: [], pending: null, naviTabId: m.naviTabId == null ? null : m.naviTabId, slot: String(m.slot || '').slice(0, 120), attach: m.file && m.file.b64 ? m.file : null };
     const me = state;
     const keep = setInterval(() => { try { chrome.runtime.getPlatformInfo(); } catch { /* 살아 있음 확인용 호출 */ } }, 20000);   // 서비스 워커가 긴 대기 중에 잠들어 작업이 끊기지 않게
     try {
@@ -436,19 +468,22 @@ async function runJob(m) {
       const usable = (t) => t && /^https:/.test(t.url || '') && !isNavi(t.url) && okHost(t.url) && (!wantSite || site(t.url) === wantSite);
       let [tab] = await chrome.tabs.query({ active: true, windowId: m.windowId });
       if (!usable(tab) && pb) { const all = (await chrome.tabs.query({})).filter(usable).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0)); if (all[0]) tab = all[0]; }
-      if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : 'about:blank'), active: true }); await wait(2500); }
+      if (!usable(tab)) { tab = await chrome.tabs.create({ url: pb && pb.start ? pb.start : (hostAllowed(m.url) ? m.url : START_URL), active: true }); await wait(2500); }
       state.tabId = tab.id; state.family = new Set([tab.id]);
       notifyOpened(tab.url || (pb && pb.start) || m.url);
-      trace('0.7.6 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
+      trace('0.7.7 작업 시작: ' + (tab.url || '새 탭') + (state.attach ? ' · 맡긴 파일 ' + state.attach.name : ''));
       await overlay('busy', '');
-      say({ type: 'log', e: { kind: 'say', text: tab.url ? `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url})` : '대상 탭: 새 빈 탭에서 시작합니다. 첫 이동 뒤 사이트가 정해집니다.' } });
+      say({ type: 'log', e: { kind: 'say', text: `대상 탭: ${tab.title || '(제목 없음)'} (${tab.url || tab.pendingUrl || ''})` } });
       const goal = pb ? `${m.goal}\n(절차: ${pb.title})` : m.goal;
       const res = await runAgent({ goal, playbook: pb, host: await host(pb) });
       say({ type: 'done', res });
+      if (res && res.done) reportEnd(me, 'ended', String(res.text || '작업을 마쳤습니다.'));
+      else if (res && res.reason === 'aborted') reportEnd(me, 'ended', '작업이 중단됐습니다.');
+      else reportEnd(me, 'failed', res && res.reason === 'max_steps' ? '단계 한도 안에 작업을 끝내지 못했습니다.' : '작업을 끝내지 못했습니다.');
       if (res && res.done) await overlay('done', String(res.text || '작업을 마쳤습니다.').replace(/[#*`]/g, '').slice(0, 300));
       else await overlay(res && res.reason === 'aborted' ? 'off' : 'error', '작업을 끝내지 못했습니다. 나비웹 화면에서 다시 맡겨 주세요.');
-    } catch (e) { trace('오류: ' + e.message); say({ type: 'error', text: e.message }); await overlay('error', e.message); }
-    clearInterval(keep); me.running = false;   // 새 작업이 이미 state 를 바꿨다면 그 작업의 표시는 건드리지 않는다
+    } catch (e) { trace('오류: ' + e.message); reportEnd(me, 'failed', e.message); say({ type: 'error', text: e.message }); await overlay('error', e.message); }
+    webAskClose(); clearInterval(keep); me.running = false;   // 새 작업이 이미 state 를 바꿨다면 그 작업의 표시는 건드리지 않는다
   }
 // 설치·업데이트·브라우저 시작 때 이미 열려 있는 나비웹 탭에도 다리(bridge.js)를 바로 넣는다.
 // 콘텐츠 스크립트는 "페이지를 새로 열 때"만 들어가므로, 이게 없으면 설치 직후 열려 있던 탭은 새로고침하기 전까지 도우미를 못 본다(2026-11-08).
@@ -502,10 +537,25 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
     let fromNavi = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; fromNavi = h === 'naviweb.kr' || h.endsWith('.naviweb.kr') || h.endsWith('.hondi.net'); } catch { /* 아님 */ }
     if (fromNavi && typeof j.token === 'string' && j.token && chrome.storage.session) chrome.storage.session.set({ userToken: j.token.slice(0, 4000) });
     if (fromNavi && sender.tab && sender.tab.id != null && chrome.storage.session) chrome.storage.session.set({ naviTabId: sender.tab.id });   // 받아 온 파일을 돌려줄 나비웹 탭
+    // 대화창의 답과 중단은 그 작업을 맡긴 바로 그 나비웹 탭에서 온 것만 받는다.
+    if (j.answer || j.stop) {
+      let top = false; try { const h = new URL(sender.url || sender.tab?.url || '').hostname; top = h === 'naviweb.kr' || h.endsWith('.naviweb.kr'); } catch { /* 아님 */ }
+      const mineJob = top && sender.tab && sender.tab.id === state.naviTabId && state.running && !!state.slot && state.slot === String(j.slot || '').slice(0, 120);
+      if (!mineJob) { send({ ok: false }); return; }
+      if (j.stop) { send({ ok: true }); stopCurrent(); return; }
+      send({ ok: answerFromWeb(j.answer) });
+      return;
+    }
     // 이미 시작한 작업에 나중에 알려 주는 정보(예: 로그인하는 동안 사용자에게 물어 얻은 법인 이름)
     if (j.update) {
-      if (fromNavi && state.running && state.slot && state.slot === String(j.slot || '').slice(0, 120) && typeof j.text === 'string' && j.text.trim()) { state.inbox.push(j.text.trim().slice(0, 1000)); send({ ok: true }); }
-      else send({ ok: false });
+      if (fromNavi && state.running && state.slot && state.slot === String(j.slot || '').slice(0, 120) && typeof j.text === 'string' && j.text.trim()) {
+        state.inbox.push(j.text.trim().slice(0, 1000));
+        const p = state.pending, t = j.text.trim();
+        if (p && state.waiter && p.mode === 'handoff') { const w = state.waiter; state.waiter = null; w(true, '__say'); }   // 직접 처리를 기다리던 중이면 말로 깨워 AI 가 판단하게 한다
+        else if (p && p.mode === 'choice' && p.options.includes(t)) answerFromWeb({ aid: p.aid, ok: true, value: t });
+        else sendWebAsk();   // 다른 질문을 기다리는 중이면 그 질문을 대화창에 다시 보여 준다
+        send({ ok: true, waiting: !!state.pending });
+      } else send({ ok: false });
       return;
     }
     // 나비웹에서 맡기면 바로 시작한다(도구 모음 아이콘·옆 창을 열 필요 없음). 로그인·인증서·결제는 작업 탭의 안내에 따라 사용자가 직접 한다.
@@ -514,8 +564,8 @@ chrome.runtime.onMessage.addListener((m, sender, send) => {
       const pb = j.playbook ? PLAYBOOKS[j.playbook] : null, winId = sender.tab.windowId;
       send({ ok: true });   // 0.7.6: 접수 응답을 먼저 보낸다 — 하던 작업을 끝내느라 최대 4초 걸리면 나비웹의 3초 대기가 끝나 "맡기지 못했어요"로 잘못 보였다
       (async () => {
-        await stopCurrent();
-        runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: winId, file: j.file || null });
+        await stopCurrent('replaced');
+        runJob({ url: String(j.url || ''), playbook: j.playbook || '', goal: String(j.goal || (pb && pb.title) || '').slice(0, 2000), slot: String(j.slot || '').slice(0, 120), windowId: winId, file: j.file || null, naviTabId: sender.tab.id });
       })();
       return true;
     }
