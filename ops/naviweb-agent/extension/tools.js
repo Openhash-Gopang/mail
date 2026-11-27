@@ -26,6 +26,10 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { seconds: { type: 'number' } }, required: ['seconds'] } },
   { name: 'report_status', description: '나비웹에서 맡긴 첨부서류 항목의 진행 결과를 나비웹 화면에 알린다. 파일이 아닌 결과(법원·기관으로 바로 전송 등)와 진행 상황·실패를 알릴 때 쓴다. state: sent(기관으로 전송 완료), pending(아직 진행 중), failed(실패). note 는 한 줄(법인 이름·건수 등).',
     input_schema: { type: 'object', properties: { state: { type: 'string', enum: ['sent', 'pending', 'failed'] }, note: { type: 'string' } }, required: ['state'] } },
+  { name: 'record_procedure', description: '신고·신청·등록의 접수나 서류 발급이 화면에서 확인된 때에만, 실제로 성공한 순서를 표준 절차로 남긴다. 확인되지 않았으면 부르지 않는다. 다음 사용자도 쓰므로 성명·상호·주소·전화·번호 같은 입력값은 절대 적지 말고 메뉴 이름·단추 이름·입력 항목의 이름만 적는다. 헤맨 단계는 빼고 성공한 길만 적는다.',
+    input_schema: { type: 'object', properties: { official_name: { type: 'string', description: '법령·기관이 쓰는 정확한 업무 이름' }, agency: { type: 'string' }, entry_url: { type: 'string', description: '시작한 공공기관 https 주소' }, legal_kind: { type: 'string' },
+      steps: { type: 'array', maxItems: 30, items: { type: 'object', properties: { action: { type: 'string', description: '예: "민원안내 > ○○ 신고 메뉴에서 신청 단추를 누른다"' }, url: { type: 'string' }, submit: { type: 'boolean' } }, required: ['action'] } },
+      required_fields: { type: 'array', items: { type: 'string' } }, documents: { type: 'array', items: { type: 'string' } } }, required: ['agency', 'entry_url', 'steps'] } },
   { name: 'report_data', description: '화면에서 읽은 상품 정보를 나비웹(시장 화면)으로 보낸다. 나비웹에서 맡긴 상품 확인 작업에서만 쓴다. 보고 읽은 값만 넣고 모르는 항목은 비운다(지어내지 않는다). 구매·결제는 하지 않는다.',
     input_schema: { type: 'object', properties: { kind: { type: 'string', enum: ['product'] }, data: { type: 'object', properties: {
       stage: { type: 'string', enum: ['core', 'detail', 'candidates', 'buyers'], description: 'buyers: 구매자 후보 목록(buyers)을 보낼 때, core: 먼저 상품명·가격(·이미지·판매자)만 보낼 때, detail: 나머지를 보낼 때, candidates: 검색 결과 후보 목록(candidates)을 보낼 때' },

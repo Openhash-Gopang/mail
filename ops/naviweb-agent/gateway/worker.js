@@ -10,6 +10,9 @@
 //   ANTHROPIC_API_KEY, CLAUDE_MODEL(기본 claude-haiku-5-5)
 //   MAX_INPUT_TOKENS   요청 1건의 입력 상한(기본 90000, 최대 95000). Haiku 5.5 는 10만 토큰을 넘으면 모든 요율이 5배라 반드시 아래로 유지한다.
 //   GEMMA_BASE_URL (예: https://<호스트>/v1), GEMMA_API_KEY, GEMMA_MODEL(기본 google/gemma-4-31B-it)
+//   DEEPSEEK_API_KEY(있을 때만 대체 모델로 쓴다), DEEPSEEK_FLASH_MODEL(기본 deepseek-flash), DEEPSEEK_PRO_MODEL(기본 deepseek-v4-pro)
+//   FALLBACKS          기본 모델이 실패하면 차례로 쓸 대체 모델(기본 "deepseek-flash,deepseek-pro", 끄려면 "off")
+//   주의: 대체 모델을 켜면 도우미가 읽은 화면 글(개인 정보가 섞일 수 있다)이 그 모델 회사의 서버로도 간다.
 
 const MAX_BODY = 6 * 1024 * 1024;
 const MAX_MESSAGES = 120;
@@ -183,7 +186,7 @@ export function withCache(req) {
   return out;
 }
 
-async function callClaude(req, env) {
+async function callClaude(req, env, signal) {
   const cached = env.PROMPT_CACHE === 'off' ? { system: req.system, tools: req.tools, messages: req.messages } : withCache(req);
   const body = {
     model: env.CLAUDE_MODEL || 'claude-haiku-5-5',
@@ -193,26 +196,88 @@ async function callClaude(req, env) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body), signal,
   });
-  const j = await r.json();
+  const j = await readBody(r);
   if (!r.ok) return { error: j, status: r.status };
   const u = j.usage || {};
   const cache = { read: u.cache_read_input_tokens || 0, write: u.cache_creation_input_tokens || 0, fresh: u.input_tokens || 0 };
   return { out: { content: j.content, stop_reason: j.stop_reason, usage: j.usage, cache } };
 }
 
-async function callGemma(req, env) {
+// 오류 응답이 JSON 이 아닐 수도 있다(게이트웨이 앞단의 HTML 오류 화면 등)
+async function readBody(r) { const t = await r.text(); try { return JSON.parse(t); } catch { return { message: t.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) }; } }
+
+async function callGemma(req, env, signal) {
   const base = (env.GEMMA_BASE_URL || '').replace(/\/$/, '');
   if (!base) return { error: { message: 'GEMMA_BASE_URL 미설정' }, status: 500 };
   const r = await fetch(base + '/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (env.GEMMA_API_KEY || '') },
-    body: JSON.stringify(toOpenAI(req, env.GEMMA_MODEL || 'google/gemma-4-31B-it')),
+    body: JSON.stringify(toOpenAI(req, env.GEMMA_MODEL || 'google/gemma-4-31B-it')), signal,
   });
-  const j = await r.json();
+  const j = await readBody(r);
   if (!r.ok) return { error: j, status: r.status };
   return { out: fromOpenAI(j) };
+}
+
+// DeepSeek(OpenAI 호환). 사고 모드는 끈다 — 켜면 도구 호출을 이어 갈 때 reasoning_content 를 되돌려 보내야 하고 응답이 느려진다.
+export function toDeepSeek(req, model, vision) {
+  const body = toOpenAI(req, model);
+  body.thinking = { type: 'disabled' };
+  if (!vision) for (const m of body.messages) {
+    if (Array.isArray(m.content)) m.content = m.content.map((x) => (x.type === 'image_url' ? { type: 'text', text: '[이 모델은 화면 이미지를 볼 수 없습니다. read_page·get_text 로 확인하세요.]' } : x));
+  }
+  return body;
+}
+async function callDeepSeek(req, env, signal, pro) {
+  const model = pro ? (env.DEEPSEEK_PRO_MODEL || 'deepseek-v4-pro') : (env.DEEPSEEK_FLASH_MODEL || 'deepseek-flash');
+  const r = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.DEEPSEEK_API_KEY },
+    body: JSON.stringify(toDeepSeek(req, model, !pro)), signal,
+  });
+  const j = await readBody(r);
+  if (!r.ok) return { error: j, status: r.status };
+  const out = fromOpenAI(j);
+  if (!out.content.some((b) => b.type === 'tool_use' || (b.type === 'text' && b.text))) return { error: { message: '빈 응답' }, status: 502 };
+  return { out };
+}
+
+// ---- 재시도와 대체 모델 ------------------------------------------------------
+// 기본 모델은 일시적인 오류면 한 번 더 부르고, 그래도 실패하면 대체 모델을 차례로 부른다.
+// 확장은 90초까지만 기다리므로 전체 시간은 80초 안으로 묶는다.
+const PROVIDERS = {
+  claude: { call: callClaude },
+  gemma: { call: callGemma },
+  'deepseek-flash': { call: (q, e, s) => callDeepSeek(q, e, s, false), ready: (e) => !!e.DEEPSEEK_API_KEY },
+  'deepseek-pro': { call: (q, e, s) => callDeepSeek(q, e, s, true), ready: (e) => !!e.DEEPSEEK_API_KEY },
+};
+const RETRYABLE = new Set([0, 408, 409, 429, 500, 502, 503, 504, 520, 522, 524, 529]);
+export function modelChain(primary, env) {
+  const raw = env.FALLBACKS === undefined ? 'deepseek-flash,deepseek-pro' : String(env.FALLBACKS);
+  const more = raw.split(',').map((x) => x.trim()).filter((x) => PROVIDERS[x] && PROVIDERS[x].ready && PROVIDERS[x].ready(env));
+  return [primary, ...more.filter((x) => x !== primary)];
+}
+const reasonOf = (e) => String((e && e.error && e.error.message) || (e && e.message) || (typeof e === 'string' ? e : '') || '원인 알 수 없음').replace(/\s+/g, ' ').slice(0, 160);
+export async function callWithFallback(req, env, primary) {
+  const tried = [], start = Date.now(), budget = Number(env.MODEL_BUDGET_MS) || 80000, perCall = Number(env.MODEL_TIMEOUT_MS) || 40000;
+  const delay = env.RETRY_DELAY_MS === undefined ? 1500 : Number(env.RETRY_DELAY_MS);
+  const chain = modelChain(primary, env);
+  for (let c = 0; c < chain.length; c++) {
+    for (let attempt = 0; attempt < (c === 0 ? 2 : 1); attempt++) {
+      const left = budget - (Date.now() - start);
+      if (left < Math.min(5000, budget / 4)) return { tried };
+      if (attempt && delay) await new Promise((r) => setTimeout(r, delay));
+      let res;
+      try { res = await PROVIDERS[chain[c]].call(req, env, AbortSignal.timeout(Math.min(perCall, left))); }
+      catch (e) { const slow = e && (e.name === 'TimeoutError' || e.name === 'AbortError'); res = { status: slow ? 408 : 0, error: { message: slow ? '응답 시간 초과' : '연결 실패: ' + reasonOf(e) } }; }
+      if (!res.error) return { out: res.out, provider: chain[c], tried };
+      tried.push({ provider: chain[c], status: res.status, reason: reasonOf(res.error) });
+      if (!RETRYABLE.has(res.status) || res.status === 408) break;   // 설정·잔액 오류나 시간 초과는 같은 모델을 다시 부르지 않는다
+    }
+  }
+  return { tried };
 }
 
 // 누가 요청했는지 확인한다. 운영자 토큰이면 운영자, 아니면 AUTH_VERIFY_URL(나비웹 로그인 확인 주소)에 같은 Authorization 을 보내
@@ -263,7 +328,7 @@ async function handle(request, env) {
       return new Response(null, { status: c.ok ? 204 : 403, headers: { ...c.headers, 'access-control-allow-headers': 'authorization, content-type, x-navi-token', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-max-age': '86400' } });
     }
     const url = new URL(request.url);
-    if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude', auth_verify: !!env.AUTH_VERIFY_URL, operator_token: !!env.AGENT_TOKEN, v: 2 }, 200, c.headers);   // 설정 여부(참/거짓)만 — 값은 내보내지 않는다
+    if (url.pathname === '/health') return json({ ok: true, provider: env.DEFAULT_PROVIDER || 'claude', chain: modelChain(env.DEFAULT_PROVIDER || 'claude', env), auth_verify: !!env.AUTH_VERIFY_URL, operator_token: !!env.AGENT_TOKEN, v: 2 }, 200, c.headers);   // 설정 여부(참/거짓)만 — 값은 내보내지 않는다
     if (url.pathname !== '/v1/step' || request.method !== 'POST') return json({ error: 'not_found' }, 404, c.headers);
     if (!c.ok) return json({ error: 'origin_not_allowed' }, 403);
     const why = {};
@@ -280,8 +345,12 @@ async function handle(request, env) {
     const fit = await enforceLimit(req, env, provider);
     if (fit.error) return json({ error: fit.error, estimate: fit.est, limit: fit.limit }, 413, c.headers);
     req = fit.req;
-    const res = provider === 'gemma' ? await callGemma(req, env) : await callClaude(req, env);
-    if (res.error) return json({ error: 'upstream', status: res.status, detail: res.error }, 502, c.headers);
-    return json({ ...res.out, provider, input_estimate: fit.exact ?? fit.est, trimmed: fit.dropped }, 200, c.headers);
+    const res = await callWithFallback(req, env, provider);
+    if (res.tried.length) console.log('model_failures', JSON.stringify(res.tried));
+    if (!res.out) {
+      const last = res.tried[res.tried.length - 1] || { status: 0, reason: '시간 초과' };
+      return json({ error: 'upstream', status: last.status, reason: last.reason, tried: res.tried, retryable: !res.tried.length || res.tried.some((t) => RETRYABLE.has(t.status)) }, 502, c.headers);
+    }
+    return json({ ...res.out, provider: res.provider, input_estimate: fit.exact ?? fit.est, trimmed: fit.dropped, ...(res.tried.length ? { failed_before: res.tried } : {}) }, 200, c.headers);
   }
 }
