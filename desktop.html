@@ -120,7 +120,7 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js?v=20261127a"></script>
+<script src="agent-bridge.js?v=20261127b"></script>
 <script src="doc-history.js?v=20261126"></script>
 <script src="task-flow.js?v=20261126"></script>
 <script src="doc-helper.js?v=20261107"></script>
@@ -3208,7 +3208,7 @@ async function _homeAgentRelay(text) {
   let ok = false; try { ok = await NaviAgent.update(job.slot, NaviAgent.mask(text)); } catch (e) { ok = false; }
   if (!ok) { _homeAgent.active = null; return false; }   // 이미 끝난 작업 — 평소처럼 처리한다
   _navBegin(); _cmpAppendBubble('user', { text }); _navRoute.msgs.push({ role: 'user', content: text });
-  _homeSay('진행 중인 “' + job.doc + '” 작업의 도우미에게 전달했습니다.');
+  _homeSay('진행 중인 “' + job.doc + '” 작업의 도우미에게 전해 두었습니다. 도우미가 멈춰 있으면 바로 반응하지 않을 수 있습니다. 반응이 없으면 작업 탭을 닫아 주세요(작업이 중단됩니다).');
   const thread = document.getElementById('cmp-thread');
   const box = document.createElement('div'); box.className = 'nav-ask';
   const opts = document.createElement('div'); opts.className = 'nav-ask-opts';
@@ -3216,6 +3216,20 @@ async function _homeAgentRelay(text) {
   b.onclick = async () => { box.remove(); await _navAssistTurn(text, { again: true }); };
   opts.appendChild(b); box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
   return true;
+}
+// 도우미의 진행 단계를 홈 대화창의 한 줄에 계속 갱신해 보여 준다 — 어디서 멈췄는지 보이도록(2026-11-27). 대화 이력에는 넣지 않는다.
+function _homeAgentStep(doc, note) {
+  let row = document.getElementById('home-agent-step');
+  if (!note) { if (row) row.remove(); return; }
+  const thread = document.getElementById('cmp-thread');
+  if (!thread || !_homeAgent.active || _homeAgent.active.doc !== doc) return;
+  if (!row) {
+    row = document.createElement('div'); row.id = 'home-agent-step'; row.className = 'chat-bubble-row assistant';
+    const b = document.createElement('div'); b.className = 'chat-bubble'; b.setAttribute('role', 'status'); b.style.cssText = 'font-size:13px;color:var(--hint);white-space:pre-line';
+    row.appendChild(b); thread.appendChild(row); _cmpScrollToBottom();
+  } else if (thread.lastElementChild !== row) { thread.appendChild(row); }
+  const waiting = /사용자 확인 대기|ask_choice|ask_input|handoff_to_user|접근 허용/.test(note);
+  row.firstChild.textContent = '도우미 진행: ' + note + (waiting ? '\n도우미가 답이나 조작을 기다립니다. 작업 탭의 안내를 확인해 주세요.' : '');
 }
 function _homeAgentStatus(doc, s) {
   if (s.state === 'sent' && _homeNoun(doc) === ' 작업') { _homeFiled(doc, 'reported'); return; }
@@ -3241,7 +3255,8 @@ function _homeAgentFile(doc, f) {
 }
 function _agentOnStatus(s) {
   const _hd = window.NaviAgent && NaviAgent.homeDoc ? NaviAgent.homeDoc(s.label) : '';
-  if (_hd && s.state !== 'step') { _homeAgentStatus(_hd, s); return; }
+  if (_hd && s.state !== 'step') { _homeAgentStep(_hd, ''); _homeAgentStatus(_hd, s); return; }
+  if (_hd) _homeAgentStep(_hd, s.note);
   if (s.state === 'opened') { _agentOpenedNotice(s); return; }
   if (s.state === 'step') { try { console.log('[도우미]', s.note); window.__agentSteps = (window.__agentSteps || []).concat([s.note]).slice(-30); } catch (e) { /* 기록만 */ } return; }   // 0.7.1 진행 단계 — 화면 상태는 건드리지 않는다
   const od = document.getElementById('agent-open-note'); if (od) od.remove();
