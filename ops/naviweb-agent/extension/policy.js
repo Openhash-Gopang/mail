@@ -8,6 +8,14 @@ const SECRET_NAME = /passw|passwd|pwd|비밀번호|card|카드번호|cvc|cvv|otp
 const HANDOFF_TEXT = /로그인|login|sign.?in|인증서|공동인증|간편인증|본인인증|캡차|captcha|자동입력\s*방지|결제|payment|pay\b|이체|송금|계좌이체|카드\s*결제|전자서명/i;
 const CONFIRM_TEXT = /제출|접수|신청서|발급|전송|삭제|확정|동의|보내기|다운로드|내려받기|send|submit|delete|download/i;
 // 메뉴 이동처럼 되돌릴 수 있는 항목은 묻지 않는다.
+// 팝업의 닫기 단추("닫기", X, "공지 팝업 닫기", "오늘 하루 보지 않기")는 묻거나 넘기지 않고 누른다. 동의·설치·결제처럼 닫기 말고 다른 일도 하는 단추는 제외한다.
+const CLOSE_LABEL = /(?:닫기|close)(?:\s*(?:버튼|단추))?$|^[×✕✖⨯xX]$|^(?:(?:오늘|하루|일주일|다시|\d+\s*(?:일|시간))[\s가-힣]{0,14}?)(?:열지|보지|띄우지)\s*않(?:기|음)$/i;
+const NOT_CLOSE = /동의|수락|허용|설치|하고\s*닫|후\s*닫|결제하|구독|신청|제출|전송|삭제|해지|탈퇴|계약|accept|agree|allow|install|subscribe/i;
+export function isCloseControl(info = {}) {
+  const labels = [info.text, info.name, info.label].map((t) => tidy(t).replace(/^(\S+) \1$/, '$1')).filter(Boolean);
+  const shown = tidy(info.text).replace(/^(\S+) \1$/, '$1');
+  return !!shown && CLOSE_LABEL.test(shown) && !labels.some((t) => NOT_CLOSE.test(t));
+}
 const NAV_OK = /^(열람[·\s]*발급|등기상호검색|신청결과|법인\s*열람|결제대상목록|처음으로|이전|다음)/;
 
 /** https 주소이면 어느 사이트든 허용한다. (http 는 열지 않는다) extra 인자는 예전 호출과의 호환을 위해 받지만 쓰지 않는다. */
@@ -47,6 +55,7 @@ function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   }
   // 화면의 "로그인" 링크는 로그인 창(팝업)을 여는 일일 뿐이라 도우미가 직접 눌러 연다. 아이디·인증서 입력과 인증은 계속 사용자가 한다.
   if (tool === 'click' && info.tag === 'a' && /^(로그인|login)$/i.test(String(info.text || '').trim())) return { act: 'auto' };
+  if (tool === 'click' && isCloseControl(info)) return { act: 'auto' };
   if (tool === 'click' || tool === 'select_option') {
     const label = `${info.text || ''} ${info.name || ''}`;
     if (HANDOFF_TEXT.test(label)) return { act: 'handoff', reason: `"${(info.text || info.name || '').trim().slice(0, 30)}" 단계는 직접 진행해 주세요.` };
