@@ -2609,10 +2609,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button type="button" role="tab" class="wp-tab active" id="xk-tab-xo" aria-selected="true" onclick="_xkSwitch('xo')">XO+</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-tablet" aria-selected="false" onclick="_xkSwitch('tablet')">XO+ 태블릿</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-history" aria-selected="false" onclick="_xkSwitch('history')">History</button>
-      <button type="button" role="tab" class="wp-tab" id="xk-tab-wp" aria-selected="false" onclick="_xkSwitch('wp')">Whitepaper</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-oh" aria-selected="false" onclick="_xkSwitch('oh')">OpenHash</button>
       <button type="button" role="tab" class="wp-tab" id="xk-tab-ma" aria-selected="false" onclick="_xkSwitch('ma')">서버리스 메일 설계</button>
-      <button type="button" role="tab" class="wp-tab" id="xk-tab-gd" aria-selected="false" onclick="_xkSwitch('gd')">나비웹 안내</button>
       <a class="wp-site" href="https://hondi.net" target="_blank" rel="noopener">나비웹 홈페이지 ↗</a>
     </div>
     <iframe id="xokorea-frame" scrolling="no" title="XO Korea에서 OpenHash를 거쳐 나비웹으로" allow="clipboard-write"></iframe>
@@ -2638,7 +2636,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div id="expert100k-doc" role="tabpanel" aria-live="polite"></div>
   </div>
   <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-tax" class="tab-panel"><div id="tx-root-host"></div></div> <div id="tab-mkt" class="tab-panel"><div id="mk-root-host"></div></div> <div id="tab-trf" class="tab-panel"><div id="tf-root-host"></div></div> <div id="tab-lgs" class="tab-panel"><div id="lg-root-host"></div></div> <div id="tab-pub" class="tab-panel"><div id="pub-root-host"></div></div> <div id="tab-dem" class="tab-panel"><div id="dem-root-host"></div></div> <div id="tab-sch" class="tab-panel"><div id="sch-root-host"></div></div> <div id="tab-biz" class="tab-panel"><div id="biz-root-host"></div></div> <div id="tab-plan" class="tab-panel"><div id="plan-root-host"></div></div> <div id="tab-wch" class="tab-panel"><div id="wch-root-host"></div></div> <div id="tab-job" class="tab-panel"><div id="job-root-host"></div></div> <div id="tab-jit" class="tab-panel"><div id="jit-root-host"></div></div> <div id="tab-cty" class="tab-panel"><div id="cty-root-host"></div></div> <div id="tab-mtg" class="tab-panel"><div id="mtg-root-host"></div></div> <div id="tab-infra" class="tab-panel"><div id="infra-root"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
-  <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
+  <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button><button type="button" role="tab" class="wp-tab" id="intro-tab-wp" aria-selected="false" onclick="_panelOpen('wp')">Whitepaper</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
     <section class="yt-sec" aria-labelledby="yt-intro-h">
       <div class="yt-head"><h2 id="yt-intro-h">안내 영상</h2><a class="yt-all" href="https://www.youtube.com/playlist?list=PLExMxaYxMDPE" target="_blank" rel="noopener">YouTube에서 전체 보기</a></div>
@@ -6998,7 +6996,7 @@ window.addEventListener('navi-home-desktop', function (ev) {
 function _switchTab(name) {
   if (window.NaviSim && window.NaviSim.close) window.NaviSim.close();   // 다른 화면으로 가면 시뮬레이션 패널은 닫는다
   if (!_scrRestoring) _scrUserNav = true;   // 사용자가 직접 화면을 옮겼다 — 늦게 도착한 새로 고침 복원이 이를 덮어쓰지 않게
-  if (name === 'whitepaper') { _subSet('xk', _subGet('wp') === 'openhash' ? 'oh' : 'wp'); name = 'xokorea'; }   // Whitepaper 는 XO Korea 화면의 탭으로 옮겼다
+  if (name === 'whitepaper') { if (_subGet('wp') === 'openhash') { _subSet('xk', 'oh'); name = 'xokorea'; } else { _panelOpen('wp'); return; } }   // Whitepaper 는 소개 패널의 탭으로 옮겼다(OpenHash 는 XO Korea 의 탭)
   // 서류를 작성하는 중에 홈(로고)을 누르면 작성 중인 서류를 Draft 로 저장하고 새 입력 필드를 불러온다
   if (name === 'home' && _docLocked() && document.getElementById('tab-compose').classList.contains('active')) {
     _docNewAfterSave(null).then(ok => { if (ok) _cmpSetMode('default', { force: true }); });
@@ -9461,7 +9459,7 @@ function _cmpSyncModeUi() {
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
 // ── '나만의 AI 비서, 나비' 문구 → 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(2026-11-03) ──
-const _PANEL_URL = { intro: 'navi-intro.html?v=20261103b', manual: 'whitepaper.html?embed=mail' };
+const _PANEL_URL = { intro: 'navi-intro.html?v=20261127a', manual: 'whitepaper.html?embed=mail', wp: 'manual.html?embed=mail' };
 let _panelKind = '';
 function _introIsOpen() { const p = document.getElementById('tab-intro'); return !!(p && p.classList.contains('active')); }
 function _panelSync() {
@@ -9517,7 +9515,7 @@ let _introPrev = null;   // 소개를 열기 전에 보던 화면(패널 id, 왼
 function _panelOpen(kind) {
   const p = document.getElementById('tab-intro'), f = document.getElementById('intro-frame');
   if (!p || !_PANEL_URL[kind]) return;
-  const title = kind === 'manual' ? '나비와 나비웹 백서' : '나만의 AI 비서 소개';
+  const title = kind === 'manual' ? '나비와 나비웹 백서' : kind === 'wp' ? 'Whitepaper — 나비웹 사용 설명서' : '나만의 AI 비서 소개';
   if (!_introIsOpen()) {
     const on = document.querySelector('.tab-panel.active');
     _introPrev = { panel: on ? on.id : 'tab-compose', nav: [].map.call(document.querySelectorAll('.side-nav .nav-btn.active, .side-nav .nav-mv.active, .side-nav .nav-dv.active, .side-nav .nav-gv.active'), el => el.id).filter(Boolean) };
@@ -9527,12 +9525,12 @@ function _panelOpen(kind) {
     p.classList.add('active');
   }
   _panelKind = kind;
-  if (f && f.getAttribute('data-kind') !== kind) { f.setAttribute('data-kind', kind); f.setAttribute('src', _PANEL_URL[kind]); }
+  if (f && f.getAttribute('data-kind') !== kind) { f.setAttribute('data-kind', kind); f.style.height = ''; f.setAttribute('src', _PANEL_URL[kind]); }   // 문서가 높이를 알려 주는 탭(Whitepaper)의 높이는 다른 탭으로 가면 되돌린다
   if (f) f.title = title;
-  ['manual', 'intro'].forEach(k => { const b = document.getElementById('intro-tab-' + k); if (b) { b.classList.toggle('active', k === kind); b.setAttribute('aria-selected', k === kind ? 'true' : 'false'); } });
+  ['manual', 'intro', 'wp'].forEach(k => { const b = document.getElementById('intro-tab-' + k); if (b) { b.classList.toggle('active', k === kind); b.setAttribute('aria-selected', k === kind ? 'true' : 'false'); } });
   window.scrollTo(0, 0); _panelSync();
 }
-window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _introClose(); _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _introClose(); _switchTab('whitepaper'); } });
+window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _panelOpen('wp'); } });
 const _WP_URL = { navi: 'manual.html?embed=mail', openhash: 'openhash.html?embed=mail' };
 // 위쪽 탭(Whitepaper·XO+/History)과 XO+ 문서의 스크롤 위치는 새로고침해도 이어서 본다 — sessionStorage(이 탭에서만, 쓸 수 없으면 건너뜀)
 function _subGet(k) { try { return sessionStorage.getItem('kmail_sub_' + k) || ''; } catch (e) { return ''; } }
@@ -9549,18 +9547,19 @@ window.addEventListener('scroll', () => {
   }, 200);
 }, { passive: true });
 const _XK_V = String(Math.floor(Date.now() / 60000));   // 1분마다 바뀌는 값 — Cloudflare(max-age 4시간)·브라우저가 옛 문서를 붙들지 않게 한다
-const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V, wp: 'manual.html?embed=mail&v=' + _XK_V, oh: 'openhash.html?embed=mail&v=' + _XK_V, ma: 'mail-architecture.html?embed=mail&v=' + _XK_V, gd: 'naviweb-guide.html?embed=mail&v=' + _XK_V, tablet: 'xo-tablet.html?embed=mail&v=' + _XK_V };
+const _XK_URL = { xo: 'xo.html?embed=mail&v=' + _XK_V, history: 'xo-korea.html?embed=mail&v=' + _XK_V, oh: 'openhash.html?embed=mail&v=' + _XK_V, ma: 'mail-architecture.html?embed=mail&v=' + _XK_V, tablet: 'xo-tablet.html?embed=mail&v=' + _XK_V };
 function _xkSwitch(k) {
+  if (!_XK_URL[k]) k = 'xo';   // 없어진 탭(Whitepaper·나비웹 안내)을 sessionStorage 가 기억하고 있어도 XO+ 로
   const f = document.getElementById('xokorea-frame');
   _subSet('xk', k);
   if (f && f.getAttribute('data-k') !== k) { f.setAttribute('data-k', k); f.style.height = ''; f.removeAttribute('data-sized'); f.setAttribute('scrolling', 'no'); f.setAttribute('src', _XK_URL[k]); window.scrollTo(0, 0);
     // 안쪽 문서가 높이를 알려 오지 않으면(옛 문서·로딩 실패) 안쪽 스크롤을 되살려 내용이 잘리지 않게 한다
     setTimeout(() => { if (f.getAttribute('data-k') === k && !f.getAttribute('data-sized')) f.setAttribute('scrolling', 'auto'); }, 3000);
   }
-  ['xo', 'tablet', 'history', 'wp', 'oh', 'ma', 'gd'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
+  ['xo', 'tablet', 'history', 'oh', 'ma'].forEach(x => { const b = document.getElementById('xk-tab-' + x); if (b) { b.classList.toggle('active', x === k); b.setAttribute('aria-selected', x === k ? 'true' : 'false'); } });
 }
 window.addEventListener('message', (e) => {
-  const f = document.getElementById('xokorea-frame'); if (!f || e.source !== f.contentWindow || !e.data) return;
+  const f = [document.getElementById('xokorea-frame'), document.getElementById('intro-frame')].find(x => x && e.source === x.contentWindow); if (!f || !e.data) return;   // 안쪽 스크롤이 없는 문서(?embed=mail)는 XO Korea 화면과 소개 패널(Whitepaper)에서 높이를 알려 온다
   if (e.data.type === 'xokorea-tab' && _XK_URL[e.data.k]) _xkSwitch(e.data.k);
   else if (e.data.type === 'xokorea-height' && e.data.h > 0) { f.style.height = e.data.h + 'px'; f.setAttribute('data-sized', '1'); if (_xkWantY && _xkWantY.k === f.getAttribute('data-k')) { const y = _xkWantY.y; _xkWantY = null; setTimeout(() => window.scrollTo(0, y), 50); } }   // 안쪽 문서 높이만큼 늘려 이중 스크롤을 없앤다
   else if (e.data.type === 'xokorea-scroll') window.scrollTo({ top: window.pageYOffset + f.getBoundingClientRect().top + e.data.y - 8, behavior: 'smooth' });

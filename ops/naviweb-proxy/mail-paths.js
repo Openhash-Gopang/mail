@@ -85,7 +85,6 @@ export const MAIL_FILES = new Set([
  "meet-app.js",
  "meet.css",
  "navi-intro.html",
- "naviweb-guide.html",
  "openhash.html",
  "orgtree.js",
  "pdv-panel.css",
