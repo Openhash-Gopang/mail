@@ -12,7 +12,7 @@
   var CASE_STAGE = { proposed: '개시 전', agreed: '개시 전', active: '진행 중', closing: '진행 중', on_hold: '보류', closed: '완료', archived: '완료', declined: '성립 안 됨', expired: '성립 안 됨' };
   var CASE_NOTE = { proposed: '합의 확인이 필요합니다', agreed: '진행 시작 전입니다', closing: '종료 협의 중입니다' };
   var view = { role: 'all', stage: 'all', open: null, tab: 'log' };
-  var cases = [], bound = false, seq = 0;
+  var cases = [], bound = false, seq = 0, histOn = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function host() { return root.TaskHomeHost; }
@@ -79,7 +79,7 @@
     open.sort(function (a, b) { return (a.due || '9999').localeCompare(b.due || '9999') || a.line - b.line; });
     var created = Number((/^g(\d{12,})/.exec(p.id) || [])[1]) || 0;
     return { key: 'guide:' + p.id, id: p.id, source: 'guide', role: 'solo', title: p.title || '제목 없는 과제', no: taskNo(p.id, created), stage: stage,
-      stageNote: verdict || (st && st !== stage ? st : ''), next: stage === '완료' ? '' : open[0] ? open[0].name : '', due: stage === '완료' ? '' : (open[0] && open[0].due) || dateIn(field(t, '마감')), updated: p.updated || 0, need: '' };
+      stageNote: verdict || (st && st !== stage && st !== '진행' && st !== '준비' && st !== '종료' ? st : ''), next: stage === '완료' ? '' : open[0] ? open[0].name : '', due: stage === '완료' ? '' : (open[0] && open[0].due) || dateIn(field(t, '마감')), updated: p.updated || 0, need: '' };
   }
   function caseRow(c) {
     var role = c.mode === 'solo' ? 'solo' : c.my_side === 'provider' ? 'provider' : 'consumer';
@@ -148,7 +148,7 @@
         (shown.length ? '<div class="tk-table" role="table"><div class="tk-tr tk-th" role="row"><span>과제</span><span>역할</span><span>단계</span><span>지금 필요한 것</span><span>다음 할 일</span><span>기한</span></div>' +
           shown.map(function (r) {
             var d = dday(r.due, today);
-            return '<button type="button" class="tk-tr" role="row" data-act="open" data-key="' + esc(r.key) + '"><span class="tk-name"><b>' + esc(r.title) + '</b><small>' + esc(r.no) + '</small></span><span>' + ROLE[r.role] + '</span><span>' + tag(r.stage) + (r.stageNote ? '<small>' + esc(r.stageNote) + '</small>' : '') + '</span><span class="tk-need">' + esc(r.need || '—') + '</span><span>' + esc(r.next || '—') + '</span><span class="tk-due ' + d.cls + '">' + (r.due ? esc(r.due.slice(5)) + '<small>' + esc(d.text) + '</small>' : '—') + '</span></button>';
+            return '<button type="button" class="tk-tr" role="row" data-act="open" data-key="' + esc(r.key) + '"><span class="tk-name"><b>' + esc(r.title) + '</b><small>' + esc(r.no) + '</small></span><span>' + ROLE[r.role] + '</span><span>' + tag(r.stage) + (r.stageNote ? '<small>' + esc(r.stageNote) + '</small>' : '') + '</span><span' + (r.need ? ' class="tk-need"' : '') + '>' + esc(r.need || '—') + '</span><span>' + esc(r.next || '—') + '</span><span class="tk-due ' + d.cls + '">' + (r.due ? esc(r.due.slice(5)) + '<small>' + esc(d.text) + '</small>' : '—') + '</span></button>';
           }).join('') + '</div>' : '<div class="tk-empty">' + (rows.length ? '이 조건에 맞는 과제가 없습니다.' : '아직 과제가 없습니다. “＋ 새 과제”로 시작하세요.') + '</div>') +
       '</section><div class="tk-foot"><button type="button" class="tk-link" data-act="old">알림 설정 · 이전 목록 화면</button><span class="tk-sub">과제 기록은 이 기기(브라우저·PDV)의 것입니다.</span></div>';
   }
@@ -173,8 +173,15 @@
       '<div class="cs-modes" role="tablist">' + [['log', '기록'], ['files', '서류·메일'], ['plan', '계획']].map(function (x) { return '<button type="button" role="tab" class="cs-mode' + (x[0] === view.tab ? ' on' : '') + '" aria-selected="' + (x[0] === view.tab) + '" data-act="tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<div class="tk-body">' + body + '</div>';
   }
+  // NaviHist 는 desktop.html 아래쪽에서 정의된다 — 주소(#tasks)로 바로 열면 첫 화면을 그릴 때는 아직 없으므로, 생긴 뒤에 한 번 등록한다.
+  function hist() {
+    var N = root.NaviHist; if (!N || histOn === N) return N;
+    histOn = N; N.on('tasks', 'tasks', function (sub) { view.open = sub || null; view.tab = 'log'; paint(); });
+    return N;
+  }
   function paint() {
     var el = box(); if (!el || !host()) return;
+    hist();
     var p = view.open ? host().plans()[view.open] : null;
     if (view.open && !p) view.open = null;
     el.innerHTML = p ? detailHtml(p) : listHtml();
@@ -196,7 +203,7 @@
   function openKey(key) {
     if (key.indexOf('guide:') === 0) {
       view.open = key.slice(6); view.tab = 'log'; paint();
-      if (root.NaviHist) root.NaviHist.push('tasks', view.open);
+      if (hist()) hist().push('tasks', view.open);
       if (root.scrollTo) root.scrollTo(0, 0);
       return;
     }
@@ -217,7 +224,7 @@
     else if (act === 'old') H.go('gprog');
     else if (act === 'all-docs') H.go('docdone');
     else if (act === 'all-mail') H.go('inbox');
-    else if (act === 'back') { view.open = null; paint(); if (root.NaviHist) root.NaviHist.push('tasks', ''); }
+    else if (act === 'back') { view.open = null; paint(); if (hist()) hist().push('tasks', ''); }
     else if (act === 'tab') { view.tab = v; paint(); }
     else if (act === 'talk' && p) H.openGuide(p.id);
     else if (act === 'add-log' && p) { var i = root.document.getElementById('tk-log'), msg = (i.value || '').trim(); if (msg) { i.value = ''; save(p, addLog(p.text, H.today(), msg)); } else i.focus(); }
@@ -228,14 +235,15 @@
   }
   function bind(el) {
     if (bound === el) return; bound = el;
-    if (root.NaviHist) root.NaviHist.on('tasks', 'tasks', function (sub) { view.open = sub || null; view.tab = 'log'; paint(); });
     el.addEventListener('click', onClick);
     el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.isComposing && ev.target.id === 'tk-log') { var b = el.querySelector('[data-act="add-log"]'); if (b) b.click(); } });
   }
 
+  if (root.setTimeout && root.document) root.setTimeout(hist, 0);
+
   var api = { render: render, refresh: refresh, home: home,
     _pure: { taskNo: taskNo, todosOf: todosOf, logsOf: logsOf, addLog: addLog, toggleTodo: toggleTodo, buildRows: buildRows, todayItems: todayItems, filterRows: filterRows, dday: dday },
-    _reset: function () { view = { role: 'all', stage: 'all', open: null, tab: 'log' }; cases = []; bound = false; } };
+    _reset: function () { view = { role: 'all', stage: 'all', open: null, tab: 'log' }; cases = []; bound = false; histOn = null; } };
   root.TaskHome = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
