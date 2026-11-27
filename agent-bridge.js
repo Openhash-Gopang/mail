@@ -112,6 +112,8 @@
     window.addEventListener('message', function (e) {
       var m = e.data;
       if (e.source !== window || !m || m.source !== 'navi-agent' || !pending[m.id]) return;
+      // 0.7.8 이하의 남은 옛 다리가 보내는 '연결 끊김' 오류는 건너뛰고 새 다리의 답을 기다린다
+      if (m.type === 'agent-error' && /context invalidated/i.test(String(m.error || ''))) return;
       var f = pending[m.id]; delete pending[m.id]; f(m);
     });
   }
