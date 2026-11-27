@@ -527,3 +527,13 @@ test('정보 공개 청구는 다른 서류와 같은 서류 작성 화면으로
   assert.ok(h.includes('async function _foiAgentSend(txt, title)') && h.includes('function _isFoiDocTitle(') && h.includes('_foiSubmitViaHelper(title, text)'));
   assert.ok(h.includes('_submitGuideStartPlain(title, blank, text)'));
 });
+
+test('나비웹 안내 페이지는 나비웹 소개(navi-intro.html)로 합쳐졌고, Whitepaper 는 소개 패널의 탭이다', () => {
+  const fs = require('node:fs');
+  assert.equal(fs.existsSync('naviweb-guide.html'), false);
+  const d = fs.readFileSync('desktop.html', 'utf8');
+  assert.ok(!d.includes('xk-tab-wp') && !d.includes('xk-tab-gd'));
+  assert.ok(d.includes('id="intro-tab-wp"') && d.includes("wp: 'manual.html?embed=mail'"));
+  const n = fs.readFileSync('navi-intro.html', 'utf8');
+  for (const k of ['두 단계로 만나 보세요', '나비웹이 지키는 원칙', '자주 묻는 질문', '기준일']) assert.ok(n.includes(k), k);
+});
