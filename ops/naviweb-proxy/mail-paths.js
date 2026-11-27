@@ -105,6 +105,7 @@ export const MAIL_FILES = new Set([
  "stock-app.js",
  "stock.css",
  "task-flow.js",
+ "task-home.js",
  "tax-app.js",
  "tax.css",
  "traffic-app.js",
