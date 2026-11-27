@@ -1320,7 +1320,9 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .brand:has(> .simbtn){display:flex;align-items:center;justify-content:space-between;gap:12px}
 .m3-head:has(> .simbtn){position:relative;padding-right:110px}.m3-head > .simbtn{position:absolute;right:0;top:0}
 .gl-head > .simbtn{margin-left:auto}
-.settings-head:has(> .simbtn){display:flex;align-items:center;justify-content:space-between;gap:12px}</style>
+.settings-head:has(> .simbtn){display:flex;align-items:center;justify-content:space-between;gap:12px}
+/* 홈 화면의 시뮬레이션 버튼은 상단 줄의 지구본(언어·국가 선택) 왼쪽에 두고, 홈 화면에서만 보인다 */
+body:not(:has(#tab-compose.active)) #home-sim{display:none}</style>
 </head>
 <body>
 <button type="button" id="hd-pull" aria-label="상단 메뉴 막대 보이기 — 아래로 끌어 내리세요" title="아래로 끌어 내리면 상단 막대가 보입니다"></button>
@@ -1684,6 +1686,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
 </div>
+<button type="button" class="mfb-btn simbtn" id="home-sim" aria-label="가상 데이터로 시뮬레이션" onclick="_homeSimOpen()">시뮬레이션</button>
 <div class="lp-host" id="lp-host"></div>
 <button type="button" class="fb-top" id="fb-top" title="기능 개선 제안" onclick="_switchTab('feedback')">기능 개선 제안</button>
 <span class="hondi-user-slot" data-hondi-user-slot="light"></span>
@@ -1695,7 +1698,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        (주피터 지시) — 이 화면 하나가 그 설계·확정 과정 전체를 담당.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-compose" class="tab-panel active" data-mode="default">
-    <div class="gl-head" id="home-sim-row" style="margin:0 0 4px"><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="home-sim" aria-label="가상 데이터로 시뮬레이션" onclick="_homeSimOpen()">시뮬레이션</button></div>
     <div class="pg-bar" data-pgbar="doc"></div>
     <div class="camp-subbar" data-campbar></div>
     <div class="chat-landing" id="cmp-landing">
