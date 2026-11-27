@@ -1,6 +1,6 @@
 // 페이지 안에서 도구를 실행한다. 요소는 ref_N 으로만 가리킨다(좌표 클릭을 쓰지 않는다).
 (() => {
-  if (window.__naviAgentV === 6) return;
+  if (window.__naviAgentV === 7) return;
   const refs = new Map(); let seq = 0;
   const SEL = 'a,button,input,select,textarea,label,area,img[alt],[role=button],[role=link],[role=checkbox],[role=radio],[role=tab],[tabindex],[onclick]';
   const PTR = 'span,div,li,td,img,i';
@@ -36,6 +36,35 @@
     } catch (e) { /* skip */ }
     return '';
   }
+  // 화면 안 팝업(레이어·대화상자) 안의 닫기 후보. 입력칸이 있는 창(검색·신청·로그인)과 필요한 창(인증·결제·주소 검색·서류 보기)은 건너뛴다.
+  const POP_NAME = /pop|layer|modal|dialog|lightbox|banner|notice/i;
+  const KEEP_BOX = /로그인|log.?in|본인\s*(인증|확인)|인증서|간편\s*인증|결제|납부|주소\s*(검색|찾기)|우편번호|문서\s*(보기|출력)|미리\s*보기|인쇄/i;
+  const NEEDS_USER = 'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=image]):not([type=hidden]),select,textarea';
+  function popupBoxOf(el) {
+    let box = null;
+    for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const cs = getComputedStyle(p), named = POP_NAME.test(`${p.id} ${typeof p.className === 'string' ? p.className : ''}`);
+      if (p.getAttribute('role') === 'dialog' || p.getAttribute('aria-modal') === 'true' || p.tagName === 'DIALOG' || cs.position === 'fixed' || (named && cs.position === 'absolute')) box = p;
+    }
+    return box;
+  }
+  function closeCandidates() {
+    const out = [];
+    const set = new Set(candidates());
+    for (const el of document.querySelectorAll('[class*=close i],[id*=close i]')) set.add(el);
+    for (const el of set) {
+      if (!visible(el)) continue;
+      const box = popupBoxOf(el);
+      if (!box) continue;
+      if ([...box.querySelectorAll(NEEDS_USER)].some(visible)) continue;
+      const head = [box.getAttribute('aria-label'), box.title, ...[...box.querySelectorAll('h1,h2,h3,h4,strong,[class*=tit i]')].slice(0, 3).map((h) => h.innerText), clean(box.innerText).slice(0, 30)].map(clean).join(' ');
+      if (KEEP_BOX.test(head)) continue;
+      let name = nameOf(el);
+      if ((!name || name === el.id) && /(^|[-_\s])(btn[-_]?)?close([-_\s]?btn)?($|[-_\s])/i.test(`${el.id} ${typeof el.className === 'string' ? el.className : ''}`)) name = '닫기';
+      out.push({ ref: refOf(el), text: name, name: el.name || el.id || '', label: name });
+    }
+    return out;
+  }
   function list(filter, root) {
     const vh = window.innerHeight; const inView = []; const rest = [];
     for (const el of candidates(root)) {
@@ -67,6 +96,7 @@
     el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
   }
   const run = {
+    close_candidates: () => JSON.stringify(closeCandidates()),
     read_page: () => { const ov = overlayText(); return `URL: ${location.href}\n제목: ${document.title}\n` + (ov ? `⚠ 화면 위에 팝업이 떠 있어 뒤쪽 화면이 가려져 있을 수 있습니다: "${ov}"\n` : '') + list(); },
     form_controls: ({ ref }) => { const el = need(ref); let box = el.closest('form') || el.parentElement;
       for (let i = 0; i < 8 && box && !(box.querySelectorAll(SEL).length >= 6 && box.querySelector('a.btn,button,input[type=button],input[type=submit],input[type=image],[id*=search],[id*=btn]')); i++) box = box.parentElement;
@@ -262,5 +292,5 @@
       else send({ ok: true, text: String(run[msg.name](msg.input || {})) });
     } catch (e) { send({ ok: false, error: e.message }); }
   });
-  window.__naviAgentV = 6;
+  window.__naviAgentV = 7;
 })();

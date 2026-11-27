@@ -2,7 +2,7 @@ import { runAgent } from './agent-core.js';
 import { PLAYBOOKS } from './playbooks.js';
 import { DOM_TOOLS } from './tools.js';
 import { fetchForNavi, pickDownload, grabPdfInPage, printTabToPdf, debuggerClick, safeName, MAX_BYTES } from './files.js';
-import { hostAllowed } from './policy.js';
+import { hostAllowed, isCloseControl } from './policy.js';
 import { cleanProcedure } from './procedure.js';
 import { modelError, keepTrying, looksBlocked, MODEL_NAME } from './resilience.js';
 
@@ -248,22 +248,72 @@ chrome.tabs.onRemoved.addListener((id) => {
   state.abort = true; if (state.waiter) { const w = state.waiter; state.waiter = null; try { w(false); } catch { /* */ } }
 });
 
-// 작업 중에 새로 열린 팝업 창을 닫는다(0.7.10). 처음 작업하던 탭, 이 작업과 무관한 탭, 로그인·본인인증·결제 창은 닫지 않는다.
-const KEEP_POPUP = /log.?in|sign.?in|\bsso\b|oauth|\bauth|\bcert|checkplus|\bpay|payment|checkout|billing|로그인|본인\s*(인증|확인)|인증서|간편\s*인증|결제|납부/i;
-async function closePopup() {
-  const id = state.tabId;
-  if (id == null || !famHas(id) || id === state.rootTab || state.family.size < 2) return { text: '닫을 팝업 창이 없습니다. 지금 화면은 작업하던 창입니다. 화면 안에 뜬 팝업이면 그 "닫기"·X 단추를 누르세요.' };
-  let t; try { t = await chrome.tabs.get(id); } catch { return { text: '창이 이미 닫혔습니다. 화면을 다시 읽으세요.' }; }
-  let secret = false;
-  try { const rs = await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, func: () => [...document.querySelectorAll('input[type=password]')].some((e) => e.getClientRects().length > 0) }); secret = rs.some((r) => r && r.result === true); } catch { /* 읽을 수 없는 창은 주소·제목으로만 판단 */ }
-  if (secret || KEEP_POPUP.test(`${t.url || t.pendingUrl || ''} ${t.title || ''}`)) return { text: '로그인·본인인증·결제 창으로 보여 닫지 않았습니다. 필요 없는 창이 확실하면 그 창의 "닫기" 단추를 누르고, 인증·결제가 필요하면 handoff_to_user 로 넘기세요.' };
+// 모든 팝업을 닫는다(0.7.12, 승인은 agent-core 가 작업마다 한 번 받는다): 새로 열린 팝업 창과 화면 안 팝업.
+// 처음 작업하던 탭, 이 작업과 무관한 탭, 로그인·본인인증·결제·서류 보기 창은 닫지 않는다. 지금 보고 있지 않은 창은 입력칸이 있으면 남긴다.
+const KEEP_POPUP = /log.?in|sign.?in|\bsso\b|oauth|\bauth|\bcert|checkplus|\bpay|payment|checkout|billing|juso|postcode|zipcode|ezpdfwv|viewer|print|로그인|본인\s*(인증|확인)|인증서|간편\s*인증|결제|납부|주소\s*(검색|찾기)|우편번호|문서\s*(보기|출력)|미리\s*보기/i;
+async function popupWindow(id) {   // 닫아도 되는 창이면 { title }, 남길 창이면 { keep: true, title }
+  let t; try { t = await chrome.tabs.get(id); } catch { return null; }
   const title = String(t.title || '').slice(0, 60);
-  state.family.delete(id);
-  const back = famHas(state.rootTab) ? state.rootTab : [...state.family].pop();
-  followTab(back, true);   // 먼저 원래 화면으로 옮긴 뒤 닫는다
-  try { await chrome.tabs.remove(id); } catch { /* 스스로 닫힌 창 */ }
-  await wait(500);
-  return { text: `팝업 창을 닫았습니다${title ? ' ("' + title + '")' : ''}. 원래 화면으로 돌아왔습니다. read_page 로 확인하고 이어서 진행하세요.` };
+  let secret = false, form = false;
+  try {
+    const rs = await chrome.scripting.executeScript({ target: { tabId: id, allFrames: true }, func: () => {
+      const shown = (q) => [...document.querySelectorAll(q)].some((e) => e.getClientRects().length > 0);
+      return { secret: shown('input[type=password]'), form: shown('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=image]):not([type=hidden]),select,textarea') };
+    } });
+    secret = rs.some((r) => r && r.result && r.result.secret); form = rs.some((r) => r && r.result && r.result.form);
+  } catch { /* 읽을 수 없는 창은 주소·제목으로만 판단 */ }
+  const keep = secret || (form && id !== state.tabId) || KEEP_POPUP.test(`${t.url || t.pendingUrl || ''} ${t.title || ''}`);
+  return { keep, title };
+}
+async function closeWindows() {
+  const closed = [], kept = [];
+  for (const id of [...(state.family || [])].reverse()) {
+    if (id === state.rootTab || !famHas(id)) continue;
+    const w = await popupWindow(id);
+    if (!w) { state.family.delete(id); continue; }
+    if (w.keep) { kept.push(w.title || '제목 없는 창'); continue; }
+    state.family.delete(id);
+    if (id === state.tabId) { const back = famHas(state.rootTab) ? state.rootTab : [...state.family].pop(); if (back == null) { state.family.add(id); continue; } followTab(back, true); }   // 먼저 원래 화면으로 옮긴 뒤 닫는다
+    try { await chrome.tabs.remove(id); } catch { /* 스스로 닫힌 창 */ }
+    closed.push(w.title || '제목 없는 창');
+  }
+  if (closed.length) await wait(500);
+  return { closed, kept };
+}
+async function closeLayers() {
+  let count = 0; const tried = new Set(); const home = state.tabId;
+  for (let round = 0; round < 12 && state.tabId === home && !state.abort; round++) {
+    await ensureContent(home);
+    let target = '';
+    for (const f of await frames(home)) {
+      let list = [];
+      try { const r = await send1(home, f, { __navi: 'tool', name: 'close_candidates', input: {}, describe: false }); list = JSON.parse((r && r.ok && r.text) || '[]'); } catch { continue; }
+      const hit = list.find((c) => isCloseControl(c) && !tried.has(`${f}.${c.ref}`));
+      if (hit) { tried.add(`${f}.${hit.ref}`); target = f ? `f${f}.${hit.ref}` : hit.ref; break; }
+    }
+    if (!target) break;
+    try { await toTab('click', { ref: target }, false); count++; } catch { /* 이미 사라진 단추 */ }
+    await wait(400);
+  }
+  return count;
+}
+async function closePopups() {
+  const { closed, kept } = await closeWindows();
+  // 지금 보는 창과, 인증 창 등을 남겨 둔 경우에는 원래 작업 화면의 팝업도 닫는다.
+  let layers = 0; const here = state.tabId;
+  for (const id of [...new Set([here, state.rootTab])]) {
+    if (id == null || !famHas(id)) continue;
+    state.tabId = id;
+    try { layers += await closeLayers(); } catch { /* 읽을 수 없는 화면 */ }
+    if (state.tabId === id && famHas(here)) state.tabId = here;
+  }
+  const parts = [];
+  if (closed.length) parts.push(`팝업 창 ${closed.length}개를 닫았습니다 (${closed.join(', ').slice(0, 200)}).`);
+  if (layers) parts.push(`화면 안 팝업의 닫기 단추를 ${layers}번 눌렀습니다.`);
+  if (kept.length) parts.push(`로그인·결제·서류 보기 또는 입력 중인 창으로 보여 남긴 창: ${kept.join(', ').slice(0, 200)}.`);
+  if (!closed.length && !layers) parts.push('자동으로 닫을 팝업을 찾지 못했습니다. 화면에 남은 팝업이 있으면 그 "닫기"·X 단추를 click 하세요.');
+  parts.push('read_page 로 확인하고 이어서 진행하세요.');
+  return { text: parts.join(' ') };
 }
 // 게이트웨이 호출: 네트워크 끊김·서버 5xx 는 두 번까지 다시 시도한다(2초, 5초 뒤). 90초 무응답은 다시 시도하지 않고 알린다.
 async function postStep(c, body, onRetry) {
@@ -350,7 +400,7 @@ async function host(playbook) {
           }
         } catch { /* 아래 일반 클릭으로 */ }
       }
-      if (name === 'close_popup') return closePopup();
+      if (name === 'close_popup') return closePopups();
       if (name === 'open_issued_document') return openIssuedDocument(Math.max(0, Number(input && input.row) || 0));
       if (DOM_TOOLS.has(name) && name !== 'upload_attached_file') return toTab(name, input, false);   // 0.7.3: 파일 올리기는 아래에서 맡긴 파일(state.attach)을 붙여 보낸다 — 예전에는 여기서 파일 없이 바로 보내져 "올릴 파일이 없습니다"가 났다
       if (name === 'screenshot') { await ensureHost(state.tabId); await chrome.tabs.update(state.tabId, { active: true }); const w = (await chrome.tabs.get(state.tabId)).windowId; const d = await chrome.tabs.captureVisibleTab(w, { format: 'jpeg', quality: 60 }); return { text: '스크린샷', image: d.split(',')[1] }; }
