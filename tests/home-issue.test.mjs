@@ -56,3 +56,10 @@ test('시작 주소가 없는 작업도 빈 탭이 아니라 실제 페이지에
   assert.equal(k.url, 'https://www.iros.go.kr');
   assert.doesNotMatch(k.goal, /시작 화면은 정부24/);
 });
+
+test('절차를 확정하지 못하면 버튼 없이 바로 도우미에게 맡긴다', () => {
+  const h = createRequire(import.meta.url)('node:fs').readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
+  const i = h.indexOf('async function _homePlanAndRun'), body = h.slice(i, h.indexOf('let _histOk', i));
+  assert.doesNotMatch(body, /계획 없이/);
+  assert.match(body, /data\.procedures\.length > 1\)\) \{[\s\S]*?await _homeAgentRun\(task,[\s\S]*?return;/);
+});
