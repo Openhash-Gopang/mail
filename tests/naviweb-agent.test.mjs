@@ -727,7 +727,7 @@ test('0.7.0: upload_attached_file — 도구·확인·파일 검사·content 동
 
 test('0.7.0: 작성한 서류에 "기관에 올리기(도우미)" — 버전·파일 크기 확인 뒤 file 로 맡긴다', () => {
   const d = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(d, /\['submit', '기관에 올리기\(도우미\)'\]/); assert.match(d, /_docSubmitViaAgent\(it\)/);
+  assert.match(readFileSync(new URL('../hub.js', import.meta.url), 'utf8'), /\['submit', '기관에 올리기/); assert.match(d, /_docSubmitViaAgent\(it\)/);
   assert.match(d, /0\.7\.0 이상/); assert.match(d, /10 \* 1024 \* 1024/); assert.match(d, /file: \{ name: name, mime:/);
   const br = readFileSync(new URL('../agent-bridge.js', import.meta.url), 'utf8'); assert.match(br, /Object\.assign\(\{\}, job, \{ autostart: true \}\)/);
 });

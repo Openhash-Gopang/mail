@@ -13,22 +13,12 @@ test('나비 길잡이: 하위 메뉴가 없고 내 위치(조준점) 아이콘�
   assert.ok(!/_navToggleGuide|_caseLast|_guideNavOpen/.test(h));
 });
 
-test('나비 길잡이 화면 위쪽 탭: 진행 중 · 완료 · 맡긴 일 · 맡은 일 (이 순서)', () => {
-  const h = R('desktop.html');
-  assert.ok(h.includes("const _GTABS = [['gprog', '진행 중'], ['gdone', '완료'], ['casecons', '맡긴 일'], ['caseprov', '맡은 일']];"));
-  assert.ok(h.includes('id="gt-bar-gprog"') && h.includes('id="gt-bar-gdone"'));
-  assert.ok(h.includes("_gtabsFill(name); _guideRenderList("), '탭 화면에 들어올 때 탭 줄을 그림');
-  assert.ok(h.includes("name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav'"), '모든 탭에서 왼쪽 메뉴 나비 길잡이가 켜짐');
-});
-
-test('나 홀로 페이지는 진행 중·완료 탭으로 흡수: 목록은 두 탭 아래, 상세는 상태에 따라 탭이 켜진다', () => {
-  const h = R('desktop.html'), c = R('case-ui.js');
-  assert.ok(h.includes('id="gprog-solo"') && h.includes('id="gdone-solo"'));
-  assert.ok(h.includes("CaseUI.fillSolo(name === 'gdone' ? 'done' : 'prog')"));
-  assert.match(c, /function fillSolo\(kind\)/);
-  assert.match(c, /\(kind === 'done'\) === isDone\(c\)/);
-  assert.match(c, /name === 'casesolo' \? \(state === 'closed' \|\| state === 'archived' \? 'gdone' : 'gprog'\) : name/);
-  assert.ok(c.includes("if (name === 'casesolo') { if (typeof root._switchTab === 'function') root._switchTab('gprog'); return; }"));
+test('과제 화면의 탭은 과제·메일·서류 한 층이다. 진행 상태·역할은 탭이 아니라 걸러 보기다', () => {
+  const h = R('desktop.html'), c = R('case-ui.js'), hub = R('hub.js'), th = R('task-home.js');
+  assert.match(hub, /\[\['tasks', '과제'\], \['mail', '메일'\], \['docs', '서류'\]\]/);
+  for (const n of ['tasks', 'mail', 'docs']) assert.ok(h.includes('data-hub="' + n + '"'), n);
+  assert.ok(!h.includes('_GTABS') && !h.includes('gt-bar') && !c.includes('fillSolo'));
+  for (const w of ['진행 중', '개시 전', '보류', '완료', '맡은 일', '맡긴 일', '자체 진행', '메일 캠페인']) assert.ok(th.includes(w), w);
 });
 
 test('사용법 위쪽 탭: 나비 사용자 매뉴얼 · 질문·답변 · Openhash · Navi Pro(강의 탭은 없다)', () => {

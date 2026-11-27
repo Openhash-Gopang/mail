@@ -227,7 +227,7 @@ test('도우미 줄은 화면에 두지 않고, 버전은 맨 위 오른쪽 배�
 
 test('desktop.html: 내 서류함 — 메뉴·화면·PDV(kind=form) 보관·양식 파일 보관·★ 담기', () => {
   const html = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.match(html, /id="tab-btn-myforms"[^>]*onclick="_switchTab\('myforms'\)">내 서류함</);
+  assert.match(readFileSync(new URL('../hub.js', import.meta.url), 'utf8'), /data-hub-act="forms">/);   // 머리글의 '양식함' 단추
   assert.match(html, /id="tab-myforms" class="tab-panel"/);
   assert.match(html, /if \(name === 'myforms'\) _mfRender\(\)/);
   assert.match(html, /id="agent-fav"[^>]*onclick="_mfAddFav\(this\)"/);
