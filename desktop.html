@@ -2701,7 +2701,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div id="expert100k-doc" role="tabpanel" aria-live="polite"></div>
   </div>
   <div id="tab-learn" class="tab-panel"><div id="learn-root"></div></div> <div id="tab-bank" class="tab-panel"><div id="bank-root"></div></div> <div id="tab-stock" class="tab-panel"><div id="stock-root"></div></div> <div id="tab-insure" class="tab-panel"><div id="insure-root"></div></div> <div id="tab-emg" class="tab-panel"><div id="emg-root"></div></div> <div id="tab-pol" class="tab-panel"><div id="pol-root"></div></div> <div id="tab-med" class="tab-panel"><div id="med-root"></div></div> <div id="tab-tax" class="tab-panel"><div id="tx-root-host"></div></div> <div id="tab-mkt" class="tab-panel"><div id="mk-root-host"></div></div> <div id="tab-trf" class="tab-panel"><div id="tf-root-host"></div></div> <div id="tab-lgs" class="tab-panel"><div id="lg-root-host"></div></div> <div id="tab-pub" class="tab-panel"><div id="pub-root-host"></div></div> <div id="tab-dem" class="tab-panel"><div id="dem-root-host"></div></div> <div id="tab-sch" class="tab-panel"><div id="sch-root-host"></div></div> <div id="tab-biz" class="tab-panel"><div id="biz-root-host"></div></div> <div id="tab-plan" class="tab-panel"><div id="plan-root-host"></div></div> <div id="tab-wch" class="tab-panel"><div id="wch-root-host"></div></div> <div id="tab-job" class="tab-panel"><div id="job-root-host"></div></div> <div id="tab-jit" class="tab-panel"><div id="jit-root-host"></div></div> <div id="tab-cty" class="tab-panel"><div id="cty-root-host"></div></div> <div id="tab-mtg" class="tab-panel"><div id="mtg-root-host"></div></div> <div id="tab-infra" class="tab-panel"><div id="infra-root"></div></div> <div id="tab-pricing" class="tab-panel"><iframe id="pricing-frame" title="나비웹 요금제"></iframe></div>
-  <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button><button type="button" role="tab" class="wp-tab" id="intro-tab-wp" aria-selected="false" onclick="_panelOpen('wp')">Whitepaper</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
+  <div id="tab-intro" class="tab-panel"><div class="intro-bar"><div class="wp-tabs intro-tabs" role="tablist" aria-label="소개"><button type="button" role="tab" class="wp-tab active" id="intro-tab-manual" aria-selected="true" onclick="_panelOpen('manual')">나비와 나비웹 백서</button><button type="button" role="tab" class="wp-tab" id="intro-tab-core" aria-selected="false" onclick="_panelOpen('core')">나비웹의 핵심</button><button type="button" role="tab" class="wp-tab" id="intro-tab-intro" aria-selected="false" onclick="_panelOpen('intro')">나만의 AI 비서, 나비</button><button type="button" role="tab" class="wp-tab" id="intro-tab-wp" aria-selected="false" onclick="_panelOpen('wp')">Whitepaper</button></div><button type="button" class="intro-close" id="intro-close" onclick="_introClose()" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>닫기</span></button></div><iframe id="intro-frame" title="나비와 나비웹 백서"></iframe></div>
   <div id="tab-youtube" class="tab-panel">
     <section class="yt-sec" aria-labelledby="yt-intro-h">
       <div class="yt-head"><h2 id="yt-intro-h">안내 영상</h2><a class="yt-all" href="https://www.youtube.com/playlist?list=PLExMxaYxMDPE" target="_blank" rel="noopener">YouTube에서 전체 보기</a></div>
@@ -9548,7 +9548,7 @@ function _cmpSyncModeUi() {
 }
 // 상단 바 가운데에 지금 페이지를 보여 준다. 작성 화면(홈)은 모드별 이름, 그 밖의 화면은 왼쪽 메뉴에서 켜진 항목의 이름(하위 메뉴면 "메일 · 받은메일함"처럼 묶음 이름과 함께).
 // ── '나만의 AI 비서, 나비' 문구 → 소개 페이지가 상단 바 밑으로 미끄러져 내려온다(2026-11-03) ──
-const _PANEL_URL = { intro: 'navi-intro.html?v=20261127a', manual: 'whitepaper.html?embed=mail', wp: 'manual.html?embed=mail' };
+const _PANEL_URL = { core: 'navi-core.html?v=20261128a', intro: 'navi-intro.html?v=20261127a', manual: 'whitepaper.html?embed=mail', wp: 'manual.html?embed=mail' };
 let _panelKind = '';
 function _introIsOpen() { const p = document.getElementById('tab-intro'); return !!(p && p.classList.contains('active')); }
 function _panelSync() {
@@ -9604,7 +9604,7 @@ let _introPrev = null;   // 소개를 열기 전에 보던 화면(패널 id, 왼
 function _panelOpen(kind) {
   const p = document.getElementById('tab-intro'), f = document.getElementById('intro-frame');
   if (!p || !_PANEL_URL[kind]) return;
-  const title = kind === 'manual' ? '나비와 나비웹 백서' : kind === 'wp' ? 'Whitepaper — 나비웹 사용 설명서' : '나만의 AI 비서 소개';
+   const title = kind === 'core' ? '나비웹의 핵심 — PDV와 OpenHash' : kind === 'manual' ? '나비와 나비웹 백서' : kind === 'wp' ? 'Whitepaper — 나비웹 사용 설명서' : '나만의 AI 비서 소개';
   if (!_introIsOpen()) {
     const on = document.querySelector('.tab-panel.active');
     _introPrev = { panel: on ? on.id : 'tab-compose', nav: [].map.call(document.querySelectorAll('.side-nav .nav-btn.active, .side-nav .nav-mv.active, .side-nav .nav-dv.active, .side-nav .nav-gv.active'), el => el.id).filter(Boolean) };
@@ -9616,7 +9616,7 @@ function _panelOpen(kind) {
   _panelKind = kind;
   if (f && f.getAttribute('data-kind') !== kind) { f.setAttribute('data-kind', kind); f.style.height = ''; f.setAttribute('src', _PANEL_URL[kind]); }   // 문서가 높이를 알려 주는 탭(Whitepaper)의 높이는 다른 탭으로 가면 되돌린다
   if (f) f.title = title;
-  ['manual', 'intro', 'wp'].forEach(k => { const b = document.getElementById('intro-tab-' + k); if (b) { b.classList.toggle('active', k === kind); b.setAttribute('aria-selected', k === kind ? 'true' : 'false'); } });
+  ['manual', 'core', 'intro', 'wp'].forEach(k => { const b = document.getElementById('intro-tab-' + k); if (b) { b.classList.toggle('active', k === kind); b.setAttribute('aria-selected', k === kind ? 'true' : 'false'); } });
   window.scrollTo(0, 0); _panelSync();
 }
 window.addEventListener('message', e => { if (!e.data || e.origin !== location.origin) return; if (e.data.type === 'navi-open-whitepaper') { _panelOpen('manual'); } else if (e.data.type === 'navi-open-manual') { _panelOpen('wp'); } });

@@ -84,6 +84,7 @@ export const MAIL_FILES = new Set([
  "medical.css",
  "meet-app.js",
  "meet.css",
+ "navi-core.html",
  "navi-intro.html",
  "openhash.html",
  "orgtree.js",
