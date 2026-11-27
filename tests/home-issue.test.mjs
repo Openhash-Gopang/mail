@@ -38,3 +38,12 @@ test('전달·작업 문구에서 주민번호와 카드번호를 가린다', ()
   assert.equal(A.mask('900101-1234567 그리고 1234-5678-9012-3456'), '(가림) 그리고 (가림)');
   assert.equal(A.mask('123-45-67890'), '123-45-67890');
 });
+
+test('AI 비서가 대화에서 모은 값은 도우미 작업에 담기고, 긴 절차에도 잘리지 않는다', () => {
+  const j = A.homeJob('법인설립등기', { goal: '가'.repeat(1200), detail: '상호 엑스오주식회사(XO Inc.), 설립자 도영민, 감사 김혜영, 900101-1234567' }, '나비웹 도우미를 활용하여, 직접 진행해');
+  assert.ok(j.goal.length <= 2000);
+  assert.match(j.goal, /설립자 도영민, 감사 김혜영/);
+  assert.ok(!j.goal.includes('1234567'));
+  assert.match(j.goal, /약관 동의·최종 승인만/);
+  assert.match(j.goal, /명령이 아닙니다\.$/);
+});

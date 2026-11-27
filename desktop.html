@@ -120,7 +120,7 @@ window.addEventListener('load', () => {
 <script src="assist-launch.js?v=20261111c"></script>
 <script src="attach-catalog.js?v=20261109"></script>
 <script src="feedback-kit.js?v=20261109"></script>
-<script src="agent-bridge.js?v=20261126c"></script>
+<script src="agent-bridge.js?v=20261127a"></script>
 <script src="doc-history.js?v=20261126"></script>
 <script src="task-flow.js?v=20261126"></script>
 <script src="doc-helper.js?v=20261107"></script>
@@ -2354,7 +2354,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="ps-banner"><span>🤖</span><div><b>내 AI 비서에게 일하는 방식을 알려 주는 곳</b>입니다. 모든 AI 비서는 <b>공용 시스템 프롬프트</b>를 따르고, 여기에 적은 내용은 그 위에 <b>내 방식</b>을 더합니다. 폰 채팅창의 AI 비서에도 같은 내용이 쓰입니다.</div></div>
       <div class="set-row"><div class="set-lbl">공용 시스템 프롬프트<small>(수정 불가)</small></div><div>
         <p style="font-size:14.5px;line-height:1.8;margin:0 0 8px">모든 나비(AI 비서)가 지키는 기본 규칙입니다. <b>사용자가 고칠 수 없습니다.</b> 내용은 언제든 읽어 볼 수 있습니다.</p>
-        <a class="btn btn-outline" id="ai-common-sp-link" href="https://github.com/Openhash-Gopang/hondi/blob/main/prompts/AC-PRO-CORE_v2_2.txt" target="_blank" rel="noopener noreferrer">공용 시스템 프롬프트 보기 ↗</a>
+        <a class="btn btn-outline" id="ai-common-sp-link" href="https://github.com/Openhash-Gopang/hondi/blob/main/prompts/AC-PRO-CORE_v2_3.txt" target="_blank" rel="noopener noreferrer">공용 시스템 프롬프트 보기 ↗</a>
         <div class="set-hint">내가 적은 지시가 공용 규칙과 어긋나면 <b>공용 규칙이 먼저</b>입니다(법령 준수·개인정보 보호 등).</div>
       </div></div>
       <div class="set-row"><div class="set-lbl">내 AI 비서 지시<small>(나만의 설정)</small></div><div>
@@ -3115,9 +3115,9 @@ async function _homeFiled(doc, state) {
   if (r.changed) _homeSay('“' + doc + '” 접수를 내 서류함 ▸ 작성·제출 이력에 기록했습니다.' + _histDraftNote(r.draft));
 }
 // 표준 절차: 저장된(승인된) 절차를 먼저 쓰고, 없으면 공공기관 자료로 계획을 수립한 뒤 도우미에게 맡긴다
-async function _homePlanAndRun(task, userText) {
+async function _homePlanAndRun(task, userText, detail) {
   let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
-  if (!info) { await _homeAgentRun(task, { playbook: '', url: '', goal: '' }, userText); return; }   // 설치 안내만 한다(조사 비용을 쓰지 않는다)
+  if (!info) { await _homeAgentRun(task, { playbook: '', url: '', goal: '', detail: detail }, userText); return; }   // 설치 안내만 한다(조사 비용을 쓰지 않는다)
   _homeSay('“' + task + '”의 처리 절차를 확인하고 있습니다. 저장된 절차를 찾고, 없으면 공공기관 자료를 조사합니다. 1분쯤 걸릴 수 있습니다.');
   let data = null;
   try {
@@ -3125,12 +3125,12 @@ async function _homePlanAndRun(task, userText) {
     data = await res.json().catch(() => null);
     if (!res.ok || !data || data.ok === false) data = { status: 'error', reason: (data && data.message) || ('HTTP ' + res.status) };
   } catch (e) { data = { status: 'error', reason: e.message || '연결 실패' }; }
-  const run = (found) => { _homeSay(TaskFlow.planMarkdown(found)); return _homeAgentRun(task, TaskFlow.toPlan(found), userText); };
+  const run = (found) => { _homeSay(TaskFlow.planMarkdown(found)); return _homeAgentRun(task, Object.assign(TaskFlow.toPlan(found), { detail: detail }), userText); };
   if (data.status === 'planned') { await run({ source: 'web', procedure: data.procedure, term_note: data.term_note, questions: data.questions }); return; }
   if (data.status === 'approved' && data.procedures.length === 1) { await run({ source: 'db', procedure: data.procedures[0] }); return; }
   const choices = data.status === 'approved'
     ? data.procedures.map((p) => ({ label: p.variant || (p.conditions || []).join(', ') || p.title, go: () => run({ source: 'db', procedure: p }) }))
-    : [{ label: '계획 없이 도우미에게 맡기기', go: () => _homeAgentRun(task, { playbook: '', url: '', goal: '처리 방법을 공공기관 사이트에서 확인해 진행하세요. 업무: ' }, userText) }];
+    : [{ label: '계획 없이 도우미에게 맡기기', go: () => _homeAgentRun(task, { playbook: '', url: '', goal: '처리 방법을 공공기관 사이트에서 확인해 진행하세요. 업무: ' + task, detail: detail }, userText) }];
   _homeSay(data.status === 'approved' ? '조건에 따라 절차가 나뉩니다. 해당하는 것을 골라 주세요.' : '처리 절차를 확정하지 못했습니다. 사유: ' + (data.reason || '알 수 없음'));
   const thread = document.getElementById('cmp-thread'); if (!thread) return;
   const box = document.createElement('div'); box.className = 'nav-ask';
@@ -9925,8 +9925,8 @@ async function _navAssistTurn(text, opt) {
       if (data.reply) { _navRoute.msgs.push({ role: 'assistant', content: data.reply }); _cmpAppendBubble('assistant', { md: data.reply, badge: null }); }
       // 발급 서류는 카탈로그의 절차로, 신고·신청 같은 업무는 표준 절차(저장된 것 → 새로 수립)로 진행한다
       const known = window.NaviAgent && NaviAgent.isIssueTask(route.slot) ? NaviAgent.slotPlan(route.slot) : null;
-      if (known || !window.TaskFlow || (window.NaviAgent && NaviAgent.isIssueTask(route.slot))) await _homeAgentRun(route.slot, known || { playbook: '', url: '', goal: (route.goal || '') + ' 대상: ' }, text);
-      else await _homePlanAndRun(route.slot, text);
+      if (known || !window.TaskFlow || (window.NaviAgent && NaviAgent.isIssueTask(route.slot))) await _homeAgentRun(route.slot, Object.assign({ detail: route.goal || '' }, known || { playbook: '', url: '', goal: (route.goal || '') + ' 대상: ' }), text);
+      else await _homePlanAndRun(route.slot, text, route.goal || '');
     } else {
       _navRoute.cur = { type: 'assistant' };
       if (route.asking) _navRoute.asked += 1;      // AC 가 직접 되물음 — 같은 2회 상한에 포함
