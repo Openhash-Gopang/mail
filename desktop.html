@@ -2819,6 +2819,15 @@ const _agentBars = () => [...document.querySelectorAll('.doc-agent')];
 // 확장을 새로고침·업데이트한 직후에는 연결이 몇 초 끊겼다가 돌아온다. 그때마다 설치 안내를 띄우지 않도록,
 // ① 전에 연결된 적이 있으면 여러 번 기다려 다시 확인하고 ② 그래도 안 되면 설치 안내 대신 "연결 확인 중" 표시만 한다(설치 안내는 한 번도 연결된 적이 없을 때만 저절로 열린다).
 const _AG_SEEN = 'navi_agent_seen_v1';
+// 2026-11-27: 도우미(Chrome 확장)는 PC 에서만 설치·동작한다. 폰·태블릿에서는 설치를 권하지 않는다.
+// 화면 폭이 아니라 기기 종류로 본다(창을 좁힌 PC 나 터치 노트북은 그대로 쓴다). iPadOS 는 Macintosh 로 자기를 소개하므로 터치 지점 수로 가린다.
+const _AG_PC_ONLY = '나비웹 도우미는 PC의 Chrome에서만 동작합니다';
+function _agentOnMobile() {
+  const ua = navigator.userAgent || '';
+  if (navigator.userAgentData && navigator.userAgentData.mobile) return true;
+  if (/Android|iPhone|iPad|iPod|Windows Phone|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua)) return true;
+  return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+}
 function _agentSeen() { try { return !!localStorage.getItem(_AG_SEEN); } catch (e) { return false; } }
 async function _agentDetectPatient(tries) {
   for (let i = 0; i < tries; i++) {
@@ -2854,7 +2863,7 @@ async function _agentInit() {
     } else {
       _agentBadge('');   // 설치 안내는 아래의 설치 안내창과 설정의 '설치하기'가 맡는다
       if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
-      setTimeout(() => { if (!_agentGuideSnoozed()) window._agentGuideOpen && window._agentGuideOpen(); }, 800);   // 설치 표지가 없으면 설치 안내를 연다('나중에'를 누르면 하루 동안은 저절로 열지 않는다)
+      if (!_agentOnMobile()) setTimeout(() => { if (!_agentGuideSnoozed()) window._agentGuideOpen && window._agentGuideOpen(); }, 800);   // 설치 표지가 없으면 설치 안내를 연다('나중에'를 누르면 하루 동안은 저절로 열지 않는다)
     }
   }
   if (_agentInfo && window._agentGuideClose) window._agentGuideClose();
@@ -2904,6 +2913,7 @@ function _otsRender() {
   _otsPhoneRender();
   _hintAttach(document.getElementById('ots-sub'), 'ots-sub'); _hintAttach(document.getElementById('ots-foot'), 'ots-foot');
   if (_agentInfo) { st.textContent = '나비웹 도우미 ' + _agentInfo.version + ' 연결됨'; _hintAttach(st, 'ots-conn'); }
+  else if (_agentOnMobile()) { st.hidden = false; st.style.display = ''; st.style.paddingRight = ''; st.textContent = _AG_PC_ONLY + '.'; }
   else { st.hidden = false; st.style.display = ''; st.style.paddingRight = ''; st.innerHTML = '나비웹 도우미가 연결돼 있지 않습니다. <button type="button" class="btn btn-sm" id="ots-inst">설치·켜기 안내</button>'; const b = document.getElementById('ots-inst'); if (b) b.onclick = () => { if (window._agentGuideOpen) window._agentGuideOpen(); }; }
   const r = document.getElementById('ots-recent'), l = _otsRecent();
   r.innerHTML = l.length ? '<span class="hint" style="margin:0 4px 0 0;align-self:center">최근 사이트</span>' + l.map((u, i) => '<button type="button" class="btn btn-sm" data-i="' + i + '" title="' + escHtml(u) + '">' + escHtml(u.replace(/^https:\/\//, '').slice(0, 40)) + '</button>').join('') + '<button type="button" class="btn btn-sm" data-clear="1">목록 지우기</button>' : '';
@@ -2953,7 +2963,7 @@ function _otsPick() {
   document.body.appendChild(inp); inp.click();
 }
 async function _otsGo() {
-  if (!_agentInfo) { _drToast('나비웹 도우미가 연결돼 있어야 합니다. 설치·켜기 안내를 확인해 주세요.'); return; }
+  if (!_agentInfo) { _drToast(_agentOnMobile() ? _AG_PC_ONLY + '. PC에서 이용해 주세요.' : '나비웹 도우미가 연결돼 있어야 합니다. 설치·켜기 안내를 확인해 주세요.'); return; }
   const urlEl = document.getElementById('ots-url'), url = urlEl.value.trim(), memo = document.getElementById('ots-text').value.trim();
   if (url && !/^https:\/\//i.test(url)) { _drToast('사이트 주소는 https:// 로 시작해야 합니다.'); urlEl.focus(); return; }
   const phoneOn = _otsPhotos.filter(o => o.on);
@@ -2977,6 +2987,7 @@ async function _otsGo() {
  * 사용자가 읽은 글을 확인·고친 뒤 나비웹 도우미에 맡긴다. 도우미가 열린 사이트의 칸을 보고 알맞은 값을 옮겨 적고, 로그인·제출은 사용자가 한다. */
 const _PHOTOFILL_RE = /(사진|촬영|찍은|종이|처방전|서류).{0,30}(사이트|웹\s*페이지|웹사이트|홈페이지|페이지).{0,20}(입력|옮겨|채워|적어|작성|등록)|(사이트|웹\s*페이지|웹사이트|홈페이지|페이지).{0,20}(입력|옮겨|채워|적어)\s*(줘|주세요|해)/;
 async function _photoFillStart(file, hint) {
+  if (!_agentInfo && _agentOnMobile()) return _AG_PC_ONLY + '. 다른 사이트에 입력하는 작업은 시작하지 않았습니다. PC에서 이용해 주세요.';
   if (!_agentInfo) return '나비웹 도우미가 연결돼 있어야 다른 사이트에 입력할 수 있습니다. 화면 위쪽의 도우미 설치·켜기 안내를 확인해 주세요.';
   if (!file) return '입력할 종이 서류의 사진을 대화창의 클립 버튼으로 첨부해 주세요. 사진은 이 기기에서만 읽습니다. 사진을 첨부한 뒤 “이 내용을 열어 둔 사이트에 입력해 줘”라고 말씀해 주세요.';
   _drToast('사진의 글자를 읽는 중입니다…');
@@ -3081,6 +3092,10 @@ function _homeSay(md) {
 }
 async function _homeAgentRun(doc, plan, userText) {
   let info = null; try { info = window.NaviAgent ? await NaviAgent.detect() : null; } catch (e) { info = null; }
+  if (!info && _agentOnMobile()) {   // 폰·태블릿: 설치를 권하지 않고, 시작하지 않았다는 사실과 할 일을 알린다
+    _homeSay('“' + doc + '” 작업은 시작하지 않았습니다. ' + _AG_PC_ONLY + '. PC에서 naviweb.kr에 접속해 같은 요청을 해 주세요.');
+    return;
+  }
   if (!info) {
     _homeSay('나비웹 도우미가 연결돼 있지 않아 ' + doc + _homeNoun(doc) + '을 시작하지 못했습니다. 도우미를 설치하거나 켠 뒤 다시 말씀해 주세요.' + (window.NaviAgent && NaviAgent.STORE_URL ? ' [도우미 설치](' + NaviAgent.STORE_URL + ')' : ''));
     return;
@@ -3347,7 +3362,7 @@ function _agentSuggestFor(title) {
   if (!window.NaviAgent) return;
   const s = NaviAgent.suggest(title); if (!s) return;
   if (!_agentInfo) {   // 확장 프로그램이 없으면: 스토어 주소가 있을 때만 "Chrome에 추가" 안내를 보인다(설치는 한 번, 이후 자동 업데이트)
-    if (!NaviAgent.STORE_URL) return;
+    if (!NaviAgent.STORE_URL || _agentOnMobile()) return;
     _agentBars().forEach(bar => {
       bar.querySelectorAll('select,input,.da-ext').forEach(e => { e.hidden = true; });
       const a = bar.querySelector('.da-install'); a.href = NaviAgent.STORE_URL; a.hidden = false;
@@ -11309,6 +11324,7 @@ function _agentGuideSnooze() { try { localStorage.setItem(_AG_SNOOZE, String(Dat
 function _agentGuideClose() { var g = document.getElementById('agent-guide'); if (g) g.remove(); }
 function _agentGuideOpen() {
   if (_agentInfo || document.getElementById('agent-guide')) return;
+  if (_agentOnMobile()) { try { _drToast(_AG_PC_ONLY + '.'); } catch (e) { /* 안내만 빠진다 */ } return; }
   var store = (window.NaviAgent && NaviAgent.STORE_URL) || '';
   var o = document.createElement('div'); o.id = 'agent-guide'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', '나비웹 도우미 설치 안내');
   o.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px';
@@ -11333,6 +11349,8 @@ function _agentEntryRefresh() {
   const st = row.querySelector('.sa-state'), btn = row.querySelector('.sa-btn');
   st.textContent = on ? '설치됨 (버전 ' + _agentInfo.version + ')' : '설치되어 있지 않습니다';
   btn.textContent = on ? '확인됨' : '설치하기'; btn.disabled = on;
+  const mobile = !on && _agentOnMobile(); btn.hidden = mobile;
+  if (mobile) st.textContent = 'PC의 Chrome에서 사용할 수 있습니다';
 }
 window._agentEntryRefresh = _agentEntryRefresh;
 </script>
