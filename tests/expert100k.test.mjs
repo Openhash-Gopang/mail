@@ -39,11 +39,11 @@ test('10만 AI 전문가: 개요 문서의 배분 합계가 100,000명이고 묶
   for (const k of ['산식', '단위', '가정']) assert.ok(line.includes(pct(k)), k + ' 비율 ' + pct(k));
 });
 
-test('10만 AI 전문가: 개요 문서는 출처 10건을 갖고, 버린 용어(혼디)를 쓰지 않는다', () => {
+test('10만 AI 전문가: 개요 문서는 출처 30건을 갖고, 버린 용어(혼디)를 쓰지 않는다', () => {
   const d = R('expert100k-overview.html');
-  assert.equal([...d.matchAll(/<li id="r\d+">/g)].length, 10);
+  assert.equal([...d.matchAll(/<li id="r\d+">/g)].length, 30);
   assert.ok(!d.includes('혼디'));
-  assert.ok(d.includes('초안 v0.1'));
+  assert.ok(d.includes('초안 v0.2'));
 });
 
 test('10만 AI 전문가: 개요 문서가 naviweb.kr 프록시의 mail 파일 목록(mail-paths.js)에 등록돼 있다', () => {
@@ -60,4 +60,16 @@ test('10만 AI 전문가: 12개 분야 탭이 모두 분야 문서와 연결되�
   for (const f of ['def:', 'pain:', 'layers:', 'flow:', 'l3:', 'gate:', 'ref:', 'ask:']) assert.equal(body.split(f).length - 1, 12, f + ' 12개');
   assert.ok(!/혼디/.test(d));
   assert.ok([...MAIL_FILES].includes('expert100k-doc.js'));
+});
+
+test('10만 AI 전문가 개요: 역할 재조명 절(1절)과 파산·회생 비교표가 있고, 절 번호·목차·출처 번호가 이어진다', () => {
+  const d = R('expert100k-overview.html');
+  const ids = [...d.matchAll(/<section id="s(\d+)">\s*<h2><span class="n">(\d+)<\/span>/g)].map((m) => [+m[1], +m[2]]);
+  assert.deepEqual(ids, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [n, n]));
+  assert.ok(d.includes('AI 시대를 맞아, 업종별 노동력의 사회적 역할 재조명'));
+  assert.ok(d.includes('사람–재래식 웹–기관') && d.includes('사람–AI–AI–기관'));
+  assert.ok(d.includes('파산·회생 절차 비교') && d.includes('10초 내외'));
+  for (const n of ids.map((x) => x[0])) assert.ok(d.includes('href="#s' + n + '"'), '목차 s' + n);
+  const refs = new Set([...d.matchAll(/<li id="r(\d+)">/g)].map((m) => +m[1]));
+  for (const m of d.matchAll(/<sup><a href="#r(\d+)">/g)) assert.ok(refs.has(+m[1]), '출처 r' + m[1]);
 });
