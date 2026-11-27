@@ -570,7 +570,7 @@ test('도우미 삭제·새로고침: 연결된 적 있으면 재확인하고, �
   assert.match(d, /_agentDetectPatient/); assert.match(d, /_agentMiss/);
   assert.match(d, /const _installed = !!\(NaviAgent\.installedMark/);
   assert.match(d, /if \(!_agentGuideSnoozed\(\)\) window\._agentGuideOpen/);
-  assert.match(d, /id="set-agent-row"/); assert.match(d, /id="helper-install-btn"/);
+  assert.match(d, /id="set-agent-row"/); assert.match(d, /id="agent-guide-go"/);
   assert.match(d, /if \(_agentInfo\) \{ try \{ window\._agentGuideClose/); assert.match(d, /_agentAfterInstallReturn/);
 });
 

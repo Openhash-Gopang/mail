@@ -3,13 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const rd = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
 
-test('상단의 설치 & 갱신 단추는 스토어 설치 화면을 새 탭에 열고, 시뮬레이션 왼쪽에 있다', () => {
+test('상단에 설치 단추는 두지 않고, 미설치 안내창이 스토어 설치 화면을 연다', () => {
   const d = rd('desktop.html');
-  const a = d.match(/<a id="helper-install-btn"[^>]*>도우미 설치 &amp; 갱신<\/a>/)[0];
-  assert.match(a, /href="https:\/\/chromewebstore\.google\.com\/detail\/bhmnnbmebjppofdboeinccngpeheongi"/);
-  assert.match(a, /target="_blank" rel="noopener"/);
+  assert.doesNotMatch(d, /helper-install-btn/);
+  assert.match(d, /if \(!_agentGuideSnoozed\(\)\) window\._agentGuideOpen/);
   assert.match(rd('agent-bridge.js'), /STORE_URL = 'https:\/\/chromewebstore\.google\.com\/detail\/bhmnnbmebjppofdboeinccngpeheongi'/);
-  assert.ok(d.indexOf('id="helper-install-btn"') < d.indexOf('id="home-sim"'));
 });
 test('지구본과 기능 개선 제안은 사용자 팝업 안에 둔다', () => {
   const d = rd('desktop.html');
