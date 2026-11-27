@@ -252,8 +252,8 @@
     else if (act === 'new') newForm(name);
     else if (act === 'cancel-new') $('cs-form-' + name).innerHTML = '';
     else if (act === 'create') await createFromForm(name);
-    else if (act === 'open') { cur[name + ':tab'] = 'all'; await openCase(name, t.getAttribute('data-id')); }
-    else if (act === 'back') { if (m.solo) { cur[name] = null; if (typeof root._switchTab === 'function') root._switchTab(cur[name + ':st'] === 'closed' || cur[name + ':st'] === 'archived' ? 'gdone' : 'gprog'); } else await renderList(name); }
+    else if (act === 'open') { cur[name + ':from'] = null; cur[name + ':tab'] = 'all'; await openCase(name, t.getAttribute('data-id')); }
+    else if (act === 'back') { if (cur[name + ':from'] === 'tasks') { cur[name] = null; cur[name + ':from'] = null; if (typeof root._switchTab === 'function') root._switchTab('tasks'); } else if (m.solo) { cur[name] = null; if (typeof root._switchTab === 'function') root._switchTab(cur[name + ':st'] === 'closed' || cur[name + ':st'] === 'archived' ? 'gdone' : 'gprog'); } else await renderList(name); }
     else if (act === 'tab') { cur[name + ':tab'] = t.getAttribute('data-t'); await openCase(name, id); }
     else if (act === 'copy') { var i = $('cs-invite-link'); i.select(); try { document.execCommand('copy'); t.textContent = '복사됨'; } catch (_) {} }
     else if (act === 'add-note') {
@@ -338,7 +338,7 @@
       if (act === 'new') newForm('casesolo');
       else if (act === 'cancel-new') { var f = $('cs-form-casesolo'); if (f) f.innerHTML = ''; }
       else if (act === 'create') createFromForm('casesolo');
-      else if (act === 'open') { cur.casesolo = t.getAttribute('data-id'); cur['casesolo:tab'] = 'all'; if (typeof root._switchTab === 'function') root._switchTab('casesolo'); }
+      else if (act === 'open') { cur['casesolo:from'] = null; cur.casesolo = t.getAttribute('data-id'); cur['casesolo:tab'] = 'all'; if (typeof root._switchTab === 'function') root._switchTab('casesolo'); }
     }); }
     var H = host();
     return (H ? H.initLocal().catch(function () {}) : Promise.resolve()).then(function () { return getStore().listCases(); }).then(function (all) {
@@ -349,6 +349,21 @@
           return '<button class="cs-row" data-act="open" data-id="' + esc(c.case_id) + '"><span class="cs-title">' + esc(c.title) + '</span><span class="cs-meta">' + esc(KIND[c.kind] || c.kind) + '</span><span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span></button>';
         }).join('') + '</div>' : '<div class="cs-empty">' + (kind === 'done' ? '완료한 나 홀로 일이 없습니다.' : '진행 중인 나 홀로 일이 없습니다. “+ 새 일”로 시작하세요.') + '</div>');
     }).catch(function () { box.innerHTML = ''; });
+  }
+
+  /** 과제 첫 화면에서 업무 하나를 연다. 뒤로를 누르면 과제 첫 화면으로 돌아간다. */
+  function openFrom(name, id) {
+    if (!MODES[name]) return;
+    cur[name] = id; cur[name + ':tab'] = 'all'; cur[name + ':from'] = 'tasks';
+    if (typeof root._switchTab === 'function') root._switchTab(name);
+  }
+  /** 과제 첫 화면의 "＋ 새 과제": 해당 역할의 화면으로 가서 새 일 입력란을 연다. */
+  function startNew(name) {
+    if (!MODES[name] || typeof root._switchTab !== 'function') return Promise.resolve();
+    cur[name] = null; cur[name + ':from'] = null;
+    var solo = name === 'casesolo';
+    root._switchTab(solo ? 'gprog' : name);
+    return Promise.resolve(solo ? fillSolo('prog') : show(name)).then(function () { newForm(name); var f = $('cs-form-' + name); if (f && f.scrollIntoView) f.scrollIntoView({ block: 'center' }); });
   }
 
   function show(name) {
@@ -394,7 +409,7 @@
   }
   function applyFlag() { inviteBanner(); }
 
-  root.CaseUI = { show: show, fillSolo: fillSolo, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
+  root.CaseUI = { show: show, openFrom: openFrom, startNew: startNew, fillSolo: fillSolo, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyFlag); else applyFlag();
   }

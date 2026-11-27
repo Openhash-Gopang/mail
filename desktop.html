@@ -113,7 +113,8 @@ window.addEventListener('load', () => {
 <script src="assistant-runtime.js?v=20261101e"></script>
 <script src="assistant-host.js?v=20261101e"></script>
 <script src="case-host.js?v=20261101d"></script>
-<script src="case-ui.js?v=20261106b"></script>
+<script src="case-ui.js?v=20261127a"></script>
+<script src="task-home.js?v=20261127a"></script>
 <script src="case-assist.js?v=20261101f"></script>
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
@@ -1175,6 +1176,59 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
    입력창·placeholder·버튼·코드·외부 라이브러리(Quill 등) 포함 모든 글자에 적용한다.
    글꼴 스택은 --font(Pretendard 우선, 로딩 실패 시에만 시스템 글꼴)이다. */
 *,*::before,*::after,::placeholder{font-family:var(--font)!important}
+/* ══ 과제(2026-11-27): 서류·메일·길잡이를 합친 메뉴와 첫 화면 ══ */
+.side-nav .task-subs{margin:0 0 6px;padding:0;border:0}
+.side-nav:not(.sn-open) #tab-btn-guidenav:has(+ .task-subs .unread-badge:not([hidden]))::after{content:"";position:absolute;bottom:6px;left:27px;width:8px;height:8px;border-radius:50%;background:#1A73E8}
+@media (max-width:960px){.side-nav .task-subs{display:flex;margin:0;gap:2px}.side-nav .task-sub{width:auto;white-space:nowrap;padding:8px 10px}.side-nav #tab-btn-guidenav::after{display:none}}
+.content > #tab-tasks{max-width:1120px}
+.tk-head,.tk-filters,.tk-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.tk-head h2,.tk-dhead h2{font-size:22px;font-weight:800;margin:0}
+.tk-sub{font-size:13px;color:var(--hint);line-height:1.6;margin-top:4px}
+.tk-btns{display:flex;gap:8px;flex-wrap:wrap}
+.tk-new{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+.tk-new[hidden]{display:none}
+.tk-new button,.tk-card{text-align:left;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font:inherit;color:var(--txt);cursor:pointer}
+.tk-new button:hover,.tk-card:hover{border-color:var(--pri)}
+.tk-new b{display:block;font-size:14.5px}.tk-new span{display:block;font-size:12.5px;color:var(--hint);margin-top:3px}
+.tk-sec{margin-top:22px}.tk-sec h3{font-size:16px;font-weight:800;margin:0 0 10px}
+.tk-count{font-size:12.5px;background:var(--pri-bg);color:var(--pri);border-radius:999px;padding:1px 8px}
+.tk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.tk-card{font-size:13.5px;line-height:1.6;border-left:4px solid #E0A100}.tk-card.s3{border-left-color:var(--red)}
+.tk-empty{font-size:14px;color:var(--hint);background:var(--sur);border:1px dashed var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.tk-filters{margin-bottom:10px}.tk-filters>div{display:flex;gap:6px;flex-wrap:wrap}
+.tk-chip{background:var(--sur);border:1px solid var(--bdr);border-radius:999px;padding:5px 13px;font:inherit;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer}
+.tk-chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.tk-table{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.tk-tr{display:grid;grid-template-columns:minmax(0,2.2fr) .8fr 1fr minmax(0,2fr) minmax(0,1.6fr) .8fr;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--bdr);padding:11px 14px;font:inherit;font-size:13.5px;color:var(--txt);cursor:pointer}
+.tk-tr:hover{background:#F4F6FA}
+.tk-th{border-top:0;background:var(--bg);font-size:12.5px;font-weight:800;color:var(--hint);cursor:default}.tk-th:hover{background:var(--bg)}
+.tk-tr>span{min-width:0;overflow-wrap:anywhere}
+.tk-tr small{display:block;font-size:12px;color:var(--hint);margin-top:2px}
+.tk-tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:1px 9px;background:#EEF1F6;color:var(--sub)}
+.tk-tag.run{background:var(--pri-bg);color:var(--pri)}.tk-tag.done{background:var(--gbg);color:var(--grn)}.tk-tag.hold{background:var(--obg);color:var(--org)}
+.tk-need{color:var(--org)}
+.tk-due.late,.tk-due.late small{color:var(--red);font-weight:800}.tk-due.soon,.tk-due.soon small{color:var(--org);font-weight:800}
+.tk-foot{margin-top:14px}
+.tk-link{background:none;border:0;padding:0;font:inherit;font-size:13.5px;font-weight:700;color:var(--pri);cursor:pointer}
+.tk-dhead{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;margin:10px 0 16px}
+.tk-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.tk-boxes{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:12px 0}
+.tk-boxes>div{background:var(--bg);border-radius:var(--r);padding:10px 12px}.tk-boxes small{display:block;font-size:12px;color:var(--hint)}.tk-boxes small.tk-need{color:var(--org);margin-top:4px}.tk-boxes b{display:block;font-size:15px;margin-top:2px}
+.tk-body{margin-top:12px}.tk-body h4{margin:18px 0 8px;font-size:14px}
+.tk-add{display:flex;gap:8px;margin-bottom:12px}.tk-add input{flex:1;min-width:0;border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px;font:inherit}
+.tk-tl{list-style:none;margin:0 0 10px;padding:0}
+.tk-tl li{display:grid;grid-template-columns:100px 1fr;gap:12px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;margin-bottom:6px;font-size:14px;line-height:1.6}
+.tk-tl time{font-size:12.5px;color:var(--hint);font-weight:700}
+.tk-todos{list-style:none;margin:0;padding:0}
+.tk-todos li{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px;margin-bottom:6px;font-size:14px}
+.tk-todos label{display:flex;gap:9px;align-items:flex-start;cursor:pointer}.tk-todos .did{text-decoration:line-through;color:var(--hint)}
+.tk-plan{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font:inherit;font-size:13.5px;line-height:1.7}
+@media (max-width:720px){
+  .tk-th{display:none}
+  .tk-tr{grid-template-columns:1fr auto auto;gap:6px 10px}
+  .tk-tr .tk-name,.tk-tr .tk-need,.tk-tr>span:nth-child(5){grid-column:1/-1}
+  .tk-boxes{grid-template-columns:1fr}.tk-add{flex-direction:column}.tk-tl li{grid-template-columns:1fr;gap:2px}
+}
 </style>
 <style>
 /* 업무(Case) 화면 — case-ui.js */
@@ -1641,6 +1695,16 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div class="side-label">작성·발송</div>
       <button id="tab-btn-home" class="nav-btn active" data-label="홈" onclick="_switchTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
         홈</button>
+      <button id="tab-btn-guidenav" class="nav-btn" data-label="과제" onclick="_guideTabOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        과제<span class="unread-badge" data-for="guide" hidden></span></button>
+      <div class="nav-sub task-subs" role="group" aria-label="과제 하위 메뉴">
+        <button type="button" id="task-sub-mail" class="nav-subitem nav-gv task-sub" data-label="전체 메일" onclick="_navMailSub('inbox')">전체 메일<span class="unread-badge" data-for="mail-all" hidden></span></button>
+        <button type="button" id="task-sub-docs" class="nav-subitem nav-gv task-sub" data-label="전체 서류" onclick="_switchTab('docdone')">전체 서류<span class="unread-badge" data-for="docs-all" hidden></span></button>
+        <button type="button" id="task-sub-quick" class="nav-subitem nav-gv task-sub" data-label="빠른 작성·발송" onclick="_switchTab('quicksend')">빠른 작성·발송</button>
+        <button type="button" id="task-sub-contacts" class="nav-subitem nav-gv task-sub" data-label="주소록·캠페인" onclick="_ctNavClick()">주소록·캠페인</button>
+      </div>
+      <!-- 2026-11-27 서류·메일 메뉴는 "과제"로 합쳤다. 아래 옛 단추는 화면에 보이지 않으며, 화면 전환·읽지 않음 수 코드가 쓰므로 남겨 둔다. -->
+      <div id="nav-legacy" hidden>
       <div class="nav-group collapsed" id="nav-group-docs">
         <button id="tab-btn-docs" class="nav-btn" data-label="서류" onclick="_navDocClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>서류<span class="unread-badge nav-top-badge" data-for="docs-all" hidden></span></button>
         <button type="button" class="nav-toggle" id="nav-toggle-docs" aria-label="서류 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-docs" onclick="_navToggleDocs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -1668,8 +1732,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
           <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
         </div>
       </div>
-      <button id="tab-btn-guidenav" class="nav-btn" data-label="나비 길잡이" onclick="_guideTabOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-        나비 길잡이<span class="unread-badge" data-for="guide" hidden></span></button>
+      </div>
       <button id="tab-btn-youtube" class="nav-btn" data-label="안내 영상" onclick="_switchTab('youtube')"><img class="yt-ico" src="assets/youtube-icon.png" alt="" aria-hidden="true">안내 영상</button>
       <button id="tab-btn-expert100k" class="nav-btn" data-label="10만 AI 전문가" onclick="_switchTab('expert100k')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c0-3.4 2.8-6 6.2-6s6.2 2.6 6.2 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.4 14.2c3 .2 4.8 2.4 4.8 5.3"/></svg>10만 AI 전문가</button>
     </div>
@@ -2566,6 +2629,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div id="mf-items"></div>
     </div>
   </div>
+
+  <div id="tab-tasks" class="tab-panel"><div id="task-root"></div></div>
 
   <div id="tab-gprog" class="tab-panel">
     <div id="gt-bar-gprog"></div>
@@ -5344,7 +5409,7 @@ function _guideToast(list) {
 function _notifyGo(go) {
   go = String(go || '');
   if (go.indexOf('guide:') === 0) { _guideOpen(go.slice(6)); return; }
-  if (go === 'guide-prog') { _switchTab('gprog'); return; }
+  if (go === 'guide-prog') { _guideTabOpen(); return; }
   if (go === 'mail' || go === 'docs') { _switchTab('mail'); try { _navMailSub('inbox'); } catch (e) {} }
 }
 /** 알림 전달: 탭이 보이면 화면 구석 카드, 가려져 있으면 브라우저 알림(켠 경우). 둘 다 못 하면 false(쌓아 두었다가 보일 때 다시). */
@@ -5362,6 +5427,7 @@ function _guideNotifyCheck() {
     const box = document.getElementById('gl-alerts');
     if (box) { box.innerHTML = al.map(a => '<button type="button" class="gl-alert' + (a.sev >= 3 ? ' s3' : '') + '" data-id="' + escHtml(a.id) + '">' + (a.sev >= 3 ? '⚠' : '•') + ' <span>' + escHtml(a.msg) + '</span></button>').join(''); box.onclick = (e) => { const b = e.target.closest && e.target.closest('.gl-alert'); if (b) _guideOpen(b.dataset.id); }; }
     _guideNotifyStatus();
+    if (window.TaskHome) TaskHome.refresh();
     let seen = {}; try { seen = JSON.parse(localStorage.getItem(_GN_KEY) || '{}') || {}; } catch (e) {}
     const fresh = al.filter(a => !seen[a.key] && a.sev >= 2);   // 정체(sev 1)는 배지·목록에만 — 끼어들지 않는다
     if (!fresh.length) return;
@@ -5444,16 +5510,26 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── 나비 길잡이(2026-11-06): 하위 메뉴 없이 한 페이지. 위쪽 탭 = 진행 중 · 완료 · 맡긴 일 · 맡은 일 ──
 // 나 홀로 일은 따로 페이지를 두지 않고 "진행 중"(끝나지 않은 일)·"완료"(종료·보관) 탭 안에 함께 나온다. 마지막에 본 탭을 기억한다.
 const _GTABS = [['gprog', '진행 중'], ['gdone', '완료'], ['casecons', '맡긴 일'], ['caseprov', '맡은 일']];
-const _GTAB_KEY = 'kmail_guide_tab';
-function _guideLastTab() { let t = ''; try { t = localStorage.getItem(_GTAB_KEY) || ''; } catch (e) {} return _GTABS.some(x => x[0] === t) ? t : 'gprog'; }
 function _gtabsHtml(active) {
   const caseOn = !window.CaseUI || CaseUI.enabled();   // 업무(맡긴 일·맡은 일)를 껐으면 두 탭은 숨김
-  return '<div class="cs-modes" role="tablist" aria-label="' + _i18nEsc(_T('나비 길잡이')) + '">' + _GTABS.filter(x => caseOn || x[0].indexOf('case') !== 0).map(x =>
+  return '<div class="cs-modes" role="tablist" aria-label="' + _i18nEsc(_T('과제')) + '"><button type="button" class="cs-mode" onclick="_guideTabOpen()">← ' + _i18nEsc(_T('내 과제')) + '</button>' + _GTABS.filter(x => caseOn || x[0].indexOf('case') !== 0).map(x =>
     '<button type="button" role="tab" class="cs-mode' + (x[0] === active ? ' on' : '') + '" aria-selected="' + (x[0] === active) + '" onclick="_switchTab(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) + '</button>').join('') + '</div>';
 }
 function _gtabsFill(name) { const el = document.getElementById('gt-bar-' + name); if (el) el.innerHTML = _gtabsHtml(name); }
-/** 왼쪽 메뉴의 "나비 길잡이"를 누르면 마지막에 보던 탭(처음엔 "진행 중")이 열린다. 새 과제는 "진행 중" 탭의 ＋ 새 과제로 시작한다. */
-function _guideTabOpen() { _switchTab(_guideLastTab()); }
+/** 왼쪽 메뉴의 "과제"를 누르면 과제 첫 화면(내 과제 목록)이 열린다. 아래 네 탭은 그 화면의 "알림 설정 · 이전 목록 화면"에서 들어간다. */
+function _guideTabOpen() { if (window.TaskHome) TaskHome.home(); _switchTab('tasks'); }
+/** 과제 화면(task-home.js)이 쓰는 이 페이지의 기능 */
+window.TaskHomeHost = {
+  plans: () => { _guideLoad(); return _guide.plans; },
+  alerts: () => _guideAlerts(),
+  today: () => _guideToday(),
+  save: (id, text) => { _guideLoad(); const p = _guide.plans[id]; if (!p) return; p.text = text; p.title = _guideTitleOf(text); p.updated = Date.now(); _guideStore(); _guideNotifyCheck(); },
+  remove: (id) => { _guideLoad(); delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; _guideStore(); _guideNotifyCheck(); },
+  openGuide: (id) => _guideOpen(id),
+  newCase: (name) => { if (window.CaseUI) CaseUI.startNew(name); },
+  go: (to) => { if (to === 'doc') _navDocClick(); else if (to === 'inbox') _navMailSub('inbox'); else _switchTab(to); },
+  confirm: (msg) => (window.mpConfirm || confirm)(msg),
+};
 /** 과제 목록에서 과제를 열거나(id), 새 과제를 시작한다(null). */
 function _guideOpen(id) { _guideLoad(); _guide.cur = id && _guide.plans[id] ? id : null; _guideStore(); _switchTab('home'); _cmpGuidePick(); }
 /** 종료한 과제인가: 판정이 있거나 상태가 종료. */
@@ -6964,7 +7040,7 @@ async function _scrRestore() {
     if (d && d.id && ['letter', 'compose', 'doc'].indexOf(s.n) >= 0) { try { it = (await _drCall('get', { id: d.id }, 10000)).item; } catch (e) {} }
     if (it && it.kind === 'doc') _drResumeDoc(it);
     else if (it && (it.kind === 'letter' || it.kind === 'campaign')) _drResumeChat(it);
-    else if (document.getElementById('tab-btn-' + s.n) || _NAV_COMPOSE_NAMES.indexOf(s.n) >= 0) _switchTab(s.n);
+    else if (s.n === 'tasks' || document.getElementById('tab-btn-' + s.n) || _NAV_COMPOSE_NAMES.indexOf(s.n) >= 0) _switchTab(s.n);
     if (s.n === 'mail' && s.sub && document.getElementById('mail-sub-' + s.sub)) _mailSwitchSub(s.sub);
   } catch (e) {} finally { _scrRestoring = false; }
   _scrSave(s.n);
@@ -7038,12 +7114,12 @@ function _switchTab(name) {
     if (name === 'home') { _infraKey = null; if (_wasComposeActive || _cmpMode === 'org') _cmpSetMode('default'); else _cmpSyncModeUi(); }   // 홈(로고)은 고른 인프라(메일 등)에서도 나가 처음 화면으로 돌아간다
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  const _navBtn = document.getElementById('tab-btn-' + (name === 'tasks' || name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
   if (name !== 'verdict') _navBtn.classList.add('active');
   // 주소의 #해시를 지금 화면에 맞춘다 — 설정을 한 번 열면 #settings 가 남아, 다른 화면에서 새로고침해도 설정이 열리던 오류를 막는다.
   // 새로고침해도 돌아올 수 있는 화면만 해시로 남기고(홈·메일 묶음·가상 판결 등은 비운다) replaceState 라 뒤로 가기 기록은 늘지 않는다.
   try {
-    const _hk = name === 'gprog' ? 'guide-prog' : (name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
+    const _hk = name === 'tasks' ? 'tasks' : name === 'gprog' ? 'guide-prog' : (name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
     const _nh = _isCompose ? ((name === 'home' || name === 'doc') ? '' : '#' + name) : (_hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '');   // 2026-11-10: 편지(#letter)·캠페인(#compose)·가상 판결(#verdict)도 주소에 남긴다(홈·서류는 비움 — 서류는 #doc/<번호>)
     {
       // 2026-11-24: 화면을 옮길 때마다 기록을 하나 남긴다 — 브라우저 뒤로 가기(좌 상단)가 직전 화면으로 돌아가고, 처음 화면에서는 이전 웹 페이지(나비웹 메인 등)로 나간다.
@@ -7080,7 +7156,7 @@ function _switchTab(name) {
   if (name === 'expert100k') _exSwitch(_subGet('ex') || 'overview');   // 10만 AI 전문가 — 위쪽 탭(개요 …)의 문서를 연다
   _infraChatSync(name); if (name === 'bank') _bankShow(); if (name === 'stock') _stockShow(); if (name === 'insure') _insureShow(); if (name === 'emg') _emgShow(); if (name === 'pol') _polShow(); if (name === 'med') _medShow(); if (name === 'tax') _taxShow(); if (name === 'mkt') _mktShow(); if (name === 'trf') _trfShow(); if (name === 'lgs') _lgsShow(); if (name === 'pub') _pubShow(); if (name === 'dem') _demShow(); if (name === 'sch') _schShow(); if (name === 'biz') _bizShow(); if (name === 'plan') _planShow(); if (name === 'wch') _wchShow(); if (name === 'job') _jobShow(); if (name === 'jit') _jitShow(); if (name === 'cty') _ctyShow(); if (name === 'mtg') _mtgShow(); if (name === 'learn') { _learnShow(); if (window.LearnHost) LearnHost.enter(); } else if (window.LearnHost) LearnHost.leave(); if (name === 'pricing') { const f = document.getElementById('pricing-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', 'pricing.html?embed=mail'); }   // 요금제 — 같은 저장소의 pricing.html(환율은 열 때마다 새로 불러온다)
   if (name === 'feedback') { const f = document.getElementById('feedback-frame'); if (f && !f.getAttribute('src')) f.setAttribute('src', _HONDI_BASE + '/feedback.html?embed=mail'); }   // 제안 게시판은 hondi 의 한 페이지를 그대로 끼워 쓴다(두 곳을 따로 고치지 않는다)
-  if (_GTABS.some(x => x[0] === name)) { try { localStorage.setItem(_GTAB_KEY, name); } catch (e) {} }
+  if (name === 'tasks') { _guidePdvSync(); if (window.TaskHome) TaskHome.render(); }
   if (name.indexOf('case') === 0 && window.CaseUI) CaseUI.show(name);
   if (name === 'guide' && window.GuideUI) GuideUI.show();   // 사용법 — 단계별 퀴즈   // 업무(Case) — 기능 플래그 뒤
   _navSyncMailSub();
@@ -9669,7 +9745,14 @@ function _campSubFill() {
   });
 }
 function _campSubGo(k) { if (k === 'new') _switchTab('compose'); else if (k === 'hist') _switchTab('camphist'); else _campNavClick(); }
+/** 지금 화면에 맞춰 "과제" 아래 하위 메뉴의 켜짐 표시를 맞춘다. */
+function _navSyncTaskSubs() {
+  const on = document.querySelector('.tab-panel.active'), id = on ? on.id.replace('tab-', '') : '', mode = id === 'compose' ? _cmpMode : '';
+  const cur = id === 'mail' || id === 'tags' ? 'mail' : ['docdrafts', 'docdone', 'myforms', 'othersite'].indexOf(id) >= 0 || mode === 'doc' ? 'docs' : id === 'quicksend' ? 'quick' : id === 'contacts' || id === 'campaigns' || id === 'camphist' || mode === 'campaign' ? 'contacts' : '';
+  document.querySelectorAll('.side-nav .task-sub').forEach(b => { const hit = b.id === 'task-sub-' + cur; b.classList.toggle('active', hit); if (hit) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+}
 function _pgTabsFill() {
+  _navSyncTaskSubs();
   _campSubFill();
   const srcBadge = document.querySelector('#nav-sub-mail .unread-badge[data-for="inbox"]');
   const bn = srcBadge && !srcBadge.hidden ? srcBadge.textContent : '';
@@ -11182,6 +11265,7 @@ window.kmailOpenSettings = function (section) {
   }
   if (h === 'foi') { _switchTab('home'); setTimeout(_cmpFoiPick, 0); return; }
   if (h === 'guide') { _switchTab('home'); setTimeout(_cmpGuidePick, 0); return; }
+  if (h === 'tasks') { _switchTab('tasks'); return; }
   if (h === 'guide-prog') { _switchTab('gprog'); return; }
   if (h === 'mail' || h === 'docs') { _notifyGo('mail'); return; }   // 푸시 알림(새 메일·서류 처리 결과)을 누르면 받은메일함으로
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc' || h === 'verdict') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
@@ -11212,7 +11296,7 @@ window.addEventListener('popstate', function () {
   window._navPop = true;
   try {
     if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
-    else if (document.getElementById('tab-' + name) && document.getElementById('tab-btn-' + (name === 'gprog' ? 'guidenav' : name))) _switchTab(name);
+    else if (document.getElementById('tab-' + name) && document.getElementById('tab-btn-' + (name === 'gprog' || name === 'tasks' ? 'guidenav' : name))) _switchTab(name);
     else if (['home', 'compose', 'letter', 'verdict'].indexOf(name) >= 0) _switchTab(name);
   } catch (e) {}
   try { NaviHist.restore(name, history.state); } catch (e) {}
@@ -11222,6 +11306,7 @@ setTimeout(function () { window._navReady = true; }, 0);
 window.addEventListener('hashchange', function () {
   const h = (location.hash || '').replace('#', '');
   if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
+  else if (h === 'tasks') _switchTab('tasks');
   else if (h === 'guide-prog') _switchTab('gprog');
   else if (h === 'mail' || h === 'docs') _notifyGo('mail');   // 이미 열려 있는 탭에서 푸시 알림을 눌렀을 때
 });
