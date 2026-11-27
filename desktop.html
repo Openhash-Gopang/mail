@@ -1461,10 +1461,6 @@ html[data-menu=open] .side-nav .side-intro{opacity:1!important;pointer-events:au
 .user-row .lp-host{position:relative;display:inline-flex}
 .user-row .lp-btn{height:34px;border-color:var(--bdr,#cbd5e1);color:var(--sub,#334155)}.user-row .lp-btn:hover,.user-row .lp-btn[aria-expanded=true]{background:var(--pri-bg,#e8f0fe)}
 .user-row .lp-pop{right:0;left:auto}
-/* 도우미 설치 & 갱신: 시뮬레이션 왼쪽의 눈에 띄는 단추. 누르면 스토어 설치 화면(일부 공개 링크)이 새 탭에 열린다. 폰은 확장을 쓸 수 없어 감춘다 */
-#helper-install-btn{flex:none;display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:99px;background:#e8590c;color:#fff;font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(232,89,12,.45)}
-#helper-install-btn:hover{background:#d9480f}#helper-install-btn:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
-@media (pointer:coarse) and (max-width:768px){#helper-install-btn{display:none}}
 /* 지구본·기능 개선 제안: 사용자 팝업이 있으면 위쪽 줄에서는 감추고 팝업 안에 한 줄씩 놓는다(팝업을 못 불러오면 위쪽 줄에 그대로 남는다) */
 .user-row:has(#hondi-user-badge) > .lp-host,.user-row:has(#hondi-user-badge) > .fb-top{display:none}
 .user-row #hondi-user-badge .hub-extra{display:flex;flex-direction:column;gap:8px;margin:8px 0}
@@ -1700,7 +1696,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
 </div>
-<a id="helper-install-btn" href="https://chromewebstore.google.com/detail/bhmnnbmebjppofdboeinccngpeheongi" target="_blank" rel="noopener" title="Chrome 웹 스토어의 나비웹 도우미 설치 화면을 엽니다. 설치한 뒤에는 새 버전이 자동으로 갱신됩니다." onclick="try{sessionStorage.setItem('navi_agent_installing',String(Date.now()))}catch(e){}">도우미 설치 &amp; 갱신</a>
 <button type="button" class="mfb-btn simbtn" id="home-sim" aria-label="가상 데이터로 시뮬레이션" onclick="_homeSimOpen()">시뮬레이션</button>
 <div class="lp-host" id="lp-host"></div>
 <button type="button" class="fb-top" id="fb-top" title="기능 개선 제안" onclick="_switchTab('feedback')">기능 개선 제안</button>
@@ -2865,7 +2860,7 @@ async function _agentInit() {
       _agentBadge('나비웹 도우미 연결 확인 중 — 계속 안 되면 이 페이지를 새로고침해 주세요');
       if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => location.reload(); _bt.onkeydown = (e) => { if (e.key === 'Enter') location.reload(); }; }
     } else {
-      _agentBadge('');   // 설치 안내는 위쪽의 '도우미 설치 & 갱신' 단추가 맡는다
+      _agentBadge('');   // 설치 안내는 아래의 설치 안내창과 설정의 '설치하기'가 맡는다
       if (_bt) { _bt.style.cursor = 'pointer'; _bt.style.textDecoration = 'underline'; _bt.setAttribute('role', 'button'); _bt.tabIndex = 0; _bt.onclick = () => window._agentGuideOpen && window._agentGuideOpen(); _bt.onkeydown = (e) => { if (e.key === 'Enter') window._agentGuideOpen && window._agentGuideOpen(); }; }
       setTimeout(() => { if (!_agentGuideSnoozed()) window._agentGuideOpen && window._agentGuideOpen(); }, 800);   // 설치 표지가 없으면 설치 안내를 연다('나중에'를 누르면 하루 동안은 저절로 열지 않는다)
     }
