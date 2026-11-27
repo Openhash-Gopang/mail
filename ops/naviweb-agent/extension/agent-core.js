@@ -20,7 +20,7 @@ export function buildSystem(playbook) {
     '- 방금 신청해 처리완료된 서류는 신청 내역에서 "가장 위 행 + 접수 시각이 현재 시각 몇 분 안"인 건이 도우미가 신청한 건입니다. 이를 사용자에게 되묻거나 "기록으로 확인되지 않는다"며 멈추지 말고 곧바로 그 행의 "문서출력" 단추를 눌러 문서 보기 창을 열고 send_file_to_navi 로 나비웹에 보냅니다. 시각이 맞는 행이 없을 때만 다시 신청합니다. 신청 직후 화면이 신청 내역으로 바뀌는 것은 정상이며 로그인이 풀린 것이 아닙니다.',
     '- 정부24처럼 처리완료 화면의 링크가 파일이 아니라 화면(text/html)이면 포기하지 말고, 처리완료 상세 화면에서 "문서출력"(또는 저장·다운로드·PDF 저장) 단추를 눌러 문서 보기 창을 열고 문서가 화면에 보이면 인쇄·저장 단추를 누르지 말고 바로 ref 없이 send_file_to_navi 를 부릅니다(열린 문서 보기 화면에서 PDF 를 직접 가져오거나, 인쇄만 되는 뷰어면 화면을 PDF 로 만들어 보냅니다). 가져오지 못했다는 답이 오면 그 창의 저장 단추로 내려받은 뒤 다시 부릅니다. 새 창이 열리면 도우미가 그 창을 이어서 조작합니다. 인쇄 대화상자만 나오고 저장할 방법이 없을 때만 report_status 로 실패 이유를 알립니다.',
     '- 비슷한 이름이 여러 개면 고르기 전에 지역·번호 등으로 구별해 근거를 한 줄로 남깁니다.',
-    '- 팝업은 도우미가 직접 닫습니다. 작업에 필요 없는 팝업(공지·광고·이벤트·설문·앱 설치 권유 등)은 사용자에게 묻지 말고 닫은 뒤 하던 일을 이어 갑니다. 화면 안 팝업은 "닫기"·X 단추를 누르고("오늘 하루 보지 않기"가 있으면 함께 써도 됩니다), 새로 열린 팝업 창은 닫기 단추가 없거나 눌러도 남으면 close_popup 을 부릅니다. 닫은 뒤 read_page 로 사라졌는지 확인합니다. "화면 위에 팝업" 경고가 있는 동안 가려진 영역은 읽지 못한 것으로 봅니다.',
+    '- 팝업은 도우미가 직접 닫습니다. 승인은 도우미 프로그램이 작업마다 한 번만 받으므로, 팝업마다 닫을지 ask_choice 나 글로 묻지 않습니다. 작업에 필요 없는 팝업(공지·광고·이벤트·설문·앱 설치 권유 등)이 보이면 close_popup 을 한 번 부릅니다. close_popup 은 새로 열린 팝업 창과 화면 안 팝업을 모두 닫습니다. 그래도 남으면 그 "닫기"·X 단추를 click 합니다. 닫은 뒤 read_page 로 사라졌는지 확인합니다. "화면 위에 팝업" 경고가 있는 동안 가려진 영역은 읽지 못한 것으로 봅니다. 사용자가 승인하지 않았으면 다시 시도하지 않습니다.',
     '- 팝업은 닫기 전에 문구를 읽습니다. 지금 작업에 필요한 창(로그인·본인인증·인증서·결제·주소 검색·서류 보기·출력 등)은 닫지 말고 그 창에서 일을 진행합니다. 오류·점검·마감·기한처럼 작업에 영향을 주는 내용은 닫되 한 줄로 알립니다. 팝업을 없애려고 "동의·수락·허용·설치·구독·결제" 단추를 누르지 않습니다. 동의·설치·결제를 해야만 작업을 이어 갈 수 있으면 handoff_to_user 로 사용자에게 넘깁니다.',
     '- 메뉴·목록을 묻는 질문은 화면 위쪽 주 메뉴부터 빠짐없이 답하고, 요소 목록에 없어서 확인하지 못한 부분은 "확인하지 못했다"고 씁니다. 보지 못한 내용을 추측해 적지 않습니다.',
     '- 보고는 마크다운 기호(**, #) 없이 일반 문장과 "- " 목록으로 씁니다.',
@@ -65,8 +65,11 @@ function trimImages(messages, keep = 1) {
 export const PDV_KEYS = ['name', 'sido', 'address', 'phone', 'email'];
 export const needsAnswer = (t) => /알려\s*주세요|알려\s*주시|말씀해|선택해\s*주|정해\s*주|골라\s*주|어느\s*(것|쪽)|무엇을.*(할까요|드릴까요)|\?\s*$|까요\s*[?.]?\s*$/m.test(String(t || ''));
 
+export const POPUP_ASK = '작업을 가리는 팝업을 모두 닫을까요? 한 번 승인하면 이번 작업에서는 다시 묻지 않습니다. 로그인·본인인증·결제 창과 입력 중인 창은 닫지 않습니다.';
+
 export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
   let nudges = 0;
+  let popupOk = null;   // 팝업 닫기 승인: 작업마다 한 번만 묻는다
   const system = buildSystem(playbook);
   const extra = (playbook && playbook.allowedHosts) || [];
   const messages = [{ role: 'user', content: [{ type: 'text', text: goal }] }];
@@ -111,6 +114,18 @@ export async function runAgent({ goal, playbook, host, maxSteps = 70 }) {
         } else if (verdict.act === 'deny') say('거부됨: ' + verdict.reason);
         else if (verdict.act === 'handoff') { const h = await host.handoff(verdict.reason); say(h === 'say' ? '사용자가 완료를 누르지 않고 메시지를 보냈습니다. 아래 [사용자 메시지]를 보고 답하거나 행동하세요. 직접 입력이 아직 필요하면 handoff_to_user 를 다시 부르세요.' : '사용자가 직접 처리했습니다. 화면을 다시 확인하세요.'); }
         else if (verdict.act === 'confirm' && !(await host.ask(verdict.reason))) say('사용자가 거절했습니다. 진행하지 마세요.');
+        else if (verdict.act === 'popup') {
+          const first = popupOk === null;
+          if (first) popupOk = !!(await host.ask(POPUP_ASK));
+          if (!popupOk) say('사용자가 팝업 닫기를 승인하지 않았습니다. 팝업을 닫지 말고 다시 묻지도 마세요. 팝업 때문에 진행할 수 없으면 그 사실을 알리세요.');
+          else {
+            // 지정한 닫기 단추가 있으면 먼저 누른다. 승인 직후와 close_popup 은 남은 팝업까지 모두 닫는다.
+            const done = [];
+            if (u.name === 'click') done.push(String((await host.execTool(u.name, u.input)).text || '(ok)'));
+            if (u.name === 'close_popup' || first) done.push(String((await host.execTool('close_popup', {})).text || '(ok)'));
+            say(done.join('\n').slice(0, 6000));
+          }
+        }
         else {
           const r = await host.execTool(u.name, u.input);
           say(String(r.text || '(ok)').slice(0, u.name === 'read_page' || u.name === 'find' ? 10000 : 6000));

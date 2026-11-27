@@ -27,6 +27,8 @@ export function hostAllowed(url, extra = []) {
 // 어느 사이트든 다룬다. 이동은 https 이면 바로 하고, 입력·클릭은 아래 동작 규칙(classifyKnown)만 따른다.
 // opts.fetchJob: 나비웹의 "도우미가 가져오기"로 시작한 작업 — 사용자가 이미 그 서류를 받아 오라고 맡겼으므로 발급·다운로드 단추는 다시 묻지 않는다(제출·전송·삭제·동의·결제는 그대로 묻거나 직접).
 export function classify(tool, input = {}, info = {}, extraHosts = [], opts = {}) {
+  // 팝업 닫기는 작업마다 한 번만 승인을 받는다(0.7.12). 승인하면 모든 팝업을 닫고, 그 뒤로는 묻지 않는다.
+  if (tool === 'close_popup' || (tool === 'click' && isCloseControl(info))) return { act: 'popup' };
   if (tool === 'navigate') {
     return hostAllowed(input.url) ? { act: 'auto' } : { act: 'deny', reason: 'https 주소만 열 수 있습니다.' };
   }
@@ -55,7 +57,6 @@ function classifyKnown(tool, input = {}, info = {}, opts = {}) {
   }
   // 화면의 "로그인" 링크는 로그인 창(팝업)을 여는 일일 뿐이라 도우미가 직접 눌러 연다. 아이디·인증서 입력과 인증은 계속 사용자가 한다.
   if (tool === 'click' && info.tag === 'a' && /^(로그인|login)$/i.test(String(info.text || '').trim())) return { act: 'auto' };
-  if (tool === 'click' && isCloseControl(info)) return { act: 'auto' };
   if (tool === 'click' || tool === 'select_option') {
     const label = `${info.text || ''} ${info.name || ''}`;
     if (HANDOFF_TEXT.test(label)) return { act: 'handoff', reason: `"${(info.text || info.name || '').trim().slice(0, 30)}" 단계는 직접 진행해 주세요.` };

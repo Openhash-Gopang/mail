@@ -8,7 +8,7 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } },
   { name: 'click', description: 'ref 요소를 클릭한다.',
     input_schema: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } },
-  { name: 'close_popup', description: '작업 중에 새로 열린 팝업 창(공지·광고·안내 등, 지금 보고 있는 창)을 닫고 원래 화면으로 돌아간다. 화면 안에 뜬 팝업(레이어)은 이 도구가 아니라 그 "닫기"·X 단추를 click 한다. 처음 작업하던 창과 로그인·본인인증·결제 창은 닫을 수 없다.',
+  { name: 'close_popup', description: '모든 팝업을 한 번에 닫는다: 작업 중에 새로 열린 팝업 창(공지·광고·안내 등)과 화면 안에 뜬 팝업(레이어). 작업에 필요한 팝업(주소 검색·서류 보기 등)에서 일하는 중이면 그 일을 먼저 끝낸다. 처음 작업하던 창, 로그인·본인인증·결제 창, 입력칸이 있는 창은 남긴다.',
     input_schema: { type: 'object', properties: {}, required: [] } },
   { name: 'type', description: 'ref 입력칸에 글자를 넣는다. 비밀번호·카드·주민등록번호는 넣을 수 없다.',
     input_schema: { type: 'object', properties: { ref: { type: 'string' }, text: { type: 'string' }, submit: { type: 'boolean' } }, required: ['ref', 'text'] } },
