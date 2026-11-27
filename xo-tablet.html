@@ -40,6 +40,16 @@ th{color:var(--on);font-weight:600}
 .tag{display:inline-block;font-size:11px;line-height:18px;padding:0 6px;border:1px solid var(--line);border-radius:4px;margin-right:4px;font-weight:500;color:var(--on2);white-space:nowrap;vertical-align:1px}
 .small{font-size:13px}
 h4{font-size:15px;font-weight:600}
+.figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0}
+.fig{margin:0;border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px}
+.fig svg{display:block;width:100%;height:auto}
+.fig figcaption{margin-top:6px;font-size:13px;color:var(--on2);text-align:center}
+.sl{fill:none;stroke:var(--on2);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{fill:var(--pri);fill-opacity:.14;stroke:var(--pri);stroke-width:2}
+.sb{fill:var(--pri);fill-opacity:.35;stroke:none}
+.st{font:600 11px 'Pretendard',sans-serif;fill:var(--on2);text-anchor:middle}
+.sd{fill:none;stroke:var(--pri);stroke-width:2;stroke-dasharray:5 4;stroke-linecap:round}
+@media (max-width:700px){.figs{grid-template-columns:1fr}}
 @media (max-width:700px){.key{grid-template-columns:1fr}h1{font-size:24px}.wrap{padding:24px 16px 48px}}
 </style>
 </head>
@@ -91,6 +101,27 @@ h4{font-size:15px;font-weight:600}
 <section id="t3">
 <h2><span class="n">3</span>사용 형태</h2>
 <p>같은 소프트웨어와 같은 서명 구조를 두 가지 형태의 기기에서 쓴다.</p>
+<div class="figs">
+<figure class="fig"><svg viewBox="0 0 360 236" role="img" aria-label="스마트폰과 키보드를 붙인 태블릿이 블루투스로 연결된 그림">
+<rect class="sp" x="22" y="78" width="58" height="108" rx="11"/><rect class="sb" x="30" y="92" width="42" height="6" rx="3"/><rect class="sb" x="30" y="104" width="30" height="6" rx="3"/><circle class="sl" cx="51" cy="174" r="4"/>
+<rect class="sl" x="132" y="22" width="206" height="128" rx="11"/><rect class="sp" x="140" y="30" width="190" height="112" rx="6"/>
+<rect class="sb" x="150" y="40" width="80" height="8" rx="4"/><rect class="sb" x="150" y="56" width="150" height="6" rx="3"/><rect class="sb" x="150" y="68" width="130" height="6" rx="3"/><rect class="sb" x="150" y="80" width="140" height="6" rx="3"/><rect class="sb" x="150" y="100" width="60" height="22" rx="5"/>
+<rect class="sl" x="122" y="160" width="226" height="48" rx="8"/>
+<path class="sl" d="M138 170h194M138 180h194M138 190h110"/><rect class="sl" x="268" y="184" width="52" height="18" rx="4"/>
+<path class="sd" d="M84 132C100 132 108 120 126 104"/>
+<text class="st" x="51" y="206">스마트폰</text><text class="st" x="105" y="124" style="text-anchor:start" transform="translate(-4 -6)"></text><text class="st" x="235" y="226">태블릿 + 키보드·트랙패드</text>
+</svg><figcaption>① 폰 + 태블릿 결합: 두 기기가 블루투스·Wi‑Fi Direct로 연결된다</figcaption></figure>
+<figure class="fig"><svg viewBox="0 0 360 236" role="img" aria-label="펼치면 태블릿, 접으면 폰이 되는 폴드형 폰 그림">
+<rect class="sl" x="16" y="30" width="226" height="150" rx="12"/><rect class="sp" x="24" y="38" width="210" height="134" rx="7"/>
+<path class="sl" d="M129 36v138" style="stroke-dasharray:3 4"/>
+<rect class="sb" x="36" y="50" width="70" height="8" rx="4"/><rect class="sb" x="36" y="66" width="76" height="6" rx="3"/><rect class="sb" x="36" y="78" width="64" height="6" rx="3"/>
+<rect class="sb" x="146" y="50" width="76" height="6" rx="3"/><rect class="sb" x="146" y="62" width="64" height="6" rx="3"/><rect class="sb" x="146" y="74" width="70" height="6" rx="3"/><rect class="sb" x="146" y="96" width="56" height="22" rx="5"/>
+<path class="sl" d="M258 105h26m-8-8 8 8-8 8"/>
+<rect class="sp" x="300" y="60" width="44" height="90" rx="10"/><rect class="sb" x="307" y="74" width="30" height="5" rx="2.5"/><rect class="sb" x="307" y="85" width="22" height="5" rx="2.5"/><circle class="sl" cx="322" cy="140" r="3"/>
+<text class="st" x="129" y="204">펼침: 태블릿</text><text class="st" x="322" y="174">접음: 폰</text>
+</svg><figcaption>② 폴드형 폰: 한 기기가 접으면 폰, 펼치면 태블릿이 된다</figcaption></figure>
+</div>
+<p class="small">그림은 개념을 나타내는 그림이며 실제 제품의 모양이 아니다.</p>
 <div class="tbl"><table>
 <tr><th></th><th>① 폰 + 태블릿 결합</th><th>② 폴드형 폰(둘을 합친 한 기기)</th></tr>
 <tr><td>구성</td><td>스마트폰과 태블릿이 따로 있다. 폰은 주머니에 두고, 태블릿에 키보드와 트랙패드(마우스, 펜)를 붙여 쓴다.</td><td>접으면 폰, 펼치면 태블릿이 되는 한 기기. 펼친 화면에 키보드와 트랙패드를 연결해 쓴다.</td></tr>
