@@ -1,6 +1,6 @@
 /* ═════════════════════════════════════════════════
    case-ui.js — 업무(Case) 화면: 맡은 일 · 맡긴 일 · 나 홀로  (M4 첫 조각)
-   2026-11-06: 나비 길잡이는 하위 메뉴 없이 위쪽 탭(진행 중·완료·맡긴 일·맡은 일)이다. 나 홀로 목록은 진행 중·완료 탭 안에 나오고(fillSolo), tab-casesolo 는 그 일의 상세 화면만 그린다.
+   2026-11-28: PC 화면(desktop.html, TaskHomeHost 가 있는 곳)에서는 업무 목록을 따로 두지 않는다 — 목록은 과제 화면(task-home.js) 하나이고, 이 파일은 과제 상세 모양의 업무 상세와 업무 만들기(create)를 맡는다. 다른 화면(webapp.html)은 예전 목록을 쓴다.
    2026-11-01. desktop.html 의 왼쪽 메뉴 "나비 길잡이 → 업무"와 3개 패널(위쪽 세 탭으로 전환, 2026-11-06)(tab-caseprov/casecons/casesolo)을 그린다.
    - 업무 메뉴는 기본으로 보인다(2026-11-05). 끄려면 주소에 ?case=0 (localStorage kmail_case_ui=0 로 기억), 다시 켜려면 ?case=1.
    - 모든 기록은 이 기기의 PDV(IndexedDB hondi_case_store)에만 저장한다. 서버로는 해시만(큐에 쌓임).
@@ -90,18 +90,14 @@
     return '<div class="cs-card cs-notes"><b>나비 비서 알림</b>' + f.slice(0, 8).map(function (x) { return '<div class="cs-note-row' + (x.severity >= 3 ? ' cs-bad' : '') + '">' + esc(x.text) + '</div>'; }).join('') +
       '<div class="cs-sub">이 기기의 기록에서 계산한 알림입니다. 법적 결과를 보장하지 않으며, 중요한 판단은 인간 전문가의 조언을 구하세요.</div></div>';
   }
-  /** 화면 위쪽 탭(진행 중·완료·맡긴 일·맡은 일) — desktop.html 의 _gtabsHtml. 나 홀로 상세는 일의 상태에 따라 진행 중(미종료)·완료(종료·보관)가 켜진다. */
   function isDone(c) { return c.state === 'closed' || c.state === 'archived'; }
-  function modesHtml(name, state) {
-    var on = name === 'casesolo' ? (state === 'closed' || state === 'archived' ? 'gdone' : 'gprog') : name;
-    return typeof root._gtabsHtml === 'function' ? root._gtabsHtml(on) : '';
-  }
+  /** 과제 화면이 있는 페이지(PC)인가 */
+  function hub() { return !!(root.TaskHomeHost && root.TaskHome); }
   async function renderList(name) {
-    if (name === 'casesolo') { if (typeof root._switchTab === 'function') root._switchTab('gprog'); return; }   // 나 홀로 목록은 진행 중·완료 탭에 있다
+    if (hub()) { cur[name] = null; if (typeof root._switchTab === 'function') root._switchTab('tasks'); return; }   // 목록은 과제 화면 하나
     var p = $('tab-' + name), m = MODES[name]; if (!p) return;
     var cases = mineOf(name, await getStore().listCases()).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
-    p.innerHTML = modesHtml(name) +
-      '<div class="cs-head"><div><h2 class="cs-h">' + esc(m.label) + '</h2><div class="cs-sub">' + esc(m.blurb) + '</div></div>' +
+    p.innerHTML = '<div class="cs-head"><div><h2 class="cs-h">' + esc(m.label) + '</h2><div class="cs-sub">' + esc(m.blurb) + '</div></div>' +
       '<button class="cs-btn cs-pri" data-act="new">+ 새 일</button></div>' +
       '<div id="cs-form-' + name + '"></div>' + await notesHtml() +
       (cases.length ? '<div class="cs-list">' + cases.map(function (c) {
@@ -123,25 +119,36 @@
   }
 
   async function createFromForm(name) {
-    var m = MODES[name], title = ($('cs-f-title').value || '').trim(), msg = $('cs-f-msg');
-    if (!title) { msg.textContent = '제목을 입력하세요.'; return; }
+    var msg = $('cs-f-msg'), mailNow = $('cs-f-sendmail');
+    var r = await create(name, { title: $('cs-f-title').value, kind: $('cs-f-kind').value, email: ($('cs-f-email') || {}).value, sendMail: !!(mailNow && mailNow.checked) });
+    if (!r.ok) { msg.textContent = r.error; return; }
+    await openNew(name, r.id);
+  }
+  /** 업무 만들기(화면과 무관). name = caseprov|casecons|casesolo, o = {title, kind, email, sendMail} → {ok, id, error} */
+  async function create(name, o) {
+    var m = MODES[name], title = String(o.title || '').trim(), kind = KIND[o.kind] ? o.kind : 'case';
+    if (!m) return { ok: false, error: '알 수 없는 업무 종류입니다.' };
+    if (!title) return { ok: false, error: '제목을 입력하세요.' };
+    var H = host(); if (H) { try { await H.initLocal(); } catch (_) {} }
     var id = newId(), s = getStore();
-    var r = await s.createCase(m.solo ? { mode: 'solo', case_id: id, title: title, kind: $('cs-f-kind').value }
-      : { case_id: id, title: title, kind: $('cs-f-kind').value, my_side: m.side });
-    if (!r.ok) { msg.textContent = r.error || '실패'; return; }
+    var r = await s.createCase(m.solo ? { mode: 'solo', case_id: id, title: title, kind: kind }
+      : { case_id: id, title: title, kind: kind, my_side: m.side });
+    if (!r.ok) return { ok: false, error: r.error || '실패' };
     if (!m.solo) {
-      var email = (($('cs-f-email') || {}).value || '').trim();
+      var email = String(o.email || '').trim();
       if (email) {
         var inv = await root.CaseInvite.createInvitation({ case_id: id, inviter_id: cfg().userId || 'me', inviter_side: m.side, invitee_email: email, signup_base: cfg().signupBase || 'https://naviweb.kr/i' });   // naviweb.kr/i → Cloudflare 리디렉션 → K-Mail(?case=1&inv=…), PC·폰 공통
-        if (!inv.ok) { msg.textContent = inv.errors.join(', '); return; }
+        if (!inv.ok) return { ok: false, id: id, created: true, error: inv.errors.join(', ') };
         await s.patchCase(id, { invitation: inv.invitation, invite_link: inv.link });
         await s.append(id, { type: 'invite_issued', actor_side: m.side, visibility: 'internal', payload: { token_hash: inv.invitation.token_hash, expires_at: inv.invitation.expires_at } });
-        if (host()) { try { await host().registerInvite(id); } catch (_) { /* 로그인 전·오프라인이면 상세 화면의 "초대 등록" 버튼으로 다시 */ } }
-        var mailNow = $('cs-f-sendmail');
-        if (host() && mailNow && mailNow.checked) { try { var sm = await host().sendInviteMail(id); if (!sm.ok) cur['inv-msg'] = '초대 메일을 보내지 못했습니다(' + errText(sm) + '). 아래 버튼으로 다시 보내거나 링크를 직접 전달하세요.'; } catch (_) {} }
+        if (H) { try { await H.registerInvite(id); } catch (_) { /* 로그인 전·오프라인이면 상세 화면의 "초대 등록" 버튼으로 다시 */ } }
+        if (H && o.sendMail) { try { var sm = await H.sendInviteMail(id); if (!sm.ok) cur['inv-msg'] = '초대 메일을 보내지 못했습니다(' + errText(sm) + '). 아래 버튼으로 다시 보내거나 링크를 직접 전달하세요.'; } catch (_) {} }
       }
     }
-    if (m.solo) { cur[name] = id; cur[name + ':tab'] = 'all'; if (typeof root._switchTab === 'function') root._switchTab('casesolo'); return; }
+    return { ok: true, id: id };
+  }
+  async function openNew(name, id) {
+    if (hub() || MODES[name].solo) { cur[name] = id; cur[name + ':tab'] = 'all'; cur[name + ':dtab'] = 'todo'; if (typeof root._switchTab === 'function') root._switchTab(name); return; }
     await openCase(name, id);
   }
 
@@ -223,15 +230,22 @@
     }
     var pending = (await getStore().flushAnchors(0)).pending;
     cur[name + ':st'] = c.state;
-    p.innerHTML = modesHtml(name, c.state) +
-      '<div class="cs-head"><div><button class="cs-link" data-act="back">← ' + esc(m.solo ? (isDone(c) ? '완료' : '진행 중') : m.label) + '</button><h2 class="cs-h">' + esc(c.title) + '</h2>' +
+    var parts = {
+      logTabs: '<div class="cs-tabs"><button class="cs-tab' + (tab === 'all' ? ' on' : '') + '" data-act="tab" data-t="all">진행 기록</button>' +
+        '<button class="cs-tab' + (tab === 'comm' ? ' on' : '') + '" data-act="tab" data-t="comm">소통 이력</button></div>',
+      forms: c.state !== 'archived' ? formsHtml(m) : '',
+      timeline: '<div class="cs-tl">' + (shown.length ? shown.map(function (e) { return entryHtml(e, m); }).join('') : '<div class="cs-empty">기록이 없습니다.</div>') + '</div>',
+      integrity: '<span class="' + (v.ok ? 'cs-ok' : 'cs-bad') + '">' + (v.ok ? '기록 무결성 확인됨 (' + v.length + '건)' : '⚠ 기록 변조 의심 (#' + v.brokenAt + ')') + '</span>'
+    };
+    if (hub()) { p.innerHTML = await hubDetailHtml(name, c, h, ki, H, acts, pending, parts); if (root.TaskHomeHost.painted) root.TaskHomeHost.painted(true); return; }
+    p.innerHTML = '<div class="cs-head"><div><button class="cs-link" data-act="back">← ' + esc(m.label) + '</button><h2 class="cs-h">' + esc(c.title) + '</h2>' +
       '<div class="cs-sub">' + esc(KIND[c.kind] || c.kind) + ' · <span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span>' +
       ' · <span class="' + (v.ok ? 'cs-ok' : 'cs-bad') + '">' + (v.ok ? '기록 무결성 확인됨 (' + v.length + '건)' : '⚠ 기록 변조 의심 (#' + v.brokenAt + ')') + '</span>' +
       ' · 이 기기의 해시 전송 대기 ' + pending + '건</div></div><div class="cs-actions">' + acts + '</div></div>' +
-      (!m.solo ? connHtml(c, ki, h) : '') + deadlinesHtml(c) +
-      '<div class="cs-tabs"><button class="cs-tab' + (tab === 'all' ? ' on' : '') + '" data-act="tab" data-t="all">진행 기록</button>' +
-      '<button class="cs-tab' + (tab === 'comm' ? ' on' : '') + '" data-act="tab" data-t="comm">소통 이력</button></div>' +
-      (c.state !== 'archived' ? '<div class="cs-card"><div class="cs-two">' +
+      (!m.solo ? connHtml(c, ki, h) : '') + deadlinesHtml(c) + parts.logTabs + parts.forms + parts.timeline;
+  }
+  function formsHtml(m) {
+    return '<div class="cs-card"><div class="cs-two">' +
         '<div><label>메모<textarea id="cs-note" rows="2" placeholder="진행 상황을 기록"></textarea></label>' +
         (m.solo ? '' : '<label class="cs-inl"><input type="checkbox" id="cs-note-shared"> 상대에게 공유</label>') +
         '<button class="cs-btn cs-pri" data-act="add-note">기록 추가</button></div>' +
@@ -241,19 +255,44 @@
         '<input id="cs-c-place" placeholder="어디서(대면은 필수)"><select id="cs-c-pu">' + Object.keys(PURPOSE).map(function (k) { return '<option value="' + k + '">' + PURPOSE[k] + '</option>'; }).join('') + '</select></div>' +
         '<textarea id="cs-c-sum" rows="2" placeholder="무엇을(내용 요약)"></textarea>' +
         (m.solo ? '' : '<label class="cs-inl"><input type="checkbox" id="cs-c-shared"> 상대에게 공유</label>') +
-        '<button class="cs-btn" data-act="add-comm">소통 기록 추가</button><div id="cs-c-msg" class="cs-msg"></div></div></div></div>' : '') +
-      '<div class="cs-tl">' + (shown.length ? shown.map(function (e) { return entryHtml(e, m); }).join('') : '<div class="cs-empty">기록이 없습니다.</div>') + '</div>';
+        '<button class="cs-btn" data-act="add-comm">소통 기록 추가</button><div id="cs-c-msg" class="cs-msg"></div></div></div></div>';
+  }
+  // 과제 상세와 같은 틀(2026-11-28): 위 = 상태·역할·제목·상태 단추, 탭 = 할 일·기록·메일·서류·계획·결과, 오른쪽 = 기한·상대방·과제 정보
+  async function hubDetailHtml(name, c, h, ki, H, acts, pending, parts) {
+    var m = MODES[name], T = root.TaskHome, P = T._pure, key = 'case:' + c.case_id, dtab = cur[name + ':dtab'] || 'todo', over = isDone(c) || c.state === 'declined' || c.state === 'expired';
+    var stage = { proposed: '개시 전', agreed: '개시 전', active: '진행 중', closing: '진행 중', on_hold: '보류', closed: '완료', archived: '완료', declined: '성립 안 됨', expired: '성립 안 됨' }[c.state] || '진행 중';
+    var cls = { '진행 중': 'run', '개시 전': 'pre', '완료': 'done', '보류': 'hold' }[stage] || 'off';
+    var no = P.taskNo(c.case_id, Date.parse(c.created_at) || 0), body = '';
+    if (dtab === 'log') body = parts.logTabs + parts.forms + parts.timeline;
+    else if (dtab === 'files') body = T.filesHtml(key);
+    else if (dtab === 'plan') {
+      var changes = h.filter(function (e) { return e.type.indexOf('state_') === 0; }).reverse();
+      body = '<div class="tk-sub">업무에는 계획서가 따로 없습니다. 상태가 바뀐 기록과 결과를 보여 줍니다.</div>' + (changes.length ? '<div class="cs-tl">' + changes.map(function (e) { return entryHtml(e, m); }).join('') + '</div>' : '<div class="tk-empty">상태가 바뀐 기록이 없습니다.</div>');
+    } else {
+      var A = assist(), notes = []; if (A && A.findings) { try { notes = (await A.findings()).filter(function (f) { return f.case_id === c.case_id; }); } catch (_) {} }
+      var need = { proposed: '합의 확인이 필요합니다', agreed: '진행 시작 전입니다', closing: '종료 협의 중입니다' }[c.state] || '';
+      var ds = (c.deadlines || []).slice().sort(function (a, b) { return String(a.due).localeCompare(String(b.due)); });
+      body = (need ? '<div class="tk-source bad">' + esc(need) + '. 위쪽 단추로 처리하세요.</div>' : '') +
+        notes.map(function (f) { return '<div class="tk-source' + (f.severity >= 3 ? ' bad' : '') + '">나비 비서 알림 · ' + esc(f.text) + '</div>'; }).join('') +
+        (!over && ds.length ? '<ul class="tk-todos">' + ds.map(function (d) { return '<li><span>' + esc(d.label) + '</span><small class="tk-due">' + esc(String(d.due).slice(0, 10)) + '</small></li>'; }).join('') + '</ul>' : '<div class="tk-empty">' + (over ? '끝난 업무입니다.' : '정해진 기한이 없습니다. 오른쪽 “기한”에서 추가하세요.') + '</div>');
+    }
+    var side = (over ? '' : deadlinesHtml(c)) + (!m.solo ? connHtml(c, ki, h) : '') +
+      '<section class="tk-card2"><h4>과제 정보</h4><dl><dt>식별 코드</dt><dd>' + esc(no) + '</dd><dt>종류</dt><dd>' + esc(KIND[c.kind] || c.kind) + '</dd><dt>무결성</dt><dd>' + parts.integrity + '</dd><dt>저장 위치</dt><dd>이 기기(해시 전송 대기 ' + pending + '건)</dd></dl><div class="tk-sub">기록은 이 기기에만 저장되며, 네트워크에는 해시만 기록됩니다.</div></section>';
+    return '<button type="button" class="tk-link" data-act="back">← 과제 목록</button>' +
+      '<div class="tk-dhead"><div class="tk-chips"><span class="tk-tag ' + cls + '">' + stage + '</span><span class="tk-tag off">' + esc(m.solo ? '자체 진행' : m.label) + '</span><span class="tk-tag off">' + esc(STATE[c.state] || c.state) + '</span></div><h2>' + esc(c.title) + '</h2><div class="tk-sub">식별 코드 ' + esc(no) + '</div><div class="cs-actions tk-actions">' + acts + '</div></div>' +
+      '<div class="tk-detail"><div class="tk-main"><div class="cs-modes tk-dtabs" role="tablist">' + [['todo', '할 일'], ['log', '기록'], ['files', '메일·서류'], ['plan', '계획·결과']].map(function (x) { return '<button type="button" role="tab" class="cs-mode' + (x[0] === dtab ? ' on' : '') + '" aria-selected="' + (x[0] === dtab) + '" data-act="dtab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><div class="tk-body">' + body + '</div></div><aside class="tk-side">' + side + '</aside></div>';
   }
 
   async function onClick(name, ev) {
     var t = ev.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act'), s = getStore(), m = MODES[name], id = cur[name];
-    if (act === 'mode') { var to = t.getAttribute('data-m'); if (MODES[to] && to !== name && typeof root._switchTab === 'function') root._switchTab(to); }
+    if (act === 'dtab') { cur[name + ':dtab'] = t.getAttribute('data-v'); await openCase(name, id); }
+    else if ((act === 'unlink' || act === 'file-open' || act === 'mail-new' || act === 'doc-new') && hub()) root.TaskHome.onFileAct(t, function () { openCase(name, id); });
     else if (act === 'new') newForm(name);
     else if (act === 'cancel-new') $('cs-form-' + name).innerHTML = '';
     else if (act === 'create') await createFromForm(name);
     else if (act === 'open') { cur[name + ':from'] = null; cur[name + ':tab'] = 'all'; await openCase(name, t.getAttribute('data-id')); }
-    else if (act === 'back') { if (cur[name + ':from'] === 'tasks') { cur[name] = null; cur[name + ':from'] = null; if (typeof root._switchTab === 'function') root._switchTab('tasks'); } else if (m.solo) { cur[name] = null; if (typeof root._switchTab === 'function') root._switchTab(cur[name + ':st'] === 'closed' || cur[name + ':st'] === 'archived' ? 'gdone' : 'gprog'); } else await renderList(name); }
+    else if (act === 'back') { if (hub()) { cur[name] = null; cur[name + ':from'] = null; if (typeof root._switchTab === 'function') root._switchTab('tasks'); } else await renderList(name); }
     else if (act === 'tab') { cur[name + ':tab'] = t.getAttribute('data-t'); await openCase(name, id); }
     else if (act === 'copy') { var i = $('cs-invite-link'); i.select(); try { document.execCommand('copy'); t.textContent = '복사됨'; } catch (_) {} }
     else if (act === 'add-note') {
@@ -272,7 +311,7 @@
       if (!m.solo && sh2 && sh2.checked && !(await gate(name, { type: 'case.share', effect: 'external' }, { has_sensitive: hasSens([$('cs-c-sum').value, $('cs-c-with').value, $('cs-c-place').value].join(' ')) }))) return;
       await s.append(id, { type: 'comm', actor_side: m.side, visibility: sh2 && sh2.checked ? 'shared' : 'internal', payload: r.value });
       if (!m.solo) await pushOut(id);
-      cur[name + ':tab'] = 'comm'; await openCase(name, id);
+      cur[name + ':tab'] = 'comm'; cur[name + ':dtab'] = 'log'; await openCase(name, id);
     } else if (act === 'tr') {
       var evn = t.getAttribute('data-ev'), ctx = { side: m.side }, entry = {};
       if (evn === 'close_self' || evn === 'request_close') {
@@ -329,43 +368,12 @@
 
   function note(name, r) { var el = $('cs-sync-msg') || $('cs-c-msg'); if (el) { el.style.color = ''; el.textContent = errText(r); } else if (typeof alert === 'function') alert(errText(r)); }
 
-  /** 진행 중·완료 탭 아래의 "나 홀로 일" 목록. kind = 'prog'(끝나지 않은 일 + ＋ 새 일) | 'done'(종료·보관). */
-  function fillSolo(kind) {
-    var box = $('g' + kind + '-solo'); if (!box) return Promise.resolve();
-    if (!enabled()) { box.innerHTML = ''; return Promise.resolve(); }
-    if (!box.__csBound) { box.__csBound = true; box.addEventListener('click', function (ev) {
-      var t = ev.target.closest('[data-act]'); if (!t) return; var act = t.getAttribute('data-act');
-      if (act === 'new') newForm('casesolo');
-      else if (act === 'cancel-new') { var f = $('cs-form-casesolo'); if (f) f.innerHTML = ''; }
-      else if (act === 'create') createFromForm('casesolo');
-      else if (act === 'open') { cur['casesolo:from'] = null; cur.casesolo = t.getAttribute('data-id'); cur['casesolo:tab'] = 'all'; if (typeof root._switchTab === 'function') root._switchTab('casesolo'); }
-    }); }
-    var H = host();
-    return (H ? H.initLocal().catch(function () {}) : Promise.resolve()).then(function () { return getStore().listCases(); }).then(function (all) {
-      var list = all.filter(function (c) { return c.mode === 'solo' && (kind === 'done') === isDone(c); }).sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
-      box.innerHTML = '<div class="cs-solo-h"><b>나 홀로 일</b><span class="cs-sub">상대 없이 내가 직접 처리하는 일</span>' + (kind === 'prog' ? '<button class="cs-btn cs-pri" data-act="new">+ 새 일</button>' : '') + '</div>' +
-        '<div id="cs-form-casesolo"></div>' +
-        (list.length ? '<div class="cs-list">' + list.map(function (c) {
-          return '<button class="cs-row" data-act="open" data-id="' + esc(c.case_id) + '"><span class="cs-title">' + esc(c.title) + '</span><span class="cs-meta">' + esc(KIND[c.kind] || c.kind) + '</span><span class="cs-badge cs-st-' + esc(c.state) + '">' + esc(STATE[c.state] || c.state) + '</span></button>';
-        }).join('') + '</div>' : '<div class="cs-empty">' + (kind === 'done' ? '완료한 나 홀로 일이 없습니다.' : '진행 중인 나 홀로 일이 없습니다. “+ 새 일”로 시작하세요.') + '</div>');
-    }).catch(function () { box.innerHTML = ''; });
-  }
-
-  /** 과제 첫 화면에서 업무 하나를 연다. 뒤로를 누르면 과제 첫 화면으로 돌아간다. */
+  /** 과제 목록에서 업무 하나를 연다. 뒤로를 누르면 과제 목록으로 돌아간다. */
   function openFrom(name, id) {
     if (!MODES[name]) return;
-    cur[name] = id; cur[name + ':tab'] = 'all'; cur[name + ':from'] = 'tasks';
+    cur[name] = id; cur[name + ':tab'] = 'all'; cur[name + ':dtab'] = 'todo';
     if (typeof root._switchTab === 'function') root._switchTab(name);
   }
-  /** 과제 첫 화면의 "＋ 새 과제": 해당 역할의 화면으로 가서 새 일 입력란을 연다. */
-  function startNew(name) {
-    if (!MODES[name] || typeof root._switchTab !== 'function') return Promise.resolve();
-    cur[name] = null; cur[name + ':from'] = null;
-    var solo = name === 'casesolo';
-    root._switchTab(solo ? 'gprog' : name);
-    return Promise.resolve(solo ? fillSolo('prog') : show(name)).then(function () { newForm(name); var f = $('cs-form-' + name); if (f && f.scrollIntoView) f.scrollIntoView({ block: 'center' }); });
-  }
-
   function show(name) {
     if (!MODES[name]) return;
     var p = $('tab-' + name); if (!p) return;
@@ -409,7 +417,7 @@
   }
   function applyFlag() { inviteBanner(); }
 
-  root.CaseUI = { show: show, openFrom: openFrom, startNew: startNew, fillSolo: fillSolo, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
+  root.CaseUI = { show: show, openFrom: openFrom, create: create, openNew: openNew, enabled: enabled, applyFlag: applyFlag, MODES: MODES, _store: getStore, _reset: function () { store = null; cur = {}; } };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyFlag); else applyFlag();
   }

@@ -56,21 +56,37 @@ test('기록: 최근 것이 먼저, 새 줄은 "## 기록" 절 끝에만 더해�
   assert.equal(T.toggleTodo(u, line), t);
 });
 
-test('왼쪽 메뉴: "과제" 하나와 하위 항목 4개. 옛 서류·메일 메뉴는 보이지 않는 칸에 남긴다', () => {
+test('왼쪽 메뉴: "과제" 단일 항목 — 하위 메뉴와 옛 서류·메일 메뉴는 없다', () => {
   const h = R('desktop.html'), nav = h.slice(h.indexOf('<nav class="side-nav"'), h.indexOf('</nav>'));
-  const legacy = nav.indexOf('<div id="nav-legacy" hidden>');
-  assert.ok(legacy > 0);
-  const ids = ['tab-btn-guidenav', 'task-sub-mail', 'task-sub-docs', 'task-sub-quick', 'task-sub-contacts'].map((i) => nav.indexOf('id="' + i + '"'));
-  assert.ok(ids.every((x, i) => x > 0 && x < legacy && (!i || x > ids[i - 1])));
-  for (const id of ['tab-btn-docs', 'tab-btn-mail', 'tab-btn-docwrite', 'tab-btn-quicksend', 'tab-btn-contacts']) assert.ok(nav.indexOf('id="' + id + '"') > legacy, id);
-  assert.ok(nav.includes('data-label="과제"') && nav.includes('data-for="mail-all"') && nav.includes('data-for="docs-all"'));
+  assert.ok(nav.includes('id="tab-btn-guidenav"') && nav.includes('data-label="과제"'));
+  for (const id of ['nav-legacy', 'task-sub-mail', 'task-sub-docs', 'task-sub-quick', 'task-sub-contacts', 'tab-btn-docs', 'tab-btn-mail', 'tab-btn-quicksend', 'tab-btn-contacts']) assert.ok(!h.includes('id="' + id + '"'), id);
   const en = JSON.parse(R('i18n/en.js').match(/\["en"\] = (\{[\s\S]*\});/)[1]);
-  for (const k of ['과제', '전체 메일', '전체 서류', '빠른 작성·발송', '주소록·캠페인', '내 과제']) assert.ok(en[k], k);
+  for (const k of ['과제', '메일', '서류', '새로 만들기', '새 과제', '메일 쓰기', '주소록', '양식함', '과제 검색', '메일 검색', '서류 검색']) assert.ok(en[k], k);
 });
 
-test('과제 화면 연결: 탭·주소·화면 전환, 예시 데이터는 싣지 않는다', () => {
+test('과제 화면 연결: 탭·주소·옛 주소 전환, 예시 데이터는 싣지 않는다', () => {
   const h = R('desktop.html');
-  assert.ok(h.includes('id="tab-tasks"') && h.includes('id="task-root"') && h.includes('src="task-home.js?v='));
-  assert.ok(h.includes("_switchTab('tasks')") && h.includes('window.TaskHomeHost = {') && h.includes("if (h === 'tasks') { _switchTab('tasks'); return; }"));
-  assert.ok(R('case-ui.js').includes('openFrom: openFrom, startNew: startNew'));
+  assert.ok(h.includes('id="tab-tasks"') && h.includes('id="task-root"') && h.includes('src="task-home.js?v=') && h.includes('src="hub.js?v=') && h.includes('src="task-links.js?v='));
+  assert.ok(h.includes('window.TaskHomeHost = {') && h.includes('window.HubHost'));
+  assert.ok(h.includes("const _OLD_HASH = ['gprog', 'gdone', 'campaigns', 'camphist', 'quicksend', 'docdrafts', 'docdone', 'docbox'];"));
+  for (const id of ['tab-tasks', 'tab-mail', 'tab-docs']) assert.ok(h.includes('id="' + id + '"'), id);
+  for (const id of ['tab-gprog', 'tab-gdone', 'tab-campaigns', 'tab-camphist', 'tab-quicksend', 'tab-docdrafts', 'tab-docdone']) assert.ok(!h.includes('id="' + id + '"'), id);
+  assert.match(R('case-ui.js'), /create: create, openNew: openNew/);
+  const paths = R('ops/naviweb-proxy/mail-paths.js');
+  for (const f of ['task-home.js', 'task-links.js', 'hub.js']) assert.ok(paths.includes('"' + f + '"'), f + ' 중계 목록');
+});
+
+test('메일 캠페인은 과제 한 줄이 된다: 작성 중=개시 전, 예약·회신 수집=진행 중, 종료=완료, 실패=확인 필요', () => {
+  const rows = T.buildRows({}, [], [], [
+    { id: 'a', title: '초안', status: 'draft' },
+    { id: 'b', title: '예약', status: 'scheduled', send_at: '2026-12-01T00:00:00Z', recipients: 3 },
+    { id: 'c', title: '수집', status: 'sent', collect_replies_until: '2026-12-10T00:00:00Z' },
+    { id: 'd', title: '끝', status: 'sent', closed_at: '2026-11-01T00:00:00Z' },
+    { id: 'e', title: '실패', status: 'failed' },
+  ]);
+  const by = Object.fromEntries(rows.map((r) => [r.id, r]));
+  assert.deepEqual(['a', 'b', 'c', 'd', 'e'].map((k) => by[k].stage), ['개시 전', '진행 중', '진행 중', '완료', '진행 중']);
+  assert.deepEqual([by.b.due, by.b.recipients, by.c.next, by.d.due, by.d.next], ['2026-12-01', 3, '회신 수집', '', '']);
+  assert.ok(rows.every((r) => r.type === 'campaign' && r.role === 'solo' && r.key === 'campaign:' + r.id));
+  assert.deepEqual(T.todayItems(rows, [], '2026-11-28').map((x) => x.key), ['campaign:e']);
 });

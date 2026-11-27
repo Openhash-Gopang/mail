@@ -113,8 +113,10 @@ window.addEventListener('load', () => {
 <script src="assistant-runtime.js?v=20261101e"></script>
 <script src="assistant-host.js?v=20261101e"></script>
 <script src="case-host.js?v=20261101d"></script>
-<script src="case-ui.js?v=20261127a"></script>
-<script src="task-home.js?v=20261127b"></script>
+<script src="task-links.js?v=20261128a"></script>
+<script src="case-ui.js?v=20261128a"></script>
+<script src="task-home.js?v=20261128a"></script>
+<script src="hub.js?v=20261128a"></script>
 <script src="case-assist.js?v=20261101f"></script>
 <script src="https://hondi.net/lib/klaw-engine.js?v=20261102"></script>
 <script src="verdict-host.js?v=20261102"></script>
@@ -210,7 +212,7 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 /* 2026-10-28 — 안 읽은 메일 개수 배지(받은메일함 오른쪽) */
 .unread-badge{display:inline-block;min-width:18px;padding:1px 6px;margin-left:6px;border-radius:999px;background:#1A73E8;color:#fff;font-size:10.5px;font-weight:800;line-height:16px;text-align:center;vertical-align:middle}
 .unread-badge[hidden]{display:none}
-.nav-subitem .unread-badge{float:right;margin-top:1px}
+
 .list-item.is-unread .li-title{font-weight:800}
 .list-item.is-unread .li-title::before{content:"● ";color:#D92D20;font-size:10px;vertical-align:middle}
 .mail-sub{display:none}
@@ -486,20 +488,20 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 /* 서류를 고르면(2026-11-05) 입력 필드를 화면에서 아예 없앤다. 새 서류는 작성 완료·Draft 저장 뒤 왼쪽 메뉴의 홈(또는 로고)으로 새 입력 필드를 불러와 시작한다. */
 #tab-compose[data-docopen="1"].doc-live .chat-composer{display:none!important}
 /* nav-mail-group — 메일 하위 메뉴가 길어졌으므로 묶음 사이에 가는 선, 링크 모양을 버튼과 같게 */
-.side-nav .nav-sub .nav-sep{height:1px;background:var(--bdr);margin:6px 8px}
-.side-nav .nav-sub a.nav-subitem{text-decoration:none;box-sizing:border-box}
-.side-nav .nav-group.collapsed:has(.nav-subitem.active:not(#tab-btn-compose)) > #tab-btn-mail{background:var(--pri-bg);color:var(--pri)}
+
+
+
 /* 사이드바 '메일' 접기/펼치기 */
-.side-nav .nav-group{position:relative}
-.side-nav .nav-group>.nav-btn{padding-right:40px}
-.side-nav .nav-toggle{position:absolute;top:5px;right:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:none;border-radius:8px;color:var(--hint);cursor:pointer}
-.side-nav .nav-toggle:hover{background:var(--bg);color:var(--txt)}
-.side-nav .nav-toggle svg{width:15px;height:15px;transition:transform .15s ease}
-.side-nav .nav-group.collapsed .nav-toggle svg{transform:rotate(-90deg)}
-.side-nav .nav-group.collapsed .nav-sub{display:none}
-.side-nav .nav-group.collapsed:has(.unread-badge:not([hidden])) .nav-toggle::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#D92D20}
-@media (max-width:960px){.side-nav .nav-group{display:flex;align-items:center;gap:2px}.side-nav .nav-group>.nav-btn{padding-right:12px}.side-nav .nav-toggle{position:static;flex:none}.side-nav .nav-group .nav-sub{display:flex;margin:0;padding:0;border:0;gap:2px}.side-nav .nav-group.collapsed .nav-sub{display:none}.side-nav .nav-sub .nav-sep{width:1px;height:20px;margin:0 6px}.side-nav .nav-subitem{white-space:nowrap;width:auto}}
-@media (prefers-reduced-motion:reduce){.side-nav .nav-toggle svg{transition:none}}
+
+
+
+
+
+
+
+
+
+
 .chat-landing-title{font-size:21px;font-weight:800;color:var(--txt);margin-bottom:10px}
 .chat-landing-sub{font-size:14px;color:var(--sub);max-width:440px;margin:0 auto 26px;line-height:1.7}
 
@@ -525,13 +527,13 @@ main{max-width:760px;margin:0 auto;padding:22px 18px 24px}
 .chat-textarea::-webkit-scrollbar{width:6px}
 .chat-textarea::-webkit-scrollbar-button{display:none;width:0;height:0}
 .chat-textarea::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
-.camp-bulk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 12px;font-size:14px}
-.camp-bulk label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-.camp-bulk .btn-danger,.camp-del-btn{border:1px solid #d92d20;color:#d92d20;background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
-.camp-bulk .btn-danger:disabled{opacity:.4;cursor:default}
-.camp-del-btn{padding:4px 10px;flex-shrink:0}
-.camp-del-btn:hover,.camp-bulk .btn-danger:not(:disabled):hover{background:#fef3f2}
-.camp-sel{width:17px;height:17px;flex-shrink:0;cursor:pointer}
+
+
+
+
+
+
+
 .rcpt-wrap{position:relative}
 .rcpt-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:8px;padding:6px 8px;background:var(--card,#fff);cursor:text}
 .rcpt-box:focus-within{border-color:var(--teal,#0d9488)}
@@ -787,8 +789,8 @@ body:has(#tab-myforms.active .mfb-root:not([hidden])) #hchat-fab,body:has(#tab-m
 }
 
 #dr-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;background:#323232;color:#fff;font-size:14px;padding:12px 16px;border-radius:4px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-.side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-docs{background:var(--pri-bg);color:var(--pri)}
-.side-nav .nav-group.collapsed:has(.nav-subitem.active) > #tab-btn-guidenav{background:var(--pri-bg);color:var(--pri)}
+
+
 /* 나비 길잡이 과제 목록(진행 중·완료한 과제) */
 .gl-pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:0 9px;margin-left:6px;vertical-align:1px;background:var(--pri-bg);color:var(--pri)}
 .gl-pill.ok{background:#e1f4e8;color:#116a3a}.gl-pill.part{background:#fdf1d6;color:#8a5a00}.gl-pill.fail{background:#fde8e8;color:#b42318}.gl-pill.off{background:var(--bg);color:var(--hint)}
@@ -913,8 +915,8 @@ body.hd-hidden.hd-peek header.topbar{transform:translateY(0);visibility:visible;
 #hd-pull::after{content:"";display:block;width:36px;height:4px;margin:6px auto 0;border-radius:2px;background:rgba(255,255,255,.8)}
 body.hd-hidden:not(.hd-peek) #hd-pull{display:block}
 body.hd-hidden main.content{padding-top:8px}
-body.hd-hidden .pg-bar{display:none}
-body.hd-hidden.hd-peek .tab-panel.active .pg-bar,body.hd-hidden.hd-peek #tab-compose[data-mode=doc] > .pg-bar,body.hd-hidden.hd-peek #tab-compose[data-mode=campaign] > .pg-bar{display:block;position:fixed;top:54px;left:0;right:0;z-index:99;margin:0;padding:8px 36px 0;background:var(--bg,#fff);box-shadow:0 6px 14px -8px rgba(0,0,0,.3)}
+body.hd-hidden .tab-panel .hub-back{display:none}
+body.hd-hidden.hd-peek .tab-panel.active .hub-back{display:flex;position:fixed;top:54px;left:0;right:0;z-index:99;margin:0;padding:8px 36px 0;background:var(--bg,#fff);box-shadow:0 6px 14px -8px rgba(0,0,0,.3)}
 /* 서류 작업 중 손잡이를 끌어내리면 상단 막대·탭에 이어 서류 이름이 보이는 입력 줄도 함께 내려온다(2026-11-07) — 작업 화면 위에 겹쳐 보이고, 바깥을 누르면 다시 올라간다 */
 body.hd-hidden.hd-peek #tab-compose[data-docopen="1"].doc-live .chat-composer{display:block!important;position:fixed;top:calc(54px + 48px);left:64px;right:0;bottom:auto;height:auto;max-height:none;z-index:98;margin:0;padding:8px 36px 10px;background:var(--bg,#fff);box-shadow:0 8px 14px -8px rgba(0,0,0,.3)}
 @media (prefers-reduced-motion:reduce){body.hd-hidden header.topbar{transition:none}}
@@ -975,14 +977,14 @@ header.topbar:has(#agent-draft:not([hidden])) .topbar-page,header.topbar:has(#ag
 .side-nav .nav-btn svg{width:17px;height:17px;flex-shrink:0;color:var(--hint)}
 .side-nav .nav-btn:hover{background:var(--bg)}
 .side-nav .nav-btn{position:relative}
-.side-nav .nav-btn .nav-top-badge{position:absolute;top:3px;right:6px;margin:0;min-width:16px;padding:0 5px;font-size:9.5px;line-height:15px}
+
 .side-nav .nav-btn.active{background:var(--pri-bg);color:var(--pri)}
 .side-nav .nav-btn.active svg{color:var(--pri)}
 /* 2026-10-28 — '메일' 아래 하위 메뉴(편지쓰기·임시보관함·보낸메일함·받은메일함·태그별 보관함·내 메일 ID). 위쪽 하위 탭과 같은 곳으로 바로 이동한다. */
-.side-nav .nav-sub{display:block;margin:0 0 8px 20px;padding-left:10px;border-left:2px solid var(--bdr)}
-.side-nav .nav-subitem{display:block;width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:6px 10px;font-size:14.5px;font-weight:600;color:var(--sub);margin-bottom:1px;cursor:pointer}
-.side-nav .nav-subitem:hover{background:var(--bg)}
-.side-nav .nav-subitem.active{background:var(--pri-bg);color:var(--pri);font-weight:800}
+
+
+
+
 .side-foot{margin-top:auto;padding:14px 12px 0;border-top:1px solid var(--bdr);font-size:13px;color:var(--hint);line-height:1.8}
 .side-foot a{color:var(--sub);text-decoration:none}
 .side-foot a:hover{color:var(--pri);text-decoration:underline}
@@ -1069,34 +1071,29 @@ header.topbar:has(#agent-draft:not([hidden])) .topbar-page,header.topbar:has(#ag
 main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 .content > .tab-panel{max-width:1120px;margin:0 auto}
 .content > #tab-compose{max-width:880px}
-.content > #tab-quicksend{max-width:820px}
-.content > #tab-campaigns{max-width:960px}
-.content > #tab-camphist{max-width:960px}
+
+
+
 /* 2026-11-20 — 캠페인 이력: 끝난 캠페인의 성과 보고서를 모아 두는 화면(레이아웃) */
-.ch-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
-.ch-stat{border:1px solid var(--bdr);border-radius:var(--r);background:#fff;padding:12px 14px}
-.ch-stat b{display:block;font-size:22px;font-weight:800;color:var(--pri)}.ch-stat span{font-size:12.5px;color:var(--sub)}
-.ch-empty{border:1px dashed var(--bdr);border-radius:var(--r);padding:28px 18px;text-align:center;color:var(--sub);font-size:14px;line-height:1.8}
-.ch-empty b{color:inherit;display:block;font-size:15px;margin-bottom:4px}
-.ch-badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--pri-bg);color:var(--pri);border:1px solid var(--pri-bd);margin-left:6px}
-.ch-rep-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0 4px}
-.ch-rep-meta div{font-size:13px;color:var(--sub)}.ch-rep-meta b{display:block;font-size:14px;color:inherit;margin-top:2px}
-.ch-sec{border-top:1px solid var(--bdr);padding:16px 0 4px;margin-top:14px}
-.ch-sec h3{font-size:15px;font-weight:800;margin:0 0 8px}
-.ch-sec p{font-size:14px;line-height:1.8;margin:0 0 8px;white-space:pre-wrap}
-.ch-tbl{width:100%;border-collapse:collapse;font-size:13.5px}.ch-tbl th,.ch-tbl td{border-bottom:1px solid var(--bdr);padding:7px 8px;text-align:left}.ch-tbl th{color:var(--sub);font-weight:700;background:var(--pri-bg)}
-.ch-sample{font-size:12.5px;color:var(--hint);margin:0 0 10px}
-@media(max-width:720px){.ch-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .card{padding:24px 26px}
 .ql-editor{min-height:340px}
 
 /* 주소록: 2단 배치 — 왼쪽 AI 일괄 관리, 오른쪽 CSV·새 연락처, 아래 전체 목록 */
-#tab-contacts.active{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start;grid-template-areas:"ai csv" "ai newc" "list list"}
-#tab-contacts.active > .card{margin-bottom:0}
-#tab-contacts.active > .card:nth-of-type(1){grid-area:ai}
-#tab-contacts.active > .card:nth-of-type(2){grid-area:csv}
-#tab-contacts.active > .card:nth-of-type(3){grid-area:newc}
-#tab-contacts.active > .card:nth-of-type(4){grid-area:list}
+#tab-contacts.active > .card{margin-bottom:18px}
 
 /* side-collapse */
 @media (min-width:961px){
@@ -1105,11 +1102,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   /* 접힌 상태도 펼친 상태와 세로 배치가 같다: 글자·하위 메뉴·화살표는 지우지 않고(자리 유지) 투명하게만 한다 → 아이콘 높이가 변하지 않는다 */
   .side-nav .nav-btn{padding-left:8px;padding-right:8px;justify-content:flex-start}   /* 접힌 폭 46px 안에서 아이콘(20px)이 가운데 오도록 */
   .side-nav .nav-btn svg{width:20px;height:20px}
-  .side-nav .side-label,.side-nav .nav-subitem,.side-nav .nav-sub{white-space:nowrap;overflow:hidden}   /* 폭이 좁아져도 글자가 줄바꿈되어 높이가 달라지지 않게 */
-  .side-nav .nl,.side-nav .nav-sub,.side-nav .side-foot,.side-nav .nav-toggle{transition:opacity .2s ease}
-  .side-nav:not(.sn-open) .nl,.side-nav:not(.sn-open) .nav-sub,.side-nav:not(.sn-open) .side-foot,.side-nav:not(.sn-open) .nav-toggle,
-  .side-nav.sn-closing .nl,.side-nav.sn-closing .nav-sub,.side-nav.sn-closing .side-foot,.side-nav.sn-closing .nav-toggle{opacity:0;pointer-events:none}
-  .side-nav.sn-open:not(.sn-closing) .nl,.side-nav.sn-open:not(.sn-closing) .nav-sub,.side-nav.sn-open:not(.sn-closing) .side-foot,.side-nav.sn-open:not(.sn-closing) .nav-toggle{transition-delay:.15s}   /* 폭이 어느 정도 늘어난 뒤 글자가 나타난다 */
+  .side-nav .side-label{white-space:nowrap;overflow:hidden}   /* 폭이 좁아져도 글자가 줄바꿈되어 높이가 달라지지 않게 */
+  .side-nav .nl,.side-nav .side-foot{transition:opacity .2s ease}
+  .side-nav:not(.sn-open) .nl,.side-nav:not(.sn-open) .side-foot,
+  .side-nav.sn-closing .nl,.side-nav.sn-closing .side-foot{opacity:0;pointer-events:none}
+  .side-nav.sn-open:not(.sn-closing) .nl,.side-nav.sn-open:not(.sn-closing) .side-foot{transition-delay:.15s}   /* 폭이 어느 정도 늘어난 뒤 글자가 나타난다 */
   .side-nav .side-label{border-top:1px solid transparent;transition:border-color .2s ease}
   .side-nav:not(.sn-open) .side-group:not(:first-child) .side-label,.side-nav.sn-closing .side-group:not(:first-child) .side-label{border-top-color:var(--bdr)}
   .side-nav .nav-btn{white-space:nowrap}
@@ -1132,11 +1129,11 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 #doc-modal .dm-x{position:absolute;top:8px;right:8px;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--sub);font-size:18px;line-height:1;cursor:pointer}
 #doc-modal .dm-x:hover{background:var(--bdr);color:var(--txt)}
 #tab-compose.doc-open .chat-landing{display:none}
-#tab-quicksend.doc-open .card>.sub{display:none}
-.qs-sbtn{position:absolute;top:0;right:0;width:42px;height:100%;border:0;background:transparent;color:var(--sub);cursor:pointer;border-radius:0 var(--r) var(--r) 0;display:flex;align-items:center;justify-content:center}
-.qs-sbtn:hover{color:var(--pri)}
-.qs-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.qs-tools .btn{display:inline-flex;align-items:center;gap:6px}
+
+
+
+
+
 #tab-compose.doc-open .chat-composer{position:static}
 #tab-compose.doc-open .chat-composer>.hint{display:none}
 @media (max-width:960px){
@@ -1146,8 +1143,6 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
   .side-label,.side-foot{display:none}
   .side-nav .nav-btn{width:auto;white-space:nowrap;margin:0;padding:8px 12px}
   main.content{padding:18px 14px 40px}
-  #tab-contacts.active{display:block}
-  #tab-contacts.active > .card{margin-bottom:18px}
   .crumb{display:none}
 }
 
@@ -1157,10 +1152,8 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
 
 
 
-@media (max-width:1180px){
-}
-@media (max-width:640px){
-}
+
+
 
 /* ── 정보 공개 청구: 청구 건(캠페인)·AI 입력창·공유 아카이브 (2026-09-20 개편) ── */
 
@@ -1177,73 +1170,159 @@ main.content{flex:1;min-width:0;max-width:none;margin:0;padding:26px 36px 56px}
    글꼴 스택은 --font(Pretendard 우선, 로딩 실패 시에만 시스템 글꼴)이다. */
 *,*::before,*::after,::placeholder{font-family:var(--font)!important}
 /* ══ 과제(2026-11-27): 서류·메일·길잡이를 합친 메뉴와 첫 화면 ══ */
-.side-nav .task-subs{margin:0 0 6px;padding:0;border:0}
-.side-nav:not(.sn-open) #tab-btn-guidenav:has(+ .task-subs .unread-badge:not([hidden]))::after{content:"";position:absolute;bottom:6px;left:27px;width:8px;height:8px;border-radius:50%;background:#1A73E8}
-@media (max-width:960px){.side-nav .task-subs{display:flex;margin:0;gap:2px}.side-nav .task-sub{width:auto;white-space:nowrap;padding:8px 10px}.side-nav #tab-btn-guidenav::after{display:none}}
-.content > #tab-tasks{max-width:1120px}
-.tk-head,.tk-filters,.tk-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.tk-head h2,.tk-dhead h2{font-size:22px;font-weight:800;margin:0}
+
+
+@media (max-width:960px){.side-nav #tab-btn-guidenav::after{display:none}}
+.content > #tab-tasks,.content > #tab-docs,.content > #tab-mail{width:100%;max-width:1160px;box-sizing:border-box}
+#tab-contacts > .card{width:100%;max-width:none;box-sizing:border-box}
+/* 과제 페이지 머리글과 탭(hub.js) — 탭 줄은 이 한 층뿐이다 */
+.hub-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.hub-head h1{font-size:24px;font-weight:800;margin:0}
+.hub-q{flex:0 1 280px;min-width:140px;border:1px solid var(--bdr);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;background:var(--sur);color:var(--txt)}
+.hub-sp{flex:1}
+.hub-tabs{margin:0 0 16px}.hub-tabs .unread-badge{margin-left:6px}
+#tab-tasks.tk-open > [data-hub],#tab-mail.writing > [data-hub]{display:none}
+.hub-back{display:none;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;font-size:14px}
+.hub-back b{font-size:16px}.hub-ctx{font-size:13px;color:var(--sub)}
+#tab-contacts > .hub-back,#tab-myforms > .hub-back,#tab-othersite > .hub-back,#tab-mail.writing > .hub-back{display:flex}
+#tab-compose[data-mode=doc] > .hub-back,#tab-compose[data-mode=campaign] > .hub-back,#tab-compose[data-mode=letter] > .hub-back{display:flex;order:0}
+/* ⋮ · ＋ 새로 만들기 */
+.tk-more{position:relative;display:inline-block}
+.tk-more>summary{list-style:none;cursor:pointer;user-select:none}
+.tk-more>summary::-webkit-details-marker{display:none}
+.tk-more>summary:not(.btn){width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bdr);border-radius:50%;background:var(--sur);color:var(--sub);font-size:17px;font-weight:800}
+.tk-more>div{position:absolute;right:0;top:calc(100% + 4px);z-index:30;min-width:180px;background:var(--sur);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 6px 20px rgba(20,30,50,.16);padding:6px 0}
+.tk-more>div button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 16px;font:inherit;font-size:14px;color:var(--txt);cursor:pointer;white-space:nowrap}
+.tk-more>div button:hover{background:#F4F6FA}
+/* 과제 목록·상세(task-home.js), 업무 상세(case-ui.js) */
 .tk-sub{font-size:13px;color:var(--hint);line-height:1.6;margin-top:4px}
-.tk-btns{display:flex;gap:8px;flex-wrap:wrap}
-.tk-new{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
-.tk-new[hidden]{display:none}
-.tk-new button,.tk-card{text-align:left;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font:inherit;color:var(--txt);cursor:pointer}
-.tk-new button:hover,.tk-card:hover{border-color:var(--pri)}
-.tk-new b{display:block;font-size:14.5px}.tk-new span{display:block;font-size:12.5px;color:var(--hint);margin-top:3px}
-.tk-sec{margin-top:22px}.tk-sec h3{font-size:16px;font-weight:800;margin:0 0 10px}
+.tk-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tk-sec{margin-top:18px}.tk-sec h3{font-size:16px;font-weight:800;margin:0 0 8px}
 .tk-count{font-size:12.5px;background:var(--pri-bg);color:var(--pri);border-radius:999px;padding:1px 8px}
-.tk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.tk-card{font-size:13.5px;line-height:1.6;border-left:4px solid #E0A100}.tk-card.s3{border-left-color:var(--red)}
-.tk-empty{font-size:14px;color:var(--hint);background:var(--sur);border:1px dashed var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:10px}
-.tk-filters{margin-bottom:10px}.tk-filters>div{display:flex;gap:6px;flex-wrap:wrap}
+.tk-needbox{margin-top:0}
+.tk-needs{list-style:none;margin:0 0 8px;padding:0;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.tk-needs li{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--bdr);border-left:4px solid #E0A100;font-size:14px}
+.tk-needs li:first-child{border-top:0}.tk-needs li.s3{border-left-color:var(--red)}
+.tk-needtag{font-size:12px;font-weight:800;color:var(--sub)}.tk-needmsg{overflow-wrap:anywhere}.tk-needmsg small{display:block;font-size:12px;color:var(--hint);margin-top:2px}
+.tk-empty{font-size:14px;color:var(--hint);background:var(--sur);border:1px dashed var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:10px;line-height:1.6}
+.tk-source{font-size:13px;color:var(--sub);background:var(--pri-bg);border-radius:var(--r);padding:9px 12px;margin:10px 0}
+.tk-source.bad{background:var(--obg);color:var(--org)}
+.tk-filters{display:flex;justify-content:space-between;align-items:center;gap:10px 12px;flex-wrap:wrap;margin-bottom:10px}
+.tk-filters>div{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .tk-chip{background:var(--sur);border:1px solid var(--bdr);border-radius:999px;padding:5px 13px;font:inherit;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer}
 .tk-chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
-.tk-table{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
-.tk-tr{display:grid;grid-template-columns:minmax(0,2.2fr) .8fr 1fr minmax(0,2fr) minmax(0,1.6fr) .8fr;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--bdr);padding:11px 14px;font:inherit;font-size:13.5px;color:var(--txt);cursor:pointer}
+.tk-sel{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--sub)}
+.tk-sel select{border:1px solid var(--bdr);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px;background:var(--sur);color:var(--txt);max-width:200px}
+.tk-bulk{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:13.5px}
+.tk-table,.hub-table{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r)}
+.tk-tr{display:grid;grid-template-columns:minmax(0,2.3fr) .8fr minmax(0,2fr) .8fr 1.1fr;gap:10px;align-items:center;width:100%;box-sizing:border-box;text-align:left;background:none;border:0;border-top:1px solid var(--bdr);padding:11px 14px;font:inherit;font-size:13.5px;color:var(--txt);cursor:pointer}
+.tk-table.selecting .tk-tr{grid-template-columns:20px minmax(0,2.3fr) .8fr minmax(0,2fr) .8fr 1.1fr}
 .tk-tr:hover{background:#F4F6FA}
 .tk-th{border-top:0;background:var(--bg);font-size:12.5px;font-weight:800;color:var(--hint);cursor:default}.tk-th:hover{background:var(--bg)}
-.tk-tr>span{min-width:0;overflow-wrap:anywhere}
-.tk-tr small{display:block;font-size:12px;color:var(--hint);margin-top:2px}
-.tk-tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:1px 9px;background:#EEF1F6;color:var(--sub)}
+.tk-tr>span,.hub-tr>span{min-width:0;overflow-wrap:anywhere}
+.tk-tr small,.hub-tr small{display:block;font-size:12px;color:var(--hint);margin-top:2px}
+.tk-name b{font-size:14px}
+.tk-links{color:var(--sub);font-size:12.5px}
+.tk-tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:1px 9px;background:#EEF1F6;color:var(--sub);white-space:nowrap}
 .tk-tag.run{background:var(--pri-bg);color:var(--pri)}.tk-tag.done{background:var(--gbg);color:var(--grn)}.tk-tag.hold{background:var(--obg);color:var(--org)}
 .tk-need{color:var(--org)}
 .tk-due.late,.tk-due.late small{color:var(--red);font-weight:800}.tk-due.soon,.tk-due.soon small{color:var(--org);font-weight:800}
-.tk-foot{margin-top:14px}
+.tk-foot{margin-top:12px}
 .tk-link{background:none;border:0;padding:0;font:inherit;font-size:13.5px;font-weight:700;color:var(--pri);cursor:pointer}
-.tk-dhead{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;margin:10px 0 16px}
+.tk-dhead{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;margin:10px 0 14px}
+.tk-dhead h2{font-size:22px;font-weight:800;margin:0;overflow-wrap:anywhere}
 .tk-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.tk-boxes{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:12px 0}
-.tk-boxes>div{background:var(--bg);border-radius:var(--r);padding:10px 12px}.tk-boxes small{display:block;font-size:12px;color:var(--hint)}.tk-boxes small.tk-need{color:var(--org);margin-top:4px}.tk-boxes b{display:block;font-size:15px;margin-top:2px}
-.tk-body{margin-top:12px}.tk-body h4{margin:18px 0 8px;font-size:14px}
+.tk-actions{margin-top:12px}.tk-actions .tk-more{margin-left:auto}
+.tk-detail{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
+.tk-dtabs{margin:0 0 12px;overflow-x:auto}
+.tk-side{display:flex;flex-direction:column;gap:10px}
+.tk-side .cs-card{margin:0}
+.tk-card2{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-size:13.5px;line-height:1.6}
+.tk-card2 h4{margin:0 0 6px;font-size:13px;color:var(--sub)}.tk-card2 b{display:block;font-size:15px}.tk-card2 small{display:block;color:var(--hint);font-size:12.5px;margin-top:2px}
+.tk-card2 dl{margin:0}.tk-card2 dt{font-size:12px;color:var(--hint)}.tk-card2 dd{margin:0 0 6px;overflow-wrap:anywhere}
+.tk-body h4{margin:18px 0 8px;font-size:14px}.tk-body>h4:first-child{margin-top:0}
+.tk-body>.tk-btns{margin-top:10px}
 .tk-add{display:flex;gap:8px;margin-bottom:12px}.tk-add input{flex:1;min-width:0;border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px;font:inherit}
 .tk-tl{list-style:none;margin:0 0 10px;padding:0}
 .tk-tl li{display:grid;grid-template-columns:100px 1fr;gap:12px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;margin-bottom:6px;font-size:14px;line-height:1.6}
+.tk-tl li>div{white-space:pre-wrap;overflow-wrap:anywhere}
 .tk-tl time{font-size:12.5px;color:var(--hint);font-weight:700}
 .tk-todos{list-style:none;margin:0;padding:0}
 .tk-todos li{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px;margin-bottom:6px;font-size:14px}
 .tk-todos label{display:flex;gap:9px;align-items:flex-start;cursor:pointer}.tk-todos .did{text-decoration:line-through;color:var(--hint)}
+.tk-files{list-style:none;margin:0 0 6px;padding:0}
+.tk-files li{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px;margin-bottom:6px;font-size:14px}
+.tk-fname{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.tk-kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:6px 12px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;margin:0;font-size:13.5px}
+.tk-kv dt{color:var(--hint)}.tk-kv dd{margin:0;overflow-wrap:anywhere}
+.tk-result{background:var(--gbg);color:var(--grn);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:14px}
 .tk-plan{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font:inherit;font-size:13.5px;line-height:1.7}
-@media (max-width:720px){
-  .tk-th{display:none}
-  .tk-tr{grid-template-columns:1fr auto auto;gap:6px 10px}
-  .tk-tr .tk-name,.tk-tr>span:nth-child(4),.tk-tr>span:nth-child(5){grid-column:1/-1}
-  .tk-boxes{grid-template-columns:1fr}.tk-add{flex-direction:column}.tk-tl li{grid-template-columns:1fr;gap:2px}
+/* 서류 탭 */
+#hub-docs .tk-empty{margin-bottom:6px}
+.hub-tr{display:grid;grid-template-columns:minmax(0,2.4fr) 1fr minmax(0,1.5fr) .9fr minmax(170px,1.2fr);gap:10px;align-items:center;border-top:1px solid var(--bdr);padding:10px 14px;font-size:13.5px}
+.hub-th{border-top:0;background:var(--bg);font-size:12.5px;font-weight:800;color:var(--hint)}
+.hub-tr.hub-focus{outline:2px solid var(--pri);outline-offset:-2px}
+.hub-acts{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.hub-link{background:none;border:1px dashed var(--bdr);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;color:var(--sub);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.hub-link.on{border-style:solid;border-color:var(--pri-bd);background:var(--pri-bg);color:var(--pri);font-weight:700}
+.hub-link:hover{border-color:var(--pri)}
+/* 대화창(새 과제·과제 지정·알림 설정) */
+.hub-ov{position:fixed;inset:0;z-index:1200;background:rgba(15,23,42,.4);display:flex;align-items:center;justify-content:center;padding:16px}
+.hub-dlg{width:100%;max-width:520px;max-height:calc(100vh - 32px);overflow:auto;background:var(--sur);border-radius:12px;box-shadow:0 20px 50px rgba(15,23,42,.3);padding:18px 20px}
+.hub-dlg-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.hub-dlg-h h3{margin:0;font-size:18px;font-weight:800}
+.hub-x{border:0;background:none;font-size:22px;line-height:1;color:var(--sub);cursor:pointer;width:32px;height:32px;border-radius:50%}
+.hub-f{display:block;border:0;padding:0;margin:0 0 12px;font-size:13.5px;font-weight:700}
+.hub-f textarea,.hub-f input[type=email],.hub-f select{display:block;width:100%;box-sizing:border-box;margin-top:4px;border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px;font:inherit;font-size:14px;font-weight:400;background:var(--sur);color:var(--txt)}
+.hub-f legend{padding:0;margin-bottom:4px}
+.hub-radio{display:inline-flex;gap:6px;align-items:center;margin:0 14px 6px 0;font-size:14px;font-weight:400;cursor:pointer}
+.hub-radio input:disabled+*{opacity:.5}
+.hub-hint{font-size:12.5px;color:var(--hint);line-height:1.6;margin:6px 0}
+.hub-msg{font-size:13px;color:var(--red);min-height:1em}
+.hub-dlg-f{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
+.hub-dlg .hub-q{width:100%;box-sizing:border-box;flex:none}
+.hub-picklist{max-height:46vh;overflow:auto;margin-top:8px}
+.hub-picklist button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--bdr);padding:9px 6px;font:inherit;font-size:14px;color:var(--txt);cursor:pointer}
+.hub-picklist button:hover,.hub-picklist button.on{background:var(--pri-bg)}
+.hub-picklist small{display:block;font-size:12px;color:var(--hint)}
+/* 메일 탭: 왼쪽 메일함 + 목록. 쓰는 동안에는 메일함 줄을 접는다 */
+.mail-wrap{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:start}
+#tab-mail.writing .mail-wrap{grid-template-columns:minmax(0,1fr);max-width:860px}
+.mail-wrap .mail-subnav{flex-direction:column;flex-wrap:nowrap;margin:0}
+.mail-wrap .mail-subnav button{text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.mail-wrap .mail-subnav button[hidden]{display:none}
+#tab-mail.writing .mail-subnav{display:none}
+.mail-sim-row{margin:0}
+.mail-ai{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--pri-bg);border-radius:var(--r);padding:9px 12px;margin-bottom:12px;font-size:13.5px}
+.mail-tools{display:flex;gap:8px;flex-wrap:wrap}
+#mail-task{max-width:420px;width:100%;border:1px solid var(--bdr);border-radius:var(--r);padding:9px 10px;font:inherit;font-size:14px;background:var(--sur);color:var(--txt)}
+/* 주소록 머리 단추 */
+.ct-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-bottom:10px}
+.ct-tool[hidden]{display:none}
+@media (max-width:960px){.tk-detail{grid-template-columns:minmax(0,1fr)}main.content{width:100%;box-sizing:border-box}}
+@media (max-width:760px){
+  .hub-q{order:5;flex:1 1 100%}
+  .tk-th,.hub-th{display:none}
+  .tk-tr,.hub-tr{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px}
+  .tk-table.selecting .tk-tr{grid-template-columns:20px minmax(0,1fr) auto}
+  .tk-tr>span.tk-name{grid-column:auto}
+  .tk-tr>span.tk-links{display:none}
+  .tk-table .tk-tr:first-child+.tk-tr,.hub-table .hub-th+.hub-tr{border-top:0}
+  .hub-tr .tk-name{grid-column:1/-1}
+  .hub-acts{grid-column:1/-1;justify-content:flex-start}
+  .tk-needs li{grid-template-columns:minmax(0,1fr) auto}.tk-needtag{grid-column:1/-1}
+  .tk-add{flex-direction:column}.tk-tl li{grid-template-columns:1fr;gap:2px}.tk-kv{grid-template-columns:1fr}
+  .mail-wrap{grid-template-columns:minmax(0,1fr)}
+  .mail-wrap .mail-subnav{flex-direction:row;overflow-x:auto}.mail-wrap .mail-subnav button{white-space:nowrap}
 }
 </style>
 <style>
 /* 업무(Case) 화면 — case-ui.js */
 .cs-panel{padding:20px 24px;max-width:980px}
-.pg-bar{margin:0 0 14px;overflow-x:auto}.pg-bar .cs-modes{margin:0;min-width:max-content}
-.pg-bar .unread-badge{margin-left:6px}
-/* 서류·메일 하위 메뉴는 위쪽 탭으로 옮겼다(2026-11-06): 왼쪽 메뉴의 펼침 단추와 하위 항목, 메일 화면 안의 옛 탭 줄은 숨긴다 */
-#nav-group-docs .nav-toggle,#nav-group-mail .nav-toggle,#nav-group-docs .nav-sub,#nav-group-mail .nav-sub,#tab-mail .mail-subnav{display:none!important}
-#tab-compose:not([data-mode=doc]):not([data-mode=campaign]) > .pg-bar{display:none}
-/* 2026-11-18 — 캠페인 페이지: 위쪽 '캠페인' 탭 아래에 하위 탭(새 캠페인 | 내 캠페인). 새 캠페인은 입력 필드를 맨 위에 두고 대화는 그 아래에 쌓는다 */
-.camp-subbar{margin:0 0 14px}.camp-subbar .cs-modes{margin:0}.camp-subbar .cs-mode{font-size:14px}
-#tab-compose .camp-subbar{display:none}
-#tab-compose[data-mode="campaign"] .camp-subbar{display:block;order:1}
+
+
+/* 메일 캠페인 대화: 입력 필드를 맨 위에 두고 대화는 그 아래에 쌓는다 */
 #tab-compose.active[data-mode="campaign"]{display:flex;flex-direction:column}
-#tab-compose[data-mode="campaign"] > .pg-bar{order:0}
+
 #tab-compose[data-mode="campaign"] .chat-landing{order:2;padding-top:8px}
 #tab-compose[data-mode="campaign"] .chat-landing-title{font-size:24px;margin-bottom:14px}
 #tab-compose[data-mode="campaign"] .chat-composer{order:3;position:static;padding-bottom:10px}
@@ -1458,13 +1537,13 @@ header.topbar .suggest-btn,header.topbar a{border-radius:4px}
 .side-nav .nav-btn:hover{background:#F4F6FA}
 .side-nav .nav-btn.active{background:#EEF1F6;color:var(--txt);font-weight:500;box-shadow:inset 3px 0 0 var(--pri)}
 .side-nav .nav-btn.active svg{color:var(--pri)}
-.side-nav .nav-group>.nav-btn{padding-right:48px}
-.side-nav .nav-toggle{top:6px;right:14px}
-.side-nav .nav-sub{margin:0 0 4px;padding:0;border-left:0}
-.side-nav .nav-subitem{border-radius:0;padding:9px 22px 9px 56px;font-size:14.5px;font-weight:400;color:var(--sub);margin-bottom:0}
-.side-nav .nav-subitem:hover{background:#F4F6FA}
-.side-nav .nav-subitem.active{background:#EEF1F6;color:var(--txt);font-weight:500}
-.side-nav .nav-group.collapsed:has(.nav-subitem.active) > .nav-btn,.side-nav .nav-group.collapsed:has(.nav-subitem.active:not(#tab-btn-compose)) > #tab-btn-mail{background:#EEF1F6;color:var(--txt)}
+
+
+
+
+
+
+
 .side-foot{padding:14px 22px 0}
 .card{border:0;border-radius:4px;box-shadow:var(--sh)}
 .card h2{font-weight:600}
@@ -1537,25 +1616,25 @@ html[data-color=purple]{--gov:#3A2370;--nav:#5B3FA8;--pri:#7C4DDB;--pri-lt:#9770
 html[data-color=orange]{--gov:#8A3B05;--nav:#C2570C;--pri:#E8710A;--pri-lt:#F08A30;--pri-bg:#FDEBDD;--pri-bd:#F6CDAA;--teal:#E8710A;--teal-bg:#FDEBDD;--bg:#FBF8F5;--pri-d:#C45C00;--act-bg:#FAEFE6;--hov-bg:#FCF6F1;--ring:rgba(232,113,10,.22)}
 html[data-color=graphite]{--gov:#212529;--nav:#343A40;--pri:#4B5563;--pri-lt:#6B7280;--pri-bg:#E9ECEF;--pri-bd:#CBD2D9;--teal:#4B5563;--teal-bg:#E9ECEF;--bg:#F6F7F8;--pri-d:#374151;--act-bg:#EEF0F2;--hov-bg:#F5F6F7;--ring:rgba(75,85,99,.22)}
 /* 위 색을 쓰는 곳(활성 줄·마우스 올림·단추 올림·입력칸 강조) */
-.side-nav .nav-btn:hover,.side-nav .nav-subitem:hover{background:var(--hov-bg)}
-.side-nav .nav-btn.active,.side-nav .nav-subitem.active,.side-nav .nav-group.collapsed:has(.nav-subitem.active) > .nav-btn,.side-nav .nav-group.collapsed:has(.nav-subitem.active:not(#tab-btn-compose)) > #tab-btn-mail{background:var(--act-bg)}
+.side-nav .nav-btn:hover{background:var(--hov-bg)}
+.side-nav .nav-btn.active{background:var(--act-bg)}
 .btn-primary:hover{background:var(--pri-d)}
 .field input:focus,.set-row input:focus,.set-row textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px var(--ring)}
 /* 메뉴: 항상 펼침 */
 @media (min-width:961px){
   html[data-menu=open] .side-nav,html[data-menu=open] .side-nav.sn-open{width:260px!important;max-width:260px!important;margin-right:0!important;box-shadow:none!important;transition:none!important}
-  html[data-menu=open] .side-nav .nl,html[data-menu=open] .side-nav .nav-sub,html[data-menu=open] .side-nav .side-foot,html[data-menu=open] .side-nav .nav-toggle{opacity:1!important;pointer-events:auto!important;transition:none!important}
+  html[data-menu=open] .side-nav .nl,html[data-menu=open] .side-nav .side-foot{opacity:1!important;pointer-events:auto!important;transition:none!important}
   html[data-menu=open] .side-nav .side-group:not(:first-child) .side-label{border-top-color:transparent!important}
-  html[data-menu=open] .side-nav .nav-group.collapsed .nav-sub{display:none}
+  
 }
 /* 밀도 */
 html[data-dens=compact] body{font-size:14px}
 html[data-dens=compact] .side-nav .nav-btn{padding-top:8px;padding-bottom:8px}
-html[data-dens=compact] .side-nav .nav-subitem{padding-top:6px;padding-bottom:6px}
+
 html[data-dens=compact] .card{padding:14px 16px}
 html[data-dens=roomy] body{font-size:16px}
 html[data-dens=roomy] .side-nav .nav-btn{padding-top:14px;padding-bottom:14px}
-html[data-dens=roomy] .side-nav .nav-subitem{padding-top:11px;padding-bottom:11px}
+
 html[data-dens=roomy] .card{padding:26px 28px}
 /* 단추 */
 html[data-btn=round] .btn,html[data-btn=round] .mail-subnav button{border-radius:10px}
@@ -1692,47 +1771,10 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <button type="button" class="side-intro" id="side-intro" aria-haspopup="true" aria-expanded="false" aria-controls="tab-intro" title="나비와 나비웹 소개" onclick="_panelToggle('manual')"><span>소개</span><svg class="tp-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
     </div>
     <div class="side-group">
-      <div class="side-label">작성·발송</div>
       <button id="tab-btn-home" class="nav-btn active" data-label="홈" onclick="_switchTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
         홈</button>
       <button id="tab-btn-guidenav" class="nav-btn" data-label="과제" onclick="_guideTabOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         과제<span class="unread-badge" data-for="guide" hidden></span></button>
-      <div class="nav-sub task-subs" role="group" aria-label="과제 하위 메뉴">
-        <button type="button" id="task-sub-mail" class="nav-subitem nav-gv task-sub" data-label="전체 메일" onclick="_navMailSub('inbox')">전체 메일<span class="unread-badge" data-for="mail-all" hidden></span></button>
-        <button type="button" id="task-sub-docs" class="nav-subitem nav-gv task-sub" data-label="전체 서류" onclick="_switchTab('docdone')">전체 서류<span class="unread-badge" data-for="docs-all" hidden></span></button>
-        <button type="button" id="task-sub-quick" class="nav-subitem nav-gv task-sub" data-label="빠른 작성·발송" onclick="_switchTab('quicksend')">빠른 작성·발송</button>
-        <button type="button" id="task-sub-contacts" class="nav-subitem nav-gv task-sub" data-label="주소록·캠페인" onclick="_ctNavClick()">주소록·캠페인</button>
-      </div>
-      <!-- 2026-11-27 서류·메일 메뉴는 "과제"로 합쳤다. 아래 옛 단추는 화면에 보이지 않으며, 화면 전환·읽지 않음 수 코드가 쓰므로 남겨 둔다. -->
-      <div id="nav-legacy" hidden>
-      <div class="nav-group collapsed" id="nav-group-docs">
-        <button id="tab-btn-docs" class="nav-btn" data-label="서류" onclick="_navDocClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>서류<span class="unread-badge nav-top-badge" data-for="docs-all" hidden></span></button>
-        <button type="button" class="nav-toggle" id="nav-toggle-docs" aria-label="서류 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-docs" onclick="_navToggleDocs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="nav-sub" id="nav-sub-docs" role="group" aria-label="서류 하위 메뉴">
-          <button id="tab-btn-docwrite" class="nav-subitem nav-dv" data-label="서류 작성" onclick="_navDocClick()">서류 작성</button>
-          <button id="tab-btn-docdrafts" class="nav-subitem nav-dv" data-label="Draft" onclick="_switchTab('docdrafts')">Draft</button>
-          <button id="tab-btn-docdone" class="nav-subitem nav-dv" data-label="작성한 서류" onclick="_switchTab('docdone')">작성한 서류</button>
-          <button id="tab-btn-myforms" class="nav-subitem nav-dv" data-label="내 서류함" onclick="_switchTab('myforms')">내 서류함</button>
-          <button id="tab-btn-othersite" class="nav-subitem nav-dv" data-label="다른 사이트 입력" onclick="_switchTab('othersite')">다른 사이트 입력</button>
-        </div>
-      </div>
-      <div class="nav-group collapsed" id="nav-group-mail">
-        <button id="tab-btn-mail" class="nav-btn" data-label="메일" onclick="_switchTab('mail')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>메일<span class="unread-badge nav-top-badge" data-for="mail-all" hidden></span></button>
-        <button type="button" class="nav-toggle" id="nav-toggle-mail" aria-label="메일 하위 메뉴 펼치기/접기" aria-expanded="false" aria-controls="nav-sub-mail" onclick="_navToggleMail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="nav-sub" id="nav-sub-mail" role="group" aria-label="메일 하위 메뉴">
-          <button id="tab-btn-quicksend" class="nav-subitem nav-mv" data-tab="quicksend" data-label="빠른 발송" onclick="_switchTab('quicksend')">빠른 발송</button>
-          <button id="tab-btn-campaigns" class="nav-subitem nav-mv" data-tab="campaigns" data-label="내 캠페인" onclick="_campNavClick()">내 캠페인</button>
-          <button id="tab-btn-camphist" class="nav-subitem nav-mv" data-tab="camphist" data-label="캠페인 이력" onclick="_switchTab('camphist')">캠페인 이력</button>
-          <button id="tab-btn-contacts" class="nav-subitem nav-mv" data-tab="contacts" data-label="주소록" onclick="_ctNavClick()">주소록</button>
-          <div class="nav-sep" role="separator"></div>
-          <button type="button" class="nav-subitem" data-sub="compose" onclick="_navMailSub('compose')">편지쓰기</button>
-          <button type="button" class="nav-subitem" data-sub="drafts" onclick="_navMailSub('drafts')">Draft</button>
-          <button type="button" class="nav-subitem" data-sub="sent" onclick="_navMailSub('sent')">보낸메일함</button>
-          <button type="button" class="nav-subitem" data-sub="inbox" onclick="_navMailSub('inbox')">받은메일함<span class="unread-badge" data-for="inbox" hidden></span></button>
-          <button type="button" class="nav-subitem" data-sub="tags" onclick="_navMailSub('tags')">태그별 보관함</button>
-        </div>
-      </div>
-      </div>
       <button id="tab-btn-youtube" class="nav-btn" data-label="안내 영상" onclick="_switchTab('youtube')"><img class="yt-ico" src="assets/youtube-icon.png" alt="" aria-hidden="true">안내 영상</button>
       <button id="tab-btn-expert100k" class="nav-btn" data-label="10만 AI 전문가" onclick="_switchTab('expert100k')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c0-3.4 2.8-6 6.2-6s6.2 2.6 6.2 6"/><circle cx="17.2" cy="9" r="2.6"/><path d="M16.4 14.2c3 .2 4.8 2.4 4.8 5.3"/></svg>10만 AI 전문가</button>
     </div>
@@ -1756,7 +1798,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 <div class="user-row" id="user-row">
 <div class="topbar-right topbar-float" id="topbar-float">
     <button type="button" class="suggest-btn" id="agent-draft" hidden onclick="_docNewAfterSave(this)" title="지금 서류를 Draft 로 저장하고 새 서류를 시작합니다">Draft 저장 후 새 서류</button>
-    <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 내 서류함의 '자주 쓰는 양식'에 담습니다">★ 내 서류함에 담기</button>
+    <button type="button" class="suggest-btn" id="agent-fav" hidden onclick="_mfAddFav(this)" title="지금 열린 서류를 양식함의 '자주 쓰는 양식'에 담습니다">★ 양식함에 담기</button>
     <span class="agent-badge" id="agent-badge" hidden role="status" aria-live="polite"><span class="ab-t"></span><a class="ab-install" hidden target="_blank" rel="noopener">Chrome에 추가</a><span class="ab-msg"></span></span>
 </div>
 <button type="button" class="mfb-btn simbtn" id="home-sim" aria-label="가상 데이터로 시뮬레이션" onclick="_homeSimOpen()">시뮬레이션</button>
@@ -1771,8 +1813,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        (주피터 지시) — 이 화면 하나가 그 설계·확정 과정 전체를 담당.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-compose" class="tab-panel active" data-mode="default">
-    <div class="pg-bar" data-pgbar="doc"></div>
-    <div class="camp-subbar" data-campbar></div>
+    <div class="hub-back" data-back="compose"></div>
     <div class="chat-landing" id="cmp-landing">
       <div class="chat-landing-title">무엇을 도와드릴까요?</div>
       <div class="chat-landing-sub">누구에게 무엇을 보낼지 말씀해 주세요. 발송 전에 반드시 확인받습니다.</div>
@@ -1875,7 +1916,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <p>참고용 가상 판결문이며 법률 자문이 아닙니다. 개인정보는 빼고 입력해 주세요. 입력 내용은 AI 제공자에게 전송되며 사용량만큼 GDC가 차감됩니다. <a href="https://klaw.hondi.net/verdict-generate.html" target="_blank" rel="noopener">K-Law에서 자세히 보기</a></p>
         <p class="vd-meter-row"><span id="cmp-verdict-meter" aria-live="polite"></span><span class="vd-keyhint">Enter 줄바꿈 · Ctrl/⌘+Enter 전송</span></p>
       </div></div>
-      <div class="hint">회신 취합을 요청하면 보고서는 “내 캠페인”에서 볼 수 있습니다.</div>
+      <div class="hint">회신 취합을 요청하면 보고서는 과제의 메일 캠페인에서 볼 수 있습니다.</div>
     </div>
     <div id="cmp-foi-doc" aria-label="정보 공개 청구서" hidden>
       <div class="foi-doc-bar"><strong id="cmp-foi-title">정보 공개 청구서</strong><span class="foi-doc-sp"></span>
@@ -1908,8 +1949,9 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        유일한 조작이라 이 화면이 필요함), 수동 등록, 태그 확인.
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-contacts" class="tab-panel">
-    <div class="pg-bar" data-pgbar="mail"></div>
-    <div class="card">
+    <div class="hub-back" data-back="contacts"></div>
+    <div class="ct-actions"><button type="button" class="btn btn-sm btn-outline" data-cttool="ai" aria-expanded="false" onclick="_ctTool('ai')">나비에게 정리 맡기기</button><button type="button" class="btn btn-sm btn-outline" data-cttool="csv" aria-expanded="false" onclick="_ctTool('csv')">파일 올리기</button><button type="button" class="btn btn-sm btn-primary" data-cttool="new" aria-expanded="false" onclick="_ctTool('new')">＋ 연락처</button></div>
+    <div class="card ct-tool" id="ct-tool-ai" hidden>
       <h2>AI로 일괄 관리 (K-Address)</h2>
       <div class="sub">명단을 붙여넣고 “등록해줘”라고 말하세요. 수정·병합·태그·삭제도 대화로 됩니다.</div>
       <div id="kaddr-thread"></div>
@@ -1923,7 +1965,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       </div>
     </div>
 
-    <div class="card">
+    <div class="card ct-tool" id="ct-tool-csv" hidden>
       <h2>CSV/엑셀 일괄 업로드</h2>
       <div class="sub">CSV·엑셀(.xlsx)을 올리면 바로 등록합니다. 첫 행은 이름·이메일·소속·부서·전화·직책·관계·주소·웹사이트·메모·태그·카테고리 헤더이며, 이메일만 있어도 됩니다. 소속명으로 분류가 가능하면 카테고리를 자동으로 채웁니다.</div>
       <input type="file" id="ct-csv-file" accept=".csv,.xlsx,.xls" onchange="_ctCsvFileSelected(event)">
@@ -1933,7 +1975,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <div style="margin-top:6px"><button class="btn btn-primary btn-sm" id="ct-csv-upload-btn" data-requires-login="주소록 일괄 업로드" disabled onclick="_ctCsvUpload()">업로드</button></div>
     </div>
 
-    <div class="card">
+    <div class="card ct-tool" id="ct-tool-new" hidden>
       <h2>새 연락처 등록</h2>
       <div class="sub">이름과 이메일을 입력하면 <b>바로 주소록에 등록(확인됨)</b>되어 캠페인·메일에 쓸 수 있습니다. 분류는 기존 것을 고르거나 새로 적어 넣을 수 있습니다.</div>
       <div class="field-row">
@@ -1973,128 +2015,6 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
-       내 캠페인 — 모든 캠페인의 기록. 목록/검색은 REST로 빠르게,
-       수신자별 상세·기관별 집계처럼 깊은 조회는 K-Mail SP가 이미
-       가진 KMAIL_CAMPAIGN_REPORT/KMAIL_LOOKUP_CAMPAIGNS 대화 능력으로
-       넘긴다(백엔드 스키마가 계속 바뀌는 중이라, 여기서 수신자별
-       테이블을 직접 그리면 스키마 변경마다 이 화면도 깨진다).
-       ══════════════════════════════════════════════════════════ -->
-  <div id="tab-campaigns" class="tab-panel">
-    <div class="pg-bar" data-pgbar="mail"></div>
-    <div class="camp-subbar" data-campbar></div>
-    <div class="card" id="camp-list-card">
-      <h2>내 캠페인</h2>
-      <div class="sub">캠페인을 제목으로 검색하고, 항목을 눌러 상세를 확인합니다.</div>
-      <div class="filter-row"><input type="text" id="camp-filter-q" placeholder="제목으로 검색" oninput="_campFilterApply()"></div>
-      <div class="camp-bulk" id="camp-bulk" style="display:none"><label><input type="checkbox" id="camp-sel-all" onchange="_campSelAll(this.checked)"> 전체 선택</label><button type="button" class="btn-danger" id="camp-del-sel" onclick="_campDeleteSelected()" disabled>선택 삭제</button><button type="button" class="btn-danger" id="camp-del-all" onclick="_campDeleteAll()">전체 삭제</button><span id="camp-del-msg" style="color:var(--hint)"></span></div>
-      <div id="camp-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="camp-empty" style="display:none;font-size:14px;color:var(--hint)">캠페인이 없습니다. 홈에서 메일 → 캠페인으로 시작하세요.</div>
-      <div id="camp-items"></div>
-    </div>
-
-    <div class="card" id="camp-detail-card" style="display:none">
-      <a onclick="_campBackToList()" style="font-size:13px;color:var(--pri);cursor:pointer;text-decoration:underline">← 목록으로</a>
-      <h2 id="camp-detail-title" style="margin-top:10px"></h2>
-      <div id="camp-detail-rows"></div>
-      <div id="camp-digest-loading" class="loading-row" style="display:none"><span class="spinner"></span>보고 내용을 불러오는 중…</div>
-      <div id="camp-digest-box" style="display:none"></div>
-      <div style="margin-top:16px">
-        <button class="btn btn-primary btn-sm" onclick="_campAskChatAboutThis()">💬 K-Mail에게 이 캠페인 자세히 물어보기</button>
-        <button class="btn btn-primary btn-sm" id="camp-resume-btn" style="display:none" onclick="_campResumeConversation()">🔄 이어서 대화하기</button>
-      </div>
-      <div class="hint">수신자별 현황·기관별 집계 등 세부 내용은 K-Mail에게 물어보세요. 초안은 “이어서 대화”로 계속할 수 있습니다.</div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════
-       캠페인 이력 — 2026-11-20 신설(주피터 지시). 캠페인이 끝나면 성과를 정리한 보고서를 만들어 이곳에 저장한다.
-       예) 세미나: 주제 · 참석자 목록 · 모임 방식(온라인/오프라인)과 장소 · 성과 · 후속 조치.
-       지금은 화면 배치(레이아웃)만 있다 — 목록은 비어 있고, [예시 보고서 보기]로 배치를 미리 볼 수 있다.
-       보고서 자료 형태(_CH_SCHEMA)는 아래 스크립트 주석에 적어 두었고, 저장·불러오기는 백엔드가 정해지면 연결한다.
-       ══════════════════════════════════════════════════════════ -->
-  <div id="tab-camphist" class="tab-panel">
-    <div class="pg-bar" data-pgbar="mail"></div>
-    <div class="camp-subbar" data-campbar></div>
-    <div class="card" id="ch-list-card">
-      <h2>캠페인 이력</h2>
-      <div class="sub">끝난 캠페인의 <b>성과 보고서</b>가 저장됩니다. 항목을 눌러 보고서를 읽고, 복사하거나 파일로 받을 수 있습니다.</div>
-      <div class="ch-stats" id="ch-stats" aria-label="이력 요약">
-        <div class="ch-stat"><b id="ch-st-total">0</b><span>종료한 캠페인</span></div>
-        <div class="ch-stat"><b id="ch-st-sent">–</b><span>보낸 메일</span></div>
-        <div class="ch-stat"><b id="ch-st-reply">–</b><span>회신</span></div>
-        <div class="ch-stat"><b id="ch-st-attend">–</b><span>참석(확정)</span></div>
-      </div>
-      <div class="filter-row">
-        <input type="text" id="ch-filter-q" placeholder="제목·주제로 검색" oninput="_chRender()">
-        <select id="ch-filter-kind" onchange="_chRender()" aria-label="유형">
-          <option value="">전체 유형</option>
-          <option value="seminar">세미나·행사</option>
-          <option value="recruit">모집·신청</option>
-          <option value="outreach">안내·홍보</option>
-          <option value="other">기타</option>
-        </select>
-        <select id="ch-filter-year" onchange="_chRender()" aria-label="기간">
-          <option value="">전체 기간</option>
-          <option value="2026">2026년</option>
-          <option value="2025">2025년</option>
-        </select>
-      </div>
-      <div id="ch-items"></div>
-      <div class="ch-empty" id="ch-empty">
-        <b>아직 저장된 보고서가 없습니다</b>
-        캠페인이 끝나면 성과를 정리한 보고서가 여기에 저장됩니다.<br>
-        <button type="button" class="btn btn-outline btn-sm" style="margin-top:10px" onclick="_chOpenSample()">예시 보고서 보기</button>
-      </div>
-    </div>
-
-    <div class="card" id="ch-detail-card" style="display:none">
-      <a onclick="_chBack()" style="font-size:13px;color:var(--pri);cursor:pointer;text-decoration:underline">← 목록으로</a>
-      <div class="ch-sample" id="ch-sample-note" style="display:none;margin-top:8px">※ 화면 배치를 보여 드리는 <b>예시</b>입니다. 실제 캠페인 자료가 아닙니다.</div>
-      <h2 id="ch-d-title" style="margin-top:10px"></h2>
-      <div class="ch-rep-meta" id="ch-d-meta"></div>
-      <div class="ch-stats" id="ch-d-stats" style="margin-top:14px"></div>
-      <div id="ch-d-body"></div>
-      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-        <button type="button" class="btn btn-primary btn-sm" onclick="_chCopy()">복사</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="_chSaveFile()">파일로 받기</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="_chAskChat()">💬 K-Mail에게 이 캠페인 이어서 묻기</button>
-      </div>
-      <div class="hint">보고서는 캠페인이 끝날 때 K-Mail이 정리해 저장합니다. 고칠 내용은 K-Mail에게 말로 요청하세요.</div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════
-       빠른 발송 — 대화·캠페인 설계 없이 한 통을 즉시 보내는 단순
-       폼(2026-09-08, hondi.net의 옛 /mail.html을 이 웹앱으로 흡수).
-       "새 캠페인"과 달리 K-Mail이 수신자·제목·본문을 설계하지 않고
-       입력한 그대로 즉시 발송한다 — 받은 메일함 열람 기능은 없음.
-       ══════════════════════════════════════════════════════════ -->
-  <div id="tab-quicksend" class="tab-panel">
-    <div class="pg-bar" data-pgbar="mail"></div>
-  <div id="qs-sent-card" class="sent-card" role="status" aria-live="polite" tabindex="-1" style="display:none"></div>
-    <div class="card">
-      <h2>빠른 발송</h2>
-      <div class="sub">외부 주소로 한 통을 바로 보냅니다. 캠페인 설계 없는 단순 발송입니다.</div>
-      <div class="field"><label>받는 사람</label><div class="rcpt-wrap"><input type="email" id="qs-to" autocomplete="off" placeholder="이름·이메일로 주소록 검색 또는 주소 직접 입력" style="padding-right:46px" oninput="_qsRcptInput()" onkeydown="_qsRcptKey(event)" onblur="_qsRcptBlur()"><button type="button" class="qs-sbtn" id="qs-search-btn" title="주소록에서 검색" aria-label="주소록에서 검색" onclick="_qsRcptInput(true)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button><div class="rcpt-sug" id="qs-sug" style="display:none"></div></div></div>
-      <div class="field"><label>제목</label><input type="text" id="qs-subject" placeholder="제목"></div>
-      <div class="field"><label>내용</label><textarea id="qs-text" rows="8" placeholder="내용을 입력하세요" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--r);font-family:inherit;font-size:15px"></textarea></div>
-      <div class="field">
-        <label>첨부파일 <span style="color:var(--hint);font-weight:400">(선택, 최대 25MB)</span></label>
-        <div class="qs-tools">
-          <input type="file" id="qs-file">
-          <input type="file" id="qs-cam" accept="image/*" capture="environment" style="display:none">
-          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('qs-cam').click()"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 6.5h3.3l1.4-2.5h6.6l1.4 2.5H20a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2zM12 8.6a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2z"/><circle cx="12" cy="13.2" r="2.2"/></svg>카메라</button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="_docModalOpen('qs')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>문서 작성</button>
-        </div>
-        <div id="qs-attach-list" style="font-size:13px;color:var(--sub);margin-top:6px"></div>
-      </div>
-      <div id="qs-err" class="errbox" style="display:none"></div>
-      <div id="qs-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
-      <div style="margin-top:10px"><button class="btn btn-primary" id="qs-submit-btn" data-requires-login="빠른 발송" onclick="_qsSendMail()">보내기</button></div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════
        메일 — 편지쓰기/임시보관함/보낸메일함/받은메일함/태그별 보관함을
        갖춘 전형적인 메일 클라이언트 화면(2026-09-11 신설). "빠른 발송"과
        달리 받은편지함·초안·라벨(태그)까지 아우른다. 백엔드는 대부분
@@ -2103,19 +2023,22 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
        PR feat/kmail-tab-backend 참고).
        ══════════════════════════════════════════════════════════ -->
   <div id="tab-mail" class="tab-panel">
-    <div class="pg-bar" data-pgbar="mail"></div>
-    <div class="card">
-      <div class="gl-head" style="margin-bottom:8px"><h2>메일</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="mail-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('mail','compose')">시뮬레이션</button></div>
-      <div class="mail-subnav">
-        <button type="button" id="mail-subnav-compose" class="active" onclick="_mailSwitchSub('compose')">편지쓰기</button>
-        <button type="button" id="mail-subnav-drafts" onclick="_mailSwitchSub('drafts')">Draft</button>
-        <button type="button" id="mail-subnav-sent" onclick="_mailSwitchSub('sent')">보낸메일함</button>
+    <div data-hub="mail"></div>
+    <div class="hub-back" data-back="mail"></div>
+    <div class="mail-wrap">
+      <div class="mail-subnav" role="group" aria-label="메일함">
+        <button type="button" id="mail-subnav-compose" hidden onclick="_mailSwitchSub('compose')">메일 쓰기</button>
         <button type="button" id="mail-subnav-inbox" onclick="_mailSwitchSub('inbox')">받은메일함<span class="unread-badge" data-for="inbox" hidden></span></button>
-        <button type="button" id="mail-subnav-tags" onclick="_mailSwitchSub('tags')">태그별 보관함</button>
+        <button type="button" id="mail-subnav-sent" onclick="_mailSwitchSub('sent')">보낸메일함</button>
+        <button type="button" id="mail-subnav-drafts" onclick="_mailSwitchSub('drafts')">임시보관</button>
+        <button type="button" id="mail-subnav-tags" onclick="_mailSwitchSub('tags')">태그별</button>
       </div>
+    <div class="card">
+      <div class="gl-head mail-sim-row"><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="mail-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('mail','compose')">시뮬레이션</button></div>
 
       <!-- 편지쓰기 -->
       <div id="mail-sub-compose" class="mail-sub active">
+      <div class="mail-ai"><span>무엇을 쓸지 말씀하시면 나비가 초안을 만듭니다.</span><button type="button" class="btn btn-sm btn-outline" onclick="_switchTab('letter')">나비에게 써 달라기</button></div>
       <div id="mail-sent-card" class="sent-card" role="status" aria-live="polite" tabindex="-1" style="display:none"></div>
         <div id="mail-compose-editing-note" style="display:none;font-size:13px;color:var(--hint);margin-bottom:8px"></div>
         <div class="field"><label>받는 사람</label><div class="rcpt-wrap"><div class="rcpt-box" id="rcpt-box-mail-to" onclick="this.querySelector('input').focus()"><input type="text" id="mail-to" autocomplete="off" placeholder="이름·이메일로 주소록 검색 또는 주소 직접 입력" oninput="_rcptInput('mail-to')" onkeydown="_rcptKey(event,'mail-to')" onblur="_rcptBlur('mail-to')"></div><div class="rcpt-sug" id="rcpt-sug-mail-to" style="display:none"></div></div></div>
@@ -2127,9 +2050,15 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div class="field">
           <label>첨부파일 <span style="color:var(--hint);font-weight:400">(선택, 최대 25MB)</span></label>
           <input type="file" id="mail-file" hidden>
-          <button type="button" class="btn-sec" id="mail-file-btn" style="padding:6px 14px;border:1px solid var(--border,#d9e0ea);border-radius:8px;background:var(--bg,#fff);color:inherit;cursor:pointer" onclick="document.getElementById('mail-file').click()">파일 선택</button>
+          <input type="file" id="mail-cam" accept="image/*" capture="environment" hidden>
+          <div class="mail-tools">
+            <button type="button" class="btn btn-sm btn-outline" id="mail-file-btn" onclick="document.getElementById('mail-file').click()">파일 선택</button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('mail-cam').click()">카메라</button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="_docModalOpen('mail')">서류 작성해 첨부</button>
+          </div>
           <div id="mail-attach-list" style="font-size:13px;color:var(--sub);margin-top:6px"></div>
         </div>
+        <div class="field"><label for="mail-task">과제 <span style="color:var(--hint);font-weight:400">(선택 — 연결 기록은 이 기기에만 남습니다)</span></label><select id="mail-task"><option value="">연결 안 함</option></select></div>
         <div id="mail-compose-err" class="errbox" style="display:none"></div>
         <div id="mail-compose-ok" style="display:none;color:var(--grn);font-size:14px;margin-top:8px"></div>
         <div style="margin-top:10px;display:flex;gap:8px">
@@ -2150,7 +2079,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
 
       <!-- 보낸메일함 -->
       <div id="mail-sub-sent" class="mail-sub">
-        <div class="sub">직접 보낸 메일만 표시됩니다. 캠페인 발송은 “내 캠페인”에서 확인하세요.</div>
+        <div class="sub">직접 보낸 메일만 표시됩니다. 메일 캠페인의 발송·회신은 과제 탭의 캠페인 과제에서 확인하세요.</div>
         <div id="mail-sent-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-sent-empty" style="display:none;font-size:14px;color:var(--hint)">보낸 메일이 없습니다.</div>
         <div id="mail-sent-items"></div>
@@ -2159,7 +2088,8 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
       <!-- 받은메일함 -->
       <div id="mail-sub-inbox" class="mail-sub">
         <div class="sub">제목을 누르면 열리고 읽음 처리됩니다. 라벨은 “태그별 보관함”에서 모아 봅니다.</div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button type="button" class="btn btn-outline btn-sm" id="mail-inbox-markall" onclick="_mailMarkAllRead()">모두 읽음으로 표시</button></div>
+        <div class="tk-filters"><div role="group" aria-label="받은메일 거르기" id="mail-inbox-chips"></div><button type="button" class="btn btn-outline btn-sm" id="mail-inbox-markall" onclick="_mailMarkAllRead()">모두 읽음으로 표시</button></div>
+        <div id="mail-inbox-nomatch" class="tk-empty" hidden>이 조건에 맞는 메일이 없습니다.</div>
         <div id="mail-inbox-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
         <div id="mail-inbox-empty" style="display:none;font-size:14px;color:var(--hint)">받은 메일이 없습니다.</div>
         <div id="mail-inbox-items"></div>
@@ -2174,6 +2104,7 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
         <div id="mail-tags-items"></div>
       </div>
 
+    </div>
     </div>
   </div>
 
@@ -2573,29 +2504,13 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     <div class="hint">서류를 다 쓴 뒤 <b>완료</b>를 누르면 Word 파일이 편지쓰기 화면에 첨부됩니다. 받는 사람은 그 화면에서 고르세요.</div>
   </div>
 
-  <div id="tab-docdrafts" class="tab-panel">
-    <div class="pg-bar" data-pgbar="doc"></div>
-    <div class="card">
-      <div class="gl-head"><h2>서류 Draft</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="docs-sim-drafts" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('docs','drafts')">시뮬레이션</button></div>
-      <div class="sub">작성 중 나간 서류가 이 기기에 자동 저장됩니다. 요청문과 받아 둔 Word 파일이 보관되며 입력칸은 복원되지 않습니다. 다른 기기와는 동기화되지 않습니다.</div>
-      <div id="docdrafts-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="docdrafts-empty" style="display:none;font-size:14px;color:var(--hint)">저장된 서류 Draft가 없습니다.</div>
-      <div id="docdrafts-items"></div>
-    </div>
-  </div>
-  <div id="tab-docdone" class="tab-panel">
-    <div class="pg-bar" data-pgbar="doc"></div>
-    <div class="card">
-      <div class="gl-head"><h2>작성한 서류</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="docs-sim-done" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('docs','done')">시뮬레이션</button></div>
-      <div class="sub">서류 화면에서 "작성 완료로 저장"을 누르거나 서류를 메일에 첨부하면 이곳에 보관됩니다(이 기기의 PDV).</div>
-      <div id="docdone-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
-      <div id="docdone-empty" style="display:none;font-size:14px;color:var(--hint)">아직 작성한 서류가 없습니다.</div>
-      <div id="docdone-items"></div>
-    </div>
+  <div id="tab-docs" class="tab-panel">
+    <div data-hub="docs"></div>
+    <div class="card"><div id="hub-docs"></div></div>
   </div>
 
   <div id="tab-othersite" class="tab-panel">
-    <div class="pg-bar" data-pgbar="doc"></div>
+    <div class="hub-back" data-back="othersite"></div>
     <div class="card" style="max-width:760px;margin-left:auto;margin-right:auto">
       <div class="gl-head"><h2>어느 사이트에 입력할까요?</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="othersite-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('othersite','steps')">시뮬레이션</button></div>
       <div class="sub" id="ots-sub">종이 서류 사진이나 적어 둔 내용을, 다른 사이트의 입력 칸에 나비웹 도우미가 옮겨 적습니다. 로그인과 마지막 제출은 사용자가 직접 합니다.</div>
@@ -2616,13 +2531,10 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
   </div>
   <div id="tab-myforms" class="tab-panel">
-    <div class="pg-bar" data-pgbar="doc"></div>
+    <div class="hub-back" data-back="myforms"></div>
     <div class="card">
-      <div class="gl-head"><h2>내 서류함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="myforms-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('myforms','forms')">시뮬레이션</button><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
-      <div class="sub">작성·제출 이력과 자주 쓰는 양식이 이 기기에만 보관됩니다. 양식은 누르면 바로 열리며, 작성 중 “내 서류함에 담기”로 추가할 수 있습니다.</div>
-      <div class="dr-sec">작성·제출 이력</div>
-      <div id="mf-history"></div>
-      <div class="dr-sec">양식</div>
+      <div class="gl-head"><h2>양식함</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="myforms-sim" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('myforms','forms')">시뮬레이션</button><button type="button" class="mfb-btn mfb-filled" onclick="_mfNewOpen()">＋ 새 양식 만들기</button></div>
+      <div class="sub">자주 쓰는 양식이 이 기기에만 보관됩니다. 누르면 바로 열리며, 서류 작성 중 “양식함에 담기”로 추가할 수 있습니다.</div>
       <div id="mf-new" hidden></div>
       <div id="mf-loading" class="loading-row"><span class="spinner"></span>불러오는 중…</div>
       <div id="mf-empty" style="display:none;font-size:14px;color:var(--hint)">아직 보관한 양식이 없습니다.</div>
@@ -2630,34 +2542,9 @@ html[data-card=lift] .card{border-radius:10px;box-shadow:0 2px 6px rgba(33,37,41
     </div>
   </div>
 
-  <div id="tab-tasks" class="tab-panel"><div id="task-root"></div></div>
-
-  <div id="tab-gprog" class="tab-panel">
-    <div id="gt-bar-gprog"></div>
-    <div class="card">
-      <div class="gl-head"><h2>진행 중인 과제</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="guide-sim-prog" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('guide','prog')">시뮬레이션</button><button type="button" class="btn btn-sm btn-primary" onclick="_guideOpen(null)">＋ 새 과제</button></div>
-      <div class="sub">아직 끝나지 않은 과제입니다. 누르면 대화와 계획서가 열립니다. <span id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</span></div>
-      <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-notify-btn" onclick="_guideNotifyToggle()">브라우저 알림 켜기</button><span id="gl-notify-st"></span></div>
-      <div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-server-btn" onclick="_guideServerToggle()">서버 알림 켜기</button><span id="gl-server-st"></span></div>
-      <div id="gl-alerts"></div>
-      <div id="gprog-empty" style="display:none;font-size:14px;color:var(--hint)">진행 중인 과제가 없습니다.</div>
-      <div id="gprog-items"></div>
-    </div>
-    <div id="gprog-solo" class="cs-solo"></div>
-  </div>
+  <div id="tab-tasks" class="tab-panel"><div data-hub="tasks"></div><div id="task-root"></div></div>
 
   <div id="gl-toast" role="status" aria-live="polite" hidden></div>
-
-  <div id="tab-gdone" class="tab-panel">
-    <div id="gt-bar-gdone"></div>
-    <div class="card">
-      <div class="gl-head"><h2>완료한 과제</h2><span class="gl-sp"></span><button type="button" class="mfb-btn simbtn" id="guide-sim-done" aria-label="가상 데이터로 시뮬레이션" onclick="window._simOpen&&window._simOpen('guide','done')">시뮬레이션</button></div>
-      <div class="sub">성공 여부와 원인·교훈이 기록된 과제입니다. 새 과제를 세울 때 참고됩니다.</div>
-      <div id="gdone-empty" style="display:none;font-size:14px;color:var(--hint)">완료한 과제가 없습니다.</div>
-      <div id="gdone-items"></div>
-    </div>
-    <div id="gdone-solo" class="cs-solo"></div>
-  </div>
 
   <div id="tab-guide" class="tab-panel gd-panel"></div>
   <div id="tab-whitepaper" class="tab-panel">
@@ -2812,7 +2699,7 @@ function _kmailAutoResize(el) {
   nav.addEventListener('focusin', (e) => { try { if (e.target.matches(':focus-visible')) snOpen(); } catch (x) {} });
   nav.addEventListener('focusout', (e) => { if (!nav.contains(e.relatedTarget)) snClose(); });
   nav.addEventListener('click', (e) => {
-    if (!e.target.closest('.nav-btn,.nav-subitem,.side-logo')) return;   // 나비 로고(홈 버튼)를 눌러도 아이콘 막대로 접는다
+    if (!e.target.closest('.nav-btn,.side-logo')) return;   // 나비 로고(홈 버튼)를 눌러도 아이콘 막대로 접는다
     snClose();
     if (document.activeElement && nav.contains(document.activeElement)) document.activeElement.blur();
   });
@@ -3213,8 +3100,8 @@ async function _homeFiled(doc, state) {
   const id = _homeAgent.hist[doc];
   const r = id ? await _histAdvance(id, state) : null;
   if (!r && _homeAgent.proc[doc] && !_procSent.has(JSON.stringify(_homeAgent.proc[doc]))) { const d = await _procDraftSave(_homeAgent.proc[doc]); if (d === 'saved') _homeSay('“' + doc + '” 절차를 처리했습니다.' + _histDraftNote(d)); }
-  if (!r) { if (state === 'filed') _homeSay('“' + doc + '” 이력을 갱신하지 못했습니다. 내 서류함에서 확인해 주세요.'); return; }
-  if (r.changed) _homeSay('“' + doc + '” 접수를 내 서류함 ▸ 작성·제출 이력에 기록했습니다.' + _histDraftNote(r.draft));
+  if (!r) { if (state === 'filed') _homeSay('“' + doc + '” 이력을 갱신하지 못했습니다. 과제 ▸ 서류에서 확인해 주세요.'); return; }
+  if (r.changed) _homeSay('“' + doc + '” 접수를 과제 ▸ 서류의 작성·제출 이력에 기록했습니다.' + _histDraftNote(r.draft));
 }
 // 표준 절차: 저장된(승인된) 절차를 먼저 쓰고, 없으면 공공기관 자료로 계획을 수립한 뒤 도우미에게 맡긴다
 async function _homePlanAndRun(task, userText, detail) {
@@ -3259,7 +3146,7 @@ async function _homePlanAndRunOnce(task, userText, detail) {
   choices.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = c.label; b.onclick = async () => { box.remove(); await c.go(); }; opts.appendChild(b); });
   box.appendChild(opts); thread.appendChild(box); _cmpScrollToBottom();
 }
-// ── 내 서류함 ▸ 작성·제출 이력 (이 기기 PDV, kind='history') ──
+// ── 작성·제출 이력 (이 기기 PDV, kind='history') — 서류 탭에서 서류와 한 줄로 보여 준다 ──
 let _histOk = null;
 async function _histSupported() {
   if (_histOk !== null) return _histOk;
@@ -3319,32 +3206,6 @@ async function _procDraftSend(proc) {
 function _histDraftNote(d) {
   return d === 'saved' ? ' 이번에 쓴 계획은 개인 자료 없이 공용 절차 초안으로 올렸습니다. 관리자가 승인하면 다른 이용자의 같은 요청에 쓰입니다.'
     : d === 'failed' ? ' 공용 절차 초안은 저장하지 못했습니다.' : '';
-}
-async function _histRender() {
-  const box = document.getElementById('mf-history'); if (!box || !window.DocHistory) return;
-  box.textContent = '불러오는 중…';
-  try {
-    const supported = await _histSupported();
-    const list = supported ? (await _drCall('list', { kind: 'history' })).items.slice(0, 100) : [];
-    const full = [];
-    for (const s of list) full.push((await _drCall('get', { id: s.id })).item);
-    const done = (await _drCall('list', { kind: 'doc', status: 'done' })).items || [];
-    const rows = DocHistory.rows(full, done);
-    if (!rows.length) { box.innerHTML = '<div style="font-size:14px;color:var(--hint)">아직 작성하거나 제출한 서류가 없습니다.</div>'; return; }
-    box.innerHTML = rows.map((r) => {
-      const acts = (r.hasFile ? [['dl', '파일 받기']] : []).concat(r.canMark ? [['filed', '제출 완료로 표시']] : []).concat(r.source === 'history' ? [['del', '삭제']] : []);
-      return '<div class="list-item" data-id="' + escHtml(r.id) + '"><div class="li-main"><div class="li-title">' + escHtml(r.title || '(제목 없음)') + '</div><div class="li-sub">' + escHtml([r.label, r.agency, fmtDt(r.at)].filter(Boolean).join(' · ')) + '</div></div><div class="dr-actions">' +
-        acts.map((a) => '<button type="button" class="btn btn-outline btn-sm" data-act="' + a[0] + '">' + a[1] + '</button>').join('') + '</div></div>';
-    }).join('');
-    box.querySelectorAll('button[data-act]').forEach((b) => b.addEventListener('click', async () => {
-      const id = b.closest('.list-item').getAttribute('data-id'), act = b.getAttribute('data-act');
-      try {
-        if (act === 'dl') await _drDownload((await _drCall('get', { id })).item);
-        else if (act === 'del') { if (await (window.mpConfirm || confirm)('이 이력을 삭제할까요? 받아 둔 파일도 함께 지워집니다.')) { await _drCall('delete', { id }); _histRender(); } }
-        else if (act === 'filed') { const r = await _histAdvance(id, 'filed'); _drToast(r ? '제출 완료로 기록했습니다.' + _histDraftNote(r.draft) : '기록하지 못했습니다.'); _histRender(); }
-      } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
-    }));
-  } catch (e) { box.textContent = 'PDV 연결을 확인하지 못했습니다. 잠시 후 다시 열어 주세요.'; }
 }
 // 진행 중인 일에 대한 답·추가 정보는 새 요청으로 보내지 않고 도우미에게 전한다. true = 전달했다.
 async function _homeAgentRelay(text) {
@@ -3434,7 +3295,7 @@ function _homeAgentFile(doc, f) {
   _homeAgent.got[doc] = true;
   const kept = f.data.byteLength <= 8 * 1024 * 1024;   // PDV 보관 상한
   _histAdvance(_homeAgent.hist[doc], _homeNoun(doc) === ' 발급' ? 'issued' : '', kept ? { name: f.name, mime: f.mime, data: f.data } : null)
-    .then((r) => { if (r && kept) _homeSay('받은 파일은 내 서류함 ▸ 작성·제출 이력에도 보관했습니다.'); });
+    .then((r) => { if (r && kept) _homeSay('받은 파일은 과제 ▸ 서류의 작성·제출 이력에도 보관했습니다.'); });
   if (_homeAgent.active && _homeAgent.active.doc === doc && _homeNoun(doc) === ' 발급') _homeAgent.active = null;   // 발급은 파일을 받으면 끝난다(신고·신청은 접수증을 받아도 이어질 수 있다)
   const thread = document.getElementById('cmp-thread'); if (!thread) return;
   const mime = f.mime === 'application/pdf' ? 'application/pdf' : 'application/octet-stream';
@@ -3639,21 +3500,21 @@ document.getElementById('cmp-cam').addEventListener('change', function () {
 
 let _docTarget = 'compose';
 function _docModalOpen(where) {
-  _docTarget = where === 'qs' ? 'qs' : 'compose';
+  _docTarget = where === 'mail' ? 'mail' : 'compose';
   const sel = document.getElementById('doc-modal-site');
   if (!sel.options.length) _DOC_SITES.forEach(x => sel.add(new Option(x.label, x.id)));
   const panel = document.getElementById('doc-modal');
-  const anchor = _docTarget === 'qs' ? document.querySelector('#tab-quicksend > .card') : document.querySelector('#tab-compose .chat-composer');
+  const anchor = _docTarget === 'mail' ? document.querySelector('#tab-mail .mail-wrap') : document.querySelector('#tab-compose .chat-composer');
   if (anchor && panel.previousElementSibling !== anchor) anchor.after(panel);   // 입력 화면 바로 아래에 펼친다
   panel.classList.add('open');
-  document.getElementById(_docTarget === 'qs' ? 'tab-quicksend' : 'tab-compose').classList.add('doc-open');
-  try { (_docTarget === 'qs' ? panel : anchor).scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {}   // 기존 화면이 위로 밀려 올라간다
+  document.getElementById(_docTarget === 'mail' ? 'tab-mail' : 'tab-compose').classList.add('doc-open');
+  try { (_docTarget === 'mail' ? panel : anchor).scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {}   // 기존 화면이 위로 밀려 올라간다
   if (!document.getElementById('doc-modal-frame').src) _docLoadInto(sel.value, { frame: 'doc-modal-frame', sel: 'doc-modal-site', note: 'doc-modal-note' });
 }
 function _docModalClose() {
   document.getElementById('doc-modal').classList.remove('open');
   document.getElementById('tab-compose').classList.remove('doc-open');
-  document.getElementById('tab-quicksend').classList.remove('doc-open');
+  document.getElementById('tab-mail').classList.remove('doc-open');
 }
 // "첨부": 서류 쪽에 지금 작성한 서류를 보내 달라고 요청한다(그러면 navi-doc-done 이 돌아와 첨부된다)
 function _docModalAttach() {
@@ -5251,7 +5112,7 @@ function _cmpGuidePick() {
     : '나비 길잡이입니다. 이루고 싶은 과제를 한 줄로 말씀해 주세요(예: GPU 지원사업 응모). 관련 자료를 첨부하면 읽고, 짧은 대화 뒤에 과제 계획서 초안을 만들어 아래에 보여 드립니다. 고칠 곳만 말씀해 주시면 됩니다.';
   _orgActivate({ key: 'kguide', label: '나비 길잡이', sp: 'inline:guide:v1', spText: _GUIDE_SP, group: 'guide', guide: true }, greeting);
   _guideRender();
-  document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-gv').forEach(x => x.classList.remove('active')); { const gn = document.getElementById('tab-btn-guidenav'); if (gn) gn.classList.add('active'); }   // 왼쪽 메뉴도 홈이 아니라 나비 길잡이가 켜진 것으로 표시
+  document.querySelectorAll('.side-nav .nav-btn').forEach(x => x.classList.remove('active')); { const gn = document.getElementById('tab-btn-guidenav'); if (gn) gn.classList.add('active'); }   // 왼쪽 메뉴도 홈이 아니라 나비 길잡이가 켜진 것으로 표시
 }
 function _guideSelChange(sel) {
   _guide.cur = sel.value || null; _guideStore(); _guideRender();
@@ -5336,7 +5197,7 @@ async function _guidePdvSync(force) {
     }
     Object.keys(_guide.plans).forEach(id => { if (!remote[id]) delete _gp.sig[id]; });   // PDV 에 없으면(처음이거나 PDV 를 비웠다) 올린다
     _gp.last = Date.now();
-    if (changed) { _guideStore(true); const d = document.getElementById('cmp-guide-doc'); if (d && !d.hidden) _guideRender(); ['prog', 'done'].forEach(k => { const t = document.getElementById('tab-g' + k); if (t && t.classList.contains('active')) _guideRenderList(k); }); }
+    if (changed) { _guideStore(true); const d = document.getElementById('cmp-guide-doc'); if (d && !d.hidden) _guideRender(); }
     await _guidePdvPush(); _guideNotifyCheck();
   } catch (e) { /* PDV 중계가 안 열리면 이 브라우저 저장만 쓴다 */ }
   finally { _gp.busy = false; }
@@ -5410,7 +5271,7 @@ function _notifyGo(go) {
   go = String(go || '');
   if (go.indexOf('guide:') === 0) { _guideOpen(go.slice(6)); return; }
   if (go === 'guide-prog') { _guideTabOpen(); return; }
-  if (go === 'mail' || go === 'docs') { _switchTab('mail'); try { _navMailSub('inbox'); } catch (e) {} }
+  if (go === 'mail' || go === 'docs') { try { _navMailSub('inbox'); } catch (e) { _switchTab('mail'); } }
 }
 /** 알림 전달: 탭이 보이면 화면 구석 카드, 가려져 있으면 브라우저 알림(켠 경우). 둘 다 못 하면 false(쌓아 두었다가 보일 때 다시). */
 function _notifyDeliver(list) {
@@ -5423,9 +5284,6 @@ function _notifyDeliver(list) {
 function _guideNotifyCheck() {
   try {
     const al = _guideAlerts();
-    document.querySelectorAll('.unread-badge[data-for="guide"]').forEach(el => { el.textContent = al.length > 99 ? '99+' : String(al.length); el.hidden = !al.length; });
-    const box = document.getElementById('gl-alerts');
-    if (box) { box.innerHTML = al.map(a => '<button type="button" class="gl-alert' + (a.sev >= 3 ? ' s3' : '') + '" data-id="' + escHtml(a.id) + '">' + (a.sev >= 3 ? '⚠' : '•') + ' <span>' + escHtml(a.msg) + '</span></button>').join(''); box.onclick = (e) => { const b = e.target.closest && e.target.closest('.gl-alert'); if (b) _guideOpen(b.dataset.id); }; }
     _guideNotifyStatus();
     if (window.TaskHome) TaskHome.refresh();
     let seen = {}; try { seen = JSON.parse(localStorage.getItem(_GN_KEY) || '{}') || {}; } catch (e) {}
@@ -5445,13 +5303,8 @@ function _mailLooksLikeDocResult(m) {
   const from = String(m.counterparty || '').toLowerCase(), em = (/[^\s<>]+@[^\s<>]+/.exec(from) || [''])[0], dom = em.split('@')[1] || '';
   return /\.go\.kr$/.test(dom) || /(접수|처리\s*결과|결과\s*(통보|통지|안내)|결정\s*통지|통지서|반려|보완\s*요청|심사\s*결과|승인|허가|정보\s*공개)/.test(String(m.subject || ''));
 }
-function _mailNotifyBadges() {
-  const un = (_mailInboxCache || []).filter(_mailIsUnread), dc = un.filter(_mailLooksLikeDocResult);
-  [['mail-all', un.length, '안 읽은 메일 '], ['docs-all', dc.length, '서류 처리 결과로 보이는 안 읽은 메일 ']].forEach(([k, n, lab]) => document.querySelectorAll('.unread-badge[data-for="' + k + '"]').forEach(el => { el.hidden = !n; el.textContent = n > 99 ? '99+' : String(n || ''); if (n) el.setAttribute('aria-label', lab + n + '통'); else el.removeAttribute('aria-label'); }));
-}
 function _mailNotifyCheck() {
   try {
-    _mailNotifyBadges();
     const inbox = (_mailInboxCache || []).filter(m => m && m.direction === 'received');
     let st = null; try { st = JSON.parse(localStorage.getItem(_MN_KEY) || 'null'); } catch (e) {}
     const save = (seen) => { try { localStorage.setItem(_MN_KEY, JSON.stringify({ ids: [...seen].slice(-400) })); } catch (e) {} };
@@ -5503,21 +5356,56 @@ let _gcTimer = null;
 function _guideCheckSoon() { clearTimeout(_gcTimer); _gcTimer = setTimeout(_guideNotifyCheck, 800); }
 document.addEventListener('DOMContentLoaded', () => {
   _guideLoad(); _gpStatus(); _guideNotifyStatus(); _guideServerStatus();
-  setTimeout(() => { _guideNotifyCheck(); _guidePdvSync(true); _guideServerSync(); }, 2500);
-  setInterval(() => { _guideNotifyCheck(); _guidePdvSync(); _guideServerSync(); }, 5 * 60 * 1000);
+  setTimeout(() => { _guideNotifyCheck(); _guidePdvSync(true); _guideServerSync(); if (window.TaskHome) TaskHome.sync(); }, 2500);
+  setInterval(() => { _guideNotifyCheck(); _guidePdvSync(); _guideServerSync(); if (window.TaskHome) TaskHome.sync(); }, 5 * 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { _guidePdvSync(); _guideLoad(); _guideNotifyCheck(); } });
 });
-// ── 나비 길잡이(2026-11-06): 하위 메뉴 없이 한 페이지. 위쪽 탭 = 진행 중 · 완료 · 맡긴 일 · 맡은 일 ──
-// 나 홀로 일은 따로 페이지를 두지 않고 "진행 중"(끝나지 않은 일)·"완료"(종료·보관) 탭 안에 함께 나온다. 마지막에 본 탭을 기억한다.
-const _GTABS = [['gprog', '진행 중'], ['gdone', '완료'], ['casecons', '맡긴 일'], ['caseprov', '맡은 일']];
-function _gtabsHtml(active) {
-  const caseOn = !window.CaseUI || CaseUI.enabled();   // 업무(맡긴 일·맡은 일)를 껐으면 두 탭은 숨김
-  return '<div class="cs-modes" role="tablist" aria-label="' + _i18nEsc(_T('과제')) + '"><button type="button" class="cs-mode" onclick="_guideTabOpen()">← ' + _i18nEsc(_T('내 과제')) + '</button>' + _GTABS.filter(x => caseOn || x[0].indexOf('case') !== 0).map(x =>
-    '<button type="button" role="tab" class="cs-mode' + (x[0] === active ? ' on' : '') + '" aria-selected="' + (x[0] === active) + '" onclick="_switchTab(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) + '</button>').join('') + '</div>';
+// ── 과제 페이지(2026-11-28): 대상은 탭 셋(과제·메일·서류), 만드는 동작은 "＋ 새로 만들기" 하나, 주소록·양식함은 머리글 단추, 설정은 ⋮ ──
+// 화면 그리기는 task-home.js(과제)·hub.js(머리글·서류 탭·대화창), 과제와 메일·서류의 연결 기록은 task-links.js. 여기는 이 페이지의 기능을 이어 준다.
+const _HUB_SCREENS = ['tasks', 'mail', 'docs', 'contacts', 'myforms', 'othersite'];
+const _OLD_HASH = ['gprog', 'gdone', 'campaigns', 'camphist', 'quicksend', 'docdrafts', 'docdone', 'docbox'];   // 없앤 화면의 옛 주소와 서류 탭의 주소(#docbox — #docs 는 알림 전용) — _switchTab 이 지금의 자리로 보낸다
+/** 주소(#이름)나 새로 고침으로 다시 열 수 있는 화면인가. 메일·서류는 #mail·#docs 가 "받은메일함 알림"의 주소라 여기서 뺀다. */
+function _hashScreen(name) {
+  if (name === 'mail' || name === 'docs' || !name || !document.getElementById('tab-' + name)) return false;
+  return _HUB_SCREENS.indexOf(name) >= 0 || !!document.getElementById('tab-btn-' + name);
 }
-function _gtabsFill(name) { const el = document.getElementById('gt-bar-' + name); if (el) el.innerHTML = _gtabsHtml(name); }
-/** 왼쪽 메뉴의 "과제"를 누르면 과제 첫 화면(내 과제 목록)이 열린다. 아래 네 탭은 그 화면의 "알림 설정 · 이전 목록 화면"에서 들어간다. */
+/** 왼쪽 메뉴의 "과제"를 누르면 항상 과제 목록이 열린다. */
 function _guideTabOpen() { if (window.TaskHome) TaskHome.home(); _switchTab('tasks'); }
+
+/* "이 과제에 연결" — 과제에서 서류 작성을 시작하면 만들어지는 서류를 그 과제에 잇는다(처음 만든 서류 한 건). */
+let _hubCtx = null;   // { kind: 'doc', task, title, docId }
+function _docLinkCtx(id, title) {
+  if (!_hubCtx || !window.TaskLinks || (_hubCtx.docId && _hubCtx.docId !== id)) return;
+  const first = !_hubCtx.docId; _hubCtx.docId = id;
+  if (first || TaskLinks.get('doc:' + id)) TaskLinks.set('doc:' + id, _hubCtx.task, { kind: 'doc', label: String(title || '서류').replace(/\s+/g, ' ').slice(0, 60), taskTitle: _hubCtx.title });
+}
+function _hubCurrentTask() {   // 과제 상세를 보고 있으면 그 과제
+  const on = document.querySelector('.tab-panel.active');
+  return on && on.id === 'tab-tasks' && window.TaskHome ? (TaskHome.currentKey() || '') : '';
+}
+function _hubNewMail(task) {
+  _navMailSub('compose');
+  if (task) _mailTaskSet(task);
+}
+async function _hubNewDoc(task) {
+  const title = task && window.TaskHome ? TaskHome.titleOf(task) : '';
+  _hubCtx = null;
+  await _navDocClick();
+  _hubCtx = task ? { kind: 'doc', task, title } : null;
+  _topbarSyncPage();
+}
+function _hubPrefill(text) {
+  if (!text) return;
+  const input = document.getElementById('cmp-input'); input.value = text; _kmailAutoResize(input); _cmpChatUpdateSendState(); input.focus();
+}
+/** 머리글 ⋮ ▸ 알림 설정 */
+function _notifDialog() {
+  if (!window.Hub) return;
+  Hub.modal('알림 설정', '<div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-notify-btn" onclick="_guideNotifyToggle()">브라우저 알림 켜기</button><span id="gl-notify-st"></span></div>' +
+    '<div class="gl-notify"><button type="button" class="btn btn-sm btn-outline" id="gl-server-btn" onclick="_guideServerToggle()">서버 알림 켜기</button><span id="gl-server-st"></span></div><div class="hub-hint" id="gl-store-st">계획서는 이 브라우저에 저장됩니다.</div>');
+  _guideNotifyStatus(); _guideServerStatus(); _gpStatus();
+}
+
 /** 과제 화면(task-home.js)이 쓰는 이 페이지의 기능 */
 window.TaskHomeHost = {
   plans: () => { _guideLoad(); return _guide.plans; },
@@ -5526,40 +5414,138 @@ window.TaskHomeHost = {
   save: (id, text) => { _guideLoad(); const p = _guide.plans[id]; if (!p) return; p.text = text; p.title = _guideTitleOf(text); p.updated = Date.now(); _guideStore(); _guideNotifyCheck(); },
   remove: (id) => { _guideLoad(); delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; _guideStore(); _guideNotifyCheck(); },
   openGuide: (id) => _guideOpen(id),
-  newCase: (name) => { if (window.CaseUI) CaseUI.startNew(name); },
-  go: (to) => { if (to === 'doc') _navDocClick(); else if (to === 'inbox') _navMailSub('inbox'); else _switchTab(to); },
+  // 메일 캠페인 과제 — 서버의 캠페인 기록. 로그인 전에는 null(로그인 창을 띄우지 않는다)
+  campaigns: () => (typeof KAuth === 'undefined' || typeof KAuth.getToken !== 'function' || !KAuth.getToken()) ? null : kmailApi('/kmail/campaigns/list').then(d => d.items || []),
+  // 회신 취합 보고는 받은메일함 기록에 content_type='kmail_digest', session_id='kmail:{캠페인 번호}' 로 남는다
+  campaignDigest: async (id) => { const d = await kmailApi('/kmail/mailbox', { query: { box: 'inbox', include_deleted: 'true' } }); const m = (d.items || []).find(x => x.session_id === 'kmail:' + id && x.content_type === 'kmail_digest'); return m ? m.body : ''; },
+  campaignMessages: async (id) => (await kmailApi('/kmail/campaigns/messages', { query: { campaign_id: id } })).items || [],
+  campaignDelete: (ids) => kmailApi('/kmail/campaigns/delete', { method: 'POST', body: { campaign_ids: ids } }),
+  campaignTalk: (c) => { _campCurrentDetail = c; if (c.status === 'draft') _campResumeConversation(); else _campAskChatAboutThis(); },
   confirm: (msg) => (window.mpConfirm || confirm)(msg),
+  notify: (msg) => _drToast(msg),
+  copy: (text) => { try { navigator.clipboard.writeText(text).then(() => _drToast('복사했습니다.'), () => _drToast('복사하지 못했습니다.')); } catch (e) { _drToast('복사하지 못했습니다.'); } },
+  saveFile: (name, text) => _drDownloadOne(text, String(name).replace(/[\\/:*?"<>|]/g, ''), 'text/plain;charset=utf-8'),
+  badge: (n) => document.querySelectorAll('.unread-badge[data-for="guide"]').forEach(el => { el.textContent = n > 99 ? '99+' : String(n); el.hidden = !n; if (n) el.setAttribute('aria-label', '확인이 필요한 일 ' + n + '건'); else el.removeAttribute('aria-label'); }),
+  painted: (detail) => { const el = document.getElementById('tab-tasks'); if (el) el.classList.toggle('tk-open', !!detail); },
+  showItem: (item, box) => {
+    if (item.indexOf('doc:') === 0) { _docFocus = item.slice(4); _switchTab('docs'); return; }
+    if (item.indexOf('mail:') === 0) { _mailFocus = item.slice(5); if (box === 'sent') _mailSentCache = null; _navMailSub(box === 'sent' ? 'sent' : 'inbox'); return; }
+    _navMailSub('drafts');
+  },
+  newMail: (task) => _hubNewMail(task),
+  newDoc: (task) => _hubNewDoc(task),
 };
+
+/** 머리글·서류 탭·대화창(hub.js)이 쓰는 이 페이지의 기능 */
+window.HubHost = {
+  t: (s) => _T(s),
+  unreadBadge: () => { try { _mailRenderUnreadBadge(); } catch (e) { /* 메일 코드가 준비되기 전 */ } try { if (window.TaskHome) TaskHome.refresh(); } catch (e) {} },
+  fmtDt: (t) => fmtDt(t),
+  siteLabel: (id) => _drSiteLabel(id),
+  toast: (msg) => _drToast(msg),
+  loadDocs: () => _docsLoad(),
+  docAction: (row, act) => _docsAction(row, act),
+  searchMail: () => _mailApplyFilter(),
+  linksChanged: () => _linksChanged(),
+  caseOn: () => !!(window.CaseUI && CaseUI.enabled()),
+  createCase: (name, o) => CaseUI.create(name, o),
+  openCase: (name, id) => CaseUI.openNew(name, id),
+  startGuide: (goal) => { _guideOpen(null); _hubPrefill(goal); },
+  startCampaign: (goal) => { _switchTab('compose'); _hubPrefill(goal); },
+  act: (act) => {
+    if (act === 'tab-tasks') _guideTabOpen();
+    else if (act === 'tab-mail') { _switchTab('mail'); if (document.getElementById('tab-mail').classList.contains('writing')) _mailSwitchSub('inbox'); }
+    else if (act === 'tab-docs') _switchTab('docs');
+    else if (act === 'home') { const task = _hubCtx && _hubCtx.task; if (task) { _switchTab('tasks'); TaskHome.open(task); } else _guideTabOpen(); }
+    else if (act === 'contacts') _ctNavClick();
+    else if (act === 'forms') _switchTab('myforms');
+    else if (act === 'othersite') _switchTab('othersite');
+    else if (act === 'new-mail') _hubNewMail(_hubCurrentTask());
+    else if (act === 'new-doc') _hubNewDoc(_hubCurrentTask());
+    else if (act === 'notif') _notifDialog();
+    else if (act === 'sim') { const id = (document.querySelector('.tab-panel.active') || {}).id; if (id === 'tab-mail') window._simOpen('mail', 'inbox'); else if (id === 'tab-docs') window._simOpen('docs', 'done'); else window._simOpen('guide', 'prog'); }
+    else if (act === 'ctx-clear') { if (_hubCtx && _hubCtx.docId && window.TaskLinks) TaskLinks.remove('doc:' + _hubCtx.docId); _hubCtx = null; _topbarSyncPage(); }
+  },
+};
+function _linksChanged() {
+  document.querySelectorAll('#tab-mail [data-linkitem]').forEach(b => { b.outerHTML = Hub.linkButton(b.dataset.linkitem, b.dataset.kind, b.dataset.label, b.dataset.box); });
+  const on = (document.querySelector('.tab-panel.active') || {}).id || '';
+  if (on === 'tab-mail') _mailApplyFilter();
+  else if (on === 'tab-docs') Hub.renderDocs();
+  else if (on.indexOf('tab-case') === 0 && window.CaseUI) CaseUI.show(on.slice(4));
+  else if (window.TaskHome) TaskHome.refresh();
+}
+document.addEventListener('DOMContentLoaded', () => { if (window.Hub) Hub.fillHeaders(); });
+
+/* 편지 쓰기의 "과제" 칸 */
+let _mailTaskWant = '';
+function _mailTaskFill() {
+  const sel = document.getElementById('mail-task'); if (!sel || !window.TaskHome) return;
+  const draw = () => {
+    const rows = TaskHome.rows().filter(r => (r.stage !== '완료' && r.stage !== '성립 안 됨') || r.key === _mailTaskWant);
+    sel.innerHTML = '<option value="">연결 안 함</option>' + rows.map(r => '<option value="' + escHtml(r.key) + '">' + escHtml(r.title) + '</option>').join('') +
+      (_mailTaskWant && !rows.some(r => r.key === _mailTaskWant) ? '<option value="' + escHtml(_mailTaskWant) + '">' + escHtml(TaskHome.titleOf(_mailTaskWant) || '연결한 과제') + '</option>' : '');
+    sel.value = _mailTaskWant;
+  };
+  draw(); TaskHome.sync(false).then(draw).catch(() => {});
+}
+function _mailTaskSet(key) {
+  _mailTaskWant = key || '';
+  if (document.getElementById('tab-mail').classList.contains('writing')) _mailTaskFill();
+}
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'mail-task') _mailTaskWant = e.target.value; });
+function _mailTaskInfo(label, box) { return { kind: box === 'drafts' ? 'sdraft' : 'mail', label: label || '(제목 없음)', box, taskTitle: window.TaskHome ? TaskHome.titleOf(_mailTaskWant) : '' }; }
+function _mailLinkDraft(draftId, subject) {
+  if (!window.TaskLinks || !draftId) return;
+  if (_mailTaskWant) TaskLinks.set('sdraft:' + draftId, _mailTaskWant, _mailTaskInfo(subject, 'drafts')); else TaskLinks.remove('sdraft:' + draftId);
+}
+function _mailLinkSent(data, subject) {
+  if (!window.TaskLinks || !_mailTaskWant) return;
+  const id = data && (data.message_id || data.id);
+  if (id) TaskLinks.set('mail:' + id, _mailTaskWant, _mailTaskInfo(subject, 'sent'));
+  else TaskLinks.pend(_mailTaskWant, subject);   // 번호를 받지 못하면 보낸메일함을 열 때 제목·시각으로 맞춘다
+}
+/* 받은메일함 거르기와 메일 검색 */
+let _mailChip = 'all', _mailFocus = '';
+const _MAIL_CHIPS = [['all', '전체'], ['unread', '안 읽음'], ['doc', '기관 회신으로 추정'], ['nolink', '과제 미지정']];
+function _mailChipHit(chip, m) { return chip === 'all' || (!!m && (chip === 'unread' ? _mailIsUnread(m) : chip === 'doc' ? _mailLooksLikeDocResult(m) : !(window.TaskLinks && TaskLinks.get('mail:' + m.id)))); }
+function _mailApplyFilter() {
+  const q = (window.Hub ? Hub.query('mail') : '').trim().toLowerCase();
+  const inbox = _mailInboxCache || [], byId = new Map(inbox.map(m => [String(m.id), m]));
+  let shown = 0, total = 0;
+  document.querySelectorAll('#tab-mail .mail-sub:not(#mail-sub-compose) .list-item').forEach(el => {
+    const inInbox = !!el.closest('#mail-inbox-items');
+    const ok = (!q || el.textContent.toLowerCase().indexOf(q) >= 0) && (!inInbox || _mailChipHit(_mailChip, byId.get(el.getAttribute('data-mid'))));
+    el.style.display = ok ? '' : 'none';
+    if (inInbox) { total++; if (ok) shown++; }
+  });
+  const chips = document.getElementById('mail-inbox-chips');
+  if (chips) chips.innerHTML = _MAIL_CHIPS.map(c => '<button type="button" class="tk-chip' + (c[0] === _mailChip ? ' on' : '') + '" aria-pressed="' + (c[0] === _mailChip) + '" onclick="_mailChipPick(\'' + c[0] + '\')">' + c[1] + (inbox.length ? ' ' + inbox.filter(m => _mailChipHit(c[0], m)).length : '') + '</button>').join('');
+  const none = document.getElementById('mail-inbox-nomatch'); if (none) none.hidden = !(total && !shown);
+}
+function _mailChipPick(c) { _mailChip = c; _mailApplyFilter(); }
+/** 과제의 "메일·서류" 탭에서 누른 메일을 목록에서 펼쳐 보여 준다. */
+function _mailFocusShow() {
+  if (!_mailFocus) return;
+  const row = [...document.querySelectorAll('.mail-sub.active .list-item')].find(el => el.getAttribute('data-mid') === _mailFocus);
+  if (!row) return;
+  _mailFocus = ''; _mailChip = 'all'; _mailApplyFilter();
+  const body = row.querySelector('[id^="mail-body-"]'); if (body && body.style.display === 'none') _mailToggleExpand(body.id, row.getAttribute('data-mid'));
+  try { row.scrollIntoView({ block: 'center' }); } catch (e) {}
+}
+/* 주소록의 도구(나비에게 정리 맡기기·파일 올리기·연락처 등록)는 한 번에 하나만 편다 */
+function _ctTool(which) {
+  const target = which && document.getElementById('ct-tool-' + which), open = !!(target && target.hidden);
+  ['ai', 'csv', 'new'].forEach(k => {
+    const el = document.getElementById('ct-tool-' + k); if (el) el.hidden = !(open && k === which);
+    const b = document.querySelector('[data-cttool="' + k + '"]'); if (b) b.setAttribute('aria-expanded', String(open && k === which));
+  });
+}
+
 /** 과제 목록에서 과제를 열거나(id), 새 과제를 시작한다(null). */
 function _guideOpen(id) { _guideLoad(); _guide.cur = id && _guide.plans[id] ? id : null; _guideStore(); _switchTab('home'); _cmpGuidePick(); }
 /** 종료한 과제인가: 판정이 있거나 상태가 종료. */
 function _guideIsDone(p) { return !!_guideField(p.text, '판정') || _guideField(p.text, '상태') === '종료'; }
-function _guideCounts(text) { let t = 0, d = 0; String(text || '').split('\n').forEach(l => { const m = /^\s*[-*]\s*\[( |x|X)\]/.exec(l); if (m) { t++; if (m[1] !== ' ') d++; } }); return [d, t]; }
-function _guideRenderList(kind) {
-  _guideLoad(); _guidePdvSync();
-  const box = document.getElementById('g' + kind + '-items'), empty = document.getElementById('g' + kind + '-empty'); if (!box) return;
-  const list = Object.values(_guide.plans).filter(p => p && p.text && (kind === 'done') === _guideIsDone(p)).sort((a, b) => (b.updated || 0) - (a.updated || 0));
-  empty.style.display = list.length ? 'none' : '';
-  box.innerHTML = list.map(p => {
-    const t = p.text, [d, n] = _guideCounts(t), v = _guideField(t, '판정'), st = _guideField(t, '상태'), goal = _guideField(t, '목적'), dl = (/(\d{4}-\d{2}-\d{2})/.exec(_guideField(t, '마감')) || [])[1];
-    const days = dl ? Math.round((Date.parse(dl) - Date.parse(_guideToday())) / 864e5) : NaN;
-    let pill = '', sub = '';
-    if (kind === 'done') {
-      const cls = v === '성공' ? 'ok' : v === '부분 성공' ? 'part' : v === '실패' ? 'fail' : 'off';
-      pill = '<span class="gl-pill ' + cls + '">' + escHtml(v || '종료') + '</span>';
-      const cause = _guideField(t, '원인'), les = _guideField(t, '교훈');
-      sub = (goal ? '목적: ' + escHtml(goal) + '<br>' : '') + (cause ? '원인: ' + escHtml(cause) + '<br>' : '') + (les ? '교훈: ' + escHtml(les) : (cause ? '' : '원인·교훈 미기록'));
-    } else {
-      pill = st ? '<span class="gl-pill">' + escHtml(st) + '</span>' : '';
-      sub = (goal ? '목적: ' + escHtml(goal) + '<br>' : '') + '할 일 ' + d + '/' + n + ' 완료' + (isNaN(days) ? '' : ' · ' + (days < 0 ? '마감 ' + (-days) + '일 지남' : days === 0 ? '오늘 마감' : '마감 D-' + days));
-    }
-    return '<div class="list-item" data-id="' + escHtml(p.id) + '"><div class="li-main"><div class="li-title">' + escHtml(p.title || '제목 없는 과제') + pill + '</div><div class="gl-li-sub">' + sub + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
-  }).join('');
-  _drBindRows(box, async (id, act) => {
-    if (act === 'del') { const p = _guide.plans[id]; if (!p || !await (window.mpConfirm||confirm)('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다.')) return; delete _guide.plans[id]; if (_guide.cur === id) _guide.cur = null; _guideStore(); _guideRenderList(kind); return; }
-    _guideOpen(id);
-  });
-}
 /** 답변에서 ~~~plan 블록을 떼어 계획서에 쓰고, 말풍선에 남길 나머지 글을 돌려준다. */
 function _guideFromReply(t) {
   const m = /~~~plan\s*\n([\s\S]*?)\n?~~~/.exec(t);
@@ -5806,7 +5792,7 @@ function _docHostMessage(d, e) {
     const _fl = String(d.label || '').slice(0, 120);
     if (d.fresh) _slotReset(_fl);   // 이미 올린 파일을 새로 발급받은 것으로 바꾸려는 요청 — 이전 기록 때문에 "이미 맡겼습니다"로 막히지 않게
     _agentFetchSlot(_fl, !!d.fresh);
-  } else if (d.type === 'navi-doc-saveform') {   // 서류 화면에서 양식을 고친 뒤 "내 양식으로 저장" — 내 서류함 ▸ 내가 만든 양식에 담는다
+  } else if (d.type === 'navi-doc-saveform') {   // 서류 화면에서 양식을 고친 뒤 "내 양식으로 저장" — 양식함 ▸ 내가 만든 양식에 담는다
     _saveMyForm(d.form);
   } else if (d.type === 'navi-doc-keep-list') { _keepList(e, d);   // 첨부서류 보관·재활용(2026-11-06): 서류 화면 ↔ PDV 중계
   } else if (d.type === 'navi-doc-keep-put') { _keepPut(e, d);
@@ -5985,7 +5971,7 @@ async function _phoneCapUse() {
   } catch (e) { if (c) c.textContent = '사진을 넘기지 못했습니다: ' + (e.message || e); _docBar(-1); }
 }
 
-// 양식 파일(이미지·PDF)을 서류 화면에 넘겨 '양식'으로 읽게 한다 — 새로 올릴 때와 내 서류함에서 다시 열 때 같은 길을 쓴다
+// 양식 파일(이미지·PDF)을 서류 화면에 넘겨 '양식'으로 읽게 한다 — 새로 올릴 때와 양식함에서 다시 열 때 같은 길을 쓴다
 function _docFeedTemplate(name, mime, buf) {
   if (_cmpMode !== 'doc' && !_cmpSetMode('doc')) return;
   _docHost.confirmed = true; document.getElementById('tab-compose').classList.add('doc-live'); _docHelperSync(); _docLockOn();   // 입력창이 비어 있어도 서류 화면이 접히지 않게 확정 상태로 둔다
@@ -6001,8 +5987,8 @@ async function _docAttachToChat(d, src, origin) {
     if (!(d.data instanceof ArrayBuffer) || !d.data.byteLength || d.data.byteLength > 10 * 1024 * 1024) throw new Error('첨부할 파일이 없거나 너무 큽니다.');
     const filename = String(d.filename || '서류.docx').slice(0, 120);
     const f = new File([d.data], filename, { type: String(d.mime || 'application/octet-stream') });
-    if (_docTarget === 'qs') await _qsFeedFile(f); else await _cmpFeedFile(f);
-    for (const x of _docExtras(d)) { const fx = new File([x.data], x.name, { type: x.mime }); if (_docTarget === 'qs') await _qsFeedFile(fx); else await _cmpFeedFile(fx); }
+    if (_docTarget === 'mail') await _mailFeedFile(f); else await _cmpFeedFile(f);
+    for (const x of _docExtras(d)) { const fx = new File([x.data], x.name, { type: x.mime }); if (_docTarget === 'mail') await _mailFeedFile(fx); else await _cmpFeedFile(fx); }
     reply(true);
     _docModalClose();
   } catch (e) {
@@ -6141,7 +6127,7 @@ function _drSnapshot() {
   const oneLine = (t, n) => String(t || '').replace(/\s+/g, ' ').trim().slice(0, n);
   if (_cmpMode === 'letter' || _cmpMode === 'campaign') {
     if (_cmpChat.done || !_cmpChat.messages.length) return null;
-    if (_cmpMode === 'campaign' && _cmpChat.campaignId) return null;   // 캠페인 초안은 서버(내 캠페인)에 이미 체크포인트된다
+    if (_cmpMode === 'campaign' && _cmpChat.campaignId) return null;   // 캠페인 초안은 서버에 이미 체크포인트된다(과제의 메일 캠페인)
     const first = _cmpChat.messages.find(m => m.role === 'user');
     const ld = _cmpChat.lastDraft || {};
     return { kind: _cmpMode, title: oneLine(ld.subject || (first && first.content), 40) || (_cmpMode === 'letter' ? '편지' : '캠페인'),
@@ -6163,6 +6149,7 @@ function _drAutoSave(reason) {
   if (!item) return true;
   const sig = JSON.stringify([item.kind, item.site, item.title, item.text, item.subject, item.body, item.messages ? item.messages.length : 0]);
   item.id = _cmpChat.draftId || (_cmpChat.draftId = _drNewId());
+  if (item.kind === 'doc') _docLinkCtx(item.id, item.title);
   _scrDraftIdSave(item.id, item.kind); _scrHashSync();
   const unchanged = sig === _dr.lastSig;
   _dr.lastSig = sig;
@@ -6184,7 +6171,7 @@ async function _drStoreCaptured(cap, d) {
     const ex = _docExtras(d); if (ex.length) item.extras = ex;
     if (d.title) item.title = String(d.title).slice(0, 120);
     await _drCall('put', { item });
-    if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _docLockOff(); _cmpChat.draftId = null; _dr.lastSig = ''; _scrDraftIdSave(null); _drToast('작성한 서류에 저장했습니다 — 왼쪽 메뉴 서류 ▸ 작성한 서류'); try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }
+    if (cap.mode === 'done') { await _drCall('done', { id: cap.id }); _docLockOff(); _cmpChat.draftId = null; _dr.lastSig = ''; _scrDraftIdSave(null); _drToast('작성한 서류에 저장했습니다 — 과제 ▸ 서류에서 볼 수 있습니다'); try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }
   } catch (e) { if (cap.mode === 'done') _drToast('서류를 저장하지 못했습니다. 서류 작성이 끝났는지 확인해 주세요.'); }
 }
 // 서류 화면의 "작성 완료로 저장" 버튼
@@ -6192,6 +6179,7 @@ function _drDocComplete() {
   if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
   const t = document.getElementById('cmp-input').value.trim();
   const id = _cmpChat.draftId || (_cmpChat.draftId = _drNewId());
+  _docLinkCtx(id, _docHost.title || t || '서류');
   _drCall('put', { item: { id, kind: 'doc', site: _docHost.id || '', title: (_docHost.title || t || '서류').replace(/\s+/g, ' ').slice(0, 40), text: t } })
     .then(() => _drCapture('done', id, _docHost.id || ''))
     .catch(() => _drToast('저장하지 못했습니다. (PDV 연결 확인)'));
@@ -6202,6 +6190,7 @@ function _drRecordDone(d) {
   _dr.mute = Date.now() + 3000;   // 곧 메일 화면으로 넘어가며 생기는 '떠남' 자동 저장과 겹치지 않게
   const id = _cmpChat.draftId || _drNewId(); _cmpChat.draftId = null; _dr.lastSig = ''; _scrDraftIdSave(null);
   const t = document.getElementById('cmp-input').value.trim();
+  _docLinkCtx(id, d.title || t || '서류');
   _drCall('put', { item: { id, kind: 'doc', site: _docHost.id || '', title: String(d.title || t || '서류').slice(0, 120), text: t,
     fileName: String(d.filename || '서류.docx').slice(0, 160), fileMime: String(d.mime || ''), fileData: d.data, extras: _docExtras(d) } })
     .then(() => _drCall('done', { id })).then(() => { try { _docChatOnSaved(); } catch (x) { /* 도우미 복귀 실패가 저장 결과를 바꾸지 않는다 */ } }).catch(() => {});
@@ -6215,8 +6204,8 @@ document.addEventListener('DOMContentLoaded', () => { _drInit(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _drAutoSave('hide'); });
 window.addEventListener('pagehide', () => { _drAutoSave('hide'); });
 
-// ── 내 서류함: 자주 쓰는 양식 · 내가 만든 양식 · 올려 둔 양식 (PDV kind='form', box=fav|mine|upload) ──
-const _MF_BOX = [['fav', '자주 쓰는 양식', '서류 작성 중 "★ 내 서류함에 담기"로 담은 양식입니다.'], ['mine', '내가 만든 양식', '"새 양식 만들기"로 직접 만든 양식입니다.'], ['upload', '올려 둔 양식', '서류 화면에서 올린 양식 파일(이미지·PDF)입니다.']];
+// ── 양식함: 자주 쓰는 양식 · 내가 만든 양식 · 올려 둔 양식 (PDV kind='form', box=fav|mine|upload) ──
+const _MF_BOX = [['fav', '자주 쓰는 양식', '서류 작성 중 "★ 양식함에 담기"로 담은 양식입니다.'], ['mine', '내가 만든 양식', '"새 양식 만들기"로 직접 만든 양식입니다.'], ['upload', '올려 둔 양식', '서류 화면에서 올린 양식 파일(이미지·PDF)입니다.']];
 function _mfHash(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 function _mfKinds(w) { w = String(w || '').trim(); if (/^(긴글|long|l)$/i.test(w)) return { t: 'long' }; if (/^(날짜|date|d)$/i.test(w)) return { t: 'date' }; let m = w.match(/^(?:금액|amount|n)(?:\s*[:：]\s*(\S{1,6}))?$/i); if (m) return m[1] ? { t: 'amount', u: m[1] } : { t: 'amount' }; m = w.match(/^(?:선택|select|sel)\s*[:：]\s*(.+)$/i); if (m) return { t: 'select', o: m[1].split(/[\/,]/).map(x => x.trim()).filter(Boolean) }; return { t: 'short' }; }
 // 한 줄에 하나 쓴 항목 → 나비 서식 JSON ({title, sections:[{h,f:[{l,t,h,o?,u?,req?}]}], attach:[]})
@@ -6599,7 +6588,7 @@ async function _mfbSave() {
   try {
     if (!_MFB.id) { let ex = null; try { ex = (await _drCall('get', { id })).item; } catch (e) {} if (ex && !await (window.mpConfirm||confirm)('같은 이름의 양식이 이미 있습니다. 덮어쓸까요?')) return; }
     await _drCall('put', { item: { id: id, kind: 'form', box: 'mine', site: _MFB.site || _docHost.id || 'all', title: r.form.title, body: JSON.stringify(r.form) } });
-    _mfbClose(true); _drToast('내 서류함에 저장했습니다'); _mfRender();
+    _mfbClose(true); _drToast('양식함에 저장했습니다'); _mfRender();
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
 }
 async function _saveMyForm(form) {
@@ -6609,7 +6598,7 @@ async function _saveMyForm(form) {
   const clean = { title: title, sections: form.sections.slice(0, 12), attach: (Array.isArray(form.attach) ? form.attach : []).slice(0, 12) };
   try {
     await _drCall('put', { item: { id: 'form-mine-' + _mfHash(title), kind: 'form', box: 'mine', site: _docHost.id || 'all', title: title, body: JSON.stringify(clean) } });
-    _drToast('내 서류함 ▸ 내가 만든 양식에 저장했습니다');
+    _drToast('양식함 ▸ 내가 만든 양식에 저장했습니다');
   } catch (e) { _drToast('저장하지 못했습니다. (PDV 연결 확인)'); }
 }
 // 원본(이미지·PDF)을 왼쪽에 띄운다 — 서류함에 저장하지 않고 이 화면에서만 본다.
@@ -6741,7 +6730,7 @@ async function _mfAddFav(btn) {
   if (!title) return;
   if (!_dr.ready) { _drToast('PDV 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
   const site = _docHost.id || 'all';
-  try { await _drCall('put', { item: { id: 'form-fav-' + site + '-' + _mfHash(title), kind: 'form', box: 'fav', site: site, title: title } }); _drToast('내 서류함 ▸ 자주 쓰는 양식에 담았습니다'); }
+  try { await _drCall('put', { item: { id: 'form-fav-' + site + '-' + _mfHash(title), kind: 'form', box: 'fav', site: site, title: title } }); _drToast('양식함 ▸ 자주 쓰는 양식에 담았습니다'); }
   catch (e) { _drToast('담지 못했습니다. (PDV 연결 확인)'); }
 }
 // 양식 파일을 올리면 같은 파일은 한 번만 보관한다(이름 기준)
@@ -6804,7 +6793,7 @@ async function _mfRender() {
         return '<div class="list-item" data-id="' + escHtml(it.id) + '"><div class="li-main"><div class="li-title">' + escHtml(it.title) + '</div><div class="li-sub">' + escHtml(sub) + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button>' + (b[0] === 'mine' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit">수정</button>' : b[0] === 'upload' ? '<button type="button" class="btn btn-outline btn-sm" data-act="edit" title="원본을 보면서 새 양식으로 고쳐 만들기">고쳐 만들기</button>' : '') + '<button type="button" class="btn btn-outline btn-sm" data-act="del">삭제</button></div></div>';
       }).join('');
     });
-    if (freq.length) html += '<div class="dr-sec">자주 쓴 서류 (작성한 서류 기준)</div>' + freq.map((x, i) => '<div class="list-item" data-freq="' + i + '"><div class="li-main"><div class="li-title">' + escHtml(x.title) + '</div><div class="li-sub">' + escHtml(_drSiteLabel(x.site) + ' · ' + x.n + '회 작성') + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="fav">★ 담기</button></div></div>').join('');
+    if (freq.length) html += '<div class="dr-sec">자주 쓴 서류 (작성 완료 서류 기준)</div>' + freq.map((x, i) => '<div class="list-item" data-freq="' + i + '"><div class="li-main"><div class="li-title">' + escHtml(x.title) + '</div><div class="li-sub">' + escHtml(_drSiteLabel(x.site) + ' · ' + x.n + '회 작성') + '</div></div><div class="dr-actions"><button type="button" class="btn btn-outline btn-sm" data-act="open">열기</button><button type="button" class="btn btn-outline btn-sm" data-act="fav">★ 담기</button></div></div>').join('');
     box.innerHTML = html;
     box.querySelectorAll('.list-item').forEach(row => row.addEventListener('click', async (ev) => {
       const b = ev.target.closest('button[data-act]'), act = b ? b.getAttribute('data-act') : 'open';
@@ -6815,7 +6804,7 @@ async function _mfRender() {
           return;
         }
         const id = row.getAttribute('data-id');
-        if (act === 'edit') await _mfEdit(id); else if (act === 'del') { if (!await (window.mpConfirm||confirm)('내 서류함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
+        if (act === 'edit') await _mfEdit(id); else if (act === 'del') { if (!await (window.mpConfirm||confirm)('양식함에서 지울까요?')) return; await _drCall('delete', { id }); _mfRender(); } else await _mfOpen(id);
       } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
     }));
   } catch (e) {
@@ -6823,7 +6812,7 @@ async function _mfRender() {
   }
 }
 
-// ── Draft 목록(서류 Draft · 작성한 서류 · 메일 Draft 의 이 기기 대화) ──
+// ── 서류 파일 받기 · 이 기기의 편지·캠페인 대화 Draft ──
 const _DR_KIND_LABEL = { doc: '서류', letter: '편지', campaign: '캠페인' };
 function _drSiteLabel(id) { const s = _DOC_SITES.find(x => x.id === id); return s ? s.label : '서류'; }
 function _drDownloadOne(data, name, mime) {
@@ -6846,22 +6835,6 @@ function _drBindRows(box, handler) {
     row.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-act]'); handler(row.getAttribute('data-id'), b ? b.getAttribute('data-act') : 'open'); });
   });
 }
-async function _drRenderDocList(status) {
-  const pre = status === 'done' ? 'docdone' : 'docdrafts';
-  const loading = document.getElementById(pre + '-loading'), empty = document.getElementById(pre + '-empty'), box = document.getElementById(pre + '-items');
-  loading.style.display = ''; empty.style.display = 'none'; box.innerHTML = '';
-  try {
-    const r = await _drCall('list', { kind: 'doc', status });
-    loading.style.display = 'none';
-    if (!r.items.length) { empty.style.display = ''; return; }
-    box.innerHTML = r.items.map(it => _drItemRow(it, status === 'done'
-      ? ((it.hasFile || it.extraCount) ? [['dl', '파일 받기'], ['mail', '메일에 첨부'], ['submit', '기관에 올리기(도우미)'], ['del', '삭제']] : [['del', '삭제']])
-      : [['resume', '이어 쓰기']].concat((it.hasFile || it.extraCount) ? [['done', '작성 완료'], ['dl', '파일 받기']] : []).concat([['del', '삭제']]))).join('');
-    _drBindRows(box, (id, act) => _drDocAction(id, act, status));
-  } catch (e) {
-    loading.style.display = 'none'; empty.style.display = ''; empty.textContent = 'PDV 연결을 확인하지 못했습니다. 잠시 후 다시 열어 주세요.';
-  }
-}
 /** 작성한 서류 파일을 나비웹 도우미가 기관 사이트의 올리기 칸에 넣게 맡긴다(2026-11-25). 올리기 전과 제출 단추 앞에서는 도우미가 사용자 확인을 받고, 로그인·결제는 사용자가 한다. */
 async function _docSubmitViaAgent(it) {
   if (!it.fileData) { _drToast('올릴 Word·PDF 파일이 이 서류에 없습니다.'); return; }
@@ -6878,22 +6851,46 @@ async function _docSubmitViaAgent(it) {
   if (ok) _histAdd({ title: it.title || name, agency: site, type: 'upload', state: 'upload' });
   _drToast(ok ? '도우미가 ' + site + '을(를) 엽니다. 열린 화면의 안내에 따라 로그인해 주세요.' : '도우미에 맡기지 못했습니다. 확장 프로그램이 켜져 있는지 확인해 주세요.');
 }
-async function _drDocAction(id, act, status) {
+/* 서류 탭(hub.js)의 자료와 동작 — 작성 중·작성 완료 서류(PDV kind='doc')와 작성·제출 이력(kind='history') */
+let _docFocus = '';
+async function _docsLoad() {
+  const drafts = (await _drCall('list', { kind: 'doc', status: 'draft' })).items || [];
+  const done = (await _drCall('list', { kind: 'doc', status: 'done' })).items || [];
+  let history = [], noHistory = true;
+  if (window.DocHistory && await _histSupported()) {
+    const list = ((await _drCall('list', { kind: 'history' })).items || []).slice(0, 100), full = [];
+    for (const x of list) full.push((await _drCall('get', { id: x.id })).item);
+    history = DocHistory.rows(full, []); noHistory = false;
+  }
+  if (_docFocus) { const id = _docFocus; _docFocus = ''; setTimeout(() => { const row = [...document.querySelectorAll('#hub-docs [data-doc]')].find(el => el.getAttribute('data-doc') === id); if (row) { row.classList.add('hub-focus'); try { row.scrollIntoView({ block: 'center' }); } catch (e) {} } }, 120); }
+  return { drafts, done, history, noHistory };
+}
+/** 서류 한 줄의 동작. true = 목록이 바뀌었으니 다시 그린다 */
+async function _docsAction(row, act) {
   try {
-    if (act === 'del') { if (!await (window.mpConfirm||confirm)('이 항목을 삭제할까요?')) return; await _drCall('delete', { id }); _drRenderDocList(status); return; }
-    if (act === 'done') { await _drCall('done', { id }); _drToast('작성한 서류로 옮겼습니다'); _drRenderDocList(status); return; }
-    const it = (await _drCall('get', { id })).item;
-    if (act === 'dl') { if (it.fileData || (it.extras || []).length) await _drDownload(it); return; }
-    if (act === 'submit') { await _docSubmitViaAgent(it); return; }
-    if (act === 'mail') {
-      if (!it.fileData && !(it.extras || []).length) return;
-      _switchTab('letter');
-      if (it.fileData) await _cmpFeedFile(new File([it.fileData], it.fileName || '서류.docx', { type: it.fileMime || 'application/octet-stream' }));
-      for (const x of (it.extras || [])) await _cmpFeedFile(new File([x.data], x.name, { type: x.mime }));
-      return;
+    if (act === 'del') {
+      if (!await (window.mpConfirm || confirm)('「' + row.title + '」 서류를 삭제할까요? 이 서류의 작성·제출 이력과 받아 둔 파일도 함께 지워집니다.')) return false;
+      if (row.source === 'doc') await _drCall('delete', { id: row.id });
+      for (const h of row.histIds) await _drCall('delete', { id: h });
+      if (window.TaskLinks) TaskLinks.remove('doc:' + row.id);
+      return true;
     }
-    if (it.kind === 'doc') _drResumeDoc(it);
+    if (act === 'done') { await _drCall('done', { id: row.id }); _drToast('작성 완료로 옮겼습니다'); return true; }
+    if (act === 'filed') { const r = await _histAdvance(row.markId, 'filed'); _drToast(r ? '제출 완료로 기록했습니다.' + _histDraftNote(r.draft) : '기록하지 못했습니다.'); return true; }
+    if (act === 'dl') { const it = (await _drCall('get', { id: row.source === 'doc' && row.hasFile ? row.id : (row.fileId || row.id) })).item; if (it.fileData || (it.extras || []).length) await _drDownload(it); return false; }
+    const it = (await _drCall('get', { id: row.id })).item;
+    if (act === 'submit') { await _docSubmitViaAgent(it); return true; }
+    if (act === 'mail') {
+      if (!it.fileData && !(it.extras || []).length) return false;
+      const link = window.TaskLinks && TaskLinks.get('doc:' + row.id);
+      _hubNewMail(link ? link.task : '');
+      if (it.fileData) await _mailFeedFile(new File([it.fileData], it.fileName || '서류.docx', { type: it.fileMime || 'application/octet-stream' }));
+      for (const x of (it.extras || [])) await _mailFeedFile(new File([x.data], x.name, { type: x.mime }));
+      return false;
+    }
+    if (act === 'resume') _drResumeDoc(it);
   } catch (e) { _drToast('처리하지 못했습니다. (PDV 연결 확인)'); }
+  return false;
 }
 function _drResumeDoc(it) {
   _drAutoSave('resume');
@@ -6936,23 +6933,6 @@ async function _drRenderMailLocal() {
     });
   } catch (e) { /* PDV 중계가 안 열리면 서버 Draft 만 보여 준다 */ }
 }
-// 사이드바 '서류' 묶음 접기/펼치기
-const _NAV_DOCS_KEY = 'kmail_nav_docs_open';
-function _navToggleDocs(force) {
-  const g = document.getElementById('nav-group-docs');
-  if (!g) return;
-  const open = false;   // 하위 메뉴는 없앴다 — 서류 화면 위쪽 탭으로 옮김(2026-11-06). 항상 접힌 채로 둔다
-  g.classList.toggle('collapsed', !open);
-  const t = document.getElementById('nav-toggle-docs');
-  if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
-  try { localStorage.setItem(_NAV_DOCS_KEY, open ? '1' : '0'); } catch (e) {}
-}
-document.addEventListener('DOMContentLoaded', () => {
-  let open = false;
-  try { open = localStorage.getItem(_NAV_DOCS_KEY) === '1'; } catch (e) {}
-  _navToggleDocs(open);
-});
-
 // 'home'(왼쪽 메뉴 "홈" · 로고) · 'compose'/'letter'/'doc'(다른 화면에서 이 입력창의 특정 모드로 넘어올 때)는 모두 같은 화면(#tab-compose)이다.
 // home: 다른 화면에서 돌아오면 하던 그대로 보여 주고, 이미 이 화면이면 기본 모드(나만의 AI 비서)로 돌아간다.
 const _NAV_COMPOSE_NAMES = ['home', 'compose', 'letter', 'doc', 'verdict'];
@@ -7040,7 +7020,7 @@ async function _scrRestore() {
     if (d && d.id && ['letter', 'compose', 'doc'].indexOf(s.n) >= 0) { try { it = (await _drCall('get', { id: d.id }, 10000)).item; } catch (e) {} }
     if (it && it.kind === 'doc') _drResumeDoc(it);
     else if (it && (it.kind === 'letter' || it.kind === 'campaign')) _drResumeChat(it);
-    else if (s.n === 'tasks' || document.getElementById('tab-btn-' + s.n) || _NAV_COMPOSE_NAMES.indexOf(s.n) >= 0) _switchTab(s.n);
+    else if (_hashScreen(s.n) || _NAV_COMPOSE_NAMES.indexOf(s.n) >= 0) _switchTab(s.n);
     if (s.n === 'mail' && s.sub && document.getElementById('mail-sub-' + s.sub)) _mailSwitchSub(s.sub);
   } catch (e) {} finally { _scrRestoring = false; }
   _scrSave(s.n);
@@ -7091,11 +7071,16 @@ function _switchTab(name) {
     _docNewAfterSave(null).then(ok => { if (ok) _cmpSetMode('default', { force: true }); });
     return;
   }
-  _sentCardHide('mail'); _sentCardHide('qs');
+  _sentCardHide();
+  // 없앤 옛 화면의 이름은 지금의 자리로 보낸다
+  let _mailSubAfter = '';
+  if (name === 'gprog' || name === 'gdone' || name === 'campaigns' || name === 'camphist') { if (window.TaskHome) TaskHome.home(); name = 'tasks'; }
+  else if (name === 'docdrafts' || name === 'docdone' || name === 'docbox') name = 'docs';
+  else if (name === 'quicksend') { name = 'mail'; _mailSubAfter = 'compose'; }
   const _wasComposeActive = document.getElementById('tab-compose').classList.contains('active');
   if (_wasComposeActive && _NAV_COMPOSE_NAMES.indexOf(name) < 0) _drAutoSave('leave');   // 편지·캠페인·서류 화면을 떠나면 Draft 로 저장해 둔다(화면 상태는 그대로 유지)
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-mv, .side-nav .nav-dv, .side-nav .nav-gv').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav .nav-btn').forEach(el => el.classList.remove('active'));
   const _isCompose = _NAV_COMPOSE_NAMES.indexOf(name) >= 0;
   const _panelName = _isCompose ? 'compose' : name;
   document.getElementById('tab-' + _panelName).classList.add('active');
@@ -7114,13 +7099,15 @@ function _switchTab(name) {
     if (name === 'home') { _infraKey = null; if (_wasComposeActive || _cmpMode === 'org') _cmpSetMode('default'); else _cmpSyncModeUi(); }   // 홈(로고)은 고른 인프라(메일 등)에서도 나가 처음 화면으로 돌아간다
     else _cmpSetMode(name === 'letter' ? 'letter' : name === 'doc' ? 'doc' : name === 'verdict' ? 'verdict' : 'campaign', { force: true });
   }
-  const _navBtn = document.getElementById('tab-btn-' + (name === 'tasks' || name === 'gprog' || name === 'gdone' || name.indexOf('case') === 0 ? 'guidenav' : name === 'doc' ? 'docwrite' : name === 'verdict' ? 'home' : _isCompose ? 'home' : name));   // 가상 판결은 입력창 위 예시 줄의 버튼으로 옮겼다(왼쪽 메뉴에는 없음)
+  // 과제 아래의 화면(탭·주소록·양식함·편지·캠페인·서류)은 왼쪽 메뉴의 "과제"가 켜진다. 가상 판결은 입력창 위 예시 줄의 버튼이라 켜지 않는다.
+  const _navId = _HUB_SCREENS.indexOf(name) >= 0 || name.indexOf('case') === 0 || ['compose', 'letter', 'doc'].indexOf(name) >= 0 ? 'guidenav' : name === 'verdict' || _isCompose ? 'home' : name;
+  const _navBtn = document.getElementById('tab-btn-' + _navId);
   if (name !== 'verdict') _navBtn.classList.add('active');
   // 주소의 #해시를 지금 화면에 맞춘다 — 설정을 한 번 열면 #settings 가 남아, 다른 화면에서 새로고침해도 설정이 열리던 오류를 막는다.
   // 새로고침해도 돌아올 수 있는 화면만 해시로 남기고(홈·메일 묶음·가상 판결 등은 비운다) replaceState 라 뒤로 가기 기록은 늘지 않는다.
   try {
-    const _hk = name === 'tasks' ? 'tasks' : name === 'gprog' ? 'guide-prog' : (name === 'guide' || name === 'gdone' || name.indexOf('case') === 0) ? '' : (document.getElementById('tab-btn-' + name) ? name : '');
-    const _nh = _isCompose ? ((name === 'home' || name === 'doc') ? '' : '#' + name) : (_hk && _hk !== 'mail' && _hk !== 'docs' ? '#' + _hk : '');   // 2026-11-10: 편지(#letter)·캠페인(#compose)·가상 판결(#verdict)도 주소에 남긴다(홈·서류는 비움 — 서류는 #doc/<번호>)
+    const _hk = (name === 'guide' || name.indexOf('case') === 0) ? '' : (_hashScreen(name) ? name : '');
+    const _nh = _isCompose ? ((name === 'home' || name === 'doc') ? '' : '#' + name) : (name === 'docs' ? '#docbox' : _hk && _hk !== 'mail' ? '#' + _hk : '');   // 2026-11-10: 편지(#letter)·캠페인(#compose)·가상 판결(#verdict)도 주소에 남긴다(홈·서류는 비움 — 서류는 #doc/<번호>)
     {
       // 2026-11-24: 화면을 옮길 때마다 기록을 하나 남긴다 — 브라우저 뒤로 가기(좌 상단)가 직전 화면으로 돌아가고, 처음 화면에서는 이전 웹 페이지(나비웹 메인 등)로 나간다.
       // 처음 열 때와 뒤로·앞으로 가기로 옮길 때는 새 기록을 만들지 않는다.
@@ -7133,19 +7120,16 @@ function _switchTab(name) {
     }
   } catch (e) {}   // 기능 개선 제안은 왼쪽 메뉴 하단 버튼이 켜진다
   const _vb = document.getElementById('cmp-verdict-btn'); if (_vb) _vb.setAttribute('aria-pressed', name === 'verdict' ? 'true' : 'false');
-  if (_navBtn.classList.contains('nav-mv')) _navToggleMail(true);
-  if (_navBtn.classList.contains('nav-dv')) _navToggleDocs(true);
-  if (name === 'gprog' || name === 'gdone') { _gtabsFill(name); _guideRenderList(name === 'gdone' ? 'done' : 'prog'); if (window.CaseUI) CaseUI.fillSolo(name === 'gdone' ? 'done' : 'prog'); }
-  if (name === 'docdrafts') _drRenderDocList('draft');
-  if (name === 'myforms') { _histRender(); _mfRender(); }
+  if (name === 'docs' && window.Hub) Hub.renderDocs();
+  if (name === 'myforms') _mfRender();
   if (name === 'othersite') _otsRender();
-  if (name === 'docdone') _drRenderDocList('done');   // 하위 메뉴로 들어가면 메일 묶음을 펼친다(처음 화면은 접힌 채)
   const _crumb = document.getElementById('crumb-cur');
   if (_crumb) _crumb.textContent = name === 'verdict' ? '가상 판결' : name === 'feedback' ? '기능 개선 제안' : (_navBtn.getAttribute('data-label') || '');
   if (name === 'contacts' && !_ctLoadedOnce) { _ctLoadedOnce = true; _ctLoad(); }
-  if (name === 'campaigns' && !_campLoadedOnce) { _campLoadedOnce = true; _campLoad(); }
-  if (name === 'camphist') { _chBack(); _chRender(); }
-  if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub('compose'); }
+  if (name === 'contacts') _ctTool(null);
+  if (name === 'mail' && !_mailLoadedOnce) { _mailLoadedOnce = true; _mailInitQuill(); _mailSwitchSub(_mailSubAfter || 'inbox'); }
+  else if (_mailSubAfter) _mailSwitchSub(_mailSubAfter);
+  if ((name === 'tasks' || name === 'docs' || name === 'home') && !_scrRestoring) _hubCtx = null;   // 과제 화면으로 돌아오면 "이 과제에 연결" 상태는 끝난다(위의 자동 저장 뒤)
   if (name === 'youtube') _ytRender();
   if (name === 'devlog' && window.DevLog) DevLog.show();   // 개발 현황 — devlog.js
   if (name === 'settings') _settingsInit();
@@ -7167,7 +7151,7 @@ function _switchTab(name) {
 // ══════════════════════════════════════════════════════════════
 // 로그인 — 공용 인증 모듈(KAuth)이 담당 (2026-09-06)
 // ══════════════════════════════════════════════════════════════
-let _ctLoadedOnce = false, _campLoadedOnce = false;
+let _ctLoadedOnce = false;
 // 2026-09-11 신설 — 주소록이 수천~수만 건으로 커질 수 있다는 지적(주피터
 // 지시)에 대한 대응. null이면 카테고리 요약(건수만) 화면, 문자열이면
 // 그 카테고리 하나로 좁힌 목록 화면('__NONE__'은 "미분류" 버킷 예약어,
@@ -7180,7 +7164,6 @@ let _ctViewCategory = null;
 // 켜진다(둘 다 null이어야 요약 화면).
 let _ctViewTag = null;
 let _ctViewOrg = null;   // 소속 기관 트리에서 고른 경로('__NONE__'=미분류). orgtree.js가 _ctOpenOrg()로 지정
-let _campAllItems = [];
 
 // 공용 fetch 래퍼(REST 엔드포인트용) — KAuth.fetchWithAuth에 위임한다.
 //
@@ -7212,147 +7195,6 @@ async function kmailApi(path, { method = 'GET', query = {}, body = null } = {}) 
   if (!res.ok || data.ok === false) throw new Error(data.message || data.detail || `HTTP ${res.status}`);
   return data;
 }
-
-// ══════════════════════════════════════════════════════════════
-// 빠른 발송 — hondi.net /mail.html에서 이관(2026-09-08). 옛 페이지는
-// 지갑 서명(guid/pubkey/signature)으로 /mail/send·/kmail/attachments/upload를
-// 직접 불렀지만, 이 웹앱은 지갑 SSO를 쓰지 않으므로(주석 참고, 2026-09-06)
-// 두 엔드포인트 모두 kmailApi()의 phone_verify_token 인증으로 호출한다
-// (서버 쪽 _kAuth.resolveGuid가 이미 두 인증 방식을 함께 지원하도록
-// 마이그레이션됨 — hondi PR 참고).
-let _qsPendingAttachments = []; // { id, filename } — 업로드 완료된 것만
-
-function _qsFileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function _qsRenderAttachList() {
-  const el = document.getElementById('qs-attach-list');
-  el.textContent = _qsPendingAttachments.length
-    ? '첨부됨: ' + _qsPendingAttachments.map(a => a.filename).join(', ')
-    : '';
-}
-
-async function _qsHandleFileSelect() {
-  const input = document.getElementById('qs-file');
-  const file = input.files[0];
-  if (!file) return;
-  const err = document.getElementById('qs-err');
-  err.style.display = 'none';
-  try {
-    const file_base64 = await _qsFileToBase64(file);
-    const data = await kmailApi('/kmail/attachments/upload', {
-      method: 'POST',
-      body: { file_base64, filename: file.name, content_type: file.type },
-    });
-    _qsPendingAttachments.push({ id: data.attachment_id, filename: file.name });
-    _qsRenderAttachList();
-  } catch (e) {
-    err.textContent = '첨부 업로드 실패: ' + e.message;
-    err.style.display = 'block';
-  } finally {
-    input.value = '';
-  }
-}
-
-async function _qsSendMail() {
-  const err = document.getElementById('qs-err');
-  const ok = document.getElementById('qs-ok');
-  err.style.display = 'none'; ok.style.display = 'none'; _sentCardHide('qs');
-
-  const to = document.getElementById('qs-to').value.trim().replace(/[,;\s]+$/, '');
-  const subject = document.getElementById('qs-subject').value.trim();
-  const text = document.getElementById('qs-text').value.trim();
-  if (!to || !subject || !text) {
-    err.textContent = '받는 사람·제목·내용을 모두 입력해 주세요.';
-    err.style.display = 'block';
-    return;
-  }
-
-  const btn = document.getElementById('qs-submit-btn');
-  btn.disabled = true;
-  try {
-    const data = await kmailApi('/mail/send', {
-      method: 'POST',
-      body: { to, subject, text, attachment_ids: _qsPendingAttachments.map(a => a.id) },
-    });
-    document.getElementById('qs-to').value = '';
-    document.getElementById('qs-subject').value = '';
-    document.getElementById('qs-text').value = '';
-    _qsPendingAttachments = [];
-    _qsRenderAttachList();
-    _sentCardShowOk('qs', { to, subject, data });
-  } catch (e) {
-    _sentCardShowErr('qs', e.message);            // 입력한 내용은 그대로 둔다
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-document.getElementById('qs-file').addEventListener('change', _qsHandleFileSelect);
-
-// 받는 사람 검색(주소록의 확정된 연락처). 하나를 고르면 그 주소가 칸에 들어간다.
-let _qsTimer = null, _qsSeq = 0, _qsHits = [];
-function _qsSugHide() { const el = document.getElementById('qs-sug'); if (el) el.style.display = 'none'; }
-function _qsRcptInput(force) {
-  clearTimeout(_qsTimer);
-  const q = document.getElementById('qs-to').value.trim();
-  if (!force && (!q || q.includes('@') && /\.[a-z]{2,}$/i.test(q))) { _qsSugHide(); return; }
-  _qsTimer = setTimeout(async () => {
-    const seq = ++_qsSeq, sug = document.getElementById('qs-sug');
-    try {
-      const data = await kmailApi('/kmail/contacts', { query: { status: 'confirmed', q } });
-      if (seq !== _qsSeq) return;
-      _qsHits = (data.items || []).filter(c => c.email).slice(0, 8);
-      sug.innerHTML = '';
-      if (!_qsHits.length) {
-        const d = document.createElement('div'); d.style.color = 'var(--hint)'; d.textContent = q ? '주소록에 없습니다. 이메일 주소를 직접 입력해 주세요.' : '주소록이 비어 있습니다.';
-        sug.appendChild(d); sug.style.display = ''; return;
-      }
-      _qsHits.forEach((c, i) => {
-        const d = document.createElement('div');
-        d.appendChild(document.createTextNode((c.name ? c.name + ' ' : '') + '<' + c.email + '>'));
-        const sm = document.createElement('small'); sm.textContent = [c.org, c.occupation].filter(Boolean).join(' · ');
-        d.appendChild(sm);
-        d.onmousedown = ev => { ev.preventDefault(); _qsRcptPick(i); };
-        sug.appendChild(d);
-      });
-      sug.style.display = '';
-    } catch (e) { _qsSugHide(); }               // 로그인 전·네트워크 오류면 직접 입력만 가능
-  }, force ? 0 : 250);
-}
-function _qsRcptPick(i) {
-  const c = _qsHits[i]; if (!c) return;
-  const inp = document.getElementById('qs-to'); inp.value = c.email; _qsSugHide(); inp.focus();
-}
-function _qsRcptKey(ev) {
-  const sug = document.getElementById('qs-sug'), items = [...sug.children];
-  if (ev.key === 'Escape') { _qsSugHide(); return; }
-  if (sug.style.display === 'none' || !items.length) return;
-  const cur = items.findIndex(e => e.classList.contains('on'));
-  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
-    ev.preventDefault();
-    const n = ev.key === 'ArrowDown' ? (cur + 1) % items.length : (cur <= 0 ? items.length - 1 : cur - 1);
-    items.forEach((e, i) => e.classList.toggle('on', i === n));
-  } else if (ev.key === 'Enter' && cur >= 0) { ev.preventDefault(); _qsRcptPick(cur); }
-}
-function _qsRcptBlur() { setTimeout(_qsSugHide, 180); }
-
-// 카메라 사진·작성한 서류도 "파일 선택"과 같은 첨부 흐름을 쓴다
-function _qsFeedFile(file) {
-  const dt = new DataTransfer(); dt.items.add(file);
-  document.getElementById('qs-file').files = dt.files;
-  return _qsHandleFileSelect();
-}
-document.getElementById('qs-cam').addEventListener('change', function () {
-  const f = this.files && this.files[0]; this.value = '';
-  if (f) _qsFeedFile(f);
-});
 
 // ══════════════════════════════════════════════════════════════
 // 메일 탭 — 편지쓰기/임시보관함/보낸메일함/받은메일함/태그별 보관함
@@ -7405,11 +7247,14 @@ function _mailSetBodyText(text) {
 
 function _mailSwitchSub(name) {
   if (window.NaviSim && window.NaviSim.tab) window.NaviSim.tab('mail', name);   // 시뮬레이션 패널이 열려 있으면 이 보관함의 시뮬레이션으로 따라간다
-  if (name !== 'compose') _sentCardHide('mail');
+  if (name !== 'compose') _sentCardHide();
   document.querySelectorAll('.mail-sub').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.mail-subnav button').forEach(el => el.classList.remove('active'));
   document.getElementById('mail-sub-' + name).classList.add('active');
   document.getElementById('mail-subnav-' + name).classList.add('active');
+  document.getElementById('tab-mail').classList.toggle('writing', name === 'compose');   // 쓰는 동안은 머리글·탭·메일함 줄을 접고 "← 과제"만 둔다
+  if (name === 'compose') _mailTaskFill();
+  else _docModalClose();
   if (name === 'drafts') _mailLoadDrafts();
   if (name === 'sent') _mailLoadSent();
   if (name === 'inbox') _mailLoadInbox();
@@ -7422,36 +7267,8 @@ function _navMailSub(name) {
   _switchTab('mail');
   _mailSwitchSub(name);
 }
-// 사이드바 '메일' 하위 메뉴 접기/펼치기. force: true=펼침, false=접음, 생략=토글
-const _NAV_MAIL_KEY = 'kmail_nav_mail_open';
-function _navToggleMail(force) {
-  const g = document.getElementById('nav-group-mail');
-  if (!g) return;
-  const open = false;   // 하위 메뉴는 없앴다 — 메일 화면 위쪽 탭으로 옮김(2026-11-06). 항상 접힌 채로 둔다
-  g.classList.toggle('collapsed', !open);
-  const t = document.getElementById('nav-toggle-mail');
-  if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
-  try { localStorage.setItem(_NAV_MAIL_KEY, open ? '1' : '0'); } catch (e) {}
-}
-document.addEventListener('DOMContentLoaded', () => {
-  let open = false;
-  try { open = localStorage.getItem(_NAV_MAIL_KEY) === '1'; } catch (e) {}
-  _navToggleMail(open);
-});
-// 사이드바 하위 메뉴의 활성 표시를 현재 화면(메일 탭이 열려 있고 위쪽 하위 탭이 무엇인지)에 맞춘다.
-function _navSyncMailSub() {
-  const panel = document.getElementById('tab-mail');
-  const onMail = !!(panel && panel.classList.contains('active'));
-  if (onMail) { const g = document.getElementById('nav-group-mail'); if (g && g.classList.contains('collapsed')) _navToggleMail(true); }
-  const act = document.querySelector('.mail-subnav button.active');
-  const cur = act ? act.id.replace('mail-subnav-', '') : null;
-  document.querySelectorAll('.nav-subitem:not(.nav-mv):not(.nav-dv):not(.nav-gv):not(.nav-link)').forEach(b => {
-    const on = onMail && b.getAttribute('data-sub') === cur;
-    b.classList.toggle('active', on);
-    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
-  });
-  _topbarSyncPage();   // 탭 전환·메일 하위 화면 전환 뒤 항상 여기를 지나므로 상단 바 표시도 여기서 맞춘다
-}
+/** 화면을 옮기거나 메일함을 바꾼 뒤 상단 표시·과제 머리글을 맞춘다. */
+function _navSyncMailSub() { _topbarSyncPage(); }
 
 // ══════════════════════════════════════════════════════════════
 // 내 메일 ID — 2026-09-12 신설. 전화번호(유일 식별자)를 노출하지 않고
@@ -8535,6 +8352,7 @@ function _mailLoadDraftIntoEditor({ subject, body, draftId, sourceNote, switchTo
   _mailPendingAttachments = [];
   _mailRenderAttachList();
   _mailEditingDraftId = draftId || null;
+  _mailTaskSet('');
   const note = document.getElementById('mail-compose-editing-note');
   note.textContent = sourceNote || '';
   note.style.display = sourceNote ? 'block' : 'none';
@@ -8597,6 +8415,7 @@ async function _mailHandleFileSelect() {
 // 안 되므로).
 function _mailEditDraft(draft) {
   _mailEditingDraftId = draft.id;
+  { const l = window.TaskLinks && TaskLinks.get('sdraft:' + draft.id); _mailTaskSet(l ? l.task : ''); }
   const recipients = Array.isArray(draft.recipients) ? draft.recipients : [];
   _rcptLoadDraft(recipients);
   document.getElementById('mail-subject').value = draft.subject || '';
@@ -8611,6 +8430,7 @@ function _mailEditDraft(draft) {
 }
 function _mailDiscardEditing() {
   _mailEditingDraftId = null;
+  _mailTaskSet('');
   _rcptClearAll();
   document.getElementById('mail-subject').value = '';
   _mailSetBodyText('');
@@ -8645,6 +8465,7 @@ async function _mailSaveDraft() {
       },
     });
     _mailEditingDraftId = data.draft_id;
+    _mailLinkDraft(data.draft_id, subject);
     ok.textContent = '임시보관함에 저장했습니다.';
     ok.style.display = 'block';
     const note = document.getElementById('mail-compose-editing-note');
@@ -8662,51 +8483,51 @@ async function _mailSaveDraft() {
 // ══════════════════════════════════════════════════════════════
 // 보냄 확인 카드 — 2026-10-28. 예전에는 첨부파일 칸 아래 작은 초록 글자 한 줄("메일을 보냈습니다.")이라 화면 아래로 밀려 놓치기 쉽고,
 // 누구에게 어떤 제목으로 언제 어떤 보낸 사람으로 갔는지 알 수 없었다. 이제 화면 맨 위에 카드로 보여 주고(스크린리더가 읽음),
-// "보낸메일함에서 보기"·"새 편지 쓰기"를 바로 누를 수 있다. 편지쓰기('mail')와 빠른 발송('qs') 둘 다 쓴다.
+// "보낸메일함에서 보기"·"새 편지 쓰기"를 바로 누를 수 있다. 메일 쓰기 화면에서 쓴다.
 // ══════════════════════════════════════════════════════════════
-function _sentCardEl(which) { return document.getElementById(which === 'qs' ? 'qs-sent-card' : 'mail-sent-card'); }
+function _sentCardEl() { return document.getElementById('mail-sent-card'); }
 function _kstStamp(iso) {
   const t = Date.parse(iso); if (!Number.isFinite(t)) return '';
   const d = new Date(t + 9 * 3600 * 1000), pad = n => String(n).padStart(2, '0');
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;     // 한국 시간
 }
-function _sentCardHide(which) {
-  const el = _sentCardEl(which); if (!el) return;
+function _sentCardHide() {
+  const el = _sentCardEl(); if (!el) return;
   el.style.display = 'none'; el.innerHTML = '';
 }
-function _sentCardShow(which, cls, role, html) {
-  const el = _sentCardEl(which); if (!el) return;
+function _sentCardShow(cls, role, html) {
+  const el = _sentCardEl(); if (!el) return;
   el.className = 'sent-card' + (cls ? ' ' + cls : '');
   el.setAttribute('role', role);
-  el.innerHTML = `<button type="button" class="sc-x" aria-label="닫기" onclick="_sentCardHide('${which}')">×</button>` + html;
+  el.innerHTML = `<button type="button" class="sc-x" aria-label="닫기" onclick="_sentCardHide()">×</button>` + html;
   el.style.display = 'block';
   try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); el.focus({ preventScroll: true }); } catch (e) { /* 오래된 브라우저 */ }
 }
-function _sentCardShowOk(which, { to, subject, data }) {
+function _sentCardShowOk({ to, subject, data }) {
   const d = data || {};
   const from = d.from_display || d.from || '';
   const stamp = _kstStamp(d.sent_at);
   const row = (k, v) => v ? `<div class="sc-row"><span class="sc-k">${k}</span><span class="sc-v">${escHtml(v)}</span></div>` : '';
   const quota = d.quota && d.quota.charged_gdc ? `<div class="sc-note">5일 평균 발송 한도 초과로 ₮${escHtml(String(d.quota.charged_gdc))}이 부과되었습니다.</div>` : '';
-  _sentCardShow(which, '', 'status',
+  _sentCardShow('', 'status',
     `<div class="sc-title">✅ 보냈습니다 — ${escHtml(to)}</div>` +
     row('제목', subject) + row('보낸 시각', stamp) + row('보낸 사람', from) + quota +
     `<div class="sc-note">받는 주소가 틀리면 반송 안내가 받은메일함으로 옵니다.</div>` +
-    `<div class="sc-actions"><button type="button" class="btn btn-primary" onclick="_sentCardGoSent('${which}')">보낸메일함에서 보기</button><button type="button" class="btn" onclick="_sentCardNew('${which}')">새 편지 쓰기</button></div>`);
+    `<div class="sc-actions"><button type="button" class="btn btn-primary" onclick="_sentCardGoSent()">보낸메일함에서 보기</button><button type="button" class="btn" onclick="_sentCardNew()">새 편지 쓰기</button></div>`);
 }
-function _sentCardShowErr(which, message) {
-  _sentCardShow(which, 'err', 'alert',
+function _sentCardShowErr(message) {
+  _sentCardShow('err', 'alert',
     `<div class="sc-title">❌ 발송하지 못했습니다</div><div class="sc-row"><span class="sc-v">${escHtml(message || '알 수 없는 오류')}</span></div>` +
     `<div class="sc-note">입력한 내용은 그대로 남아 있습니다. 확인하고 다시 보내 주세요.</div>`);
 }
-function _sentCardGoSent(which) {
-  _sentCardHide(which);
+function _sentCardGoSent() {
+  _sentCardHide();
   _switchTab('mail');
   _mailSwitchSub('sent');
 }
-function _sentCardNew(which) {
-  _sentCardHide(which);
-  const f = document.getElementById(which === 'qs' ? 'qs-to' : 'mail-to');
+function _sentCardNew() {
+  _sentCardHide();
+  const f = document.getElementById('mail-to');
   if (f) { f.scrollIntoView({ block: 'center' }); f.focus(); }
 }
 
@@ -8839,7 +8660,7 @@ function _rcptSummary(r) { return r.to.join(', ') + (r.cc.length ? ` (참조 ${r
 async function _mailSend() {
   const err = document.getElementById('mail-compose-err');
   const ok = document.getElementById('mail-compose-ok');
-  err.style.display = 'none'; ok.style.display = 'none'; _sentCardHide('mail');
+  err.style.display = 'none'; ok.style.display = 'none'; _sentCardHide();
   const rc = _rcptCollect();
   const to = _rcptSummary(rc);
   const subject = document.getElementById('mail-subject').value.trim();
@@ -8863,14 +8684,16 @@ async function _mailSend() {
     });
     // 발송에 성공했으면 이어 쓰던 초안은 임시보관함에서 지운다 — 이미
     // 보낸 편지가 "임시보관함"에 남아있으면 혼란스럽다.
+    _mailLinkSent(data, subject);
     if (_mailEditingDraftId) {
+      if (window.TaskLinks) TaskLinks.remove('sdraft:' + _mailEditingDraftId);
       try { await kmailApi('/kmail/drafts/delete', { method: 'POST', body: { draft_id: _mailEditingDraftId } }); } catch (e) { /* 발송은 이미 성공했으니 삭제 실패는 조용히 무시 */ }
     }
     _mailDiscardEditing();
     _mailSentCache = null; // 다음에 보낸메일함을 열면 새로 불러오게
-    _sentCardShowOk('mail', { to, subject, data });
+    _sentCardShowOk({ to, subject, data });
   } catch (e) {
-    _sentCardShowErr('mail', e.message);          // 입력한 내용은 그대로 둔다
+    _sentCardShowErr(e.message);          // 입력한 내용은 그대로 둔다
   } finally {
     btn.disabled = false;
   }
@@ -8896,10 +8719,12 @@ async function _mailLoadDrafts() {
           <div class="li-main">
             <div class="li-title">${escHtml(d.subject || '(제목 없음)')}</div>
             <div class="li-sub">받는 사람: ${escHtml(to)} · ${fmtDt(d.updated)} 저장됨</div>
+            <div class="li-sub">${window.Hub ? Hub.linkButton('sdraft:' + d.id, 'sdraft', d.subject || '(제목 없음)', 'drafts') : ''}</div>
           </div>
           <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); _mailDeleteDraft('${d.id}')">삭제</button>
         </div>`;
     }).join('');
+    _mailApplyFilter();
   } catch (e) {
     itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
   } finally { loadingEl.style.display = 'none'; }
@@ -8907,6 +8732,7 @@ async function _mailLoadDrafts() {
 async function _mailDeleteDraft(draftId) {
   try {
     await kmailApi('/kmail/drafts/delete', { method: 'POST', body: { draft_id: draftId } });
+    if (window.TaskLinks) TaskLinks.remove('sdraft:' + draftId);
     if (_mailEditingDraftId === draftId) _mailDiscardEditing();
     _mailLoadDrafts();
   } catch (e) {
@@ -8938,6 +8764,7 @@ function _mailRenderMailItem(m, { showLabels } = {}) {
         <div class="li-title" style="cursor:pointer" onclick="_mailToggleExpand('${bodyId}', '${escHtml(m.id)}')">${escHtml(m.subject || '(제목 없음)')}</div>
         <div class="li-sub">${m.direction === 'sent' ? '받는 사람' : '보낸 사람'}: ${escHtml(m.counterparty)} · ${fmtDt(m.created)}</div>
         <div class="li-sub" style="margin-top:2px;cursor:pointer" onclick="_mailToggleExpand('${bodyId}', '${escHtml(m.id)}')">${escHtml(_mailSnippet(m.body))}</div>
+        <div class="li-sub">${window.Hub ? Hub.linkButton('mail:' + m.id, 'mail', m.subject || '(제목 없음)', m.direction === 'sent' ? 'sent' : 'inbox') : ''}</div>
         <div id="${bodyId}" style="display:none;margin-top:8px;font-size:14px;white-space:pre-wrap;border-top:1px solid var(--bdr);padding-top:8px">${escHtml(m.body)}</div>
         ${showLabels ? `
           <div style="margin-top:8px">${labelPills}</div>
@@ -8962,7 +8789,9 @@ async function _mailLoadSent() {
     if (!_mailSentCache) _mailSentCache = await _mailFetchBox('sent');
     const items = _mailSentCache;
     if (!items.length) { emptyEl.style.display = ''; return; }
+    if (window.TaskLinks) TaskLinks.matchPending(items);   // 방금 보낸 메일의 번호를 몰랐던 경우 여기서 과제에 연결한다
     itemsEl.innerHTML = items.map(m => _mailRenderMailItem(m, { showLabels: false })).join('');
+    _mailApplyFilter(); _mailFocusShow();
   } catch (e) {
     itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
   } finally { loadingEl.style.display = 'none'; }
@@ -8977,8 +8806,9 @@ async function _mailLoadInbox() {
     if (!_mailInboxCache) _mailInboxCache = await _mailFetchBox('inbox');
     const items = _mailInboxCache;
     _mailRenderUnreadBadge();
-    if (!items.length) { emptyEl.style.display = ''; return; }
+    if (!items.length) { emptyEl.style.display = ''; _mailApplyFilter(); return; }
     itemsEl.innerHTML = items.map(m => _mailRenderMailItem(m, { showLabels: true })).join('');
+    _mailApplyFilter(); _mailFocusShow();
   } catch (e) {
     itemsEl.innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
   } finally { loadingEl.style.display = 'none'; }
@@ -9021,7 +8851,6 @@ function _mailUnreadCount() {
 }
 function _mailRenderUnreadBadge() {
   const n = _mailUnreadCount();
-  try { _mailNotifyBadges(); } catch (e) {}
   document.querySelectorAll('.unread-badge[data-for="inbox"]').forEach(el => {
     if (n > 0) { el.textContent = n > 99 ? '99+' : String(n); el.hidden = false; el.setAttribute('aria-label', '안 읽은 메일 ' + n + '통'); }
     else { el.hidden = true; el.textContent = ''; el.removeAttribute('aria-label'); }
@@ -9263,7 +9092,7 @@ async function _cmpHandleFileSelect() {
   _cmpPendingAttachments.push(entry);
   _cmpRenderAttachList();
   try {
-    const file_base64 = await _qsFileToBase64(file);
+    const file_base64 = await _mailFileToBase64(file);
     const uploadPromise = kmailApi('/kmail/attachments/upload', {
       method: 'POST',
       body: { file_base64, filename: file.name, content_type: file.type },
@@ -9403,11 +9232,11 @@ function _cmpScrollToBottom() {
 // 정확하다.
 // 2026-10-27 — 서버가 실제로 확인한 발송 결과(action.state)에 맞는 배지. "예약됨"으로 뭉뚱그리면 이미 보낸 메일도 "예약"으로 읽힌다.
 const _CAMPAIGN_STATE_BADGE = {
-  sent:      { cls: 'badge-sent',      label: '📨 발송 완료 — "내 캠페인"에서 확인' },
-  partial:   { cls: 'badge-pending',   label: '⚠️ 일부만 발송됨 — "내 캠페인"에서 확인' },
-  failed:    { cls: 'badge-failed',    label: '❌ 발송 실패 — "내 캠페인"에서 확인' },
+  sent:      { cls: 'badge-sent',      label: '📨 발송 완료 — 과제에서 확인' },
+  partial:   { cls: 'badge-pending',   label: '⚠️ 일부만 발송됨 — 과제에서 확인' },
+  failed:    { cls: 'badge-failed',    label: '❌ 발송 실패 — 과제에서 확인' },
   queued:    { cls: 'badge-scheduled', label: '📤 발송 접수됨 — 곧 전달됩니다' },
-  scheduled: { cls: 'badge-scheduled', label: '⏰ 발송 예약됨 — "내 캠페인"에서 확인' },
+  scheduled: { cls: 'badge-scheduled', label: '⏰ 발송 예약됨 — 과제에서 확인' },
 };
 function _badgeWithCount(map, action) {
   if (!action) return null;
@@ -9420,9 +9249,9 @@ function _badgeWithCount(map, action) {
 }
 
 const _CMP_ACTION_BADGE = {
-  campaign_created:    { cls: 'badge-scheduled', label: '📨 캠페인 접수됨 — "내 캠페인" 탭에서 확인' },   // state가 없는 옛 서버 응답용
+  campaign_created:    { cls: 'badge-scheduled', label: '📨 캠페인 접수됨 — 과제에서 확인' },   // state가 없는 옛 서버 응답용
   letter_sent:         { cls: 'badge-sent',      label: '✉️ 편지 발송 — "보낸메일함"에서 확인' },
-  campaign_started:    { cls: 'badge-pending',   label: '📌 캠페인 시작됨(진행 중) — "내 캠페인" 탭에서 확인' },
+  campaign_started:    { cls: 'badge-pending',   label: '📌 캠페인 시작됨(진행 중) — 과제에서 확인' },
   send_confirmation_required: { cls: 'badge-pending', label: '📝 발송 전 확인 필요 — 아직 보내지 않았습니다' },
   searched_contacts:   { cls: 'badge-pending',   label: '🔍 웹 검색 결과' },
   looked_up_contacts:  { cls: 'badge-none',      label: '📇 주소록 조회' },
@@ -9607,10 +9436,10 @@ function _panelOpen(kind) {
    const title = kind === 'core' ? '나비웹의 핵심 — PDV와 OpenHash' : kind === 'manual' ? '나비와 나비웹 백서' : kind === 'wp' ? 'Whitepaper — 나비웹 사용 설명서' : '나만의 AI 비서 소개';
   if (!_introIsOpen()) {
     const on = document.querySelector('.tab-panel.active');
-    _introPrev = { panel: on ? on.id : 'tab-compose', nav: [].map.call(document.querySelectorAll('.side-nav .nav-btn.active, .side-nav .nav-mv.active, .side-nav .nav-dv.active, .side-nav .nav-gv.active'), el => el.id).filter(Boolean) };
+    _introPrev = { panel: on ? on.id : 'tab-compose', nav: [].map.call(document.querySelectorAll('.side-nav .nav-btn.active'), el => el.id).filter(Boolean) };
     if (on && on.id === 'tab-compose') { try { _drAutoSave('leave'); } catch (e) {} }
     document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.side-nav .nav-btn, .side-nav .nav-mv, .side-nav .nav-dv, .side-nav .nav-gv').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.side-nav .nav-btn').forEach(el => el.classList.remove('active'));
     p.classList.add('active');
   }
   _panelKind = kind;
@@ -9715,57 +9544,21 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _introIs
 const _TOPBAR_HOME = '나만의 AI 비서, 나비';
 const _TOPBAR_MODE_LABEL = { default: _TOPBAR_HOME, letter: '메일 · 편지 작성', campaign: '메일 · 캠페인', doc: '서류 작성', org: '인프라 AI', verdict: '가상 판결' };
 function _topbarOwnText(el) { return Array.prototype.filter.call(el.childNodes, n => n.nodeType === 3 || (n.classList && n.classList.contains('nl'))).map(n => _i18nOrig(n)).join('').trim(); }   // 언어를 바꿔도 판단은 한국어 원문으로   // .nl = 왼쪽 메뉴가 글자만 따로 감싼 span
-// ── 서류·메일 화면 위쪽 탭(2026-11-06) — 왼쪽 메뉴의 하위 메뉴를 옮겨 왔다 ──
-const _PG_TABS = {
-  doc: [['doc', '서류 작성'], ['docdrafts', 'Draft'], ['docdone', '작성한 서류'], ['myforms', '내 서류함'], ['othersite', '다른 사이트 입력']],
-  mail: [['quicksend', '빠른 발송'], ['campaigns', '캠페인'], ['contacts', '주소록'], ['m:compose', '편지쓰기'], ['m:drafts', 'Draft'], ['m:sent', '보낸메일함'], ['m:inbox', '받은메일함'], ['m:tags', '태그별 보관함']],
-};
-function _pgActive(kind) {
-  const on = document.querySelector('.tab-panel.active'); if (!on) return '';
-  if (on.id === 'tab-camphist') return kind === 'mail' ? 'campaigns' : '';
-  if (on.id === 'tab-compose') return kind === 'doc' && _cmpMode === 'doc' ? 'doc' : kind === 'mail' && _cmpMode === 'campaign' ? 'campaigns' : '';
-  if (on.id === 'tab-mail') { const a = document.querySelector('.mail-subnav button.active'); return kind === 'mail' ? 'm:' + (a ? a.id.replace('mail-subnav-', '') : 'compose') : ''; }
-  return on.id.replace('tab-', '');
-}
-function _pgGo(key) {
-  if (key.indexOf('m:') === 0) return _navMailSub(key.slice(2));
-  if (key === 'campaigns') return _campSubGo('new');   // 위쪽 '캠페인' 탭 = 캠페인 페이지의 기본 화면 '새 캠페인'
-  if (key === 'contacts') return _ctNavClick();
-  _switchTab(key);
-}
-// ── 캠페인 페이지 하위 탭(2026-11-18, 주피터 지시): 새 캠페인(기본) | 내 캠페인 ──
-//  새 캠페인 = 입력창(compose) 화면의 '메일 · 캠페인' 모드(/kmail/chat, K-Mail 캠페인 SP — 입력 필드가 맨 위), 내 캠페인 = 지난 캠페인 목록(tab-campaigns).
-function _campSubFill() {
-  const compose = document.getElementById('tab-compose');
-  const hist = document.getElementById('tab-camphist');
-  const act = hist && hist.classList.contains('active') ? 'hist' : compose && compose.classList.contains('active') && _cmpMode === 'campaign' ? 'new' : 'mine';
-  document.querySelectorAll('[data-campbar]').forEach(box => {
-    box.innerHTML = '<div class="cs-modes cs-sub" role="tablist" aria-label="' + _i18nEsc(_T('캠페인')) + '">' + [['new', '새 캠페인'], ['mine', '내 캠페인'], ['hist', '캠페인 이력']].map(x =>
-      '<button type="button" role="tab" class="cs-mode' + (x[0] === act ? ' on' : '') + '" aria-selected="' + (x[0] === act) + '" onclick="_campSubGo(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) + '</button>').join('') + '</div>';
+// ── "← 과제" 줄(2026-11-28): 과제 아래의 작성 화면·주소록·양식함에는 탭 줄 대신 돌아가는 줄 하나만 둔다 ──
+function _hubSync() {
+  if (!window.Hub) return;
+  const compose = { letter: '메일 · 나비에게 맡기기', campaign: '메일 캠페인', doc: '서류 작성' };
+  const titles = { mail: '메일 쓰기', contacts: '주소록', myforms: '양식함', othersite: '다른 사이트에 입력' };
+  document.querySelectorAll('[data-back]').forEach(el => {
+    const k = el.getAttribute('data-back'), title = k === 'compose' ? (compose[_cmpMode] || '') : titles[k];
+    const note = k === 'compose' && _cmpMode === 'doc' && _hubCtx ? '과제 「' + (_hubCtx.title || '연결한 과제') + '」에 연결됩니다.' : '';
+    Hub.fillBack(el, title, note);
   });
-}
-function _campSubGo(k) { if (k === 'new') _switchTab('compose'); else if (k === 'hist') _switchTab('camphist'); else _campNavClick(); }
-/** 지금 화면에 맞춰 "과제" 아래 하위 메뉴의 켜짐 표시를 맞춘다. */
-function _navSyncTaskSubs() {
-  const on = document.querySelector('.tab-panel.active'), id = on ? on.id.replace('tab-', '') : '', mode = id === 'compose' ? _cmpMode : '';
-  const cur = id === 'mail' || id === 'tags' ? 'mail' : ['docdrafts', 'docdone', 'myforms', 'othersite'].indexOf(id) >= 0 || mode === 'doc' ? 'docs' : id === 'quicksend' ? 'quick' : id === 'contacts' || id === 'campaigns' || id === 'camphist' || mode === 'campaign' ? 'contacts' : '';
-  document.querySelectorAll('.side-nav .task-sub').forEach(b => { const hit = b.id === 'task-sub-' + cur; b.classList.toggle('active', hit); if (hit) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-}
-function _pgTabsFill() {
-  _navSyncTaskSubs();
-  _campSubFill();
-  const srcBadge = document.querySelector('#nav-sub-mail .unread-badge[data-for="inbox"]');
-  const bn = srcBadge && !srcBadge.hidden ? srcBadge.textContent : '';
-  document.querySelectorAll('[data-pgbar]').forEach(box => {
-    const inCompose = !!(box.parentElement && box.parentElement.id === 'tab-compose');
-    const kind = inCompose && _cmpMode === 'campaign' ? 'mail' : box.getAttribute('data-pgbar'), act = _pgActive(kind);   // 입력창 화면의 탭은 서류 모드면 서류 탭, 캠페인 모드면 메일 탭
-    box.innerHTML = '<div class="cs-modes" role="tablist" aria-label="' + _i18nEsc(_T(kind === 'doc' ? '서류' : '메일')) + '">' + _PG_TABS[kind].map(x =>
-      '<button type="button" role="tab" class="cs-mode' + (x[0] === act ? ' on' : '') + '" aria-selected="' + (x[0] === act) + '" onclick="_pgGo(\'' + x[0] + '\')">' + _i18nEsc(_T(x[1])) +
-      (x[0] === 'm:inbox' && bn ? '<span class="unread-badge" data-for="inbox">' + _i18nEsc(bn) + '</span>' : '') + '</button>').join('') + '</div>';
-  });
+  const a = document.activeElement;
+  if (!(a && a.closest && a.closest('[data-hub]'))) Hub.fillHeaders();   // 검색 칸에 입력하는 동안은 머리글을 다시 그리지 않는다
 }
 function _topbarSyncPage() {
-  _pgTabsFill();
+  _hubSync();
   const el = document.getElementById('topbar-page');
   if (!el) return;
   let label = '';
@@ -9774,16 +9567,9 @@ function _topbarSyncPage() {
     label = (_cmpMode === 'org' && _org) ? _org.label : (_TOPBAR_MODE_LABEL[_cmpMode] || _TOPBAR_HOME);
   } else {
     const fbp = document.getElementById('tab-feedback');
-    const sub = document.querySelector('.side-nav .nav-subitem.active');
     const btn = document.querySelector('.side-nav .nav-btn.active');
     if (fbp && fbp.classList.contains('active')) label = '기능 개선 제안';
-    else if (sub) {
-      const g = sub.closest('.nav-group');
-      const head = g && g.id === 'nav-group-mail' ? '메일 · ' : g && g.id === 'nav-group-docs' ? '서류 · ' : g && g.id === 'nav-group-guide' ? '나비 길잡이 · ' : '';
-      label = head + (sub.getAttribute('data-label') || _topbarOwnText(sub));
-    } else if (btn) {
-      label = btn.getAttribute('data-label') || _topbarOwnText(btn);
-    }
+    else if (btn) label = btn.getAttribute('data-label') || _topbarOwnText(btn);
   }
   const _home = label === _TOPBAR_HOME;
   el.classList.toggle('can-intro', _home); if (_home) { el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-haspopup', 'true'); el.title = _T('나만의 AI 비서 소개'); } else { el.setAttribute('role', 'status'); el.removeAttribute('tabindex'); el.removeAttribute('aria-haspopup'); el.removeAttribute('aria-expanded'); el.title = ''; if (_introIsOpen() && _panelKind === 'intro') _introClose(); }
@@ -9803,7 +9589,7 @@ function _cmpSetMode(mode, opts) {
   if (!opts.keep && hadWork) {
     const saved = _drAutoSave('mode');
     if (!saved && !opts.force &&
-        !confirm(_cmpMode === 'verdict' ? '진행 중인 판결 시뮬레이션이 중단됩니다. 모드를 바꿀까요?' : '진행 중인 작업이 사라집니다. 모드를 바꿀까요?\n(캠페인 초안은 "내 캠페인"에서 이어서 열 수 있습니다.)')) { _cmpSyncModeUi(); return false; }
+        !confirm(_cmpMode === 'verdict' ? '진행 중인 판결 시뮬레이션이 중단됩니다. 모드를 바꿀까요?' : '진행 중인 작업이 사라집니다. 모드를 바꿀까요?\n(캠페인 초안은 과제의 메일 캠페인에서 이어서 열 수 있습니다.)')) { _cmpSyncModeUi(); return false; }
   }
   const input = document.getElementById('cmp-input');
   // 아직 시작한 작업이 없으면 적어 둔 글과 첨부는 새 모드로 가져간다
@@ -9896,11 +9682,11 @@ async function _schedPoll() {
       if (c.status === 'scheduled' || c.status === 'draft') { keep.push(w); continue; }
       const name = c.title || c.subject || '예약 메일';
       const ok = c.status === 'sent';
-      const msg = ok ? `📨 예약하신 메일이 발송되었습니다 — "${name}" (수신자 ${c.recipients}명). "내 캠페인"에서 확인하세요.`
-                     : `❌ 예약하신 메일 발송에 실패했습니다 — "${name}". "내 캠페인"에서 확인하세요.`;
+      const msg = ok ? `📨 예약하신 메일이 발송되었습니다 — "${name}" (수신자 ${c.recipients}명). 과제에서 확인하세요.`
+                     : `❌ 예약하신 메일 발송에 실패했습니다 — "${name}". 과제에서 확인하세요.`;
       _schedToast(msg);
       if (document.getElementById('cmp-thread')) _cmpAppendBubble('assistant', { md: msg, badge: null });
-      _campLoadedOnce = false;
+      if (window.TaskHome) TaskHome.sync(true);
     }
     _schedSave(keep);
   } catch (e) { /* 다음 주기에 다시 */ }
@@ -9959,7 +9745,7 @@ async function _cmpChatSendText(text, attachments) {
     // 모든 턴에 함께 보낸다 — 서버가 대화 전문을 계속 그 캠페인에
     // 이어서 기록할 수 있게.
     if (data.action && data.action.campaign_id) { _cmpChat.campaignId = data.action.campaign_id; }
-    if (data.action && (data.action.type === 'campaign_created' || data.action.type === 'campaign_started')) { _campLoadedOnce = false; }
+    if (data.action && (data.action.type === 'campaign_created' || data.action.type === 'campaign_started')) { if (window.TaskHome) TaskHome.sync(true); }
     // 2026-09-11 신설 — "Mail SP에게 메일 작성을 지시하면 그 초안을
     // 메일 편집기 화면에 표시해야 한다"(주피터 지시)는 요구 구현.
     // draft_saved(사용자가 명시적으로 "초안으로 저장해줘"라고 요청한
@@ -10652,105 +10438,6 @@ function _ctNavClick() {
   _switchTab('contacts');
   if (active || drilled) { if (q) q.value = ''; _ctShowCategories(); }
 }
-// ── 캠페인 이력(2026-11-20) — 끝난 캠페인의 성과 보고서 화면 ─────────────────────────────
-// 보고서 한 건의 자료 형태(_CH_SCHEMA). 저장·불러오기는 백엔드가 정해지면 _chLoad()에서 채운다.
-//   { id, campaign_id, title, kind: 'seminar'|'recruit'|'outreach'|'other', closed_at: ISO, period: {start, end},
-//     topic: '주제', event: { when: '일시', mode: 'online'|'offline'|'hybrid', place: '장소', url: '온라인 주소' },   // event 는 세미나·행사만
-//     attendees: [{ name, org, status: '참석'|'불참'|'미정' }], outreach: [{ org, result }],
-//     metrics: { sent, replied, confirmed, attended }, outcome: '성과 요약', followups: ['후속 조치', …] }
-// 참석자 이름은 메일 페이지에서 가운데 글자를 가려 보여 준다(주피터 지시 2026-11-20): 홍길동→홍*동, 이도→이*, 남궁민수→남**수, Kim→K*m.
-// 원본 명단은 L1 PocketBase 에 저장하는 것으로 정했다(저장 연결은 백엔드 작업). 이 화면·복사·파일 내보내기는 모두 가린 이름만 쓴다.
-function _chMaskName(n) {
-  const a = Array.from(String(n == null ? '' : n).trim());
-  if (a.length <= 1) return a.join('');
-  if (a.length === 2) return a[0] + '*';
-  return a[0] + '*'.repeat(a.length - 2) + a[a.length - 1];
-}
-var _chItems = [];     // 저장된 보고서(지금은 비어 있음)
-var _chCur = null;     // 지금 열어 본 보고서
-var _CH_KIND = { seminar: '세미나·행사', recruit: '모집·신청', outreach: '안내·홍보', other: '기타' };
-var _CH_MODE = { online: '온라인', offline: '오프라인', hybrid: '온라인+오프라인' };
-var _CH_SAMPLE = {
-  id: 'sample', title: '12월 ○○ 세미나', kind: 'seminar', closed_at: '2026-12-20T18:00:00+09:00',
-  period: { start: '2026-11-20', end: '2026-12-20' }, topic: '지역 AI 활용 사례와 시민 참여',
-  event: { when: '2026-12-15(화) 14:00~17:00', mode: 'hybrid', place: '제주시 ○○센터 3층 대강당', url: '온라인 중계 주소는 참석 확정자에게 별도 안내' },
-  attendees: [ { name: '홍길동', org: '○○시청', status: '참석' }, { name: '김나비', org: '△△연구원', status: '참석' }, { name: '이도영', org: '□□협회', status: '불참' }, { name: '박한림', org: '개인', status: '미정' } ],
-  outreach: [ { org: '○○시청', result: '장소 협조 및 홍보 지원 회신' }, { org: '△△연구원', result: '발표자 1명 추천' } ],
-  metrics: { sent: 120, replied: 64, confirmed: 41, attended: 37 },
-  outcome: '참석 확정 41명 중 37명이 참석했습니다(참석률 90%). 온라인 접속은 12명이었고, 만족도 조사 응답은 28건입니다.',
-  followups: ['발표 자료를 참석자 전원에게 메일로 공유', '협조 기관에 감사 메일 발송', '내년 상반기 후속 세미나 일정 논의']
-};
-function _chFiltered() {
-  const q = (document.getElementById('ch-filter-q').value || '').trim().toLowerCase();
-  const kind = document.getElementById('ch-filter-kind').value, yr = document.getElementById('ch-filter-year').value;
-  return _chItems.filter(r => (!q || (String(r.title) + ' ' + String(r.topic || '')).toLowerCase().includes(q)) && (!kind || r.kind === kind) && (!yr || String(r.closed_at || '').slice(0, 4) === yr));
-}
-function _chRender() {
-  const list = _chFiltered(), box = document.getElementById('ch-items'), empty = document.getElementById('ch-empty');
-  const sum = k => _chItems.reduce((a, r) => a + ((r.metrics && r.metrics[k]) || 0), 0);
-  document.getElementById('ch-st-total').textContent = _chItems.length;
-  document.getElementById('ch-st-sent').textContent = _chItems.length ? sum('sent') : '–';
-  document.getElementById('ch-st-reply').textContent = _chItems.length ? sum('replied') : '–';
-  document.getElementById('ch-st-attend').textContent = _chItems.length ? sum('confirmed') : '–';
-  empty.style.display = list.length ? 'none' : '';
-  if (!list.length && _chItems.length) empty.innerHTML = '<b>조건에 맞는 보고서가 없습니다</b>검색어나 유형을 바꿔 보세요.';
-  box.innerHTML = list.map((r, i) => `
-    <div class="list-item" onclick="_chOpen(${i})">
-      <div class="li-main">
-        <div class="li-title">${escHtml(r.title)}<span class="ch-badge">${escHtml(_CH_KIND[r.kind] || '기타')}</span></div>
-        <div class="li-sub">종료 ${escHtml(String(r.closed_at || '').slice(0, 10))} · 회신 ${(r.metrics && r.metrics.replied) || 0}건${r.attendees ? ' · 참석자 ' + r.attendees.filter(a => a.status === '참석').length + '명' : ''}</div>
-      </div>
-    </div>`).join('');
-}
-function _chOpen(i) { _chShow(_chFiltered()[i], false); }
-function _chOpenSample() { _chShow(_CH_SAMPLE, true); }
-function _chShow(r, isSample) {
-  if (!r) return; _chCur = r;
-  document.getElementById('ch-list-card').style.display = 'none';
-  document.getElementById('ch-detail-card').style.display = '';
-  document.getElementById('ch-sample-note').style.display = isSample ? '' : 'none';
-  document.getElementById('ch-d-title').innerHTML = escHtml(r.title) + '<span class="ch-badge">' + escHtml(_CH_KIND[r.kind] || '기타') + '</span>';
-  const e = r.event || null, m = r.metrics || {};
-  const meta = [['캠페인 기간', (r.period ? r.period.start + ' ~ ' + r.period.end : '–')], ['종료일', String(r.closed_at || '').slice(0, 10) || '–']];
-  if (e) meta.push(['모임 방식', _CH_MODE[e.mode] || '–'], ['일시', e.when || '–'], ['장소', e.place || '–']);
-  document.getElementById('ch-d-meta').innerHTML = meta.map(x => '<div>' + escHtml(x[0]) + '<b>' + escHtml(x[1]) + '</b></div>').join('');
-  const rate = m.sent ? Math.round((m.replied || 0) / m.sent * 100) + '%' : '–';
-  document.getElementById('ch-d-stats').innerHTML = [[m.sent, '보낸 메일'], [m.replied, '회신 · 회신율 ' + rate], [m.confirmed, '참석 확정'], [m.attended, '실제 참석']].map(x => '<div class="ch-stat"><b>' + (x[0] == null ? '–' : escHtml(String(x[0]))) + '</b><span>' + escHtml(x[1]) + '</span></div>').join('');
-  const sec = (t, inner) => '<div class="ch-sec"><h3>' + escHtml(t) + '</h3>' + inner + '</div>';
-  let h = sec('1. 개요', '<p>' + escHtml(r.topic || '') + '</p>');
-  if (e) h += sec('2. 모임 방식과 장소', '<p>' + escHtml((_CH_MODE[e.mode] || '') + ' · ' + (e.place || '')) + '\n' + escHtml(e.url || '') + '</p>');
-  if (r.attendees) h += sec((e ? '3' : '2') + '. 참석자 목록', '<table class="ch-tbl"><thead><tr><th>이름</th><th>소속</th><th>상태</th></tr></thead><tbody>' + r.attendees.map(a => '<tr><td>' + escHtml(_chMaskName(a.name)) + '</td><td>' + escHtml(a.org || '') + '</td><td>' + escHtml(a.status || '') + '</td></tr>').join('') + '</tbody></table><div class="ch-sample" style="margin:8px 0 0">개인정보 보호를 위해 이름의 가운데 글자는 *로 가려 보여 줍니다.</div>');
-  if (r.outreach) h += sec('관련 기관과의 소통', '<table class="ch-tbl"><thead><tr><th>기관</th><th>결과</th></tr></thead><tbody>' + r.outreach.map(o => '<tr><td>' + escHtml(o.org) + '</td><td>' + escHtml(o.result || '') + '</td></tr>').join('') + '</tbody></table>');
-  h += sec('성과', '<p>' + escHtml(r.outcome || '') + '</p>');
-  if (r.followups && r.followups.length) h += sec('후속 조치', '<p>' + r.followups.map(x => '· ' + escHtml(x)).join('\n') + '</p>');
-  document.getElementById('ch-d-body').innerHTML = h;
-  window.scrollTo(0, 0);
-}
-function _chBack() { document.getElementById('ch-detail-card').style.display = 'none'; document.getElementById('ch-list-card').style.display = ''; _chCur = null; }
-function _chText() {
-  const r = _chCur; if (!r) return '';
-  const e = r.event, m = r.metrics || {}, L = [r.title + ' — 캠페인 성과 보고서', '', '[개요] ' + (r.topic || '')];
-  if (e) L.push('[모임] ' + (_CH_MODE[e.mode] || '') + ' · ' + (e.when || '') + ' · ' + (e.place || ''));
-  L.push('[수치] 보낸 메일 ' + (m.sent ?? '–') + ' · 회신 ' + (m.replied ?? '–') + ' · 참석 확정 ' + (m.confirmed ?? '–') + ' · 실제 참석 ' + (m.attended ?? '–'));
-  if (r.attendees) L.push('', '[참석자]', ...r.attendees.map(a => '- ' + _chMaskName(a.name) + ' (' + (a.org || '') + ') ' + (a.status || '')));
-  if (r.outreach) L.push('', '[기관 소통]', ...r.outreach.map(o => '- ' + o.org + ': ' + (o.result || '')));
-  L.push('', '[성과] ' + (r.outcome || ''));
-  if (r.followups && r.followups.length) L.push('', '[후속 조치]', ...r.followups.map(x => '- ' + x));
-  return L.join('\n');
-}
-function _chCopy() { try { navigator.clipboard.writeText(_chText()); } catch (e) {} }
-function _chSaveFile() {
-  const t = _chText(); if (!t) return;
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain;charset=utf-8' }));
-  a.download = (_chCur.title || '캠페인 보고서') + '.txt'; document.body.appendChild(a); a.click(); a.remove();
-}
-function _chAskChat() { _switchTab('compose'); }
-function _campNavClick() {
-  const detail = document.getElementById('camp-detail-card');
-  const inDetail = detail && detail.style.display !== 'none';
-  _switchTab('campaigns');
-  if (inDetail) _campBackToList();
-}
 // 2026-09-21 신설 — 소속 기관 트리(orgtree.js)에서 노드를 눌렀을 때: 그 노드와 하위 전부의 연락처 목록.
 function _ctOpenOrg(path) {
   _ctViewOrg = path;
@@ -10995,155 +10682,13 @@ async function _ctDecide(contactId, decision) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 내 캠페인 — 목록/검색(REST) + 상세(기본 정보 + 다이제스트 보고 원문)
+// 메일 캠페인 과제의 대화 — 목록·상세는 과제 화면(task-home.js)에 있다
 // ══════════════════════════════════════════════════════════════
 let _campCurrentDetail = null;
 
-// ── 2026-10-28: 내 캠페인 삭제(개별·선택·전체) ───────────────────────────
-const _campSel = new Set();
-function _campSelUpdate() {
-  const bulk = document.getElementById('camp-bulk'); if (!bulk) return;
-  bulk.style.display = _campAllItems.length ? 'flex' : 'none';
-  const n = _campSel.size;
-  const btn = document.getElementById('camp-del-sel');
-  btn.disabled = n === 0; btn.textContent = n ? `선택 삭제 (${n})` : '선택 삭제';
-  const visible = Array.from(document.querySelectorAll('#camp-items .camp-sel'));
-  const all = document.getElementById('camp-sel-all');
-  all.checked = visible.length > 0 && visible.every(cb => cb.checked);
-}
-function _campToggleSel(id, on) { if (on) _campSel.add(id); else _campSel.delete(id); _campSelUpdate(); }
-function _campSelAll(on) {
-  document.querySelectorAll('#camp-items .camp-sel').forEach(cb => {
-    cb.checked = on;
-    const m = (cb.getAttribute('onchange') || '').match(/'([^']+)'/);
-    if (m) { if (on) _campSel.add(m[1]); else _campSel.delete(m[1]); }
-  });
-  _campSelUpdate();
-}
-async function _campDeleteCall(body, confirmText) {
-  if (!window.confirm(confirmText + '\n\n※ 예약 중인 캠페인은 발송이 취소됩니다. 이미 보낸 메일은 "보낸메일함"에 그대로 남습니다.\n삭제하면 되돌릴 수 없습니다.')) return;
-  const msg = document.getElementById('camp-del-msg');
-  msg.textContent = '삭제 중…';
-  try {
-    const data = await kmailApi('/kmail/campaigns/delete', { method: 'POST', body });
-    msg.textContent = `${data.deleted}건 삭제했습니다.` + (data.failed ? ` (${data.failed}건은 삭제하지 못했습니다)` : '');
-    _campSel.clear();
-    await _campLoad();
-    _campSelUpdate();
-  } catch (e) { msg.textContent = '삭제 실패: ' + e.message; }
-}
-function _campDelete(ids) {
-  const c = _campAllItems.find(x => x.id === ids[0]);
-  return _campDeleteCall({ campaign_ids: ids }, `"${c ? _campDisplayName(c) : '이 캠페인'}" 캠페인을 삭제할까요?`);
-}
-function _campDeleteSelected() {
-  const ids = Array.from(_campSel).filter(id => _campAllItems.some(c => c.id === id));
-  if (!ids.length) return;
-  return _campDeleteCall({ campaign_ids: ids }, `선택한 캠페인 ${ids.length}건을 삭제할까요?`);
-}
-function _campDeleteAll() {
-  if (!_campAllItems.length) return;
-  return _campDeleteCall({ all: true }, `내 캠페인 전체 ${_campAllItems.length}건을 삭제할까요?`);
-}
-
-async function _campLoad() {
-  const loadingEl = document.getElementById('camp-loading');
-  const emptyEl = document.getElementById('camp-empty');
-  loadingEl.style.display = ''; emptyEl.style.display = 'none';
-  try {
-    const data = await kmailApi('/kmail/campaigns/list');
-    _campAllItems = data.items || [];
-    _campFilterApply();
-  } catch (e) {
-    document.getElementById('camp-items').innerHTML = `<div class="errbox">불러오기 실패: ${escHtml(e.message)}</div>`;
-  } finally { loadingEl.style.display = 'none'; }
-}
-
 function _campDisplayName(c) { return c.title || c.subject; }
 
-function _campFilterApply() {
-  const q = document.getElementById('camp-filter-q').value.trim().toLowerCase();
-  const itemsEl = document.getElementById('camp-items');
-  const emptyEl = document.getElementById('camp-empty');
-  const filtered = q ? _campAllItems.filter(c => _campDisplayName(c).toLowerCase().includes(q)) : _campAllItems;
-  setTimeout(_campSelUpdate, 0);
-  if (!filtered.length) { itemsEl.innerHTML = ''; emptyEl.style.display = ''; return; }
-  emptyEl.style.display = 'none';
-  itemsEl.innerHTML = filtered.map(c => {
-    const badges = [`<span class="badge badge-${escHtml(c.status)}">${escHtml(_campStatusLabel(c.status))}</span>`];
-    if (c.closed_at) badges.push('<span class="badge badge-closed">종료됨</span>');
-    else if (c.digest_status && c.digest_status !== 'none') badges.push(`<span class="badge badge-${escHtml(c.digest_status)}">보고 ${c.digest_status === 'sent' ? '완료' : '대기'}</span>`);
-    return `
-      <div class="list-item" onclick='_campOpenDetail(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
-        <input type="checkbox" class="camp-sel" aria-label="선택" ${_campSel.has(c.id) ? 'checked' : ''} onclick="event.stopPropagation()" onchange="_campToggleSel('${escHtml(c.id)}', this.checked)">
-        <div class="li-main">
-          <div class="li-title">${escHtml(_campDisplayName(c))} ${badges.join(' ')}</div>
-          <div class="li-sub">수신자 ${c.recipients}명 · 발송 ${fmtDt(c.send_at)}${c.kplan_plan_id ? ` · K-Plan 연결됨` : ''}</div>
-        </div>
-        <button type="button" class="camp-del-btn" onclick="event.stopPropagation();_campDelete(['${escHtml(c.id)}'])">삭제</button>
-      </div>`;
-  }).join('');
-}
-
-// 2026-09-10 신설 — status 원문(draft/scheduled/sent/failed)을 사람이
-// 읽을 한글 라벨로. 배지 CSS 클래스(badge-draft 등)는 그대로 status
-// 값을 쓰고, 이 함수는 텍스트만 바꾼다.
-function _campStatusLabel(status) {
-  return { draft: '진행 중(초안)', scheduled: '예약됨', sent: '발송 완료', failed: '발송 실패' }[status] || status;
-}
-
-async function _campOpenDetail(c) {
-  _campCurrentDetail = c;
-  document.getElementById('camp-list-card').style.display = 'none';
-  const detailCard = document.getElementById('camp-detail-card');
-  detailCard.style.display = '';
-  document.getElementById('camp-detail-title').textContent = _campDisplayName(c);
-
-  const rows = [
-    ['상태', `<span class="badge badge-${escHtml(c.status)}">${escHtml(_campStatusLabel(c.status))}</span>${c.closed_at ? ' <span class="badge badge-closed">종료됨</span>' : ''}`],
-    ['수신자', `${c.recipients}명`],
-    ['발송 시각', fmtDt(c.send_at)],
-    ['회신 수집 마감', fmtDt(c.collect_replies_until)],
-    ['다이제스트 생성 시각', fmtDt(c.digest_at)],
-    ['보고 상태', c.digest_status && c.digest_status !== 'none' ? `<span class="badge badge-${escHtml(c.digest_status)}">${c.digest_status === 'sent' ? '보고 완료' : '보고 대기'}</span>` : '보고 요청 안 함'],
-  ];
-  if (c.closed_at) rows.push(['종료 시각', fmtDt(c.closed_at)]);
-  if (c.kplan_plan_id) rows.push(['K-Plan 연결', `<code>${escHtml(c.kplan_plan_id)}</code>${c.kplan_checkpoint_label ? ' (' + escHtml(c.kplan_checkpoint_label) + ')' : ''}`]);
-  document.getElementById('camp-detail-rows').innerHTML = rows.map(([k, v]) => `<div class="detail-row"><div class="dt">${escHtml(k)}</div><div class="dd">${v}</div></div>`).join('');
-  document.getElementById('camp-resume-btn').style.display = c.status === 'draft' ? '' : 'none';
-
-  const digestLoading = document.getElementById('camp-digest-loading');
-  const digestBox = document.getElementById('camp-digest-box');
-  digestBox.style.display = 'none'; digestBox.innerHTML = '';
-
-  if (c.digest_status === 'sent') {
-    digestLoading.style.display = 'flex';
-    try {
-      // 다이제스트(회신 취합 보고)는 ai_messages에 content_type='kmail_digest'로
-      // 기록되고, session_id가 'kmail:{campaign_id}'라 이걸로 이 캠페인의
-      // 보고만 골라낸다. 수신자별 상세·기관별 집계는 여기 없다 —
-      // "K-Mail에게 물어보기" 버튼으로 KMAIL_CAMPAIGN_REPORT를 태운다.
-      const data = await kmailApi('/kmail/mailbox', { query: { box: 'inbox', include_deleted: 'true' } });
-      const digestMsg = (data.items || []).find(m => m.session_id === `kmail:${c.id}` && m.content_type === 'kmail_digest');
-      if (digestMsg) {
-        digestBox.innerHTML = `<div class="digest-box-title">회신 취합 보고</div><div class="digest-box">${escHtml(digestMsg.body)}</div>`;
-        digestBox.style.display = '';
-      }
-    } catch (e) {
-      digestBox.innerHTML = `<div class="errbox">보고 내용을 불러오지 못했습니다: ${escHtml(e.message)}</div>`;
-      digestBox.style.display = '';
-    } finally { digestLoading.style.display = 'none'; }
-  }
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function _campBackToList() {
-  document.getElementById('camp-detail-card').style.display = 'none';
-  document.getElementById('camp-list-card').style.display = '';
-}
-
-// "내 캠페인" 상세에서 채팅으로 넘어가 그 캠페인에 대해 바로 물어본다 —
+// 캠페인 과제 상세에서 채팅으로 넘어가 그 캠페인에 대해 바로 물어본다 —
 // 수신자별 상태·기관별 집계·접속 추적 결과처럼 REST로는 안 주는 정보를
 // K-Mail SP가 이미 가진 KMAIL_LOOKUP_CAMPAIGNS/KMAIL_CAMPAIGN_REPORT로
 // 답하게 한다(요구사항: "모든 캠페인은... 추후에 검색 및 인출할 수
@@ -11265,11 +10810,10 @@ window.kmailOpenSettings = function (section) {
   }
   if (h === 'foi') { _switchTab('home'); setTimeout(_cmpFoiPick, 0); return; }
   if (h === 'guide') { _switchTab('home'); setTimeout(_cmpGuidePick, 0); return; }
-  if (h === 'tasks') { _switchTab('tasks'); return; }
-  if (h === 'guide-prog') { _switchTab('gprog'); return; }
+  if (h === 'tasks' || h === 'guide-prog') { _switchTab('tasks'); return; }
   if (h === 'mail' || h === 'docs') { _notifyGo('mail'); return; }   // 푸시 알림(새 메일·서류 처리 결과)을 누르면 받은메일함으로
   if (h === 'home' || h === 'compose' || h === 'letter' || h === 'doc' || h === 'verdict') { _switchTab(h); return; }   // 입력창 통합: 예전 #compose·#letter·#doc 딥링크도 같은 화면의 해당 모드로
-  if (h && document.getElementById('tab-' + h) && document.getElementById('tab-btn-' + h)) _switchTab(h);
+  if (h && (_hashScreen(h) || _OLD_HASH.indexOf(h) >= 0)) _switchTab(h);
 })();
 // 화면 안에서 바뀌는 단계(시장 1~6단계, 세무 회계의 확인 결과 등)도 뒤로 가기에 남긴다(2026-11-24).
 // 화면 모듈이 NaviHist.on(모듈, 탭, 복원함수)로 등록하고, 단계가 바뀔 때 NaviHist.push(모듈, 단계)를 부른다.
@@ -11292,11 +10836,11 @@ window.addEventListener('popstate', function () {
   const h = (location.hash || '').replace('#', '');
   if (/^doc\//.test(h)) return;   // 서류 편집기는 자체 주소 규칙(#doc/번호)을 쓴다
   const _sn = history.state && history.state.navTab;
-  const name = h === '' ? (_sn && document.getElementById('tab-' + _sn) ? _sn : 'home') : h === 'guide-prog' ? 'gprog' : (h === 'mail' || h === 'docs') ? 'mail' : h;
+  const name = h === '' ? (_sn && document.getElementById('tab-' + _sn) ? _sn : 'home') : h === 'guide-prog' ? 'tasks' : (h === 'mail' || h === 'docs') ? 'mail' : h;
   window._navPop = true;
   try {
     if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
-    else if (document.getElementById('tab-' + name) && document.getElementById('tab-btn-' + (name === 'gprog' || name === 'tasks' ? 'guidenav' : name))) _switchTab(name);
+    else if (_hashScreen(name) || name === 'mail' || name === 'docs' || _OLD_HASH.indexOf(name) >= 0) _switchTab(name);
     else if (['home', 'compose', 'letter', 'verdict'].indexOf(name) >= 0) _switchTab(name);
   } catch (e) {}
   try { NaviHist.restore(name, history.state); } catch (e) {}
@@ -11306,8 +10850,8 @@ setTimeout(function () { window._navReady = true; }, 0);
 window.addEventListener('hashchange', function () {
   const h = (location.hash || '').replace('#', '');
   if (h === 'settings' || h === 'idsettings') kmailOpenSettings('account');
-  else if (h === 'tasks') _switchTab('tasks');
-  else if (h === 'guide-prog') _switchTab('gprog');
+  else if (h === 'tasks' || h === 'guide-prog') _switchTab('tasks');
+  else if (_OLD_HASH.indexOf(h) >= 0) _switchTab(h);
   else if (h === 'mail' || h === 'docs') _notifyGo('mail');   // 이미 열려 있는 탭에서 푸시 알림을 눌렀을 때
 });
 </script>

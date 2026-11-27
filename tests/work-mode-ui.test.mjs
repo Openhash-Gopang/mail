@@ -10,7 +10,7 @@ test('작업 중(서류가 열린 동안) 상단 막대·탭 줄을 위로 숨�
   assert.match(html, /body\.hd-hidden header\.topbar\{position:fixed;[^}]*translateY\(-100%\)/);
   assert.match(html, /id="hd-pull"/);
   assert.match(html, /tab\.getAttribute\('data-docopen'\) === '1'/);
-  assert.match(html, /body\.hd-hidden \.pg-bar\{display:none\}/);
+  assert.match(html, /body\.hd-hidden \.tab-panel \.hub-back\{display:none/);
   assert.equal((html.match(/top:54px/g) || []).length, 1, '위쪽 간격은 var(--hd) 를 따른다(고정 54px 는 펼쳐 볼 때의 탭 줄 하나뿐)');
 });
 

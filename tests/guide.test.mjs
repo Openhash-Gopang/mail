@@ -126,7 +126,7 @@ test('GDC 는 설정의 탭(PDV 오른쪽)으로 옮겨 사용량(그래프) 화
 test('좌측 메뉴: 접힌 상태도 펼친 상태와 세로 배치가 같고, 접을 때 글자를 먼저 지운 뒤 천천히 폭을 줄인다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
   assert.match(h, /sn-closing/);
-  assert.match(h, /\.side-nav \.side-label,\.side-nav \.nav-subitem,\.side-nav \.nav-sub\{white-space:nowrap/);
+  assert.match(h, /\.side-nav \.side-label\{white-space:nowrap/);
   assert.ok(!/\.side-nav:not\(\.sn-open\) \.nav-sub,\.side-nav:not\(\.sn-open\) \.side-foot,\.side-nav:not\(\.sn-open\) \.nav-toggle\{display:none\}/.test(h), '접힌 상태에서 display:none 으로 자리를 없애지 않는다');
   assert.match(h, /closeT = setTimeout\(\(\) => \{ nav\.style\.width = ''/);
 });
@@ -457,8 +457,8 @@ test('서류 작성 대화창: 사진 → 다른 사이트 입력(OCR → 확인
 
 test('다른 사이트 입력 탭: 메뉴·위쪽 탭·화면·흐름이 연결돼 있다', () => {
   const h = readFileSync(new URL('../desktop.html', import.meta.url), 'utf8');
-  assert.ok(h.includes('id="tab-btn-othersite"') && h.includes('id="tab-othersite"'));
-  assert.ok(h.includes("['myforms', '내 서류함'], ['othersite', '다른 사이트 입력']"), '위쪽 탭');
+  assert.ok(h.includes('id="tab-othersite"') && h.includes('data-back="othersite"'));
+  assert.match(readFileSync(new URL('../hub.js', import.meta.url), 'utf8'), /data-hub-act="othersite">/, '＋ 새로 만들기 메뉴');
   assert.ok(h.includes("if (name === 'othersite') _otsRender();") && h.includes('async function _otsGo(') && h.includes('_photoFillConfirm(all, url)'));
 });
 
