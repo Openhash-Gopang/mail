@@ -20,7 +20,7 @@
     return '<div class="hub-head"><h1>' + esc(T('과제')) + '</h1><input type="search" class="hub-q" data-hubq="' + active + '" placeholder="' + esc(T(ph)) + '" aria-label="' + esc(T(ph)) + '" value="' + esc(query[active]) + '">' +
       '<span class="hub-sp"></span><button type="button" class="btn btn-sm btn-outline" data-hub-act="contacts">' + esc(T('주소록')) + '</button><button type="button" class="btn btn-sm btn-outline" data-hub-act="forms">' + esc(T('양식함')) + '</button>' +
       '<details class="tk-more"><summary aria-label="' + esc(T('설정')) + '">⋮</summary><div><button type="button" data-hub-act="notif">' + esc(T('알림 설정')) + '</button><button type="button" data-hub-act="sim">' + esc(T('예시 데이터로 보기')) + '</button></div></details>' +
-      '<details class="tk-more hub-new"><summary class="btn btn-sm btn-primary">＋ ' + esc(T('새로 만들기')) + '</summary><div><button type="button" data-hub-act="new-task">' + esc(T('새 과제')) + '</button><button type="button" data-hub-act="new-mail">' + esc(T('메일 쓰기')) + '</button><button type="button" data-hub-act="new-doc">' + esc(T('서류 작성')) + '</button><button type="button" data-hub-act="othersite">' + esc(T('다른 사이트에 입력')) + '</button></div></details></div>' +
+      '<details class="tk-more hub-new"><summary class="btn btn-sm btn-primary">＋ ' + esc(T('새로 만들기')) + '</summary><div><button type="button" data-hub-act="new-task">' + esc(T('새 과제')) + '</button><button type="button" data-hub-act="new-mail">' + esc(T('메일 쓰기')) + '</button><button type="button" data-hub-act="new-campaign">' + esc(T('메일 캠페인')) + '</button><button type="button" data-hub-act="new-doc">' + esc(T('서류 작성')) + '</button><button type="button" data-hub-act="othersite">' + esc(T('다른 사이트에 입력')) + '</button></div></details></div>' +
       '<div class="cs-modes hub-tabs" role="tablist" aria-label="' + esc(T('과제')) + '">' + TABS.map(function (x) {
         return '<button type="button" role="tab" class="cs-mode' + (x[0] === active ? ' on' : '') + '" aria-selected="' + (x[0] === active) + '" data-hub-act="tab-' + x[0] + '">' + esc(T(x[1])) +
           (x[0] === 'mail' ? '<span class="unread-badge" data-for="inbox" hidden></span>' : '') + '</button>';
@@ -56,34 +56,31 @@
   }
 
   // ── 새 과제 ───────────────────────────────────
-  /** 고른 값에 따라 쓸 수 있는 단추: 상의 = 자체 진행(일반·캠페인), 바로 만들기 = 일반(업무 기능이 켜진 경우) */
-  function newTaskChoices(role, type, caseOn) {
-    return { consult: role === 'solo', direct: type === 'plain' && !!caseOn, roles: type === 'campaign' || !caseOn ? ['solo'] : ['solo', 'provider', 'consumer'], email: role !== 'solo' };
+  /** 고른 값에 따라 쓸 수 있는 단추: 상의 = 자체 진행, 바로 만들기 = 업무 기능이 켜진 경우 */
+  function newTaskChoices(role, caseOn) {
+    return { consult: role === 'solo', direct: !!caseOn, roles: caseOn ? ['solo', 'provider', 'consumer'] : ['solo'], email: role !== 'solo' };
   }
   function openNewTask() {
     var H = host(), caseOn = H.caseOn();
     var radio = function (name, v, label, on) { return '<label class="hub-radio"><input type="radio" name="' + name + '" value="' + v + '"' + (on ? ' checked' : '') + '> ' + label + '</label>'; };
     var ov = modal('새 과제',
-      '<label class="hub-f">목표<textarea id="nt-goal" rows="2" maxlength="200" placeholder="예: GPU 지원사업 응모"></textarea></label>' +
+      '<label class="hub-f">목표<textarea id="nt-goal" rows="2" maxlength="200" placeholder="예: 상표 출원, 대여금 청구 소송"></textarea></label>' +
       '<fieldset class="hub-f" id="nt-roles"><legend>역할</legend>' + radio('nt-role', 'solo', '자체 진행', true) + (caseOn ? radio('nt-role', 'provider', '맡은 일') + radio('nt-role', 'consumer', '맡긴 일') : '') + '</fieldset>' +
-      '<fieldset class="hub-f"><legend>유형</legend>' + radio('nt-type', 'plain', '일반', true) + radio('nt-type', 'campaign', '✉ 메일 캠페인') + '</fieldset>' +
       (caseOn ? '<label class="hub-f" id="nt-kind-row">종류<select id="nt-kind"><option value="case">사건·건</option><option value="transaction">거래</option><option value="event">행사</option></select></label>' : '') +
       '<div id="nt-peer" hidden><label class="hub-f">상대방 메일 주소 (초대권을 보낼 곳)<input id="nt-email" type="email" placeholder="client@example.com"></label><label class="hub-radio"><input type="checkbox" id="nt-send" checked> 만들면서 초대 메일을 바로 보내기 (내 K-Mail 주소로 발송, 사건 제목은 메일에 넣지 않음)</label></div>' +
       '<div class="hub-hint" id="nt-hint"></div><div class="hub-msg" id="nt-msg" role="alert"></div>' +
       '<div class="hub-dlg-f"><button type="button" class="btn btn-sm btn-outline" id="nt-consult">나비와 상의해 만들기</button><button type="button" class="btn btn-sm btn-primary" id="nt-direct">바로 만들기</button></div>');
     var val = function (n) { var e = ov.querySelector('input[name="' + n + '"]:checked'); return e ? e.value : ''; };
     function sync() {
-      var type = val('nt-type'), allowed = newTaskChoices(val('nt-role'), type, caseOn).roles;
-      Array.prototype.forEach.call(ov.querySelectorAll('input[name="nt-role"]'), function (r) { r.disabled = allowed.indexOf(r.value) < 0; if (r.disabled && r.checked) ov.querySelector('input[name="nt-role"][value="solo"]').checked = true; });
-      var c = newTaskChoices(val('nt-role'), type, caseOn);
+      var c = newTaskChoices(val('nt-role'), caseOn);
       $('nt-peer').hidden = !c.email; if ($('nt-kind-row')) $('nt-kind-row').hidden = !c.direct;
       $('nt-consult').disabled = !c.consult; $('nt-direct').disabled = !c.direct;
-      $('nt-hint').textContent = type === 'campaign' ? '메일 캠페인은 나비와 대화하면서 대상·내용을 정하고, 발송 전에 확인받습니다.' : c.consult ? '“나비와 상의해 만들기”는 계획서를, “바로 만들기”는 기록할 빈 업무를 만듭니다.' : '상대와 함께 하는 일은 “바로 만들기”로 만든 뒤 상대를 초대합니다.';
+      $('nt-hint').textContent = c.consult ? '“나비와 상의해 만들기”는 계획서를, “바로 만들기”는 기록할 빈 업무를 만듭니다.' : '상대와 함께 하는 일은 “바로 만들기”로 만든 뒤 상대를 초대합니다.';
     }
     ov.addEventListener('change', sync); sync();
     $('nt-consult').addEventListener('click', function () {
-      var goal = $('nt-goal').value.trim(), type = val('nt-type'); closeModal();
-      if (type === 'campaign') H.startCampaign(goal); else H.startGuide(goal);
+      var goal = $('nt-goal').value.trim(); closeModal();
+      H.startGuide(goal);
     });
     $('nt-direct').addEventListener('click', function () {
       var btn = this, role = val('nt-role'), name = role === 'provider' ? 'caseprov' : role === 'consumer' ? 'casecons' : 'casesolo'; btn.disabled = true;

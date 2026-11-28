@@ -1,23 +1,23 @@
 /* ═════════════════════════════════════════════════
-   task-home.js — 과제(2026-11-28 통합): 과제 목록과 과제 상세
-   - 한 목록에 모으는 것: 길잡이 계획서(자체 진행), 업무(Case: 맡은 일·맡긴 일·자체 진행), 메일 캠페인(서버).
-   - 새 저장소를 만들지 않는다. 계획서·업무는 이 기기의 기록이고, 캠페인은 로그인한 계정의 서버 기록이다.
+   task-home.js — 과제(2026-11-28): 과제 목록과 과제 상세
+   - 과제는 하나의 일(예: 특허 출원 한 건, 민사 소송 한 건) 단위다. 메일·서류·메일 캠페인은 과제가 아니므로 목록에 넣지 않는다
+     (메일 캠페인은 메일 탭의 "캠페인" 함 = mail-campaigns.js). 메일·서류는 과제에 연결해서 본다.
+   - 목록에 올리는 것: 길잡이 계획서(자체 진행), 업무(Case: 맡은 일·맡긴 일·자체 진행). 나비 비서의 내부 원장(case_id 'assistant')은 뺀다.
+   - 새 저장소를 만들지 않는다. 계획서·업무는 이 기기의 기록이다.
    - "확인 필요"의 건수와 왼쪽 메뉴 "과제"의 숫자는 같은 계산(todayItems)을 쓴다.
    - 메일·서류 연결은 task-links.js(이 기기에만 저장). 아직 없는 것: 회신 자동 분류, AI 비서의 제출 대행 기록.
-   - 의존(desktop.html 의 TaskHomeHost 로 주입): 계획서 읽기·저장·열기, 알림 계산, 캠페인 조회·삭제·대화, 확인창.
+   - 의존(desktop.html 의 TaskHomeHost 로 주입): 계획서 읽기·저장·열기, 알림 계산, 확인창.
    ═════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
   var ROLE = { solo: '자체 진행', provider: '맡은 일', consumer: '맡긴 일' };
-  var TYPE = { plain: '일반', campaign: '메일 캠페인' };
+  var LEDGER_ID = 'assistant';   // assistant-core.js 의 원장 — 비서의 내부 기록이지 사용자의 과제가 아니다
   var STAGES = ['진행 중', '개시 전', '보류', '완료'];
   var CASE_STAGE = { proposed: '개시 전', agreed: '개시 전', active: '진행 중', closing: '진행 중', on_hold: '보류', closed: '완료', archived: '완료', declined: '성립 안 됨', expired: '성립 안 됨' };
   var CASE_NOTE = { proposed: '합의 확인이 필요합니다', agreed: '진행 시작 전입니다', closing: '종료 협의 중입니다' };
-  var CAMP_TTL = 60000;
-  function freshView() { return { role: 'all', stage: 'open', type: 'all', year: 'all', q: '', open: null, tab: 'todo', select: false, sel: {}, more: false }; }
+  function freshView() { return { role: 'all', stage: 'open', q: '', open: null, tab: 'todo', select: false, sel: {}, more: false }; }
   var view = freshView();
   var cases = [], findings = [], bound = false, seq = 0, histOn = null;
-  var camp = { state: 'idle', items: [], error: '', at: 0, extra: {} };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function host() { return root.TaskHomeHost; }
@@ -83,7 +83,7 @@
     var open = todosOf(t).filter(function (x) { return !x.done; });
     open.sort(function (a, b) { return (a.due || '9999').localeCompare(b.due || '9999') || a.line - b.line; });
     var created = Number((/^g(\d{12,})/.exec(p.id) || [])[1]) || 0;
-    return { key: 'guide:' + p.id, id: p.id, source: 'guide', type: 'plain', role: 'solo', title: p.title || '제목 없는 과제', no: taskNo(p.id, created), stage: stage,
+    return { key: 'guide:' + p.id, id: p.id, source: 'guide', role: 'solo', title: p.title || '제목 없는 과제', no: taskNo(p.id, created), stage: stage,
       stageNote: verdict || (st && st !== stage && st !== '진행' && st !== '준비' && st !== '종료' ? st : ''), next: stage === '완료' ? '' : open[0] ? open[0].name : '', due: stage === '완료' ? '' : (open[0] && open[0].due) || dateIn(field(t, '마감')), updated: p.updated || 0, need: '' };
   }
   function caseRow(c) {
@@ -91,25 +91,14 @@
     var stage = CASE_STAGE[c.state] || '진행 중', over = stage === '완료' || stage === '성립 안 됨';
     var dl = (c.deadlines || []).slice().sort(function (a, b) { return String(a.due).localeCompare(String(b.due)); })[0];
     var created = Date.parse(c.created_at) || 0;
-    return { key: 'case:' + c.case_id, id: c.case_id, source: 'case', type: 'plain', role: role, title: c.title || '제목 없는 과제', no: taskNo(c.case_id, created), stage: stage,
+    return { key: 'case:' + c.case_id, id: c.case_id, source: 'case', role: role, title: c.title || '제목 없는 과제', no: taskNo(c.case_id, created), stage: stage,
       stageNote: c.state === 'archived' ? '보관' : c.state === 'closing' ? '종료 협의 중' : c.state === 'agreed' ? '합의됨' : c.state === 'proposed' ? '제안됨' : '',
       next: !over && dl ? dl.label : '', due: !over && dl ? kstDay(dl.due) : '', updated: Date.parse(c.updated_at) || created, need: CASE_NOTE[c.state] || '' };
   }
-  /** 메일 캠페인(서버 기록) → 과제 한 줄. 작성 중=개시 전, 예약됨·회신 수집=진행 중, 종료=완료, 발송 실패=확인 필요 */
-  function campaignRow(c) {
-    var closed = !!c.closed_at, failed = c.status === 'failed' && !closed;
-    var stage = closed ? '완료' : c.status === 'draft' ? '개시 전' : '진행 중';
-    var note = closed ? '' : c.status === 'scheduled' ? '예약됨' : c.status === 'sent' ? '회신 수집' : failed ? '발송 실패' : c.status === 'draft' ? '작성 중' : '';
-    var when = c.status === 'scheduled' ? c.send_at : c.status === 'sent' ? c.collect_replies_until : '';
-    var created = Date.parse(c.created_at || c.created || c.send_at) || 0;
-    return { key: 'campaign:' + c.id, id: c.id, source: 'campaign', type: 'campaign', role: 'solo', title: c.title || c.subject || '제목 없는 캠페인', no: taskNo(c.id, created), stage: stage, stageNote: note,
-      next: closed ? '' : c.status === 'draft' ? '캠페인 내용 확정' : c.status === 'scheduled' ? '예약 발송 대기' : c.status === 'sent' ? '회신 수집' : '발송 실패 확인', due: !closed && when ? kstDay(when) : '',
-      updated: Date.parse(c.updated || c.closed_at || c.send_at) || created, need: failed ? '발송에 실패했습니다' : '', year: String(c.closed_at || c.send_at || '').slice(0, 4), recipients: Number(c.recipients) || 0 };
-  }
-  /** 세 곳의 기록을 한 목록으로. alerts = 길잡이 알림 [{id, sev, msg}] */
-  function buildRows(plans, caseList, alerts, campaigns) {
+  /** 두 곳의 기록(계획서·업무)을 한 목록으로. alerts = 길잡이 알림 [{id, sev, msg}] */
+  function buildRows(plans, caseList, alerts) {
     var rows = Object.keys(plans || {}).map(function (k) { return plans[k]; }).filter(function (p) { return p && p.text; }).map(guideRow)
-      .concat((caseList || []).map(caseRow)).concat((campaigns || []).map(campaignRow));
+      .concat((caseList || []).filter(function (c) { return c && c.case_id !== LEDGER_ID; }).map(caseRow));
     rows.forEach(function (r) {
       if (r.source !== 'guide') return;
       var a = (alerts || []).filter(function (x) { return x.id === r.id; })[0];
@@ -118,7 +107,7 @@
     var order = { '진행 중': 0, '개시 전': 1, '보류': 2, '완료': 3, '성립 안 됨': 4 };
     return rows.sort(function (a, b) { return order[a.stage] - order[b.stage] || (a.due || '9999').localeCompare(b.due || '9999') || b.updated - a.updated; });
   }
-  /** "확인 필요": 길잡이 알림 + 업무의 지난·7일 안 기한과 내 확인이 필요한 상태 + 비서의 응답·청구 알림 + 발송 실패 캠페인.
+  /** "확인 필요": 길잡이 알림 + 업무의 지난·7일 안 기한과 내 확인이 필요한 상태 + 비서의 응답·청구 알림.
       같은 업무의 기한은 한 번만 센다(비서의 기한 알림은 여기의 기한 계산과 겹치므로 뺀다). */
   function todayItems(rows, alerts, today, notes) {
     var byKey = {}; rows.forEach(function (r) { byKey[r.key] = r; });
@@ -129,7 +118,6 @@
     });
     rows.forEach(function (r) {
       if (r.stage === '완료' || r.stage === '성립 안 됨') return;
-      if (r.source === 'campaign') { if (r.need) out.push(item(r.key, 3, '발송 실패', r.title, r.need)); return; }
       if (r.source !== 'case') return;
       if (r.due) { var n = Math.round((Date.parse(r.due) - Date.parse(today)) / 864e5); if (n <= 7) out.push(item(r.key, n <= 3 ? 3 : 2, '기한', r.title, r.next + ' 기한 ' + dday(r.due, today).text)); }
       if (r.need && r.stage === '개시 전') out.push(item(r.key, 2, '확인', r.title, r.need));
@@ -144,12 +132,11 @@
   }
   function isOver(r) { return r.stage === '완료' || r.stage === '성립 안 됨'; }
   /** stage: 'open'(미완료) · 'all' · 단계 이름. '완료'에는 성립 안 됨도 함께 보인다. */
-  function filterRows(rows, role, stage, type, year, q) {
+  function filterRows(rows, role, stage, q) {
     var needle = String(q || '').trim().toLowerCase();
     return rows.filter(function (r) {
-      return (role === 'all' || r.role === role) && (!type || type === 'all' || r.type === type) &&
-        (stage === 'all' || (stage === 'open' ? !isOver(r) : stage === '완료' ? isOver(r) : r.stage === stage)) &&
-        (!year || year === 'all' || r.year === year) && (!needle || (r.title + ' ' + r.no + ' ' + r.next).toLowerCase().indexOf(needle) >= 0);
+      return (role === 'all' || r.role === role) && (stage === 'all' || (stage === 'open' ? !isOver(r) : stage === '완료' ? isOver(r) : r.stage === stage)) &&
+        (!needle || (r.title + ' ' + r.no + ' ' + r.next).toLowerCase().indexOf(needle) >= 0);
     });
   }
   /** 계획서의 '상태:' 줄을 바꾼다(없으면 제목 아래에 더한다). 다른 줄은 건드리지 않는다. */
@@ -177,18 +164,7 @@
     var A = root.CaseAssist;
     return caseOn() && A && A.findings ? Promise.resolve(A.findings()).catch(function () { return []; }) : Promise.resolve([]);
   }
-  /** 캠페인은 로그인한 계정의 서버 기록. 로그인 전이면 부르지 않는다(로그인 창을 띄우지 않기 위해). */
-  function loadCampaigns(force) {
-    var H = host();
-    if (!H || !H.campaigns) return Promise.resolve();
-    if (!force && camp.state === 'ok' && Date.now() - camp.at < CAMP_TTL) return Promise.resolve();
-    var p = H.campaigns();
-    if (!p) { camp = { state: 'login', items: [], error: '', at: 0, extra: {} }; return Promise.resolve(); }
-    if (camp.state !== 'ok') camp.state = 'loading';
-    return Promise.resolve(p).then(function (items) { camp.state = 'ok'; camp.items = items || []; camp.error = ''; camp.at = Date.now(); })
-      .catch(function (e) { camp.state = 'error'; camp.error = String((e && e.message) || e).slice(0, 80); });
-  }
-  function rowsNow() { return buildRows(host().plans(), cases, host().alerts(), camp.items); }
+  function rowsNow() { return buildRows(host().plans(), cases, host().alerts()); }
   function itemsNow(rows) { return todayItems(rows || rowsNow(), host().alerts(), host().today(), findings); }
   function badge() { var H = host(); if (H && H.badge) H.badge(itemsNow().length); }
   function chips(name, items, cur) {
@@ -205,13 +181,6 @@
     if (c.doc) a.push('서류 ' + c.doc);
     return a.join(' · ') || '—';
   }
-  function sourceNotes() {
-    var a = [];
-    if (camp.state === 'login') a.push('<div class="tk-source">메일 캠페인 과제는 로그인하면 함께 보입니다.</div>');
-    else if (camp.state === 'loading') a.push('<div class="tk-source" role="status">메일 캠페인을 불러오는 중…</div>');
-    else if (camp.state === 'error') a.push('<div class="tk-source bad" role="alert">메일 캠페인 목록을 불러오지 못했습니다(' + esc(camp.error) + '). 아래 목록에는 캠페인이 빠져 있습니다. <button type="button" class="tk-link" data-act="retry">다시 시도</button></div>');
-    return a.join('');
-  }
   function needHtml(items) {
     var shown = view.more ? items : items.slice(0, 3);
     return '<section class="tk-sec tk-needbox" aria-label="확인 필요"><h3>확인 필요 <span class="tk-count">' + items.length + '</span></h3>' +
@@ -221,30 +190,29 @@
         : '<div class="tk-empty">기한이 임박하거나 지난 일이 없습니다.</div>') + '</section>';
   }
   function selectedKeys() { return Object.keys(view.sel).filter(function (k) { return view.sel[k]; }); }
+  var FOOT = '<div class="tk-foot"><span class="tk-sub">과제 기록은 이 기기(브라우저·PDV)의 것입니다.</span></div>';
   function listHtml() {
-    var today = host().today(), rows = rowsNow(), items = itemsNow(rows);
-    var base = filterRows(rows, view.role, 'all', view.type), shown = filterRows(rows, view.role, view.stage, view.type, view.stage === '완료' ? view.year : 'all', view.q);
+    var today = host().today(), rows = rowsNow(), items = itemsNow(rows), need = items.length ? needHtml(items) : '';
+    // 과제가 하나도 없으면 비워 둔다(거르기·표·확인 필요를 그리지 않는다)
+    if (!rows.length) return '<div class="tk-none">진행 중인 과제가 없습니다.</div>';
+    var base = filterRows(rows, view.role, 'all'), shown = filterRows(rows, view.role, view.stage, view.q);
     var n = function (st) { return filterRows(base, 'all', st).length; };
-    var years = filterRows(base, 'all', '완료').map(function (r) { return r.year; }).filter(function (y, i, a) { return y && a.indexOf(y) === i; }).sort().reverse();
     var table = shown.length ? '<div class="tk-table' + (view.select ? ' selecting' : '') + '" role="table"><div class="tk-tr tk-th" role="row">' + (view.select ? '<span></span>' : '') + '<span>과제</span><span>상태</span><span>다음 할 일</span><span>기한</span><span>연결 자료</span></div>' +
       shown.map(function (r) {
-        var d = dday(r.due, today), sub = r.no + ' · ' + ROLE[r.role] + (r.type === 'campaign' ? ' · ✉ 메일 캠페인' + (r.recipients ? ' ' + r.recipients + '명' : '') : '');
+        var d = dday(r.due, today), sub = r.no + ' · ' + ROLE[r.role];
         var cells = '<span class="tk-name"><b>' + esc(r.title) + '</b><small>' + esc(sub) + '</small></span><span>' + tag(r.stage) + (r.stageNote ? '<small>' + esc(r.stageNote) + '</small>' : '') + '</span><span' + (r.need ? ' class="tk-need"' : '') + '>' + esc(r.next || r.need || '—') + '</span><span class="tk-due ' + d.cls + '">' + (r.due ? esc(r.due.slice(5)) + '<small>' + esc(d.text) + '</small>' : '—') + '</span><span class="tk-links">' + esc(linkText(r.key)) + '</span>';
         if (!view.select) return '<button type="button" class="tk-tr" role="row" data-act="open" data-key="' + esc(r.key) + '">' + cells + '</button>';
         var can = r.source !== 'case';
         return '<label class="tk-tr" role="row"><span><input type="checkbox" data-act="pick" data-key="' + esc(r.key) + '"' + (view.sel[r.key] ? ' checked' : '') + (can ? '' : ' disabled title="상대와의 기록이 있는 업무는 지울 수 없습니다. 과제를 열어 종료·보관하세요."') + ' aria-label="' + esc(r.title) + ' 선택"></span>' + cells + '</label>';
       }).join('') + '</div>'
-      : '<div class="tk-empty">' + (rows.length ? '이 조건에 맞는 과제가 없습니다.' : '아직 과제가 없습니다. “＋ 새로 만들기”에서 새 과제를 시작하세요.') + '</div>';
+      : '<div class="tk-none">' + (view.stage === 'open' && !view.q && view.role === 'all' ? '진행 중인 과제가 없습니다.' : '이 조건에 맞는 과제가 없습니다.') + '</div>';
     var nsel = selectedKeys().length;
-    return needHtml(items) + sourceNotes() +
+    return need +
       '<section class="tk-sec"><div class="tk-filters"><div role="group" aria-label="상태">' + chips('stage', [['open', '미완료 ' + n('open')]].concat(STAGES.map(function (s) { return [s, s + ' ' + n(s)]; })), view.stage) + '</div>' +
         '<div class="tk-fsel">' + select('role', '역할', [['all', '전체'], ['solo', '자체 진행'], ['provider', '맡은 일'], ['consumer', '맡긴 일']], view.role) +
-        select('type', '유형', [['all', '전체'], ['plain', TYPE.plain], ['campaign', TYPE.campaign]], view.type) +
-        (view.stage === '완료' && years.length ? select('year', '연도', [['all', '전체']].concat(years.map(function (y) { return [y, y + '년']; })), view.year) : '') +
         '<button type="button" class="tk-chip' + (view.select ? ' on' : '') + '" aria-pressed="' + view.select + '" data-act="select">선택</button></div></div>' +
         (view.select ? '<div class="tk-bulk"><button type="button" class="tk-link" data-act="pick-all">보이는 과제 모두 선택</button><span>' + nsel + '개 선택</span><button type="button" class="btn btn-sm btn-outline" data-act="del-sel"' + (nsel ? '' : ' disabled') + '>선택한 과제 삭제</button><span class="tk-sub">업무(상대와의 기록)는 지울 수 없습니다.</span></div>' : '') +
-        table + '</section>' +
-      '<div class="tk-foot"><span class="tk-sub">계획서·업무 기록은 이 기기(브라우저·PDV)의 것이고, 메일 캠페인은 로그인한 계정의 기록입니다.</span></div>';
+        table + '</section>' + FOOT;
   }
   function sideCard(title, inner) { return '<section class="tk-card2"><h4>' + esc(title) + '</h4>' + inner + '</section>'; }
   function tabsHtml(list) {
@@ -286,47 +254,6 @@
       '<button type="button" data-act="del">과제 삭제</button>', DTABS, body,
       dueCard(r, today) + sideCard('과제 정보', '<dl><dt>식별 코드</dt><dd>' + esc(r.no) + '</dd><dt>유형</dt><dd>일반</dd><dt>저장 위치</dt><dd>이 기기(브라우저·PDV)</dd></dl>'));
   }
-  function when(s) { var t = Date.parse(String(s || '').replace(' ', 'T')); if (isNaN(t)) return s ? String(s) : '—'; var d = new Date(t + 9 * 3600000).toISOString(); return d.slice(0, 10) + ' ' + d.slice(11, 16); }
-  /** 캠페인 보고 내용(계획·결과를 복사·파일로 받을 때 쓰는 글) */
-  function campaignText(c, digest) {
-    var L = [(c.title || c.subject || '메일 캠페인') + ' — 캠페인 결과', '', '메일 제목: ' + (c.subject || '—'), '수신자: ' + (c.recipients || 0) + '명', '발송: ' + when(c.send_at), '회신 수집 마감: ' + when(c.collect_replies_until)];
-    if (c.closed_at) L.push('종료: ' + when(c.closed_at));
-    if (digest) L.push('', '[회신 취합 보고]', digest);
-    return L.join('\n');
-  }
-  function campaignDetailHtml(c) {
-    var r = campaignRow(c), today = host().today(), x = camp.extra[c.id] || (camp.extra[c.id] = {}), body = '';
-    if (view.tab === 'files') body = filesHtml(r.key);
-    else if (view.tab === 'log') {
-      body = x.messages ? (x.messages.length ? '<ol class="tk-tl">' + x.messages.map(function (m) { return '<li><time>' + (m.role === 'user' ? '나' : '나비') + '</time><div>' + esc(m.content) + '</div></li>'; }).join('') + '</ol>' : '<div class="tk-empty">이 캠페인의 대화 기록이 없습니다.</div>')
-        : '<div class="tk-empty">' + (x.msgError ? '대화 기록을 불러오지 못했습니다(' + esc(x.msgError) + ').' : '이 캠페인을 만들며 나눈 대화를 읽기 전용으로 봅니다.') + '</div><button type="button" class="btn btn-sm btn-outline" data-act="camp-log">' + (x.msgLoading ? '불러오는 중…' : '대화 기록 불러오기') + '</button>';
-    } else if (view.tab === 'plan') {
-      var kv = [['메일 제목', c.subject || '—'], ['수신자', (c.recipients || 0) + '명'], ['발송 시각', when(c.send_at)], ['회신 수집 마감', when(c.collect_replies_until)], ['보고 생성 시각', when(c.digest_at)],
-        ['보고 상태', c.digest_status && c.digest_status !== 'none' ? (c.digest_status === 'sent' ? '보고 완료' : '보고 대기') : '보고 요청 안 함']];
-      if (c.closed_at) kv.push(['종료 시각', when(c.closed_at)]);
-      if (c.kplan_plan_id) kv.push(['K-Plan 연결', c.kplan_plan_id + (c.kplan_checkpoint_label ? ' (' + c.kplan_checkpoint_label + ')' : '')]);
-      body = '<h4>발송 설정</h4><dl class="tk-kv">' + kv.map(function (k) { return '<dt>' + esc(k[0]) + '</dt><dd>' + esc(k[1]) + '</dd>'; }).join('') + '</dl><h4>회신 취합 보고</h4>' +
-        (c.digest_status !== 'sent' ? '<div class="tk-empty">아직 완료된 보고가 없습니다.</div>' : x.digest ? '<pre class="tk-plan">' + esc(x.digest) + '</pre>' : '<div class="tk-empty" role="status">' + (x.digestError ? '보고를 불러오지 못했습니다(' + esc(x.digestError) + ').' : x.digestLoaded ? '받은메일함에서 보고 메일을 찾지 못했습니다.' : '보고를 불러오는 중…') + '</div>') +
-        '<div class="tk-btns"><button type="button" class="btn btn-sm btn-outline" data-act="camp-copy">복사</button><button type="button" class="btn btn-sm btn-outline" data-act="camp-file">파일로 받기</button></div>' +
-        '<div class="tk-sub">수신자별 발송·회신 현황과 기관별 집계는 “나비와 이어 하기”에서 물어보세요.</div>';
-    } else {
-      body = (r.need ? '<div class="tk-source bad">' + esc(r.need) + '. 원인은 “나비와 이어 하기”에서 확인하세요.</div>' : '') +
-        (isOver(r) ? '<div class="tk-empty">끝난 캠페인입니다. 결과는 “계획·결과”에서 보세요.</div>' : '<ul class="tk-todos"><li><span>' + esc(r.next || '—') + '</span>' + (r.due ? '<small class="tk-due ' + dday(r.due, today).cls + '">' + esc(r.due) + ' · ' + esc(dday(r.due, today).text) + '</small>' : '') + '</li></ul>') +
-        (c.status === 'draft' ? '<div class="tk-sub">아직 보내지 않은 캠페인입니다. “나비와 이어 하기”에서 내용과 수신자를 확정합니다.</div>' : '');
-    }
-    return frame(r, '<span class="tk-tag off">✉ 메일 캠페인</span>', '식별 코드 ' + r.no + (c.subject ? ' · 메일 제목: ' + c.subject : ''),
-      '<button type="button" class="btn btn-sm btn-primary" data-act="camp-talk">나비와 이어 하기</button>',
-      '<button type="button" data-act="camp-del">캠페인 삭제</button>', DTABS, body,
-      dueCard(r, today) + sideCard('과제 정보', '<dl><dt>식별 코드</dt><dd>' + esc(r.no) + '</dd><dt>유형</dt><dd>메일 캠페인</dd><dt>수신자</dt><dd>' + r.recipients + '명</dd><dt>저장 위치</dt><dd>로그인한 계정(서버)</dd></dl>'));
-  }
-  function campaignById(id) { return camp.items.filter(function (c) { return String(c.id) === String(id); })[0] || null; }
-  function loadDigest(c) {
-    var x = camp.extra[c.id] || (camp.extra[c.id] = {});
-    if (c.digest_status !== 'sent' || x.digestLoaded || x.digestLoading || !host().campaignDigest) return;
-    x.digestLoading = true;
-    Promise.resolve(host().campaignDigest(c.id)).then(function (t) { x.digest = t || ''; x.digestError = ''; }).catch(function (e) { x.digestError = String((e && e.message) || e).slice(0, 80); })
-      .then(function () { x.digestLoading = false; x.digestLoaded = true; if (!typing()) paint(); });
-  }
   // NaviHist 는 desktop.html 아래쪽에서 정의된다 — 주소(#tasks)로 바로 열면 첫 화면을 그릴 때는 아직 없으므로, 생긴 뒤에 한 번 등록한다.
   function hist() {
     var N = root.NaviHist; if (!N || histOn === N) return N;
@@ -338,27 +265,20 @@
     hist();
     var html = null, key = view.open || '';
     if (key.indexOf('guide:') === 0) { var p = host().plans()[key.slice(6)]; if (p) html = detailHtml(p); else view.open = null; }
-    else if (key.indexOf('campaign:') === 0) {
-      var c = campaignById(key.slice(9));
-      if (c) { html = campaignDetailHtml(c); if (view.tab === 'plan') loadDigest(c); }
-      else if (camp.state === 'ok') view.open = null;
-      else html = '<button type="button" class="tk-link" data-act="back">← 과제 목록</button>' + (sourceNotes() || '<div class="tk-empty">캠페인을 불러오는 중…</div>');
-    }
     el.innerHTML = html == null ? listHtml() : html;
     if (host().painted) host().painted(!!view.open);
   }
-  /** 업무(Case)·캠페인·비서 알림을 다시 읽고 화면과 왼쪽 메뉴 숫자를 맞춘다. */
+  /** 업무(Case)·비서 알림을 다시 읽고 화면과 왼쪽 메뉴 숫자를 맞춘다. */
   function sync(force) {
     if (!host()) return Promise.resolve();
     var my = ++seq, failed = false;
     function step() { if (my !== seq) return; badge(); var el = box(); if (el && el.closest && el.closest('.tab-panel.active') === null) return; if (!typing()) paint(); }
     var a = loadCases().then(function (list) { cases = list || []; }).catch(function () { failed = true; }).then(loadNotes).then(function (n) { findings = n || []; step(); });
-    var b = loadCampaigns(force).then(step);
-    return Promise.all([a, b]).then(function () {
+    return a.then(function () {
       if (failed && my === seq) { var e = box(); if (e && !view.open) e.insertAdjacentHTML('beforeend', '<div class="tk-source bad" role="alert">업무 기록을 읽지 못했습니다. 목록에는 업무(맡은 일·맡긴 일)가 빠져 있습니다.</div>'); }
     });
   }
-  /** 화면에 들어올 때. 계획서 과제는 바로 그리고, 업무·캠페인은 읽는 대로 다시 그린다. */
+  /** 화면에 들어올 때. 계획서 과제는 바로 그리고, 업무는 읽는 대로 다시 그린다. */
   function render() {
     var el = box(); if (!el || !host()) return Promise.resolve();
     bind(el); paint();
@@ -386,35 +306,25 @@
     return true;
   }
   function save(p, text) { host().save(p.id, text); paint(); }
-  /** 계획서·캠페인 과제를 지운다. 연결한 메일·서류는 남고 연결만 사라진다. */
+  /** 계획서 과제를 지운다. 연결한 메일·서류는 남고 연결만 사라진다. */
   function removeKeys(keys) {
-    var H = host(), camps = [];
-    keys.forEach(function (k) {
-      if (k.indexOf('guide:') === 0) { H.remove(k.slice(6)); if (links()) links().dropTask(k); }
-      else if (k.indexOf('campaign:') === 0) camps.push(k.slice(9));
-    });
-    if (!camps.length) return Promise.resolve();
-    return Promise.resolve(H.campaignDelete(camps)).then(function (res) {
-      if (res && res.failed) H.notify('캠페인 ' + res.failed + '건은 삭제하지 못했습니다.');
-      else if (links()) camps.forEach(function (id) { links().dropTask('campaign:' + id); });
-    }).catch(function (e) { H.notify('캠페인 삭제 실패: ' + ((e && e.message) || e)); }).then(function () { return sync(true); });
+    var H = host();
+    keys.forEach(function (k) { if (k.indexOf('guide:') === 0) { H.remove(k.slice(6)); if (links()) links().dropTask(k); } });
+    return Promise.resolve();
   }
-  var CAMP_WARN = '\n\n예약 중인 캠페인은 발송이 취소됩니다. 이미 보낸 메일은 보낸메일함에 그대로 남습니다.';
   function onClick(ev) {
     var t = ev.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act'), v = t.getAttribute('data-v'), H = host(), key = view.open || '';
-    var p = key.indexOf('guide:') === 0 ? H.plans()[key.slice(6)] : null, c = key.indexOf('campaign:') === 0 ? campaignById(key.slice(9)) : null;
+    var p = key.indexOf('guide:') === 0 ? H.plans()[key.slice(6)] : null;
     if (act === 'stage') { view.stage = v; view.sel = {}; paint(); }
     else if (act === 'open') openKey(t.getAttribute('data-key'));
     else if (act === 'more') { view.more = !view.more; paint(); }
-    else if (act === 'retry') { camp.state = 'loading'; paint(); sync(true); }
     else if (act === 'select') { view.select = !view.select; view.sel = {}; paint(); }
     else if (act === 'pick') { view.sel[t.getAttribute('data-key')] = t.checked; paint(); }
-    else if (act === 'pick-all') { filterRows(rowsNow(), view.role, view.stage, view.type, view.stage === '완료' ? view.year : 'all', view.q).forEach(function (r) { if (r.source !== 'case') view.sel[r.key] = true; }); paint(); }
+    else if (act === 'pick-all') { filterRows(rowsNow(), view.role, view.stage, view.q).forEach(function (r) { if (r.source !== 'case') view.sel[r.key] = true; }); paint(); }
     else if (act === 'del-sel') {
       var keys = selectedKeys(); if (!keys.length) return;
-      var hasCamp = keys.some(function (k) { return k.indexOf('campaign:') === 0; });
-      Promise.resolve(H.confirm('선택한 과제 ' + keys.length + '개를 지울까요? 되돌릴 수 없습니다.' + (hasCamp ? CAMP_WARN : ''))).then(function (ok) { if (!ok) return; view.sel = {}; view.select = false; return removeKeys(keys).then(paint); });
+      Promise.resolve(H.confirm('선택한 과제 ' + keys.length + '개를 지울까요? 되돌릴 수 없습니다.')).then(function (ok) { if (!ok) return; view.sel = {}; view.select = false; return removeKeys(keys).then(paint); });
     }
     else if (act === 'back') { view.open = null; paint(); if (hist()) hist().push('tasks', ''); }
     else if (act === 'tab') { view.tab = v; paint(); }
@@ -426,16 +336,6 @@
     else if (act === 'del' && p) {
       Promise.resolve(H.confirm('「' + p.title + '」 과제의 계획서와 기록을 지울까요? 되돌릴 수 없습니다. 연결한 메일·서류는 남습니다.')).then(function (ok) { if (!ok) return; view.open = null; return removeKeys(['guide:' + p.id]).then(paint); });
     }
-    else if (act === 'camp-talk' && c) H.campaignTalk(c);
-    else if (act === 'camp-del' && c) {
-      Promise.resolve(H.confirm('「' + (c.title || c.subject) + '」 캠페인을 삭제할까요? 되돌릴 수 없습니다.' + CAMP_WARN)).then(function (ok) { if (!ok) return; view.open = null; return removeKeys(['campaign:' + c.id]).then(paint); });
-    }
-    else if (act === 'camp-log' && c) {
-      var x = camp.extra[c.id] || (camp.extra[c.id] = {}); if (x.msgLoading) return; x.msgLoading = true; paint();
-      Promise.resolve(H.campaignMessages(c.id)).then(function (list) { x.messages = list || []; x.msgError = ''; }).catch(function (e) { x.msgError = String((e && e.message) || e).slice(0, 80); }).then(function () { x.msgLoading = false; paint(); });
-    }
-    else if (act === 'camp-copy' && c) H.copy(campaignText(c, (camp.extra[c.id] || {}).digest));
-    else if (act === 'camp-file' && c) H.saveFile((c.title || c.subject || '캠페인') + ' 결과.txt', campaignText(c, (camp.extra[c.id] || {}).digest));
     else onFileAct(t, paint);
   }
   /** "메일·서류" 탭의 단추 — 업무(Case) 상세도 함께 쓴다. 처리했으면 true */
@@ -462,8 +362,8 @@
   if (root.setTimeout && root.document) root.setTimeout(hist, 0);
 
   var api = { render: render, refresh: refresh, sync: sync, home: home, search: search, rows: rows, titleOf: titleOf, currentKey: currentKey, open: openKey, filesHtml: filesHtml, onFileAct: onFileAct,
-    _pure: { taskNo: taskNo, todosOf: todosOf, logsOf: logsOf, addLog: addLog, toggleTodo: toggleTodo, buildRows: buildRows, campaignRow: campaignRow, campaignText: campaignText, todayItems: todayItems, filterRows: filterRows, setStatus: setStatus, dday: dday },
-    _reset: function () { view = freshView(); cases = []; findings = []; bound = false; histOn = null; camp = { state: 'idle', items: [], error: '', at: 0, extra: {} }; } };
+    _pure: { taskNo: taskNo, todosOf: todosOf, logsOf: logsOf, addLog: addLog, toggleTodo: toggleTodo, buildRows: buildRows, todayItems: todayItems, filterRows: filterRows, setStatus: setStatus, dday: dday },
+    _reset: function () { view = freshView(); cases = []; findings = []; bound = false; histOn = null; } };
   root.TaskHome = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

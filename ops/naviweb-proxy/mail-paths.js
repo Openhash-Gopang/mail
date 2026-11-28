@@ -77,6 +77,7 @@ export const MAIL_FILES = new Set([
  "logistics-app.js",
  "logistics.css",
  "mail-architecture.html",
+ "mail-campaigns.js",
  "manual-chat.js",
  "manual-videos.js",
  "manual.html",
