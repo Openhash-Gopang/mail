@@ -15,7 +15,7 @@ const chapters = JSON.parse(man.split('\n').find((l) => l.startsWith('var CHAPTE
 const ALL = chapters.map((c) => c.id);
 const IDS = ALL.slice(0, 39);
 
-test('매뉴얼 전체 장(107개)에 시나리오가 있고 단계가 3개 이상, 번호가 장 순서와 같다', { skip }, () => {
+test('매뉴얼 전체 장(90개)에 시나리오가 있고 단계가 3개 이상, 번호가 장 순서와 같다', { skip }, () => {
   const { N } = env(); assert.equal(JSON.stringify(N.ids()), JSON.stringify(ALL));
   for (const id of ALL) { const m = N.meta(id); assert.equal(m.n, ALL.indexOf(id) + 1, id); assert.ok(m.steps.length >= 3, id); assert.equal(m.say.length, 3, id); assert.ok(m.focus.includes('시뮬레이션이 맡는 것'), id); }
 });
@@ -32,7 +32,7 @@ test('같은 시드는 같은 화면', { skip }, () => {
   assert.equal(a.w.document.getElementById('hw-body').innerHTML, b.w.document.getElementById('hw-body').innerHTML);
 });
 test('매뉴얼: 장마다 시뮬레이션 안내와 버튼 연결, 갱신일, JSON 유효', () => {
-  for (const id of ALL) { const c = chapters.find((x) => x.id === id); assert.ok(c.body.includes('🧪 시뮬레이션'), id); assert.equal(c.updated, '2026-11-25', id); }
+  for (const id of ALL) { const c = chapters.find((x) => x.id === id); assert.ok(c.body.includes('🧪 시뮬레이션'), id); assert.equal(c.updated, /^(ex|adv)_/.test(id) ? '2026-11-28' : '2026-11-25', id); }
   assert.equal(JSON.stringify(Object.keys(JSON.parse(/NAVI_HOWTO_IDS = (\{[^}]*\});/.exec(man)[1]))), JSON.stringify(ALL));
   for (const id of ['ch10', 'ch11', 'ch13', 'ch14']) assert.ok(chapters.find((x) => x.id === id).body.includes('🎯 연습 예제'), id);
   assert.ok(man.includes('hwOpenBtn') && man.includes('sim-howto.js'));

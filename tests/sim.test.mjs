@@ -139,13 +139,14 @@ test('서류·기록 시뮬레이션: 서류함·외부 입력·서류 작성·P
   S.open('docs', 'write'); for (let i = 0; i < 3; i++) doc.getElementById('sim-w-next').click(); assert.match(doc.getElementById('sim-w-sum').textContent, /준법 점검/);
   S.open('pdv', 'bs'); assert.match(doc.getElementById('sim-p-bs').textContent, /장부 대조/); S.tab('pdv', 'vault'); assert.ok(doc.getElementById('sim-chain'));
   assert.equal(J(S.gen.forms(2)), J(S.gen.forms(2)));
-  for (const id of ['docs-sim-drafts', 'docs-sim-done', 'myforms-sim', 'othersite-sim', 'pdv-sim']) assert.ok(desk.includes('id="' + id + '"'), id);
+  for (const id of ['myforms-sim', 'othersite-sim', 'pdv-sim']) assert.ok(desk.includes('id="' + id + '"'), id);
+  assert.match(desk, /_simOpen\('docs', 'done'\)/);   // 서류 탭의 시뮬레이션은 과제 화면 ⋮ 메뉴에서 연다
   assert.match(desk, /#pdv-root \[role=tab\]/);
 });
 
 test('버튼 위치: 모든 화면의 시뮬레이션 버튼은 같은 작은 모양(simbtn)이고, 제목 줄 오른쪽 끝에 놓는 공통 규칙이 있다', { skip }, () => {
   for (const [src, n] of [[stockApp, 1], [bankApp, 1], [taxApp, 1], [mktApp, 2], [insApp, 1], [lrnApp, 1]]) assert.equal((src.match(/class:'btn quiet simbtn', id:'[a-z-]*sim/g) || []).length, n);
-  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 11);
+  assert.equal((desk.match(/class="mfb-btn simbtn" id="[a-z-]*sim/g) || []).length, 7);
   assert.match(desk, /id="simbtn-css"/); assert.match(desk, /\.brand:has\(> \.simbtn\)\{display:flex/); assert.match(desk, /min-height:30px!important/);
 });
 
@@ -164,7 +165,7 @@ test('메일·길잡이 시뮬레이션: 받는 사람은 정확 일치만, 첨�
   S.open('mail', 'compose'); fire('sm-mt', '김가'); assert.match(doc.getElementById('sim-m-chk').textContent, /정확히 일치하는 사람이 없어요/); fire('sm-mt', '김가온'); assert.match(doc.getElementById('sim-m-chk').textContent, /찾았어요/); assert.match(doc.getElementById('sim-m-chk').textContent, /첨부 파일이 없어요/); fire('sm-ma', '1'); assert.match(doc.getElementById('sim-m-chk').textContent, /점검 통과/);
   S.tab('mail', 'inbox'); assert.match(doc.getElementById('sim-m-inbox').textContent, /안 읽은 메일/); S.tab('mail', 'tags'); assert.ok(doc.getElementById('sim-body').textContent.includes('세무'));
   S.open('guide', 'prog'); assert.match(doc.getElementById('sim-gd-prog').textContent, /늦어지는 과제 \d개/); S.tab('guide', 'done'); assert.match(doc.getElementById('sim-gd-done').textContent, /성공 \d건/);
-  for (const id of ['mail-sim', 'guide-sim-prog', 'guide-sim-done']) assert.ok(desk.includes('id="' + id + '"'), id); assert.match(desk, /NaviSim\.tab\('mail', name\)/);
+  assert.ok(desk.includes('id="mail-sim"')); assert.match(desk, /_simOpen\('guide', 'prog'\)/);   // 과제 탭의 시뮬레이션은 과제 화면 ⋮ 메뉴에서 연다 assert.match(desk, /NaviSim\.tab\('mail', name\)/);
   assert.equal(J(S.gen.mail(3)), J(S.gen.mail(3)));
 });
 
