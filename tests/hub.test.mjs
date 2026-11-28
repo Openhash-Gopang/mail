@@ -29,20 +29,17 @@ test('서류 목록: 같은 이름의 이력은 서류 한 줄로 합치고, 서
   assert.deepEqual(H.nextAction(rows[1]), ['resume', '이어 쓰기']);
 });
 
-test('새 과제: 역할·유형에 따라 만들 수 있는 방법이 다르다', () => {
-  const solo = H.newTaskChoices('solo', 'plain', true);
+test('새 과제: 역할에 따라 만들 수 있는 방법이 다르고, 과제 유형은 고르지 않는다', () => {
+  const solo = H.newTaskChoices('solo', true);
   assert.deepEqual([solo.consult, solo.direct, solo.email], [true, true, false]);
-  const prov = H.newTaskChoices('provider', 'plain', true);
+  const prov = H.newTaskChoices('provider', true);
   assert.deepEqual([prov.consult, prov.direct, prov.email], [false, true, true]);
-  const camp = H.newTaskChoices('solo', 'campaign', true);
-  assert.deepEqual([camp.consult, camp.direct], [true, false]);
-  assert.equal(H.newTaskChoices('solo', 'plain', false).direct, false);
+  assert.equal(H.newTaskChoices('solo', false).direct, false);
 });
-
 test('머리글: 탭은 과제·메일·서류 셋이고 만들기 단추는 하나다', () => {
   const h = H.headerHtml('docs');
   assert.equal((h.match(/role="tab"/g) || []).length, 3);
   assert.match(h, /aria-selected="true" data-hub-act="tab-docs"/);
   assert.equal((h.match(/hub-new/g) || []).length, 1);
-  for (const a of ['contacts', 'forms', 'notif', 'sim', 'new-task', 'new-mail', 'new-doc', 'othersite']) assert.ok(h.includes('data-hub-act="' + a + '"'), a);
+  for (const a of ['contacts', 'forms', 'notif', 'sim', 'new-task', 'new-mail', 'new-campaign', 'new-doc', 'othersite']) assert.ok(h.includes('data-hub-act="' + a + '"'), a);
 });

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const R = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 const T = (await import('../task-home.js')).default._pure;
+const C = (await import('../mail-campaigns.js')).default._pure;
 
 const plan = (over = {}) => ({ id: 'g1795000000000', title: '상표 출원', updated: 1795000000000,
   text: `# 과제: 상표 출원\n목적: 등록\n마감: 2026-12-10\n상태: ${over.state || '진행'}\n${over.verdict ? '판정: ' + over.verdict + '\n' : ''}\n## 할 일\n- [x] 선행 조사 | ~2026-11-20\n- [ ] 출원서 검토 | ~2026-12-01\n- [ ] 수수료 납부 | ~2026-11-29\n\n## 기록\n- 2026-11-18 조사함\n- 2026-11-20 초안 작성\n\n## 위험\n- 유사 상표` });
@@ -76,17 +77,34 @@ test('과제 화면 연결: 탭·주소·옛 주소 전환, 예시 데이터는 
   for (const f of ['task-home.js', 'task-links.js', 'hub.js']) assert.ok(paths.includes('"' + f + '"'), f + ' 중계 목록');
 });
 
-test('메일 캠페인은 과제 한 줄이 된다: 작성 중=개시 전, 예약·회신 수집=진행 중, 종료=완료, 실패=확인 필요', () => {
-  const rows = T.buildRows({}, [], [], [
-    { id: 'a', title: '초안', status: 'draft' },
-    { id: 'b', title: '예약', status: 'scheduled', send_at: '2026-12-01T00:00:00Z', recipients: 3 },
-    { id: 'c', title: '수집', status: 'sent', collect_replies_until: '2026-12-10T00:00:00Z' },
+test('과제 목록: 메일 캠페인과 나비 비서 원장은 과제가 아니다', () => {
+  const rows = T.buildRows({}, [{ case_id: 'assistant', title: '나비 비서 원장', mode: 'solo', state: 'active' }, { case_id: 'case-p', title: '특허 출원', mode: 'solo', state: 'active' }], [], [{ id: 'c', title: '테스트 메일', status: 'failed' }]);
+  assert.deepEqual(rows.map((r) => r.key), ['case:case-p']);
+  const src = R('task-home.js');
+  assert.ok(!/\.campaigns\b|campaignRow|campaignDelete|loadCampaigns/.test(src), '과제 화면은 캠페인 기록을 읽지 않는다');
+  assert.ok(src.includes('진행 중인 과제가 없습니다.'));
+});
+
+test('메일 탭의 캠페인 함: 상태를 나누고 발송 실패를 위에 둔다', () => {
+  const items = [
+    { id: 'a', title: '초안', status: 'draft', updated: '2026-11-20T00:00:00Z' },
+    { id: 'b', title: '예약', status: 'scheduled', send_at: '2026-12-01T00:00:00Z' },
+    { id: 'c', title: '수집', status: 'sent', send_at: '2026-11-25T00:00:00Z' },
     { id: 'd', title: '끝', status: 'sent', closed_at: '2026-11-01T00:00:00Z' },
-    { id: 'e', title: '실패', status: 'failed' },
-  ]);
-  const by = Object.fromEntries(rows.map((r) => [r.id, r]));
-  assert.deepEqual(['a', 'b', 'c', 'd', 'e'].map((k) => by[k].stage), ['개시 전', '진행 중', '진행 중', '완료', '진행 중']);
-  assert.deepEqual([by.b.due, by.b.recipients, by.c.next, by.d.due, by.d.next], ['2026-12-01', 3, '회신 수집', '', '']);
-  assert.ok(rows.every((r) => r.type === 'campaign' && r.role === 'solo' && r.key === 'campaign:' + r.id));
-  assert.deepEqual(T.todayItems(rows, [], '2026-11-28').map((x) => x.key), ['campaign:e']);
+    { id: 'e', title: '실패', status: 'failed', send_at: '2026-10-01T00:00:00Z' },
+  ];
+  assert.deepEqual(items.map(C.stageOf), ['작성 중', '예약됨', '회신 수집', '종료', '발송 실패']);
+  assert.equal(C.filterItems(items, 'all', '')[0].id, 'e');
+  assert.deepEqual(C.filterItems(items, '종료', '').map((x) => x.id), ['d']);
+  assert.deepEqual(C.filterItems(items, 'all', '예약').map((x) => x.id), ['b']);
+  assert.match(C.reportText(items[3], '요약'), /끝 — 캠페인 결과[\s\S]*\[회신 취합 보고\]\n요약/);
+  const h = R('desktop.html');
+  for (const x of ['id="mail-subnav-camp"', 'id="mail-sub-camp"', 'id="camp-root"', 'window.MailCampHost = {', 'src="mail-campaigns.js?v=']) assert.ok(h.includes(x), x);
+  assert.ok(R('ops/naviweb-proxy/mail-paths.js').includes('"mail-campaigns.js"'));
+});
+
+test('메일함은 위쪽 가로 탭이다 — 왼쪽 칸을 만들지 않는다', () => {
+  const h = R('desktop.html');
+  assert.ok(h.includes('.mail-wrap{display:block}') && h.includes('<div class="mail-bar">'));
+  assert.ok(!h.includes('grid-template-columns:150px minmax(0,1fr)') && !h.includes('.mail-wrap .mail-subnav{flex-direction:column'));
 });
