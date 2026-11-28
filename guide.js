@@ -97,7 +97,7 @@
     el.innerHTML = modesHtml() + '<div class="gd-card"><h2 class="gd-h">Openhash — 서버 없는 인증</h2>' +
       '<p>중앙 서버 하나에 기대지 않고 기록이 바뀌지 않았음을 확인하는 기술입니다. 나비는 이 위에서 내 데이터 금고(PDV)의 기록과 재무제표를 믿고 쓸 수 있게 합니다.</p>' +
       '<ul class="gd-body"><li><b>분산 기록</b> — 기록이 한 서버가 아니라 여러 지점에 나뉘어 저장됩니다.</li><li><b>위변조 방지</b> — 한 곳의 기록만 몰래 바꿔서는 전체를 속일 수 없는 구조입니다.</li><li><b>쓰이는 곳</b> — 재무제표의 해시 기록, K-Law 시뮬레이션 기록(위변조 방지를 목표로 설계)처럼 나비 안의 기록에 쓰입니다.</li></ul>' +
-      '<p>자세한 설명은 ' + goChapterLink('ch29', '「Openhash — 서버 없는 인증」장') + '과 ' + goChapterLink('ch_fsverify', '「재무제표 무결성 검증」장') + '을 보세요. 이 탭은 앞으로 더 채워 갑니다.</p></div>';
+      '<p>자세한 설명은 ' + goChapterLink('adv_fs', '「재무제표 자동 생성과 무결성 검증」장') + '을 보세요. 이 탭은 앞으로 더 채워 갑니다.</p></div>';
   }
   function renderNaviPro(el) {
     var rows = PRO_SITES.map(function (r) {
