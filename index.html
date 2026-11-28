@@ -334,11 +334,11 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     </div>
     <div class="fact-card">
       <div class="fact-val">3단계</div>
-      <div class="fact-lbl">인바운드 처리 등급 — 즉결 / 위임범위내 실행 / 사람 확인</div>
+      <div class="fact-lbl">인바운드 처리 등급 — 즉결 / 위임범위 내 초안 / 사람 확인</div>
     </div>
     <div class="fact-card">
-      <div class="fact-val">사람 확인 없이</div>
-      <div class="fact-lbl">위임 범위 안 요청은 K-Mail이 직접 회신까지 발송</div>
+      <div class="fact-val">초안까지만</div>
+      <div class="fact-lbl">회신은 임시보관함에 초안으로 저장, 발송은 사용자가 직접</div>
     </div>
     <div class="fact-card">
       <div class="fact-val">K-Plan</div>
@@ -371,7 +371,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       <div class="cap-card">
         <div class="cap-num">4</div>
         <div class="cap-title">규칙 등록 — 자동삭제 또는 위임 처리</div>
-        <div class="cap-desc">"불필요한 메일은 도착 즉시 삭제해" 같은 자동삭제 규칙뿐 아니라, "이런 요청이면 확인 안 받고 알아서 답장해" 같은 <strong>위임 처리 규칙</strong>도 자연어 그대로 등록합니다. 실제 판정은 이 문장을 다른 AI가 그대로 읽고 수행합니다. 자세한 내용은 <a href="#delegation" style="color:var(--primary);font-weight:700;">위임과 에스컬레이션</a> 참고.</div>
+        <div class="cap-desc">"불필요한 메일은 도착 즉시 삭제해" 같은 자동삭제 규칙뿐 아니라, "이런 요청이면 답장 초안을 만들어 둬" 같은 <strong>위임 처리 규칙</strong>도 자연어 그대로 등록합니다. 실제 판정은 이 문장을 다른 AI가 그대로 읽고 수행합니다. 자세한 내용은 <a href="#delegation" style="color:var(--primary);font-weight:700;">위임과 에스컬레이션</a> 참고.</div>
       </div>
       <div class="cap-card">
         <div class="cap-num">5</div>
@@ -464,7 +464,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
-      <div class="limit-text"><strong>발송 전 명시적 확인 필수(위임 범위 밖 발송)</strong> — 위임 규칙 범위 안이 아닌 이상, 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 "이대로 보낼까요?" 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
+      <div class="limit-text"><strong>발송 전 명시적 확인 필수</strong> — 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 "이대로 보낼까요?" 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
@@ -480,7 +480,7 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
-      <div class="limit-text"><strong>위임 규칙 자동 승격은 사후 검토 없음</strong> — K-Plan이 반복 가능한 패턴이라고 스스로 판단하면 위임 규칙을 즉시 만듭니다. 과하게 일반화됐는지 검증하는 절차는 아직 없어, 오판이 그대로 규칙화될 수 있습니다 — 사람이 주기적으로 위임 규칙 목록을 확인하는 걸 권장합니다.</div>
+      <div class="limit-text"><strong>받은 메일에 스스로 회신하지 않습니다</strong> — 위임 규칙에 맞아도 회신 초안까지만 만듭니다. 새 위임 규칙은 제안만 하고 등록하지 않습니다. 사용자가 직접 켠 부재중 자동응답만 정해 둔 문구를 자동으로 보냅니다.</div>
     </div>
     <div class="limit-item">
       <span class="limit-icon">⚠</span>
@@ -511,8 +511,8 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       </div>
       <div class="cap-card">
         <div class="cap-num">2</div>
-        <div class="cap-title">위임 범위 내 실행</div>
-        <div class="cap-desc">K-Plan이 미리 정해둔 조건 안. K-Mail이 사람 확인 없이 직접 실행하고 K-Plan에만 보고합니다.</div>
+        <div class="cap-title">위임 범위 내 초안</div>
+        <div class="cap-desc">미리 정해둔 조건 안. K-Mail이 회신 초안을 임시보관함에 저장하고 사용자에게 알립니다. 발송은 사용자가 합니다.</div>
       </div>
       <div class="cap-card">
         <div class="cap-num">3</div>
@@ -526,8 +526,8 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
     <div class="api-block">_kplanDecideForKMail({ planId, subject, bodyText, threadHistoryText })
   → { decision: <span class="k">'approve'</span> | <span class="k">'escalate'</span>,
       replyGuidance?, urgent?, holdMessage?,
-      suggestedRuleText?, delegationPromoted? }</div>
-    <p class="wide-sub" style="margin-bottom:0;">K-Plan은 플랜의 목표·계획서, <strong>실시간 상태</strong>(재고·영업시간 등, 사람이나 향후 K-JIT 연동이 채워넣는 값), <strong>이 상대와의 과거 대화 이력</strong>까지 근거로 판단합니다. 승인이면서 반복 가능한 패턴이라고 스스로 판단하면, 그 자리에서 위임 규칙으로 자동 승격해 다음부터는 안 물어봐도 되게 만듭니다. 에스컬레이션이면서 급한 사안이면, 사람 확인 전 "확인 후 회신드리겠습니다" 같은 대기 응답까지 K-Plan이 직접 문구를 정해 K-Mail에게 시킵니다.</p>
+      suggestedRuleText? }</div>
+    <p class="wide-sub" style="margin-bottom:0;">K-Plan은 플랜의 목표·계획서, <strong>실시간 상태</strong>(재고·영업시간 등, 사람이나 향후 K-JIT 연동이 채워넣는 값), <strong>이 상대와의 과거 대화 이력</strong>까지 근거로 판단합니다. 반복 가능한 패턴이라고 판단하면 위임 규칙을 사용자에게 제안합니다(등록하지 않습니다). 에스컬레이션이면서 급한 사안이면 "확인 후 회신드리겠습니다" 같은 대기 응답의 초안 문구를 정하고, K-Mail은 이를 임시보관함에 저장합니다.</p>
 
     <h3 style="font-size:16px;font-weight:800;margin:32px 0 10px;">기존 상향 보고 — K-Recompose</h3>
     <p class="wide-sub" style="margin-bottom:14px;">캠페인이 여러 트랙으로 나뉘어 몇 주에 걸쳐 순차 발송될 때, 사용자가 "이 캠페인은 K-Plan 플랜의 일부"라고 명시적으로 알려주면 회신 다이제스트가 K-Plan의 중간 재평가(K-Recompose)를 자동으로 트리거합니다.</p>
@@ -546,23 +546,23 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
 
 <section class="wide-section" id="delegation">
   <div class="section-title">위임과 에스컬레이션</div>
-  <h2 class="wide-h2">상대방도 K-Mail을 쓴다면 — K-Mail과 K-Mail이 직접 대화합니다</h2>
-  <p class="wide-sub">기존 이메일은 사람이 사람에게 쓰고 AI가 대신 써주는 틀입니다. K-Mail은 이걸 한 단계 더 밀어붙입니다 — <strong>위임 범위 안의 요청이면 사람 확인 없이 K-Mail이 직접 회신까지 보냅니다.</strong> 두 조직의 조율이 "사람이 메일 확인 → 며칠 뒤 답장"이 아니라 양쪽 K-Mail이 그 자리에서 여러 차례 주고받는 방식이 되면, 의사결정 속도·정확성·합리성이 크게 올라간다는 것이 이 설계의 목적입니다.</p>
+  <h2 class="wide-h2">K-Mail이 초안을 만들고, 사람이 보냅니다</h2>
+  <p class="wide-sub">K-Mail은 받은 메일이 위임 범위 안인지 판정해 <strong>회신 초안을 미리 만듭니다. 발송은 사용자가 초안을 확인한 뒤 직접 합니다.</strong> 서버가 사용자 대신 회신을 보내지 않습니다.</p>
   <div class="cap-grid">
     <div class="cap-card">
       <div class="cap-num">A</div>
       <div class="cap-title">위임 규칙 등록</div>
-      <div class="cap-desc">"짜장면·짬뽕류 주문이고 재고·시간 여유 있으면 바로 수락해" 같은 자연어 규칙을 등록합니다. 특정 K-Plan 캠페인/체크포인트로 범위를 좁힐 수도, 전역으로 둘 수도 있습니다.</div>
+      <div class="cap-desc">"짜장면·짬뽕류 주문이고 재고·시간 여유 있으면 수락 답장 초안을 만들어" 같은 자연어 규칙을 등록합니다. 특정 K-Plan 캠페인/체크포인트로 범위를 좁힐 수도, 전역으로 둘 수도 있습니다.</div>
     </div>
     <div class="cap-card">
       <div class="cap-num">B</div>
-      <div class="cap-title">자동 승인·회신</div>
-      <div class="cap-desc">인바운드가 위임 범위 안으로 판정되면, K-Mail이 사람 확인 없이 즉시 회신을 작성해 발송합니다. 처리 결과는 항상 기록되어 나중에 확인할 수 있습니다.</div>
+      <div class="cap-title">회신 초안</div>
+      <div class="cap-desc">인바운드가 위임 범위 안으로 판정되면, K-Mail이 회신 초안을 임시보관함에 저장하고 받은메일함에 알립니다. 받는 주소와 내용을 확인한 뒤 직접 보냅니다.</div>
     </div>
     <div class="cap-card">
       <div class="cap-num">C</div>
       <div class="cap-title">에스컬레이션</div>
-      <div class="cap-desc">범위 밖이거나 애매하면 사람에게 올립니다. 급한 사안이면 K-Plan이 대기 응답 문구까지 정해줘서, 사람 확인 전에 "확인 후 회신드리겠습니다"를 먼저 보낼 수 있습니다.</div>
+      <div class="cap-desc">범위 밖이거나 애매하면 사람에게 올립니다. 급한 사안이면 "확인 후 회신드리겠습니다" 같은 대기 응답도 초안으로 만들어 알립니다.</div>
     </div>
   </div>
   <div class="principle-strip" style="margin-top:20px;">
@@ -573,12 +573,12 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
 <div class="wide-section alt">
   <div class="wide-section alt-inner" style="padding:52px 24px;" id="human">
     <div class="section-title">사람과의 관계</div>
-    <h2 class="wide-h2">자율성이 늘어난 만큼, 최종 승인 경계는 더 명확합니다</h2>
-    <p class="wide-sub">위임·에스컬레이션 체계가 생겼다고 K-Mail이 사람 없이 무엇이든 결정하는 건 아닙니다 — 오히려 "어디까지는 사람 없이 가고, 어디부터는 반드시 사람을 거치는지"가 이전보다 훨씬 명시적으로 나뉘었습니다.</p>
+    <h2 class="wide-h2">회신의 최종 발송은 사람이 합니다</h2>
+    <p class="wide-sub">K-Mail은 분류하고 초안을 만듭니다. 받은 메일에 대한 회신을 보낼지는 사람이 정합니다.</p>
     <div class="boundary-list">
       <div class="boundary-item">
         <span class="boundary-icon">●</span>
-        <div class="boundary-text"><strong>위임 범위는 사람(또는 K-Plan)이 정합니다</strong> — K-Mail이 스스로 "이 정도는 물어보지 않아도 되겠다"고 위임 범위를 넓히지 않습니다. 범위를 정하는 건 위임 규칙을 등록하는 사람, 또는 그 규칙을 승격시키는 K-Plan입니다.</div>
+        <div class="boundary-text"><strong>위임 범위는 사람이 정합니다</strong> — K-Mail과 K-Plan은 규칙을 제안할 수 있지만 스스로 등록하지 않습니다.</div>
       </div>
       <div class="boundary-item">
         <span class="boundary-icon">●</span>
@@ -586,15 +586,15 @@ footer { background: var(--gov-header); color: rgba(255,255,255,.55); padding: 3
       </div>
       <div class="boundary-item">
         <span class="boundary-icon">●</span>
-        <div class="boundary-text"><strong>대기 응답과 최종 답변은 다릅니다</strong> — 급한 사안에 "확인 후 회신드리겠습니다"를 먼저 보내는 것은 판단을 대신하는 게 아니라 시간을 버는 것뿐입니다. 실제 결정은 사람의 확인을 거친 뒤에만 나갑니다.</div>
+        <div class="boundary-text"><strong>대기 응답도 초안입니다</strong> — 급한 사안이라도 서버가 먼저 보내지 않습니다.</div>
       </div>
       <div class="boundary-item">
         <span class="boundary-icon">●</span>
-        <div class="boundary-text"><strong>위임 규칙은 언제든 사람이 고치거나 지울 수 있습니다</strong> — K-Plan이 자동으로 승격한 규칙도 예외가 아닙니다. 과하게 일반화됐다고 판단되면 그 규칙을 좁히거나 삭제하는 것으로 즉시 되돌릴 수 있습니다.</div>
+        <div class="boundary-text"><strong>위임 규칙은 언제든 고치거나 지울 수 있습니다</strong> — 과하게 일반화됐다고 판단되면 규칙을 좁히거나 삭제합니다.</div>
       </div>
       <div class="boundary-item">
         <span class="boundary-icon">●</span>
-        <div class="boundary-text"><strong>발송 대상·본문은 항상 확인 대상입니다</strong>(위임 범위 밖) — 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
+        <div class="boundary-text"><strong>발송 대상·본문은 항상 확인 대상입니다</strong> — 수신자 명단·제목·본문·발송 시각을 한 번에 정리해 보여주고 확인을 받은 뒤에만 실제 발송을 확정합니다.</div>
       </div>
     </div>
   </div>
